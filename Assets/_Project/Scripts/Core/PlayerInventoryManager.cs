@@ -84,12 +84,6 @@ namespace Hecton8.Core
             if (ActiveRuntimeInstance != null)
                 return ActiveRuntimeInstance;
 
-            if (GlobalRegistry.RegisteredPlayerInventory is PlayerInventoryManager registeredRuntime)
-            {
-                ActiveRuntimeInstance = registeredRuntime;
-                return registeredRuntime;
-            }
-
             GameObject runtimeRoot = new GameObject("[PlayerInventoryManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned player inventory/tooling service root - owner: PlayerInventoryManager
             return runtimeRoot.AddComponent<PlayerInventoryManager>();
         }
@@ -162,10 +156,14 @@ namespace Hecton8.Core
         private bool EnsureSingletonOwnership()
         {
             PlayerInventoryManager runtime = ActiveRuntimeInstance;
-            if (runtime == null)
-                runtime = GlobalRegistry.RegisteredPlayerInventory as PlayerInventoryManager;
-
             if (runtime != null && runtime != this)
+            {
+                Destroy(gameObject);
+                return false;
+            }
+
+            IPlayerInventoryService registeredService = GlobalRegistry.RegisteredPlayerInventory;
+            if (registeredService != null && !ReferenceEquals(registeredService, this))
             {
                 Destroy(gameObject);
                 return false;

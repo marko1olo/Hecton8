@@ -27,8 +27,10 @@ Authority:
 Evidence basis:
 - Docs/Orchestration/VISUAL_FRONT_P0_P1_SYNTHESIS_20260605.md
 - Docs/Orchestration/UNITY_OWNER_DIALOGUE_REVIEW_20260605.md
+- Docs/Orchestration/UNITY_WORKER_DIALOGUE_REFERENCE_REJECTION_20260606.md
 - Docs/Orchestration/SURFACE_ROUTE_STATIC_CLASSIFICATION_20260605.md
 - Docs/Orchestration/SURFACE_AUTHORITATIVE_ROUTE_RECOVERY_MATRIX_20260605.md
+- Docs/Orchestration/MODIFIED_SOURCE_DIFF_STATIC_TRIAGE_20260606.md
 - Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md
 - Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.png
 - Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.txt
@@ -37,6 +39,26 @@ Evidence basis:
 - Docs/Reports/Batch30/3004_WATER_FOAM_CAUSTIC_ROUTE_AUDIT.md
 - Docs/AssetAudit/H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md
 - Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeF_20260606_003256.log
+- Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeN_20260606_025336.log
+- Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeO_20260606_030119.log
+- Fermat residue classification, 2026-06-06: `H8VisualProofCapture1912.cs` is dangerous mutating proof-tool residue; `ACTUAL TERRAIN.asset` is dangerous dirty production graph state; `02_HECTON_WORLD.unity` is not surface-attributed by static diff.
+- Zeno surface-route anchor audit, 2026-06-06: current route failure is authorship failure, not color tuning; historical anchors are readback/A-B inputs only; no raw revert, blind Crest assignment, green/blue overlay, water card, or decorative dressing can close the route.
+- 2026-06-06 controller refresh: mandatory `base.webp`, `beauty.webp`, late-April surface, late-development water/cliffs, and sky/Aegir references were reviewed directly. Current h8_1914 crest and green-water probes fail structurally, not chromatically.
+- 2026-06-06 validators: `ValidateTerrainProbeEvidence.py --require-production` rejects h8_1914 with 9 blockers; `ValidatePlayerRouteStaticEvidence.py --require-production-static` currently rejects the active player route with 21 blockers; `ValidateAssetProofArtifactIndex.py` remains OK only because diagnostic h8_1914 artifacts are classified as rejected.
+- 2026-06-06 Hubble static forensics:
+  - `857689d2b` Apr 28 is the strongest Crest/Ocean/Sky readback anchor: `Ocean_Crest.prefab` -> `Ocean.mat` GUID `9def92...`, Crest depth/foam/shadow/cache fields, `Mat_HectonSky.mat` daylight values, and atmospheric Aegir overlay route.
+  - `2442f78e9` May 6 and `474759516` May 7 are the strongest MapMagic terrain/anomaly/splat/water-transition comparison anchors.
+  - `b81b0da81` May 10 is a likely divergence point: `_NightBlend 0 -> 0.5`, `_SunElevation 0.596 -> 0`, orange sky/haze, and packed-control terrain route. Treat as suspect, not recovery target.
+  - `06cff4605`, `fd33b9521`, and `7073862dd` are weak/scene-placement hints only. `MAT_H8_SurfaceCrestOcean_1428` remains candidate-only with overdrive risk.
+- 2026-06-06 Wegener historical readback matrix:
+  - Crest current readback must inspect `02_HECTON_WORLD.unity`, `Ocean.mat`, `Ocean-Underwater.mat`, `MAT_H8_SurfaceCrestOcean_1428`, `MAT_H8SurfaceOceanRead_1428`, `H8_WORLD_CREST_OCEAN_RUNTIME_1428`, `oceanRenderer`, `oceanDepthCache`, `mapMagicBridge`, `waterSurfaceLevel`, and `waterLevelFallback`.
+  - `857689d2b` Apr28 expected Crest/Ocean anchor includes `Ocean.mat` shader GUID `986f7c...`, `_Foam=1`, `_FoamScale=0.001528351`, `_NormalsScale=40`, `_NormalsStrength=0.08`, `_WaveFoamCoverage=0.52`, `_WaveFoamStrength=1.25`, `_DepthFogDensity={0.12,0.12,0.08635997}`.
+  - Current `MAT_H8_SurfaceCrestOcean_1428` static values are stronger and risky: `_FoamScale=0.028`, `_NormalsStrength=0.38`, `_WaveFoamStrength=3.8`, `_DepthFogDensity={0.014,0.018,0.024}`. Candidate only.
+  - `Packages/com.waveharmonic.crest/package.json` is missing; current Crest route is vendored `Assets/Crest` plus first-party `Assets/_Project/Scripts/Plugins/Crest`.
+  - Scene static evidence has `MapMagicRuntimeBridge.waterSurfaceLevel: 0` while underwater owner has `waterLevelFallback: 14.02`; this is a mandatory Unity readback question.
+  - `Mat_HectonSky.mat` currently has brighter/daylight-skewed values than Apr28, but scene skybox static GUID still resolves to `Assets/_Project/Art/Materials/Mat_HectonSky.mat`, not newer `MAT_AegirSky_Master`.
+  - `ACTUAL TERRAIN.asset` is modified and contains both old `Hecton8.Core` and current `Hecton8.Plugins` serialized MapMagic node entries; old `Assets/_Project/Scripts/World/*MapMagicNode.cs` paths are not current owner paths.
+  - `WaterTransitionHandler` text is absent from `02_HECTON_WORLD.unity`; route must be resolved through player prefab/script GUID or owner binding after player route proof.
 
 Owned scope:
 - Static/source audit while Unity gate is red.
@@ -44,7 +66,7 @@ Owned scope:
 - Do not edit Crest package shaders/wrappers. Do not create runtime material clones.
 
 Tasks:
-1. Inspect mandatory visual references; cite VREF surface/water/shore/sky signals.
+1. Inspect mandatory visual references; cite VREF surface/water/shore/sky signals. The target is broad cyan/blue ocean, foam/contact, readable cliffs/materials, sky/cloud/Aegir integration, and gameplay witness where required.
 2. Static-map active ocean candidates: Ocean_Crest, H8_WORLD_CREST_OCEAN_RUNTIME_1428, Ocean.mat, Ocean-Underwater.mat, MAT_H8_SurfaceCrestOcean_1428.mat, H8_SurfaceWaterReadability_1428.shader.
 3. Classify MAT_H8_SurfaceCrestOcean_1428 as active, candidate, or rejected-risk only from evidence. Do not assign blindly.
 4. Identify slab-water source: geometry extents, camera plane, ocean LOD, horizon occluders, low-water occlusion, curtains, or diagnostic temp objects.
@@ -53,8 +75,26 @@ Tasks:
 7. Identify Aegir/sky/cloud active material route and stale candidates.
 8. Produce a repair plan with exact Unity readback fields and safe edit order.
 9. Treat `Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeF_20260606_003256.log` as a current terrain/job blocker until current Unity import proves the MapMagic source bypass of `ScheduleFourPhaseSlicedWithDeltaApply(...)` and no `HydraulicErosionDeltaApplyJob` or TempJob leak remains.
-10. If Unity gate is green and controller allows, perform the smallest Unity-safe route repair. No raw YAML.
-11. Capture before/after screenshots and Frame Debugger/Stats where relevant.
+10. Treat `H8VisualProofCapture1912` 90s h8_1914 route as diagnostic-only and not a surface repair path.
+11. Use historical candidates only as comparison anchors: `857689d2b` for Apr28 sky/Crest/scene fields, `06cff4605` plus first-week-May commits for MapMagic graph comparison, and `b81b0da81^` as pre-divergence terrain/sky shader comparison. Do not raw-revert YAML or blindly assign materials.
+11a. Zeno anchor readback emphasis:
+    - `857689d2b`: compare active scene route, Crest renderer/material asset GUIDs, sea level/extents/LOD/foam/normals/underwater slots, skybox/Mat_HectonSky texture slots, Aegir material/mesh/atmosphere integration, reflection/lighting state.
+    - `06cff4605`: compare whether current MapMagic graph is production erosion/anomaly route or dirty bypass; read terrain material/splat/control/mask/normal slots and weather/celestial route state.
+    - `2442f78e9`: compare MapMagic graph links and node ownership only; sandbox scene is not production proof.
+    - `474759516`: compare current active water/sky/terrain route against generated/editor candidates including HectonSurfacePainter/HectonWaterGrid/OceanKinematicsRuntimeService, without running tools or assigning outputs before Unity gate.
+    - `fd33b9521` and `7073862dd`: compare scene placement, sky-follow camera, Crest depth cache, celestial placement, weather route, player swim/water transition witness; deprecated diffs are hints only.
+    - `b81b0da81^` / `e94c11c4d`: compare pre-divergence sky/Aegir/cloud/celestial slots, terrain shader path, water ripple/ocean kinematics ownership.
+12. Treat current h8_1914 metadata as rejection evidence: temp haze active, terrain shell active, erosion disabled, anomaly disabled, `splat.sedimentIn=UNLINKED`, and `anomaly.heightIn=UNLINKED`.
+13. If Unity gate is green and controller allows, perform the smallest Unity-safe route repair. No raw YAML.
+14. Capture before/after screenshots and Frame Debugger/Stats where relevant.
+15. Do not classify `02_HECTON_WORLD.unity` as a surface probe mutation without Unity readback; current static diff ties it to `[MUSIC_SYSTEM]`/audio ownership.
+16. Do not start from a water-color or haze A/B. First prove the active route owner: Crest material/source, ocean extent/LOD, MapMagic graph state, terrain material/splat route, shoreline/foam/contact route, skybox/Aegir/cloud material slots, and active camera/player witness.
+17. Read back Hubble anchor fields before any surface repair:
+    - active Crest prefab/material GUID and `Ocean.mat` vs runtime/temp/1428 replacement;
+    - active Crest scale, LOD, foam, depth, shadow, underwater, normal, caustics, and cache fields;
+    - active `Mat_HectonSky`/celestial skybox slots, `_SunElevation`, `_NightBlend`, haze, cloud/star, Aegir halo fields;
+    - active MapMagic biome/hydraulic/splat/anomaly links and sediment/slope/cavity outputs;
+    - active May 10 night/orange/packed-control terrain divergence state.
 
 Acceptance:
 - No visible rectangular slab water or dark horizon band before haze/post.
@@ -67,8 +107,155 @@ Rejection:
 - Green haze as root fix.
 - Temporary water cards as product proof.
 - h8_1914 crest/water recovery probes as product proof; they are editor-only unsaved diagnostics.
+- The 90s h8_1914 MapMagic pump as proof improvement; it strengthens a rejected diagnostic route.
 - Any continuation of the green overlay/card line as root fix.
+- Any "improvement" that still reads as slab/card water, black clipped coast, acid/green water, dirty yellow terrain carpet, or pasted Aegir.
 - Decorative rocks/flora/coral masking the broken base.
+- Using `H8VisualProofCapture1912.cs` as acceptance harness after it mutates Crest/MapMagic/Terrain before capture.
+- Raw scene/material/MapMagic YAML revert.
+- Blind Crest material assignment.
+- Cosmetic rocks/flora/coral before water, shoreline, terrain, and sky base route pass.
+- Landscape-only proof without player/HUD/tool/movement witness when first-20 proof is required.
 
 Low/Middle/High/Ultra:
 Low preserves clean cyan/blue water, readable shore, terrain silhouette, and Aegir. High/Ultra add richer normals, foam, reflection, sky/cloud detail, and dense route dressing without changing route truth.
+
+2026-06-06 cursor 135 Tesla/static candidate integration:
+- Tesla completed a static-only surface candidate audit. No edits, no Unity/dotnet/build/import/Play/profiler.
+- Readback owner questions to carry into the next green Unity window:
+  - Crest ocean: `Assets/_Project/Prefabs/Ocean_Crest.prefab`, `CrestBridge.cs`, `CrestOceanRuntimeAdapter.cs`; prove active `OceanRenderer`, bound material, and camera/viewpoint.
+  - OceanSinglePass: `Assets/_Project/Scripts/Rendering/OceanSinglePass/*`, `Hidden_Hecton_OceanDepthFoam.shader`, `Hecton_WakeDisplacement.compute`; prove active renderer feature and real `_H8OceanDepthFoamMask` / `_H8OceanWakeDisplacement` in Frame Debugger.
+  - Shoreline/contact foam: `ShorelineFoamGraftContracts.cs`, `shoreline_foam_profiles.csv`, `MESH_H8_ShorelineFoamOrganic_1446.asset`, `MESH_H8_ShorelineFoamFine_1469.asset`; prove waterline/depth alignment and real coastline/depth data, not mock rows.
+  - MapMagic/coast terrain: `MapMagicBridge.cs`, `MapMagicRuntimeBridge.cs`, `terrain_splatmap_profiles.csv`, `HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset`, `Photic1464/1465/1469`; prove active production owner, terrain layers/materials, and absence of black chunks/null materials.
+  - Sky/celestial: `Sky_System.prefab`, `HectonCelestialEngine.cs`, `ObserverRelativeCelestialBody.cs`, `Mat_HectonSky.mat`, `Hecton_AlienSky_Master.shader`; prove assigned sky material and Aegir update route.
+  - Aegir: `MAT_AegirGasGiant_Impostor_1428.mat`, `H8_AegirGasGiantImpostor_1428.shader`, `TX_H8AegirGasGiantBakedDisc_1428.png`, `Aegir_storms.png`, `GasGiant_Aegir.prefab`; prove which duplicate route renders and whether screen scale/details pass.
+  - Weather/atmosphere bridge: `HectonSurfaceWeatherDirector.cs`, `ShinobuOceanSurfaceAtmosphereRuntime.cs`, `SurfaceWeatherProfile_*`, `Hecton_OceanSurfaceAtmosphere.hlsl`; prove clear/calm readability and storm-only darkness.
+  - Emergency water grid: `Assets/_Project/Prefabs/Hecton Ocean.prefab`, `HectonWaterGrid.cs`; prove whether it is disabled, active, or masking Crest as a slab/card.
+  - Rejected probe: `Assets/_Project/Scripts/Editor/H8VisualProofCapture1912.cs`; never use as acceptance.
+- Latest `h8_1915_surface_crest_april_route_probe` gives useful readback but fails acceptance:
+  - active Crest reports `MAT_H8_SurfaceCrestOcean_1428` in the diagnostic capture; this is still not production terrain proof;
+  - active temp `SURFACE_HORIZON_SALT_HAZE_1428` is still present;
+  - MapMagic graph has erosion disabled, anomaly disabled, anomaly height unlinked, splat sediment unlinked, and height/splat not sourced from erosion;
+  - validator currently returns `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`, including non-production `captureTruth`;
+  - direct image review still rejects hard horizon band, black clipped coast/islands, weak foam/contact, yellow-green foreground carpet, oversized/weak Aegir integration, and no player/HUD/tool witness.
+
+2026-06-06 cursor 136 h8_1916 rejection:
+- Latest `h8_1916_surface_crest_clean_terrain_probe` is also rejected as acceptance.
+- `python -B Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestCleanTerrainProbe_EditorGPU_20260606_073231.log --metadata Docs\Screenshots\MCP\h8_1916_surface_crest_clean_terrain_probe.txt --require-production` currently returns `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`, including non-production `captureTruth`.
+- It improves terrain layer cleanliness only. It does not repair production MapMagic graph: erosion disabled, anomaly disabled, anomaly height unlinked, splat sediment unlinked, height/splat not sourced from erosion.
+- Direct visual review still rejects black clipped coast/islands, hard horizon band, weak shoreline foam/contact, oversized weak Aegir, and missing player/HUD/tool witness.
+- `H8VisualProofCapture1912` guardrail count is now `violations=102 diagnostic_only=true`; the harness remains rejection-only.
+
+2026-06-06 cursor 139 h8_1917 daylight rejection:
+- Latest `h8_1917_surface_crest_daylight_probe` is also rejected as acceptance.
+- `python -B Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestDaylightProbe_EditorGPU_20260606_074642.log --metadata Docs\Screenshots\MCP\h8_1917_surface_crest_daylight_probe.txt --require-production` returns `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=10`, including non-production `captureTruth`, Unity `MemoryLeaks`, `compile-input-mutated`, and the same disabled/unlinked MapMagic graph state.
+- Metadata readback is useful only as rejection evidence: active Crest route reports `MAT_H8_SurfaceCrestOcean_1428`, but erosion/anomaly are disabled and height/splat still source from biome post-process.
+- Direct visual review rejects overbearing Aegir, black hard horizon strip, cyan slab water, dark clipped shoreline masses, weak/no shoreline contact foam, and crude terrain silhouette.
+
+2026-06-06 cursor 143 h8_1918 coast-horizon rejection:
+- Latest `h8_1918_surface_crest_coast_horizon_probe` is also rejected as acceptance.
+- `python -B Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestCoastHorizonProbe_EditorGPU_20260606_080213.log --metadata Docs\Screenshots\MCP\h8_1918_surface_crest_coast_horizon_probe.txt --require-production` returns `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`, including non-production `captureTruth`, Unity `MemoryLeaks`, and the same disabled/unlinked MapMagic graph state.
+- Direct visual review rejects overbearing Aegir, black hard horizon strip, cyan slab water, black clipped shoreline masses, weak/no shoreline contact foam, and noisy gold/speckled terrain.
+
+2026-06-06 cursor 140 pasted dialogue/root repair lock:
+- Pasted Unity-worker dialogue confirms the failed direction: green haze, green/acid water overlays, temporary water-skin cards, and more h8_1914/h8_1915/h8_1916/h8_1917 diagnostic captures do not repair the product route.
+- The worker's own A/B results are failure evidence: the frame started to read as water only by adding a temporary card, but it remained green, flat, rectangular, edge-visible, with black terrain holes and weak shoreline truth.
+- h8_1917 proves that even activating `MAT_H8_SurfaceCrestOcean_1428` in a diagnostic route is not enough. The MapMagic graph/root terrain state, horizon/shore contact, and player/HUD witness remain blockers.
+- Next valid Unity window must start from owner readback and route repair, not color/haze/card tuning.
+- Repair order remains locked: MapMagic graph ownership and erosion/anomaly/sediment links first; then terrain application; then Crest active material/viewpoint/extents/depth/foam; then shoreline wetness/foam/contact; then horizon/weather; then Aegir/sky/cloud integration; then h8_1475 proof with player/HUD/tool witness.
+- Decorative rocks/flora/coral remain forbidden as a mask until this base route passes.
+
+2026-06-06 cursor 141 direct reference comparison:
+- Direct review of `h8_1917_surface_crest_daylight_probe.png` against the mandatory surface reference and prior in-development cliff/water reference rejects the shot harder, not softer.
+- Missing traits: patterned ocean scale, whitewater/contact foam, transparent shallow water, non-black shoreline, readable wet-rock material, integrated Aegir/sky, route vegetation used as composition rather than camouflage.
+- Prior in-development cliff/water reference proves the project already had the essential water/rock contact direction. Current `h8_1917` is not merely below AI-reference target; it is below project-local prior evidence.
+- Treat this as route regression/active-owner failure until Unity readback proves exact MapMagic/Crest/sky owners and repairs them.
+
+2026-06-06 cursor 142 current pasted-dialogue classification:
+- Fresh pasted Unity-worker dialogue confirms the failed line of work: green haze, acid/green water overlays, temporary water-skin/card mesh, and more `H8VisualProofCapture1912` diagnostic captures do not repair the product route.
+- The worker's own A/B proved only that a temporary card can make the image start reading as water. It still failed: green/neon tint, flat rectangle, visible edges, black shore/terrain holes, weak/no foam-contact truth, and no production player/HUD/tool witness.
+- The valid direction is not "tune the green overlay". It is restoring authoritative surface route ownership: MapMagic graph state, terrain material/splat route, Crest material/extents/depth/foam, shoreline wetness/contact, sky/Aegir/cloud integration, and then h8_1475 proof.
+- Current process gate is red at CPU 100 with Unity/dotnet/ILPP/UPM/ShaderCompiler blockers. No Unity repair/readback is allowed in this state.
+- Plato sidecar now owns static comparison of end-April/first-week-May surface route anchors against current source/assets. Its output is planning input only, not acceptance proof.
+
+2026-06-06 cursor 143 Plato/static anchor integration:
+- New synthesis: `Docs/Orchestration/SURFACE_HISTORICAL_ROUTE_ANCHORS_STATIC_20260606.md`.
+- Evidence class: STATIC_DOC / STATIC_SOURCE / SCREENSHOT_REVIEW only.
+- Mandatory reference review rejects current h8_1917 and h8_1919 harder: water is slab/card, horizon is hard band, shore is black clipped mass, wetness/foam/contact is absent, and Aegir is disconnected from water/terrain lighting.
+- Static current route facts: scene MapMagic graph points to `HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset` GUID `569d36fc879e1e044a410c62ce64a383`, not `ACTUAL TERRAIN.asset` GUID `4b0faac2e4d571e49b4a4ad83e927683`; scene MapMagic component is disabled; `terrainSettings.material` is null.
+- Static current water/contact facts: scene Crest runtime binds Crest `Ocean.mat`; `Ocean_Crest.prefab` depth/foam defaults are off; first-party `MAT_H8_SurfaceCrestOcean_1428` exists but is not the static scene binding; wet apron and wet ribs scene objects exist but are inactive.
+- Next green Unity window must start with readback, not edits: active sky/Aegir, Crest material/depth/foam/extents, MapMagic graph/enabled/material/tile state, and shoreline foam/wetness draw state.
+- Repair order locked: terrain ownership/binding -> Crest readable water body -> shoreline contact/wetness -> sky/Aegir integration -> h8_1475 canonical proof.
+- Decorative rocks/flora/coral remain forbidden as a mask until base water/shore/terrain/sky passes.
+
+2026-06-06 cursor 144 Dewey readback planner integration:
+- Dewey `019e9b5e-694a-7660-8ba8-eb1367cbd95c` completed `STATIC_PLAN` readback checklist with no edits and no Unity/build/import/profiler work.
+- `Docs/Orchestration/SURFACE_HISTORICAL_ROUTE_ANCHORS_STATIC_20260606.md` now records the exact next-green readback fields for process preflight, MapMagic/terrain, Crest/ocean, shoreline contact, sky/Aegir/lighting, and player/HUD/tool witness.
+- Forbidden mutation list remains: no object enable/disable, MapMagic graph/material/tile edits, Crest material/depth/foam toggles, apron/rib/foam activation, sky/Aegir/fog/lighting edits, player/HUD/tool spawn/reposition, green haze/color-card cover, scene save, mutating capture scripts, deletion/restore/stage/commit, or Unity/build/import while gate is red.
+- h8_1475 prerequisites now include clean dirty-state audit, console export, 60 clean post-capture seconds, Frame Debugger stats, six named screenshots, manifest/hash, and continuous `global_quality_weight`.
+- Current visual status remains `VISUAL_ROUTE_INVALID / STATIC_ONLY / PENDING UNITY READBACK`.
+
+2026-06-06 cursor 145 Epicurus next-green packet:
+- Epicurus `019e9b7e-1ace-7961-8ac6-a6e0ff303542` completed static-only surface next-green Unity owner packet. No Unity, MCP, Play, import, build/test, profiler, scene/prefab/material/YAML mutation, deletion, restore, stage, or commit.
+- `h8_1921_surface_owner_lighting_nonmutating` remains failure evidence only. Metadata confirms active scene `02_HECTON_WORLD`, active Crest ocean, active terrain shell, and active Aegir, but also `MapMagic.enabled=False`, grid `0`, sandbox graph, Crest `Ocean.mat`, `_viewpoint=NULL`, `_camera=NULL`, sea-floor depth disabled, inactive Crest input tiles, and no production player/HUD/tool witness.
+- Direct image verdict remains rejected: rectangular slab water, black clipped coast, weak/no wet contact, overbearing Aegir, landscape-only proof.
+- Readback order locked: process/no-mutation preflight -> player/camera/HUD baseline -> MapMagic/terrain -> Crest/ocean -> shoreline/contact -> sky/Aegir/lighting -> post-readback dirty/console/stats -> only then h8_1475.
+- Forbidden before readback: `SetActive`, renderer toggles, camera pose cheats, material swaps, temp materials, water/haze cards, MapMagic `Refresh/StartGenerate/Pin`, Crest serialized edits, terrain/splat edits, prefab Apply/Revert, scene dirty/save, raw MCP PNG acceptance, or extending `H8VisualProofCapture1912` as canonical proof.
+- First allowed Unity API changes after readback, if evidence confirms them: production MapMagic/terrain binding repair; Crest material/viewpoint/camera/depth/foam/input ownership repair; existing wet apron/rib/foam/contact object and mask/profile repair. Sky/Aegir repair follows unless it is proven the blocking owner first.
+- h8_1475 packet predicates expanded: `Docs/Screenshots/HectonProofPackets/h8_1475_<session>/`, manifest/hash/log/readback/dirty/stats artifacts, six exact screenshots, clean dirty before/after, 60 clean post-capture seconds, no leak/import/compile markers, continuous `global_quality_weight`, and production player/HUD/tool witness.
+- Updated synthesis: `Docs/Orchestration/SURFACE_HISTORICAL_ROUTE_ANCHORS_STATIC_20260606.md`.
+
+2026-06-06 cursor 146 h8_1925 pure-ocean false proof:
+- `h8_1925_surface_crest_pure_ocean_uniform_sky_probe` was reviewed directly and rejected as surface-route proof.
+- The image proves only isolated Crest water/sky rendering. It does not prove terrain, shoreline contact, wet rock, foam, Aegir integration, player/HUD/tool/movement, or route readability.
+- Surface repair order is unchanged: process gate -> no-mutation readback -> player/camera/HUD -> MapMagic/terrain -> Crest/ocean -> shoreline/contact -> sky/Aegir -> audit -> h8_1475.
+- Direct h8_1922/h8_1923/h8_1925 routes are now disabled in the proof harness so future workers cannot use pure-ocean/flat-sky frames as progress evidence.
+- Current status: `SURFACE_ROUTE_INVALID / PURE_OCEAN_FALSE_PROOF_REJECTED / PENDING UNITY READBACK`.
+
+2026-06-06 cursor 147 Pasteur historical route forensics:
+- Pasteur completed static-only surface route forensics. No Unity, dotnet, import, build, Play Mode, profiler, edits, logs, scene/prefab/material/YAML mutation, delete, restore, stage, or commit.
+- Verdict: current surface is not the old route with slight lighting drift. It is a broken hybrid where saved `Ocean_Crest.prefab`, scene runtime capture, and diagnostic probes disagree.
+- Historical cluster at commit `857689d2b` changed `02_HECTON_WORLD.unity`, `Ocean_Crest.prefab`, Crest `Ocean.mat`, and `Mat_HectonSky.mat` together. Historical Crest used `Ocean.mat` GUID `9def92ac79181fe41b238e91663f0fad`, with sea-floor depth and foam enabled, and material keywords for foam, transparency, underwater, and shallow subsurface color.
+- Current broken cluster: `Ocean_Crest.prefab` points at `MAT_H8_SurfaceCrestOcean_1428` but has null viewpoint/camera and depth/foam off; `h8_1921` runtime object uses Crest `Ocean.mat` but also has null viewpoint/camera, no follow camera, depth off, and inactive input tiles; MapMagic is disabled, sandbox graph is active, grid count is `0`.
+- `h8_1917`/`h8_1919` are useful rejection probes only because they temporarily bind `ACTUAL TERRAIN`, first-party ocean material, camera/viewpoint, depth/foam, and shadow data with temp sky/Aegir materials. They are unsaved diagnostics, not product proof.
+- Next green Unity owner must read and repair one canonical route: Crest owner material/viewpoint/camera/depth/foam, MapMagic graph/enabled/grid/terrain material, active terrain waterline, shoreline foam/wet anchors, and sky/Aegir material/transform/lighting. No pure-ocean proof, haze proof, water card, temp clone, or raw YAML route.
+- Current status: `HISTORICAL_ROUTE_BREAK_CONFIRMED / OWNER_ROUTE_REPAIR_REQUIRED / PENDING UNITY READBACK`.
+
+2026-06-06 cursor 148 full mandatory visual reference readback:
+- The full mandatory visual folder was enumerated and all 15 image references were directly inspected: surface, cliffs/water, cliffs/sky/Aegir, shallow water, middle water, kelp/forest, bioluminescent depth, underwater prior-development, and generated middle-depth references.
+- Reference floor is not a palette tweak. It demands readable blue/cyan water, wave scale, foam/wet-rock contact, real cliff/terrain relief, route flora/geology density, integrated Aegir/cloud/sky atmosphere, and player/HUD/tool witness for production proof.
+- Depth/noir references still demand saturation, silhouettes, biolum structure, and cockpit/HUD witness. Darkness is not allowed as a mask for weak art.
+- Current h8_1914/h8_1917/h8_1919/h8_1921/h8_1925-style surface evidence remains rejected. The project-local prior MapMagic + Crest references are already better than current captures, so this is route regression, not an unreachable art target.
+- Decorative rocks, flora, coral, fog, bloom, horizon masks, or green water cards remain forbidden as camouflage until the base MapMagic/Crest/shore/sky route passes.
+- Updated reference synthesis: `Docs/Orchestration/VISUAL_REFERENCE_DIRECT_RECHECK_20260606.md`.
+- Current status: `MANDATORY_REFERENCE_FULL_READBACK_COMPLETE / CURRENT_SURFACE_VISUAL_REJECTED / PENDING UNITY OWNER REPAIR`.
+
+2026-06-06 cursor 184 surface proof route containment:
+- The h8_1928 persistent polish bypass is now statically disabled. This prevents another false surface proof path from mutating scene/material state and emitting proof-looking output.
+- External `DirectHost_20260606_1216` did not produce h8_1928 output. A new external compile-only Unity process is active, so the next valid surface action remains unchanged: wait for a green process gate, run no-mutation readback, then repair MapMagic/Crest/shoreline/sky through Unity API if evidence identifies the owner route.
+- Current surface visual status remains `PENDING VERIFICATION`; no new screenshot, player/HUD/tool witness, Frame Debugger, profiler, or h8_1475 packet exists.
+
+2026-06-06 cursor 194 h8_1929 polish proof containment:
+- `SurfaceRoute1929PolishProofRunner` was another false surface proof path: it could mutate lighting/materials/camera, save `02_HECTON_WORLD`, render a raw camera PNG, and emit h8_1929 proof-looking text outside the canonical h8_1475 packet.
+- Public `ApplyAndExit` / `CaptureAndExit` now write rejected disabled-output only. Guardrails now inventory this class and fail on public scene-open/save/render/material-polish drift.
+- This is surface-route containment only. It does not improve water, terrain, shoreline, sky, Aegir, player/HUD/tool witness, Frame Debugger, profiler, or gameplay proof.
+- Current valid next step is unchanged: when process gate is green, run no-mutation Unity readback first; then repair MapMagic graph/terrain, Crest water/depth/foam/viewpoint, shoreline contact, and sky/Aegir through allowed Unity API evidence.
+
+2026-06-06 cursor 195 h8_1930 authoring bridge containment:
+- `SurfaceRoute1930AuthoringBridge` and internal persistent runner authoring methods were another false-proof path for the same surface-polish route.
+- Bridge public entries and persistent runner internal 1930 methods now write disabled/rejected output only; guardrails cover both layers.
+- This is still containment only: no surface screenshot, production player/HUD/tool witness, Frame Debugger, profiler, terrain/Crest readback, or h8_1475 proof exists.
+- Process gate remains red, so the next valid surface action remains no-mutation Unity readback after gate green, not another numbered polish/capture route.
+
+2026-06-06 cursor 196 h8_1931 authoring bridge containment:
+- `SurfaceSceneAuthoring1931Bridge` and internal persistent runner 1931 methods repeated the same false-proof authoring route.
+- Bridge public entries and internal persistent runner 1931 methods now write disabled/rejected output only; guardrails cover both layers.
+- No surface route repair, screenshot, player/HUD/tool witness, Frame Debugger, profiler, terrain/Crest readback, or h8_1475 proof exists.
+- External 1931 Unity proof launch failed on compile errors before executeMethod. Next valid surface step remains compile gate cleanup, then no-mutation Unity readback.
+
+2026-06-06 cursor 197 Banach visual reference critic:
+- Banach completed static-only visual critic. No edits, Unity, import, build, Play Mode, profiler, scene/prefab/material mutation, stage, or commit.
+- Verdict remains `REJECTED / PENDING UNITY + h8_1475 SCREENSHOT PROOF`.
+- P0 failures: no valid h8_1475 packet, slab surface ocean, failed shoreline contact, failed terrain/coast material truth, toy-integrated Aegir/sky, empty/slab 0-5m underwater route, absent production player/HUD/tool witness.
+- P1 failures: unproven 20-50m hero route, unresolved product-face source gates, flora/coral/UI sources still only candidates.
+- Do not hide base failure with raw MCP screenshots, pure-ocean frames, cards, green haze, bloom/fog, darkness, rocks, flora, or coral. Base MapMagic/Crest/shoreline/sky/player proof must pass first.

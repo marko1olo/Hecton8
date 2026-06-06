@@ -4,6 +4,12 @@ Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: rocks, boulders, cliffs, ore nodes, cave chunks, thermal vents, mineral shelves, basalt columns, sediment layers, and geological props.
 
+## First-20 Route Hook
+
+- First-20 moment: first shoreline/exposed rock, shallow traversal shelf, resource node, cave mouth, vent mark, route landmark, or terrain-detail object that proves the world has physical geology.
+- Route blocker removed: prevents opening terrain and resource reads from becoming smooth blobs, colorized heightfields, noise spheres, or shader-only geology.
+- Proof class: STATIC_DOC until geology process manifest, topology/normal validation, LOD/collider proof, material/triplanar proof, compact capture, and route screenshot exist.
+
 ## 1. Geology Mesh Law
 
 Generated geology must look stratified, pressure-eroded or wave-eroded, mineral-stained, fractured, and embedded in its route: surface, photic shallows, depth, cave, vent, or abyss. Smooth noise blobs and perfect ico-spheres are rejected. The shape must contain readable geological process: sediment bands, chipped edges, sheared planes, pitted cavities, erosion shelves, mineral veins, vent chimneys, waterline marks, shoreline undercuts, or collapsed fracture faces.
@@ -93,6 +99,12 @@ Geology collision uses:
 - SDF/nav proxy when navigation uses voxel authority.
 
 LOD0 MeshCollider is banned. Collision proxy must be saved as `COL_*` mesh or primitive child set and cooked offline when a mesh proxy is unavoidable.
+
+## 8A. Runtime And Hot-Path Boundary
+
+Geology runtime truth is the serialized visual package, material/mask contract, collider or SDF/nav proxy, ore/vent identity, traversal blocker identity, and route placement owner. Hot paths must not run SDF mesh generation, marching cubes, erosion, fracture, UV/triplanar setup, AO baking, collider cooking, ore-mask derivation, or visual-triangle collision.
+
+Runtime may stream prebuilt geology variants, select LOD/HLOD/impostors, drive approved wetness/vent/emission shader parameters, and read precomputed collision/nav proxies. `GlobalQualityWeight` may scale fidelity and residency only; it must not change ore identity, collision route, navigation blocker truth, material channel semantics, save identity, or route ownership.
 
 ## 9. Rejection Gates
 

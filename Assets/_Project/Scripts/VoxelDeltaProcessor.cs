@@ -4187,7 +4187,7 @@ namespace Hecton8.Caves
                 {
                     if (_scheduledCarveRunning)
                     {
-                        if (!TryFinalizeScheduledCarveJobBeforeFrameBoundary())
+                        if (!TryFinalizeScheduledCarveJobForCommit())
                             return;
 
                         _scheduledCarveRunning = false;
@@ -4328,34 +4328,15 @@ namespace Hecton8.Caves
             }
         }
 
-        private bool TryFinalizeScheduledCarveJobBeforeFrameBoundary()
+        private bool TryFinalizeScheduledCarveJobForCommit()
         {
             if (DispatcherJobSwap.TryComplete(ref _scheduledCarveHandle, false))
                 return true;
 
             DeferScheduledCarveBlackBoxSample(ResolveScheduledCarveVolumeId(), VoxelBlackBoxScheduledCarveJobOverrunFlag);
-
-            // [BLOCKING_SYNC_POINT] FAIL_CLOSED_FRAME_BOUNDARY: the carve write buffer is
-            // Vault-pinned while the worker owns it. Completing here is cheaper than
-            // carrying a relocation-blocking pin into the next PRE_SIMULATION compaction pass.
-            DispatcherJobFence.BeginLateFrameSwapWindow();
-            bool completed;
-            try
-            {
-                completed = DispatcherJobFence.TryComplete(ref _scheduledCarveHandle, forceComplete: true);
-            }
-            finally
-            {
-                DispatcherJobFence.EndLateFrameSwapWindow();
-            }
-
-            if (!completed)
-            {
-                ResetScheduledCarveState();
-                return false;
-            }
-
-            return true;
+            // Keep the vault pin as the relocation fence instead of stalling the frame.
+            // DataVault defrag/growth observes ActiveBurstLockMask and defers while the carve worker owns this buffer.
+            return false;
         }
 
         private void PublishCarveCommitWarningIfNeeded(long startTimestamp)
@@ -6488,17 +6469,6 @@ namespace Hecton8.Caves
 
             NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
-            array = default;
-        }
-
-        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            JobHandle disposeHandle = array.Dispose(dependency);
-            DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
             array = default;
         }
 

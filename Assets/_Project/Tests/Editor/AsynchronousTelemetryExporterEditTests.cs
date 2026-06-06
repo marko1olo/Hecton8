@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Diagnostics;
 using NUnit.Framework;
@@ -61,6 +62,34 @@ namespace Hecton8.Tests.Editor
                 if (destination.IsCreated)
                     destination.Dispose();
             }
+        }
+
+        [Test]
+        public void TelemetryDumpStartIndex_UsesZeroBeforeRingWrap()
+        {
+            Assert.AreEqual(0, InvokeStartIndex(cursorValue: 17, ringLength: 300, ringHasWrapped: false));
+        }
+
+        [Test]
+        public void TelemetryDumpStartIndex_UsesCursorAfterRingWrap()
+        {
+            Assert.AreEqual(17, InvokeStartIndex(cursorValue: 317, ringLength: 300, ringHasWrapped: true));
+        }
+
+        [Test]
+        public void TelemetryDumpSourceIndex_WrapsChronologicalSequence()
+        {
+            Assert.AreEqual(298, InvokeSourceIndex(startIndex: 298, ringLength: 300, offset: 0));
+            Assert.AreEqual(299, InvokeSourceIndex(startIndex: 298, ringLength: 300, offset: 1));
+            Assert.AreEqual(0, InvokeSourceIndex(startIndex: 298, ringLength: 300, offset: 2));
+            Assert.AreEqual(1, InvokeSourceIndex(startIndex: 298, ringLength: 300, offset: 3));
+        }
+
+        [Test]
+        public void TelemetryDumpSourceIndex_NormalizesNegativeStart()
+        {
+            Assert.AreEqual(299, InvokeSourceIndex(startIndex: -1, ringLength: 300, offset: 0));
+            Assert.AreEqual(0, InvokeSourceIndex(startIndex: -1, ringLength: 300, offset: 1));
         }
 
         [Test]
@@ -139,7 +168,9 @@ namespace Hecton8.Tests.Editor
                     "ClearWorkerFlag(WorkerFlagRunning)",
                     "Interlocked.CompareExchange(ref _workerFlags",
                     "PublishWorkerAccumCount(accumCount)",
-                    "PublishWorkerAccumCount(0)"
+                    "PublishWorkerAccumCount(0)",
+                    "ResolveTelemetryDumpStartIndex",
+                    "ResolveTelemetryDumpSourceIndex"
                 },
                 new[]
                 {
@@ -164,6 +195,28 @@ namespace Hecton8.Tests.Editor
                     "Volatile.Write(ref _workerFlags, Volatile.Read(ref _workerFlags)",
                     "File.Delete(finalPath)"
                 });
+        }
+
+        private static int InvokeStartIndex(int cursorValue, int ringLength, bool ringHasWrapped)
+        {
+            MethodInfo method = ResolvePrivateStaticMethod("ResolveTelemetryDumpStartIndex");
+            return (int)method.Invoke(null, new object[] { cursorValue, ringLength, ringHasWrapped });
+        }
+
+        private static int InvokeSourceIndex(int startIndex, int ringLength, int offset)
+        {
+            MethodInfo method = ResolvePrivateStaticMethod("ResolveTelemetryDumpSourceIndex");
+            return (int)method.Invoke(null, new object[] { startIndex, ringLength, offset });
+        }
+
+        private static MethodInfo ResolvePrivateStaticMethod(string methodName)
+        {
+            MethodInfo method = typeof(AsynchronousTelemetryExporter).GetMethod(
+                methodName,
+                BindingFlags.Static | BindingFlags.NonPublic);
+
+            Assert.NotNull(method, methodName);
+            return method;
         }
 
         private static void AssertFileTokens(string path, string[] required, string[] forbidden)

@@ -331,7 +331,22 @@ namespace Hecton8.World
         public NativeQueue<HydraulicErosionHeightDelta>.ParallelWriter HeightDeltaQueue;
 
         /// <summary>Two-int writer budget: remaining delta slots, dropped delta count.</summary>
-        [NativeDisableParallelForRestriction] public NativeArray<int> HeightDeltaBudget;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // HeightDeltaBudget is an optional queued-delta limiter. Direct erosion scheduling keeps
+        // QueueHeightDeltas and DeferHeightDeltaApplication at zero, so Execute never reads this
+        // NativeArray in the production MapMagic path, but Unity job validation still rejects a
+        // default optional container before the flag can gate access.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Allocating a synthetic TempJob budget for every direct erosion schedule would add owner
+        // lifetime and Sentinel cleanup debt to the hot editor-generation route. Splitting the
+        // job into duplicate direct/queued structs was rejected here because the queued path is
+        // already quarantined from MapMagic and this patch only removes validation of unused state.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Invariant: the only budget read is inside TryEnqueueHeightDeltaBounded, which first checks
+        // IsCreated and Length. If QueueHeightDeltas is zero, the method is never called; if it is
+        // non-zero with an invalid budget, enqueue is refused before HeightDeltaQueue is touched.
+        [NativeDisableContainerSafetyRestriction, NativeDisableParallelForRestriction]
+        public NativeArray<int> HeightDeltaBudget;
 
         /// <summary>Non-zero emits every terrain mutation into <see cref="HeightDeltaQueue"/>.</summary>
         public byte QueueHeightDeltas;

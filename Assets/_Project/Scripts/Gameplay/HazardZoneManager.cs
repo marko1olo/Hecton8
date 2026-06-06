@@ -4,6 +4,8 @@ using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Core.Memory.Layout;
+using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
@@ -62,6 +64,27 @@ namespace Hecton8.Gameplay
         [FieldOffset(104)] private ulong _pad6;
         [FieldOffset(112)] private ulong _pad7;
         [FieldOffset(120)] private ulong _pad8;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    internal struct HazardZoneTelemetryEntry
+    {
+        [FieldOffset(0)] public ulong PackedOwner;
+        [FieldOffset(8)] public uint FrameIndex;
+        [FieldOffset(12)] public uint Sequence;
+        [FieldOffset(16)] public uint StateHash;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public int ActiveZoneCount;
+        [FieldOffset(28)] public int PendingMutationCount;
+        [FieldOffset(32)] public int PublishedExposureMask;
+        [FieldOffset(36)] public uint BufferGeneration;
+        [FieldOffset(40)] public float ToxicityDose;
+        [FieldOffset(44)] public float ToxicityPulseAccumulatorSeconds;
+        [FieldOffset(48)] public float PlayerToxicity;
+        [FieldOffset(52)] public float VehicleToxicity;
+        [FieldOffset(56)] public float PlayerRadiation;
+        [FieldOffset(60)] public float VehicleRadiation;
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -214,8 +237,16 @@ namespace Hecton8.Gameplay
             int sampleIndex = (int)math.floor(scaledIndex);
             int nextIndex = math.min(curveLutSampleCount - 1, sampleIndex + 1);
             float fraction = scaledIndex - sampleIndex;
-            float a = FiniteSaturate01(curveLutSamples[curveLutOffset + sampleIndex]);
-            float b = FiniteSaturate01(curveLutSamples[curveLutOffset + nextIndex]);
+            int sampleOffset = curveLutOffset + sampleIndex;
+            int nextOffset = curveLutOffset + nextIndex;
+            if ((uint)sampleOffset >= (uint)curveLutSamples.Length ||
+                (uint)nextOffset >= (uint)curveLutSamples.Length)
+            {
+                return ResolveSquaredDefaultCurveSample(normalizedDistanceSq);
+            }
+
+            float a = FiniteSaturate01(curveLutSamples[sampleOffset]);
+            float b = FiniteSaturate01(curveLutSamples[nextOffset]);
             return math.lerp(a, b, fraction);
         }
 
@@ -233,13 +264,16 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5695)]
-    public sealed class HazardZoneManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IHazardZoneReadModel
+    public sealed class HazardZoneManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IHazardZoneReadModel, ISaveable
     {
         private static int s_x001HazardZoneManagerSignalPushDropCount;
         private const int HazardTypeCount = 4;
         private const int DefaultMaxZoneCount = 512;
         private const int MinZoneCapacity = 32;
         private const int PendingMutationCapacity = 64;
+        private const int PendingUnregisterOverflowCapacity = 64;
+        private const int TelemetryCapacity = 300;
+        private const int TelemetryEntrySizeBytes = 64;
         private const float HazardStepIntervalSeconds = 0.1f;
         private const float MinHazardRadius = 0.01f;
         private const double HazardSpatialCellSizeMeters = 12d;
@@ -250,6 +284,18 @@ namespace Hecton8.Gameplay
         private const int HazardTypeMaskNonRadiation = HazardTypeMaskAll & ~HazardTypeMaskRadiation;
         private const uint PendingMutationOverflowWarningHash = 0x485A4D51u; // HZMQ
         private const uint HazardManagerContextHash = 0x485A4D47u; // HZMG
+        private const uint TelemetryDumpMagic = 0x4838485Au; // H8HZ
+        private const int TelemetryDumpFormatVersion = 1;
+        private const string TelemetryDumpPayloadLabel = "HazardZoneBlackBox";
+        private const string TelemetryDumpRelativePathPrefix = "Docs/AgentLogs/Dump_HAZARD_ZONE_BLACKBOX_";
+        private const string TelemetryDumpRelativePathSuffix = ".bin";
+        private const uint TelemetryFlagJobRunning = 1u << 0;
+        private const uint TelemetryFlagHazardStateGuardHeld = 1u << 1;
+        private const uint TelemetryFlagExposureJobGuardHeld = 1u << 2;
+        private const uint TelemetryFlagPendingDataVaultSwap = 1u << 3;
+        private const uint TelemetryFlagPendingMutation = 1u << 4;
+        private const uint TelemetryFlagPendingUnregisterOverflow = 1u << 5;
+        private const uint TelemetryFlagNonFinite = 1u << 6;
         private const float ToxicityDoseThreshold = 1f;
         private const float ToxicityDoseDecayPerSecond = 0.18f;
         private const float ToxicityDamagePulseIntervalSeconds = 0.5f;
@@ -257,6 +303,7 @@ namespace Hecton8.Gameplay
         private const float ToxicityOverdoseDamageScale = 0.85f;
         private const float ToxicityPoisonStatusDurationSeconds = 5f;
         private const float ToxicityExposureToxemiaScale = 0.08f;
+        private const float MaxPersistedToxicityDose = 64f;
         private const float RadiationClarityTransferScale = 0.85f;
         private const float ThermalClarityTransferDenominator = 18f;
         private const float ToxicClarityTransferScale = 1.35f;
@@ -299,6 +346,8 @@ namespace Hecton8.Gameplay
         private HazardVaultArray<float> _volumeCurveLutSamples;
         private HazardVaultArray<HazardVolumeData> _jobVolumes;
         private VaultGenerationHandle<HazardExposureJobResult> _jobResultHandle;
+        private VaultGenerationHandle<HazardZoneTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<int> _telemetryCursorHandle;
         private IDataVault _dataVault;
         private HazardVaultArray<byte> _candidateVolumeFlags;
         private JobHandle _jobHandle;
@@ -309,16 +358,25 @@ namespace Hecton8.Gameplay
         private bool _hazardStateGuardHeld;
         private bool _registered;
         private bool _serviceRegistered;
+        private bool _saveRegistered;
         private bool _hotSwapRegistered;
         private bool _ownsJobResultHandle;
+        private bool _ownsTelemetryRingHandle;
+        private bool _ownsTelemetryCursorHandle;
+        private bool _hazardBlackBoxDumped;
+        private bool _hazardBlackBoxDumpAttempted;
+        private bool _hazardBlackBoxUnavailableReported;
         private bool _pendingDataVaultSwap;
         private int _activeCount;
+        private int _telemetryWriteIndex;
+        private uint _telemetrySequence;
         private float _toxicityDose;
         private float _toxicityPulseAccumulatorSeconds;
         private int _publishedExposureMask;
 
         private Transform _playerTransform;
         private IDataVault _pendingDataVault;
+        private ISaveService _saveService;
         private IDataVault _exposureJobGuardVault;
         private IDataVault _hazardStateGuardVault;
         private HectonSurvivalSystem _playerSurvival;
@@ -341,7 +399,10 @@ namespace Hecton8.Gameplay
         private readonly float[] _vehicleHazardGlitchBias = new float[HazardTypeCount];
         // COLD ALLOC: PendingHazardZoneMutation[64] - deferred register/unregister mutations while exposure job reads LUTs - owner: HazardZoneManager
         private readonly PendingHazardZoneMutation[] _pendingMutations = new PendingHazardZoneMutation[PendingMutationCapacity];
+        // COLD ALLOC: int[64] - fail-closed unregister overflow lane for stale damaging hazard removal - owner: HazardZoneManager
+        private readonly int[] _pendingOverflowUnregisterIds = new int[PendingUnregisterOverflowCapacity];
         private int _pendingMutationCount;
+        private int _pendingOverflowUnregisterCount;
 
         private struct HazardVaultArray<T> where T : struct
         {
@@ -721,6 +782,48 @@ namespace Hecton8.Gameplay
         /// <summary>Current toxicity dose accumulated by the local player.</summary>
         public float ToxicityDose => _toxicityDose;
 
+        public int SavePriority => 55;
+        public int LoadPriority => 55;
+
+        public void PopulateSaveData(SaveData data)
+        {
+            if (data == null)
+                return;
+
+            ref HazardZoneRuntimeDTO dto = ref data.hazardZones;
+            dto.toxicityDose = ClampPersistedToxicityDose(_toxicityDose);
+            dto.toxicityPulseAccumulatorSeconds = dto.toxicityDose > ToxicityDoseThreshold
+                ? ClampPersistedToxicityPulseAccumulator(_toxicityPulseAccumulatorSeconds)
+                : 0f;
+        }
+
+        public void LoadFromSaveData(SaveData data)
+        {
+            if (data == null)
+            {
+                _toxicityDose = 0f;
+                _toxicityPulseAccumulatorSeconds = 0f;
+                UpdateDiagnostics();
+                return;
+            }
+
+            HazardZoneRuntimeDTO dto = data.hazardZones;
+            if (data.version < SaveData.HazardZoneRuntimePersistenceVersion)
+            {
+                _toxicityDose = 0f;
+                _toxicityPulseAccumulatorSeconds = 0f;
+            }
+            else
+            {
+                _toxicityDose = ClampPersistedToxicityDose(dto.toxicityDose);
+                _toxicityPulseAccumulatorSeconds = _toxicityDose > ToxicityDoseThreshold
+                    ? ClampPersistedToxicityPulseAccumulator(dto.toxicityPulseAccumulatorSeconds)
+                    : 0f;
+            }
+
+            UpdateDiagnostics();
+        }
+
         private void Awake()
         {
             HazardZoneManager registeredInstance = GlobalRegistry.HazardZones;
@@ -746,12 +849,14 @@ namespace Hecton8.Gameplay
             ResolvePlayerContext();
             TryRegister();
             TryRegisterService();
+            TryRegisterSaveParticipant();
             UpdateDiagnostics();
         }
 
         private void OnDisable()
         {
             PublishExposureMask(0);
+            TryUnregisterSaveParticipant();
             TryUnregister();
             TryUnregisterService();
             TryUnregisterHotSwapListener();
@@ -762,6 +867,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             PublishExposureMask(0);
+            TryUnregisterSaveParticipant();
             TryUnregister();
             TryUnregisterService();
             TryUnregisterHotSwapListener();
@@ -785,6 +891,13 @@ namespace Hecton8.Gameplay
                         _playerRuntimeContext.SurvivalSystem,
                         _playerRuntimeContext.TraumaDispatcher,
                         _playerRuntimeContext.PlayerTransportCoordinator);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Save)
+            {
+                TryUnregisterSaveParticipant();
+                TryRegisterSaveParticipant();
                 return;
             }
 
@@ -850,6 +963,7 @@ namespace Hecton8.Gameplay
         {
             ConsumeCompletedJob();
             ApplyPendingMutationsIfIdle();
+            RecordHazardBlackBoxTelemetry();
         }
 
         private void AllocateNativeState()
@@ -877,6 +991,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            _ = TryEnsureHazardTelemetryBuffers();
             _ = TryPrepareHazardExposureResultBuffer(out _, allowAllocation: true);
             _spatialHash = new HectonSpatialHash(
                 safeCapacity,
@@ -1038,7 +1153,6 @@ namespace Hecton8.Gameplay
             {
                 if (!TryPrepareHazardExposureResultBuffer(out NativeArray<HazardExposureJobResult> jobResult, allowAllocation: false))
                 {
-                    ClearExposureState();
                     return true;
                 }
 
@@ -1079,15 +1193,16 @@ namespace Hecton8.Gameplay
             float currentToxicityIntensity = ClampExposure(math.max(
                 _playerHazardIntensity[(int)HazardType.Toxicity],
                 _vehicleHazardIntensity[(int)HazardType.Toxicity]));
+            float safeDose = math.min(FiniteNonNegativeOrZero(_toxicityDose), MaxPersistedToxicityDose);
 
             if (currentToxicityIntensity > 0.001f)
             {
                 float resistance = ResolveToxicityResistance();
-                _toxicityDose += (currentToxicityIntensity / resistance) * safeDt;
+                _toxicityDose = math.min(safeDose + (currentToxicityIntensity / resistance) * safeDt, MaxPersistedToxicityDose);
             }
             else
             {
-                _toxicityDose = math.max(0f, FiniteNonNegativeOrZero(_toxicityDose) - ToxicityDoseDecayPerSecond * safeDt);
+                _toxicityDose = math.max(0f, safeDose - ToxicityDoseDecayPerSecond * safeDt);
                 if (_toxicityDose <= ToxicityDoseThreshold)
                     _toxicityPulseAccumulatorSeconds = 0f;
             }
@@ -1095,7 +1210,7 @@ namespace Hecton8.Gameplay
             if (_toxicityDose <= ToxicityDoseThreshold || _playerSurvival == null)
                 return;
 
-            _toxicityPulseAccumulatorSeconds += safeDt;
+            _toxicityPulseAccumulatorSeconds = FiniteNonNegativeOrZero(_toxicityPulseAccumulatorSeconds) + safeDt;
             while (_toxicityPulseAccumulatorSeconds >= ToxicityDamagePulseIntervalSeconds)
             {
                 _toxicityPulseAccumulatorSeconds -= ToxicityDamagePulseIntervalSeconds;
@@ -1105,14 +1220,16 @@ namespace Hecton8.Gameplay
 
         private void ApplyToxicityDamagePulse(float currentIntensity)
         {
-            float overdose = math.max(0f, _toxicityDose - ToxicityDoseThreshold);
+            float safeCurrentIntensity = ClampExposure(currentIntensity);
+            float safeDose = math.min(FiniteNonNegativeOrZero(_toxicityDose), MaxPersistedToxicityDose);
+            float overdose = math.max(0f, safeDose - ToxicityDoseThreshold);
             float damageMagnitude = ToxicityDamagePerPulse *
-                                    math.max(0.25f, currentIntensity) *
+                                    math.max(0.25f, safeCurrentIntensity) *
                                     (1f + overdose * ToxicityOverdoseDamageScale);
 
             int targetId = ResolvePlayerCombatTargetId();
-            PublishToxicityExposureSignal(targetId, damageMagnitude, currentIntensity);
-            _ = TryQueueToxicityPoisonStatus(targetId, damageMagnitude, currentIntensity);
+            PublishToxicityExposureSignal(targetId, damageMagnitude, safeCurrentIntensity);
+            _ = TryQueueToxicityPoisonStatus(targetId, damageMagnitude, safeCurrentIntensity);
         }
 
         private int ResolvePlayerCombatTargetId()
@@ -1201,7 +1318,6 @@ namespace Hecton8.Gameplay
             if (!TryPrepareHazardExposureResultBuffer(out _, allowAllocation: false) ||
                 !TryAcquireExposureJobGuard())
             {
-                ClearExposureState();
                 return;
             }
 
@@ -1211,14 +1327,12 @@ namespace Hecton8.Gameplay
             {
                 if (!_jobVolumes.TryResolveMutable(out NativeArray<HazardVolumeData> lockedJobVolumes))
                 {
-                    ClearExposureState();
                     return;
                 }
 
                 if (!_volumes.TryReadOnly(out NativeArray<HazardVolumeData>.ReadOnly readVolumes) ||
                     !_volumeIds.TryReadOnly(out NativeArray<int>.ReadOnly readVolumeIds))
                 {
-                    ClearExposureState();
                     return;
                 }
 
@@ -1249,7 +1363,6 @@ namespace Hecton8.Gameplay
                     !jobResult.IsCreated ||
                     jobResult.Length < 1)
                 {
-                    ClearExposureState();
                     return;
                 }
 
@@ -1272,6 +1385,7 @@ namespace Hecton8.Gameplay
                 _jobHandle = job.Schedule();
                 _jobRunning = true;
                 keepJobGuard = true;
+                H8Memory.RegisterActiveJob(SystemID.GameplayHazards, _jobHandle);
             }
             finally
             {
@@ -1471,6 +1585,7 @@ namespace Hecton8.Gameplay
             _jobVolumes.ReleaseBuffer();
             _candidateVolumeFlags.ReleaseBuffer();
             _spatialQueryHandles.ReleaseBuffer();
+            ReleaseHazardTelemetryBuffers();
             _activeCount = 0;
         }
 
@@ -1511,6 +1626,429 @@ namespace Hecton8.Gameplay
 
             vault.ReleaseBuffer(in _jobResultHandle);
             ClearHazardExposureResultDescriptor();
+        }
+
+        private bool TryEnsureHazardTelemetryBuffers()
+        {
+            bool ringReady = TryEnsureHazardTelemetryRing();
+            bool cursorReady = TryEnsureHazardTelemetryCursor();
+            return ringReady && cursorReady;
+        }
+
+        private bool TryEnsureHazardTelemetryRing()
+        {
+            return TryEnsureHazardTelemetryBuffer(
+                ref _telemetryRingHandle,
+                BufferID.HazardZoneTelemetryRing,
+                TelemetryCapacity,
+                NativeArrayOptions.ClearMemory,
+                ref _ownsTelemetryRingHandle);
+        }
+
+        private bool TryEnsureHazardTelemetryCursor()
+        {
+            return TryEnsureHazardTelemetryBuffer(
+                ref _telemetryCursorHandle,
+                BufferID.HazardZoneTelemetryCursor,
+                1,
+                NativeArrayOptions.ClearMemory,
+                ref _ownsTelemetryCursorHandle);
+        }
+
+        private bool TryEnsureHazardTelemetryBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredCapacity,
+            NativeArrayOptions options,
+            ref bool ownsHandle)
+            where T : struct
+        {
+            int safeCapacity = math.max(1, requiredCapacity);
+            IDataVault vault = _dataVault;
+            uint expectedBufferId = unchecked((uint)(int)bufferId);
+            uint expectedSystemId = unchecked((uint)SystemID.GameplayHazards);
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (IsVaultHandleCreated(in handle) &&
+                handle.BufferID == expectedBufferId &&
+                handle.SystemID == expectedSystemId &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
+                existing.IsCreated &&
+                existing.Length >= safeCapacity)
+            {
+                return true;
+            }
+
+            handle = default;
+            ownsHandle = false;
+            if (vault.IsAllocationLocked)
+                return false;
+
+            VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                safeCapacity,
+                SystemID.GameplayHazards,
+                options);
+            if (!IsVaultHandleCreated(in acquired) ||
+                acquired.BufferID != expectedBufferId ||
+                acquired.SystemID != expectedSystemId ||
+                !vault.TryReadOnlyHandle(in acquired, out NativeArray<T>.ReadOnly buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < safeCapacity)
+            {
+                return false;
+            }
+
+            handle = acquired;
+            ownsHandle = true;
+            return true;
+        }
+
+        private void ReleaseHazardTelemetryBuffers()
+        {
+            ReleaseHazardTelemetryBuffer(
+                ref _telemetryRingHandle,
+                BufferID.HazardZoneTelemetryRing,
+                ref _ownsTelemetryRingHandle);
+            ReleaseHazardTelemetryBuffer(
+                ref _telemetryCursorHandle,
+                BufferID.HazardZoneTelemetryCursor,
+                ref _ownsTelemetryCursorHandle);
+            _telemetryWriteIndex = 0;
+            _telemetrySequence = 0u;
+            _hazardBlackBoxDumped = false;
+            _hazardBlackBoxDumpAttempted = false;
+            _hazardBlackBoxUnavailableReported = false;
+        }
+
+        private void ReleaseHazardTelemetryBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            ref bool ownsHandle)
+            where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (ownsHandle &&
+                vault != null &&
+                IsVaultHandleCreated(in handle) &&
+                vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> current) &&
+                current.Generation == handle.Generation &&
+                current.SystemID == handle.SystemID)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
+            ownsHandle = false;
+        }
+
+        private void RecordHazardBlackBoxTelemetry()
+        {
+            HazardZoneTelemetryEntry entry = BuildHazardTelemetryEntry();
+            bool hasFault = (entry.Flags & TelemetryFlagNonFinite) != 0u;
+            _ = TryWriteHazardTelemetryEntry(ref entry);
+
+            if (hasFault)
+                DumpHazardBlackBoxOnce();
+        }
+
+        private HazardZoneTelemetryEntry BuildHazardTelemetryEntry()
+        {
+            uint flags = ComposeHazardTelemetryFlags();
+            float toxicityDose = FiniteTelemetryValue(_toxicityDose, ref flags);
+            float toxicityPulse = FiniteTelemetryValue(_toxicityPulseAccumulatorSeconds, ref flags);
+            float playerToxicity = FiniteTelemetryValue(_playerHazardIntensity[(int)HazardType.Toxicity], ref flags);
+            float vehicleToxicity = FiniteTelemetryValue(_vehicleHazardIntensity[(int)HazardType.Toxicity], ref flags);
+            float playerRadiation = FiniteTelemetryValue(_playerHazardIntensity[(int)HazardType.Radiation], ref flags);
+            float vehicleRadiation = FiniteTelemetryValue(_vehicleHazardIntensity[(int)HazardType.Radiation], ref flags);
+            uint nextSequence = unchecked(_telemetrySequence + 1u);
+            if (nextSequence == 0u)
+                nextSequence = 1u;
+
+            _telemetrySequence = nextSequence;
+            HazardZoneTelemetryEntry entry = default;
+            entry.FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            entry.Sequence = nextSequence;
+            entry.Flags = flags;
+            entry.ActiveZoneCount = _activeCount;
+            entry.PendingMutationCount = _pendingMutationCount + _pendingOverflowUnregisterCount;
+            entry.PublishedExposureMask = _publishedExposureMask;
+            entry.ToxicityDose = toxicityDose;
+            entry.ToxicityPulseAccumulatorSeconds = toxicityPulse;
+            entry.PlayerToxicity = playerToxicity;
+            entry.VehicleToxicity = vehicleToxicity;
+            entry.PlayerRadiation = playerRadiation;
+            entry.VehicleRadiation = vehicleRadiation;
+            entry.StateHash = ComputeHazardTelemetryStateHash(in entry);
+            return entry;
+        }
+
+        private uint ComposeHazardTelemetryFlags()
+        {
+            uint flags = 0u;
+            if (_jobRunning)
+                flags |= TelemetryFlagJobRunning;
+            if (_hazardStateGuardHeld)
+                flags |= TelemetryFlagHazardStateGuardHeld;
+            if (_exposureJobGuardHeld)
+                flags |= TelemetryFlagExposureJobGuardHeld;
+            if (_pendingDataVaultSwap)
+                flags |= TelemetryFlagPendingDataVaultSwap;
+            if (_pendingMutationCount > 0)
+                flags |= TelemetryFlagPendingMutation;
+            if (_pendingOverflowUnregisterCount > 0)
+                flags |= TelemetryFlagPendingUnregisterOverflow;
+
+            return flags;
+        }
+
+        private bool TryWriteHazardTelemetryEntry(ref HazardZoneTelemetryEntry entry)
+        {
+            if (!IsHazardTelemetryRingReady())
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in _telemetryRingHandle, SystemID.GameplayHazards, out NativeArray<HazardZoneTelemetryEntry> telemetryRing))
+            {
+                return false;
+            }
+
+            int nextWriteIndex = _telemetryWriteIndex;
+            bool wrote = false;
+            try
+            {
+                if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
+                    return false;
+
+                int telemetryLength = telemetryRing.Length;
+                int writeIndex = _telemetryWriteIndex;
+                if ((uint)writeIndex >= (uint)telemetryLength)
+                    writeIndex = 0;
+
+                nextWriteIndex = writeIndex + 1;
+                if (nextWriteIndex >= telemetryLength)
+                    nextWriteIndex = 0;
+
+                entry.PackedOwner = ((ulong)_telemetryRingHandle.BufferID << 32) | _telemetryRingHandle.SystemID;
+                entry.BufferGeneration = _telemetryRingHandle.Generation;
+                telemetryRing[writeIndex] = entry;
+                wrote = true;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.GameplayHazards);
+                if (wrote)
+                {
+                    _telemetryWriteIndex = nextWriteIndex;
+                    _ = TryWriteHazardTelemetryCursor(nextWriteIndex);
+                }
+            }
+        }
+
+        private bool TryWriteHazardTelemetryCursor(int nextWriteIndex)
+        {
+            if (!IsHazardTelemetryCursorReady())
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsVaultHandleCreated(in _telemetryCursorHandle) ||
+                !vault.TryAcquireWriteLock(in _telemetryCursorHandle, SystemID.GameplayHazards, out NativeArray<int> cursorBuffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!cursorBuffer.IsCreated || cursorBuffer.Length <= 0)
+                    return false;
+
+                cursorBuffer[0] = nextWriteIndex;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryCursorHandle, SystemID.GameplayHazards);
+            }
+        }
+
+        private bool TryReadHazardTelemetryRing(out NativeArray<HazardZoneTelemetryEntry>.ReadOnly telemetryRing)
+        {
+            telemetryRing = default;
+            IDataVault vault = _dataVault;
+            return IsHazardTelemetryRingReady(vault) &&
+                   vault.TryReadOnlyHandle(in _telemetryRingHandle, out telemetryRing) &&
+                   telemetryRing.IsCreated &&
+                   telemetryRing.Length >= TelemetryCapacity;
+        }
+
+        private bool IsHazardTelemetryRingReady()
+        {
+            return IsHazardTelemetryRingReady(_dataVault);
+        }
+
+        private bool IsHazardTelemetryRingReady(IDataVault vault)
+        {
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   IsVaultHandleCreated(in _telemetryRingHandle) &&
+                   _telemetryRingHandle.BufferID == unchecked((uint)(int)BufferID.HazardZoneTelemetryRing) &&
+                   _telemetryRingHandle.SystemID == unchecked((uint)SystemID.GameplayHazards);
+        }
+
+        private bool IsHazardTelemetryCursorReady()
+        {
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   IsVaultHandleCreated(in _telemetryCursorHandle) &&
+                   _telemetryCursorHandle.BufferID == unchecked((uint)(int)BufferID.HazardZoneTelemetryCursor) &&
+                   _telemetryCursorHandle.SystemID == unchecked((uint)SystemID.GameplayHazards);
+        }
+
+        private void DumpHazardBlackBoxOnce()
+        {
+            if (_hazardBlackBoxDumped || _hazardBlackBoxDumpAttempted)
+                return;
+
+            if (!TryReadHazardTelemetryRing(out NativeArray<HazardZoneTelemetryEntry>.ReadOnly telemetryRing))
+            {
+                if (!_hazardBlackBoxUnavailableReported)
+                {
+                    _hazardBlackBoxUnavailableReported = true;
+                    GlobalTelemetryBus.PublishUnityLogFault(TelemetryDumpMagic, 0u, 2u);
+                }
+
+                return;
+            }
+
+            _hazardBlackBoxDumpAttempted = true;
+            NativeArray<byte> payload = default;
+            int payloadBytes = 0;
+            try
+            {
+                int entryCount = telemetryRing.Length;
+                payloadBytes = 24 + entryCount * TelemetryEntrySizeBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    payloadBytes,
+                    nameof(HazardZoneManager),
+                    TelemetryDumpPayloadLabel);
+
+                int cursor = 0;
+                WriteUInt32LittleEndian(payload, ref cursor, TelemetryDumpMagic);
+                WriteInt32LittleEndian(payload, ref cursor, TelemetryDumpFormatVersion);
+                WriteInt32LittleEndian(payload, ref cursor, TelemetryEntrySizeBytes);
+                WriteInt32LittleEndian(payload, ref cursor, entryCount);
+                WriteInt32LittleEndian(payload, ref cursor, _telemetryWriteIndex);
+                WriteUInt32LittleEndian(payload, ref cursor, _telemetrySequence);
+                for (int i = 0; i < entryCount; i++)
+                {
+                    HazardZoneTelemetryEntry entry = telemetryRing[i];
+                    WriteUInt64LittleEndian(payload, ref cursor, entry.PackedOwner);
+                    WriteUInt32LittleEndian(payload, ref cursor, entry.FrameIndex);
+                    WriteUInt32LittleEndian(payload, ref cursor, entry.Sequence);
+                    WriteUInt32LittleEndian(payload, ref cursor, entry.StateHash);
+                    WriteUInt32LittleEndian(payload, ref cursor, entry.Flags);
+                    WriteInt32LittleEndian(payload, ref cursor, entry.ActiveZoneCount);
+                    WriteInt32LittleEndian(payload, ref cursor, entry.PendingMutationCount);
+                    WriteInt32LittleEndian(payload, ref cursor, entry.PublishedExposureMask);
+                    WriteUInt32LittleEndian(payload, ref cursor, entry.BufferGeneration);
+                    WriteFloatLittleEndian(payload, ref cursor, entry.ToxicityDose);
+                    WriteFloatLittleEndian(payload, ref cursor, entry.ToxicityPulseAccumulatorSeconds);
+                    WriteFloatLittleEndian(payload, ref cursor, entry.PlayerToxicity);
+                    WriteFloatLittleEndian(payload, ref cursor, entry.VehicleToxicity);
+                    WriteFloatLittleEndian(payload, ref cursor, entry.PlayerRadiation);
+                    WriteFloatLittleEndian(payload, ref cursor, entry.VehicleRadiation);
+                }
+
+                _hazardBlackBoxDumped = NativeFaultDumpWriter.TryWriteAll(BuildHazardTelemetryDumpRelativePath(), payload, cursor);
+                if (!_hazardBlackBoxDumped)
+                    GlobalTelemetryBus.PublishUnityLogFault(TelemetryDumpMagic, 0u, 1u);
+            }
+            catch (System.IO.IOException)
+            {
+                GlobalTelemetryBus.PublishUnityLogFault(TelemetryDumpMagic, 0u, 1u);
+            }
+            catch (System.UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishUnityLogFault(TelemetryDumpMagic, 0u, 1u);
+            }
+            catch (System.ArgumentException)
+            {
+                GlobalTelemetryBus.PublishUnityLogFault(TelemetryDumpMagic, 0u, 1u);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HazardZoneManager),
+                    TelemetryDumpPayloadLabel);
+            }
+        }
+
+        private static float FiniteTelemetryValue(float value, ref uint flags)
+        {
+            if (math.isfinite(value))
+                return value;
+
+            flags |= TelemetryFlagNonFinite;
+            return 0f;
+        }
+
+        private static string BuildHazardTelemetryDumpRelativePath()
+        {
+            return TelemetryDumpRelativePathPrefix +
+                   System.DateTime.UtcNow.ToString("yyyyMMdd_HHmmss_fff", System.Globalization.CultureInfo.InvariantCulture) +
+                   TelemetryDumpRelativePathSuffix;
+        }
+
+        private static uint ComputeHazardTelemetryStateHash(in HazardZoneTelemetryEntry entry)
+        {
+            uint hash = 2166136261u;
+            hash = MixTelemetryHash(hash, entry.Sequence);
+            hash = MixTelemetryHash(hash, entry.Flags);
+            hash = MixTelemetryHash(hash, unchecked((uint)entry.ActiveZoneCount));
+            hash = MixTelemetryHash(hash, unchecked((uint)entry.PendingMutationCount));
+            hash = MixTelemetryHash(hash, unchecked((uint)entry.PublishedExposureMask));
+            hash = MixTelemetryHash(hash, math.asuint(entry.ToxicityDose));
+            hash = MixTelemetryHash(hash, math.asuint(entry.ToxicityPulseAccumulatorSeconds));
+            hash = MixTelemetryHash(hash, math.asuint(entry.PlayerToxicity));
+            hash = MixTelemetryHash(hash, math.asuint(entry.VehicleToxicity));
+            hash = MixTelemetryHash(hash, math.asuint(entry.PlayerRadiation));
+            hash = MixTelemetryHash(hash, math.asuint(entry.VehicleRadiation));
+            return hash;
+        }
+
+        private static uint MixTelemetryHash(uint hash, uint value)
+        {
+            return unchecked((hash ^ value) * 16777619u);
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> target, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(target, ref cursor, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> target, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(target, ref cursor, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> target, ref int cursor, uint value)
+        {
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+            target[cursor++] = (byte)(value >> 16);
+            target[cursor++] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> target, ref int cursor, ulong value)
+        {
+            WriteUInt32LittleEndian(target, ref cursor, unchecked((uint)value));
+            WriteUInt32LittleEndian(target, ref cursor, unchecked((uint)(value >> 32)));
         }
 
         private void ClearHazardExposureResultDescriptor()
@@ -2160,6 +2698,7 @@ namespace Hecton8.Gameplay
             if (_jobRunning && DispatcherJobSwap.TryFinalizeCompleted(ref _jobHandle))
             {
                 _jobRunning = false;
+                ReleaseExposureJobLocks();
             }
 
             ClearPendingMutations();
@@ -2221,15 +2760,18 @@ namespace Hecton8.Gameplay
             return QueueMutation(in mutation);
         }
 
-        private void QueueUnregisterMutation(int id)
+        private bool QueueUnregisterMutation(int id)
         {
             if (id <= 0)
-                return;
+                return false;
 
             PendingHazardZoneMutation mutation = default;
             mutation.Kind = PendingHazardZoneMutationKind.Unregister;
             mutation.Id = id;
-            QueueMutation(in mutation);
+            if (QueueMutation(in mutation))
+                return true;
+
+            return QueueOverflowUnregister(id);
         }
 
         private bool QueueMutation(in PendingHazardZoneMutation mutation)
@@ -2254,6 +2796,31 @@ namespace Hecton8.Gameplay
             }
 
             _pendingMutations[_pendingMutationCount++] = mutation;
+            UpdateDiagnostics();
+            return true;
+        }
+
+        private bool QueueOverflowUnregister(int id)
+        {
+            if (id <= 0)
+                return false;
+
+            for (int i = 0; i < _pendingOverflowUnregisterCount; i++)
+            {
+                if (_pendingOverflowUnregisterIds[i] == id)
+                    return true;
+            }
+
+            if (_pendingOverflowUnregisterCount >= _pendingOverflowUnregisterIds.Length)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    PendingMutationOverflowWarningHash,
+                    HazardManagerContextHash,
+                    _pendingMutationCount + _pendingOverflowUnregisterCount);
+                return false;
+            }
+
+            _pendingOverflowUnregisterIds[_pendingOverflowUnregisterCount++] = id;
             UpdateDiagnostics();
             return true;
         }
@@ -2309,6 +2876,16 @@ namespace Hecton8.Gameplay
         private static float FiniteNonNegativeOrZero(float value)
         {
             return math.isfinite(value) && value > 0f ? value : 0f;
+        }
+
+        private static float ClampPersistedToxicityDose(float value)
+        {
+            return math.clamp(FiniteNonNegativeOrZero(value), 0f, MaxPersistedToxicityDose);
+        }
+
+        private static float ClampPersistedToxicityPulseAccumulator(float value)
+        {
+            return math.clamp(FiniteNonNegativeOrZero(value), 0f, ToxicityDamagePulseIntervalSeconds);
         }
 
         private static float FiniteSaturate01(float value, float fallback)
@@ -2375,8 +2952,16 @@ namespace Hecton8.Gameplay
 
         private void ApplyPendingMutationsIfIdle()
         {
-            if (_jobRunning || _pendingMutationCount <= 0 || !_volumes.IsCreated)
+            if (_jobRunning || !_volumes.IsCreated)
                 return;
+
+            bool appliedOverflowUnregisters = ApplyOverflowUnregistersIfIdle();
+            if (_pendingMutationCount <= 0)
+            {
+                if (appliedOverflowUnregisters)
+                    UpdateDiagnostics();
+                return;
+            }
 
             int pendingCount = _pendingMutationCount;
             _pendingMutationCount = 0;
@@ -2404,12 +2989,34 @@ namespace Hecton8.Gameplay
             UpdateDiagnostics();
         }
 
+        private bool ApplyOverflowUnregistersIfIdle()
+        {
+            int pendingOverflowCount = _pendingOverflowUnregisterCount;
+            if (pendingOverflowCount <= 0)
+                return false;
+
+            _pendingOverflowUnregisterCount = 0;
+            for (int i = 0; i < pendingOverflowCount; i++)
+            {
+                int id = _pendingOverflowUnregisterIds[i];
+                _pendingOverflowUnregisterIds[i] = 0;
+                if (id > 0)
+                    UnregisterZoneImmediate(id);
+            }
+
+            return true;
+        }
+
         private void ClearPendingMutations()
         {
             for (int i = 0; i < _pendingMutationCount; i++)
                 _pendingMutations[i] = default;
 
+            for (int i = 0; i < _pendingOverflowUnregisterCount; i++)
+                _pendingOverflowUnregisterIds[i] = 0;
+
             _pendingMutationCount = 0;
+            _pendingOverflowUnregisterCount = 0;
         }
 
         private void PublishExposureMask(int nextMask)
@@ -2647,6 +3254,33 @@ namespace Hecton8.Gameplay
             _hotSwapRegistered = false;
         }
 
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            _saveService = GlobalRegistry.Save;
+
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveRegistered = false;
+            _saveService = null;
+        }
+
         private void TryRegisterService()
         {
             HazardZoneManager registeredInstance = GlobalRegistry.HazardZones;
@@ -2684,7 +3318,7 @@ namespace Hecton8.Gameplay
             _debugJobRunning = _jobRunning;
             _debugPlayerExposureActive = (_publishedExposureMask & (1 << (int)HazardType.Toxicity)) != 0;
             _debugVehicleExposureActive = _vehicleHazardIntensity[(int)HazardType.Toxicity] > 0.001f;
-            _debugPendingMutationCount = _pendingMutationCount;
+            _debugPendingMutationCount = _pendingMutationCount + _pendingOverflowUnregisterCount;
         }
 
         private enum PendingHazardZoneMutationKind : byte

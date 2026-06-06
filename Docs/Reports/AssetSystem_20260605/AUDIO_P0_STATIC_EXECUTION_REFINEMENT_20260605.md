@@ -22,8 +22,8 @@ The six audio P0 rows were correctly identified but still too coarse for executi
 
 - MusicDirector null `_musicMixerGroup` and `_stingerMixerGroup` need config/mixer route readback before any music or stinger taste judgment.
 - `Player.prefab` direct refs need prefab component/field readback before unwiring, deletion, import edits, or route adoption.
-- `dive_splash.wav` is a short player-contact cue. It needs contact SFX ownership and no-allocation playback proof, not generic streaming.
-- `Underwater Ambient.wav` is a 193s long direct ref. It needs classification as ambient bank, player-loop exception, fixed startup/core exception, Addressables-owned long ambience, or removal/replacement candidate.
+- `dive_splash.wav` is a short player-contact cue with prior direct prefab refs source-cleared. It still needs Unity readback, contact SFX ownership, playback or absence proof, and no-allocation proof.
+- `Underwater Ambient.wav` is a 193s long cue with prior direct prefab refs source-cleared. It still needs Unity readback and classification as removed/replaced, ambient bank, player-loop exception, fixed startup/core exception, or Addressables-owned long ambience.
 - Static source loudness, waveform facts, and prefab serialization are not listening proof, runtime proof, import proof, or Addressables proof.
 - The import policy is still conflicted: root audio wording favors ambient/music compressed-in-memory, while streaming lifecycle rules put clips over 10s on streaming unless a bounded exception is proved. The only safe next action is row-level classification plus Unity import readback, not a broad preset.
 
@@ -32,7 +32,7 @@ First-20 route moment affected: first world load, first exit, shallow/photic rea
 ## Refined Order
 
 1. `ASSET_OWNER_10_MUSICDIRECTOR_AUDIO_ROUTING_PACKET.md`: Unity-read `MusicDirectorConfig_Global.asset`; close `_musicMixerGroup` and `_stingerMixerGroup` via approved mixer groups or documented owned native/DSP bypass.
-2. `ASSET_OWNER_08_AUDIO_DIRECT_REF_UNWIRING_PACKET.md`: Unity-read `Player.prefab`; map the four P0 direct refs to exact owning components and fields. Do not trust YAML line numbers as final authority.
+2. `ASSET_OWNER_08_AUDIO_DIRECT_REF_UNWIRING_PACKET.md`: Unity-read `Player.prefab`; confirm current source-cleared P0 fields and map remaining direct refs to exact owning components and fields. Do not trust YAML line numbers as final authority.
 3. `ASSET_OWNER_19_AUDIO_IMPORT_AUTHORITY_ADOPTION_PACKET.md`: resolve the import/load policy conflict before any import mutation or exception promotion.
 4. `ASSET_OWNER_23_AUDIO_SOURCE_TECHNICAL_REMEDIATION_PACKET.md`: perform Unity import readback for the P0 clips; source probe facts remain preflight only.
 5. `ASSET_OWNER_15_ADDRESSABLES_ASSET_GROUP_EXECUTION_BLOCKERS_PACKET.md`: assign Addressables group/key or fixed-startup exception only after owner/classification is closed.
@@ -43,9 +43,9 @@ CSV row actions are in `AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.csv`.
 ## Blockers
 
 - `MusicDirectorConfig_Global.asset` has static null mixer refs for music and stingers. Runtime output is unjudged until Unity readback closes this.
-- `Player.prefab` has four P0 direct refs: `Underwater Ambient.wav` at lines `137` and `239`, `dive_splash.wav` at lines `1066` and `1067`. Static YAML line evidence is not enough to mutate.
-- `Underwater Ambient.wav` is long, currently reported as `Streaming`, `Vorbis`, quality `0.45`, duration `193s`. It cannot be accepted or removed until route class and lifecycle are named.
-- `dive_splash.wav` is short, currently reported as `CompressedInMemory`, `ADPCM`, duration `1.729s`. It cannot be converted to streaming SFX.
+- Current `Player.prefab` static scan has zero P0 direct refs; prior `Underwater Ambient.wav` fields at lines `137` and `239` and prior `dive_splash.wav` fields at lines `1066` and `1067` are source-cleared. Static YAML line evidence is not enough to accept removal or mutate further.
+- `Underwater Ambient.wav` is long, currently reported as `Streaming`, `Vorbis`, quality `0.45`, duration `193s`. It cannot be accepted, removed, or replaced until route class and lifecycle are named through Unity readback.
+- `dive_splash.wav` is short, currently reported as `CompressedInMemory`, `ADPCM`, duration `1.729s`. It cannot be converted to streaming SFX and cannot be considered removed until Unity readback plus playback/absence proof exists.
 - Addressables data/lifecycle proof is absent. Direct refs are not handle ownership.
 - Runtime proof, listening proof, GC proof, DSP proof, and memory/residency proof are absent.
 
@@ -53,8 +53,8 @@ CSV row actions are in `AUDIO_P0_STATIC_EXECUTION_REFINEMENT_20260605.csv`.
 
 - Do not delete, unwire, replace, or null any P0 direct ref from static tables alone.
 - Do not raw-edit `.prefab`, `.asset`, mixer, import, or scene YAML.
-- Do not remove `Underwater Ambient.wav` until Unity readback identifies the component role and the owner decides ambient bank, player-loop exception, fixed startup/core exception, Addressables route, or replacement.
-- Do not remove `dive_splash.wav` until Unity readback confirms the entry/exit components and a replacement/player-contact route exists.
+- Do not accept `Underwater Ambient.wav` removal until Unity readback identifies the component role and the owner decides ambient bank, player-loop exception, fixed startup/core exception, Addressables route, removal, or replacement.
+- Do not accept `dive_splash.wav` removal until Unity readback confirms the entry/exit components and a replacement/player-contact route or absence decision exists.
 - Do not treat retained direct refs as valid exceptions without owner, cue id/hash, load phase, release/shutdown phase, playback route, priority/ducking rule, fallback, import readback, lifecycle proof, and hot-path allocation proof.
 
 ## Proof Boundary
@@ -81,10 +81,10 @@ Forbidden proof claims:
 |---|---|---|---|
 | `AUDIO-P0-01` | Owner 10 MusicDirector | Unity-read `_stingerMixerGroup`; assign approved route or document native/DSP bypass. | `PENDING_MUSICDIRECTOR_CONFIG_READBACK` |
 | `AUDIO-P0-02` | Owner 10 MusicDirector | Unity-read `_musicMixerGroup`; assign approved route or document native/DSP bypass. | `PENDING_MUSICDIRECTOR_CONFIG_READBACK` |
-| `AUDIO-P0-03` | Owner 08 direct refs | Unity-read `waterExitSplashClip`; classify as player contact SFX route or scoped exception. | `PENDING_PLAYER_PREFAB_READBACK` |
-| `AUDIO-P0-04` | Owner 08 direct refs | Unity-read `waterEntrySplashClip`; classify as player contact SFX route or scoped exception. | `PENDING_PLAYER_PREFAB_READBACK` |
-| `AUDIO-P0-05` | Owner 08 direct refs | Unity-read `m_Resource`; classify `Underwater Ambient.wav` route before any mutation. | `PENDING_PLAYER_PREFAB_READBACK` |
-| `AUDIO-P0-06` | Owner 08 direct refs | Unity-read `_driverClip`; classify `Underwater Ambient.wav` route before any mutation. | `PENDING_PLAYER_PREFAB_READBACK` |
+| `AUDIO-P0-03` | Owner 08 splash readback | Unity-read prior `waterExitSplashClip`; confirm source-cleared state and prove player contact SFX route or absence decision. | `PENDING_UNITY_PREFAB_READBACK` |
+| `AUDIO-P0-04` | Owner 08 splash readback | Unity-read prior `waterEntrySplashClip`; confirm source-cleared state and prove player contact SFX route or absence decision. | `PENDING_UNITY_PREFAB_READBACK` |
+| `AUDIO-P0-05` | Owner 08 ambient readback | Unity-read `m_Resource`; confirm source-cleared state and prove `Underwater Ambient.wav` removal/replacement route. | `PENDING_UNITY_PREFAB_READBACK` |
+| `AUDIO-P0-06` | Owner 08 ambient readback | Unity-read `_driverClip`; confirm source-cleared state and prove `Underwater Ambient.wav` removal/replacement route. | `PENDING_UNITY_PREFAB_READBACK` |
 
 ## Continuous Quality Consequences
 

@@ -17,6 +17,9 @@ The repository root may contain these active text anchors and standing route bib
 - `MASTER_RELEASE_WORK_PLAN.md`
 - `BUILD_PLAYTEST_ISSUES.md`
 - standing root route bibles listed under `Routes` in `PROJECT_BIBLES.md`
+- `GEMINI.md` as a third-party Gemini/Antigravity shim only, not project law
+- `HECTON8_ORCHESTRATOR.md` for explicit standalone batch/controller/orchestration work
+- `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md` for explicit local VS Code Codex GUI control work
 
 Generated Unity/project files such as `.csproj`, `.slnx`, CSV, package, and build config files are not active documentation. Do not move them during documentation cleanup.
 
@@ -34,6 +37,9 @@ Pre-cleanup verbose root copies from `Docs/DEPRECATED/Root_Bloat_X_012_2026-05-2
 - `VISION_LOCKS.md` - product vision locks and ambiguity-resolution authority.
 - `TASTE.md` - taste authority for gameplay, design, presentation, screenshot, audio, UI, creature, base, and marketing review.
 - `textes.md` - public-copy voice authority; use only for advertising, store, social, outreach, bios, and community text.
+- `GEMINI.md` - one-way third-party tool shim; HECTON-8 authority must not depend on it.
+- `HECTON8_ORCHESTRATOR.md` - explicit standalone agent batch/controller lane contracts.
+- `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md` - explicit local Codex GUI process-control law for workstation orchestration only.
 - `Docs/DOC_GOVERNANCE.md` - documentation maintenance rules.
 - `Docs/QUALITY_GATES.md` - evidence and acceptance gates.
 - `Docs/SYSTEMS_CONTRACTS.md` - stable cross-system contracts.

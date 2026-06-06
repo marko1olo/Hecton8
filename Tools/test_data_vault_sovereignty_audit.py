@@ -475,6 +475,32 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
         self.assertEqual(len(findings), 1)
         self.assertEqual(findings[0].names, ("_real",))
 
+    def test_declaration_scan_reuses_presanitized_lines_without_semantic_change(self) -> None:
+        source = (
+            "using Unity.Burst;\n"
+            "using Unity.Collections;\n"
+            "public sealed class RuntimeOwner\n"
+            "{\n"
+            "    private NativeArray<int> _localState;\n"
+            "    [BurstCompile]\n"
+            "    private struct BuildJob : IJob\n"
+            "    {\n"
+            "        [ReadOnly] public NativeList<float> Input;\n"
+            "        public void Execute() {}\n"
+            "    }\n"
+            "}\n"
+        )
+        relative_path = "Assets/_Project/Scripts/Gameplay/RuntimeOwner.cs"
+        expected = audit.scan_native_collection_declarations_in_source(source, relative_path)
+        reused = audit.scan_native_collection_declarations_in_source(
+            source,
+            relative_path,
+            sanitized_lines=audit.sanitize_csharp_source(source).splitlines(),
+            original_lines=source.splitlines(),
+        )
+
+        self.assertEqual(reused, expected)
+
     def test_combined_scan_matches_individual_nativearray_scans(self) -> None:
         with tempfile.TemporaryDirectory(prefix="h8_vault_combined_audit_") as temp_dir:
             root = Path(temp_dir)

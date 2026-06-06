@@ -17,6 +17,8 @@ This index is a map of existing proof-adjacent artifacts. It is not product acce
 | `Docs/AssetAudit/ContactSheets/ui_textures_contact_sheet.png` | UI sprite candidate triage | Static image review only | Pair with HUD binding, atlas/import proof, and readability proof. |
 | `Docs/AssetAudit/ContactSheets/unknown_textures_contact_sheet.png` | Unassigned useful texture sources | Static image review only | Assign owner/material role before route use. |
 | `Docs/AssetAudit/ContactSheets/generated_source_only_contact_sheet.png` | Generated/source-only candidate overview | Static image review only | Treat as reference art only. |
+| `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png` | Mandatory visual references: surface water, sky, Aegir, coastline, shallows, flora, cockpit | Static reference review only | Use as the comparison floor for h8_1475 and route-owner visual work; it is not scene/import proof. |
+| `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.csv` | Current path continuity for all mandatory reference images | Static path manifest only | Keep all 15 references reachable before any visual critique or owner handoff. |
 
 ## Diagnostic Screenshot Reviews
 
@@ -25,6 +27,7 @@ This index is a map of existing proof-adjacent artifacts. It is not product acce
 | `Docs/Screenshots/MCP/h8_1914_surface_water_recovery_probe.png` | Surface/ocean diagnostic rejection | Static screenshot review only; editor-only unsaved capture | Use with `SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md`; do not accept as h8_1475 proof. |
 | `Docs/Screenshots/MCP/h8_1914_surface_water_recovery_probe.txt` | Surface/ocean diagnostic readback text | Static text capture only; editor-only unsaved capture | Route to ocean/Crest, terrain, and sky owners for future clean readback. |
 | `Docs/AssetAudit/SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md` | Surface/ocean visual rejection summary | Static screenshot review only | Use to reject flat slab water, clipped shoreline, billboard Aegir, and temp-haze proof substitution. |
+| `Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.png` | Surface/Crest diagnostic rejection | Static screenshot review only; not h8_1475 | Use to reject checkerboard water plane, black shoreline, weak terrain material, and false acceptance claims. |
 | `Docs/AssetAudit/H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md` | h8_1475 proof-tool risk summary | Static source review only | Use to reject editor-mutated diagnostic probe methods as canonical acceptance proof. |
 
 ## Audio Waveform Artifacts
@@ -53,6 +56,8 @@ This index is a map of existing proof-adjacent artifacts. It is not product acce
 | `Docs/GeneratedAssets/AssetSystem_20260605/AegirCloudPrototype_20260605/` | Initial Aegir/cloud source prototype | `SOURCE_ONLY` | Use as reference for gas-giant/cloud authoring; shader response unproven. |
 | `Docs/GeneratedAssets/AssetSystem_20260605/CleanupPass_20260605/` | Cleaned foam/contact and Aegir/cloud source direction | `SOURCE_ONLY_USEFUL` | Route through texture authoring/import matrix and Unity readback before any product use. |
 | `Docs/GeneratedAssets/AssetSystem_20260605/TEXTURE_AUTHORING_MANIFEST_3212_20260605.md` | Prior texture authoring pack summary | `STATIC_DOC` | Use as supporting context only; current queues and import matrix remain controlling. |
+| `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_contact_sheet.png` | Batch31 wet basalt and photic substrate PBR candidate overview | `SOURCE_ONLY_USEFUL` | Useful source direction only; direct import remains blocked by channel semantics and material-target proof. |
+| `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_INDEX.md` | Batch31 promotion-prep manifest | `BLOCKED_CHANNEL_SEMANTICS` | Keep blocked until the target shader layout and packed-channel route are proven. |
 
 ## Taxonomy Artifacts
 
@@ -69,6 +74,8 @@ CSV companion: `Docs/AssetAudit/ASSET_PROOF_ARTIFACT_INDEX_20260605.csv`.
 - Waveform sheets cannot prove mix, taste, routing, audio-thread safety, or runtime memory behavior.
 - Generated packs cannot be imported as final art without authoring, import, material, screenshot, and memory proof.
 - Taxonomies and queues cannot create Addressables readiness or stable authority.
+- Mandatory visual reference sheets are comparison targets only. They do not prove the current scene is correct.
+- h8_1914 diagnostic screenshots are negative evidence only. They cannot substitute for the canonical h8_1475 proof packet.
 
 ## Manual Image QA Notes
 
@@ -77,7 +84,10 @@ CSV companion: `Docs/AssetAudit/ASSET_PROOF_ARTIFACT_INDEX_20260605.csv`.
 - Terrain/geology sheet: wet basalt and sand source pools contain useful material direction, but several generated basalt variants show repeated macro-rock islands and uneven channel quality. Clean PBR authoring remains required.
 - Flora/coral/fauna sheet: imported coral/kelp source stacks have usable raw forms, but streaming mips are disabled in static metadata and several detail/mask channels look placeholder-flat. Proxy material contamination remains a blocker.
 - UI texture sheet: `ui/OXYGEN.png` is a detailed source candidate; `oxygen-tank.png` is a black mask/silhouette and cannot be treated as the colored HUD oxygen icon without a proven mask/tint route.
+- Unknown texture sheet: `FLOOR`, mineral seep, organic lightning, menu view, and bubble/soft-plume sources can support specific owners. Fog line/weather sheets remain support-only; no unknown row can enter a route without owner, material role, import proof, and route screenshot proof.
 - Generated-source sheet: generated wet-basalt/sand sets are reference material only. Repetition, synthetic normals/MRAO, and source-cleanup debt block direct final import.
+- Mandatory visual reference sheet: surface target requires bright ocean readability, authored shoreline, large readable Aegir, detailed sky, rich photic shallows, dense attached flora/coral, and cockpit/instrument readability. Current h8_1914 imagery fails this floor.
+- Batch31 PromotionPrep sheet: wet basalt and photic substrate candidates are visibly stronger than checkerboard/placeholder terrain. Wet basalt still carries turquoise source-contamination/watermark-like streak risk; seabed and shell-sand are bright/detail-rich but near-duplicate until a biome/material role split is proven. Still static source only; MRAO/channel semantics and Unity import/material readback remain blocked.
 
 ## Manual Waveform QA Notes
 

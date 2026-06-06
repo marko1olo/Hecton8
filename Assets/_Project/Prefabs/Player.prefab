@@ -134,7 +134,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 0d1a03d1d70c9dd448ad1fbab16de520, type: 3}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -236,7 +236,7 @@ MonoBehaviour:
   _mockTensionBias01: 0
   _mockDepthMeters: 900
   _mockQualityBias01: 1
-  _driverClip: {fileID: 8300000, guid: 0d1a03d1d70c9dd448ad1fbab16de520, type: 3}
+  _driverClip: {fileID: 0}
   _autoCreateRuntimeInstance: 1
 --- !u!1 &2069897344838356199
 GameObject:
@@ -1063,8 +1063,6 @@ MonoBehaviour:
   waterEntryImpactDuration: 0.7
   waterEntryImpactFovExpand: 4.5
   waterEntryImpactFovCompress: 2.1
-  waterEntrySplashClip: {fileID: 8300000, guid: 15bc31b4390305143a4b7f6a365a5a88, type: 3}
-  waterExitSplashClip: {fileID: 8300000, guid: 15bc31b4390305143a4b7f6a365a5a88, type: 3}
   surfacePierceSplashMinSpeed: 3.5
   surfacePierceSplashMaxSpeed: 10
   surfacePierceSplashMinVolume: 0.45

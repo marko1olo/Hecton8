@@ -71,9 +71,9 @@ namespace Hecton8.Systems.AI
         [FieldOffset(68)]
         public uint SpawnSequence;
         [FieldOffset(72)]
-        public uint Padding0;
+        public uint SurvivalCriticalFlags;
         [FieldOffset(76)]
-        public uint Padding1;
+        public uint SurvivalCriticalSeverityPermille;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 48)]
@@ -155,39 +155,27 @@ namespace Hecton8.Systems.AI
         [System.Runtime.InteropServices.FieldOffset(32)]
         public float3 PlayerPosition;
         [System.Runtime.InteropServices.FieldOffset(44)]
-        public uint Padding0;
+        public uint SurvivalCriticalFlags;
         [System.Runtime.InteropServices.FieldOffset(48)]
-        private byte _pad0;
-        [System.Runtime.InteropServices.FieldOffset(49)]
-        private byte _pad1;
-        [System.Runtime.InteropServices.FieldOffset(50)]
-        private byte _pad2;
-        [System.Runtime.InteropServices.FieldOffset(51)]
-        private byte _pad3;
+        public uint SurvivalCriticalSeverityPermille;
         [System.Runtime.InteropServices.FieldOffset(52)]
-        private byte _pad4;
-        [System.Runtime.InteropServices.FieldOffset(53)]
-        private byte _pad5;
-        [System.Runtime.InteropServices.FieldOffset(54)]
-        private byte _pad6;
-        [System.Runtime.InteropServices.FieldOffset(55)]
-        private byte _pad7;
+        public uint ActivePhase;
         [System.Runtime.InteropServices.FieldOffset(56)]
-        private byte _pad8;
+        private byte _pad0;
         [System.Runtime.InteropServices.FieldOffset(57)]
-        private byte _pad9;
+        private byte _pad1;
         [System.Runtime.InteropServices.FieldOffset(58)]
-        private byte _pad10;
+        private byte _pad2;
         [System.Runtime.InteropServices.FieldOffset(59)]
-        private byte _pad11;
+        private byte _pad3;
         [System.Runtime.InteropServices.FieldOffset(60)]
-        private byte _pad12;
+        private byte _pad4;
         [System.Runtime.InteropServices.FieldOffset(61)]
-        private byte _pad13;
+        private byte _pad5;
         [System.Runtime.InteropServices.FieldOffset(62)]
-        private byte _pad14;
+        private byte _pad6;
         [System.Runtime.InteropServices.FieldOffset(63)]
-        private byte _pad15;
+        private byte _pad7;
     }
 
     internal struct EncounterFrameContext
@@ -301,6 +289,10 @@ namespace Hecton8.Systems.AI
         private const float MinSpawnRadius = 50f;
         private const float MaxSpawnRadius = 150f;
         private const float SpawnClusterRadiusSq = 15f * 15f;
+        private const float CriticalHealthSpawnSuppressionThreshold = 0.15f;
+        private const float CriticalOxygenSpawnSuppressionThreshold = 0.15f;
+        private const uint SurvivalCriticalFlagHealth = 1u << 0;
+        private const uint SurvivalCriticalFlagOxygen = 1u << 1;
         private const float DespawnKeepDistanceSq = 25f * 25f;
         private const float FrustumRejectPadding = 3f;
         private const float SafeIdleStressDecayPerTick = 0.06f;
@@ -893,11 +885,11 @@ namespace Hecton8.Systems.AI
                 PlayerPosition = currentState.PlayerPosition,
                 PlayerVelocity = currentState.PlayerVelocity,
                 PlayerForward = new float4(NormalizeSafe(frameContext.PlayerForward, new float3(0f, 0f, 1f)), 0f),
-                PlayerHealthNormalized = math.clamp(frameContext.PlayerHealthNormalized, 0f, 1f),
-                PlayerOxygenNormalized = math.clamp(frameContext.PlayerOxygenNormalized, 0f, 1f),
-                PlayerInternalStress = math.clamp(frameContext.PlayerInternalStress, 0f, 1f),
-                AcousticThreatLevel = math.clamp(frameContext.AcousticThreatLevel, 0f, 1f),
-                AvgFrameTimeMs = math.max(0f, frameContext.AvgFrameTimeMs),
+                PlayerHealthNormalized = SanitizeNormalized01(frameContext.PlayerHealthNormalized),
+                PlayerOxygenNormalized = SanitizeNormalized01(frameContext.PlayerOxygenNormalized),
+                PlayerInternalStress = SanitizeNormalized01(frameContext.PlayerInternalStress),
+                AcousticThreatLevel = SanitizeNormalized01(frameContext.AcousticThreatLevel),
+                AvgFrameTimeMs = SanitizeNonNegativeFinite(frameContext.AvgFrameTimeMs),
                 SurfaceWorldY = frameContext.SurfaceWorldY,
                 ForcedThreatClass = _pendingForcedThreatClass,
                 ForcedThreatCount = _pendingForcedThreatCount,
@@ -1080,9 +1072,44 @@ namespace Hecton8.Systems.AI
         private EncounterDirectorState BuildTelemetryState(in EncounterFrameContext frameContext)
         {
             EncounterDirectorState state = _frontState[0];
+            float health01 = SanitizeNormalized01(frameContext.PlayerHealthNormalized);
+            float oxygen01 = SanitizeNormalized01(frameContext.PlayerOxygenNormalized);
             state.PlayerPosition = new float4(frameContext.PlayerPosition, frameContext.PlayerDepth);
             state.PlayerVelocity = new float4(frameContext.PlayerVelocity, EstimateLength(frameContext.PlayerVelocity));
+            state.SurvivalCriticalFlags = ResolveSurvivalCriticalFlags(health01, oxygen01);
+            state.SurvivalCriticalSeverityPermille = ResolveSurvivalCriticalSeverityPermille(health01, oxygen01);
             return state;
+        }
+
+        private static float SanitizeNormalized01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static uint ResolveSurvivalCriticalFlags(float health01, float oxygen01)
+        {
+            uint flags = 0u;
+            if (health01 <= CriticalHealthSpawnSuppressionThreshold)
+                flags |= SurvivalCriticalFlagHealth;
+            if (oxygen01 <= CriticalOxygenSpawnSuppressionThreshold)
+                flags |= SurvivalCriticalFlagOxygen;
+            return flags;
+        }
+
+        private static uint ResolveSurvivalCriticalSeverityPermille(float health01, float oxygen01)
+        {
+            float healthSeverity = CriticalHealthSpawnSuppressionThreshold > 0f
+                ? math.saturate((CriticalHealthSpawnSuppressionThreshold - health01) / CriticalHealthSpawnSuppressionThreshold)
+                : 0f;
+            float oxygenSeverity = CriticalOxygenSpawnSuppressionThreshold > 0f
+                ? math.saturate((CriticalOxygenSpawnSuppressionThreshold - oxygen01) / CriticalOxygenSpawnSuppressionThreshold)
+                : 0f;
+            return unchecked((uint)math.round(math.max(healthSeverity, oxygenSeverity) * 1000f));
         }
 
         private void RecordBlackBox(in EncounterDirectorState state)
@@ -1105,7 +1132,9 @@ namespace Hecton8.Systems.AI
                 SpawnCredits = state.TokenBudget,
                 PlayerSpeed = state.PlayerVelocity.w,
                 PlayerPosition = state.PlayerPosition.xyz,
-                Padding0 = 0u
+                SurvivalCriticalFlags = state.SurvivalCriticalFlags,
+                SurvivalCriticalSeverityPermille = state.SurvivalCriticalSeverityPermille,
+                ActivePhase = unchecked((uint)math.max(0, state.ActivePhase))
             };
             _blackBoxHead[0] = head + 1;
 
@@ -1128,6 +1157,8 @@ namespace Hecton8.Systems.AI
             hash = (hash ^ unchecked((uint)state.ActiveEnemyCount)) * 16777619u;
             hash = (hash ^ unchecked((uint)state.BudgetFlags)) * 16777619u;
             hash = (hash ^ unchecked((uint)state.ActivePhase)) * 16777619u;
+            hash = (hash ^ state.SurvivalCriticalFlags) * 16777619u;
+            hash = (hash ^ state.SurvivalCriticalSeverityPermille) * 16777619u;
             hash = (hash ^ math.asuint(state.PlayerVelocity.w)) * 16777619u;
             hash = (hash ^ math.asuint(state.PlayerPosition.x)) * 16777619u;
             hash = (hash ^ math.asuint(state.PlayerPosition.y)) * 16777619u;
@@ -1144,7 +1175,7 @@ namespace Hecton8.Systems.AI
             try
             {
                 const int headerBytes = 16;
-                const int rowBytes = 48;
+                const int rowBytes = 56;
                 int head = _blackBoxHead[0];
                 int count = math.min(DirectorBlackBoxCapacity, math.max(0, head));
                 int byteCount = headerBytes + count * rowBytes;
@@ -1206,7 +1237,9 @@ namespace Hecton8.Systems.AI
             WriteFloatLittleEndian(target, 32, entry.PlayerPosition.x);
             WriteFloatLittleEndian(target, 36, entry.PlayerPosition.y);
             WriteFloatLittleEndian(target, 40, entry.PlayerPosition.z);
-            WriteUInt32LittleEndian(target, 44, entry.Padding0);
+            WriteUInt32LittleEndian(target, 44, entry.SurvivalCriticalFlags);
+            WriteUInt32LittleEndian(target, 48, entry.SurvivalCriticalSeverityPermille);
+            WriteUInt32LittleEndian(target, 52, entry.ActivePhase);
         }
 
         private static unsafe void WriteUInt64LittleEndian(byte* target, int offset, ulong value)
@@ -2150,6 +2183,9 @@ namespace Hecton8.Systems.AI
         private const float MaxTokenBudget = 1000f;
         private const float FrustumRejectPadding = 3f;
         private const float CriticalHealthSpawnSuppressionThreshold = 0.15f;
+        private const float CriticalOxygenSpawnSuppressionThreshold = 0.15f;
+        private const uint SurvivalCriticalFlagHealth = 1u << 0;
+        private const uint SurvivalCriticalFlagOxygen = 1u << 1;
         private const float SpawnClusterRadiusSq = 15f * 15f;
         private const float MinSpawnRadius = 50f;
         private const float MaxSpawnRadius = 150f;
@@ -2224,6 +2260,13 @@ namespace Hecton8.Systems.AI
 
             EncounterDirectorState state = CurrentState;
             EncounterJobOutput output = default;
+            float playerHealth01 = SanitizeNormalized01(PlayerHealthNormalized);
+            float playerOxygen01 = SanitizeNormalized01(PlayerOxygenNormalized);
+            float playerInternalStress01 = SanitizeNormalized01(PlayerInternalStress);
+            float acousticThreat01 = SanitizeNormalized01(AcousticThreatLevel);
+            float avgFrameTimeMs = SanitizeNonNegativeFinite(AvgFrameTimeMs);
+            float playerDepthMeters = SanitizeNonNegativeFinite(PlayerPosition.w);
+            float playerSpeedMetersPerSecond = SanitizeNonNegativeFinite(PlayerVelocity.w);
 
             float3 playerPosition = PlayerPosition.xyz;
             float3 playerForward = NormalizeSafe(PlayerForward.xyz, new float3(0f, 0f, 1f));
@@ -2282,7 +2325,7 @@ namespace Hecton8.Systems.AI
                         break;
                 }
 
-                if (AvgFrameTimeMs <= LoadShedThresholdMs)
+                if (avgFrameTimeMs <= LoadShedThresholdMs)
                     continue;
 
                 if (distSq <= DespawnKeepDistanceSq)
@@ -2301,11 +2344,11 @@ namespace Hecton8.Systems.AI
             float proximityStress = nearestThreatDistanceSq < float.MaxValue
                 ? math.saturate(1f - nearestThreatDistanceSq * InvThreatStressRadiusSq)
                 : 0f;
-            float depthStress = math.saturate(PlayerPosition.w * InvMaxDepthStressMeters) * 0.4f;
-            float velocityStress = math.saturate(PlayerVelocity.w * InvVelocityStressMetersPerSecond) * 0.15f;
-            float healthStress = 1f - PlayerHealthNormalized;
-            float oxygenStress = 1f - PlayerOxygenNormalized;
-            float acousticStress = math.saturate(AcousticThreatLevel);
+            float depthStress = math.saturate(playerDepthMeters * InvMaxDepthStressMeters) * 0.4f;
+            float velocityStress = math.saturate(playerSpeedMetersPerSecond * InvVelocityStressMetersPerSecond) * 0.15f;
+            float healthStress = 1f - playerHealth01;
+            float oxygenStress = 1f - playerOxygen01;
+            float acousticStress = acousticThreat01;
             float rawStress = 0.35f * healthStress +
                               0.25f * oxygenStress +
                               0.25f * proximityStress +
@@ -2313,12 +2356,12 @@ namespace Hecton8.Systems.AI
                               0.05f * velocityStress;
             rawStress = math.saturate(math.max(rawStress, acousticStress));
             float safeIdleRecovery = math.saturate(math.min(
-                math.min(PlayerHealthNormalized, PlayerOxygenNormalized),
+                math.min(playerHealth01, playerOxygen01),
                 math.min(
                     1f - proximityStress,
                     math.min(
-                        1f - math.saturate(PlayerVelocity.w * InvSafeIdleVelocityMetersPerSecond),
-                        1f - math.max(acousticStress, PlayerInternalStress)))));
+                        1f - math.saturate(playerSpeedMetersPerSecond * InvSafeIdleVelocityMetersPerSecond),
+                        1f - math.max(acousticStress, playerInternalStress01)))));
             rawStress *= math.lerp(1f, 0.25f, safeIdleRecovery);
             float alpha = ApproximateOneMinusExpNegPositive(1f / StressTau);
             state.StressLevel += alpha * (math.saturate(rawStress) - state.StressLevel);
@@ -2342,18 +2385,18 @@ namespace Hecton8.Systems.AI
                 state.IntensityLevel = 0f;
 
             EncounterBudgetFlags budgetFlags = (EncounterBudgetFlags)state.BudgetFlags;
-            if (AvgFrameTimeMs > EmergencyThresholdMs)
+            if (avgFrameTimeMs > EmergencyThresholdMs)
             {
                 budgetFlags |= EncounterBudgetFlags.LoadSheddingActive | EncounterBudgetFlags.SpawnSuspended | EncounterBudgetFlags.EmergencyRecall;
                 state.RecoveryTimer = 0f;
             }
-            else if (AvgFrameTimeMs > LoadShedThresholdMs)
+            else if (avgFrameTimeMs > LoadShedThresholdMs)
             {
                 budgetFlags |= EncounterBudgetFlags.LoadSheddingActive | EncounterBudgetFlags.SpawnSuspended;
                 budgetFlags &= ~EncounterBudgetFlags.EmergencyRecall;
                 state.RecoveryTimer = 0f;
             }
-            else if (AvgFrameTimeMs <= RecoveryThresholdMs)
+            else if (avgFrameTimeMs <= RecoveryThresholdMs)
             {
                 state.RecoveryTimer += 1f;
                 if (state.RecoveryTimer >= 3f)
@@ -2366,8 +2409,12 @@ namespace Hecton8.Systems.AI
                 state.RecoveryTimer = 0f;
             }
 
-            bool criticalHealthSuppressed = PlayerHealthNormalized <= CriticalHealthSpawnSuppressionThreshold;
-            if (criticalHealthSuppressed)
+            bool healthCriticalSuppressed = playerHealth01 <= CriticalHealthSpawnSuppressionThreshold;
+            bool oxygenCriticalSuppressed = playerOxygen01 <= CriticalOxygenSpawnSuppressionThreshold;
+            bool survivalCriticalSuppressed = healthCriticalSuppressed || oxygenCriticalSuppressed;
+            state.SurvivalCriticalFlags = ResolveSurvivalCriticalFlags(playerHealth01, playerOxygen01);
+            state.SurvivalCriticalSeverityPermille = ResolveSurvivalCriticalSeverityPermille(playerHealth01, playerOxygen01);
+            if (survivalCriticalSuppressed)
                 budgetFlags |= EncounterBudgetFlags.DespairModeActive;
             else
                 budgetFlags &= ~EncounterBudgetFlags.DespairModeActive;
@@ -2378,7 +2425,7 @@ namespace Hecton8.Systems.AI
             {
                 state.TokenRegenRate = 0f;
             }
-            else if (criticalHealthSuppressed)
+            else if (survivalCriticalSuppressed)
             {
                 state.TokenRegenRate = 0f;
                 state.TokenBudget = math.min(state.TokenBudget, DespairModeBudgetCap);
@@ -2396,9 +2443,9 @@ namespace Hecton8.Systems.AI
 
             state.TokenBudget = math.clamp(state.TokenBudget + state.TokenRegenRate, 0f, MaxTokenBudget);
 
-            if (AvgFrameTimeMs > LoadShedThresholdMs)
+            if (avgFrameTimeMs > LoadShedThresholdMs)
             {
-                int shedCount = AvgFrameTimeMs > EmergencyThresholdMs ? 3 : 1;
+                int shedCount = avgFrameTimeMs > EmergencyThresholdMs ? 3 : 1;
                 if (bestEntity0 != 0 && shedCount > 0)
                 {
                     if (TryWriteDespawnSlot(ref output, bestEntity0))
@@ -2430,11 +2477,11 @@ namespace Hecton8.Systems.AI
                 }
             }
 
-            if (criticalHealthSuppressed)
+            if (survivalCriticalSuppressed)
                 state.TokenBudget = math.min(state.TokenBudget, DespairModeBudgetCap);
 
-            bool forceSpawn = !criticalHealthSuppressed && ForcedThreatCount > 0 && ForcedThreatClass >= 0;
-            bool spawnCadenceOpen = forceSpawn || !criticalHealthSuppressed || ((((int)state.PacingPhaseTimer) & 0x3) == 0);
+            bool forceSpawn = !survivalCriticalSuppressed && ForcedThreatCount > 0 && ForcedThreatClass >= 0;
+            bool spawnCadenceOpen = forceSpawn || !survivalCriticalSuppressed || ((((int)state.PacingPhaseTimer) & 0x3) == 0);
             if ((forceSpawn || (EncounterPhase)state.ActivePhase != EncounterPhase.Relax) &&
                 ((EncounterBudgetFlags)state.BudgetFlags & (EncounterBudgetFlags.LoadSheddingActive | EncounterBudgetFlags.SpawnSuspended)) == 0 &&
                 activeEnemyCount < 32 &&
@@ -2447,7 +2494,7 @@ namespace Hecton8.Systems.AI
                     EncounterThreatClass threatClass;
                     bool resolvedThreatClass = forceSpawn
                         ? TryResolveForcedThreatClass(ForcedThreatClass, threatClassCounts, ThreatAuthoring, out threatClass)
-                        : TryResolveDesiredThreatClass(state.IntensityLevel, state.TokenBudget, criticalHealthSuppressed, threatClassCounts, ThreatAuthoring, out threatClass);
+                        : TryResolveDesiredThreatClass(state.IntensityLevel, state.TokenBudget, survivalCriticalSuppressed, threatClassCounts, ThreatAuthoring, out threatClass);
                     if (!resolvedThreatClass)
                         break;
 
@@ -2490,7 +2537,7 @@ namespace Hecton8.Systems.AI
                     activeEnemyCount++;
                     IncrementThreatClassCount(ref threatClassCounts, threatClass);
 
-                    if (!forceSpawn && state.TokenBudget + SelectionEpsilon < ResolveCheapestAllowedCost(state.IntensityLevel, criticalHealthSuppressed, threatClassCounts, ThreatAuthoring))
+                    if (!forceSpawn && state.TokenBudget + SelectionEpsilon < ResolveCheapestAllowedCost(state.IntensityLevel, survivalCriticalSuppressed, threatClassCounts, ThreatAuthoring))
                     {
                         break;
                     }
@@ -2510,6 +2557,37 @@ namespace Hecton8.Systems.AI
             return lengthSq > 0.000001f
                 ? value * math.rsqrt(lengthSq)
                 : fallback;
+        }
+
+        private static uint ResolveSurvivalCriticalFlags(float health01, float oxygen01)
+        {
+            uint flags = 0u;
+            if (health01 <= CriticalHealthSpawnSuppressionThreshold)
+                flags |= SurvivalCriticalFlagHealth;
+            if (oxygen01 <= CriticalOxygenSpawnSuppressionThreshold)
+                flags |= SurvivalCriticalFlagOxygen;
+            return flags;
+        }
+
+        private static uint ResolveSurvivalCriticalSeverityPermille(float health01, float oxygen01)
+        {
+            float healthSeverity = CriticalHealthSpawnSuppressionThreshold > 0f
+                ? math.saturate((CriticalHealthSpawnSuppressionThreshold - health01) / CriticalHealthSpawnSuppressionThreshold)
+                : 0f;
+            float oxygenSeverity = CriticalOxygenSpawnSuppressionThreshold > 0f
+                ? math.saturate((CriticalOxygenSpawnSuppressionThreshold - oxygen01) / CriticalOxygenSpawnSuppressionThreshold)
+                : 0f;
+            return unchecked((uint)math.round(math.max(healthSeverity, oxygenSeverity) * 1000f));
+        }
+
+        private static float SanitizeNormalized01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
         }
 
         private static float ApproximateOneMinusExpNegPositive(float x)
@@ -2742,30 +2820,30 @@ namespace Hecton8.Systems.AI
         private static bool TryResolveDesiredThreatClass(
             float intensityLevel,
             float tokenBudget,
-            bool criticalHealthSuppressed,
+            bool survivalCriticalSuppressed,
             int4 threatClassCounts,
             EncounterThreatAuthoringSnapshot authoring,
             out EncounterThreatClass threatClass)
         {
-            if (CanSpawnThreatClass(EncounterThreatClass.Leviathan, intensityLevel, tokenBudget, criticalHealthSuppressed, threatClassCounts, authoring))
+            if (CanSpawnThreatClass(EncounterThreatClass.Leviathan, intensityLevel, tokenBudget, survivalCriticalSuppressed, threatClassCounts, authoring))
             {
                 threatClass = EncounterThreatClass.Leviathan;
                 return true;
             }
 
-            if (CanSpawnThreatClass(EncounterThreatClass.Stalker, intensityLevel, tokenBudget, criticalHealthSuppressed, threatClassCounts, authoring))
+            if (CanSpawnThreatClass(EncounterThreatClass.Stalker, intensityLevel, tokenBudget, survivalCriticalSuppressed, threatClassCounts, authoring))
             {
                 threatClass = EncounterThreatClass.Stalker;
                 return true;
             }
 
-            if (CanSpawnThreatClass(EncounterThreatClass.Swarm, intensityLevel, tokenBudget, criticalHealthSuppressed, threatClassCounts, authoring))
+            if (CanSpawnThreatClass(EncounterThreatClass.Swarm, intensityLevel, tokenBudget, survivalCriticalSuppressed, threatClassCounts, authoring))
             {
                 threatClass = EncounterThreatClass.Swarm;
                 return true;
             }
 
-            if (CanSpawnThreatClass(EncounterThreatClass.Drone, intensityLevel, tokenBudget, criticalHealthSuppressed, threatClassCounts, authoring))
+            if (CanSpawnThreatClass(EncounterThreatClass.Drone, intensityLevel, tokenBudget, survivalCriticalSuppressed, threatClassCounts, authoring))
             {
                 threatClass = EncounterThreatClass.Drone;
                 return true;
@@ -2779,11 +2857,11 @@ namespace Hecton8.Systems.AI
             EncounterThreatClass threatClass,
             float intensityLevel,
             float tokenBudget,
-            bool criticalHealthSuppressed,
+            bool survivalCriticalSuppressed,
             int4 threatClassCounts,
             EncounterThreatAuthoringSnapshot authoring)
         {
-            if (criticalHealthSuppressed && !AllowsCriticalHealthSpawn(threatClass, authoring))
+            if (survivalCriticalSuppressed && !AllowsSurvivalCriticalSpawn(threatClass, authoring))
                 return false;
 
             if (intensityLevel + SelectionEpsilon < ResolveMinimumIntensity(threatClass, authoring))
@@ -2797,18 +2875,18 @@ namespace Hecton8.Systems.AI
 
         private static float ResolveCheapestAllowedCost(
             float intensityLevel,
-            bool criticalHealthSuppressed,
+            bool survivalCriticalSuppressed,
             int4 threatClassCounts,
             EncounterThreatAuthoringSnapshot authoring)
         {
             float cheapest = float.MaxValue;
-            if (CanSpawnThreatClass(EncounterThreatClass.Drone, intensityLevel, float.MaxValue, criticalHealthSuppressed, threatClassCounts, authoring))
+            if (CanSpawnThreatClass(EncounterThreatClass.Drone, intensityLevel, float.MaxValue, survivalCriticalSuppressed, threatClassCounts, authoring))
                 cheapest = math.min(cheapest, ResolveTokenCost(EncounterThreatClass.Drone, authoring));
-            if (CanSpawnThreatClass(EncounterThreatClass.Swarm, intensityLevel, float.MaxValue, criticalHealthSuppressed, threatClassCounts, authoring))
+            if (CanSpawnThreatClass(EncounterThreatClass.Swarm, intensityLevel, float.MaxValue, survivalCriticalSuppressed, threatClassCounts, authoring))
                 cheapest = math.min(cheapest, ResolveTokenCost(EncounterThreatClass.Swarm, authoring));
-            if (CanSpawnThreatClass(EncounterThreatClass.Stalker, intensityLevel, float.MaxValue, criticalHealthSuppressed, threatClassCounts, authoring))
+            if (CanSpawnThreatClass(EncounterThreatClass.Stalker, intensityLevel, float.MaxValue, survivalCriticalSuppressed, threatClassCounts, authoring))
                 cheapest = math.min(cheapest, ResolveTokenCost(EncounterThreatClass.Stalker, authoring));
-            if (CanSpawnThreatClass(EncounterThreatClass.Leviathan, intensityLevel, float.MaxValue, criticalHealthSuppressed, threatClassCounts, authoring))
+            if (CanSpawnThreatClass(EncounterThreatClass.Leviathan, intensityLevel, float.MaxValue, survivalCriticalSuppressed, threatClassCounts, authoring))
                 cheapest = math.min(cheapest, ResolveTokenCost(EncounterThreatClass.Leviathan, authoring));
 
             return cheapest;
@@ -2859,7 +2937,7 @@ namespace Hecton8.Systems.AI
             }
         }
 
-        private static bool AllowsCriticalHealthSpawn(EncounterThreatClass threatClass, EncounterThreatAuthoringSnapshot authoring)
+        private static bool AllowsSurvivalCriticalSpawn(EncounterThreatClass threatClass, EncounterThreatAuthoringSnapshot authoring)
         {
             switch (threatClass)
             {

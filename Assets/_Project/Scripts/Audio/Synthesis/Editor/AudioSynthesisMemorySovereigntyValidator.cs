@@ -438,7 +438,7 @@ namespace Hecton8.Audio.Synthesis.Editor
             AssertFieldOffset<DynamicMusicSharedStateDTO>(nameof(DynamicMusicSharedStateDTO.LastDepthMeters), 44, ref result);
             AssertFieldOffset<DynamicMusicSharedStateDTO>(nameof(DynamicMusicSharedStateDTO.LastCutoffHz), 48, ref result);
             AssertFieldOffset<DynamicMusicSharedStateDTO>(nameof(DynamicMusicSharedStateDTO.Flags), 52, ref result);
-            AssertFieldOffset<DynamicMusicSharedStateDTO>("_pad0", 56, ref result);
+            AssertFieldOffset<DynamicMusicSharedStateDTO>(nameof(DynamicMusicSharedStateDTO.MusicActivity01), 56, ref result);
             AssertFieldOffset<DynamicMusicSharedStateDTO>("_pad1", 60, ref result);
 
             AssertFieldOffset<AudioDSPTelemetryEntry>(nameof(AudioDSPTelemetryEntry.Frame), 0, ref result);

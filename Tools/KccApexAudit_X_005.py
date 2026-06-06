@@ -76,7 +76,10 @@ FLORA_INTERACTION = ROOT / "Assets" / "_Project" / "Scripts" / "World" / "FloraI
 SARGASSUM_COLLAPSE_CHUNK = ROOT / "Assets" / "_Project" / "Scripts" / "World" / "SargassumCollapseChunk.cs"
 H8_MEMORY = ROOT / "Assets" / "_Project" / "Scripts" / "Core" / "Memory" / "H8Memory.cs"
 VAULT_MEMORY_CONTRACTS = ROOT / "Assets" / "_Project" / "Scripts" / "Core" / "Memory" / "VaultMemoryContracts.cs"
-DISPATCHER_JOB_FENCE = ROOT / "Assets" / "_Project" / "Scripts" / "Core" / "DispatcherJobFence.cs"
+DISPATCHER_JOB_FENCE_CANDIDATES = (
+    ROOT / "Assets" / "_Project" / "Scripts" / "Core" / "Contracts" / "CoreLowLevelUtilities.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "Core" / "DispatcherJobFence.cs",
+)
 
 TOOL_SURFACE_FILES = (
     ROOT / "Assets" / "_Project" / "Scripts" / "PlayerTool.cs",
@@ -221,6 +224,15 @@ def rel(path: Path) -> str:
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8-sig", errors="replace")
+
+
+def resolve_dispatcher_job_fence() -> Path:
+    for path in DISPATCHER_JOB_FENCE_CANDIDATES:
+        if path.exists():
+            return path
+
+    candidates = ", ".join(rel(path) for path in DISPATCHER_JOB_FENCE_CANDIDATES)
+    raise FileNotFoundError(f"DispatcherJobFence source not found. Checked: {candidates}")
 
 
 def collect_player_rigidbody_aliases(text: str) -> set[str]:
@@ -1201,7 +1213,8 @@ def blackbox_report() -> dict:
 
 def hydro_job_lifecycle_report() -> dict:
     hydro = read(HYDRO)
-    fence = read(DISPATCHER_JOB_FENCE)
+    fence_path = resolve_dispatcher_job_fence()
+    fence = read(fence_path)
     fixed_body = extract_method_body(hydro, "FixedTick")
     post_body = extract_method_body(hydro, "PostFixedTick")
     late_body = extract_method_body(hydro, "LateFrameTick")
@@ -1220,6 +1233,7 @@ def hydro_job_lifecycle_report() -> dict:
         "_externalInputHandle",
     )
     return {
+        "dispatcher_fence_path": rel(fence_path),
         "runtime_private_native_array_field_count": len(re.findall(r"\bprivate\s+(?:readonly\s+)?NativeArray<", hydro)),
         "runtime_private_vault_handle_count": len(re.findall(r"\bprivate\s+VaultGenerationHandle<", hydro)),
         "runtime_private_job_handle_count": len(re.findall(r"\bprivate\s+JobHandle\s+_", hydro)),
@@ -1458,6 +1472,7 @@ def write_markdown(payload: dict) -> None:
         f"- Save-load angular reset is Hydro-gated: {payload['player_force_routes']['save_load_angular_reset_gated_for_hydro']}",
         "",
         "## Hydro Job Lifecycle",
+        f"- Dispatcher fence source: `{lifecycle['dispatcher_fence_path']}`",
         f"- Runtime private `NativeArray<T>` field count: {lifecycle['runtime_private_native_array_field_count']}",
         f"- Runtime private vault handle count: {lifecycle['runtime_private_vault_handle_count']}",
         f"- Runtime private job handle count: {lifecycle['runtime_private_job_handle_count']}",
@@ -1768,6 +1783,7 @@ def main() -> int:
         "hydro_abort_no_wait_forced_complete_count": payload["hydro_job_lifecycle"]["abort_no_wait_forced_complete_count"],
         "hydro_teardown_forced_complete_count": payload["hydro_job_lifecycle"]["teardown_forced_complete_count"],
         "hydro_teardown_is_only_force_complete_site": payload["hydro_job_lifecycle"]["teardown_is_only_force_complete_site"],
+        "hydro_dispatcher_fence_path": payload["hydro_job_lifecycle"]["dispatcher_fence_path"],
         "dispatcher_finalize_checks_is_completed_before_complete": payload["hydro_job_lifecycle"]["dispatcher_finalize_checks_is_completed_before_complete"],
         "lockstep_size": payload["layouts"]["LockstepPlayerKinematicState"]["size"],
         "lockstep_runtime_validator_checks_offsets": payload["lockstep_layout_gate"]["runtime_validator_checks_storage_offsets"],

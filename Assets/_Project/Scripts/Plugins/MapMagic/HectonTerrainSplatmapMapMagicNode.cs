@@ -127,6 +127,10 @@ namespace MapMagic.Nodes.MatrixGenerators
             NativeArray<float> sediment = default;
             NativeArray<float4> weights = default;
             NativeArray<float> slopeWeights = default;
+            int heightsRegistrationId = 0;
+            int sedimentRegistrationId = 0;
+            int weightsRegistrationId = 0;
+            int slopeWeightsRegistrationId = 0;
             JobHandle handle = default;
             bool scheduled = false;
 
@@ -136,7 +140,15 @@ namespace MapMagic.Nodes.MatrixGenerators
                 sediment = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 weights = new NativeArray<float4>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 slopeWeights = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                RegisterTempJobBuffers(heights, sediment, weights, slopeWeights);
+                RegisterTempJobBuffers(
+                    heights,
+                    sediment,
+                    weights,
+                    slopeWeights,
+                    out heightsRegistrationId,
+                    out sedimentRegistrationId,
+                    out weightsRegistrationId,
+                    out slopeWeightsRegistrationId);
 
                 CopyMatrixToNative(heightSource.arr, heights);
                 if (sedimentSource != null)
@@ -180,10 +192,10 @@ namespace MapMagic.Nodes.MatrixGenerators
                     DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
                 }
 
-                DisposeTracked(ref heights);
-                DisposeTracked(ref sediment);
-                DisposeTracked(ref weights);
-                DisposeTracked(ref slopeWeights);
+                DisposeTracked(ref heights, ref heightsRegistrationId);
+                DisposeTracked(ref sediment, ref sedimentRegistrationId);
+                DisposeTracked(ref weights, ref weightsRegistrationId);
+                DisposeTracked(ref slopeWeights, ref slopeWeightsRegistrationId);
             }
         }
 
@@ -221,21 +233,26 @@ namespace MapMagic.Nodes.MatrixGenerators
             NativeArray<float> heights,
             NativeArray<float> sediment,
             NativeArray<float4> weights,
-            NativeArray<float> slopeWeights)
+            NativeArray<float> slopeWeights,
+            out int heightsRegistrationId,
+            out int sedimentRegistrationId,
+            out int weightsRegistrationId,
+            out int slopeWeightsRegistrationId)
         {
-            NativeMemorySentinel.RegisterNativeArray(heights, NativeMemoryOwner, HeightLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(weights, NativeMemoryOwner, WeightsLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(slopeWeights, NativeMemoryOwner, SlopeWeightsLabel, NativeAllocationLifetime.TempJob);
+            heightsRegistrationId = NativeMemorySentinel.RegisterNativeArray(heights, NativeMemoryOwner, HeightLabel, NativeAllocationLifetime.TempJob);
+            sedimentRegistrationId = NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
+            weightsRegistrationId = NativeMemorySentinel.RegisterNativeArray(weights, NativeMemoryOwner, WeightsLabel, NativeAllocationLifetime.TempJob);
+            slopeWeightsRegistrationId = NativeMemorySentinel.RegisterNativeArray(slopeWeights, NativeMemoryOwner, SlopeWeightsLabel, NativeAllocationLifetime.TempJob);
         }
 
-        private static void DisposeTracked<T>(ref NativeArray<T> array)
+        private static void DisposeTracked<T>(ref NativeArray<T> array, ref int registrationId)
             where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
+            NativeMemorySentinel.Unregister(registrationId);
+            registrationId = 0;
             array.Dispose();
             array = default;
         }

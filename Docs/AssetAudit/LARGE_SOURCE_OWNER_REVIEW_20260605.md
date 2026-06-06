@@ -12,7 +12,7 @@ This file is not deletion authorization, import acceptance, material proof, Addr
 
 | Review ID | Bucket | Count | Total MiB | Owner | Immediate risk |
 |---|---|---:|---:|---|---|
-| `LSR-01` | P0 direct large audio | 1 | 32.47 | Audio lifecycle/source owner | `Underwater Ambient.wav` is large and prefab-reachable. |
+| `LSR-01` | P0 source-cleared large audio | 1 | 32.47 | Audio lifecycle/source owner | Prior `Underwater Ambient.wav` prefab refs are source-cleared; large route-critical cue still needs Unity readback and route/removal proof. |
 | `LSR-02` | ScifiFacility material-reachable large textures | 29 | 597.84 | Texture/material/streaming owner | Non-project textures are material-reachable and too large to ignore. |
 | `LSR-03` | Other large texture/audio rows | 13 | 122.62 | Texture/material/streaming owner | Mixed first-party texture/source rows need owner classification. |
 | `LSR-04` | Unreferenced large audio | 11 | 248.78 | Audio lifecycle/source owner | Atmos and breathing WAV sources are unreferenced in static GUID text only. |

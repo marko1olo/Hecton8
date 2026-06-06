@@ -76,6 +76,13 @@ namespace Hecton8.Editor
             NativeQueue<HydraulicErosionHeightDelta> heightDeltas = default;
             NativeArray<int> heightDeltaBudget = default;
             NativeArray<ErosionSmokeMetrics> metrics = default;
+            int beforeRegistrationId = 0;
+            int heightARegistrationId = 0;
+            int heightBRegistrationId = 0;
+            int sedimentRegistrationId = 0;
+            int wearRegistrationId = 0;
+            int heightDeltaBudgetRegistrationId = 0;
+            int metricsRegistrationId = 0;
             JobHandle handle = default;
             bool handleScheduled = false;
 
@@ -101,7 +108,14 @@ namespace Hecton8.Editor
                     heightDeltas,
                     heightDeltaBudget,
                     metrics,
-                    ResolveHeightDeltaQueueCapacity(dropletsPerSlice, ErosionMaxLifetime));
+                    ResolveHeightDeltaQueueCapacity(dropletsPerSlice, ErosionMaxLifetime),
+                    out beforeRegistrationId,
+                    out heightARegistrationId,
+                    out heightBRegistrationId,
+                    out sedimentRegistrationId,
+                    out wearRegistrationId,
+                    out heightDeltaBudgetRegistrationId,
+                    out metricsRegistrationId);
 
                 handle = new ErosionFractalHeightmapJob
                 {
@@ -148,6 +162,9 @@ namespace Hecton8.Editor
                     MinWater = 0.01f
                 };
 
+                // QUEUED_DELTA_APPLY_QUARANTINED: editor-only proof route. Production MapMagic
+                // terrain generation must stay on direct ScheduleFourPhaseSliced until this
+                // queue writer/budget/apply lifecycle has fresh Unity proof.
                 handle = HydraulicErosionScheduler.ScheduleFourPhaseSlicedWithDeltaApply(
                     ref erosionJob,
                     dropletsPerSlice,
@@ -248,14 +265,14 @@ namespace Hecton8.Editor
                 if (handleScheduled)
                     DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
 
-                DisposeTracked(ref before);
-                DisposeTracked(ref heightA);
-                DisposeTracked(ref heightB);
-                DisposeTracked(ref sediment);
-                DisposeTracked(ref wear);
+                DisposeTracked(ref before, ref beforeRegistrationId);
+                DisposeTracked(ref heightA, ref heightARegistrationId);
+                DisposeTracked(ref heightB, ref heightBRegistrationId);
+                DisposeTracked(ref sediment, ref sedimentRegistrationId);
+                DisposeTracked(ref wear, ref wearRegistrationId);
                 DisposeTrackedQueue(ref heightDeltas);
-                DisposeTracked(ref heightDeltaBudget);
-                DisposeTracked(ref metrics);
+                DisposeTracked(ref heightDeltaBudget, ref heightDeltaBudgetRegistrationId);
+                DisposeTracked(ref metrics, ref metricsRegistrationId);
             }
         }
 
@@ -263,6 +280,8 @@ namespace Hecton8.Editor
         {
             NativeArray<float> raw = default;
             NativeArray<float> quantized = default;
+            int rawRegistrationId = 0;
+            int quantizedRegistrationId = 0;
             JobHandle handle = default;
             bool handleScheduled = false;
 
@@ -270,8 +289,8 @@ namespace Hecton8.Editor
             {
                 raw = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 quantized = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(raw, NativeMemoryOwner, ShelfRawLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(quantized, NativeMemoryOwner, ShelfQuantizedLabel, NativeAllocationLifetime.TempJob);
+                rawRegistrationId = NativeMemorySentinel.RegisterNativeArray(raw, NativeMemoryOwner, ShelfRawLabel, NativeAllocationLifetime.TempJob);
+                quantizedRegistrationId = NativeMemorySentinel.RegisterNativeArray(quantized, NativeMemoryOwner, ShelfQuantizedLabel, NativeAllocationLifetime.TempJob);
 
                 HectonSandboxAbyssalShelfParams parameters = CreateMacroShelfParameters();
                 AbsoluteUniversePosition previewOriginAup = HectonSandboxAbyssalShelfMath.BuildAupXZ(
@@ -334,8 +353,8 @@ namespace Hecton8.Editor
                 if (handleScheduled)
                     DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
 
-                DisposeTracked(ref raw);
-                DisposeTracked(ref quantized);
+                DisposeTracked(ref raw, ref rawRegistrationId);
+                DisposeTracked(ref quantized, ref quantizedRegistrationId);
             }
         }
 
@@ -412,24 +431,32 @@ namespace Hecton8.Editor
             NativeQueue<HydraulicErosionHeightDelta> heightDeltas,
             NativeArray<int> heightDeltaBudget,
             NativeArray<ErosionSmokeMetrics> metrics,
-            int heightDeltaQueueCapacity)
+            int heightDeltaQueueCapacity,
+            out int beforeRegistrationId,
+            out int heightARegistrationId,
+            out int heightBRegistrationId,
+            out int sedimentRegistrationId,
+            out int wearRegistrationId,
+            out int heightDeltaBudgetRegistrationId,
+            out int metricsRegistrationId)
         {
-            NativeMemorySentinel.RegisterNativeArray(before, NativeMemoryOwner, BeforeLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
+            beforeRegistrationId = NativeMemorySentinel.RegisterNativeArray(before, NativeMemoryOwner, BeforeLabel, NativeAllocationLifetime.TempJob);
+            heightARegistrationId = NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
+            heightBRegistrationId = NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
+            sedimentRegistrationId = NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
+            wearRegistrationId = NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeQueue(heightDeltas, heightDeltaQueueCapacity, NativeMemoryOwner, HeightDeltaQueueLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(heightDeltaBudget, NativeMemoryOwner, HeightDeltaBudgetLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(metrics, NativeMemoryOwner, MetricsLabel, NativeAllocationLifetime.TempJob);
+            heightDeltaBudgetRegistrationId = NativeMemorySentinel.RegisterNativeArray(heightDeltaBudget, NativeMemoryOwner, HeightDeltaBudgetLabel, NativeAllocationLifetime.TempJob);
+            metricsRegistrationId = NativeMemorySentinel.RegisterNativeArray(metrics, NativeMemoryOwner, MetricsLabel, NativeAllocationLifetime.TempJob);
         }
 
-        private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
+        private static void DisposeTracked<T>(ref NativeArray<T> array, ref int registrationId) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
+            NativeMemorySentinel.Unregister(registrationId);
+            registrationId = 0;
             array.Dispose();
             array = default;
         }
@@ -447,13 +474,14 @@ namespace Hecton8.Editor
         private static void WriteHeightPng(NativeArray<float> heights, string path)
         {
             NativeArray<Color32> pixels = default;
+            int pixelsRegistrationId = 0;
             JobHandle handle = default;
             bool handleScheduled = false;
 
             try
             {
                 pixels = new NativeArray<Color32>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(pixels, NativeMemoryOwner, HeightPixelsLabel, NativeAllocationLifetime.TempJob);
+                pixelsRegistrationId = NativeMemorySentinel.RegisterNativeArray(pixels, NativeMemoryOwner, HeightPixelsLabel, NativeAllocationLifetime.TempJob);
 
                 handle = new ErosionGrayscalePngBakeJob
                 {
@@ -473,20 +501,21 @@ namespace Hecton8.Editor
                 if (handleScheduled)
                     DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
 
-                DisposeTracked(ref pixels);
+                DisposeTracked(ref pixels, ref pixelsRegistrationId);
             }
         }
 
         private static void WriteNormalPng(NativeArray<float> heights, string path, float heightScaleMeters, float cellSizeMeters)
         {
             NativeArray<Color32> pixels = default;
+            int pixelsRegistrationId = 0;
             JobHandle handle = default;
             bool handleScheduled = false;
 
             try
             {
                 pixels = new NativeArray<Color32>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(pixels, NativeMemoryOwner, NormalPixelsLabel, NativeAllocationLifetime.TempJob);
+                pixelsRegistrationId = NativeMemorySentinel.RegisterNativeArray(pixels, NativeMemoryOwner, NormalPixelsLabel, NativeAllocationLifetime.TempJob);
 
                 handle = new ErosionNormalMapBakeJob
                 {
@@ -510,7 +539,7 @@ namespace Hecton8.Editor
                 if (handleScheduled)
                     DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
 
-                DisposeTracked(ref pixels);
+                DisposeTracked(ref pixels, ref pixelsRegistrationId);
             }
         }
 
@@ -518,6 +547,8 @@ namespace Hecton8.Editor
         {
             NativeArray<Color32> pixels = default;
             NativeArray<float> maxValue = default;
+            int pixelsRegistrationId = 0;
+            int maxValueRegistrationId = 0;
             JobHandle maxHandle = default;
             JobHandle bakeHandle = default;
             bool maxHandleScheduled = false;
@@ -527,8 +558,8 @@ namespace Hecton8.Editor
             {
                 pixels = new NativeArray<Color32>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 maxValue = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(pixels, NativeMemoryOwner, MaskPixelsLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(maxValue, NativeMemoryOwner, MaskMaxLabel, NativeAllocationLifetime.TempJob);
+                pixelsRegistrationId = NativeMemorySentinel.RegisterNativeArray(pixels, NativeMemoryOwner, MaskPixelsLabel, NativeAllocationLifetime.TempJob);
+                maxValueRegistrationId = NativeMemorySentinel.RegisterNativeArray(maxValue, NativeMemoryOwner, MaskMaxLabel, NativeAllocationLifetime.TempJob);
 
                 maxHandle = new ErosionMaskMaxJob
                 {
@@ -559,8 +590,8 @@ namespace Hecton8.Editor
                 else if (maxHandleScheduled)
                     DispatcherJobSwap.TryComplete(ref maxHandle, forceComplete: true);
 
-                DisposeTracked(ref maxValue);
-                DisposeTracked(ref pixels);
+                DisposeTracked(ref maxValue, ref maxValueRegistrationId);
+                DisposeTracked(ref pixels, ref pixelsRegistrationId);
             }
         }
 

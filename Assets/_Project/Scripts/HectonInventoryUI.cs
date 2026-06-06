@@ -1,10 +1,6 @@
-using Hecton8.Core;
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public sealed class HectonInventoryUI : MonoBehaviour, ITickable, IUpdatable
+public sealed class HectonInventoryUI : MonoBehaviour
 {
-    public void Tick(float deltaTime)
-    {
-    }
 }

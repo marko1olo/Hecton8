@@ -1,0 +1,2 @@
+release_set,packet_id,route_moment,first_20_relevance,evidence_object,unlock_condition,spoiler_level,surfaces,player_decision_changed,canon_sources,localization_risk,implementation_note
+RS_LDA_TEST,P_TEST_VALID,Standard Decode,low,terminal,explore,low,terminal,none,Lore_Bible.md,none,none

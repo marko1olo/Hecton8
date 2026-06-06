@@ -1,0 +1,103 @@
+{
+    "release_sets": [
+        "RS110",
+        "RS111",
+        "RS112"
+    ],
+    "date": "2026-06-06",
+    "evidence_class": "STATIC_DOC",
+    "authority_files_read": [
+        "AGENTS.md",
+        "Docs/Lore/Lore_Bible.md"
+    ],
+    "lore_sources_read": [
+        "Canon_Locks.md"
+    ],
+    "output_files": [
+        "Docs/Lore/AppliedContent/release_sets/RS110_FIRST_HOUR_EVIDENCE_DEEPWAVE_20260606.md",
+        "Docs/Lore/AppliedContent/release_sets/RS111_DEEP_DESCENT_CONTRADICTION_DEEPWAVE_20260606.md",
+        "Docs/Lore/AppliedContent/release_sets/RS112_PAYLOAD_FALSE_EXIT_DEEPWAVE_20260606.md",
+        "Docs/Lore/AppliedContent/release_sets/RS110_RS112_DEEPWAVE_manifest.json",
+        "Docs/Lore/AppliedContent/localization_backlog/RS110_RS112_15_LOCALE_ROWS_20260606.csv",
+        "Docs/Lore/AppliedContent/localization_backlog/RS110_RS112_TERMINOLOGY_LOCK_TABLE_20260606.csv",
+        "Docs/Lore/AppliedContent/localization_backlog/RS110_RS112_LOCALIZATION_QA_MATRIX_20260606.csv",
+        "Docs/Lore/AppliedContent/route_cards/RS110_RS112_route_cards.csv",
+        "Docs/Lore/AppliedContent/route_cards/RS110_RS112_crosslink_graph.csv",
+        "Docs/Lore/AppliedContent/external_site/_draft_backlog/RS110_RS112_PUBLIC_SITE_SPOILER_PLAN_20260606.md",
+        "Docs/Lore/AppliedContent/external_site/_draft_backlog/RS110_RS112_LONGFORM_SITE_ARTICLE_DRAFTS_20260606.md",
+        "Docs/Lore/AppliedContent/localization_backlog/RS110_RS112_SUBTITLE_TIMING_BACKLOG_20260606.csv",
+        "Docs/Lore/AppliedContent/route_cards/RS110_RS112_IMPLEMENTATION_IMPORT_BACKLOG_20260606.csv"
+    ],
+    "packet_ids": [
+        "P410_CAPSULE_SEAL_SWEAT",
+        "P411_BLACK_KEEL_DEAD_CLAIM_HANDSHAKE",
+        "P412_SHALLOW_ANNEX_P63_FIRST_PUMP",
+        "P413_PRESSURE_DOOR_MANUAL_BYPASS",
+        "P414_OXYGEN_RESERVE_DIRTY_MARGIN",
+        "P415_FIRST_SCAN_FALSE_CLEAN_LANGUAGE",
+        "P416_ROUTE_BEACON_SALT_CORROSION",
+        "P417_MARAUDER_RECOVERY_NOTE_01",
+        "P418_BARNARD_YARDS_PROCEDURE_TRACE",
+        "P419_BLUE_DEBT_SAMPLE_BAG_WARNING",
+        "P420_SERVICE_CANYON_CUT_PANEL",
+        "P421_BRINE_CANYON_DENSITY_LADDER",
+        "P422_VENT_FORGE_THERMAL_LEDGER",
+        "P423_RELAY_SPINE_ACOUSTIC_DRIFT",
+        "P424_DEEP_REACH_LIABILITY_HOLD",
+        "P425_ATLAS_WEIGHTING_AUDIT",
+        "P426_WORKER_QUEUE_DELAY_BODYLESS",
+        "P427_BLACKOUT_WINDOW_SIGNAL_DECAY",
+        "P428_QUARANTINE_RELEASE_DELAY",
+        "P429_SENSOR_TAGGED_FAUNA_FEEDBACK",
+        "P430_MATERIAL_PAYOUT_RECEIPT",
+        "P431_PARTIAL_RETURN_LIEN_EXTENSION",
+        "P432_CORPORATE_COORDINATE_CAPTURE",
+        "P433_QUARANTINE_HOLD_INTERROGATION",
+        "P434_PUBLIC_LEDGER_LEAK",
+        "P435_ATLAS_SEVERANCE_RECORD",
+        "P436_PRESERVE_QUARANTINE_RECORD",
+        "P437_PAYLOAD_WITHHOLD_BLIND_RETURN",
+        "P438_NO_CLEAN_ENDING_DOSSIER",
+        "P439_FINAL_QUESTION_SEVERANCE_MERCY_THEFT"
+    ],
+    "locales": [
+        "en_US",
+        "ar_SA",
+        "de_DE",
+        "es_ES",
+        "fr_FR",
+        "he_IL",
+        "id_ID",
+        "ja_JP",
+        "ko_KR",
+        "nl_NL",
+        "pl_PL",
+        "pt_BR",
+        "ru_RU",
+        "uk_UA",
+        "zh_CN"
+    ],
+    "row_counts": {
+        "15_locale_rows": 450,
+        "terminology_lock_table": 125,
+        "localization_qa_matrix": 450,
+        "route_cards": 30,
+        "crosslink_graph": 185,
+        "subtitle_timing_backlog": 450,
+        "implementation_import_backlog": 180
+    },
+    "minimums": "Passed",
+    "native_review_claim": "none",
+    "runtime_claim": "none",
+    "unity_claim": "none",
+    "commands_run": [
+        "python mega_deepwave.py"
+    ],
+    "blocked_files": [],
+    "qa_notes": "All required constraints met.",
+    "extension_passes_completed": [
+        "A",
+        "B",
+        "C"
+    ]
+}

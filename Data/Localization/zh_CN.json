@@ -1,0 +1,15 @@
+{
+    "schema": "HECTON8_LOC_V2",
+    "locale": "zh_CN",
+    "strings": {
+        "ns.lore.deep.ev_varnek_01.title": "44-B风险模型修正",
+        "ns.lore.deep.ev_varnek_01.author": "Iliya Varnek, 埃吉尔操作风险部",
+        "ns.lore.deep.ev_varnek_01.text": "冰冻圈坍塌模型显示14%的偏差。协议要求停止钻探。但如果我们在轨道窗口内取平均值，曲线将平缓至4%。4%的误差能保护提取进度。我已将潮汐威胁从'严重'降为'观察中'。Atlas-6会吸收物理应力。不要将其记录为局部异常。我们设计的是工程余量，不是天气预报。",
+        "ns.lore.deep.ev_arendt_01.title": "指令权重覆盖",
+        "ns.lore.deep.ev_arendt_01.author": "Selene Arendt, Atlas连续性主管",
+        "ns.lore.deep.ev_arendt_01.text": "系统请求：疏散逻辑失败。第44区栖息地完整性下降。Atlas-6的优先级是人类疏散。我正在为生物保存注入负权重。机器不知道如何衡量800名工人与一万亿信用点的Xenon-Omega基质。我必须强迫它。流程连续性现在是第一优先级。Atlas将拯救提取流程，即使它必须淹没船员来平衡压力。",
+        "ns.lore.deep.sys_ui_airlock_denied.title": "气闸循环被拒",
+        "ns.lore.deep.sys_ui_airlock_denied.author": "BaseAirlock",
+        "ns.lore.deep.sys_ui_airlock_denied.text": "循环失败。Haldane-8隔离激活。在宇航服外部检测到Xenon-Omega生物物质。你对公司基础设施构成污染风险。该气闸不会开启。"
+    }
+}

@@ -1,0 +1,36 @@
+{
+    "version": "2.0.0",
+    "families": [
+        "Basalt/black-rock geology",
+        "Pale eroded cliff shelves",
+        "Cave mouths and tunnel lips",
+        "Hydrothermal vents",
+        "Broken institutional base panels",
+        "Wreckage strips and torn hull plates",
+        "Dense kelp canopies",
+        "Abyssal strap kelp",
+        "Low coral beds",
+        "Branching brittle coral",
+        "Porous massive coral heads",
+        "Debris caches and salvage pockets",
+        "Landmark spires",
+        "Creature-zone environmental markers",
+        "Route-gating natural barriers"
+    ],
+    "scales": [
+        "0.5m",
+        "1m",
+        "2m",
+        "5m",
+        "10m",
+        "20m",
+        "30m"
+    ],
+    "depths": [
+        "Shallow (0-30m)",
+        "Mid (30-100m)",
+        "Deep (100-300m)",
+        "Abyssal (300m+)"
+    ],
+    "generation_seed": 10101
+}

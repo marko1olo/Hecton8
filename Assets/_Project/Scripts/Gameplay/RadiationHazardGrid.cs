@@ -27,12 +27,12 @@ namespace Hecton8.Gameplay
     public sealed unsafe class RadiationHazardGrid : MonoBehaviour, ISlowTickable, IOriginShiftListener, ISaveable, IGlobalRegistryHotSwapListener
     {
         private static int _signalPushDropCount;
-        public const int GridResolution = 32;
-        public const int GridCellCount = GridResolution * GridResolution * GridResolution;
+        public const int GridResolution = SaveData.RadiationGridResolution;
+        public const int GridCellCount = SaveData.RadiationGridCellCount;
         public const int MaxSourceCount = 64;
         public const int TelemetryCapacity = 300;
-        public const int RlePacketSizeBytes = 5;
-        public const int MaxRlePayloadBytes = 81920;
+        public const int RlePacketSizeBytes = SaveData.RadiationGridRlePacketSizeBytes;
+        public const int MaxRlePayloadBytes = SaveData.RadiationGridRleMaxBytes;
 
         private const string NativeMemoryOwner = nameof(RadiationHazardGrid);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
@@ -59,6 +59,12 @@ namespace Hecton8.Gameplay
         private const uint RadiationStateFlagSdfShielded = 1u << 4;
         private const uint RadiationStateFlagBulkheadShielded = 1u << 5;
         private const uint RadiationStateFlagNonFinite = 1u << 31;
+        private const uint RadiationTelemetryFlagSkippedEvaluation = 1u << 0;
+        private const uint RadiationTelemetryFlagOriginShift = 1u << 1;
+        private const uint RadiationTelemetryFlagSourceOverflow = 1u << 2;
+        private const uint RadiationTelemetryFlagSourceOverflowReplaced = 1u << 3;
+        private const uint RadiationTelemetryFlagSignalDrops = 1u << 4;
+        private const uint RadiationTelemetryFlagJobActive = 1u << 5;
         private const uint RadiationSystemHash = 0x53483237u;
         private const ushort RadiationCombatSourceId = 274;
         private const BufferID RadiationStatusSignalBuffer = (BufferID)72748;
@@ -228,6 +234,7 @@ namespace Hecton8.Gameplay
         private bool _registeredHotSwapListener;
         private bool _pendingLoadDataValid;
         private bool _pendingDataVaultSwap;
+        private bool _blackBoxDumpAttempted;
         private ISaveService _saveService;
 
         public int SavePriority => 54;
@@ -374,6 +381,7 @@ namespace Hecton8.Gameplay
 
             TryUnregisterRuntimeLanes();
             TryUnregisterHotSwapListener();
+            CompleteRadiationJobsForTeardownRelease();
         }
 
         private void OnDestroy()
@@ -394,11 +402,13 @@ namespace Hecton8.Gameplay
             _currentSimulationFrame = context.Frame != 0u ? context.Frame : timing.FrameId;
             if (!HasRequiredRuntimeBuffers())
             {
+                PreserveRadiationSourceSignalsForNextSimulation();
+                DrainExternalDoseSignals();
+                DrainItemAcquiredSignalsDeferred();
                 _radiationEvaluatedThisFrame = false;
                 return dependsOn;
             }
 
-            CompleteDiffusionJobIfReady();
             if (_radiationSimulationJobActive)
             {
                 PreserveRadiationSourceSignalsForNextSimulation();
@@ -473,7 +483,10 @@ namespace Hecton8.Gameplay
             if (_radiationSimulationJobActive)
             {
                 if (!DispatcherJobFence.TryFinalizeCompleted(ref _radiationSimulationJobHandle))
+                {
+                    RecordTelemetry(_lastSimulationPlayerAup, _lastGridIntensity01, _accumulatedRadiationDose, RadiationTelemetryFlagJobActive);
                     return;
+                }
 
                 _radiationSimulationJobActive = false;
                 ReleaseRadiationSdfSnapshotLock();
@@ -484,7 +497,10 @@ namespace Hecton8.Gameplay
                 TryApplyDeferredStructuralOperations();
 
             if (!_radiationEvaluatedThisFrame)
+            {
+                RecordTelemetry(_lastSimulationPlayerAup, _lastGridIntensity01, _accumulatedRadiationDose, RadiationTelemetryFlagSkippedEvaluation);
                 return;
+            }
 
             RadiationStateDTO state = _radiationStates.IsCreated && _radiationStates.Length > 0
                 ? _radiationStates[0]
@@ -524,7 +540,7 @@ namespace Hecton8.Gameplay
             PublishPendingRadiationStatusSignal();
             PublishDoseSignal(in playerAup, doseAdd, _lastGridIntensity01, RadiationDoseGridKind);
             EmitGeigerIfNeeded(in playerAup, _lastGridIntensity01);
-            RecordTelemetry(playerAup, _lastGridIntensity01, _accumulatedRadiationDose, _radiationEvaluatedThisFrame ? 0u : 1u);
+            RecordTelemetry(playerAup, _lastGridIntensity01, _accumulatedRadiationDose, 0u);
             _lastExternalIntensity01 *= 0.5f;
         }
 
@@ -544,7 +560,7 @@ namespace Hecton8.Gameplay
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             _lastShiftSequence = shiftData.Sequence;
-            RecordTelemetry(_gridOriginAup, _lastGridIntensity01, _accumulatedRadiationDose, 1u << 1);
+            RecordTelemetry(_gridOriginAup, _lastGridIntensity01, _accumulatedRadiationDose, RadiationTelemetryFlagOriginShift);
         }
 
         public void PopulateSaveData(SaveData data)
@@ -661,7 +677,16 @@ namespace Hecton8.Gameplay
             }
 
             if (freeIndex < 0)
+            {
+                if (TryReplaceWeakestRadiationSource(sourceId, in sourceAup, sourceIntensity01, sourceRadiusMeters))
+                {
+                    RecordTelemetry(sourceAup, _lastGridIntensity01, _accumulatedRadiationDose, RadiationTelemetryFlagSourceOverflowReplaced);
+                    return;
+                }
+
+                RecordTelemetry(sourceAup, _lastGridIntensity01, _accumulatedRadiationDose, RadiationTelemetryFlagSourceOverflow);
                 return;
+            }
 
             _sources[freeIndex] = new RadiationSource
             {
@@ -675,6 +700,46 @@ namespace Hecton8.Gameplay
             if (_sourceCountLane.IsCreated && _sourceCountLane.Length > 0)
                 _sourceCountLane[0] = _activeSourceCount;
             _sourceVersion++;
+        }
+
+        private bool TryReplaceWeakestRadiationSource(
+            int sourceId,
+            in AbsoluteUniversePosition sourceAup,
+            float sourceIntensity01,
+            float sourceRadiusMeters)
+        {
+            if (!_sources.IsCreated)
+                return false;
+
+            int weakestIndex = -1;
+            float weakestIntensity = float.MaxValue;
+            for (int i = 0; i < MaxSourceCount; i++)
+            {
+                RadiationSource source = _sources[i];
+                if (source.Active == 0)
+                    continue;
+
+                float candidateIntensity = SanitizeNonNegative(source.Intensity01);
+                if (candidateIntensity >= weakestIntensity)
+                    continue;
+
+                weakestIntensity = candidateIntensity;
+                weakestIndex = i;
+            }
+
+            if (weakestIndex < 0 || sourceIntensity01 <= weakestIntensity)
+                return false;
+
+            _sources[weakestIndex] = new RadiationSource
+            {
+                PositionAup = sourceAup.ToAbsoluteDouble3(),
+                Intensity01 = sourceIntensity01,
+                RadiusMeters = sourceRadiusMeters,
+                SourceId = sourceId,
+                Active = 1
+            };
+            _sourceVersion++;
+            return true;
         }
 
         private void UnregisterSourceInternal(int sourceId)
@@ -707,7 +772,6 @@ namespace Hecton8.Gameplay
             IDataVault vault = _dataVault;
             return _vaultInitialized &&
                    vault != null &&
-                   RefreshVaultViews(vault) &&
                    _gridRead.IsCreated &&
                    _gridWrite.IsCreated &&
                    _gridSource.IsCreated &&
@@ -826,8 +890,13 @@ namespace Hecton8.Gameplay
 
             if (_sourceCountLane.IsCreated && _sourceCountLane.Length > 0)
                 _sourceCountLane[0] = _activeSourceCount;
-            if (_telemetryCursorLane.IsCreated && _telemetryCursorLane.Length > 0 && _telemetryWriteIndex == 0)
-                _telemetryWriteIndex = unchecked((int)_telemetryCursorLane[0]);
+            if (_telemetryWriteIndex == 0 &&
+                vault.TryReadOnlyHandle(in _telemetryCursorHandle, out NativeArray<uint>.ReadOnly telemetryCursorRead) &&
+                telemetryCursorRead.IsCreated &&
+                telemetryCursorRead.Length > 0)
+            {
+                _telemetryWriteIndex = WrapTelemetryCursor(telemetryCursorRead[0], TelemetryCapacity);
+            }
 
             EnsureDefaultRadiationTuning();
 #if UNITY_EDITOR
@@ -1139,6 +1208,7 @@ namespace Hecton8.Gameplay
             _tuningLane = default;
             _statusSignalLane = default;
             _gridBuffersSwapped = false;
+            _blackBoxDumpAttempted = false;
             _vaultInitialized = false;
         }
 
@@ -1180,10 +1250,21 @@ namespace Hecton8.Gameplay
                 _registeredOriginShift = true;
             }
 
-            ISaveService saveService = _saveService;
+            ISaveService saveService = GlobalRegistry.Save;
+            if (_registeredSave && !ReferenceEquals(_saveService, saveService))
+            {
+                ISaveService registeredSave = _saveService;
+                if (registeredSave != null)
+                    registeredSave.Unregister(this);
+
+                _registeredSave = false;
+                _saveService = null;
+            }
+
             if (!_registeredSave && saveService != null)
             {
                 saveService.Register(this);
+                _saveService = saveService;
                 _registeredSave = true;
             }
         }
@@ -1226,11 +1307,15 @@ namespace Hecton8.Gameplay
                 saveService.Unregister(this);
                 _registeredSave = false;
             }
+
+            _saveService = null;
         }
 
         private void RefreshColdRegistryReferences()
         {
-            _saveService = GlobalRegistry.Save;
+            if (!_registeredSave)
+                _saveService = GlobalRegistry.Save;
+
             _dataVault = GlobalRegistry.DataVault;
             _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
             _voxelSdfReadLeaseModel = _voxelSdfReadModel as IVoxelSonarSdfReadLeaseModel;
@@ -1269,12 +1354,17 @@ namespace Hecton8.Gameplay
                         TryRegisterRuntimeLanes();
                     break;
                 case GlobalRegistryServiceSlot.Save:
-                    if (_registeredSave && previousService is ISaveService previousSave)
-                        previousSave.Unregister(this);
-                    _registeredSave = false;
-                    _saveService = currentService as ISaveService;
-                    if (_saveService != null)
-                        TryRegisterRuntimeLanes();
+                    if (_registeredSave)
+                    {
+                        ISaveService previousSave = previousService as ISaveService ?? _saveService;
+                        if (previousSave != null)
+                            previousSave.Unregister(this);
+
+                        _registeredSave = false;
+                    }
+
+                    _saveService = null;
+                    TryRegisterRuntimeLanes();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     IDataVault nextVault = currentService as IDataVault;
@@ -1685,23 +1775,27 @@ namespace Hecton8.Gameplay
             }
 
             snapshotLocked = true;
-            if (vault.IsCompactionFenceActive)
+            bool handoffToScheduledJob = false;
+            try
             {
-                UnlockRadiationSdfSnapshot(ref snapshotLocked);
-                return false;
-            }
+                if (vault.IsCompactionFenceActive)
+                    return false;
 
-            if (!IsRadiationSdfSnapshotReady(vault, requiredLength, out snapshot))
+                if (!IsRadiationSdfSnapshotReady(vault, requiredLength, out snapshot))
+                    return false;
+
+                for (int i = 0; i < requiredLength; i++)
+                    snapshot[i] = sourceSdf[i];
+
+                snapshotSdf = snapshot.AsReadOnly();
+                handoffToScheduledJob = true;
+                return true;
+            }
+            finally
             {
-                UnlockRadiationSdfSnapshot(ref snapshotLocked);
-                return false;
+                if (!handoffToScheduledJob)
+                    UnlockRadiationSdfSnapshot(ref snapshotLocked);
             }
-
-            for (int i = 0; i < requiredLength; i++)
-                snapshot[i] = sourceSdf[i];
-
-            snapshotSdf = snapshot.AsReadOnly();
-            return true;
         }
 
         private bool IsRadiationSdfSnapshotReady(IDataVault vault, int requiredLength, out NativeArray<byte> snapshot)
@@ -2320,9 +2414,24 @@ namespace Hecton8.Gameplay
             return (byte)math.clamp((int)math.round(math.saturate(value) * 127f), 0, 127);
         }
 
+        private static int WrapTelemetryIndex(int value, int capacity)
+        {
+            if (capacity <= 0)
+                return 0;
+
+            int wrapped = value % capacity;
+            return wrapped < 0 ? wrapped + capacity : wrapped;
+        }
+
+        private static int WrapTelemetryCursor(uint value, int capacity)
+        {
+            return capacity > 0 ? (int)(value % (uint)capacity) : 0;
+        }
+
         private void RecordTelemetry(in AbsoluteUniversePosition playerAup, float intensity01, float accumulatedRads, uint flags)
         {
-            if (!_telemetryRing.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null || _telemetryHandle.BufferID == 0u)
                 return;
 
             double3 playerAbsolute = AbsoluteUniversePosition.IsFinite(in playerAup) ? playerAup.ToAbsoluteDouble3() : double3.zero;
@@ -2343,23 +2452,78 @@ namespace Hecton8.Gameplay
                 SourceVersion = (ushort)math.clamp(_sourceVersion, 0, ushort.MaxValue),
                 Frame = _currentSimulationFrame,
                 ShiftSequence = _lastShiftSequence,
-                Flags = flags
+                Flags = _signalPushDropCount > 0 ? flags | RadiationTelemetryFlagSignalDrops : flags
             };
-            _telemetryRing[_telemetryWriteIndex % TelemetryCapacity] = entry;
-            _telemetryWriteIndex++;
-            if (_telemetryCursorLane.IsCreated && _telemetryCursorLane.Length > 0)
-                _telemetryCursorLane[0] = unchecked((uint)_telemetryWriteIndex);
-        }
 
-        private void DumpBlackBox()
-        {
-            if (!_telemetryRing.IsCreated)
+            int nextWriteIndex = _telemetryWriteIndex;
+            bool wrote = false;
+            if (!vault.TryAcquireWriteLock(in _telemetryHandle, OwnerSystemId, out NativeArray<RadiationTelemetryEntry> telemetryRing))
                 return;
 
             try
             {
+                if (!telemetryRing.IsCreated)
+                    return;
+
+                int telemetryCapacity = math.min(telemetryRing.Length, TelemetryCapacity);
+                if (telemetryCapacity <= 0)
+                    return;
+
+                int writeIndex = WrapTelemetryIndex(_telemetryWriteIndex, telemetryCapacity);
+                nextWriteIndex = writeIndex + 1 >= telemetryCapacity ? 0 : writeIndex + 1;
+                telemetryRing[writeIndex] = entry;
+                wrote = true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
+            }
+
+            if (!wrote)
+                return;
+
+            _telemetryWriteIndex = nextWriteIndex;
+            TryWriteTelemetryCursor(unchecked((uint)nextWriteIndex));
+        }
+
+        private void TryWriteTelemetryCursor(uint nextWriteIndex)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || _telemetryCursorHandle.BufferID == 0u)
+                return;
+
+            if (!vault.TryAcquireWriteLock(in _telemetryCursorHandle, OwnerSystemId, out NativeArray<uint> telemetryCursor))
+                return;
+
+            try
+            {
+                if (telemetryCursor.IsCreated && telemetryCursor.Length > 0)
+                    telemetryCursor[0] = nextWriteIndex;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystemId);
+            }
+        }
+
+        private void DumpBlackBox()
+        {
+            if (_blackBoxDumpAttempted)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<RadiationTelemetryEntry>.ReadOnly telemetry) ||
+                !telemetry.IsCreated ||
+                telemetry.Length < TelemetryCapacity)
+            {
+                return;
+            }
+
+            _blackBoxDumpAttempted = true;
+            try
+            {
                 string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", RadiationDumpFileName));
-                NativeArray<RadiationTelemetryEntry> telemetry = _telemetryRing;
                 int headerBytes = 8;
                 int stride = UnsafeUtility.SizeOf<RadiationTelemetryEntry>();
                 int entryBytes = TelemetryCapacity * stride;

@@ -65,7 +65,9 @@ namespace Hecton8.Gameplay
         EmergencyLevelEvacuate = 12,
         StationKeepingArmed = 13,
         StationKeepingReleased = 14,
-        HostileDroneDetected = 15
+        HostileDroneDetected = 15,
+        EngineTelemetryMasked = 16,
+        EngineTelemetryRestored = 17
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -85,6 +87,9 @@ namespace Hecton8.Gameplay
             float maxPressureKPa,
             float speedKnots,
             float engineHeat01,
+            float engineHeatTrue01,
+            float engineHeatMaskDelta01,
+            uint atlasTelemetryFlags,
             int sonarContactCount,
             int nearestSonarContactMeters,
             SubmarineVwsFlags vocalWarningFlags,
@@ -100,6 +105,9 @@ namespace Hecton8.Gameplay
             MaxPressureKPa = maxPressureKPa;
             SpeedKnots = speedKnots;
             EngineHeat01 = engineHeat01;
+            EngineHeatTrue01 = engineHeatTrue01;
+            EngineHeatMaskDelta01 = engineHeatMaskDelta01;
+            AtlasTelemetryFlags = atlasTelemetryFlags;
             SonarContactCount = sonarContactCount;
             NearestSonarContactMeters = nearestSonarContactMeters;
             VocalWarningFlags = vocalWarningFlags;
@@ -120,9 +128,14 @@ namespace Hecton8.Gameplay
         [FieldOffset(36)] public readonly SubmarineVwsFlags VocalWarningFlags;
         [FieldOffset(38)] public readonly SubsystemStatus SubsystemStatus;
         [FieldOffset(39)] public readonly SubmarineEmergencyLevel EmergencyLevel;
-        [FieldOffset(40)] private readonly ulong _pad0;
-        [FieldOffset(48)] private readonly ulong _pad1;
+        [FieldOffset(40)] public readonly float EngineHeatTrue01;
+        [FieldOffset(44)] public readonly float EngineHeatMaskDelta01;
+        [FieldOffset(48)] public readonly uint AtlasTelemetryFlags;
+        [FieldOffset(52)] private readonly uint _pad0;
         [FieldOffset(56)] private readonly ulong _pad2;
+
+        public readonly bool IsEngineTelemetryMasked =>
+            (AtlasTelemetryFlags & Hecton8.Gameplay.Atlas6Liability.ThermalSheerManager.TelemetryFlagMasked) != 0u;
 
         public static bool HasLowPowerMode(uint statusFlags)
         {
@@ -213,8 +226,9 @@ namespace Hecton8.Gameplay
         [FieldOffset(46)] public ushort Priority;
         [FieldOffset(48)] public ushort VocalWarningFlags;
         [FieldOffset(50)] private ushort _pad0;
-        [FieldOffset(52)] private uint _pad1;
-        [FieldOffset(56)] private ulong _pad2;
+        [FieldOffset(52)] public float EngineHeatTrue01;
+        [FieldOffset(56)] public float EngineHeatMaskDelta01;
+        [FieldOffset(60)] public uint AtlasTelemetryFlags;
     }
 
     /// <summary>
@@ -428,6 +442,9 @@ namespace Hecton8.Gameplay
                 MaxPressureKPa = snapshot.MaxPressureKPa,
                 SpeedKnots = snapshot.SpeedKnots,
                 EngineHeat01 = snapshot.EngineHeat01,
+                EngineHeatTrue01 = snapshot.EngineHeatTrue01,
+                EngineHeatMaskDelta01 = snapshot.EngineHeatMaskDelta01,
+                AtlasTelemetryFlags = snapshot.AtlasTelemetryFlags,
                 SonarContactCount = snapshot.SonarContactCount,
                 NearestSonarContactMeters = snapshot.NearestSonarContactMeters,
                 ModuleId = GlobalSubmarineOsModuleId,
@@ -483,6 +500,9 @@ namespace Hecton8.Gameplay
                 payload.MaxPressureKPa,
                 payload.SpeedKnots,
                 payload.EngineHeat01,
+                payload.EngineHeatTrue01,
+                payload.EngineHeatMaskDelta01,
+                payload.AtlasTelemetryFlags,
                 payload.SonarContactCount,
                 payload.NearestSonarContactMeters,
                 (SubmarineVwsFlags)payload.VocalWarningFlags,
@@ -754,6 +774,7 @@ namespace Hecton8.Gameplay
         private SubmarineCoreDirector _submarineCore;
         private ISubmarineAtmosphereRoomReadModel _atmosphereSystem;
         private SubmarineStationKeepingController _stationKeepingController;
+        private Hecton8.Gameplay.Atlas6Liability.Atlas6CorporateLiabilityManager _atlas6Manager;
         private IPowerGridService _powerGridService;
         private SpectrumSystem _spectrumRuntime;
         private IPlayerRuntimeContext _playerRuntime;
@@ -1029,6 +1050,9 @@ namespace Hecton8.Gameplay
                 if (_stationKeepingController == null)
                     _submarineCore.TryGetComponent(out _stationKeepingController);
             }
+
+            if (_atlas6Manager == null)
+                _atlas6Manager = UnityEngine.Object.FindAnyObjectByType<Hecton8.Gameplay.Atlas6Liability.Atlas6CorporateLiabilityManager>();
         }
 
         private void RefreshCachedComponentReferencesHot()
@@ -1347,6 +1371,13 @@ namespace Hecton8.Gameplay
                 elapsedInv *
                 EngineHeatAccelerationReferenceInv);
             float targetHeat01 = math.saturate(math.max(speedLoad01 * EngineHeatCruiseLoadScale, accelerationLoad01));
+
+            if (_atlas6Manager != null)
+            {
+                var readout = _atlas6Manager.GetSubmarineOSReadout(targetHeat01);
+                targetHeat01 = readout.ReportedSheer;
+            }
+
             _engineHeat01 = QuantizeHeat01(targetHeat01);
             _lastHullSpeedMetersPerSecond = hullSpeedMetersPerSecond;
             ApplyEngineDiagnosticsShaderGlobal();

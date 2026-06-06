@@ -1,0 +1,12 @@
+{
+    "schema": "HECTON8_LOC_V3",
+    "locale": "en_US",
+    "strings": {
+        "ns.lore.encyclopedia.xenon_decay": "Scientific Journal: Xenon-Omega Isotope 44. Analysis shows the substrate does not merely emit radiation; it actively aggressively bonds with deep-sea brine, creating a localized exothermic reaction. The resulting heat differential is what shatters standard carbon-steel pressure hulls. It is not eating the metal. It is flash-boiling the microscopic water droplets trapped in the steel's pores.",
+        "ns.lore.tech_spec.p63_manual": "Technical Manual: P-63 Fabricator. WARNING: Do not bypass the thermal safety lock. The P-63 uses a focused plasma arc to weld ceramic plates underwater. If the seal integrity is below 80%, the plasma will ignite the surrounding oxygenated water, resulting in catastrophic backdraft. If the lock is broken, operators must use manual clamp pressure and pray the weld holds before the arc grounds out.",
+        "ns.lore.survivor.bloody_note_04": "Survivor Note: I found Corrie. Or what was left of her after the pressure door closed on her suit. The suit's internal medical system kept her alive for two hours by clamping the severed arteries, but the painkillers ran out in twenty minutes. I took her rebreather. I'm sorry, Cor. I really am. But you don't need the air anymore.",
+        "ns.lore.public_site.aegir_recruitment": "Public Marketing: Aegir Holdings. The frontier isn't in the stars. It's in the deep. Join the Atlas-6 platform today. We offer competitive hazard pay, comprehensive Keelmark life insurance, and the chance to harvest the future. The pressure is high, but so are the rewards. (Note: Survival rates vary by sector. Aegir Holdings is not liable for pressure-related psychological decay).",
+        "ns.lore.os.casual_doom": "OS Assistant: Good morning. Current exterior pressure is 84 MPa. Your suit integrity is at 42%. Statistically, you have a 14% chance of surviving the next shift. I have automatically pre-filled your Keelmark incident report to save time in the event of a fatal crush. Would you like me to play some ambient music?",
+        "ns.lore.hero.internal_monologue_11": "Hero Dialogue: (Sighs heavily). Another dead diver. Pockets turned inside out. The Marauders got here first. They didn't even take his tags. They just took his filters and left him to choke. God, this whole ocean is just a giant grave that we keep digging deeper."
+    }
+}

@@ -192,6 +192,10 @@ namespace Hecton8.World
         private const int PillarEnvelopeBatchCount = 32768;
         private const float TerrainSdfSnapHysteresisMeters = 0.05f;
 
+#if UNITY_EDITOR
+        private static int _editorMainThreadId;
+#endif
+
         /// <summary>
         /// Schedules closed basin detection against a heightmap.
         /// </summary>
@@ -771,9 +775,17 @@ namespace Hecton8.World
         }
 
 #if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void CaptureEditorMainThread()
+        {
+            Volatile.Write(ref _editorMainThreadId, Thread.CurrentThread.ManagedThreadId);
+        }
+
         private static bool ShouldUseEditorDirectExecution(JobHandle dependency)
         {
             if (!dependency.IsCompleted)
+                return false;
+            if (Thread.CurrentThread.ManagedThreadId != Volatile.Read(ref _editorMainThreadId))
                 return false;
 
             return UnityEditor.EditorApplication.isCompiling ||

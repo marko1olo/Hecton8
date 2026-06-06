@@ -3088,12 +3088,69 @@ namespace Hecton8.Core.Persistence.Paging
 
         private unsafe void WriteBlackBoxDumps()
         {
+            if (!TryReadTelemetryRing(out NativeArray<H8BinaryWorldPagerTelemetryEntry>.ReadOnly telemetryRing))
+                return;
+
+            WriteBlackBoxDump(_dumpPath, telemetryRing);
+            WriteBlackBoxDump(_dumpH8Path, telemetryRing);
         }
 
         private unsafe void WriteBlackBoxDump(
             string dumpPath,
             NativeArray<H8BinaryWorldPagerTelemetryEntry>.ReadOnly telemetryRing)
         {
+            if (string.IsNullOrEmpty(dumpPath) || !telemetryRing.IsCreated)
+                return;
+
+            try
+            {
+                HectonPersistentPathPolicy.EnsureParentDirectory(dumpPath);
+                using (FileStream stream = new FileStream(
+                           dumpPath,
+                           FileMode.Create,
+                           FileAccess.Write,
+                           FileShare.Read,
+                           4096,
+                           FileOptions.SequentialScan))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    int count = math.min(telemetryRing.Length, TelemetryCapacity);
+                    for (int i = 0; i < count; i++)
+                    {
+                        H8BinaryWorldPagerTelemetryEntry entry = telemetryRing[i];
+                        writer.Write(entry.SectorHash);
+                        writer.Write(entry.Offset);
+                        writer.Write(entry.TicksUtc);
+                        writer.Write(entry.PayloadType);
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.RequestId);
+                        writer.Write(entry.PayloadBytes);
+                        writer.Write(entry.PendingWrites);
+                        writer.Write(entry.PendingReads);
+                        writer.Write(entry.PageFaults);
+                        writer.Write(entry.Metrics);
+                        writer.Write(entry.DirectorySlot);
+                        writer.Write(entry.Flags);
+                        writer.Write((byte)entry.Operation);
+                        writer.Write((byte)entry.Status);
+                    }
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
         }
 
         private struct PagerNativeState : IDisposable

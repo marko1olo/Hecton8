@@ -162,7 +162,7 @@ namespace Hecton8.Audio
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Audio/Adaptive Stem Audio Mixer")]
-    public sealed unsafe class AdaptiveStemAudioMixer : MonoBehaviour, IColdTickable, IUpdatable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed unsafe class AdaptiveStemAudioMixer : MonoBehaviour, IColdTickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001AdaptiveStemAudioMixerSignalPushDropCount;
         private const int TelemetryCapacity = 300;
@@ -386,10 +386,6 @@ namespace Hecton8.Audio
                 return;
 
             FlushPendingUnityMixFrame();
-        }
-
-        public void SlowTick()
-        {
         }
 
         public void ColdTick()
@@ -1153,8 +1149,7 @@ namespace Hecton8.Audio
                 float depthMeters = math.max(0f, math.isfinite(rule.MockDepthMeters) ? rule.MockDepthMeters : 0f);
                 float quality = math.saturate(math.isfinite(frame.QualityWeight) ? frame.QualityWeight : 1f);
                 float tension = math.saturate(math.isfinite(frame.TensionIndex) ? frame.TensionIndex : 0f);
-                float impulse = math.saturate(math.isfinite(frame.IoPressure01) ? frame.IoPressure01 : 0f);
-                PushDynamicMusicSignal(tension, depthMeters, quality, impulse);
+                PushDynamicMusicSignal(tension, depthMeters, quality);
                 return;
             }
 
@@ -1186,16 +1181,19 @@ namespace Hecton8.Audio
             SignalBus<DynamicMusicScalarSignal>.EnsureInitialized();
         }
 
-        private void PushDynamicMusicSignal(float tension01, float depthMeters, float quality01, float damageImpulse01)
+        private void PushDynamicMusicSignal(float tension01, float depthMeters, float quality01)
         {
             EnsureDynamicMusicSignalLaneCold();
             DynamicMusicScalarSignal signal = default;
             signal.Frame = _simulationFrameCounter;
-            signal.Flags = DynamicMusicScalarSignal.FlagExternalScalars;
+            signal.Flags =
+                DynamicMusicScalarSignal.FlagExternalScalars |
+                DynamicMusicScalarSignal.FlagSuppressReactiveImpulses;
             signal.Tension01 = math.saturate(FiniteOrFallback(tension01, 0f));
             signal.DepthMeters = math.max(0f, FiniteOrFallback(depthMeters, 0f));
             signal.GlobalQualityWeight = math.saturate(FiniteOrFallback(quality01, 1f));
-            signal.DamageImpulse01 = math.saturate(FiniteOrFallback(damageImpulse01, 0f));
+            signal.DamageImpulse01 = 0f;
+            signal.MusicActivity01 = 0f;
             signal.SourceHash = DynamicMusicScalarSignal.SourceAdaptiveStemHash;
             SignalBus<DynamicMusicScalarSignal>.TryPushTracked(in signal, ref s_x001AdaptiveStemAudioMixerSignalPushDropCount);
         }

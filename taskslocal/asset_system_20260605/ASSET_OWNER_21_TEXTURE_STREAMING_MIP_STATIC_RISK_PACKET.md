@@ -34,6 +34,14 @@ Hard boundary:
 
 All counts below are from `Docs/AssetAudit/TEXTURE_FILE_TECHNICAL_PROPERTIES_20260605.csv`.
 
+Latest role-ledger guard:
+
+- `python -B Tools\ValidateTextureRoleTechnicalLedger.py --no-fail` returns `TEXTURE_ROLE_TECHNICAL_LEDGER_REJECTED blockers=3 rows=13 exact_asset_rows=2 directory_rows=4 docs_source_only_rows=7 ledger_matches=136`.
+- `flora_coral:albedo` has no matching static ledger row with `streaming_mips=1` under `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported`.
+- `flora_coral:normal_detail_mask` has no matching static ledger row with `streaming_mips=1` under the same imported flora/coral source scope.
+- `ui_oxygen_mask:mask` maps to `Assets/_Project/Art/Sprites/oxygen-tank.png`; the role matrix expects linear/mask treatment, while static importer meta reports `sRGB=1`.
+- This is owner routing evidence only. Do not raw-edit `.meta`; future repair must use Unity importer/API readback and HUD/material proof.
+
 | Risk selector | Rows | Static split | Future blocker |
 |---|---:|---|---|
 | `policy_flags` contains `STATIC_META_STREAMING_MIPS_OFF_WORLD_RISK` | 81 | `sky_aegir_cloud` 14, `terrain_geology` 1, `texture_source` 66 | World/sky/flora/detail sources may stream poorly or not shed mips under pressure. Requires importer readback, route ownership, material user readback, and compact VRAM proof before any route claim. |
@@ -176,3 +184,55 @@ Quality bands below are reporting anchors only. Implementation consumes continuo
 - Visual floor: surface, sky, Aegir, coastline, ocean surface, photic shallows, and medium-depth hero routes remain blocked until screenshots and memory evidence exist together.
 
 Final status: `PENDING_VERIFICATION`.
+
+## 2026-06-06 Maxwell Exact Role-Ledger Repair Packet
+
+Evidence class: `STATIC_META / STATIC_LEDGER / NO_UNITY_IMPORT_READBACK`.
+
+`python -B Tools\ValidateTextureRoleTechnicalLedger.py --no-fail` reproduces:
+
+```text
+TEXTURE_ROLE_TECHNICAL_LEDGER_REJECTED blockers=3 rows=13 exact_asset_rows=2 directory_rows=4 docs_source_only_rows=7 ledger_matches=136
+BLOCKER: flora_coral:albedo:no_matching_streaming_mips_setting:expected=1
+BLOCKER: flora_coral:normal_detail_mask:no_matching_streaming_mips_setting:expected=1
+BLOCKER: ui_oxygen_mask:mask:srgb_mismatch:Assets/_Project/Art/Sprites/oxygen-tank.png:expected=0:actual=1
+```
+
+Exact static state:
+
+- Role matrix rows for `flora_coral/albedo` and `flora_coral/normal_detail_mask` point to `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported` and expect mipmaps plus streaming mips.
+- 11 matched flora/coral albedo assets report `meta_mipmaps=1` and `meta_streaming_mips=0`.
+- 33 matched flora/coral detail/mask/normal assets report `meta_mipmaps=1` and `meta_streaming_mips=0`.
+- `Assets/_Project/Art/Sprites/oxygen-tank.png` reports `textureType=8`, `sRGBTexture=1`, `enableMipMap=0`, `streamingMipmaps=0`.
+- The `flora_coral` role row currently covers both coral and kelp families because the source scope is the whole imported flora directory and the validator matches by `albedo`, `detail`, `mask`, and `normal` file-name tokens. A future repair that changes only `family.coral.*` rows will leave the role-ledger validator red.
+
+Exact importer target inventory:
+
+- Albedo streaming targets, all currently `type=0 srgb=1 mips=1 stream=0`: `family.coral.branching.v2/albedo___family.coral.branching.v2.png`; `family.coral.branching/albedo___family.coral.branching.png`; `family.coral.brittle/albedo___family.coral.brittle.png`; `family.coral.low/albedo___family.coral.low.png`; `family.coral.massive.2/albedo___family.coral.massive.2.png`; `family.coral.massive/albedo___family.coral.massive.png`; `family.coral.plate/albedo___family.coral.plate.png`; `family.kelp.abyssal/albedo___family.kelp.abyssal.png`; `family.kelp.canopy/albedo___family.kelp.canopy.png`; `family.kelp.patch.dense/albedo___family.kelp.patch.dense.png`; `family.kelp.tall/albedo___family.kelp.tall.png`.
+- Detail/mask/normal streaming targets, all currently `mips=1 stream=0`: `family.coral.branching.v2/detail___family.coral.branching.v2.png`; `family.coral.branching.v2/mask___family.coral.branching.v2.png`; `family.coral.branching.v2/normal___family.coral.branching.v2.png`; `family.coral.branching/detail___family.coral.branching.png`; `family.coral.branching/mask___family.coral.branching.png`; `family.coral.branching/normal___family.coral.branching.png`; `family.coral.brittle/detail___family.coral.brittle.png`; `family.coral.brittle/mask___family.coral.brittle.png`; `family.coral.brittle/normal___family.coral.brittle.png`; `family.coral.low/detail___family.coral.low.png`; `family.coral.low/mask___family.coral.low.png`; `family.coral.low/normal___family.coral.low.png`; `family.coral.massive.2/detail___family.coral.massive.2.png`; `family.coral.massive.2/mask___family.coral.massive.2.png`; `family.coral.massive.2/normal___family.coral.massive.2.png`; `family.coral.massive/detail___family.coral.massive.png`; `family.coral.massive/mask___family.coral.massive.png`; `family.coral.massive/normal___family.coral.massive.png`; `family.coral.plate/detail___family.coral.plate.png`; `family.coral.plate/mask___family.coral.plate.png`; `family.coral.plate/normal___family.coral.plate.png`; `family.kelp.abyssal/detail___family.kelp.abyssal.png`; `family.kelp.abyssal/mask___family.kelp.abyssal.png`; `family.kelp.abyssal/normal___family.kelp.abyssal.png`; `family.kelp.canopy/detail___family.kelp.canopy.png`; `family.kelp.canopy/mask___family.kelp.canopy.png`; `family.kelp.canopy/normal___family.kelp.canopy.png`; `family.kelp.patch.dense/detail___family.kelp.patch.dense.png`; `family.kelp.patch.dense/mask___family.kelp.patch.dense.png`; `family.kelp.patch.dense/normal___family.kelp.patch.dense.png`; `family.kelp.tall/detail___family.kelp.tall.png`; `family.kelp.tall/mask___family.kelp.tall.png`; `family.kelp.tall/normal___family.kelp.tall.png`.
+- Full path prefix for every flora target above is `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/`.
+
+Repair policy:
+
+1. Do not patch `.meta` text.
+2. Use Unity `TextureImporter` / `AssetDatabase` routes only.
+3. Set `albedo___*.png` to `TextureType=Default`, `sRGB=true`, `mipmapEnabled=true`, `streamingMipmaps=true`.
+4. Set `detail___*.png` and `mask___*.png` to `TextureType=Default`, `sRGB=false`, `mipmapEnabled=true`, `streamingMipmaps=true`.
+5. Set `normal___*.png` to `TextureType=NormalMap`, `sRGB=false`, `mipmapEnabled=true`, `streamingMipmaps=true`.
+6. If `oxygen-tank.png` remains a mask, keep it Sprite/non-mipped/non-streaming and set `sRGB=false`; if the UI owner proves it is a colored icon, reclassify the role row instead.
+7. Regenerate `TEXTURE_FILE_TECHNICAL_PROPERTIES_20260605.csv` from post-import Unity state, rerun the role-ledger validator, then update the unit test that currently expects the known rejection.
+
+## 2026-06-06 Ramanujan Texture Importer Repair Clarification
+
+Evidence class: `STATIC_META / STATIC_LEDGER / NO_UNITY_IMPORT_READBACK`.
+
+Ramanujan confirmed the current texture-role rejection is real, not a script false positive.
+
+Unity importer/API repair target remains:
+
+- `WorldProceduralFlora/Imported/**/albedo___*.png`: `TextureType=Default`, `sRGB=true`, `mipmapEnabled=true`, `streamingMipmaps=true`.
+- `WorldProceduralFlora/Imported/**/detail___*.png` and `mask___*.png`: `TextureType=Default`, `sRGB=false`, `mipmapEnabled=true`, `streamingMipmaps=true`.
+- `WorldProceduralFlora/Imported/**/normal___*.png`: `TextureType=NormalMap`, `sRGB=false`, `mipmapEnabled=true`, `streamingMipmaps=true`.
+- `Assets/_Project/Art/Sprites/oxygen-tank.png`: keep as mask/silhouette for now, not as the detailed colored icon; if mask role remains, keep Sprite/non-mipped/non-streaming and set `sRGB=false`.
+
+Do not reclassify `oxygen-tank.png` yet. The separate colored icon candidate is `Assets/_Project/Art/Sprites/ui/OXYGEN.png`; binding/readback proof belongs to the UI owner.

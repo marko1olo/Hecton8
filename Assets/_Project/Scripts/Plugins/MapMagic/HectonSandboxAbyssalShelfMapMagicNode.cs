@@ -96,14 +96,16 @@ namespace MapMagic.Nodes.MatrixGenerators
 
             NativeArray<float> rawHeights = default;
             NativeArray<float> quantizedHeights = default;
+            int rawHeightsRegistrationId = 0;
+            int quantizedHeightsRegistrationId = 0;
             JobHandle generationHandle = default;
             bool generationHandleScheduled = false;
             try
             {
                 rawHeights = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 quantizedHeights = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                RegisterTempJobArray(rawHeights, nameof(rawHeights));
-                RegisterTempJobArray(quantizedHeights, nameof(quantizedHeights));
+                rawHeightsRegistrationId = RegisterTempJobArray(rawHeights, nameof(rawHeights));
+                quantizedHeightsRegistrationId = RegisterTempJobArray(quantizedHeights, nameof(quantizedHeights));
 
                 double sampleCellSizeMeters = ResolveCellSizeMeters(dst);
                 AbsoluteUniversePosition worldOriginAup = HectonSandboxAbyssalShelfMath.BuildAupXZ(
@@ -217,27 +219,29 @@ namespace MapMagic.Nodes.MatrixGenerators
                 if (generationHandleScheduled)
                     DispatcherJobSwap.TryComplete(ref generationHandle, forceComplete: true);
 
-                if (rawHeights.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(rawHeights);
-                    rawHeights.Dispose();
-                }
-
-                if (quantizedHeights.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(quantizedHeights);
-                    quantizedHeights.Dispose();
-                }
+                DisposeTracked(ref rawHeights, ref rawHeightsRegistrationId);
+                DisposeTracked(ref quantizedHeights, ref quantizedHeightsRegistrationId);
             }
         }
 
-        private static void RegisterTempJobArray(NativeArray<float> array, string label)
+        private static int RegisterTempJobArray(NativeArray<float> array, string label)
         {
-            NativeMemorySentinel.RegisterNativeArray(
+            return NativeMemorySentinel.RegisterNativeArray(
                 array,
                 NativeMemoryOwner,
                 label,
                 NativeAllocationLifetime.TempJob);
+        }
+
+        private static void DisposeTracked(ref NativeArray<float> array, ref int registrationId)
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.Unregister(registrationId);
+            registrationId = 0;
+            array.Dispose();
+            array = default;
         }
 
         private static double ResolveCellSizeMeters(MatrixWorld matrix)

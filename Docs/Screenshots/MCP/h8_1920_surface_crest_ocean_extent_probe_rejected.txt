@@ -1,0 +1,4 @@
+﻿captureTruth=disabled_diagnostic_route
+route=H8VisualProofCapture1912.CaptureSurfaceCrestSkyCardHorizonProbeAndExit
+status=REJECTED_DISABLED_DIRECT_EXECUTE_METHOD
+reason=mutating diagnostic proof route is quarantined and cannot be used as canonical acceptance proof

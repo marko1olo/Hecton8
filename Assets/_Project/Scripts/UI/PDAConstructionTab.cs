@@ -503,9 +503,6 @@ namespace Hecton8.UI
                 case PDAEventType.Opened:
                     HandlePdaOpened(payload.CurrentTab);
                     break;
-                case PDAEventType.Closed:
-                    HandlePdaClosed(payload.DurationSeconds);
-                    break;
                 case PDAEventType.TabChanged:
                     HandlePdaTabChanged(payload.PreviousTab, payload.CurrentTab);
                     break;
@@ -536,10 +533,6 @@ namespace Hecton8.UI
                 Refresh(true);
                 RegisterTick();
             }
-        }
-
-        private void HandlePdaClosed(float _)
-        {
         }
 
         private void HandlePdaTabChanged(int _, int newTab)

@@ -36,6 +36,12 @@ Every generated visual asset must therefore ship as:
 - Separate collision proxy assets or primitive collider children named `COL_*`.
 - A validation report or manifest with triangle counts, UV density, material slots, collider type, and failure gates.
 
+## 0A. Runtime And Hot-Path Boundary
+
+The runtime owner for generated models is streaming, culling, instancing, shader animation, LOD selection, and interaction through serialized anchors/proxies. It is not generation.
+
+Hot paths must not allocate or mutate mesh topology, vertex/index buffers, UVs, tangents, texture pixels, atlas data, material instances, collider cooking, LOD chains, prefab structure, sockets, anchors, or validation manifests. `GlobalQualityWeight` may select prebuilt variants, distances, density, shader presentation, and residency only. It must not change vertex channel meaning, collider identity, socket names, save identity, prefab ownership, or gameplay truth.
+
 ## 1. Routing Map
 
 If a task asks an agent to generate or improve a 3D asset, route it through the relevant file before writing code:

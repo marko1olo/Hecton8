@@ -3,6 +3,12 @@
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Scope: kelp, seaweed, coral, roots, abyssal flora, static biological growth, harvestable plants, and non-fauna organic props.
 
+## First-20 Route Hook
+
+- First-20 moment: first colorful shallow flora/coral read, harvestable plant, route-cover plant mass, reef silhouette, or biolum/evidence organism in the opening path.
+- Route blocker removed: prevents shallow biology from becoming dark abyss leftovers, flat cards, primitive tubes, noisy blobs, or shader glow with no grown structure.
+- Proof class: STATIC_DOC until growth manifest, vertex-color semantic proof, UV/atlas proof, LOD/anchor proof, interaction proxy proof, compact capture, and route screenshot exist.
+
 ## 1. Organic Asset Law
 
 Flora and coral are not primitive cylinders, spheres, ribbons, or cones. Those shapes are allowed only as construction scaffolds. The saved mesh must include asymmetry, taper, branching hierarchy, secondary silhouette breakup, thickness variation, scars, pores, cavities, bent growth direction, and anchor geometry.
@@ -117,6 +123,12 @@ Evidence class: STATIC_SOURCE only. Compile, Unity import, cut-mask capture, Fra
 | Runtime | Owner / boundary | Static route | GlobalQualityWeight consequence | Missing proof |
 |---|---|---|---|---|
 | `Assets/_Project/Scripts/World/SargassumCutManager.cs` | `Hecton8.World`, `SystemID.WorldSargassum`; runtime cut-mask and terrain damage-volume service for sargassum/flora presentation. It does not generate flora/coral meshes, author root anchors, or own harvest/collision truth. | Registers global `ISargassumCutWriteService`, tick/slow/late-frame routes, DataVault stamp command buffers, compute-shader cut masks, ping-pong render textures, and shader globals for cut/damage response. External cuts enter through `RegisterExternalCut`/service calls; recent cut heat is registered in `WorldSpatialHashGrid`. | `GlobalQualityWeight` scales mask and damage-volume resolution with hysteresis. Mesh topology, vertex color semantics, root identity, harvest point identity, and collision proxies must not change by runtime mask resolution. | No generated asset readback, shader cut visual capture, compact/high comparison, Frame Debugger/GPU profiler, GCMonitor, or gameplay cut proof was provided by this static audit. |
+
+## 7.2 Runtime And Hot-Path Boundary
+
+Flora/coral runtime truth is root/anchor identity, harvest point identity, collision or trigger proxy, shader vertex color semantics, placement owner, and save/respawn state where applicable. The mesh package, UVs, atlas, masks, LODs, and interaction proxies are offline products.
+
+Hot paths must not generate branches, blades, coral pores, UVs, atlas entries, vertex color semantics, colliders, harvest anchors, or material instances. Runtime may bend, pulse, cut-mask, fade, stream, and instance prebuilt assets through approved shader/DataVault/owner routes. `GlobalQualityWeight` may scale presentation density, mask resolution, field population, and LOD distance only; it must not change root identity, harvest truth, collision proxy route, placement truth, or save identity.
 
 ## 8. Rejection Gates
 

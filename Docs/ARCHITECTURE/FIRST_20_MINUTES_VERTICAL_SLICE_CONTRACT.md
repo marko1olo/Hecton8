@@ -69,7 +69,7 @@ The project may proceed broadly while this route is being proven, but broad work
 
 |---|---|
 
-| Boot | New Game uses `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`; load-game resumes may still enter `02_HECTON_WORLD` directly from `01_MAIN_MENU`. |
+| Boot | Current first-20 proof uses `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`. `01_ORBIT` remains an enabled standalone/YELLOW prologue route, but it is not mandatory first-20 acceptance until its route card is GREEN and the root scene-flow authority is updated. Load-game resumes may still enter `02_HECTON_WORLD` directly from `01_MAIN_MENU`. |
 
 | World load | One selected semi-open shallow/surface-adjacent route loads with terrain, water, lighting, fog, HUD, audio, spawn safety, and visual spectacle. |
 

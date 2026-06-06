@@ -31,7 +31,7 @@ It does not bind dictionary APIs such as `LZ4_loadDict`, `LZ4_compress_fast_cont
 [RULE] Precondition data before LZ4:
 - Sort by stable key.
 - Delta-pack monotonic fields.
-- Quantize floats to fixed-point when visually acceptable.
+- Quantize floats to fixed-point only when route-bible proof shows the quantization preserves gameplay truth, save identity, and the visual floor.
 - Split hot repeated enums/flags into byte planes.
 - RLE all-zero and repeated planes before LZ4.
 

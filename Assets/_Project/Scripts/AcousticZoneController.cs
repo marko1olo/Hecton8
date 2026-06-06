@@ -123,11 +123,6 @@ namespace Hecton8.Audio
             TryRaiseFloodMuffle(in payload);
         }
 
-        /// <summary>Compatibility no-op; SignalBus snapshots are flushed by <see cref="GlobalSignals"/>.</summary>
-        public static void FlushPending()
-        {
-        }
-
         public static void EnsureInitialized()
         {
             SignalCorridorRuntime.EnsureInitialized();
@@ -496,6 +491,28 @@ namespace Hecton8.Audio
         [Tooltip("Underwater loop pitch multiplier in the thermal tier.")]
         [SerializeField, Range(0.5f, 1.5f)] private float thermalTierAmbientPitchScale = 0.9f;
 
+        [Header("Music Ambient Integration")]
+        [Tooltip("Maximum underwater ambient-loop ducking applied while the music director owns the emotional foreground.")]
+        [SerializeField, Range(0f, 0.4f)] private float musicAmbientDuckMax = 0.16f;
+
+        [Tooltip("How quickly underwater ambient yields when music activity rises.")]
+        [SerializeField, Range(0.25f, 20f)] private float musicAmbientDuckAttackSharpness = 6.5f;
+
+        [Tooltip("How quickly underwater ambient returns after music activity releases.")]
+        [SerializeField, Range(0.25f, 20f)] private float musicAmbientDuckReleaseSharpness = 2.4f;
+
+        [Tooltip("Duck weight for exploration phrases. Keep subtle so ocean texture remains readable.")]
+        [SerializeField, Range(0f, 1f)] private float explorationMusicAmbientDuckWeight = 0.42f;
+
+        [Tooltip("Duck weight for base music beds.")]
+        [SerializeField, Range(0f, 1f)] private float baseMusicAmbientDuckWeight = 0.50f;
+
+        [Tooltip("Duck weight for tense music phrases.")]
+        [SerializeField, Range(0f, 1f)] private float tenseMusicAmbientDuckWeight = 0.72f;
+
+        [Tooltip("Duck weight for combat and authored override music.")]
+        [SerializeField, Range(0f, 1f)] private float foregroundMusicAmbientDuckWeight = 1f;
+
         [Header("Listener Fallback Processing")]
         [Tooltip("If mixer snapshot authoring is incomplete, apply listener-level low-pass/reverb fallback so underwater/interior contrast still exists.")]
         [SerializeField] private bool enableSourceLevelAcousticFallback = true;
@@ -609,6 +626,7 @@ namespace Hecton8.Audio
         [SerializeField] private string _debugSoundscapeTier;
         [SerializeField] private float _debugSoundscapeVolumeScale = 1f;
         [SerializeField] private float _debugSoundscapePitchScale = 1f;
+        [SerializeField] private float _debugMusicAmbientDuck;
         [SerializeField] private float _debugAcousticLowPassCutoff = 22000f;
         [SerializeField] private float _debugAcousticReverbDecay = 0f;
         [SerializeField] private float _debugImpactImpulse;
@@ -645,6 +663,7 @@ namespace Hecton8.Audio
         private IPhysicsStateEventService _physicsStateEvents;
         private int _nextAudioServiceResolveFrame;
         private float _nextPlayerResolveTime;
+        private HectonMusicDirector _cachedMusicDirector;
         private const float PlayerResolveRetryInterval = 1f;
         private const float SurfaceWeatherStateEpsilon = 0.001f;
         private float _nextBiomeMatrixResolveTime;
@@ -697,6 +716,7 @@ namespace Hecton8.Audio
         private SoundscapeTier _currentSoundscapeTier = SoundscapeTier.Shallow;
         private float _currentSoundscapeVolumeScale = 1f;
         private float _currentSoundscapePitchScale = 1f;
+        private float _currentMusicAmbientDuck01;
         private float _surfacePrecipitationIntensity;
         private float _surfaceElectricalActivity;
         private float _stormInterferencePulseTimer;
@@ -951,6 +971,9 @@ namespace Hecton8.Audio
                     CacheSoundscapeReadModel(currentService as ISoundscapeTierReadModel);
                     RefreshSoundscapeTierContext(true);
                     break;
+                case GlobalRegistryServiceSlot.MusicDirectorRuntime:
+                    CacheMusicDirector(currentService as HectonMusicDirector);
+                    break;
                 case GlobalRegistryServiceSlot.AtmosphereRuntime:
                     _atmosphereReadModel = currentService as IAtmosphereReadModel;
                     RefreshAtmosphereZoneCache();
@@ -1091,8 +1114,11 @@ namespace Hecton8.Audio
             _cachedSpatialAudioEmitterReadModel = null;
             _physicsStateEvents = null;
             _cachedSoundscapeReadModel = null;
+            _cachedMusicDirector = null;
             _atmosphereReadModel = null;
             _playerRuntimeContext = null;
+            _currentMusicAmbientDuck01 = 0f;
+            _debugMusicAmbientDuck = 0f;
             _nextAudioServiceResolveFrame = 0;
         }
 
@@ -1100,6 +1126,7 @@ namespace Hecton8.Audio
         {
             CacheAudioService(GlobalRegistry.Audio);
             CacheSoundscapeReadModel(GlobalRegistry.SoundscapeTierReadModel);
+            CacheMusicDirector(GlobalRegistry.MusicDirector);
             _atmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
             _physicsStateEvents = GlobalRegistry.PhysicsStateEvents;
             _playerRuntimeContext = GlobalRegistry.Player;
@@ -1117,6 +1144,11 @@ namespace Hecton8.Audio
         {
             _cachedSoundscapeReadModel = runtime;
             _nextSoundscapeResolveTime = 0f;
+        }
+
+        private void CacheMusicDirector(HectonMusicDirector musicDirector)
+        {
+            _cachedMusicDirector = musicDirector != null && musicDirector.isActiveAndEnabled ? musicDirector : null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1207,7 +1239,10 @@ namespace Hecton8.Audio
             {
                 TryBindPlayerBuoyancyFromCachedContext();
                 if (!HasValidPlayerBuoyancyState())
+                {
+                    UpdateMusicAmbientDucking(AcousticZoneState.Surface, deltaTime);
                     return;
+                }
             }
 
             // Current acoustic zone.
@@ -1215,6 +1250,7 @@ namespace Hecton8.Audio
             currentZone = ResolveStableZone(currentZone);
             RefreshBiomeAmbientContext();
             RefreshSoundscapeTierContext(false);
+            UpdateMusicAmbientDucking(currentZone, deltaTime);
             UpdateStormInterferenceAudio(currentZone, deltaTime);
             QueueAmbientLoopState(currentZone);
             UpdateUnderwaterVegetationOverlay(currentZone, deltaTime);
@@ -1564,11 +1600,13 @@ namespace Hecton8.Audio
             _debugAmbientSummary = string.IsNullOrWhiteSpace(_currentAmbientSummary) ? "None" : _currentAmbientSummary;
             _debugSnapshotCoverage = BuildSnapshotCoverageSummary();
             _debugMixerCoverage = BuildMixerCoverageSummary();
-            _debugAmbientVolume = _ambientSourceBaseVolume * _currentAmbientVolumeScale * _currentSoundscapeVolumeScale;
+            float musicAmbientDuckScale = zone == AcousticZoneState.Underwater ? ResolveMusicAmbientDuckVolumeScale() : 1f;
+            _debugAmbientVolume = _ambientSourceBaseVolume * _currentAmbientVolumeScale * _currentSoundscapeVolumeScale * musicAmbientDuckScale;
             _debugAmbientPitch = _ambientSourceBasePitch * _currentAmbientPitchScale * _currentSoundscapePitchScale;
             _debugSoundscapeTier = ResolveSoundscapeTierLabel(_currentSoundscapeTier);
             _debugSoundscapeVolumeScale = _currentSoundscapeVolumeScale;
             _debugSoundscapePitchScale = _currentSoundscapePitchScale;
+            _debugMusicAmbientDuck = _currentMusicAmbientDuck01;
             _debugAcousticLowPassCutoff = _currentAcousticLowPassCutoffHz;
             _debugAcousticReverbDecay = _currentAcousticReverbDecayTime;
             _debugImpactImpulse = _acousticImpactImpulse;
@@ -2338,6 +2376,7 @@ namespace Hecton8.Audio
                 targetPitch *= _currentAmbientPitchScale;
                 targetVolume *= _currentSoundscapeVolumeScale;
                 targetPitch *= _currentSoundscapePitchScale;
+                targetVolume *= ResolveMusicAmbientDuckVolumeScale();
                 if (_stormAmbientInterference > 0.001f)
                 {
                     targetVolume *= math.lerp(1f, math.max(0.1f, 1f - stormAmbientDuckMax), _stormAmbientInterference);
@@ -2351,6 +2390,70 @@ namespace Hecton8.Audio
 
             if (math.abs(ambientSource.pitch - targetPitch) > 0.01f)
                 ambientSource.pitch = targetPitch;
+        }
+
+        private void UpdateMusicAmbientDucking(AcousticZoneState zone, float deltaTime)
+        {
+            float target01 = ResolveMusicAmbientDuckTarget01(zone);
+            float sharpness = target01 > _currentMusicAmbientDuck01
+                ? musicAmbientDuckAttackSharpness
+                : musicAmbientDuckReleaseSharpness;
+
+            float blendT = deltaTime <= 0f
+                ? 1f
+                : ApproximateOneMinusExpNegPositive(math.max(0.01f, sharpness) * deltaTime);
+
+            _currentMusicAmbientDuck01 = math.saturate(math.lerp(_currentMusicAmbientDuck01, target01, blendT));
+            _debugMusicAmbientDuck = _currentMusicAmbientDuck01;
+        }
+
+        private float ResolveMusicAmbientDuckTarget01(AcousticZoneState zone)
+        {
+            if (zone != AcousticZoneState.Underwater)
+                return 0f;
+
+            HectonMusicDirector musicDirector = _cachedMusicDirector;
+            if (musicDirector == null || !musicDirector.isActiveAndEnabled)
+                return 0f;
+
+            HectonMusicDirector.MusicActivityReason reason = musicDirector.CurrentMusicActivityReason;
+            if (reason == HectonMusicDirector.MusicActivityReason.Emergency ||
+                reason == HectonMusicDirector.MusicActivityReason.Silent ||
+                reason == HectonMusicDirector.MusicActivityReason.Rest)
+            {
+                return 0f;
+            }
+
+            float activity01 = math.saturate(musicDirector.CurrentMusicActivity01);
+            if (activity01 <= 0.001f)
+                return 0f;
+
+            return math.saturate(activity01 * ResolveMusicAmbientDuckReasonWeight01(reason));
+        }
+
+        private float ResolveMusicAmbientDuckReasonWeight01(HectonMusicDirector.MusicActivityReason reason)
+        {
+            switch (reason)
+            {
+                case HectonMusicDirector.MusicActivityReason.Exploration:
+                case HectonMusicDirector.MusicActivityReason.Menu:
+                case HectonMusicDirector.MusicActivityReason.Prologue:
+                    return explorationMusicAmbientDuckWeight;
+                case HectonMusicDirector.MusicActivityReason.Base:
+                    return baseMusicAmbientDuckWeight;
+                case HectonMusicDirector.MusicActivityReason.Tense:
+                    return tenseMusicAmbientDuckWeight;
+                case HectonMusicDirector.MusicActivityReason.Combat:
+                case HectonMusicDirector.MusicActivityReason.Override:
+                    return foregroundMusicAmbientDuckWeight;
+                default:
+                    return 0f;
+            }
+        }
+
+        private float ResolveMusicAmbientDuckVolumeScale()
+        {
+            return math.lerp(1f, math.max(0.1f, 1f - musicAmbientDuckMax), math.saturate(_currentMusicAmbientDuck01));
         }
 
         private void QueueAmbientLoopState(AcousticZoneState zone)
@@ -3615,6 +3718,20 @@ namespace Hecton8.Audio
             if (stormStaticUnderwaterVolumeScale > 1f) stormStaticUnderwaterVolumeScale = 1f;
             if (stormAmbientDuckMax < 0f) stormAmbientDuckMax = 0f;
             if (stormAmbientDuckMax > 0.5f) stormAmbientDuckMax = 0.5f;
+            if (musicAmbientDuckMax < 0f) musicAmbientDuckMax = 0f;
+            if (musicAmbientDuckMax > 0.4f) musicAmbientDuckMax = 0.4f;
+            if (musicAmbientDuckAttackSharpness < 0.25f) musicAmbientDuckAttackSharpness = 0.25f;
+            if (musicAmbientDuckAttackSharpness > 20f) musicAmbientDuckAttackSharpness = 20f;
+            if (musicAmbientDuckReleaseSharpness < 0.25f) musicAmbientDuckReleaseSharpness = 0.25f;
+            if (musicAmbientDuckReleaseSharpness > 20f) musicAmbientDuckReleaseSharpness = 20f;
+            if (explorationMusicAmbientDuckWeight < 0f) explorationMusicAmbientDuckWeight = 0f;
+            if (explorationMusicAmbientDuckWeight > 1f) explorationMusicAmbientDuckWeight = 1f;
+            if (baseMusicAmbientDuckWeight < 0f) baseMusicAmbientDuckWeight = 0f;
+            if (baseMusicAmbientDuckWeight > 1f) baseMusicAmbientDuckWeight = 1f;
+            if (tenseMusicAmbientDuckWeight < 0f) tenseMusicAmbientDuckWeight = 0f;
+            if (tenseMusicAmbientDuckWeight > 1f) tenseMusicAmbientDuckWeight = 1f;
+            if (foregroundMusicAmbientDuckWeight < 0f) foregroundMusicAmbientDuckWeight = 0f;
+            if (foregroundMusicAmbientDuckWeight > 1f) foregroundMusicAmbientDuckWeight = 1f;
             if (stormAmbientPitchDropMax < 0f) stormAmbientPitchDropMax = 0f;
             if (stormAmbientPitchDropMax > 0.25f) stormAmbientPitchDropMax = 0.25f;
             if (stormAmbientPitchFlutterMax < 0f) stormAmbientPitchFlutterMax = 0f;

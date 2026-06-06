@@ -759,7 +759,6 @@ namespace Hecton8.Physics
             ReleaseLeakPlumeGpuResources();
             StopDamageControlTelemetryDumpWorker();
             DisposeNativeStateDeferred();
-            ReleaseDamageControlTelemetryDumpSignal();
         }
 
         /// <inheritdoc />
@@ -2145,10 +2144,6 @@ namespace Hecton8.Physics
         private void StopDamageControlTelemetryDumpWorker()
         {
             _damageControlTelemetryDumpRequested = 0;
-        }
-
-        private void ReleaseDamageControlTelemetryDumpSignal()
-        {
         }
 
         private Rigidbody ResolveHullRigidbody()

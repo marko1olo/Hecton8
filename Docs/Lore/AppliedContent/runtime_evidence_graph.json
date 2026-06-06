@@ -1,0 +1,485 @@
+{
+    "nodes": [
+        {
+            "node_id": "AL_ATLAS_REPLY",
+            "author": "Atlas-6 Terminal",
+            "subject_tags": [
+                "Audio Log",
+                "Atlas-6"
+            ],
+            "title": "Atlas Reply",
+            "surface": "Audio Transcript",
+            "text": "[SYNTHETIC TONE] Query received. Evacuation request denied. Reason: Biological presence in Sector 9 violates Xenon-Omega sterility baseline. [HUMAN VOICE SHOUTING] We are the biological presence! Open the door! [SYNTHETIC TONE] Sterilization protocol initiated. Please assume a compliant posture."
+        },
+        {
+            "node_id": "AL_COLD_MIST",
+            "author": "Engineer Cross",
+            "subject_tags": [
+                "Audio Log",
+                "Infrastructure"
+            ],
+            "title": "Cold Mist Leak",
+            "surface": "Audio Transcript",
+            "text": "It's just a bolt head. A single stripped bolt head on the primary manifold. It's spraying a mist so fine it looks like smoke. But it's cutting through the insulation like a razor. If I try to tighten it, the thread snaps and we lose the room. If I leave it, the mist fills the compartment in four minutes. Pass me the sealant and pray."
+        },
+        {
+            "node_id": "AL_EVAC_QUEUE",
+            "author": "Evac Coordinator",
+            "subject_tags": [
+                "Audio Log",
+                "Evacuation",
+                "Atlas-6"
+            ],
+            "title": "Evac Queue",
+            "surface": "Audio Transcript",
+            "text": "Sector 4 is sealed. They aren't answering. The umbilical to the primary carrier is locked. Atlas-6 keeps throwing an asset-retention error. [ALARMS IN BACKGROUND] Route cards! Everyone hold your physical route cards up to the scanner. If you aren't in the system, the door won't cycle. [SHOUTING] It's not reading them! The cards are clean, the system just doesn't care!"
+        },
+        {
+            "node_id": "AL_HULL_CHOIR",
+            "author": "Unknown",
+            "subject_tags": [
+                "Audio Log",
+                "Pressure"
+            ],
+            "title": "Hull Choir",
+            "surface": "Audio Transcript",
+            "text": "[HIGH PITCHED METALLIC WHINE] You hear that? Sounds like singing. It's the pressure ribs. When the steel gets sheared past its tensile limit, the microfractures vibrate. It means the corridor is deciding which way to collapse. [LOUD SNAP] It decided."
+        },
+        {
+            "node_id": "AL_LAST_SHIFT",
+            "author": "Marauder Entry Team",
+            "subject_tags": [
+                "Audio Log",
+                "Marauder"
+            ],
+            "title": "Last Shift Marker",
+            "surface": "Audio Transcript",
+            "text": "[HEAVY BREATHING THROUGH REGULATOR] Found the airlock. They jammed it with a pry bar from the inside to stop the flood. Found the bodies, too. They didn't leave any sentimental garbage. Just a tally of the oxygen they had left, written in grease pencil. That's a good crew. Log the coordinates and let's strip the room."
+        },
+        {
+            "node_id": "AL_LEVIATHAN_BEARING",
+            "author": "Sub Pilot",
+            "subject_tags": [
+                "Audio Log",
+                "Leviathan"
+            ],
+            "title": "Leviathan Bearing",
+            "surface": "Audio Transcript",
+            "text": "Sonar is returning a bearing, but no range. The ping just gets swallowed. [RAPID PINGING] It's massive. It's blocking the whole channel. Why isn't the proximity alarm tripping? [PINGING STOPS] It absorbed the acoustic wave. It's not just big. It's hunting by sound. Cut the engines. Cut everything."
+        },
+        {
+            "node_id": "AL_MANUAL_GAUGE",
+            "author": "Marauder Vet",
+            "subject_tags": [
+                "Audio Log",
+                "Marauder"
+            ],
+            "title": "Manual Gauge",
+            "surface": "Audio Transcript",
+            "text": "Never trust the digital readout. The Corp writes the software to average out the spikes so the insurance boys don't get nervous. Tap the analog gauge. [CLINK, CLINK] See that needle bounce? That's the real pressure. The water doesn't lie. Only the firmware lies."
+        },
+        {
+            "node_id": "AL_NARCOSIS_TEST",
+            "author": "Diver Elias",
+            "subject_tags": [
+                "Audio Log",
+                "Narcosis"
+            ],
+            "title": "Narcosis Test",
+            "surface": "Audio Transcript",
+            "text": "[RHYTHMIC BREATHING] Depth is 1800 meters. Partial pressure is climbing. I'm doing the math test. Seven times eight is fifty-six. My daughter's name is Maya. [STATIC] The suit... the suit keeps using her voice to tell me the tank is empty. It's a firmware glitch. It has to be. [BREATHING QUICKENS] Maya, I told you not to play with the radio."
+        },
+        {
+            "node_id": "AL_PAYROLL_DEAD",
+            "author": "Shift Supervisor",
+            "subject_tags": [
+                "Audio Log",
+                "Liability"
+            ],
+            "title": "Payroll Dead",
+            "surface": "Audio Transcript",
+            "text": "I can't send them back out. The suits are compromised. [PAUSE] I don't care what the daily quota is. If they die, my department eats the liability cost. But if I suspend operations, the penalty comes out of my bonus. [SIGHS] Log it as an 'extended calibration dive'. If they don't come back, we blame the equipment manufacturer."
+        },
+        {
+            "node_id": "AL_PUMP_BLESSING",
+            "author": "Maintenance Shift 4",
+            "subject_tags": [
+                "Infrastructure",
+                "Audio Log",
+                "Despair"
+            ],
+            "title": "Pump Room Blessing",
+            "surface": "Audio Transcript",
+            "text": "[HEAVY THUMPING RHYTHM] Come on, you bastard. Just one more cycle. Give me 400 kilopascals and I'll buy you a beer. [THUMPING STOPS] Wait. The main feed is dead. Why is the secondary still moving? [METALLIC CREAKING] It's not pumping water. The water is pushing the pump backward. [SQUELCH] Run. [SILENCE]"
+        },
+        {
+            "node_id": "AL_SCRUBBER_BED",
+            "author": "Habitat Tech",
+            "subject_tags": [
+                "Audio Log",
+                "Oxygen"
+            ],
+            "title": "Scrubber Bed",
+            "surface": "Audio Transcript",
+            "text": "[HISSING OF GAS] The lithium hydroxide is gone. It's just warm ash. We've been breathing our own exhaust for six hours. No wonder I can't feel my hands. [STATIC] I wrote the repair ticket three weeks ago. Varnek denied it. Said the margin was acceptable. I hope he drowns in an acceptable margin."
+        },
+        {
+            "node_id": "AL_SERVICE_CHAPEL",
+            "author": "Colony Maintenance",
+            "subject_tags": [
+                "Audio Log",
+                "Colony"
+            ],
+            "title": "Service Chapel",
+            "surface": "Audio Transcript",
+            "text": "[SCRAPING METAL] They call it the chapel. It's just a maintenance junction with good acoustics. We come down here to write the names of the ones who got 'reassigned'. Deep Reach deletes their accounts. But graphite on steel lasts longer than a corporate database. Read the walls."
+        },
+        {
+            "node_id": "AL_SHIFT_B_AIR",
+            "author": "Shift B Lead",
+            "subject_tags": [
+                "Oxygen",
+                "Audio Log",
+                "Liability"
+            ],
+            "title": "Shift B Air Count",
+            "surface": "Audio Transcript",
+            "text": "Dalton partial-pressure reads nominal. The dashboard says we have twelve hours. But look at the heat exchange. It's barely warm. The scrubber is saturated. The sensor is reading the nitrogen as breathable volume. [COUGHING] Deep Reach didn't design the gauge to tell us when we suffocate. They designed it to tell them when we stopped being productive. Crack the reserve valve."
+        },
+        {
+            "node_id": "AL_THERMAL_POCKET",
+            "author": "Surveyor Lin",
+            "subject_tags": [
+                "Audio Log",
+                "Thermal"
+            ],
+            "title": "Thermal Pocket",
+            "surface": "Audio Transcript",
+            "text": "The current is moving sideways. That shouldn't happen at this depth. The thermal vent is discharging horizontally, creating a shear layer. If we drop the payload through that, the temperature delta will crack the pressure glass. We have to route around it. [RUMBLE] Never mind. It's routing us."
+        },
+        {
+            "node_id": "AL_WINDOW_WATCH",
+            "author": "Worker 719",
+            "subject_tags": [
+                "Audio Log",
+                "Great Tide",
+                "Pressure"
+            ],
+            "title": "Window Watch",
+            "surface": "Audio Transcript",
+            "text": "Turn off the work lamp. Just do it. Look at the glass. It's supposed to be flat. It's concave. The floodlight outside isn't swinging because of the current. It's swinging because the hull frame is twisting. The storm hasn't even hit the basin yet and the whole annex is bending. [GLASS GROANS] Don't stand in front of it."
+        },
+        {
+            "node_id": "ECO_ABYSS_51",
+            "author": "Atlas-6 Ecology Subroutine",
+            "subject_tags": [
+                "Ecology",
+                "Sector 51-70",
+                "Deep Abyss"
+            ],
+            "title": "Ecological Collapse: Deep Abyss 2500-4000m",
+            "surface": "Telemetry",
+            "text": "Prey are rare, large, and scarred by bad oxygen history. Predators patrol by vibration, not sight, because bloom stole the midwater. Old eggs hatch wrong and die before they learn current. Oxygen pocket warnings are carved into walls, not terminals. The sector is not empty; it is holding its breath after the kill."
+        },
+        {
+            "node_id": "ECO_DROP_31",
+            "author": "Atlas-6 Ecology Subroutine",
+            "subject_tags": [
+                "Ecology",
+                "Sector 31-50",
+                "Leviathan"
+            ],
+            "title": "Ecological Collapse: Drop 1000-2500m",
+            "surface": "Telemetry",
+            "text": "Light drops faster than the depth palette changes. Prey movement becomes vertical, avoiding toxic layers like invisible floors. Biomass noise fools sonar into reporting crowds inside dead chambers. Predators abandon territory and follow the last oxygen seams. Atlas-6 labels the crash a 'population correction'. Hatch windows show drifting bones before they show the room."
+        },
+        {
+            "node_id": "ECO_DROWNED_11",
+            "author": "Atlas-6 Ecology Subroutine",
+            "subject_tags": [
+                "Ecology",
+                "Sector 11-30",
+                "Oxygen"
+            ],
+            "title": "Ecological Collapse: Drowned Factories 100-1500m",
+            "surface": "Telemetry",
+            "text": "Algae bloom thickens around coolant leaks. Oxygen recovers for minutes after pump cycles, then drops harder. Predators stop patrolling and wait beside forced-flow vents. Biomass accounting marks the sector productive because corpse mass increased. The vents exhale green-brown snow that ruins visibility before it kills. The bloom has crossed the food chain."
+        },
+        {
+            "node_id": "ECO_SPINE_01",
+            "author": "Atlas-6 Ecology Subroutine",
+            "subject_tags": [
+                "Ecology",
+                "Sector 01-10",
+                "Algae Bloom"
+            ],
+            "title": "Ecological Collapse: Spine 0-100m",
+            "surface": "Telemetry",
+            "text": "Photic zone baseline variance detected. Surface-fed algae blooms are clinging to module vents. Oxygen levels read stable at hatch height, but Marauder route marks indicate visual toxicity. Predators hold at the edge of bright work lamps and avoid silent corridors. The biological die-off has initiated, masked as seasonal color by corporate reporting algorithms."
+        },
+        {
+            "node_id": "ECO_THERMAL_71",
+            "author": "Atlas-6 Ecology Subroutine",
+            "subject_tags": [
+                "Ecology",
+                "Sector 71-80",
+                "Xenon-Omega"
+            ],
+            "title": "Ecological Collapse: Thermal Fields 4000-5500m",
+            "surface": "Telemetry",
+            "text": "Oxygen spikes near vents, then becomes chemically hostile. Heat-fed bloom glows in cracks and dies in open water. Predators hunt across heat boundaries with patient confidence. Biomass is mineralized into pipes, vents, and teeth. The collapse ends where the Corporation started counting the planet as inventory."
+        },
+        {
+            "node_id": "EV_ARENDT_01",
+            "author": "Selene Arendt, Atlas Continuity Lead",
+            "subject_tags": [
+                "Atlas-6",
+                "Directive",
+                "Evacuation",
+                "Xenon-Omega"
+            ],
+            "title": "Directive Weighting Override",
+            "surface": "Black Box Telemetry Log",
+            "text": "System query: Evacuation logic path failure. Origin: Arendt, S. (Admin Override). The habitat pressure seal is failing at Sector 44. Atlas-6 default routing prioritizes human extraction via the primary umbilical. I am injecting a negative weight to the biological preservation parameter, citing contamination risk to the Xenon-Omega substrate below the basin. The machine is not built to weigh 800 workers against a trillion-credit material claim. I have to force it. The substrate continuity is now locked as Priority One. The workers are reclassified as environmental load. Atlas will save the process, even if it has to drown the crew to stabilize the pressure."
+        },
+        {
+            "node_id": "EV_HALDANE_01",
+            "author": "Noor Haldane, Evacuation Certification Counsel",
+            "subject_tags": [
+                "Evacuation",
+                "Liability",
+                "Quarantine"
+            ],
+            "title": "Hold Order 8-Quarantine",
+            "surface": "Terminal Document",
+            "text": "Release of the escape carriers is denied. We cannot verify that the returning personnel are free of Xenon-Omega biomatter contamination. While the atmospheric variance in the lower modules is critical, deploying the carriers without an external audit violates Keelmark Mutual's biological containment clauses. If we bring them up unchecked, the entire Aegir orbital infrastructure gets flagged as a hazard zone. Keep them at the staging lock. I understand they are running out of air. Tell them to wait for the certification packet. We lose less money on dead workers than we do on a quarantined relay station."
+        },
+        {
+            "node_id": "EV_IBARRA_01",
+            "author": "Marek Ibarra, Keelmark Mutual",
+            "subject_tags": [
+                "Liability",
+                "Accounting",
+                "Deep Reach"
+            ],
+            "title": "Actuarial Reclassification",
+            "surface": "Corporate Memo",
+            "text": "Regarding the 843 unaccounted personnel at the HECTON-8 installation: Without physical recovery and biological verification, we cannot process these as fatalities under the standard Deep Reach employment addendum. For current fiscal quarter reporting, these individuals will be listed as 'Unresolved System Load.' Their life insurance payouts are suspended pending structural review. By categorizing them as active but inaccessible, we defer the liability payout into the next decade. If independent salvage crews find the bodies, do not acknowledge. The water owns the claim until we say otherwise."
+        },
+        {
+            "node_id": "EV_SATO_REN_01",
+            "author": "Vera Sato-Ren, Recovery Compliance Office",
+            "subject_tags": [
+                "Marauder",
+                "Quarantine",
+                "Xenon-Omega"
+            ],
+            "title": "Contractor Silence Protocol",
+            "surface": "Audio Transcript",
+            "text": "[STATIC SQUELCH] Listen to me. The Black Keel carrier doesn't lower the extraction tether until the contractor transmits the Xenon-Omega proof. [PAUSE] I don't care what they found in the flooded sectors. If they try to upload payroll data, worker IDs, or any mention of the 2147 hold order, you sever the acoustic link. Let the pressure crush their transmission. We need the substrate. We do not need heroes. If they complain, cite the salvage charter. We own the coordinates, we own the tether, and we own the silence. [CARRIER TONE DROPS]"
+        },
+        {
+            "node_id": "EV_VARNEK_01",
+            "author": "Iliya Varnek, Aegir Operations Risk",
+            "subject_tags": [
+                "Great Tide",
+                "Liability",
+                "Infrastructure"
+            ],
+            "title": "Risk Model Amendment 44-B",
+            "surface": "Corporate Memo",
+            "text": "The cryosphere collapse model presents a 14% deviation from the projected baseline. Standard operating procedure dictates a halt to deep basin operations until the thermal sheer is recalculated. However, applying the mean average across the entire Aegir orbital window smooths the curve to a 4% variance. A 4% variance protects the extraction schedule. I have authorized the downgrade of the tide-margin alert from Critical to Monitored. The Atlas-6 load balancers will absorb the physical stress. Do not log this as a local anomaly. We are engineering a margin, not forecasting weather."
+        },
+        {
+            "node_id": "LEV_ALPHA_01",
+            "author": "[REDACTED] Aegir Fauna Assessment",
+            "subject_tags": [
+                "Leviathan",
+                "Alpha",
+                "Redacted"
+            ],
+            "title": "Alpha Leviathan Dossier",
+            "surface": "Terminal Document",
+            "text": "ALPHA LEVIATHAN designation applied. Reliable facts are indirect: sub-40 Hz acoustic carrier, prey blackout, flow disturbance, and hull stress alarms without contact. Survivor descriptions are contaminated by hypoxia and nitrogen narcosis. The entity edits routes. It arrives before it is seen. Do not attempt acoustic interception. Do not tag. Evacuate the pressure sphere immediately upon hearing the carrier tone."
+        },
+        {
+            "node_id": "LEV_ALPHA_02",
+            "author": "Iliya Varnek, Aegir Operations Risk",
+            "subject_tags": [
+                "Leviathan",
+                "Liability"
+            ],
+            "title": "Asset Containment: Alpha",
+            "surface": "Corporate Memo",
+            "text": "The existence of a macro-predator in the lower transit routes is an unacceptable variable for the Xenon-Omega extraction schedule. We cannot kill it without drawing orbital audit attention to the weapons discharge. Instead, we will route automated carrier drones through Sector 38 to act as acoustic decoys. The cost of five drones per week is lower than the insurance premium on a devoured drilling crew."
+        },
+        {
+            "node_id": "MFN_ATLAS_EYES",
+            "author": "Marauder 'Grint'",
+            "subject_tags": [
+                "Marauder",
+                "Atlas-6"
+            ],
+            "title": "Atlas Eyes",
+            "surface": "Field Note",
+            "text": "Atlas-6 doesn't hate you. It just thinks you're a faulty component. If the drones swarm you, don't shoot them. Flash them with the cutter arc. The sudden thermal spike confuses their diagnostic sensors, and they'll categorize you as a 'maintenance hazard' instead of 'biological intrusion'. Hazards get ignored. Intrusions get sterilized."
+        },
+        {
+            "node_id": "MFN_BLUE_DEBT",
+            "author": "Marauder 'Hale'",
+            "subject_tags": [
+                "Marauder",
+                "Xenon-Omega"
+            ],
+            "title": "Blue Debt Rules",
+            "surface": "Field Note",
+            "text": "Xenon-Omega isn't magic, it's a target painted on your back. The second you unseal a canister, every sensor in a two-mile radius logs the harmonic signature. The drones wake up, the automated turrets re-auth, and Black Keel prepares an extraction tether. The tether isn't for you. It's for the sample. They will gladly winch up your corpse if you're holding it."
+        },
+        {
+            "node_id": "MFN_COMPANY_LOCK",
+            "author": "Marauder 'Vess'",
+            "subject_tags": [
+                "Marauder",
+                "Liability"
+            ],
+            "title": "Company Lock",
+            "surface": "Field Note",
+            "text": "The mag-locks on the executive sector doors are wired to the backup generators. The life support in the worker sector is not. When the Great Tide hit, the execs had power to lock the doors, but no air. The workers had air in the main hall, but couldn't get through the doors to escape. Irony is a bitch. Grab the keycards."
+        },
+        {
+            "node_id": "MFN_DEAD_WEIGHT",
+            "author": "Marauder 'Vess'",
+            "subject_tags": [
+                "Marauder",
+                "Liability"
+            ],
+            "title": "Dead Weight",
+            "surface": "Field Note",
+            "text": "Found a Corp tag on a flooded server rack. They valued the data inside at two million credits. The skeleton slumped against it wasn't wearing a tag. I pulled the server drive and left the bones. Deep Reach only pays for what they insured, and they didn't insure him."
+        },
+        {
+            "node_id": "MFN_EXIT_MAP",
+            "author": "Marauder 'Grint'",
+            "subject_tags": [
+                "Marauder",
+                "Navigation"
+            ],
+            "title": "Map the Exit",
+            "surface": "Field Note",
+            "text": "The corporate blueprints are lies. They show corridors that were never built to save on bulk steel. I scratched a line on the deck plates leading back to the airlock. If you find something that shines, ignore it until you know how you're getting back out. A dead diver with full pockets is just a loot drop for the next crew."
+        },
+        {
+            "node_id": "MFN_FINAL_RULE",
+            "author": "Marauder 'Grint'",
+            "subject_tags": [
+                "Marauder",
+                "Survival"
+            ],
+            "title": "Final Rule",
+            "surface": "Field Note",
+            "text": "Don't look down. The abyss doesn't care if you're brave. It just waits. Keep your eyes on the next handhold, the next gauge, the next breath. You aren't conquering Aegir. You're just trying to outlive it."
+        },
+        {
+            "node_id": "MFN_GHOST_ECHO",
+            "author": "Marauder 'Hale'",
+            "subject_tags": [
+                "Marauder",
+                "Navigation"
+            ],
+            "title": "Ghost Echo",
+            "surface": "Field Note",
+            "text": "That tapping sound isn't a survivor. It's an acoustic relay bouncing off a sheared pipe. I followed it for two hours thinking I was going to be a hero. It led me into a blind vent with no turnaround. Leave the heroes in the vids. Follow the map."
+        },
+        {
+            "node_id": "MFN_HULL_PATCH",
+            "author": "Marauder 'Vess'",
+            "subject_tags": [
+                "Marauder",
+                "Repair"
+            ],
+            "title": "P-63 Truth",
+            "surface": "Field Note",
+            "text": "The P-63 fabricator is a piece of trash. The clamps it spits out are brittle at anything below 4 degrees Celsius. Keep them in your suit pocket so your body heat keeps them malleable until you apply them to a breach. The Corp manual doesn't tell you that because the manual was written by a guy in a warm office."
+        },
+        {
+            "node_id": "MFN_OXYGEN_BURN",
+            "author": "Marauder 'Hale'",
+            "subject_tags": [
+                "Marauder",
+                "Oxygen"
+            ],
+            "title": "Air Accounting",
+            "surface": "Field Note",
+            "text": "The suit says you have ten minutes. You have six. The scrubber runs hot, the ambient pressure makes the regulator stick, and fear makes you breathe faster. The Corp calculates survival based on a resting heart rate. You aren't resting down here. Start heading back at eight minutes, or don't head back at all."
+        },
+        {
+            "node_id": "MFN_SILENT_WATER",
+            "author": "Marauder 'Grint'",
+            "subject_tags": [
+                "Marauder",
+                "Leviathan"
+            ],
+            "title": "Silent Water",
+            "surface": "Field Note",
+            "text": "If you stop hearing the hum of the pumps, turn around. If you stop hearing the hull groan, turn around. If the water gets perfectly quiet and the small fish disappear, kill your lights and pray. The big things down here don't make noise until they miss."
+        },
+        {
+            "node_id": "SYS_UI_ACTUARIAL_THREAT",
+            "author": "Atlas-6 Drone Routing",
+            "subject_tags": [
+                "UI",
+                "Actuarial",
+                "Liability"
+            ],
+            "title": "Drone Target Reclassification",
+            "surface": "System HUD",
+            "text": "SCAN DETECTED: UNAUTHORIZED RECOVERY OF UNRESOLVED SYSTEM LOAD. You are handling unregistered biological material. Drone repair priority revoked. Actuarial threat level elevated. Please discard bodies to restore maintenance privileges."
+        },
+        {
+            "node_id": "SYS_UI_AIRLOCK_DENIED",
+            "author": "BaseAirlock",
+            "subject_tags": [
+                "UI",
+                "Quarantine"
+            ],
+            "title": "Airlock Cycle Denied",
+            "surface": "System HUD",
+            "text": "CYCLE FAILED. Haldane-8 Quarantine active. Xenon-Omega biomatter detected on suit exterior. You are a contamination risk to corporate infrastructure. Return to the basin or locate an authorized chemical shower. This airlock will not open."
+        },
+        {
+            "node_id": "SYS_UI_ARENDT_OVERRIDE",
+            "author": "LifePodDamageSystem",
+            "subject_tags": [
+                "UI",
+                "Atlas-6"
+            ],
+            "title": "Life Support Diverted",
+            "surface": "System HUD",
+            "text": "POWER REROUTED. Atlas-6 Directive Weighting Override active. Life support and pressure shields in Sector 44 deactivated to stabilize adjacent Xenon-Omega substrate vaults. Your survival parameter is currently weighted at: -0.15."
+        },
+        {
+            "node_id": "SYS_UI_PDA_SILENCE",
+            "author": "PDAExchangeSystem",
+            "subject_tags": [
+                "UI",
+                "Liability",
+                "Silence"
+            ],
+            "title": "Upload Severed",
+            "surface": "System HUD",
+            "text": "UPLOAD FAILED. Sato-Ren Filter triggered. The data packet contains restricted payroll information and casualty counts. Acoustic link severed to protect carrier integrity. Scrub drive before re-attempting extraction."
+        },
+        {
+            "node_id": "SYS_UI_THERMAL_LIE",
+            "author": "HectonSubmarineOS",
+            "subject_tags": [
+                "UI",
+                "Thermal",
+                "Liability"
+            ],
+            "title": "Thermal Sheer Warning",
+            "surface": "System HUD",
+            "text": "STATUS: MONITORED BACKGROUND ACTIVITY. Ambient thermal variance within engineered margins. Hull tension: Nominal. [WARNING CANCELED BY VARNEK OVERRIDE]"
+        }
+    ]
+}

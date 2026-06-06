@@ -1,0 +1,12 @@
+{
+    "node_id": "SYS_UI_PDA_SILENCE",
+    "author": "PDAExchangeSystem",
+    "subject_tags": [
+        "UI",
+        "Liability",
+        "Silence"
+    ],
+    "title": "Upload Severed",
+    "surface": "System HUD",
+    "text": "UPLOAD FAILED. Sato-Ren Filter triggered. The data packet contains restricted payroll information and casualty counts. Acoustic link severed to protect carrier integrity. Scrub drive before re-attempting extraction."
+}

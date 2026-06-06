@@ -44,7 +44,7 @@ Under pressure, distant and speculative work is cut first. Player survival asset
 
 ## World Streaming
 
-World streaming must consider:
+World streaming decisions must evaluate:
 
 - player position and velocity;
 - depth band;

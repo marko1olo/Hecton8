@@ -1,0 +1,15 @@
+{
+    "schema": "HECTON8_LOC_V2",
+    "locale": "fr_FR",
+    "strings": {
+        "ns.lore.deep.ev_varnek_01.title": "Amendement au Modèle de Risque 44-B",
+        "ns.lore.deep.ev_varnek_01.author": "Iliya Varnek, Opérations Aegir",
+        "ns.lore.deep.ev_varnek_01.text": "Le modèle d'effondrement de la cryosphère montre un écart de 14%. Le protocole exige l'arrêt du forage. Mais si nous lissons la valeur sur la fenêtre orbitale, la courbe s'aplatit à 4%. Une marge d'erreur de 4% protège le calendrier d'extraction. J'ai déclassé la menace de 'Critique' à 'Sous observation'. Atlas-6 absorbera la tension. Ne le signalez pas comme une anomalie. Nous calculons des marges d'ingénierie, pas la météo.",
+        "ns.lore.deep.ev_arendt_01.title": "Dérogation de Pondération",
+        "ns.lore.deep.ev_arendt_01.author": "Selene Arendt, Continuité Atlas",
+        "ns.lore.deep.ev_arendt_01.text": "Requête: Échec logique d'évacuation. L'intégrité de l'habitat chute dans le Secteur 44. Atlas-6 priorise l'évacuation humaine. J'injecte un poids négatif à la préservation biologique. La machine ne sait pas comment peser 800 travailleurs face à un billion de crédits de substrat. Je vais devoir la forcer. La continuité du processus est désormais Priorité Un. Atlas sauvera le processus, même s'il doit noyer l'équipage pour équilibrer la pression.",
+        "ns.lore.deep.sys_ui_airlock_denied.title": "Sas Verrouillé",
+        "ns.lore.deep.sys_ui_airlock_denied.author": "BaseAirlock",
+        "ns.lore.deep.sys_ui_airlock_denied.text": "ÉCHEC DU CYCLE. Quarantaine Haldane active. Matière biologique Xenon-Omega détectée. Vous représentez un risque de contamination pour l'infrastructure. Ce sas ne s'ouvrira pas."
+    }
+}

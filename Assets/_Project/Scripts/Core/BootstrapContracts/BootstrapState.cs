@@ -61,7 +61,7 @@ namespace Hecton8.Core
         /// <param name="playerObject">Resolved player object, or null.</param>
         public static void PublishCurrentPlayerObject(GameObject playerObject)
         {
-            CurrentPlayerObject = playerObject;
+            CurrentPlayerObject = IsProductionPlayerAuthorityObject(playerObject) ? playerObject : null;
         }
 
         /// <summary>
@@ -94,5 +94,86 @@ namespace Hecton8.Core
             HasActiveInstance = false;
             CurrentPlayerObject = null;
         }
+
+        /// <summary>
+        /// Validates that the object owns production player authority without referencing gameplay assemblies.
+        /// </summary>
+        /// <param name="playerObject">Candidate player object.</param>
+        /// <returns>True when the object has the required production player authority components.</returns>
+        public static bool IsProductionPlayerAuthorityObject(GameObject playerObject)
+        {
+            if (playerObject == null)
+                return false;
+
+            if (IsLegacyWorldShellOwned(playerObject))
+                return false;
+
+            return playerObject.TryGetComponent(out IBootstrapProductionPlayerMovementAuthority movement) &&
+                   movement != null &&
+                   playerObject.TryGetComponent(out IBootstrapProductionPlayerInteractionAuthority interaction) &&
+                   interaction != null &&
+                   playerObject.TryGetComponent(out Rigidbody body) &&
+                   body != null;
+        }
+
+        private static bool IsLegacyWorldShellOwned(GameObject candidate)
+        {
+            if (candidate == null)
+                return false;
+
+            if (candidate.TryGetComponent(out IBootstrapLegacyWorldShellOwner shell) &&
+                shell != null)
+            {
+                return true;
+            }
+
+            Transform current = candidate.transform.parent;
+            while (current != null)
+            {
+                if (current.TryGetComponent(out shell) && shell != null)
+                    return true;
+
+                current = current.parent;
+            }
+
+            return ContainsLegacyWorldShellOwnerInChildren(candidate.transform);
+        }
+
+        private static bool ContainsLegacyWorldShellOwnerInChildren(Transform root)
+        {
+            if (root == null)
+                return false;
+
+            int childCount = root.childCount;
+            for (int i = 0; i < childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (child == null)
+                    continue;
+
+                if (child.TryGetComponent(out IBootstrapLegacyWorldShellOwner shell) &&
+                    shell != null)
+                {
+                    return true;
+                }
+
+                if (ContainsLegacyWorldShellOwnerInChildren(child))
+                    return true;
+            }
+
+            return false;
+        }
+    }
+
+    public interface IBootstrapProductionPlayerMovementAuthority
+    {
+    }
+
+    public interface IBootstrapProductionPlayerInteractionAuthority
+    {
+    }
+
+    public interface IBootstrapLegacyWorldShellOwner
+    {
     }
 }

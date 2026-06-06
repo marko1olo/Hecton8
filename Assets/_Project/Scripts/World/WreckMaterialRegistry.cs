@@ -454,20 +454,6 @@ namespace Hecton8.World
                 _matrixUploadDirty = false;
             }
 
-            private bool TryFinalizePendingVisibilityCullNoWait()
-            {
-                return true;
-            }
-
-            private bool CompletePendingVisibilityCullForBarrier()
-            {
-                return true;
-            }
-
-            private void MarkVisibilityCullCompleted()
-            {
-            }
-
             private void EnsureResources()
             {
                 if (_batchRendererGroup != null)

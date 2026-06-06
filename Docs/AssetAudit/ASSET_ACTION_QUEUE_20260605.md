@@ -17,15 +17,15 @@ Execution specs:
 
 1. Water visual: `foam.png` is visually rejected but serialized-reachable through active world/ocean users. Replacement priority is high because the bad source can affect the visible surface/photic route.
 2. Flora materials: four `WorldProceduralProxy` flora/coral/kelp materials are serialized in `02_HECTON_WORLD.unity`. Visible route proxy contamination blocks promotion.
-3. Audio routing: `MusicDirectorConfig_Global.asset` has null `_musicMixerGroup` and `_stingerMixerGroup`. Runtime mix acceptance is blocked.
-4. Audio lifecycle: `Player.prefab` has 28 direct AudioClip refs. Addressables/release ownership and zero-GC audio lifecycle are unproven.
+3. Audio routing: Addressables settings/groups/entries are absent. `MusicDirectorConfig_Global.asset` mixer refs are statically non-null, but MusicDirector prefab AudioSource `OutputAudioMixerGroup` refs still require Unity/audio proof.
+4. Audio lifecycle: current `Player.prefab` static scan has 24 direct P1 footstep/UI AudioClip refs; prior P0 ambient/splash direct refs are cleared in source but still need Unity prefab readback. Addressables/release ownership and zero-GC audio lifecycle are unproven.
 
 ## P1
 
 1. Aegir: `TX_H8AegirGasGiantBakedDisc_1428.png` is prototype-only but serialized-reachable in the active world route.
 2. Sky slots: `Mat_HectonSky` and cloud stack need Unity readback before any binding claim.
 3. Terrain PBR: wet basalt/shell/sand sources need cleaned channel authoring; direct generated import is rejected.
-4. UI sprite: `oxygen-tank.png` is a black silhouette/mask, not the finished oxygen icon. Use `ui/OXYGEN.png` or classify the mask explicitly.
+4. UI sprite: `oxygen-tank.png` is a black silhouette/mask referenced by `Suit_HUD_Canvas.prefab`; current role ledger expects mask/linear sRGB false, but the source is sRGB true. Use `ui/OXYGEN.png`, classify/fix the mask route, or split dual roles explicitly.
 5. Music cadence: loud long beds and repeated stingers need MusicDirector runtime gating and listening proof.
 
 ## P2
@@ -40,7 +40,7 @@ Last process gate before creating this queue: CPU `100`, active `Unity`, `Unity.
 ## Next Owner Order
 
 1. Unity material readback owner: P0 water foam and P0 proxy flora first.
-2. Audio owner: P0 null mixer refs and direct prefab clip refs.
+2. Audio owner: Addressables absence, MusicDirector prefab mixer fallback notes, and direct prefab clip refs.
 3. Texture authoring owner: P1 Aegir/cloud and terrain PBR packs.
 4. Mesh/prefab owner: candidate-pool promotion only after material proof.
 

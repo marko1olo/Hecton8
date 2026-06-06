@@ -255,6 +255,33 @@ namespace Hecton8.Celestial
             SetFixedDirection(resolvedDirection);
         }
 
+        internal void ApplyFixedDirectionPresentationDefaults(
+            float targetAngularDiameterDegrees,
+            float targetFixedVerticalOffset)
+        {
+            float resolvedAngularDiameter = Mathf.Clamp(
+                targetAngularDiameterDegrees,
+                MinAngularDiameter,
+                MaxAngularDiameter);
+            float resolvedVerticalOffset = Mathf.Clamp(targetFixedVerticalOffset, -0.5f, 0.5f);
+
+            bool changed = false;
+            if (Mathf.Abs(angularDiameterDegrees - resolvedAngularDiameter) > DirectionEpsilon)
+            {
+                angularDiameterDegrees = resolvedAngularDiameter;
+                changed = true;
+            }
+
+            if (Mathf.Abs(fixedVerticalOffset - resolvedVerticalOffset) > DirectionEpsilon)
+            {
+                fixedVerticalOffset = resolvedVerticalOffset;
+                changed = true;
+            }
+
+            if (changed)
+                QueuePlacementVisualSync();
+        }
+
         private void TryRegister()
         {
             if ((_registeredToTickManager && _registeredToLateFrame) || !Application.isPlaying)

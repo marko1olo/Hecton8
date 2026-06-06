@@ -204,16 +204,15 @@ namespace Hecton8.Core
                 return false;
             }
 
-            byte[] managed = new byte[byteCount];
-            fixed (byte* destination = managed)
+            try
             {
-                UnsafeUtility.MemCpy(
-                    destination,
-                    NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(payload),
-                    byteCount);
+                byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(payload);
+                return TryWriteAll(absolutePath, new ReadOnlySpan<byte>(source, byteCount), byteCount);
             }
-
-            return TryWriteAll(absolutePath, managed, byteCount);
+            catch
+            {
+                return false;
+            }
         }
 
         public static bool TryWriteAll(string absolutePath, ReadOnlySpan<byte> payload, int byteCount)
@@ -225,14 +224,104 @@ namespace Hecton8.Core
                 return false;
             }
 
-            string fullPath = Path.GetFullPath(absolutePath);
-            string directory = Path.GetDirectoryName(fullPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
+            if (!TryResolveWritablePath(absolutePath, out string fullPath))
+                return false;
 
-            byte[] managed = payload.Slice(0, byteCount).ToArray();
-            File.WriteAllBytes(fullPath, managed);
+            try
+            {
+                string directory = Path.GetDirectoryName(fullPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.None))
+                {
+                    stream.Write(payload.Slice(0, byteCount));
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryResolveWritablePath(string requestedPath, out string fullPath)
+        {
+            fullPath = null;
+            if (string.IsNullOrWhiteSpace(requestedPath))
+                return false;
+
+            try
+            {
+                if (Path.IsPathRooted(requestedPath))
+                {
+                    fullPath = Path.GetFullPath(requestedPath);
+                    return true;
+                }
+
+                if (!TryNormalizeRelativePath(requestedPath, out string relativePath))
+                    return false;
+
+#if UNITY_EDITOR
+                string dataPath = UnityEngine.Application.dataPath;
+                string projectRoot = !string.IsNullOrEmpty(dataPath)
+                    ? Directory.GetParent(dataPath)?.FullName
+                    : null;
+                if (!string.IsNullOrEmpty(projectRoot))
+                {
+                    fullPath = Path.GetFullPath(Path.Combine(projectRoot, relativePath));
+                    return true;
+                }
+#endif
+                fullPath = Path.GetFullPath(Path.Combine(HectonPersistentPathPolicy.RootPath, relativePath));
+                return true;
+            }
+            catch
+            {
+                fullPath = null;
+                return false;
+            }
+        }
+
+        private static bool TryNormalizeRelativePath(string requestedPath, out string relativePath)
+        {
+            relativePath = null;
+            string normalized = requestedPath
+                .Replace('\\', Path.DirectorySeparatorChar)
+                .Replace('/', Path.DirectorySeparatorChar)
+                .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            if (normalized.Length <= 0 || ContainsTraversalSegment(normalized))
+            {
+                return false;
+            }
+
+            relativePath = normalized;
             return true;
+        }
+
+        private static bool ContainsTraversalSegment(string path)
+        {
+            int segmentStart = 0;
+            for (int i = 0; i <= path.Length; i++)
+            {
+                bool atSeparator = i == path.Length || path[i] == Path.DirectorySeparatorChar;
+                if (!atSeparator)
+                    continue;
+
+                int segmentLength = i - segmentStart;
+                if (segmentLength == 2 &&
+                    path[segmentStart] == '.' &&
+                    path[segmentStart + 1] == '.')
+                {
+                    return true;
+                }
+
+                segmentStart = i + 1;
+            }
+
+            return false;
         }
     }
 

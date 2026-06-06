@@ -2528,7 +2528,12 @@ namespace Hecton8.Core.Diagnostics
                 Span<byte> bytes = AsSpan(snapshot, DumpSnapshotBytes);
                 BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(0, 4), 0x41313630u);
                 BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(4, 4), reason);
-                BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(8, 4), (uint)telemetry.Length);
+                int count = math.min(telemetry.Length, DefaultTelemetryCapacity);
+                int normalizedCursor = NormalizeTelemetryRingIndex(cursor[0], telemetry.Length);
+                bool ringHasWrapped = count > 0 && IsTelemetryEntryWritten(in telemetry[normalizedCursor]);
+                int startIndex = ResolveTelemetryDumpStartIndex(cursor[0], telemetry.Length, ringHasWrapped);
+
+                BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(8, 4), (uint)count);
                 BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(12, 4), (uint)UnsafeUtility.SizeOf<AnalyticsExporterTelemetryEntry>());
                 BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(16, 4), (uint)cursor[0]);
                 BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(20, 4), counter.StateHash);
@@ -2536,10 +2541,10 @@ namespace Hecton8.Core.Diagnostics
                 BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(28, 4), counter.DroppedEvents);
 
                 int offset = DumpHeaderBytes;
-                int count = math.min(telemetry.Length, DefaultTelemetryCapacity);
                 for (int i = 0; i < count; i++)
                 {
-                    AnalyticsExporterTelemetryEntry entry = telemetry[i];
+                    int sourceIndex = ResolveTelemetryDumpSourceIndex(startIndex, telemetry.Length, i);
+                    AnalyticsExporterTelemetryEntry entry = telemetry[sourceIndex];
                     BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(offset, 4), entry.Frame);
                     BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(offset + 4, 4), entry.TimestampSeconds);
                     BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(offset + 8, 4), entry.SentEvents);
@@ -2570,6 +2575,41 @@ namespace Hecton8.Core.Diagnostics
                 SetWorkerFlag(WorkerFlagFaulted);
                 Interlocked.Exchange(ref _pendingDumpState, DumpStateIdle);
             }
+        }
+
+        private static int ResolveTelemetryDumpStartIndex(int cursorValue, int ringLength, bool ringHasWrapped)
+        {
+            if (ringLength <= 0)
+                return 0;
+
+            return ringHasWrapped ? NormalizeTelemetryRingIndex(cursorValue, ringLength) : 0;
+        }
+
+        private static bool IsTelemetryEntryWritten(in AnalyticsExporterTelemetryEntry entry)
+        {
+            return entry.StateHash != 0u ||
+                   entry.Frame != 0u ||
+                   entry.TimestampSeconds != 0u ||
+                   entry.Flags != 0u ||
+                   entry.VaultBytes != 0u;
+        }
+
+        private static int ResolveTelemetryDumpSourceIndex(int startIndex, int ringLength, int offset)
+        {
+            if (ringLength <= 0)
+                return 0;
+
+            int index = NormalizeTelemetryRingIndex(startIndex, ringLength) + math.max(0, offset);
+            return index % ringLength;
+        }
+
+        private static int NormalizeTelemetryRingIndex(int cursorValue, int ringLength)
+        {
+            if (ringLength <= 0)
+                return 0;
+
+            int index = cursorValue % ringLength;
+            return index < 0 ? index + ringLength : index;
         }
 
         private void TryWritePendingBlackBoxDump()

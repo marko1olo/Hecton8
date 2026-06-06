@@ -1,16 +1,16 @@
 NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY
 Role: Terrain generation job-lifetime and MapMagic hydraulic erosion safety owner.
-Status: PENDING EXECUTION
+Status: PARTIAL_DIAGNOSTIC_PROOF_ROUTE_STILL_REJECTED
 
 Lane contract:
 LANE_CLASS: RUNTIME_SYSTEM
-VALID_COMPLETION: current MapMagic erosion source either compiles and proves no delta-apply writer-fence/TempJob leak, or produces an exact blocker with source line and log evidence.
-INVALID_COMPLETION: source-comment-only fix claim, hidden Complete(), safety suppression, or proof run while Unity/dotnet/compiler gate is red.
-KILL_SWITCH: repeated `HydraulicErosionDeltaApplyJob` writer-fence or TempJob leak after the same source route becomes BLOCKED_BY_EXACT_DEPENDENCY.
+VALID_COMPLETION: current production-intent MapMagic erosion/anomaly source compiles and proves no delta-apply writer-fence, optional-container schedule failure, editor-worker-thread API call, TempJob leak, or Unity MemoryLeaks payload; otherwise it produces an exact blocker with source line and log evidence.
+INVALID_COMPLETION: source-comment-only fix claim, hidden Complete(), unbounded safety suppression, or proof run while Unity/dotnet/compiler gate is red.
+KILL_SWITCH: repeated `HydraulicErosionDeltaApplyJob`, `HeightDeltaBudget`, `get_isUpdating`, or TempJob leak after the same source route becomes BLOCKED_BY_EXACT_DEPENDENCY.
 EVIDENCE_BUDGET: one static source/log audit plus one Unity-safe compile/proof pass when the process gate is green.
 
 Objective:
-Remove or prove gone the `HydraulicErosionDeltaApplyJob` writer-fence/sentinel cleanup blocker so surface terrain proof is not poisoned by NativeArray safety exceptions and TempJob leaks.
+Remove or prove gone the MapMagic terrain generation job-safety blockers so surface terrain proof is not poisoned by NativeArray safety exceptions, Unity editor worker-thread API calls, or TempJob leaks.
 
 Authority:
 - AGENTS.md
@@ -25,12 +25,55 @@ Authority:
 
 Evidence basis:
 - Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md
+- Fermat residue classification, 2026-06-06: `ACTUAL TERRAIN.asset` is a dangerous dirty production graph state after probe/graph work; restore/reintegrate only via owner-approved Unity/API route, no raw YAML patch.
 - Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeF_20260606_003256.log
+- Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeJ_20260606_012945.log
+- Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeK_20260606_014642.log
+- Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeL_20260606_022301.log (historical reference; absent from current Docs/Logs)
+- Docs/Logs/UnityIntegratePlanetaryCanvasGraph_DisableAnomaly_20260606_015935.log
+- Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.png
+- Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.txt
+- Tools/ValidateTerrainProbeEvidence.py
+- Tools/test_validate_terrain_probe_evidence.py
+- Tools/ValidateMapMagicErosionSourceRoute.py
+- Tools/test_validate_mapmagic_erosion_source_route.py
 - Assets/_Project/Scripts/Plugins/MapMagic/HectonHydraulicErosionMapMagicNode.cs
 - Assets/_Project/Scripts/World/HydraulicErosionJob.cs
+- Assets/_Project/Scripts/World/HectonAnomalyEngine.cs
+- Assets/_Project/Scripts/Plugins/MapMagic/HectonAnomalyMapMagicNode.cs
 - Assets/_Project/Scripts/Editor/ErosionTestHarness.cs
 - Assets/_Project/Scripts/Core/NativeMemorySentinel.cs
 - Assets/_Project/Scripts/Core/Contracts/CoreLowLevelUtilities.cs
+- Hilbert static anomaly thread-safety recheck: `ShouldUseEditorDirectExecution` is illegal in MapMagic worker threads because it reads UnityEditor main-thread-only properties.
+- Carver static repair recheck: current `HeightDeltaBudget` suppression is defensible only for direct MapMagic scheduling; queued delta apply remains quarantined and still needs `HeightDeltaQueue`/budget lifecycle proof.
+- ProbeL diagnostic evidence: when the named capture log was present, `HydraulicErosionDeltaApplyJob`, `HeightDeltaBudget`, `get_isUpdating`, `TempJob`, `Thread failed`, `InvalidOperationException`, and `error CS` were zero, but the log had a Unity `MemoryLeaks` payload and metadata showed both erosion and anomaly disabled. The named ProbeL log is absent from current `Docs/Logs`.
+- Static evidence classifier: `python Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbeL_20260606_022301.log --metadata Docs\Screenshots\MCP\h8_1914_surface_crest_recovery_probe.txt --require-production` returns `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=10`: missing log, non-production `captureTruth`, `editor_only_unsaved`, `h8_1914`, erosion disabled, anomaly disabled, anomaly height unlinked, splat sediment unlinked, height output not eroded, and splat height not eroded.
+- Latest unsuffixed probe refresh: `UnityCaptureSurfaceCrestActualTerrainProbe_20260606_054748.log` recorded `Tundra build success`, wrote fresh h8_1914 PNG/TXT, then `python Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbe_20260606_054748.log --metadata Docs\Screenshots\MCP\h8_1914_surface_crest_recovery_probe.txt --require-production` returned `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`: Unity `MemoryLeaks`, `editor_only_unsaved`, `h8_1914`, erosion disabled, anomaly disabled, anomaly height unlinked, splat sediment unlinked, height output not eroded, and splat height not eroded.
+- Next unsuffixed probe refresh: `UnityCaptureSurfaceCrestActualTerrainProbe_20260606_060418.log` failed before capture on TerminalOS editor compile errors for `DecryptionPuzzleDTO` / `DecryptionKnobInputDTO`. The validator rejects it with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=11`: compile error, Tundra failure, missing capture output, and the same diagnostic disabled/unlinked graph metadata. `Hecton8.UI.TerminalOS.Editor.asmdef`, `TerminalOsLayoutValidator.cs`, and `OscilloscopeDecryptionTunerWindow.cs` now directly reference/import `Hecton8.Core.Contracts`; Unity proof is pending.
+- Follow-up unsuffixed probe refresh: `UnityCaptureSurfaceCrestActualTerrainProbe_20260606_061409.log` compile-proves the TerminalOS contract reference fix externally: Tundra success and fresh PNG/TXT writes. Current hard-gate rerun rejects with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=10` on non-production `captureTruth`, Unity `MemoryLeaks`, and diagnostic disabled/unlinked graph metadata. Fresh visual inspection rejects the later 06:24 PNG for rectangular water/terrain bands, hard horizon strip, detached dark shoreline chunks, and weak Aegir atmosphere integration.
+- EditorGPU refresh: `UnityCaptureSurfaceCrestActualTerrainProbe_EditorGPU_20260606_062050.log` rejects with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9` and shows Crest proof-route leak callstacks from `H8VisualProofCapture1912.InvokeCrestRunUpdate`: `QueryBase` Persistent `NativeArray<Vector3>` / `ComputeBuffer`, and `OceanRenderer` `ComputeBuffer`. `H8VisualProofCapture1912.cs` now disables the Crest `OceanRenderer` after writing metadata, forces `_debug._destroyResourcesInOnDisable`, pumps the editor loop, and destroys the temporary HideAndDontSave ocean material before exit. Fresh post-patch Unity proof is still pending.
+- Post-cleanup no-terrain-shell logs `UnityCaptureSurfaceNoTerrainShell_EditorGPU_20260606_062938.log`, `UnityCaptureSurfaceNoTerrainShell_EditorGPU_20260606_063306.log`, and `UnityCaptureSurfaceNoTerrainShell_AutorunEditorGPU_20260606_064605.log` provide compile/import-only Tundra success with no scoped `error CS`, but no PNG/TXT capture output; `_064605` rejects with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`. `UnityMapMagicGraphIntegrator_20260606_063611.log` aborted because another Unity instance had the project open, so graph integration proof/mutation is absent.
+- Clean-terrain probe refresh `UnityCaptureSurfaceCrestCleanTerrainProbe_EditorGPU_20260606_073231.log` reached Tundra success and wrote `h8_1916_surface_crest_clean_terrain_probe.png/.txt`, but current hard-gate rerun rejects with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9` on non-production `captureTruth`, Unity `MemoryLeaks`, and diagnostic disabled/unlinked graph metadata. The second graph integrator attempt `UnityMapMagicGraphIntegrator_20260606_073258.log` aborted because that Unity capture had the project open, so graph integration proof/mutation remains absent.
+- Daylight probe refresh `UnityCaptureSurfaceCrestDaylightProbe_EditorGPU_20260606_074642.log` reached Tundra success and wrote `h8_1917_surface_crest_daylight_probe.png/.txt`, but rejects with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=10` on non-production `captureTruth`, Unity `MemoryLeaks`, `compile-input-mutated`, and the same diagnostic disabled/unlinked graph metadata. Visual review rejects overbearing Aegir, black hard horizon strip, cyan slab water, dark clipped shoreline masses, weak/no shoreline contact foam, and crude terrain silhouette.
+- Third graph integrator attempt `UnityMapMagicGraphIntegrator_20260606_080219.log` also aborted before graph integration because external `UnityCaptureSurfaceCrestCoastHorizonProbe_EditorGPU_20260606_080213.log` had the project open. Current process gate is red with that Unity process family plus `dotnet test GhaCacheDoctor.slnx`; graph mutation/readback remains absent.
+- Coast-horizon probe `UnityCaptureSurfaceCrestCoastHorizonProbe_EditorGPU_20260606_080213.log` then wrote `h8_1918_surface_crest_coast_horizon_probe.png/.txt`, but rejects with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9` on non-production `captureTruth`, Unity `MemoryLeaks`, and diagnostic disabled/unlinked graph metadata. Visual review rejects overbearing Aegir, black hard horizon strip, cyan slab water, black clipped shoreline masses, weak/no shoreline contact foam, and noisy gold/speckled terrain.
+- Later daylight probe `UnityCaptureSurfaceCrestDaylightProbe_EditorGPU_20260606_080535.log` is compile-poison/stale-source evidence only: it reports missing `disableSurfaceSkyCardsForHorizonProbe` arguments and missing `DisableSurfaceSkyCardsForHorizonProbe`, but current `H8VisualProofCapture1912.cs` contains those callsite arguments and helper. `Tools/test_validate_terrain_probe_evidence.py` now has a static guard for that skycard-horizon parameter wiring; Unity compile proof remains pending.
+- Static MapMagic node grep: `HectonHydraulicErosionMapMagicNode.cs` no longer contains queued delta queue/budget constants, locals, registration helpers, disposal helpers, or `ScheduleFourPhaseSlicedWithDeltaApply`; the only queued caller remains `Assets/_Project/Scripts/Editor/ErosionTestHarness.cs`.
+- Static Sentinel cleanup repair: `HectonHydraulicErosionMapMagicNode.cs` stores `RegisterNativeArray(...)` ids and uses `NativeMemorySentinel.Unregister(id)` before disposal; it no longer calls `NativeMemorySentinel.UnregisterNativeArray(array)`.
+- Static anomaly cleanup repair: `HectonAnomalyMapMagicNode.cs` now stores ten TempJob `RegisterNativeArray(...)` ids and uses `NativeMemorySentinel.Unregister(id)` before disposal; it no longer calls `NativeMemorySentinel.UnregisterNativeArray(array)`.
+- Static graph support cleanup repair: `HectonTerrainSplatmapMapMagicNode.cs` and `HectonBiomeMatrixMapMagicPostProcessNode.cs` now unregister TempJob arrays by stable Sentinel ids instead of `NativeMemorySentinel.UnregisterNativeArray(array)`.
+- Static MapMagic plugin cleanup sweep: `HectonSpaceEngine098MapMagicNodes.cs` and `HectonSandboxAbyssalShelfMapMagicNode.cs` now unregister TempJob arrays by stable Sentinel ids; the first-party MapMagic plugin folder has no remaining `NativeMemorySentinel.UnregisterNativeArray(...)` cleanup calls.
+- Static harness quarantine repair: `ErosionTestHarness.cs` still owns the queued delta apply proof route, but NativeArray cleanup now uses stable Sentinel ids; the queue unregister path remains pointerless owner/label.
+- Source quarantine marker: `ErosionTestHarness.cs` labels the queued `ScheduleFourPhaseSlicedWithDeltaApply(...)` call with `QUEUED_DELTA_APPLY_QUARANTINED`; production MapMagic remains direct-only until fresh queued lifecycle proof exists.
+- Source-route validator: `python Tools\ValidateMapMagicErosionSourceRoute.py` returns `MAPMAGIC_EROSION_SOURCE_ROUTE_OK` and has regression tests for queued MapMagic reintroduction, queued delta flags, hidden queued callers outside scheduler/harness, pointer unregister anywhere in first-party MapMagic plugin cleanup, old one-argument `DisposeTracked`, anomaly dependency-completion/main-thread guard ordering, typed `LinkGraph` graph rewiring instead of direct ambiguous `graph.Link(...)`, anomaly exclusion from upstream height source resolution, and disabled erosion/anomaly recovery defaults.
+- Static graph-integrator source repair: `PlanetaryCanvasMapMagicGraphIntegrator.cs` restored production-intent wiring from erosion output to height/splat/anomaly and anomaly brine mask to mud layers; recovery defaults enable erosion/anomaly. Serialized graph asset still needs Unity readback/reintegration proof.
+- Dirac serialized graph diff: current `ACTUAL TERRAIN.asset` has anomaly disabled and anomaly/mud/brine links cleared. This is a diagnostic bypass state, not production terrain proof.
+- ProbeN/ProbeO refresh: ProbeN reached Tundra success and overwrote h8_1914 metadata, but the metadata remains editor-only unsaved with temp haze, shell terrain, erosion disabled, anomaly disabled, and unlinked anomaly/sediment inputs. ProbeO overwrote h8_1914 again, emitted Unity `MemoryLeaks`, and then hit a moving-worktree compile failure in `SeamGapDitherRenderer.cs`; it is not an acceptance packet.
+- Current `SeamGapDitherRenderer.cs` static state no longer contains `_registeredToDispatcher`; its diff removes `IUpdatable` and the old updatable registration lane. This clears that exact stale-field wall statically, but Unity compile proof remains pending.
+- ProbeO evidence classifier: historical ProbeO log evidence previously rejected with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=13` while the log was present; current file-state recheck returns `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=10` because the ProbeO log is absent and h8_1914 metadata remains non-production diagnostic state.
+- Terrain probe validator update: compile-poison blockers now include `compile-error`, `tundra-build-failed`, `editor-compiler-errors`, and `compile-input-mutated`; capture-output checks reject logs that invoke `H8VisualProofCapture` without writing both PNG and metadata; completed captures with Unity `MemoryLeaks` and disabled/unlinked MapMagic graph metadata still reject; `--require-production` rejects missing/empty metadata artifacts, missing `captureTruth`, non-production `captureTruth`, missing required production link rows, and missing/ambiguous erosion/anomaly `enabled=True` generator rows. `python -m unittest Tools/test_validate_terrain_probe_evidence.py` ran 20 tests OK with 1 skipped historical-artifact test, including a Crest recovery probe cleanup source guard.
+- ProbeR refresh: historical ProbeR log evidence recorded moving-worktree `HectonHazardManager.cs(87,39)` `CS0136` compile failures; current source has the renamed `existingZoneManager` and `UnityCompileAfterHazardFix_20260606_034456.log` later records Tundra success, but active `dotnet` keeps the process gate red. Current ProbeR validation returns `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=10` because the ProbeR log is absent and h8_1914 metadata remains non-production diagnostic state.
+- ProbeS/ProbeT refresh: historical ProbeS/ProbeT log evidence lacked completed production capture output markers; current ProbeS/ProbeT validations return `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=10` because both logs are absent and h8_1914 metadata remains non-production diagnostic state.
 
 Owned scope:
 - Static/code audit while Unity gate is red.
@@ -39,16 +82,35 @@ Owned scope:
 
 Tasks:
 1. Confirm current source no longer schedules `ScheduleFourPhaseSlicedWithDeltaApply` from the MapMagic node.
-2. Remove unused queued-delta leftovers from `HectonHydraulicErosionMapMagicNode.cs` if present and safe.
-3. Harden pointer-based sentinel cleanup by using stable registration ids where arrays may have active safety handles.
-4. Apply same hardening or explicit quarantine to `ErosionTestHarness.cs`, which still calls queued delta apply.
-5. Add comments documenting why queued delta apply is disabled for MapMagic until writer-fence proof exists.
-6. When gate is green, compile and run the exact terrain/capture route to prove no `HydraulicErosionDeltaApplyJob` safety exception and no TempJob leak.
+2. Confirm `HydraulicErosionJob.HeightDeltaBudget` optional-container scheduling no longer fails in direct erosion.
+3. Confirm `HectonAnomalyEngine` no longer calls `UnityEditor.EditorApplication.isUpdating` or `isCompiling` from a MapMagic worker thread.
+4. Confirm both `ScheduleClosedBasinDetection(...)` and `ScheduleRidgeFeatureDetection(...)` are covered by the anomaly thread-safety proof, or record which entry point did not execute.
+5. DONE_STATIC: unused queued-delta leftovers were removed from `HectonHydraulicErosionMapMagicNode.cs`; Unity compile/import proof remains pending.
+6. DONE_STATIC: `HectonHydraulicErosionMapMagicNode.cs` cleanup now unregisters by stable Sentinel ids instead of pointer-reading arrays; Unity compile/import proof remains pending.
+7. DONE_STATIC: `ErosionTestHarness.cs` remains the queued delta proof quarantine lane and now unregisters NativeArrays by stable Sentinel ids; Unity compile/proof remains pending.
+8. DONE_STATIC: queued delta apply now has a source-local `QUEUED_DELTA_APPLY_QUARANTINED` marker in `ErosionTestHarness.cs`; production MapMagic remains direct-only pending proof.
+9. When gate is green, compile and run the exact terrain/capture route to prove no `HydraulicErosionDeltaApplyJob`, `HeightDeltaBudget`, editor worker-thread, or TempJob leak failure.
+10. If the current thread-id guard does not prove clean in Unity, remove editor direct execution from MapMagic worker scheduling or make it an explicit caller option with MapMagic passing `false`; do not catch `UnityException`.
+11. If queued delta apply is tested, prove `HeightDeltaQueue` and `HeightDeltaBudget` are both valid for every enqueue path before `writer.Enqueue(delta)`; otherwise keep the queued path out of production MapMagic.
+12. Prove the Crest proof-route cleanup patch with a fresh post-patch capture before any terrain-generation acceptance claim; the named ProbeL path is already rejected earlier because the log is missing, `_054748`, `_061409`, and `EditorGPU_062050` are rejected as diagnostic/disabled graph evidence with `MemoryLeaks`, `_060418` is historical compile-poisoned evidence superseded by `_061409`, post-cleanup no-terrain-shell logs are compile/import-only with missing capture output, `UnityCaptureSurfaceCrestCleanTerrainProbe_EditorGPU_20260606_073231.log` writes h8_1916 PNG/TXT but still rejects on non-production `captureTruth`, `MemoryLeaks`, and disabled/unlinked graph metadata, `UnityCaptureSurfaceCrestDaylightProbe_EditorGPU_20260606_074642.log` writes h8_1917 PNG/TXT but rejects on non-production `captureTruth`, `MemoryLeaks`, `compile-input-mutated`, and disabled/unlinked graph metadata, `UnityCaptureSurfaceCrestCoastHorizonProbe_EditorGPU_20260606_080213.log` writes h8_1918 PNG/TXT but rejects on non-production `captureTruth`, `MemoryLeaks`, and disabled/unlinked graph metadata, `_080535` is stale compile-poisoned daylight evidence, and `UnityMapMagicGraphIntegrator_20260606_063611.log`, `_073258.log`, and `_080219.log` aborted before graph integration because another Unity instance had the project open.
+13. Do not accept h8_1914 ProbeL as surface-route proof; it is a diagnostic capture with disabled erosion/anomaly and rejected visuals.
+14. For any future acceptance proof, run `Tools/ValidateTerrainProbeEvidence.py --require-production` against the fresh log and metadata.
+15. Run `Tools/ValidateMapMagicErosionSourceRoute.py` before any future Owner09 proof run.
+16. Use Unity graph readback/reintegration to prove the serialized `ACTUAL TERRAIN.asset` follows the restored production-intent source route; static source and serialized text are insufficient.
 
 Acceptance:
 - Current MapMagic node cannot accidentally use queued delta apply.
+- Direct hydraulic erosion schedule does not fail on unused optional `HeightDeltaBudget`.
+- Anomaly basin/ridge scheduling does not touch UnityEditor APIs off the editor main thread.
+- Both MapMagic draft and main generation tasks complete or report a new exact named blocker.
 - Cleanup does not call `NativeMemorySentinel.UnregisterNativeArray(array)` on arrays that may still have protected safety handles.
-- Unity log after proof has no `HydraulicErosionDeltaApplyJob`, `InvalidOperationException`, or TempJob leak warning.
+- Queued delta apply remains quarantined unless `ErosionTestHarness` or equivalent proves queue writer, budget, producer handle, consumer handle, and TempJob lifetime clean.
+- Unity log after proof has no `HydraulicErosionDeltaApplyJob`, `HeightDeltaBudget`, `get_isUpdating`, `InvalidOperationException`, or TempJob leak warning.
+- Unity log after proof has no Unity `MemoryLeaks` payload.
+- Proof route does not rely on disabled erosion/anomaly nodes unless an approved production replacement route is documented.
+- Serialized `ACTUAL TERRAIN.asset` graph links import/open/evaluate cleanly under Unity readback with production-intent erosion/anomaly enabled, or reports a new exact blocker.
+- `Tools/ValidateTerrainProbeEvidence.py --require-production` accepts the fresh terrain proof log and metadata with zero blockers.
+- `Tools/ValidateMapMagicErosionSourceRoute.py` returns `MAPMAGIC_EROSION_SOURCE_ROUTE_OK`.
 - Surface proof owner sees terrain generation as clean or explicitly blocked by another named issue.
 
 Rejection:
@@ -59,3 +121,14 @@ Rejection:
 
 Low/Middle/High/Ultra:
 Low keeps direct sliced erosion with reduced budget. Middle keeps direct four-phase erosion. High/Ultra may raise detail only after dependency-chain, cleanup, and profiler proof. No tier may use queued delta apply without fence proof.
+
+2026-06-06 cursor 184 process-gated graph integration:
+- Static source route still passes: `python Tools\ValidateMapMagicErosionSourceRoute.py` returned `MAPMAGIC_EROSION_SOURCE_ROUTE_OK`.
+- The scoped graph integrator was not run because the process gate stayed red. Latest red sample had external Unity `UnityCompileOnly_Wait_20260606_1228.log` active and CPU at threshold violation.
+- External `DirectHost_20260606_1216` ended without producing `Docs/Screenshots/MCP/h8_1928*`; current `h8_1928` output is absent.
+- Next valid Owner09 action is still the same: when gate is green, run `Hecton8.Editor.PlanetaryCanvasMapMagicGraphIntegrator.RunBatchmode`, inspect log, then run `ValidateTerrainProbeEvidence.py --require-production` only against a fresh production-intent log and metadata.
+
+2026-06-06 cursor 187 graph integration still gated:
+- `h8_1928_surface_lighting_material_polish_apply.txt` now exists, but it is disabled/rejected diagnostic output only and the Unity log contains `MemoryLeaks`.
+- The graph integrator still has not run. Current process gate is red due external `.dotnet-daily` MSBuild nodeReuse/VBCSCompiler processes and CPU over threshold.
+- Do not run Unity/import/integrator while this gate remains red.

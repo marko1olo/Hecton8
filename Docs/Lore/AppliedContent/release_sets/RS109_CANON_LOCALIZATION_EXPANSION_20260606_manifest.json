@@ -1,0 +1,53 @@
+{
+    "release_set": "RS109_CANON_LOCALIZATION_EXPANSION_20260606",
+    "date": "2026-06-06",
+    "evidence_class": "STATIC_DOC",
+    "authority": "Lore_Bible.md, Canon_Locks.md",
+    "source_files_read": [
+        "Docs/Lore/Lore_Bible.md"
+    ],
+    "output_files": [
+        "Docs/Lore/AppliedContent/release_sets/RS109_CANON_LOCALIZATION_EXPANSION_20260606.md",
+        "Docs/Lore/AppliedContent/release_sets/RS109_CANON_LOCALIZATION_EXPANSION_20260606_manifest.json",
+        "Docs/Lore/AppliedContent/localization_backlog/RS109_15_LOCALE_ROWS_20260606.csv",
+        "Docs/Lore/AppliedContent/localization_backlog/RS109_TERMINOLOGY_LOCK_TABLE_20260606.csv",
+        "Docs/Lore/AppliedContent/route_cards/RS109_route_cards.csv"
+    ],
+    "packet_ids": [
+        "P402_DROP_CAPSULE_FIRST_FAULT",
+        "P403_BLACK_KEEL_CONTRACT_APPROACH",
+        "P404_SHALLOW_ANNEX_P63_PUMP_RECEIPT",
+        "P405_BLUE_DEBT_CUSTODY_INTAKE",
+        "P406_DEEP_REACH_LIABILITY_MEMO",
+        "P407_ATLAS_MISCLASSIFICATION_FRAGMENT",
+        "P408_EVACUATION_QUEUE_TERMINAL",
+        "P409_FINAL_PAYLOAD_RECEIVER_WARNING"
+    ],
+    "locales": [
+        "en_US",
+        "ar_SA",
+        "de_DE",
+        "es_ES",
+        "fr_FR",
+        "he_IL",
+        "id_ID",
+        "ja_JP",
+        "ko_KR",
+        "nl_NL",
+        "pl_PL",
+        "pt_BR",
+        "ru_RU",
+        "uk_UA",
+        "zh_CN"
+    ],
+    "row_counts": {
+        "15_locale_rows": 120,
+        "terminology_lock_table": 40,
+        "route_cards": 8
+    },
+    "native_review_claim": "none",
+    "runtime_claim": "none",
+    "unity_claim": "none",
+    "blocked_files": [],
+    "qa_notes": "All 15 locales generated with strict canon preservation. No runtime or native-review claims made."
+}

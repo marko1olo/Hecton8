@@ -4,6 +4,12 @@ Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: generated creatures, shells, jaws, fins, tails, tentacles, skeletons, carcasses, VAT-ready bodies, and fauna equipment attachments.
 
+## First-20 Route Hook
+
+- First-20 moment: first readable threat silhouette, distant creature pass, carcass/evidence object, shell/organ scan, or shallow fauna encounter that teaches avoidance, risk, and route pressure.
+- Route blocker removed: prevents first-route creatures from becoming scaled capsules, decorative fish, unreadable hitboxes, or runtime animation masking weak anatomy.
+- Proof class: STATIC_DOC until body-plan declaration, deformation/topology proof, hitbox alignment, LOD/material proof, animation fallback note, compact capture, and route screenshot/clip exist.
+
 ## 1. Fauna Mesh Law
 
 Fauna geometry must support animation, readability, and fear. A generated creature made from scaled capsules or bone sticks is rejected unless it is a hidden rig proxy. The saved visual mesh must include a coherent body plan, silhouette hierarchy, asymmetry, pressure-adapted anatomy, scars, tissue thickness, hard/soft material separation, and readable attack/contact zones.
@@ -95,6 +101,12 @@ Fauna collision uses primitives:
 - Boxes for armored plates or broad shell regions.
 
 LOD0 render mesh is never used as MeshCollider. Bite, lunge, and damage routing must reference hitbox primitives or authored sockets, not visual triangles.
+
+## 8A. Runtime And Hot-Path Boundary
+
+Fauna runtime truth is AI owner state, animation/VAT/skinning owner state, hitbox primitives, attack/contact sockets, weak spot identity, and save identity. The visual mesh is presentation.
+
+Hot paths must not generate or mutate creature geometry, deformation topology, blendshape/VAT frames, UVs, masks, LOD chains, hitboxes, collider proxies, material instances, or skeleton/socket identity. Runtime may animate authored rigs/VAT, select approved LODs, drive shader masks, and read cached hitbox/socket data. `GlobalQualityWeight` may scale presentation density, animation/VAT sampling, diagnostics, and LOD distance only; it must not change attack reach, hitbox truth, weak spot identity, locomotion authority, AI decisions, or save state.
 
 ## 9. Rejection Gates
 

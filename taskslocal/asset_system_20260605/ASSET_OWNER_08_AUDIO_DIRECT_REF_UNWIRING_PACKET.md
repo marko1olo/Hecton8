@@ -19,7 +19,7 @@ Hard boundary: no Unity run, no prefab edit, no import edit, no Addressables ope
 
 ## Scope
 
-Remove or route direct prefab `AudioClip` references in `Assets/_Project/Prefabs/Player.prefab` after Unity prefab readback. Static evidence lists 28 direct refs. Direct prefab serialization is not Addressables ownership, not release proof, not playback route proof, and not audio-thread proof.
+Remove or route direct prefab `AudioClip` references in `Assets/_Project/Prefabs/Player.prefab` after Unity prefab readback. Current static evidence lists 24 remaining direct refs. Prior `Underwater Ambient.wav` and `dive_splash.wav` direct refs are source-cleared in the working tree and still require Unity prefab readback plus removal/replacement or playback route proof. Direct prefab serialization is not Addressables ownership, not release proof, not playback route proof, and not audio-thread proof.
 
 First-20 route moment: player breath/audio continuity, water entry/exit contact, HUD/UI feedback audibility, warning priority, and shallow-route mix clarity.
 
@@ -27,8 +27,8 @@ First-20 route moment: player breath/audio continuity, water entry/exit contact,
 
 | Category | Static rows | Current blocker | Required classification |
 |---|---:|---|---|
-| Underwater Ambient direct refs | 2 | `Underwater Ambient.wav` directly serialized at `Player.prefab` lines 137 and 239. Duration 193s, Streaming, Vorbis Q0.45. | World/player loop route. Must not remain unexplained prefab direct ref. |
-| dive_splash direct refs | 2 | `dive_splash.wav` directly serialized at lines 1066 and 1067 for entry/exit splash. Duration 1.729s, CompressedInMemory, ADPCM. | Player contact SFX or scoped player-loop exception. Needs owner/load/release/playback route. |
+| Underwater Ambient readback | 0 current direct rows | Prior `Underwater Ambient.wav` direct refs at `Player.prefab` lines 137 and 239 are source-cleared to `{fileID: 0}` in the working tree. Duration 193s, Streaming, Vorbis Q0.45 remain import/source facts only. | Unity-read null/source-cleared state and prove removal/replacement or owned long-bed route. |
+| dive_splash readback | 0 current direct rows | Prior `dive_splash.wav` direct refs at `Player.prefab` lines 1066 and 1067 are source-cleared from the serialized component block. Duration 1.729s, CompressedInMemory, ADPCM remain import/source facts only. | Unity-read source-cleared state and prove player contact SFX replacement route or absence decision. |
 
 ## P1 Categories
 
@@ -50,8 +50,8 @@ First-20 route moment: player breath/audio continuity, water entry/exit contact,
 
 ## Execution Order
 
-1. Unity prefab readback: confirm every static row still exists and map each serialized field to its owning component.
-2. Classify each row: Addressables-routed clip, DSP/player-loop exception, UI short SFX exception, or removal/replacement.
+1. Unity prefab readback: confirm each remaining static direct-ref row still exists, confirm prior P0 ambient/splash fields are source-cleared or intentionally replaced, and map each serialized field to its owning component.
+2. Classify each row or cleared field: Addressables-routed clip, DSP/player-loop exception, UI short SFX exception, replacement, absence decision, or removal.
 3. Replace direct refs only through Unity-safe prefab workflow. No raw YAML patching.
 4. Fill owner ledger: cue id, owner, route, Addressables key or exception id, load phase, release phase, priority, ducking rule, and fallback.
 5. Run static grep proof after edit.

@@ -395,7 +395,6 @@ namespace Hecton8.Core.Determinism
                 _registeredPostFixed = 0;
             }
 
-            StopReplayWriter();
             DisposeNativeState();
             if (ReferenceEquals(_activeInstance, this))
                 _activeInstance = null;
@@ -1544,7 +1543,6 @@ namespace Hecton8.Core.Determinism
             if (_binaryLayoutInvalid != 0)
                 return false;
 
-            StopReplayWriter();
             CoreDeterminismSignals.ClearInputOverride();
             Volatile.Write(ref _ghostReplayActive, 0);
             EnsureGhostReplayBuffers();
@@ -1962,9 +1960,6 @@ namespace Hecton8.Core.Determinism
             Hecton8.Core.H8Debug.LogException(ex);
         }
 
-        private void StopReplayWriter()
-        {
-        }
     }
 
     internal static class LockstepHashMath

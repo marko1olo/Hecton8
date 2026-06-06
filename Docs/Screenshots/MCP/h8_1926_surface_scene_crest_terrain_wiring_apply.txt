@@ -1,0 +1,17 @@
+﻿captureTruth=persistent_scene_wiring_apply
+status=APPLIED_PENDING_VISUAL_PROOF
+scene=Assets/_Project/Scenes/02_HECTON_WORLD.unity
+crestObject=H8_WORLD_CREST_OCEAN_RUNTIME_1428
+crestMaterial=Assets/_Project/Art/Materials/MAT_H8_SurfaceCrestOcean_1428.mat
+crestCamera=Main Camera
+crestViewpoint=Main Camera
+crestChanges=1
+crestWaterBodyCulling=false
+crestExtentsSizeMultiplier=1800
+crestMaxScale=4096
+crestLodCount=8
+mapMagicGraph=Assets/MapMagic/Map_Graph/New Gen/ACTUAL TERRAIN.asset
+mapMagicHeightMeters=32.0
+terrainShell=disabled
+leftPhoticCanyonWall=disabled
+terrainDirtyCount=5

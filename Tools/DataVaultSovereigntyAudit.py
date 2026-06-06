@@ -26,11 +26,12 @@ DEFAULT_REPORT_PATH = (
     / "AgentLogs"
     / "DataVaultSovereigntyAudit_VAULT_SOVEREIGNTY_ENFORCER.md"
 )
-AUDIT_SCHEMA = "hecton8.datavault_sovereignty_audit.v3"
-BASELINE_SCHEMA = "hecton8.datavault_sovereignty_baseline.v3"
-REPORT_SCHEMA = "hecton8.datavault_sovereignty_audit_report.v2"
+AUDIT_SCHEMA = "hecton8.datavault_sovereignty_audit.v4"
+BASELINE_SCHEMA = "hecton8.datavault_sovereignty_baseline.v4"
+REPORT_SCHEMA = "hecton8.datavault_sovereignty_audit_report.v3"
 NATIVE_ARRAY_CONSTRUCTOR_RE = re.compile(r"\bnew\s+NativeArray\s*<")
 NATIVE_ARRAY_ALLOCATOR_RE = re.compile(r"\bAllocator\s*\.\s*(?P<allocator>Persistent|TempJob|Temp)\b")
+LATEST_CREATED_FALLBACK_RE = re.compile(r"\bGlobalDataVault\s*\.\s*TryGetLatestCreated\s*\(")
 NATIVE_COLLECTION_DECLARATION_RE = re.compile(
     r"^\s*(?:\[[^\]]+\]\s*)*"
     r"(?:(?:public|private|protected|internal|static|readonly|volatile|unsafe|new)\s+)+"
@@ -74,6 +75,24 @@ DEFAULT_ALLOWED_PATH_SUFFIXES = (
 DEFAULT_ALLOWED_DECLARATION_PATH_SUFFIXES = (
     "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
     "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+)
+DEFAULT_ALLOWED_LATEST_CREATED_PATH_SUFFIXES = (
+    "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+    "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+)
+LATEST_CREATED_ALLOWED_PATH_TOKENS = (
+    "/bootstrap/",
+    "/diagnostics/",
+    "/diagnostic",
+    "/gizmo",
+    "/xray",
+    "/validator",
+    "/smoketester",
+    "/fuzzer",
+    "/crash",
+    "/fault",
+    "/dump",
+    "/watchdog",
 )
 SKIP_DIR_NAMES = {
     ".git",
@@ -125,6 +144,16 @@ class DeclarationFinding:
     owner_kind: str
     owner_line: int
     burst_owner: bool
+
+
+@dataclass(frozen=True)
+class LatestCreatedFallbackFinding:
+    path: str
+    count: int
+    lines: tuple[int, ...]
+    allowed: bool
+    execution_surface: str
+    execution_surfaces: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -182,6 +211,18 @@ def should_skip(path: Path) -> bool:
     return any(part in SKIP_DIR_NAMES for part in path.parts)
 
 
+def contains_native_collection_token(source: str) -> bool:
+    return any(token in source for token in NATIVE_COLLECTION_TOKENS)
+
+
+def contains_native_collection_declaration_candidate(lines: Sequence[str]) -> bool:
+    return any(NATIVE_COLLECTION_DECLARATION_RE.search(line) for line in lines)
+
+
+def contains_latest_created_fallback_token(source: str) -> bool:
+    return "TryGetLatestCreated" in source
+
+
 def scan_source_tree(
     source_root: Path,
     repo_root: Path = REPO_ROOT,
@@ -202,9 +243,11 @@ def scan_source_tree(
             source = path.read_text(encoding="utf-8", errors="ignore")
         except OSError as exc:
             raise OSError(f"failed to read {path}") from exc
+        if "NativeArray" not in source:
+            continue
+
         sanitized_lines = sanitize_csharp_source(source).splitlines()
         relative_path = normalize_path(path, repo_root)
-        line_execution_surfaces = extract_line_execution_surfaces_for_source(relative_path, source)
 
         for line_index, line in enumerate(sanitized_lines):
             if NATIVE_ARRAY_CONSTRUCTOR_RE.search(line):
@@ -217,7 +260,11 @@ def scan_source_tree(
         if not line_numbers:
             continue
 
-        constructor_surfaces = tuple(resolve_line_execution_surface(line_execution_surfaces, line_number) for line_number in line_numbers)
+        line_execution_surfaces = extract_line_execution_surfaces_for_source(relative_path, source)
+        constructor_surfaces = tuple(
+            resolve_line_execution_surface(line_execution_surfaces, line_number)
+            for line_number in line_numbers
+        )
         execution_surface = summarize_execution_surfaces(constructor_surfaces)
         findings.append(
             FileFinding(
@@ -491,6 +538,96 @@ def constructor_is_gate_relevant(execution_surface: str, allocator: str) -> bool
     return True
 
 
+def latest_created_fallback_is_allowed(
+    relative_path: str,
+    execution_surface: str,
+    allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_LATEST_CREATED_PATH_SUFFIXES,
+) -> bool:
+    if is_allowed_path(relative_path, allowed_suffixes):
+        return True
+    if execution_surface in EDITOR_OFFLINE_SURFACES:
+        return True
+
+    normalized = "/" + relative_path.replace("\\", "/").lower()
+    return any(token in normalized for token in LATEST_CREATED_ALLOWED_PATH_TOKENS)
+
+
+def scan_latest_created_fallbacks_in_source(
+    source: str,
+    relative_path: str,
+    allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_LATEST_CREATED_PATH_SUFFIXES,
+    sanitized_lines: Sequence[str] | None = None,
+) -> list[LatestCreatedFallbackFinding]:
+    if sanitized_lines is None:
+        sanitized_lines = sanitize_csharp_source(source).splitlines()
+
+    lines: list[int] = []
+    for line_index, line in enumerate(sanitized_lines):
+        if LATEST_CREATED_FALLBACK_RE.search(line):
+            lines.append(line_index + 1)
+
+    if not lines:
+        return []
+
+    line_execution_surfaces = extract_line_execution_surfaces_for_source(relative_path, source)
+    surfaces = tuple(
+        resolve_line_execution_surface(line_execution_surfaces, line_number)
+        for line_number in lines
+    )
+    allowed = all(
+        latest_created_fallback_is_allowed(relative_path, surface, allowed_suffixes)
+        for surface in surfaces
+    )
+    return [
+        LatestCreatedFallbackFinding(
+            path=relative_path,
+            count=len(lines),
+            lines=tuple(lines),
+            allowed=allowed,
+            execution_surface=summarize_execution_surfaces(surfaces),
+            execution_surfaces=surfaces,
+        )
+    ]
+
+
+def latest_created_fallback_finding_to_dict(
+    finding: LatestCreatedFallbackFinding,
+    allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_LATEST_CREATED_PATH_SUFFIXES,
+) -> dict[str, Any]:
+    forbidden_lines: list[int] = []
+    forbidden_surfaces: list[str] = []
+    allowed_lines: list[int] = []
+    allowed_surfaces: list[str] = []
+
+    for index, line_number in enumerate(finding.lines):
+        surface = finding.execution_surfaces[index] if index < len(finding.execution_surfaces) else RUNTIME_SURFACE
+        if latest_created_fallback_is_allowed(finding.path, surface, allowed_suffixes):
+            allowed_lines.append(line_number)
+            allowed_surfaces.append(surface)
+        else:
+            forbidden_lines.append(line_number)
+            forbidden_surfaces.append(surface)
+
+    return {
+        "path": finding.path,
+        "count": finding.count,
+        "lines": list(finding.lines),
+        "allowed": len(forbidden_lines) == 0,
+        "executionSurface": finding.execution_surface,
+        "lineExecutionSurfaces": list(finding.execution_surfaces),
+        "lineExecutionSurfaceCounts": count_values(finding.execution_surfaces),
+        "domain": extract_domain(finding.path),
+        "forbiddenCount": len(forbidden_lines),
+        "forbiddenLines": forbidden_lines,
+        "forbiddenLineExecutionSurfaces": forbidden_surfaces,
+        "forbiddenLineExecutionSurfaceCounts": count_values(forbidden_surfaces),
+        "allowedCount": len(allowed_lines),
+        "allowedLines": allowed_lines,
+        "allowedLineExecutionSurfaces": allowed_surfaces,
+        "allowedLineExecutionSurfaceCounts": count_values(allowed_surfaces),
+    }
+
+
 def constructor_finding_to_dict(finding: FileFinding) -> dict[str, Any]:
     line_numbers = list(finding.lines)
     allocator_kinds = list(finding.allocator_kinds)
@@ -603,9 +740,14 @@ def scan_native_collection_declarations_in_source(
     source: str,
     relative_path: str,
     allowed: bool = False,
+    sanitized_lines: Sequence[str] | None = None,
+    original_lines: Sequence[str] | None = None,
 ) -> list[DeclarationFinding]:
-    sanitized_lines = sanitize_csharp_source(source).splitlines()
-    original_lines = source.splitlines()
+    if sanitized_lines is None:
+        sanitized_lines = sanitize_csharp_source(source).splitlines()
+    if original_lines is None:
+        original_lines = source.splitlines()
+
     tracked_editor_preview = (
         "H8MEMORY_TRACKED_EDITOR_PREVIEW" in source
         and "H8Memory.Allocate" in source
@@ -750,19 +892,61 @@ def scan_native_array_declaration_tree(
         except OSError as exc:
             raise OSError(f"failed to read {path}") from exc
 
-        if not any(token in source for token in NATIVE_COLLECTION_TOKENS):
+        if not contains_native_collection_token(source):
             continue
 
         relative_path = normalize_path(path, repo_root)
+        sanitized_lines = sanitize_csharp_source(source).splitlines()
+        if not contains_native_collection_declaration_candidate(sanitized_lines):
+            continue
+
         findings.extend(
             scan_native_collection_declarations_in_source(
                 source,
                 relative_path,
                 is_allowed_path(relative_path, allowed_suffixes),
+                sanitized_lines=sanitized_lines,
+                original_lines=source.splitlines(),
             )
         )
 
     return group_declaration_findings(findings)
+
+
+def scan_latest_created_fallback_tree(
+    source_root: Path,
+    repo_root: Path = REPO_ROOT,
+    allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_LATEST_CREATED_PATH_SUFFIXES,
+) -> list[LatestCreatedFallbackFinding]:
+    if not source_root.exists():
+        raise FileNotFoundError(f"source root not found: {source_root}")
+
+    findings: list[LatestCreatedFallbackFinding] = []
+    for path in sorted(source_root.rglob("*.cs")):
+        relative_scan_path = path.relative_to(source_root)
+        if should_skip(relative_scan_path):
+            continue
+
+        try:
+            source = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError as exc:
+            raise OSError(f"failed to read {path}") from exc
+
+        if not contains_latest_created_fallback_token(source):
+            continue
+
+        relative_path = normalize_path(path, repo_root)
+        sanitized_lines = sanitize_csharp_source(source).splitlines()
+        findings.extend(
+            scan_latest_created_fallbacks_in_source(
+                source,
+                relative_path,
+                allowed_suffixes=allowed_suffixes,
+                sanitized_lines=sanitized_lines,
+            )
+        )
+
+    return findings
 
 
 def scan_source_tree_with_declarations(
@@ -787,9 +971,14 @@ def scan_source_tree_with_declarations(
             source = path.read_text(encoding="utf-8", errors="ignore")
         except OSError as exc:
             raise OSError(f"failed to read {path}") from exc
+
+        if not contains_native_collection_token(source):
+            continue
+
         sanitized_lines = sanitize_csharp_source(source).splitlines()
+        original_lines = source.splitlines()
         relative_path = normalize_path(path, repo_root)
-        line_execution_surfaces = extract_line_execution_surfaces_for_source(relative_path, source)
+        has_declaration_candidate = False
 
         for line_index, line in enumerate(sanitized_lines):
             if NATIVE_ARRAY_CONSTRUCTOR_RE.search(line):
@@ -798,24 +987,29 @@ def scan_source_tree_with_declarations(
                 constructor_allocator_kinds.append(
                     classify_constructor_allocator_at_line(sanitized_lines, line_index, source)
                 )
+            if not has_declaration_candidate and NATIVE_COLLECTION_DECLARATION_RE.search(line):
+                has_declaration_candidate = True
 
-        constructor_surfaces = tuple(
-            resolve_line_execution_surface(line_execution_surfaces, line_number)
-            for line_number in constructor_lines
-        )
-        execution_surface = summarize_execution_surfaces(constructor_surfaces)
         file_declaration_findings: list[DeclarationFinding] = []
-        if any(token in source for token in NATIVE_COLLECTION_TOKENS):
+        if has_declaration_candidate:
             file_declaration_findings = scan_native_collection_declarations_in_source(
                 source,
                 relative_path,
                 is_allowed_path(relative_path, declaration_allowed_suffixes),
+                sanitized_lines=sanitized_lines,
+                original_lines=original_lines,
             )
 
         if not constructor_lines and not file_declaration_findings:
             continue
 
         if constructor_lines:
+            line_execution_surfaces = extract_line_execution_surfaces_for_source(relative_path, source)
+            constructor_surfaces = tuple(
+                resolve_line_execution_surface(line_execution_surfaces, line_number)
+                for line_number in constructor_lines
+            )
+            execution_surface = summarize_execution_surfaces(constructor_surfaces)
             constructor_findings.append(
                 FileFinding(
                     path=relative_path,
@@ -840,6 +1034,8 @@ def build_audit_payload(
     allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_PATH_SUFFIXES,
     declaration_findings: Sequence[DeclarationFinding] | None = None,
     declaration_allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_DECLARATION_PATH_SUFFIXES,
+    latest_created_fallback_findings: Sequence[LatestCreatedFallbackFinding] | None = None,
+    latest_created_allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_LATEST_CREATED_PATH_SUFFIXES,
 ) -> dict[str, Any]:
     total_direct = sum(finding.count for finding in findings)
     constructor_findings = [constructor_finding_to_dict(finding) for finding in findings]
@@ -900,14 +1096,34 @@ def build_audit_payload(
         for finding in declaration_findings
         if finding.classification == "editorOfflinePersistentPreviewField"
     ]
+    latest_created_fallback_findings = tuple(latest_created_fallback_findings or ())
+    latest_created_findings = [
+        latest_created_fallback_finding_to_dict(finding, latest_created_allowed_suffixes)
+        for finding in latest_created_fallback_findings
+    ]
+    forbidden_latest_created_findings = [
+        finding for finding in latest_created_findings if int(finding["forbiddenCount"]) > 0
+    ]
+    total_latest_created_fallbacks = sum(finding.count for finding in latest_created_fallback_findings)
+    forbidden_latest_created_fallbacks = sum(
+        int(finding["forbiddenCount"])
+        for finding in forbidden_latest_created_findings
+    )
+    runtime_forbidden_latest_created_fallbacks = aggregate_constructor_count_for_surfaces(
+        latest_created_findings,
+        "forbiddenLineExecutionSurfaceCounts",
+        {RUNTIME_SURFACE},
+    )
 
     return {
         "schema": AUDIT_SCHEMA,
         "sourceRoot": normalize_path(source_root, repo_root),
         "pattern": NATIVE_ARRAY_CONSTRUCTOR_RE.pattern,
         "declarationPattern": NATIVE_ARRAY_DECLARATION_RE.pattern,
+        "latestCreatedFallbackPattern": LATEST_CREATED_FALLBACK_RE.pattern,
         "allowedPathSuffixes": list(allowed_suffixes),
         "declarationAllowedPathSuffixes": list(declaration_allowed_suffixes),
+        "latestCreatedAllowedPathSuffixes": list(latest_created_allowed_suffixes),
         "totalDirectConstructors": total_direct,
         "allowedDirectConstructors": allowed_direct,
         "forbiddenDirectConstructors": forbidden_direct,
@@ -945,6 +1161,16 @@ def build_audit_payload(
         "unknownStructNativeCollectionDeclarations": sum(finding.count for finding in unknown_struct_declarations),
         "unknownOwnerNativeCollectionDeclarations": sum(finding.count for finding in unknown_owner_declarations),
         "declarationFileCount": len(forbidden_declarations),
+        "totalLatestCreatedFallbacks": total_latest_created_fallbacks,
+        "allowedLatestCreatedFallbacks": total_latest_created_fallbacks - forbidden_latest_created_fallbacks,
+        "forbiddenLatestCreatedFallbacks": forbidden_latest_created_fallbacks,
+        "runtimeForbiddenLatestCreatedFallbacks": runtime_forbidden_latest_created_fallbacks,
+        "forbiddenLatestCreatedFallbacksByExecutionSurface": aggregate_constructor_surface_counts(
+            forbidden_latest_created_findings,
+            "forbiddenLineExecutionSurfaceCounts",
+        ),
+        "latestCreatedFallbackFileCount": len(latest_created_findings),
+        "forbiddenLatestCreatedFallbackFileCount": len(forbidden_latest_created_findings),
         "findingCount": len(findings),
         "findings": constructor_findings,
         "declarationFindings": [
@@ -971,6 +1197,7 @@ def build_audit_payload(
             for finding in declaration_findings
             if finding.classification == "editorOfflinePersistentPreviewField"
         ],
+        "latestCreatedFallbackFindings": latest_created_findings,
     }
 
 
@@ -991,11 +1218,28 @@ def build_baseline(payload: dict[str, Any]) -> dict[str, Any]:
         target = allowed_declarations_by_file if finding["allowed"] else forbidden_declarations_by_file
         target[finding["path"]] = int(finding["count"])
 
+    forbidden_latest_created_by_file: dict[str, int] = {}
+    runtime_forbidden_latest_created_by_file: dict[str, int] = {}
+    allowed_latest_created_by_file: dict[str, int] = {}
+    for finding in payload.get("latestCreatedFallbackFindings", []):
+        forbidden_count = int(finding.get("forbiddenCount", 0))
+        runtime_forbidden_count = int(
+            finding.get("forbiddenLineExecutionSurfaceCounts", {}).get(RUNTIME_SURFACE, 0)
+        )
+        allowed_count = int(finding.get("allowedCount", int(finding["count"]) - forbidden_count))
+        if forbidden_count > 0:
+            forbidden_latest_created_by_file[finding["path"]] = forbidden_count
+        if runtime_forbidden_count > 0:
+            runtime_forbidden_latest_created_by_file[finding["path"]] = runtime_forbidden_count
+        if allowed_count > 0:
+            allowed_latest_created_by_file[finding["path"]] = allowed_count
+
     return {
         "schema": BASELINE_SCHEMA,
         "sourceRoot": payload["sourceRoot"],
         "pattern": payload["pattern"],
         "declarationPattern": payload.get("declarationPattern", NATIVE_ARRAY_DECLARATION_RE.pattern),
+        "latestCreatedFallbackPattern": payload.get("latestCreatedFallbackPattern", LATEST_CREATED_FALLBACK_RE.pattern),
         "totalDirectConstructors": payload["totalDirectConstructors"],
         "allowedDirectConstructors": payload["allowedDirectConstructors"],
         "forbiddenDirectConstructors": payload["forbiddenDirectConstructors"],
@@ -1014,15 +1258,27 @@ def build_baseline(payload: dict[str, Any]) -> dict[str, Any]:
         "allowedNativeArrayDeclarations": payload.get("allowedNativeArrayDeclarations", 0),
         "forbiddenNativeArrayDeclarations": payload.get("forbiddenNativeArrayDeclarations", 0),
         "declarationFileCount": payload.get("declarationFileCount", 0),
+        "totalLatestCreatedFallbacks": payload.get("totalLatestCreatedFallbacks", 0),
+        "allowedLatestCreatedFallbacks": payload.get("allowedLatestCreatedFallbacks", 0),
+        "forbiddenLatestCreatedFallbacks": payload.get("forbiddenLatestCreatedFallbacks", 0),
+        "runtimeForbiddenLatestCreatedFallbacks": payload.get("runtimeForbiddenLatestCreatedFallbacks", 0),
+        "forbiddenLatestCreatedFallbackFileCount": payload.get("forbiddenLatestCreatedFallbackFileCount", 0),
         "allowedPathSuffixes": payload["allowedPathSuffixes"],
         "declarationAllowedPathSuffixes": payload.get(
             "declarationAllowedPathSuffixes",
             list(DEFAULT_ALLOWED_DECLARATION_PATH_SUFFIXES),
         ),
+        "latestCreatedAllowedPathSuffixes": payload.get(
+            "latestCreatedAllowedPathSuffixes",
+            list(DEFAULT_ALLOWED_LATEST_CREATED_PATH_SUFFIXES),
+        ),
         "forbiddenByFile": dict(sorted(forbidden_by_file.items())),
         "allowedByFile": dict(sorted(allowed_by_file.items())),
         "forbiddenDeclarationsByFile": dict(sorted(forbidden_declarations_by_file.items())),
         "allowedDeclarationsByFile": dict(sorted(allowed_declarations_by_file.items())),
+        "forbiddenLatestCreatedFallbacksByFile": dict(sorted(forbidden_latest_created_by_file.items())),
+        "runtimeForbiddenLatestCreatedFallbacksByFile": dict(sorted(runtime_forbidden_latest_created_by_file.items())),
+        "allowedLatestCreatedFallbacksByFile": dict(sorted(allowed_latest_created_by_file.items())),
     }
 
 
@@ -1063,6 +1319,26 @@ def forbidden_declarations_by_file(payload: dict[str, Any]) -> dict[str, int]:
             continue
 
         result[finding["path"]] = int(finding["count"])
+
+    return result
+
+
+def forbidden_latest_created_fallbacks_by_file(
+    payload: dict[str, Any],
+    runtime_only: bool = False,
+) -> dict[str, int]:
+    result: dict[str, int] = {}
+    for finding in payload.get("latestCreatedFallbackFindings", []):
+        if runtime_only:
+            count = int(
+                finding.get("forbiddenLineExecutionSurfaceCounts", {}).get(RUNTIME_SURFACE, 0)
+            )
+        else:
+            count = int(finding.get("forbiddenCount", 0))
+        if count <= 0:
+            continue
+
+        result[finding["path"]] = count
 
     return result
 
@@ -1249,6 +1525,71 @@ def collect_regression_details(
                         "kind": "fieldDeclaration",
                         "domain": extract_domain(path),
                         "executionSurface": extract_execution_surface(path),
+                        "path": path,
+                        "baseline": baseline_count,
+                        "current": count,
+                        "delta": delta,
+                    }
+                )
+
+    if "forbiddenLatestCreatedFallbacks" in payload or "latestCreatedFallbackFindings" in payload:
+        current_latest_total = int(payload.get("forbiddenLatestCreatedFallbacks", 0))
+        baseline_latest_total = int(baseline.get("forbiddenLatestCreatedFallbacks", -1))
+        if current_latest_total > baseline_latest_total:
+            errors.append(
+                "Forbidden GlobalDataVault.TryGetLatestCreated fallbacks increased "
+                f"from {baseline_latest_total} to {current_latest_total}."
+            )
+
+        baseline_latest_by_file = baseline.get("forbiddenLatestCreatedFallbacksByFile", {})
+        if not isinstance(baseline_latest_by_file, dict):
+            errors.append("Baseline forbiddenLatestCreatedFallbacksByFile is missing or invalid.")
+            baseline_latest_by_file = {}
+
+        for path, count in sorted(forbidden_latest_created_fallbacks_by_file(payload).items()):
+            baseline_count = int(baseline_latest_by_file.get(path, 0))
+            if count > baseline_count:
+                delta = count - baseline_count
+                errors.append(
+                    f"{path}: forbidden TryGetLatestCreated fallbacks increased from {baseline_count} to {count}."
+                )
+                details.append(
+                    {
+                        "kind": "latestCreatedFallback",
+                        "domain": extract_domain(path),
+                        "executionSurface": extract_execution_surface(path),
+                        "path": path,
+                        "baseline": baseline_count,
+                        "current": count,
+                        "delta": delta,
+                    }
+                )
+
+        current_runtime_latest_total = int(payload.get("runtimeForbiddenLatestCreatedFallbacks", 0))
+        baseline_runtime_latest_total = int(baseline.get("runtimeForbiddenLatestCreatedFallbacks", -1))
+        if current_runtime_latest_total > baseline_runtime_latest_total:
+            errors.append(
+                "Runtime forbidden GlobalDataVault.TryGetLatestCreated fallbacks increased "
+                f"from {baseline_runtime_latest_total} to {current_runtime_latest_total}."
+            )
+
+        baseline_runtime_latest_by_file = baseline.get("runtimeForbiddenLatestCreatedFallbacksByFile", {})
+        if not isinstance(baseline_runtime_latest_by_file, dict):
+            errors.append("Baseline runtimeForbiddenLatestCreatedFallbacksByFile is missing or invalid.")
+            baseline_runtime_latest_by_file = {}
+
+        for path, count in sorted(forbidden_latest_created_fallbacks_by_file(payload, runtime_only=True).items()):
+            baseline_count = int(baseline_runtime_latest_by_file.get(path, 0))
+            if count > baseline_count:
+                delta = count - baseline_count
+                errors.append(
+                    f"{path}: runtime TryGetLatestCreated fallbacks increased from {baseline_count} to {count}."
+                )
+                details.append(
+                    {
+                        "kind": "latestCreatedRuntimeFallback",
+                        "domain": extract_domain(path),
+                        "executionSurface": RUNTIME_SURFACE,
                         "path": path,
                         "baseline": baseline_count,
                         "current": count,

@@ -226,7 +226,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cc079585c0500324aa44396b1029ebf9, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.World.WorldFidelityRoot
   visibleFromState: 2
   collidersFromState: 2
@@ -19164,7 +19164,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &447981947
 Transform:
   m_ObjectHideFlags: 0
@@ -19174,8 +19174,8 @@ Transform:
   m_GameObject: {fileID: 447981946}
   serializedVersion: 2
   m_LocalRotation: {x: 0.010386873, y: 0.9651477, z: -0.038764335, w: 0.25861058}
-  m_LocalPosition: {x: 51, y: 2.7, z: 32}
-  m_LocalScale: {x: 1.18, y: 0.75, z: 1.18}
+  m_LocalPosition: {x: 16, y: 12.1, z: 39}
+  m_LocalScale: {x: 1.22, y: 0.21, z: 1.04}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 270687705}
@@ -19226,7 +19226,7 @@ MeshRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 34
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &447981949
@@ -43166,7 +43166,7 @@ PrefabInstance:
     - target: {fileID: 661104235710018484, guid: 0a7f97b6028cb014e80782578e9bf734, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 9def92ac79181fe41b238e91663f0fad, type: 2}
+      objectReference: {fileID: 2100000, guid: cb6742dd8bbf8d843ba150a5e6dd5eb9, type: 2}
     - target: {fileID: 771104235710018481, guid: 0a7f97b6028cb014e80782578e9bf734, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -43182,11 +43182,11 @@ PrefabInstance:
     - target: {fileID: 771104235710018484, guid: 0a7f97b6028cb014e80782578e9bf734, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 9def92ac79181fe41b238e91663f0fad, type: 2}
+      objectReference: {fileID: 2100000, guid: cb6742dd8bbf8d843ba150a5e6dd5eb9, type: 2}
     - target: {fileID: 1881482921440711839, guid: 0a7f97b6028cb014e80782578e9bf734, type: 3}
       propertyPath: _material
       value: 
-      objectReference: {fileID: 2100000, guid: 9def92ac79181fe41b238e91663f0fad, type: 2}
+      objectReference: {fileID: 2100000, guid: cb6742dd8bbf8d843ba150a5e6dd5eb9, type: 2}
     - target: {fileID: 1881482921440711839, guid: 0a7f97b6028cb014e80782578e9bf734, type: 3}
       propertyPath: _primaryLight
       value: 
@@ -43210,7 +43210,7 @@ PrefabInstance:
     - target: {fileID: 5393921084769625238, guid: 0a7f97b6028cb014e80782578e9bf734, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 9def92ac79181fe41b238e91663f0fad, type: 2}
+      objectReference: {fileID: 2100000, guid: cb6742dd8bbf8d843ba150a5e6dd5eb9, type: 2}
     - target: {fileID: 5513631557248329811, guid: 0a7f97b6028cb014e80782578e9bf734, type: 3}
       propertyPath: m_Name
       value: H8_WORLD_CREST_OCEAN_RUNTIME_1428
@@ -102228,6 +102228,51 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2145398509}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &2147003100
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2147003102}
+  - component: {fileID: 2147003101}
+  m_Layer: 0
+  m_Name: '[MUSIC_SYSTEM]'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2147003101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2147003100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 941e71210e2f558459955e06f2b4e893, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Audio.HectonMusicDirectorAnchor
+  _config: {fileID: 11400000, guid: 3fe2e07be4fdac24cb6b2f12b438dcc3, type: 2}
+--- !u!4 &2147003102
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2147003100}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -102312,3 +102357,4 @@ SceneRoots:
   - {fileID: 1658397550}
   - {fileID: 330896151}
   - {fileID: 101536744}
+  - {fileID: 2147003102}

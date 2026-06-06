@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Hecton8.Core;
 using Hecton8.Gameplay;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -9,7 +8,7 @@ using UnityEditor;
 [DisallowMultipleComponent]
 [ExecuteAlways]
 [AddComponentMenu("Hecton8/HUD/Suit HUD v4")]
-public sealed class HectonSuitHUD_v4 : MonoBehaviour, ITickable, IUpdatable
+public sealed class HectonSuitHUD_v4 : MonoBehaviour
 {
     // COLD ALLOC: List<HectonSuitHUD_v4>[4] — active legacy HUD compatibility registry — owner: HectonSuitHUD_v4
     private static readonly List<HectonSuitHUD_v4> s_activeHuds = new List<HectonSuitHUD_v4>(4);
@@ -44,17 +43,11 @@ public sealed class HectonSuitHUD_v4 : MonoBehaviour, ITickable, IUpdatable
 #endif
 
         RegisterActiveHud();
-        TryRegisterUiService();
     }
 
     private void OnDisable()
     {
-        UnregisterUiService();
         UnregisterActiveHud();
-    }
-
-    public void Tick(float deltaTime)
-    {
     }
 
     public void SetHudCamera(Camera camera)
@@ -87,11 +80,4 @@ public sealed class HectonSuitHUD_v4 : MonoBehaviour, ITickable, IUpdatable
         }
     }
 
-    private void TryRegisterUiService()
-    {
-    }
-
-    private void UnregisterUiService()
-    {
-    }
 }

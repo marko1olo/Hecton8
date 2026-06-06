@@ -294,9 +294,11 @@ Bad agent behavior to correct immediately:
 - optimization used as an excuse for ugly output;
 - runtime/Unity claims from static-only evidence.
 
-## Current User Mission, Captured
+## Historical Mission Capture Boundary
 
-The user assigned the next long autonomous phase:
+The prior autonomous-night assignment below is preserved as process provenance only. It is not an active mission unless the user explicitly reissues it or points to a current orchestration memory file that reactivates it.
+
+Historical assignment summary:
 - work overnight for roughly 8 hours;
 - start with Batch 18;
 - run at least 5 Codex agents in parallel;
@@ -310,3 +312,5 @@ The user assigned the next long autonomous phase:
 - keep working even when the user is asleep;
 - solve problems independently;
 - record memory so context compression does not erase the mission.
+
+For any new autonomous GUI run, the current user message, current orchestration memory, and fresh workstation/process proof define the active mission. Do not execute historical mission bullets from this static file as live instructions.

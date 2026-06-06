@@ -65,8 +65,10 @@ This directory is the current asset-front control surface. It is not Unity accep
 |---|---|---|
 | water_visual | `foam.png` is visually rejected but serialized-reachable through active world/ocean users. | Unity material readback plus texture authoring |
 | flora_materials | Four `WorldProceduralProxy` flora/coral/kelp materials are serialized in `02_HECTON_WORLD.unity`. | Unity material readback plus mesh/prefab owner |
-| audio_routing | `MusicDirectorConfig_Global.asset` has null music and stinger mixer group refs in static evidence. | Audio/MusicDirector owner |
-| audio_lifecycle | `Player.prefab` has direct AudioClip refs without owner/release/Addressables proof. | Audio lifecycle owner |
+| audio_routing | Addressables settings/groups/entries are absent; `MusicDirectorConfig_Global.asset` mixer refs are statically non-null, but MusicDirector prefab AudioSource `OutputAudioMixerGroup` refs remain fallback-required notes until Unity/audio proof. | Audio/MusicDirector plus Addressables owner |
+| audio_lifecycle | `Player.prefab` has 24 direct P1 footstep/UI AudioClip refs without owner/release/Addressables proof. | Audio lifecycle owner |
+| player_hud_route | Production Player/HUD/movement/interaction scene binding rejects statically with `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=17 notes=7`. | Unity readback/player HUD route owner |
+| ui_oxygen_mask | `oxygen-tank.png` is referenced by `Suit_HUD_Canvas.prefab` and classified as `ui_oxygen_mask`, but current sRGB is 1 where the mask policy expects 0. | UI oxygen sprite/atlas owner |
 
 ## Route Queues
 
@@ -125,6 +127,7 @@ Use these files before assigning or doing asset work:
 - Biolum black-box route decision: `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.md` and `.csv` (`STATIC_TOOL_OUTPUT`; source decision fields are present; compile, Unity, GC/profiler, and dump proof remain absent).
 - Visual hero source coverage matrix: `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.md` and `.csv` (`STATIC_IMAGE_QA`; mandatory-reference source fit and blocker routing only).
 - Visual source promotion execution queue: `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.md` and `.csv` (`STATIC_SOURCE_QUEUE_ONLY`; exact owner actions and rejection gates only).
+- Gemini Batch30 browser generation queue: `Docs/GeneratedAssets/Gemini/README_GENERATION_QUEUE_20260606.md`, `Docs/GeneratedAssets/Gemini/Batch30_PRIORITY_QUEUE_20260606.csv`, and `Docs/GeneratedAssets/Gemini/Prompts/Batch30/3001_GEMINI_ASSET_GENERATION_PROMPT_PACK_20260606.md` (`STATIC_OPERATOR_QUEUE`; source generation only, no Unity import or route acceptance).
 - Surface horizon haze rejection review: `SURFACE_HORIZON_HAZE_1428_STATIC_REVIEW_20260605.md` (`STATIC_REVIEW_ONLY`; rejects untracked `ZTest Always` haze and raw no-clip screenshot as proof).
 - Surface water recovery probe rejection review: `SURFACE_WATER_RECOVERY_PROBE_1914_STATIC_REVIEW_20260605.md` (`STATIC_SCREENSHOT_REVIEW`; rejects editor-only unsaved flat-water diagnostic screenshot as proof).
 - h8_1475 proof-tool risk review: `H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md` (`STATIC_SOURCE_REVIEW`; rejects editor-mutated diagnostic capture paths as canonical proof).

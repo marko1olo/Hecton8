@@ -272,7 +272,6 @@ namespace Hecton8.World
         {
             TryUnregisterFromTickManager();
             GlobalRegistry.TryUnregisterHotSwapListener(this);
-            ReleaseGapDitherMaterial();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -774,10 +773,6 @@ namespace Hecton8.World
             }
 
             return null;
-        }
-
-        private void ReleaseGapDitherMaterial()
-        {
         }
 
         private void BuildVoxelCollar(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan, float visualQualityWeight, ref int primitiveIndex)

@@ -1,0 +1,5 @@
+﻿captureTruth=disabled_diagnostic_route
+captureName=h8_1927_surface_owner_lighting_after_scene_wiring
+route=H8VisualProofCapture1912.disabled_mutating_diagnostic_route
+status=REJECTED_DISABLED_DIRECT_EXECUTE_METHOD
+reason=mutating diagnostic proof route is quarantined and cannot be used as canonical acceptance proof

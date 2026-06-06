@@ -657,7 +657,7 @@ namespace Hecton8.QA.Headless
             if (!_navigationPending)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _navigationHandle, forceComplete: Application.isBatchMode))
+            if (!DispatcherJobFence.TryComplete(ref _navigationHandle, forceComplete: false))
                 return;
 
             _navigationPending = false;

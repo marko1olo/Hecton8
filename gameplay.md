@@ -4,6 +4,12 @@ Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Evidence class: STATIC_DOC
 Scope: player verbs, survival loop, salvage, pressure, oxygen, tools, construction, progression, failure, mission flow, and systemic gameplay taste.
 
+## First-20 Route Hook
+
+- First-20 moment: damaged safe anchor, first semi-open shallow exit, first oxygen/pressure retreat decision, first tool/resource repair chain, first hazard response, and first return-path consequence.
+- Route blocker removed: prevents the opening from collapsing into generic pickup/crafting or a Copper Wire-only proof route with no pressure, machinery, beauty, failure, or physical decision.
+- Proof class: STATIC_DOC until play repro, save/load proof, UI/readability capture, failure evidence, and route screenshots/clips exist.
+
 ## 0. Prime Gameplay Law
 
 HECTON-8 gameplay is not collection. It is a chain of physical decisions under pressure.

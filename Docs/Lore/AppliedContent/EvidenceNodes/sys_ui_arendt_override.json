@@ -1,0 +1,11 @@
+{
+    "node_id": "SYS_UI_ARENDT_OVERRIDE",
+    "author": "LifePodDamageSystem",
+    "subject_tags": [
+        "UI",
+        "Atlas-6"
+    ],
+    "title": "Life Support Diverted",
+    "surface": "System HUD",
+    "text": "POWER REROUTED. Atlas-6 Directive Weighting Override active. Life support and pressure shields in Sector 44 deactivated to stabilize adjacent Xenon-Omega substrate vaults. Your survival parameter is currently weighted at: -0.15."
+}

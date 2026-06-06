@@ -211,7 +211,27 @@ namespace Hecton8.Gameplay
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsService)
+            {
                 _thermodynamicsService = currentService as IThermodynamicsService;
+                if (currentService != null)
+                    RefreshAuthorityAfterServiceSwap();
+                return;
+            }
+
+            if (currentService != null &&
+                (serviceSlot == GlobalRegistryServiceSlot.Environment ||
+                 serviceSlot == GlobalRegistryServiceSlot.HazardZoneRuntime))
+            {
+                RefreshAuthorityAfterServiceSwap();
+            }
+        }
+
+        private void RefreshAuthorityAfterServiceSwap()
+        {
+            if (!isActiveAndEnabled || _tr == null)
+                return;
+
+            InternalUpdateRegistry();
         }
 
         // ══════════════════════════════════════════════════════════════════

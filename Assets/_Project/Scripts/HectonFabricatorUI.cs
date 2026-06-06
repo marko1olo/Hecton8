@@ -261,7 +261,6 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             CacheRegistryServicesCold();
-            TryRegisterUiService();
             TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
             SubscribeInputManagerIfAvailable();
@@ -281,7 +280,6 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            UnregisterUiService();
             UnsubscribeInputManager();
             TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
@@ -289,7 +287,6 @@ namespace Hecton8.UI
 
             CraftingEvents.Unregister(this);
 
-            UnregisterTick();
             UnregisterLateFrameTick();
 
             if (_isOpen)
@@ -298,7 +295,6 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
-            UnregisterUiService();
             UnsubscribeInputManager();
             TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
@@ -315,14 +311,6 @@ namespace Hecton8.UI
                 Destroy(_recipeListRoot.gameObject);
                 _recipeListRoot = null;
             }
-        }
-
-        private void TryRegisterUiService()
-        {
-        }
-
-        private void UnregisterUiService()
-        {
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -498,7 +486,6 @@ namespace Hecton8.UI
             EnsureRecipeListPool();
             SetRecipeListVisible(true);
             BaselinePlayerInputSignalSequence();
-            RegisterTick();
             RegisterLateFrameTick();
 
             IInputService inputService = _inputService;
@@ -641,7 +628,7 @@ namespace Hecton8.UI
             InvalidateHologramMatrixCache();
             QueueRecipeListVisibility(false);
 
-            UnregisterTick();
+            UnregisterLateFrameTick();
 
             IInputService inputService = _inputService;
             if (inputService != null)
@@ -652,21 +639,12 @@ namespace Hecton8.UI
             UpdateDiagnostics();
         }
 
-        private void RegisterTick()
-        {
-            RegisterLateFrameTick();
-        }
-
         private void RegisterLateFrameTick()
         {
             if (_lateFrameTickRegistered || !Application.isPlaying)
                 return;
 
             _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
-        }
-
-        private void UnregisterTick()
-        {
         }
 
         private void UnregisterLateFrameTick()

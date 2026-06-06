@@ -3,6 +3,7 @@ using Hecton.Localization;
 using Hecton8.AtlasSignal;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Gameplay.Atlas6Liability;
 using Hecton8.Inventory;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
@@ -142,6 +143,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private ScanLogSystem scanLogSystem;
         [SerializeField] private HUDNotification hudNotification;
         [SerializeField] private BarterOfferCatalog offerCatalog;
+        [SerializeField] private Atlas6CorporateLiabilityManager liabilityManager;
 
         // COLD ALLOC: int[MaxOffers] - offer execution hash slots without Dictionary churn - owner: PDAExchangeSystem
         private readonly int[] _executionOfferHashes = new int[BarterDTO.MaxOffers];
@@ -162,6 +164,8 @@ namespace Hecton8.Gameplay
         private bool _serviceRegistered;
         private bool _registeredHotSwapListener;
         private bool _saveRegistered;
+        private bool _liabilityEventsRegistered;
+        private bool _canTransmit = true;
         private uint _signalSourceId;
         private PlayerInventory _boundInventory;
         private IScanLogService _boundScanLog;
@@ -174,6 +178,7 @@ namespace Hecton8.Gameplay
 
         public int SavePriority => 36;
         public int LoadPriority => 36;
+        public bool CanTransmit => _canTransmit;
         public int OfferCount => offerCatalog != null ? offerCatalog.Count : 0;
         public int RecentTransactionCount => _recentTransactionCount;
 
@@ -202,15 +207,18 @@ namespace Hecton8.Gameplay
             CacheCatalogRuntimeHashes();
             TryRegisterSaveParticipant();
             TryRegister();
+            TryRegisterLiabilityEvents();
         }
 
         private void Start()
         {
             TryRegister();
+            TryRegisterLiabilityEvents();
         }
 
         private void OnDisable()
         {
+            TryUnregisterLiabilityEvents();
             TryUnregisterSaveParticipant();
             TryUnregister();
             TryUnregisterService();
@@ -323,6 +331,27 @@ namespace Hecton8.Gameplay
             }
 
             return count;
+        }
+
+        public void AttemptDataTransmission(string dataPayload)
+        {
+            if (!_canTransmit)
+            {
+                NotifyWarning("PDA EXCHANGE - ACOUSTIC TETHER SEVERED");
+                return;
+            }
+
+            if (ContainsAtlas6LiabilityPayload(dataPayload))
+            {
+                TryBindAtlas6LiabilityManager();
+                if (liabilityManager != null && liabilityManager.ActuarialLiability != null)
+                    liabilityManager.ActuarialLiability.UploadGhostPDAData((dataPayload ?? string.Empty).Length * 0.01f);
+
+                NotifyWarning("PDA EXCHANGE - ACTUARIAL LIABILITY FLAGGED");
+                return;
+            }
+
+            NotifyInfo("PDA EXCHANGE - TRANSMISSION READY");
         }
 
         public bool TryExecuteOffer(int index)
@@ -667,6 +696,8 @@ namespace Hecton8.Gameplay
 
         private void AutoResolve(bool resolveHud)
         {
+            TryBindAtlas6LiabilityManager();
+
             if (playerInventory == null)
             {
                 IPlayerRuntimeContext playerContext = _playerRuntime;
@@ -678,6 +709,54 @@ namespace Hecton8.Gameplay
             }
             if (resolveHud && hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
+        }
+
+        private void TryBindAtlas6LiabilityManager()
+        {
+            if (liabilityManager == null)
+                liabilityManager = UnityEngine.Object.FindAnyObjectByType<Atlas6CorporateLiabilityManager>();
+        }
+
+        private void TryRegisterLiabilityEvents()
+        {
+            if (_liabilityEventsRegistered)
+                return;
+
+            TryBindAtlas6LiabilityManager();
+            if (liabilityManager == null || liabilityManager.ExtractionGating == null)
+                return;
+
+            liabilityManager.ExtractionGating.OnTetherSeveredSatoRen += HandleSatoRenSilenceProtocol;
+            _liabilityEventsRegistered = true;
+        }
+
+        private void TryUnregisterLiabilityEvents()
+        {
+            if (!_liabilityEventsRegistered)
+                return;
+
+            if (liabilityManager != null && liabilityManager.ExtractionGating != null)
+                liabilityManager.ExtractionGating.OnTetherSeveredSatoRen -= HandleSatoRenSilenceProtocol;
+
+            _liabilityEventsRegistered = false;
+        }
+
+        private void HandleSatoRenSilenceProtocol()
+        {
+            _canTransmit = false;
+            PublishExchangeStateChanged(PdaExchangeStateChangedSignal.ReasonInventoryChanged, PdaExchangeStateChangedSignal.FlagInventoryDirty);
+        }
+
+        private static bool ContainsAtlas6LiabilityPayload(string dataPayload)
+        {
+            if (string.IsNullOrEmpty(dataPayload))
+                return false;
+
+            return dataPayload.IndexOf("Liability", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   dataPayload.IndexOf("Arendt", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   dataPayload.IndexOf("Varnek", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   dataPayload.IndexOf("Haldane", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   dataPayload.IndexOf("Sato-Ren", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void TryRegisterHotSwapListener()

@@ -34,7 +34,7 @@ namespace Hecton8.Audio.Synthesis
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3890)]
     [AddComponentMenu("Hecton8/Audio/Vocal Bank Playback Runtime")]
-    public sealed unsafe class VocalBankPlaybackRuntime : MonoBehaviour, IColdTickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed unsafe class VocalBankPlaybackRuntime : MonoBehaviour, IColdTickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const SystemID VaultOwner = SystemID.AudioVocalSynthesis;
         private const int TelemetryCapacity = 300;
@@ -387,10 +387,6 @@ namespace Hecton8.Audio.Synthesis
                 DumpBlackboxCold();
 
             _ = deltaTime;
-        }
-
-        public void SlowTick()
-        {
         }
 
         public void ColdTick()

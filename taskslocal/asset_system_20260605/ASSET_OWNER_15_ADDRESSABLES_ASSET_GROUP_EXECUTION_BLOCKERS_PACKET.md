@@ -24,6 +24,16 @@ No Unity run, import, build, Play Mode, Addressables window work, catalog build,
 
 ## Exact Blockers
 
+## 2026-06-06 Current Addressables Static Blocker Refresh
+
+Fresh static audio-route evidence narrows the immediate scene-route blocker but does not promote anything to runtime proof:
+
+- `ValidateAudioSceneStaticRoute.py --no-fail` currently reports `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1`; the only hard scene-route blocker is `addressables-absent`.
+- `02_HECTON_WORLD` statically contains exactly one active `[MUSIC_SYSTEM] / HectonMusicDirectorAnchor` bound to `MusicDirectorConfig_Global.asset` GUID `3fe2e07be4fdac24cb6b2f12b438dcc3`. This is static YAML evidence only, not Play Mode, mixer, memory, GC, or audible proof.
+- `ValidateAudioAddressablesP0Synthesis.py` currently reports `AUDIO_ADDRESSABLES_P0_SYNTHESIS_OK blockers=1 direct_refs=24 p0=0 footsteps=20 ui=4 fallback_required=1`.
+- `Assets/AddressableAssetsData` remains effectively empty for owner-promotion purposes: no settings, groups, profiles, schemas, labels, entries, or catalog ownership evidence exists.
+- Future Addressables repair must create or restore settings, groups, profiles, schemas, labels, and entries only through scoped Unity owner/API work after the process gate is green. Raw YAML edits remain forbidden.
+
 | Blocker | Static fact | Required future evidence |
 |---|---|---|
 | No Addressables source data | `Assets/AddressableAssetsData` exists with recursive file count `0` and non-meta file count `0` in prior static evidence. No settings, group, profile, schema, catalog, key, label, or entry evidence exists. | Addressables settings/groups/schemas/profiles/labels/entries on disk, group window readback, settings readback, and catalog evidence after scoped owner work. |

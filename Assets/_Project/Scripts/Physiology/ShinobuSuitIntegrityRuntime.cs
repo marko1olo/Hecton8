@@ -816,7 +816,7 @@ namespace Hecton8.Physiology
             if (!_jobScheduled)
                 return;
 
-            if (!ForceCompleteFrameJobInPostSimulationWindow())
+            if (!CompleteFrameJobForTeardownInPostSimulationWindow())
                 return;
 
             FinishFrameJobCompletion();
@@ -854,7 +854,7 @@ namespace Hecton8.Physiology
                 _telemetryCursor %= ShinobuSuitIntegrityConstants.TelemetryFrameCount;
         }
 
-        private bool ForceCompleteFrameJobInPostSimulationWindow()
+        private bool CompleteFrameJobForTeardownInPostSimulationWindow()
         {
             DispatcherJobFence.BeginPostSimulationSwapWindow();
             try

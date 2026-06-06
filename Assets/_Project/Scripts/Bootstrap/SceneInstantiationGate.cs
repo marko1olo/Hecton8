@@ -83,9 +83,9 @@ namespace Hecton8.Bootstrap
 
         internal void MarkPlayerInstantiated(GameObject playerObject)
         {
-            _playerInstantiated = playerObject != null;
+            _playerInstantiated = ProductionPlayerAuthorityUtility.IsProductionPlayerAuthorityObject(playerObject);
             if (!_playerInstantiated)
-                LastFailureReason = "PLAYER_NULL";
+                LastFailureReason = playerObject == null ? "PLAYER_NULL" : "PLAYER_AUTHORITY_INVALID";
         }
 
         internal void CaptureMemorySnapshot(float textureMemoryMb, float reservedMemoryMb, float totalVramMb)

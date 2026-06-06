@@ -8,7 +8,7 @@ This folder stores dialogue, stem, synth, ledger, and remediation CSV support da
 Local support files:
 
 - `audio_asset_ledger.csv` - static ledger/remediation support data.
-- `audio_profile_usage_20260605.csv` - static source-scan evidence snapshot.
+- `audio_profile_usage_20260605.csv` - static source-scan evidence snapshot; currently stale for prior `Underwater Ambient.wav` and `dive_splash.wav` Player-prefab direct rows after source-clearing. Use `Docs/AssetAudit/AUDIO_DIRECT_REF_DETAIL_20260605.csv` plus `Tools/ValidateAudioDirectRefDetail.py` for current direct-ref truth until regenerated.
 - `audio_remediation_matrix_20260605.csv` - static remediation queue.
 - `audio_stem_rules.csv` - stem authoring support data.
 - `dialogue_script.csv` - dialogue authoring support data.

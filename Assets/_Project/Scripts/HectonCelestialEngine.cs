@@ -489,15 +489,17 @@ namespace Hecton8.Celestial
         private static int s_x001HectonCelestialEngineSignalPushDropCount;
         private const string MandatedSkyMaterialName = "Mat_HectonSky";
         private const float SurfaceCloudShadowCookieEpsilon = 0.0001f;
-        private const float SurfaceReadableSunIntensityFloor = 0.85f;
-        private const float SurfaceReadableAmbientIntensityFloor = 1.1f;
+        private const float SurfaceReadableSunIntensityFloor = 1.05f;
+        private const float SurfaceReadableAmbientIntensityFloor = 1.32f;
         private const float SurfaceReadableFogDensityCeiling = 0.001f;
         private const float SurfaceEclipseVisibilityFloor = 0.7f;
         private const float SurfaceEclipseSkyNightBlendCeiling = 0.22f;
         private const float SurfaceEclipseShaderOcclusionCeiling = 0.24f;
-        private static readonly Color SurfaceReadableSkyAmbientFloor = new Color(0.240f, 0.320f, 0.350f, 1f);
-        private static readonly Color SurfaceReadableEquatorAmbientFloor = new Color(0.200f, 0.280f, 0.310f, 1f);
-        private static readonly Color SurfaceReadableGroundAmbientFloor = new Color(0.120f, 0.160f, 0.180f, 1f);
+        private const float SurfaceAegirAngularDiameterDegrees = 20f;
+        private const float SurfaceAegirFixedVerticalOffset = 0.0564f;
+        private static readonly Color SurfaceReadableSkyAmbientFloor = new Color(0.300f, 0.380f, 0.420f, 1f);
+        private static readonly Color SurfaceReadableEquatorAmbientFloor = new Color(0.280f, 0.360f, 0.400f, 1f);
+        private static readonly Color SurfaceReadableGroundAmbientFloor = new Color(0.220f, 0.280f, 0.300f, 1f);
         private static readonly Color SurfaceReadableSkyZenithFloor = new Color(0.160f, 0.270f, 0.320f, 1f);
         private static readonly Color SurfaceReadableSkyHorizonFloor = new Color(0.360f, 0.460f, 0.500f, 1f);
         private static readonly Color SurfaceReadableSkyNadirFloor = new Color(0.110f, 0.165f, 0.190f, 1f);
@@ -2355,6 +2357,10 @@ namespace Hecton8.Celestial
         {
             if (aegirObserverRelativeBody == null)
                 return;
+
+            aegirObserverRelativeBody.ApplyFixedDirectionPresentationDefaults(
+                SurfaceAegirAngularDiameterDegrees,
+                SurfaceAegirFixedVerticalOffset);
 
             Vector3 fallbackDirection = Vector3.forward;
             if (aegirTransform != null && aegirTransform.localPosition.sqrMagnitude > 0.0001f)

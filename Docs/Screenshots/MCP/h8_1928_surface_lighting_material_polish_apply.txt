@@ -1,0 +1,5 @@
+﻿captureTruth=disabled_diagnostic_route
+captureName=h8_1928_surface_lighting_material_polish_apply
+route=SurfaceRoutePersistentPolishRunner.disabled_mutating_diagnostic_route
+status=REJECTED_DISABLED_DIRECT_EXECUTE_METHOD
+reason=persistent surface polish route is quarantined and cannot be used as canonical acceptance proof

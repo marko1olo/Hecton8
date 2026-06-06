@@ -33,17 +33,17 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _CloudOpacity: 0.82
+    - _CloudOpacity: 0.78
     - _CloudSoftness: 0.24
     - _CloudThreshold: 0.29
     - _Exposure: 1.08
-    - _HorizonMist: 0.24
+    - _HorizonMist: 0.3
     m_Colors:
     - _CloudLit: {r: 1, g: 1, b: 1, a: 1}
-    - _CloudShadow: {r: 0.31, g: 0.39, b: 0.48, a: 1}
+    - _CloudShadow: {r: 0.34, g: 0.36, b: 0.55, a: 1}
     - _FlowA: {r: 0.0011, g: 0.00016, b: 1, a: 1}
     - _FlowB: {r: -0.00065, g: 0.00012, b: 1.45, a: 0.82}
-    - _HorizonColor: {r: 0.74, g: 0.86, b: 0.96, a: 1}
-    - _ZenithColor: {r: 0.12, g: 0.35, b: 0.62, a: 1}
+    - _HorizonColor: {r: 0.7, g: 0.82, b: 0.98, a: 1}
+    - _ZenithColor: {r: 0.16, g: 0.25, b: 0.52, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

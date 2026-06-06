@@ -27,7 +27,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4042)]
-    public sealed partial class ResourceDistributionDirector : MonoBehaviour, ISlowTickable, ILateFrameTickable, IRandomEventListener, IBrineFluidDensityReadModel, IGlobalRegistryHotSwapListener
+    public sealed partial class ResourceDistributionDirector : MonoBehaviour, ISlowTickable, IRandomEventListener, IBrineFluidDensityReadModel, IGlobalRegistryHotSwapListener
     {
         private const int DefaultSectorSizeMeters = 128;
         private const int DefaultMaxPendingSpawnRequests = 1024;
@@ -403,7 +403,6 @@ namespace Hecton8.World
         private bool _reportedMissingAuthoredOrePrefab;
         private GameObject _validatedAuthoredOrePrefab;
         private bool _slowTickRegistered;
-        private bool _lateFrameRegistered;
         private bool _seismicHookRegistered;
         private int _computedPoolWarmupCount;
         private float _meteorImpactTimerSeconds;
@@ -542,7 +541,6 @@ namespace Hecton8.World
             EnsureGhostProxySnapStaging();
 
             TryRegisterSlowTick();
-            TryRegisterLateFrameTick();
 
             if (!_seismicHookRegistered)
             {
@@ -565,12 +563,6 @@ namespace Hecton8.World
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _slowTickRegistered = false;
-            }
-
-            if (_lateFrameRegistered)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = false;
             }
 
             CancelMetamorphismJobForTeardown();
@@ -746,11 +738,9 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _dispatcher = currentService as ITickDispatcher;
                     _slowTickRegistered = false;
-                    _lateFrameRegistered = false;
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegisterSlowTick();
-                        TryRegisterLateFrameTick();
                     }
                     break;
                 case GlobalRegistryServiceSlot.Player:
@@ -777,14 +767,6 @@ namespace Hecton8.World
                 return;
 
             _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
-        }
-
-        private void TryRegisterLateFrameTick()
-        {
-            if (_lateFrameRegistered || !Application.isPlaying || _dispatcher == null)
-                return;
-
-            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         /// <summary>
@@ -816,10 +798,6 @@ namespace Hecton8.World
         /// <summary>
         /// Reserved for visual-only resource presentation once simulation ownership has settled.
         /// </summary>
-        public void LateFrameTick()
-        {
-        }
-
         /// <summary>
         /// Spawns one Thermal Diamond node at a flash-freeze crystallization boundary.
         /// </summary>

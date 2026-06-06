@@ -830,7 +830,6 @@ namespace Hecton8.Systems.AI
 
             SpectrumEvents.UnregisterSonarPingListener(this);
             DisablePhysicsEventPayloadReader();
-            CompletePredatorSightBatch(forceComplete: true);
             CompletePredatorSpatialHashBuild(forceComplete: true);
             _encounterDirector.ForceStopAndReset();
             _recentSonarStress = 0f;
@@ -877,8 +876,6 @@ namespace Hecton8.Systems.AI
 
             TryUnregisterDispatcherLanes();
 
-            CompletePredatorSightBatch(forceComplete: true);
-            ReleasePredatorSightBuffers();
             CompletePredatorSpatialHashBuild(forceComplete: true);
             ReleasePredatorSpatialHashBuffers();
             _encounterDirector.ForceCompleteActiveJobForTeardown();
@@ -1002,7 +999,6 @@ namespace Hecton8.Systems.AI
             DrainPhysicsEventPayloads();
             _encounterDirector.CompleteReadyOutput(faunaDirector, this, forceComplete: false);
             _encounterDirector.FlushPredatorAupVisualSync();
-            CompletePredatorSightBatch(forceComplete: false);
         }
 
         private void DrainPhysicsEventPayloads()
@@ -1462,19 +1458,6 @@ namespace Hecton8.Systems.AI
             return direction.z < 0f ? Vector3.back : Vector3.forward;
         }
 
-        private bool CompletePredatorSightBatch(bool forceComplete)
-        {
-            return true;
-        }
-
-        private void ReleasePredatorSightBuffers()
-        {
-        }
-
-        private void ReleasePredatorSightBuffers(IDataVault vault)
-        {
-        }
-
         private bool EnsurePredatorSpatialHashBuffersAllocated(
             out NativeArray<double3> spatialAbsolutePositions,
             out NativeArray<int3> spatialCellCoords)
@@ -1924,9 +1907,7 @@ namespace Hecton8.Systems.AI
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                CompletePredatorSightBatch(forceComplete: true);
                 CompletePredatorSpatialHashBuild(forceComplete: true);
-                ReleasePredatorSightBuffers(_dataVault ?? (previousService as IDataVault));
                 ReleasePredatorSpatialHashBuffers(_dataVault ?? (previousService as IDataVault));
                 _dataVault = currentService as IDataVault;
                 PredatorCognitionDomain.InjectDataVault(_dataVault);

@@ -27,6 +27,7 @@ Authority:
 Evidence basis:
 - Docs/Orchestration/ORCHESTRATOR_SUBAGENT_SYNTHESIS_20260605.md
 - Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md
+- Docs/Orchestration/MODIFIED_SOURCE_DIFF_STATIC_TRIAGE_20260606.md
 - Docs/Reports/RuntimeSystem_20260605/PLAYER_UI_TOOL_PRODUCT_FACE_CROSSWALK_20260605.md
 - Docs/Reports/RuntimeSystem_20260605/ACTIVE_PLAYER_SCENE_CONFLICT_MAP_20260605.md
 - taskslocal/runtime_system_20260605/RUNTIME_OWNER_04_PLAYER_UI_MOVEMENT_UNITY_READBACK_AND_REPAIR_PACKET.md
@@ -36,6 +37,12 @@ Owned scope:
 - Static/source audit while Unity gate is red.
 - Future repair only in active player/bootstrap/HUD/input owners proven by readback.
 - Do not patch HectonWorldShellController1428 as production input route unless explicitly approved. It is a blocker candidate, not the target architecture.
+
+Current controller/Poincare result:
+- Static source repair can harden `GameBootstrapper.cs`, `SceneInstantiationGate.cs`, `BootstrapState.cs`, and `HectonPlayerSpawner.cs` so tagged shell acceptance and non-production publish/mark routes fail closed.
+- That source hardening cannot complete production player/HUD/movement by itself. Scene `Player`, `Player.prefab`, `HUD_Internal`, and `Suit_HUD_Canvas` require Unity API readback and owner-correct prefab/scene wiring after process gate green.
+- Raw YAML mutation of `.unity`, `.prefab`, or `.asset` remains forbidden.
+- Current guard still rejects: `python Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` -> `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=19 notes=4`.
 
 Tasks:
 1. Read owner 01 readback output if available. If absent, do static blocker map only.
@@ -49,14 +56,134 @@ Tasks:
 9. Fix/route generic prompt fallback if `OPEN HATCH` can leak to non-hatch interactables.
 10. Prove dry walk, surface swim, underwater swim, ascend/descend, camera, interaction prompt, PDA/pause, save/load if Unity gate and runtime proof are safe.
 11. Add or verify 300-frame telemetry/black-box route for player/input/HUD only if owner-correct.
+12. Treat Avicenna static recheck as current blocker: active `02_HECTON_WORLD` player is scene-local shell-bound, `Player.prefab` is candidate-only, HUD/PDA/pause/save refs are not scene-active proof, and h8_1475 remains blocked until runtime authority is proven.
+13. Treat Hooke static bootstrap recheck as current blocker: no runtime/bootstrap/scene reference to production `Player.prefab` GUID `1c4db7a430141e5408e01b6ce4ed19d7` was found; `GameBootstrapper` and `HectonPlayerSpawner` publish/reposition existing objects rather than instantiate the prefab; scene tag lookup can accept the shell named `Player`.
+14. Run `Tools/ValidatePlayerRouteStaticEvidence.py --require-production-static` before any Owner03 proof attempt; hardened current evidence rejects with 21 blockers across scene shell identity, missing exact production `Player.prefab` instance binding, missing scene HUD/movement/interaction refs, runtime missing production prefab guid, unsafe BootstrapState publish, Player.prefab PDA/pause/swim/HUD null routes, disabled/null HUD compositor, forced screen-space HUD, and null Suit HUD runtime refs.
+15. Treat `scene-production-prefab-instance-exact`, `bootstrap-tagged-shell-acceptance-route`, `bootstrap-mark-player-instantiated-without-production-validation`, `bootstrap-publish-player-without-production-validation`, and `spawner-bootstrap-transform-rigidbody-fallback-route` as authority blockers. A scenic screenshot cannot supersede these.
+16. Do not overclaim static component GUIDs. If a valid production prefab instance route serializes components through prefab source rather than expanded scene YAML, Unity readback must prove prefab source identity plus enabled runtime components before the static movement/interaction scene-GUID blockers can be waived.
 
 Acceptance:
 - Active production player route known and production-bound.
 - No active scene-local shell route is accepted as movement/input/camera authority.
+- If readback proves shell-only, repair must add an owner-correct cold prefab binding/spawn route through Unity tooling or scene prefab ownership, not convert `HectonWorldShellController1428` into production movement.
 - Walking/swimming/ascend/descend and camera are Play Mode/player-capture verified.
 - Interactive HUD is not generic ScreenSpaceOverlay unless an approved bridge exists.
 - PDA, pause, save/load, and prompt routes are visually and functionally proven.
 - HUD hot text and input route have 0 B/frame proof.
+- Static player-route guard passes, or every exact static blocker is repaired/classified and superseded by stronger Unity readback/runtime proof before Unity proof or h8_1475 proof is accepted.
 
 Low/Middle/High/Ultra:
 Low keeps control readability, input buffering, HUD state, and route cues. High/Ultra add richer visor/camera/tool presentation without changing movement or input truth.
+
+2026-06-06 cursor 134 static recheck:
+- `python Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` now returns `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=19 notes=4`.
+- This replaces the earlier documented `25` and later `19` blocker counts for current state only.
+- The changed blocker count is not accepted as repair until Bohr classifies the delta as `REAL_STATIC_REPAIR`, `VALIDATOR_WEAKENING`, or `UNKNOWN_DIRTY_DRIFT`.
+- Remaining blockers still include scene-local shell identity, missing exact production `Player.prefab` scene binding, missing HUD prefabs, missing movement/interaction scene refs, runtime missing production prefab guid, unsafe BootstrapState publish, PDA/pause/swim/HUD null routes, disabled/unbound HUD render camera/compositor, forced overlay, and null Suit HUD runtime refs.
+
+2026-06-06 cursor 135 Bohr/James integration:
+- Bohr classification: `UNKNOWN_DIRTY_DRIFT`. The transient `19` blocker state was real but unstable and cannot be reported as clean repair.
+- Current command remains red: `python -B Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` -> `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=19 notes=4`.
+- James source-only hardening is useful but insufficient. It can reject some bad publish/mark/fallback paths, but it cannot create active production prefab scene binding, HUD prefab binding, movement/interaction scene refs, PDA/pause/save route, or HUD compositor route.
+- Current source drift includes marker-interface hardening in player/movement/interaction/world-shell files; treat that as `STATIC_SOURCE_ONLY / PENDING UNITY COMPILE_AND_READBACK`.
+- Do not claim player route progress from scenic surface captures. `h8_1914` and `h8_1915` both lack player/HUD/tool witness and cannot waive Owner03 blockers.
+
+2026-06-06 cursor 136 validator tightening:
+- `Tools\ValidatePlayerRouteStaticEvidence.py` now checks `BootstrapState` marker interfaces against source implementations in `HectonPlayerMovement.cs`, `PlayerInteraction.cs`, and `HectonWorldShellController1428.cs`.
+- Current command is red but more precise: `python -B Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` -> `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=19 notes=4`.
+- Removed false-positive blocker: `bootstrap-publish-player-without-production-validation`.
+- Still blocked: scene-local shell, missing production `Player.prefab` scene binding, missing HUD prefabs, missing movement/interaction scene refs, `runtime-missing-production-prefab-guid`, PDA/pause/swim/HUD null routes, disabled/unbound HUD render camera/compositor, forced overlay, and null Suit HUD runtime refs.
+- `python -B -m unittest Tools.test_validate_player_route_static_evidence` ran `5` tests OK. This is static tooling proof only, not Unity compile/import/runtime proof.
+
+2026-06-06 cursor 137 source-only prefab route prep:
+- `Assets/_Project/Scripts/HectonPlayerSpawner.cs` now has a serialized `productionPlayerPrefab` cold-path fallback for production `Player.prefab` GUID `1c4db7a430141e5408e01b6ce4ed19d7`; the fallback instantiates only when Inspector/bootstrap/runtime context resolution failed and then revalidates movement, interaction, and Rigidbody authority through `ProductionPlayerAuthorityUtility`.
+- `Tools\ValidatePlayerRouteStaticEvidence.py` now requires an actual prefab source route (`productionPlayerPrefab` field + `Instantiate(productionPlayerPrefab)` + authority acceptance), so a bare GUID string no longer satisfies the runtime prefab route guard.
+- `Assets/_Project/Scripts/Interaction/PlayerInteraction.cs` changed the default look-target prompt from hatch-specific `OPEN HATCH` to neutral `INTERACT`, preventing non-hatch interactables without `IInteractableTextProvider` text from leaking the wrong diegetic command.
+- `Tools\ValidatePlayerRouteStaticEvidence.py` now rejects `DefaultLookTargetPrompt = "OPEN HATCH"` as `player-interaction-hatch-fallback-prompt`.
+- Current command remains red but removes the source-only route blocker and hatch fallback leak: `python -B Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` -> `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=19 notes=4`.
+- `python -B -m unittest Tools.test_validate_player_route_static_evidence` ran `7` tests OK.
+- This is `STATIC_SOURCE_ONLY / PENDING UNITY COMPILE / PENDING UNITY PREFAB ASSIGNMENT / PENDING SCENE_READBACK`. Scene-local shell, missing scene prefab binding, HUD prefab binding/nulls, PDA/pause/swim/HUD compositor/overlay blockers remain.
+
+2026-06-06 cursor 138 Franklin/Averroes/Ampere integration:
+- Franklin UI/HUD null map: `Player.prefab` still has `PlayerPDA` nulls for panel, canvas group, eight tabs, and controls rebind UI; pause/smoke route nulls; `PlayerBuilder._swimContract` null; `SuitHUDPresentationController` null overlay/projected/canvas/source/compositor refs; disabled/unbound `HUD_Render_Camera`; `HectonSuitHUDExtensions` null flashlight/primary HUD/canvas refs; `HUD_Internal` disabled/null/forced overlay; `Suit_HUD_Canvas` `ScreenSpaceOverlay` with null production refs.
+- Averroes production binding map: `GameBootstrapper` owns readiness/player disable/spawn/activate/runtime publish; `BootstrapState` now rejects legacy shell and requires production movement marker, interaction marker, and `Rigidbody`; `SceneInstantiationGate` uses production authority utility; `HectonPlayerSpawner` source prep can instantiate production prefab only through cold fallback, but scene/prefab assignment/readback is absent.
+- Remaining hard blockers: active scene still statically contains scene-local shell `Player`; production `Player.prefab` GUID is absent from `02_HECTON_WORLD`; world systems may still serialize refs to shell transform; disabling/untagging shell before Unity API rebind is dangerous.
+- Ampere first-20 audit confirms content cannot be accepted until this owner proves production player/HUD/PDA/objective, movement, prompt, scanner/salvage, survival cue, pause/save/load, and safe-anchor routes.
+- Safe future Unity order: readback scene refs; load production `Player.prefab`; enumerate shell-bound fields; instantiate/bind production prefab through Unity API; rebind world/streaming/procedural refs; disable/untag shell only after refs moved; repair prefab internals; rerun static guard; then Play Mode proof for walking, swimming, ascend/descend, camera, interaction, PDA, pause, save/load, and HUD/input GC.
+
+2026-06-06 cursor 139 Singer first-20 quest/data integration:
+- Singer completed static quest/data spine map. Active planning spine is Black Keel / claim / P-63 shallow salvage, using copper/resource director route as runtime-bindable substrate.
+- Required sequence for this owner: wake/safe anchor -> bright shallow exit -> oxygen/pressure cue -> physical salvage/resource action -> `Data_Copper` or equivalent route material -> repair/build/useful improvement -> P-63/Black Keel packet -> save/load return.
+- Copper-only is proof substrate, not first-20 product identity.
+- Titanium-to-scanner and scanner-first/leviathan/radio routes are deferred until tool unlock, scanner target, objective UI, and event bridge prove in Play Mode.
+- Static blockers affecting Owner03: objective order conflict across `FirstHourDirector.cs`, `Quest_Graph.json`, and `First_Hour_Quests.json`; `quest_first_breath` 150/300 threshold mismatch; unproven safe-anchor/P-63 object binding; unproven PDA/lore/objective packet unlock.
+- New reference synthesis: `Docs/Orchestration/FIRST_20_QUEST_DATA_SPINE_CONFLICT_20260606.md`.
+- This does not change the current player/HUD/movement acceptance state: still blocked by production player binding, HUD/PDA nulls, movement/readback, save/load, and runtime proof absence.
+
+2026-06-06 cursor 140 Schrodinger first-20 player/UI/movement audit:
+- Schrodinger `019e9b5e-4464-7742-8b3c-42326aeb826e` completed `STATIC_SOURCE / STATIC_DOC` audit with no edits and no Unity/build/import/profiler work.
+- Owners found: `GameBootstrapper`, `HectonPlayerSpawner`, `BootstrapState`, `HectonPlayerMovement`, `HectonPlayerMotor`, `InputDispatcher`, `PlayerInteraction`, `SuitHUDV4CanvasOverlay`, `DiegeticVisorHudMesh`, `DiegeticVisorLensRuntime`, and `FirstHourDirector`.
+- Controller patched first-20 scene-flow docs: `01_ORBIT` is no longer mandatory first-20 acceptance; it remains a standalone/YELLOW prologue route until GREEN proof and root authority update.
+- Blockers retained: first-20 timing gap (`FirstCraft` 25-40, `FirstModule` 70-90), unverified production prefab/scene wiring, incomplete discrete input buffering for interact/tool/PDA/inventory/pause/death acknowledgement, HUD production route ambiguity, KCC/MovePosition fallback proof gap, and unproven save/load roundtrip for pose/inventory/hazard/opened/looted/scanned state.
+- Safe next work: route-gating repair, input-buffer formalization, diegetic HUD route lock, Unity API prefab/readback proof, KCC/fallback collision proof, one resource->inventory->tool->craft/repair/build->hazard->save/load chain.
+- Current status remains `P0 BLOCKED / STATIC ONLY / PENDING UNITY READBACK`.
+
+2026-06-06 cursor 141 Kant static blocker map:
+- Kant `019e9b7d-d11d-76b0-a240-8f7b2b487089` ran `python -B Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` read-only. Result remains `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=19 notes=4`.
+- No Unity, build, import, Play Mode, profiler, edits, scene/prefab/material/YAML mutation, delete, restore, stage, or commit.
+- Scene/player blocker: `02_HECTON_WORLD` still has a scene-local active `Player` shell with no production prefab binding; production `Player.prefab` GUID `1c4db7a430141e5408e01b6ce4ed19d7` is absent from scene text; `HUD_Internal`, `Suit_HUD_Canvas`, movement, and interaction GUIDs are absent.
+- Source owners exist but need runtime binding proof: `HectonPlayerSpawner`, `BootstrapState`, `SceneInstantiationGate`, `GameBootstrapper`, `InputDispatcher`, `HectonPlayerMovement`, `HectonPlayerMotor`, and `PlayerInteraction`.
+- Required Unity readback: active `Player` objects and prefab source/GUID; `GameBootstrapper` player fields; `HectonPlayerSpawner.productionPlayerPrefab`; `BootstrapState.CurrentPlayerObject`; `GlobalRegistry.Player`; `PlayerRuntimeContextService` bindings; `SceneInstantiationGate._playerInstantiated` and `LastFailureReason`.
+- Input/movement/interaction readback: dispatcher registrations, active input service/state/bitmask/block mask, movement Rigidbody/CapsuleCollider/camera/motor/swim state, KCC vs Rigidbody fallback, interaction mask/camera/target/prompt/signal consumption.
+- Prefab/UI blockers remain: `PlayerPDA` null panel/canvas/tabs/rebind refs; pause route null; `_swimContract` null; `HUD_Render_Camera` disabled/unbound; `SuitHUDPresentationController` null overlay/projected/compositor refs; `HectonSuitHUDExtensions` HUD/flashlight refs null; `HUD_Internal` disabled/null/forced overlay; `Suit_HUD_Canvas` overlay/null runtime refs.
+- Do not raw-YAML bind production prefab, convert the legacy shell into production authority, bypass `ProductionPlayerAuthorityUtility`, set interaction mask to Everything/Nothing, assume KCC active, force overlay as final gameplay HUD, delete deprecated prompt UI, or claim save/load from source presence.
+- Updated synthesis: `Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md`.
+
+2026-06-06 cursor 142 Aquinas static binding refinement:
+- Aquinas confirmed the route remains red. Fresh controller rerun after integration: `ValidatePlayerRouteStaticEvidence.py --require-production-static` -> `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=18 notes=5`. Source owners exist; active production binding does not.
+- Failure is not missing movement/interaction source. It is scene-local shell authority, absent exact production `Player.prefab` source binding, missing HUD prefab scene refs, and prefab nulls in PDA/pause/swim/HUD/compositor/flashlight routes.
+- Future Unity owner must repair prefab sources first, then instantiate/bind linked production prefab instances through Unity API, then rebind shell consumers only after readback. Raw YAML binding and shell-to-production conversion remain rejected.
+- Validator caveat: if a correct linked prefab scene instance serializes component script GUIDs through prefab source rather than expanded scene YAML, improve validator to follow prefab source identity. Do not weaken the production prefab-source requirement.
+- Proof remains Play Mode/player route, not scenic capture: walk, swim, ascend/descend, camera, interaction, PDA, pause, save/load, prompt, HUD/input GC, Console, profiler, and player/HUD/tool witness.
+- Current status: `PLAYER_ROUTE_STATIC_REJECTED / ACTIVE_BINDING_NOT_SOURCE_ABSENCE / PENDING UNITY API REPAIR`.
+
+2026-06-06 cursor 143 fresh static count refresh:
+- The 18/5 state is not accepted repair. The previous shell marker blocker moved to a note (`scene-shell-player: not detected by static marker scan`).
+- Remaining hard blockers still include absent exact production `Player.prefab` scene binding, missing HUD prefab scene GUIDs, missing movement/interaction scene GUIDs, PDA/pause/swim/HUD/compositor/flashlight null routes, disabled HUD camera/compositor, forced overlay, and ScreenSpaceOverlay Suit HUD.
+- Current status: `PLAYER_ROUTE_STATIC_REJECTED_18B_5N / ACTIVE_BINDING_NOT_SOURCE_ABSENCE / PENDING UNITY API REPAIR`.
+
+2026-06-06 cursor 144 fresh 19/4 controller refresh:
+- Fresh controller rerun returns `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=19 notes=4`.
+- Hard blocker groups:
+  - scene binding: scene-local shell `Player`, missing production `Player.prefab` scene GUID/instance, missing `HUD_Internal`, `Suit_HUD_Canvas`, movement, and interaction scene GUIDs;
+  - prefab/UI nulls: `PlayerPDA` panel/canvas/tabs/rebind refs null, pause route null, `_swimContract` null, `SuitHUDPresentationController` overlay/projected/compositor refs null, `HectonSuitHUDExtensions` HUD/flashlight refs null;
+  - HUD carrier: `HUD_Render_Camera` disabled/unbound, `HUD_Internal` compositor disabled/null/forced overlay, `Suit_HUD_Canvas` ScreenSpaceOverlay with null runtime refs.
+- Positive static notes remain source-only: production prefab source route exists in bootstrap/spawner, production player authority guard exists, `SpawnPlayerAsync` exists, deprecated interaction UI still needs readback.
+- This supersedes the previous 18/5 count for current state only. It is still not repair or proof.
+- Required next Unity pass remains: readback all active Player/HUD refs, repair prefab source internals, bind linked production Player/HUD prefab instances through Unity API, rebind shell consumers only after readback, then Play Mode proof for walk, swim, ascend/descend, camera, interaction, PDA, pause, save/load, HUD/input GC, Console, profiler, and player/HUD/tool witness.
+- Current status: `PLAYER_ROUTE_STATIC_REJECTED_19B_4N / FULL_UI_MOVEMENT_BLOCKED / PENDING UNITY API REPAIR`.
+
+2026-06-06 cursor 145 Planck static binding split:
+- Planck completed read-only/static sidecar. No Unity, import, Console, Play Mode, profiler, GC, screenshot, scene/prefab/material/YAML mutation, delete, restore, stage, or commit.
+- Hard state remains: `02_HECTON_WORLD` contains scene-local shell `Player`; production `Player.prefab` GUID `1c4db7a430141e5408e01b6ce4ed19d7`, `HUD_Internal`, `Suit_HUD_Canvas`, movement, and interaction GUIDs are absent from scene text.
+- `Player.prefab` does contain `HectonPlayerMovement` and `PlayerInteraction`, but prefab source presence is not scene/runtime binding proof.
+- HUD/PDA blockers remain real: `PlayerPDA` null panel/canvas/tabs/rebind refs, disabled/unbound `HUD_Render_Camera`, null `SuitHUDPresentationController` route, null `HectonSuitHUDExtensions`, disabled/null/forced-overlay `HUD_Internal`, and ScreenSpaceOverlay/null `Suit_HUD_Canvas`.
+- Validator caveats: pause check likely trips on `Hecton8.Dev.UIRuntimeSmokeTester.pauseMenu`; `_swimContract` check likely catches root `PlayerBuilder` rather than active held tool slots; `SuitAdvisoryController.survival` and `hudNotification` nulls are not currently reported.
+- Next useful code front: refine validator to separate dev/test false positives and inactive root tool data from production blockers, without weakening production prefab/HUD binding requirements.
+- Unity repair order remains: instantiate/bind production Player prefab through Unity API, dev-gate/untag shell only after production authority proof, bind PDA/pause/HUD projection refs, convert Suit HUD away from forced overlay, rerun static validator, then Play Mode/profiler/GC/screenshots for walk, swim, ascend/descend, interaction, PDA, pause, save/load, HUD/input, and player/HUD/tool witness.
+
+2026-06-06 cursor 146 validator refinement:
+- `Tools\ValidatePlayerRouteStaticEvidence.py` now separates dev smoke fields from production blockers.
+- Current static result is `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=17 notes=7`.
+- Removed false hard classification: `Hecton8.Dev.UIRuntimeSmokeTester.pauseMenu` null is now `player-prefab-dev-pause-smoke-null-note`.
+- Narrowed swim classification: root `Hecton8.Building.PlayerBuilder._swimContract` null is now `player-prefab-builder-swim-contract-null-readback-note`.
+- Added explicit `player-prefab-suit-advisory-runtime-ref-null-note` for `SuitAdvisoryController` serialized survival/HUD nulls.
+- Hard P0 scene/HUD/player blockers remain unchanged in meaning: no production scene binding, broken PDA/HUD projection, disabled/unbound HUD camera, forced overlay, and ScreenSpaceOverlay suit HUD.
+- Verification: `python -B -m unittest Tools.test_validate_player_route_static_evidence` ran 7 tests OK; direct production static validator remains rejected.
+
+2026-06-06 cursor 147 Poincare static Unity repair plan:
+- Poincare completed static-only repair planning. No edits, Unity, import, build, scene save, prefab save, stage, or commit.
+- Future Unity/API sequence: read back all shell/Player/HUD/PDA/pause/spawner objects; load and repair `Player.prefab`, `HUD_Internal.prefab`, `Suit_HUD_Canvas.prefab` through `PrefabUtility.LoadPrefabContents` and `SerializedObject`; instantiate linked production `Player.prefab`; bind/create `HectonPlayerSpawner.productionPlayerPrefab`; rebind shell consumers; only then untag/deactivate/dev-gate shell.
+- Hard rejects: raw YAML, shell-as-production, two tagged Players, hierarchy-order bootstrap resolution, final ScreenSpaceOverlay HUD, deleting shell/deprecated prompt UI before readback, bypassing `ProductionPlayerAuthorityUtility`.
+- Proof gates: walk, swim, ascend/descend, camera, PDA, pause, interaction, HUD projection/compositor, Console clean, profiler/GCMonitor `0 B/frame`, and static validator or stronger Unity readback.
+- Status remains `STATIC ONLY / PENDING UNITY READBACK`.

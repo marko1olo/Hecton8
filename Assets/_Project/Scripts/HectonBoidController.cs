@@ -78,7 +78,7 @@ using UnityEngine.Rendering;
 namespace Hecton8.AI.GPU
 {
     [DisallowMultipleComponent]
-    public sealed class HectonBoidController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class HectonBoidController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  BOID DATA â€” must match compute shader struct exactly
@@ -661,7 +661,7 @@ namespace Hecton8.AI.GPU
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Called every frame by GameTickManager.
+        /// Called during dispatcher late-frame visual sync.
         ///
         /// Order:
         ///   1. Update target position (from player).
@@ -674,10 +674,6 @@ namespace Hecton8.AI.GPU
         /// CPU cost: ~0.01ms (uniform upload + dispatch command + draw command).
         /// Actual computation happens on GPU asynchronously.
         /// </summary>
-        public void Tick(float deltaTime)
-        {
-        }
-
         public void LateFrameTick()
         {
             RunBoidVisualSync(SystemDispatcher.CurrentFrameDeltaTime);

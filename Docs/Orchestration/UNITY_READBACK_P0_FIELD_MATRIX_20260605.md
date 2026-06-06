@@ -37,6 +37,41 @@ When the process gate turns green, Unity owner must collect no-mutation readback
 - shoreline/island renderers: active state, material paths, wet basalt slots, foam bounds, material/renderQueue/ZWrite;
 - sky/celestial: `RenderSettings.skybox`, `Mat_HectonSky` texture slots, cloud deck renderers/materials, `HectonCelestialEngine` sky material if present, Aegir object active/material/mesh/component state, Aegir `_MainTex/_DetailTex/_StormTex` and scalar values.
 
+## Historical Surface Comparison Anchors
+
+Use these only for no-mutation readback/A-B comparison. They are not raw revert instructions:
+
+- `857689d2b`: Apr 28 sky/Crest/scene candidate; compare `02_HECTON_WORLD.unity`, `Assets/Crest/Crest/Materials/Ocean.mat`, `Assets/_Project/Art/Materials/Mat_HectonSky.mat`, and `Hecton_AegirHazeOverlay.shader`.
+- `06cff4605`, `2442f78e9`, `474759516`: first-week-May MapMagic graph candidates for `Assets/MapMagic/Map_Graph/New Gen/ACTUAL TERRAIN.asset`.
+- `fd33b9521`, `7073862dd`: May 1 scene placement candidates.
+- `b81b0da81^`: pre-divergence terrain/sky shader comparison point.
+- Zeno static anchor audit expands the readback target: `857689d2b` must cover Crest renderer/material GUIDs, sea level/extents/LOD/foam/normals/underwater slots, skybox/Mat_HectonSky slots, Aegir material/mesh/atmosphere, and reflection/lighting state; first-week-May MapMagic anchors must cover erosion/anomaly/splatmap links and active generation state; `474759516` must cover whether HectonSurfacePainter/HectonWaterGrid/OceanKinematicsRuntimeService candidates are active, not run or assign them; `fd33b9521`/`7073862dd` must cover scene placement, sky-follow camera, Crest depth cache, celestial/weather route, and player swim/water transition witness; `b81b0da81^`/`e94c11c4d` must cover pre-divergence sky/Aegir/cloud/celestial, TerrainMaster, OceanRainRippleDecal, and ocean-kinematics ownership.
+- Hubble static forensics refines the critical questions:
+  - `857689d2b` `Ocean_Crest.prefab`: verify active `OceanRenderer._material` GUID `9def92...`, `_minScale 8`, `_maxScale 256`, `_lodDataResolution 256`, depth/foam/shadow flags, and `OceanDepthCache` state.
+  - `857689d2b` `Ocean.mat`: verify active `_Underwater`, `_Foam`, `Foam2.png`, `WaveNormals.png`, caustics, diffuse/subsurface scalars, and whether runtime/temp/1428 material replaced it.
+  - `857689d2b` `Mat_HectonSky.mat`: verify cloud/star slots, `_SunElevation`, `_NightBlend`, sky/haze values, and Aegir halo fields.
+  - `2442f78e9`/`474759516`: verify biome, hydraulic erosion, splatmap, anomaly, slope, sediment, and water-transition links.
+  - `b81b0da81`: verify whether May 10 night/orange sky and packed-control terrain divergence is active.
+- Wegener static matrix adds:
+  - verify `Ocean.mat`, `Ocean-Underwater.mat`, `MAT_H8_SurfaceCrestOcean_1428`, `MAT_H8SurfaceOceanRead_1428`, `waterSurfaceLevel`, and `waterLevelFallback` together; scene static says `waterSurfaceLevel: 0` while underwater fallback is `14.02`;
+  - verify current Crest package route is vendored `Assets/Crest` plus first-party plugin scripts because `Packages/com.waveharmonic.crest/package.json` is missing;
+  - verify scene skybox GUID resolves to `Assets/_Project/Art/Materials/Mat_HectonSky.mat`, not newer `MAT_AegirSky_Master`;
+  - verify `ACTUAL TERRAIN.asset` mixed old `Hecton8.Core` and current `Hecton8.Plugins` MapMagic entries against current owner scripts under `Assets/_Project/Scripts/Plugins/MapMagic`;
+  - resolve `WaterTransitionHandler` through player prefab/script GUID or owner binding because it does not text-hit in `02_HECTON_WORLD.unity`.
+
+Readback must answer:
+
+- whether the current Crest material/renderer route matches or diverges from the Apr 28 candidate;
+- whether the serialized MapMagic graph is the dirty diagnostic bypass state or the restored production-intent erosion/anomaly route;
+- whether current sky/Aegir/cloud slots match the mandatory bright surface reference route or stale/null slots;
+- whether any `H8_TEMP_*`, `editor_only_unsaved`, green haze, water-card, or h8_1914 diagnostic object/material is active.
+
+## Proof Tool Quarantine
+
+- `H8VisualProofCapture1912.cs` is diagnostic rejection tooling only while it mutates Crest/MapMagic/Terrain, creates temp probes/materials, pumps MapMagic generation, or writes `editor_only_unsaved` metadata.
+- h8_1475 must use a separate no-mutation harness. It must hard-reject scene save, scene dirty mark, renderer enable/disable, transform mutation, material assignment, MapMagic refresh/generation pumping, temp water cards, temp haze, and raw MCP PNG substitution.
+- `ACTUAL TERRAIN.asset` is a dirty production graph state until Unity graph readback/reintegration proves production-intent links. Do not raw-edit YAML.
+
 ## Audio / Addressables
 
 - `MusicDirectorConfig_Global.asset`: `_musicMixerGroup`, `_stingerMixerGroup`;

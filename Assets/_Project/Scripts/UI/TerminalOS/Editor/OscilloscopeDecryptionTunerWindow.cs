@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using Hecton8.Core.Contracts;
 using Hecton8.UI;
 using UnityEditor;
 using UnityEditor.UIElements;

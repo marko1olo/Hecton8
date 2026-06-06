@@ -18,7 +18,7 @@ namespace Hecton8.AI.Ecosystem
     /// <summary>
     /// Data-only ecology population governor. Storage is DataVault-owned; this component only schedules and publishes.
     /// </summary>
-    public sealed class EcosystemPopulationBalancer : MonoBehaviour, IColdTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class EcosystemPopulationBalancer : MonoBehaviour, IColdTickable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001EcosystemPopulationBalancerSignalPushDropCount;
         private const int TelemetryCapacity = HectonEcologyContract.PopulationTelemetryCapacity;
@@ -172,10 +172,6 @@ namespace Hecton8.AI.Ecosystem
             }
 
             ScheduleBalancerJob(vault, frame, entityCount, totalActiveEntities);
-        }
-
-        public void LateFrameTick()
-        {
         }
 
         private void PostSimulationTick(in DispatcherTimingDTO timing)

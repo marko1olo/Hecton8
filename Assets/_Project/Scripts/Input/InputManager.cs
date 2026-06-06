@@ -101,6 +101,41 @@ namespace Hecton8.Input
         // COLD ALLOC: Dictionary<int, InputDisplayStyle>[32] — cached device-display-style lookup for keyboards, mice, gamepads, XR controllers, and platform virtual devices — owner: InputManager
         private readonly Dictionary<int, InputDisplayStyle> _displayStyleByDeviceId = new Dictionary<int, InputDisplayStyle>(32);
         private Action<InputDevice, InputDeviceChange> _cachedDeviceChangeAction;
+        private bool _playerActionsSubscribed;
+        private bool _uiActionsSubscribed;
+        private Action<InputAction.CallbackContext> _cachedMovePerformedAction;
+        private Action<InputAction.CallbackContext> _cachedMoveCanceledAction;
+        private Action<InputAction.CallbackContext> _cachedLookPerformedAction;
+        private Action<InputAction.CallbackContext> _cachedLookCanceledAction;
+        private Action<InputAction.CallbackContext> _cachedJumpPerformedAction;
+        private Action<InputAction.CallbackContext> _cachedJumpCanceledAction;
+        private Action<InputAction.CallbackContext> _cachedSprintPerformedAction;
+        private Action<InputAction.CallbackContext> _cachedSprintCanceledAction;
+        private Action<InputAction.CallbackContext> _cachedVerticalMovementPerformedAction;
+        private Action<InputAction.CallbackContext> _cachedVerticalMovementCanceledAction;
+        private Action<InputAction.CallbackContext> _cachedInteractPerformedAction;
+        private Action<InputAction.CallbackContext> _cachedFlashlightPerformedAction;
+        private Action<InputAction.CallbackContext> _cachedPdaPerformedAction;
+        private Action<InputAction.CallbackContext> _cachedPausePerformedAction;
+        private Action<InputAction.CallbackContext> _cachedInventoryPerformedAction;
+        private Action<InputAction.CallbackContext> _cachedToolSlot1PerformedAction;
+        private Action<InputAction.CallbackContext> _cachedToolSlot2PerformedAction;
+        private Action<InputAction.CallbackContext> _cachedToolSlot3PerformedAction;
+        private Action<InputAction.CallbackContext> _cachedToolSlot4PerformedAction;
+        private Action<InputAction.CallbackContext> _cachedPrimaryActionPerformedAction;
+        private Action<InputAction.CallbackContext> _cachedPrimaryActionCanceledAction;
+        private Action<InputAction.CallbackContext> _cachedSecondaryActionPerformedAction;
+        private Action<InputAction.CallbackContext> _cachedSecondaryActionCanceledAction;
+        private Action<InputAction.CallbackContext> _cachedNavigatePerformedAction;
+        private Action<InputAction.CallbackContext> _cachedNavigateCanceledAction;
+        private Action<InputAction.CallbackContext> _cachedSubmitPerformedAction;
+        private Action<InputAction.CallbackContext> _cachedCancelPerformedAction;
+        private Action<InputAction.CallbackContext> _cachedTabNextPerformedAction;
+        private Action<InputAction.CallbackContext> _cachedTabPreviousPerformedAction;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private Action<InputAction.CallbackContext> _cachedDebugToggleBlackBoxDashboardPerformedAction;
+        private Action<InputAction.CallbackContext> _cachedDebugToggleEngineHealthOverlayPerformedAction;
+#endif
 
         public static bool TryValidateRuntimeConfiguration(out string message)
         {
@@ -682,18 +717,114 @@ namespace Hecton8.Input
 
         private void SubscribeToPlayerActions()
         {
+            if (_playerActionsSubscribed)
+                return;
+
+            EnsureCachedDelegates();
+            SubscribeAction(_moveAction, _cachedMovePerformedAction, _cachedMoveCanceledAction);
+            SubscribeAction(_lookAction, _cachedLookPerformedAction, _cachedLookCanceledAction);
+            SubscribeAction(_jumpAction, _cachedJumpPerformedAction, _cachedJumpCanceledAction);
+            SubscribeAction(_sprintAction, _cachedSprintPerformedAction, _cachedSprintCanceledAction);
+            SubscribeAction(_interactAction, _cachedInteractPerformedAction);
+            SubscribeAction(_flashlightAction, _cachedFlashlightPerformedAction);
+            SubscribeAction(_pdaAction, _cachedPdaPerformedAction);
+            SubscribeAction(_pauseAction, _cachedPausePerformedAction);
+            SubscribeAction(_inventoryAction, _cachedInventoryPerformedAction);
+            SubscribeAction(_toolSlot1Action, _cachedToolSlot1PerformedAction);
+            SubscribeAction(_toolSlot2Action, _cachedToolSlot2PerformedAction);
+            SubscribeAction(_toolSlot3Action, _cachedToolSlot3PerformedAction);
+            SubscribeAction(_toolSlot4Action, _cachedToolSlot4PerformedAction);
+            SubscribeAction(_primaryActionAction, _cachedPrimaryActionPerformedAction, _cachedPrimaryActionCanceledAction);
+            SubscribeAction(_secondaryActionAction, _cachedSecondaryActionPerformedAction, _cachedSecondaryActionCanceledAction);
+            SubscribeAction(_verticalMovementAction, _cachedVerticalMovementPerformedAction, _cachedVerticalMovementCanceledAction);
+            _playerActionsSubscribed = true;
         }
         
         private void SubscribeToUIActions()
         {
+            if (_uiActionsSubscribed)
+                return;
+
+            EnsureCachedDelegates();
+            SubscribeAction(_navigateAction, _cachedNavigatePerformedAction, _cachedNavigateCanceledAction);
+            SubscribeAction(_submitAction, _cachedSubmitPerformedAction);
+            SubscribeAction(_cancelAction, _cachedCancelPerformedAction);
+            SubscribeAction(_tabNextAction, _cachedTabNextPerformedAction);
+            SubscribeAction(_tabPreviousAction, _cachedTabPreviousPerformedAction);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            SubscribeAction(_debugToggleBlackBoxDashboardAction, _cachedDebugToggleBlackBoxDashboardPerformedAction);
+            SubscribeAction(_debugToggleEngineHealthOverlayAction, _cachedDebugToggleEngineHealthOverlayPerformedAction);
+#endif
+            _uiActionsSubscribed = true;
         }
 
         private void UnsubscribeFromPlayerActions()
         {
+            if (!_playerActionsSubscribed)
+                return;
+
+            UnsubscribeAction(_moveAction, _cachedMovePerformedAction, _cachedMoveCanceledAction);
+            UnsubscribeAction(_lookAction, _cachedLookPerformedAction, _cachedLookCanceledAction);
+            UnsubscribeAction(_jumpAction, _cachedJumpPerformedAction, _cachedJumpCanceledAction);
+            UnsubscribeAction(_sprintAction, _cachedSprintPerformedAction, _cachedSprintCanceledAction);
+            UnsubscribeAction(_interactAction, _cachedInteractPerformedAction);
+            UnsubscribeAction(_flashlightAction, _cachedFlashlightPerformedAction);
+            UnsubscribeAction(_pdaAction, _cachedPdaPerformedAction);
+            UnsubscribeAction(_pauseAction, _cachedPausePerformedAction);
+            UnsubscribeAction(_inventoryAction, _cachedInventoryPerformedAction);
+            UnsubscribeAction(_toolSlot1Action, _cachedToolSlot1PerformedAction);
+            UnsubscribeAction(_toolSlot2Action, _cachedToolSlot2PerformedAction);
+            UnsubscribeAction(_toolSlot3Action, _cachedToolSlot3PerformedAction);
+            UnsubscribeAction(_toolSlot4Action, _cachedToolSlot4PerformedAction);
+            UnsubscribeAction(_primaryActionAction, _cachedPrimaryActionPerformedAction, _cachedPrimaryActionCanceledAction);
+            UnsubscribeAction(_secondaryActionAction, _cachedSecondaryActionPerformedAction, _cachedSecondaryActionCanceledAction);
+            UnsubscribeAction(_verticalMovementAction, _cachedVerticalMovementPerformedAction, _cachedVerticalMovementCanceledAction);
+            _playerActionsSubscribed = false;
         }
 
         private void UnsubscribeFromUIActions()
         {
+            if (!_uiActionsSubscribed)
+                return;
+
+            UnsubscribeAction(_navigateAction, _cachedNavigatePerformedAction, _cachedNavigateCanceledAction);
+            UnsubscribeAction(_submitAction, _cachedSubmitPerformedAction);
+            UnsubscribeAction(_cancelAction, _cachedCancelPerformedAction);
+            UnsubscribeAction(_tabNextAction, _cachedTabNextPerformedAction);
+            UnsubscribeAction(_tabPreviousAction, _cachedTabPreviousPerformedAction);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnsubscribeAction(_debugToggleBlackBoxDashboardAction, _cachedDebugToggleBlackBoxDashboardPerformedAction);
+            UnsubscribeAction(_debugToggleEngineHealthOverlayAction, _cachedDebugToggleEngineHealthOverlayPerformedAction);
+#endif
+            _uiActionsSubscribed = false;
+        }
+
+        private static void SubscribeAction(
+            InputAction action,
+            Action<InputAction.CallbackContext> performed,
+            Action<InputAction.CallbackContext> canceled = null)
+        {
+            if (action == null)
+                return;
+
+            if (performed != null)
+                action.performed += performed;
+            if (canceled != null)
+                action.canceled += canceled;
+        }
+
+        private static void UnsubscribeAction(
+            InputAction action,
+            Action<InputAction.CallbackContext> performed,
+            Action<InputAction.CallbackContext> canceled = null)
+        {
+            if (action == null)
+                return;
+
+            if (performed != null)
+                action.performed -= performed;
+            if (canceled != null)
+                action.canceled -= canceled;
         }
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -1851,6 +1982,39 @@ namespace Hecton8.Input
         private void EnsureCachedDelegates()
         {
             _cachedDeviceChangeAction ??= HandleInputDeviceChange; // COLD ALLOC: Action<InputDevice,InputDeviceChange>[1] - cached device-change callback - owner: InputManager
+            _cachedMovePerformedAction ??= OnMovePerformed;
+            _cachedMoveCanceledAction ??= OnMoveCanceled;
+            _cachedLookPerformedAction ??= OnLookPerformed;
+            _cachedLookCanceledAction ??= OnLookCanceled;
+            _cachedJumpPerformedAction ??= OnJumpPerformed;
+            _cachedJumpCanceledAction ??= OnJumpCanceledPerformed;
+            _cachedSprintPerformedAction ??= OnSprintPerformed;
+            _cachedSprintCanceledAction ??= OnSprintCanceledPerformed;
+            _cachedVerticalMovementPerformedAction ??= OnVerticalMovementPerformed;
+            _cachedVerticalMovementCanceledAction ??= OnVerticalMovementCanceled;
+            _cachedInteractPerformedAction ??= OnInteractPerformed;
+            _cachedFlashlightPerformedAction ??= OnFlashlightPerformed;
+            _cachedPdaPerformedAction ??= OnPDAPerformed;
+            _cachedPausePerformedAction ??= OnPausePerformed;
+            _cachedInventoryPerformedAction ??= OnInventoryPerformed;
+            _cachedToolSlot1PerformedAction ??= OnToolSlot1Performed;
+            _cachedToolSlot2PerformedAction ??= OnToolSlot2Performed;
+            _cachedToolSlot3PerformedAction ??= OnToolSlot3Performed;
+            _cachedToolSlot4PerformedAction ??= OnToolSlot4Performed;
+            _cachedPrimaryActionPerformedAction ??= OnPrimaryActionPerformed;
+            _cachedPrimaryActionCanceledAction ??= OnPrimaryActionCanceledPerformed;
+            _cachedSecondaryActionPerformedAction ??= OnSecondaryActionPerformed;
+            _cachedSecondaryActionCanceledAction ??= OnSecondaryActionCanceledPerformed;
+            _cachedNavigatePerformedAction ??= OnNavigatePerformed;
+            _cachedNavigateCanceledAction ??= OnNavigateCanceled;
+            _cachedSubmitPerformedAction ??= OnSubmitPerformed;
+            _cachedCancelPerformedAction ??= OnCancelPerformed;
+            _cachedTabNextPerformedAction ??= OnTabNextPerformed;
+            _cachedTabPreviousPerformedAction ??= OnTabPreviousPerformed;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _cachedDebugToggleBlackBoxDashboardPerformedAction ??= OnDebugToggleBlackBoxDashboardPerformed;
+            _cachedDebugToggleEngineHealthOverlayPerformedAction ??= OnDebugToggleEngineHealthOverlayPerformed;
+#endif
         }
 
         private void HandleInputDeviceChange(InputDevice device, InputDeviceChange change)

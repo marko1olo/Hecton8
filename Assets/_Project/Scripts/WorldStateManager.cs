@@ -50,11 +50,6 @@ namespace Hecton8.World
         // COLD ALLOC: List<long>[256] — packed pickup depletion words during save — owner: WorldStateManager
         private readonly List<long> _packedPickupWords = new List<long>(256);
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-        }
-
         /// <summary>
         /// Total persisted depleted resource node count.
         /// </summary>

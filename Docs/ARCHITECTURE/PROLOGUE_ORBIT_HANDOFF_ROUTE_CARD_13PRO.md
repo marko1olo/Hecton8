@@ -22,11 +22,17 @@ Owning file/system:
 - `Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs`
 - `Assets/_Project/Scripts/Narrative/Prologue/AwaitableDropSequenceDirector.cs`
 
+Current authority boundary:
+
+- This route card is `YELLOW / STATIC_SOURCE_ONLY`.
+- Root production handoff remains `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD` until this route is proven GREEN and root scene-flow authority is explicitly updated.
+- `01_ORBIT` may stay enabled and may be worked as standalone prologue content, but it is not mandatory first-20 acceptance proof in the current route.
+
 Problem:
 
-- The required 10-15 minute orbital prologue needs a production new-game route through `01_ORBIT`.
-- Older scene-flow authority still stated `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`.
-- That older authority left `01_ORBIT` outside the main handoff.
+- The proposed 10-15 minute orbital prologue needs a production new-game route through `01_ORBIT`.
+- Current root scene-flow authority leaves `01_ORBIT` outside the main handoff.
+- This route cannot override first-20 acceptance until proof and authority update exist.
 
 Why owner-local data is insufficient:
 

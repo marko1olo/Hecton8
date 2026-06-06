@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
 using Unity.Collections;
@@ -19,13 +20,14 @@ namespace Hecton8.SaveSystem
         MappedWriteStarted = 7
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct SaveEventPayload
     {
-        public SaveEventType Type;
-        public ulong TimestampTicks;
-        public uint SlotHash;
-        public uint MessageHash;
-        public int MessageSlot;
+        [FieldOffset(0)] public ulong TimestampTicks;
+        [FieldOffset(8)] public uint SlotHash;
+        [FieldOffset(12)] public uint MessageHash;
+        [FieldOffset(16)] public int MessageSlot;
+        [FieldOffset(20)] public SaveEventType Type;
     }
 
     public interface ISaveEventListener
@@ -371,6 +373,13 @@ namespace Hecton8.SaveSystem
             _lastListenerExceptionTelemetryFrame = -1;
             _lastPayloadTruncationTelemetryFrame = -1;
             _isDispatching = false;
+        }
+
+        [UnityEngine.RuntimeInitializeOnLoadMethod(
+            UnityEngine.RuntimeInitializeLoadType.BeforeSceneLoad)]
+        internal static void PrewarmRuntimeQueues()
+        {
+            EnsureInitialized();
         }
 
 #if UNITY_EDITOR

@@ -1,0 +1,94 @@
+﻿captureTruth=surface_crest_only_uniform_sky_horizon_probe_editor_only_unsaved
+scene=Assets/_Project/Scenes/02_HECTON_WORLD.unity
+camera=Main Camera
+cameraPosition=(-18.000, 18.650, 126.000)
+cameraRotation=(0.400, 178.100, 0.000)
+cameraNearFar=0.050/120000.0
+skybox=H8_TEMP_SurfaceUniformBrightSkyProbe_1428
+sun=H8_SURFACE_SUN_KEY_1428
+renderSettings=fog=False fogMode=ExponentialSquared fogColor=RGBA(0.035,0.300,0.340,1.000) fogDensity=0.010000 ambientMode=Trilight ambientLight=RGBA(0.586,0.687,0.759,1.000) ambientSky=RGBA(0.586,0.687,0.759,1.000) ambientEquator=RGBA(0.420,0.580,0.580,1.000) ambientGround=RGBA(0.240,0.280,0.300,1.000) ambientIntensity=1.340 reflectionIntensity=0.620
+sunLightState=name=H8_SURFACE_SUN_KEY_1428 enabled=True type=Directional intensity=1.750 color=RGBA(1.000,0.950,0.880,1.000) shadows=Soft shadowStrength=1.000 rotation=(54.000, 332.000, 0.000)
+
+H8_ORGANIC_SHORELINE_FOAM_FINE_1469=activeSelf=True activeHierarchy=True layer=Default position=(0.00, 0.00, 0.00) scale=(1.00, 1.00, 1.00) rendererEnabled=False bounds=(100.000, 0.000, 7.118) material=MAT_H8_ShorelineFoamFine_1469
+H8_WORLD_CREST_OCEAN_RUNTIME_1428=activeSelf=True activeHierarchy=True layer=Water position=(-18.00, 14.02, 126.00) scale=(1.00, 1.00, 1.00)
+SURFACE_HORIZON_SALT_HAZE_1428=activeSelf=False activeHierarchy=False layer=Default position=(51.00, 2.70, 32.00) scale=(1.18, 0.75, 1.18) rendererEnabled=False bounds=(369.121, 30.651, 214.536) material=MAT_SurfaceHorizonSaltHaze_1428
+H8_FloorCausticSoft_1443=activeSelf=True activeHierarchy=True layer=Default position=(0.00, 0.00, 0.00) scale=(1.00, 1.00, 1.00) rendererEnabled=False bounds=(52.278, 5.800, 47.219) material=MAT_H8_FloorCausticSoft_1443
+H8_UnderwaterSurfaceSheet_1455=activeSelf=False activeHierarchy=False layer=Default position=(0.00, 0.00, 0.00) scale=(1.00, 1.00, 1.00) rendererEnabled=False bounds=(235.000, 0.082, 162.000) material=MAT_H8_UnderwaterSurfaceSheet_1455
+H8_UnderwaterHazeCurtain_1454=activeSelf=False activeHierarchy=False layer=Default position=(0.00, 0.00, 0.00) scale=(1.00, 1.00, 1.00) rendererEnabled=False bounds=(182.000, 4.400, 30.000) material=MAT_H8_UnderwaterHazeCurtain_1454
+H8_DEPTH_LOW_SHELF_1428=activeSelf=True activeHierarchy=False layer=Default position=(0.00, -0.90, 30.00) scale=(58.00, 1.15, 8.00) rendererEnabled=False bounds=(58.000, 1.150, 8.000) material=MAT_H8WorldAbyssRidge_1428
+H8_WORLD_LOW_WATER_OCCLUSION_00_1428=activeSelf=True activeHierarchy=False layer=Default position=(-7.00, -0.07, 18.80) scale=(3.20, 0.06, 0.40) rendererEnabled=False bounds=(3.200, 0.060, 0.400) material=MAT_WorldShell_1428
+H8_WORLD_LOW_WATER_OCCLUSION_01_1428=activeSelf=True activeHierarchy=False layer=Default position=(-2.40, -0.07, 21.20) scale=(3.20, 0.06, 0.40) rendererEnabled=False bounds=(3.200, 0.060, 0.400) material=MAT_WorldShell_1428
+H8_WORLD_LOW_WATER_OCCLUSION_02_1428=activeSelf=True activeHierarchy=False layer=Default position=(2.20, -0.07, 23.60) scale=(3.20, 0.06, 0.40) rendererEnabled=False bounds=(3.200, 0.060, 0.400) material=MAT_WorldShell_1428
+H8_WORLD_LOW_WATER_OCCLUSION_03_1428=activeSelf=True activeHierarchy=False layer=Default position=(6.80, -0.07, 26.00) scale=(3.20, 0.06, 0.40) rendererEnabled=False bounds=(3.200, 0.060, 0.400) material=MAT_WorldShell_1428
+H8_DEPTH_CEILING_OCCLUSION_1428=activeSelf=True activeHierarchy=False layer=Default position=(-4.00, 7.80, 25.00) scale=(70.00, 1.00, 8.00) rendererEnabled=False bounds=(70.000, 1.000, 8.000) material=MAT_H8WorldDeepAbyss_1428
+NOIR_UPPER_PRESSURE_LID=activeSelf=True activeHierarchy=False layer=Default position=(0.00, 8.60, 5.00) scale=(38.00, 0.25, 30.00) rendererEnabled=False bounds=(38.000, 0.250, 30.000) material=MAT_H8WorldPressureVignette_1428
+H8_PhoticRouteTerrain_1464=activeSelf=True activeHierarchy=False layer=Default position=(0.00, 0.00, 0.00) scale=(1.00, 1.00, 1.00) rendererEnabled=False bounds=(158.000, 10.828, 132.000) material=MAT_H8_PhoticRouteTerrain_1464
+H8_WORLD_TERRAIN_SHELL_1428=activeSelf=False activeHierarchy=False layer=Default position=(-60.00, -8.00, -4.00) scale=(1.00, 1.00, 1.00) terrainEnabled=False drawHeightmap=False drawInstanced=True heightmapPixelError=3.00 basemapDistance=900.0 terrainMaterial=MAT_H8TerrainLit_BasaltSediment_1428 terrainSize=(120.00, 6.00, 88.00)
+H8_SURFACE_AEGIR_GAS_GIANT_REAL_1428=activeSelf=False activeHierarchy=False layer=Celestial  position=(1624.85, 6707.97, -49397.27) scale=(17293.16, 17293.16, 17293.16) rendererEnabled=False bounds=(34586.310, 34586.310, 34586.310) material=MAT_AegirGasGiant_Impostor_1428
+
+oceanRendererState H8_WORLD_CREST_OCEAN_RUNTIME_1428=material=MAT_H8_SurfaceCrestOcean_1428 materialPath=Assets/_Project/Art/Materials/MAT_H8_SurfaceCrestOcean_1428.mat hideFlags=None kwClipSurface=True kwClipUnderTerrain=True _ClipSurface=1.000 _ClipUnderTerrain=1.000 _Foam=1.000 _CausticsStrength=1.650 _viewpoint=Main Camera _camera=Main Camera _followSceneCamera=True _showOceanProxyPlane=False _debug._disableFollowViewpoint=False _debug._forceBatchMode=False _debug._forceNoGPU=False _waterBodyCulling=False _extentsSizeMultiplier=1800.000 _minScale=8.000 _maxScale=4096.000 _lodDataResolution=256 _geometryDownSampleFactor=1 _lodCount=8 _createSeaFloorDepthData=True _createFoamSim=True _createShadowData=True
+oceanTileSummary H8_WORLD_CREST_OCEAN_RUNTIME_1428=
+  tile[0] name=SargassumWaveDampingInput activeHierarchy=False enabled=False layer=Water material=Ocean boundsCenter=(-18.00, 4914.07, 126.00) boundsSize=(10.00, 0.00, 10.00)
+  tile[1] name=SargassumFoamDampingInput activeHierarchy=False enabled=False layer=Water material=Ocean boundsCenter=(-18.00, 4914.07, 126.00) boundsSize=(10.00, 0.00, 10.00)
+  tile[2] name=SargassumOilFilmInput activeHierarchy=False enabled=False layer=Water material=Ocean boundsCenter=(-18.00, 4914.07, 126.00) boundsSize=(10.00, 0.00, 10.00)
+  tile[3] name=Tile_L0_SlimXFatZ activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-30.06, 14.02, 137.94) boundsSize=(8.88, 0.00, 8.63)
+  tile[4] name=Tile_L0_SlimX activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-22.00, 14.02, 137.94) boundsSize=(8.75, 0.00, 8.63)
+  tile[5] name=Tile_L0_SlimX activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-14.00, 14.02, 137.94) boundsSize=(8.75, 0.00, 8.63)
+  tile[6] name=Tile_L0_SlimXZ activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-6.06, 14.02, 137.94) boundsSize=(8.63, 0.00, 8.63)
+  tile[7] name=Tile_L0_FatX activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-30.06, 14.02, 130.00) boundsSize=(8.88, 0.00, 8.75)
+  tile[8] name=Tile_L0_Interior activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-22.00, 14.02, 130.00) boundsSize=(8.75, 0.00, 8.75)
+  tile[9] name=Tile_L0_Interior activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-14.00, 14.02, 130.00) boundsSize=(8.75, 0.00, 8.75)
+  tile[10] name=Tile_L0_SlimX activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-6.06, 14.02, 130.00) boundsSize=(8.63, 0.00, 8.75)
+  tile[11] name=Tile_L0_FatX activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-30.06, 14.02, 122.00) boundsSize=(8.88, 0.00, 8.75)
+  tile[12] name=Tile_L0_Interior activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-22.00, 14.02, 122.00) boundsSize=(8.75, 0.00, 8.75)
+  tile[13] name=Tile_L0_Interior activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-14.00, 14.02, 122.00) boundsSize=(8.75, 0.00, 8.75)
+  tile[14] name=Tile_L0_SlimX activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-6.06, 14.02, 122.00) boundsSize=(8.63, 0.00, 8.75)
+  tile[15] name=Tile_L0_FatXZ activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-30.06, 14.02, 113.94) boundsSize=(8.88, 0.00, 8.88)
+  tile[16] name=Tile_L0_FatX activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-22.00, 14.02, 113.94) boundsSize=(8.75, 0.00, 8.88)
+  tile[17] name=Tile_L0_FatX activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-14.00, 14.02, 113.94) boundsSize=(8.75, 0.00, 8.88)
+  tile[18] name=Tile_L0_FatXSlimZ activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-6.06, 14.02, 113.94) boundsSize=(8.63, 0.00, 8.88)
+  tile[19] name=Tile_L1_SlimXFatZ activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-42.12, 14.02, 149.88) boundsSize=(17.75, 0.00, 17.25)
+  tile[20] name=Tile_L1_SlimX activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-26.00, 14.02, 149.88) boundsSize=(17.50, 0.00, 17.25)
+  tile[21] name=Tile_L1_SlimX activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-10.00, 14.02, 149.88) boundsSize=(17.50, 0.00, 17.25)
+  tile[22] name=Tile_L1_SlimXZ activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(5.88, 14.02, 149.88) boundsSize=(17.25, 0.00, 17.25)
+  tile[23] name=Tile_L1_FatX activeHierarchy=True enabled=True layer=Water material=MAT_H8_SurfaceCrestOcean_1428 boundsCenter=(-42.12, 14.02, 134.00) boundsSize=(17.75, 0.00, 17.50)
+  totals rendererCount=103 active=100 enabled=100 inFrustum=39
+
+mapMagicSummary=
+  enabled=True activeSelf=True activeHierarchy=True graph=Assets/MapMagic/Map_Graph/New Gen/ACTUAL TERRAIN.asset gridCount=2 pinnedCount=2 progress=1.000 isGenerating=False height=32.00 mainApply=SetHeights draftApply=SetHeights generateRange=1 mainRange=1
+  tile[0] name=Tile -1,0 coord=Den.Tools.Coord x:-1 z:0 distance=1.00 activeTerrain=NULL mainReady=True draftReady=True mainGenerateReady=True mainApplyReady=True mainFinalizeMarks=0 mainApplyMarks=0 mainProducts=76 mainHeightOutputs=1 mainAllOutputsReady=True draftGenerateReady=True draftApplyReady=True draftFinalizeMarks=0 draftApplyMarks=0 draftProducts=76 draftHeightOutputs=1 draftAllOutputsReady=True
+  tile[1] name=Tile 0,0 coord=Den.Tools.Coord x:0 z:0 distance=0.00 activeTerrain=NULL mainReady=True draftReady=True mainGenerateReady=True mainApplyReady=True mainFinalizeMarks=0 mainApplyMarks=0 mainProducts=76 mainHeightOutputs=1 mainAllOutputsReady=True draftGenerateReady=True draftApplyReady=True draftFinalizeMarks=0 draftApplyMarks=0 draftProducts=76 draftHeightOutputs=1 draftAllOutputsReady=True
+
+actualTerrainGraphSummary=
+  graphPath=Assets/MapMagic/Map_Graph/New Gen/ACTUAL TERRAIN.asset generatorCount=117 linkCount=152
+  heightOutput=type=MapMagic.Nodes.MatrixGenerators.HeightOutput200 enabled=True id=12395288260639719426 version=17
+  link heightOutput.in=sourceType=MapMagic.Nodes.MatrixGenerators.HectonBiomeMatrixMapMagicPostProcessNode sourceId=17024921607367294977 sourceVersion=4 outletId=17024921607367294977 storedLinkedOutletId=17024921607367294977
+  tectonic=type=MapMagic.Nodes.MatrixGenerators.HectonBiomeMatrixMapMagicPostProcessNode enabled=True id=17024921607367294977 version=4
+  link tectonic.in=sourceType=MapMagic.Nodes.MatrixGenerators.Import200 sourceId=12389088114570690561 sourceVersion=29 outletId=12389088114570690561 storedLinkedOutletId=12389088114570690561
+  erosion=type=MapMagic.Nodes.MatrixGenerators.HectonHydraulicErosionMapMagicNode enabled=False id=17024940299064967170 version=4
+  link erosion.heightIn=sourceType=MapMagic.Nodes.MatrixGenerators.HectonBiomeMatrixMapMagicPostProcessNode sourceId=17024921607367294977 sourceVersion=4 outletId=17024921607367294977 storedLinkedOutletId=17024921607367294977
+  splat=type=MapMagic.Nodes.MatrixGenerators.HectonTerrainSplatmapMapMagicNode enabled=True id=17024943597599850503 version=8
+  link splat.heightIn=sourceType=MapMagic.Nodes.MatrixGenerators.HectonBiomeMatrixMapMagicPostProcessNode sourceId=17024921607367294977 sourceVersion=4 outletId=17024921607367294977 storedLinkedOutletId=17024921607367294977
+  link splat.sedimentIn=UNLINKED linkedOutletId=0
+  anomaly=type=MapMagic.Nodes.MatrixGenerators.HectonAnomalyMapMagicNode enabled=False id=17024945796623106063 version=4
+  link anomaly.heightIn=UNLINKED linkedOutletId=0
+  import[0] enabled=True id=12389088114570690561 version=29 scale=17.000 offset=(-9000.000, -9000.000) matrixAsset=Assets/MapMagic/Map_Graph/New Gen/USE IT.asset matrixRect=Den.Tools.CoordRect: offsetX:0 offsetZ:0 sizeX:4096 sizeZ:4096 matrixCount=16777216 finiteCount=16777216 min=0.00000 max=1.00000 avg=0.34283
+
+terrainSummary=
+  Main Terrain activeSelf=True activeHierarchy=True enabled=False inFrustum=True position=(-15018.00, -2.80, 42.00) size=(15000.00, 32.00, 15000.00) pixelError=3.00 basemapDistance=2400.0 drawInstanced=True material=MAT_H8TerrainLit_BasaltSediment_1428 layerCount=4 layers=L_Basalt|L_Rocks|L_Sand|L_Gravel
+  Main Terrain activeSelf=True activeHierarchy=True enabled=False inFrustum=True position=(-18.00, -2.80, 42.00) size=(15000.00, 32.00, 15000.00) pixelError=3.00 basemapDistance=2400.0 drawInstanced=True material=MAT_H8TerrainLit_BasaltSediment_1428 layerCount=4 layers=L_Basalt|L_Rocks|L_Sand|L_Gravel
+  Draft Terrain activeSelf=False activeHierarchy=False enabled=False inFrustum=True position=(-18.00, -2.80, 42.00) size=(15000.00, 32.00, 15000.00) pixelError=3.00 basemapDistance=2400.0 drawInstanced=True material=MAT_H8TerrainLit_BasaltSediment_1428 layerCount=4 layers=L_Basalt|L_Rocks|L_Sand|L_Gravel
+  Draft Terrain activeSelf=False activeHierarchy=False enabled=False inFrustum=True position=(-15018.00, -2.80, 42.00) size=(15000.00, 32.00, 15000.00) pixelError=3.00 basemapDistance=2400.0 drawInstanced=True material=MAT_H8TerrainLit_BasaltSediment_1428 layerCount=4 layers=L_Basalt|L_Rocks|L_Sand|L_Gravel
+  H8_WORLD_TERRAIN_SHELL_1428 activeSelf=False activeHierarchy=False enabled=False inFrustum=True position=(-60.00, -8.00, -4.00) size=(120.00, 6.00, 88.00) pixelError=3.00 basemapDistance=900.0 drawInstanced=True material=MAT_H8TerrainLit_BasaltSediment_1428 layerCount=4 layers=L_Basalt|L_Rocks|L_Sand|L_Gravel
+
+materialSnapshot Assets/Crest/Crest/Materials/Ocean.mat=name=Ocean shader=Crest/Ocean URP _Diffuse=RGBA(0.026,0.120,0.200,1.000) _DiffuseGrazing=RGBA(0.290,0.560,0.720,1.000) _SubSurfaceShallowCol=RGBA(0.340,0.680,0.820,1.000) _ClipSurface=1.000 _ClipUnderTerrain=1.000 _Foam=1.000 _CausticsStrength=0.920
+materialSnapshot Assets/_Project/Art/Materials/MAT_H8_SurfaceCrestOcean_1428.mat=name=MAT_H8_SurfaceCrestOcean_1428 shader=Crest/Ocean URP _Diffuse=RGBA(0.035,0.145,0.245,1.000) _DiffuseGrazing=RGBA(0.360,0.640,0.820,1.000) _SubSurfaceShallowCol=RGBA(0.480,0.780,0.940,1.000) _ClipSurface=1.000 _ClipUnderTerrain=1.000 _Foam=1.000 _CausticsStrength=1.650
+materialSnapshot Assets/_Project/Art/Materials/World/MAT_H8TerrainLit_BasaltSediment_1428.mat=name=MAT_H8TerrainLit_BasaltSediment_1428 shader=Universal Render Pipeline/Terrain/Lit _BaseColor=RGBA(0.680,0.650,0.560,1.000)
+materialSnapshot Assets/_Project/Art/Materials/World/Photic1464/MAT_H8_PhoticRouteTerrain_1464.mat=name=MAT_H8_PhoticRouteTerrain_1464 shader=Hecton8/World/PhoticTerrainLit1453 _Tint=RGBA(0.720,0.690,0.600,1.000) _ShadowTint=RGBA(0.180,0.220,0.220,1.000)
+materialSnapshot Assets/_Project/Art/Materials/World/Photic1469/MAT_H8_ShorelineFoamFine_1469.mat=name=MAT_H8_ShorelineFoamFine_1469 shader=HECTON/World/H8_ShorelineFoamRibbon_1428
+materialSnapshot Assets/_Project/Art/Materials/World/Photic1464/MAT_H8_WetBasaltDetail_1464.mat=name=MAT_H8_WetBasaltDetail_1464 shader=Universal Render Pipeline/Lit _BaseColor=RGBA(0.360,0.390,0.350,1.000)
+materialSnapshot Assets/_Project/Art/Materials/World/MAT_H8SurfaceWetBasaltReal_1428.mat=name=MAT_H8SurfaceWetBasaltReal_1428 shader=Universal Render Pipeline/Lit _BaseColor=RGBA(0.460,0.490,0.420,1.000)
+materialSnapshot Assets/_Project/Art/Materials/Mat_HectonSky.mat=name=Mat_HectonSky shader=HECTON/Sky/Hecton_AlienSky_Master
+materialSnapshot Assets/_Project/Art/Materials/Celestial/MAT_AegirGasGiant_Impostor_1428.mat=name=MAT_AegirGasGiant_Impostor_1428 shader=HECTON/Celestial/H8_AegirGasGiantImpostor_1428
+
+visibleRendererSummary=

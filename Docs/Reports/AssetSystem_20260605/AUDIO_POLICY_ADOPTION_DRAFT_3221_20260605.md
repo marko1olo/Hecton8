@@ -133,7 +133,7 @@ Static ledger facts:
 Blockers from 3213, remediation spec, and matrix:
 
 - MusicDirector mixer nulls: `MusicDirectorConfig_Global.asset` has null `_musicMixerGroup` and `_stingerMixerGroup` fields in static evidence.
-- Player prefab direct refs: remediation spec reports 28 direct `AudioClip` refs in `Assets/_Project/Prefabs/Player.prefab`; the matrix has P0 direct refs for `dive_splash.wav` and `Underwater Ambient.wav` with no owner/release/0 B proof.
+- Player prefab direct refs: current static scan reports 24 direct `AudioClip` refs in `Assets/_Project/Prefabs/Player.prefab`; prior `dive_splash.wav` and `Underwater Ambient.wav` direct refs are source-cleared but still lack Unity prefab readback, owner/removal ledger, playback/absence proof, and 0 B proof.
 - VO stubs placeholder: `VOSTUB_CHEN_LOG01_EN` and `VOSTUB_CHEN_LOG01_RU` are 1.341s placeholder rows and cannot prove final VO duration, localization, subtitle timing, loudness, or delivery policy.
 - Player-loop risk: `BREATHING_BREATH_IN_AND_OUT_1`, `INSIDE_SUIT_SOUNDS_TOO_LOUD`, `SWIMMING_UNDERWATER`, and `SWIMMING_ONWATER` are streaming player-layer rows or long loop risks, not accepted by duration alone.
 - Music/ambient mix risk: loud/dense beds, repeated stingers, and first-exit/shallow candidates require MusicDirector runtime proof, ducking, silence windows, warning audibility, and listening pass.

@@ -6,6 +6,12 @@ Scope: generated and authored textures, material assignment, PBR masks, atlas pa
 
 For source creation recipes, AI-assisted texture prompts, procedural height/normal/MRAO bake rules, and visual acceptance gates, read `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md` before authoring or generating texture families.
 
+## First-20 Route Hook
+
+- First-20 moment: first readable wet rock, pressure-rated metal, tool surface, shallow flora/coral material, resource node, route decal, or machinery label seen in the opening route.
+- Route blocker removed: prevents generated meshes from entering the first route with flat color, blurry atlases, fake PBR channels, unreadable labels, or runtime texture repair.
+- Proof class: STATIC_DOC until texture role reports, import settings, UV/atlas proof, material previews, Unity import evidence, compact capture, and route screenshot exist.
+
 ## 1. Texture Source Law
 
 Generated meshes must use existing high-quality human-authored or AI-assisted texture assets when available. Synthetic flat colors are allowed only as validator/debug placeholders and must not ship as final art.
@@ -131,7 +137,15 @@ Texture import must be enforced offline:
 
 Generated meshes must reference material assets, not duplicate materials. Per-instance variation uses vertex colors, material property blocks only where approved, atlas rects, or instancing data. Runtime `renderer.material` is banned.
 
-## 9. Rejection Gates
+## 9. Runtime Truth And Hot-Path Boundary
+
+Texture and material generation is an editor/offline authoring route. Runtime truth is the imported texture asset, material asset, shader contract, atlas rect, channel manifest, streaming handle, and prefab/material reference that consume the generated output.
+
+Runtime hot paths must not create `Texture2D` assets, fill pixels, compress textures, bake masks, repack atlases, unwrap UVs, call `renderer.material`, or instantiate per-prefab materials. Runtime may only bind approved material assets, update predeclared shader parameters, select already-imported texture/atlas variants through an owner route, and stream/release tracked handles.
+
+`GlobalQualityWeight` may scale texture max size, streaming residency, decal/material detail intensity, and optional diagnostics. It must not change material channel semantics, atlas rect identity, prefab authority, gameplay truth, save identity, or shader ABI.
+
+## 10. Rejection Gates
 
 Reject if:
 
@@ -143,7 +157,7 @@ Reject if:
 - Runtime code is required to generate final textures.
 - Generated material count breaks SRP Batcher/instancing without proof.
 
-## 10. Proof Artifacts
+## 11. Proof Artifacts
 
 Texture and material generation must output:
 
@@ -155,6 +169,6 @@ Texture and material generation must output:
 - preview captures for albedo-only, normal-only, mask-channel view, flat lighting, and final URP lighting;
 - explicit `PENDING UNITY/PROFILER VERIFICATION` if only static material rules changed.
 
-## 11. Acceptance Sentence
+## 12. Acceptance Sentence
 
 A generated texture/material set is accepted only when every map has a documented PBR role, UVs or projection coordinates are measured, atlas padding survives mips, import settings are correct, material slots remain batchable, and final visual richness comes from valid offline maps rather than runtime texture generation or fake color noise.

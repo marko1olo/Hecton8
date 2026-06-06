@@ -5499,7 +5499,6 @@ namespace Hecton8.Core
 
                 CelestialEvents.FlushPending();
                 EclipseGameplayEvents.FlushPending();
-                AcousticZoneEvents.FlushPending();
                 ElectrolysisAcousticEvents.FlushPending();
                 AudioCaptionEvents.FlushPending();
                 SpectrumEvents.FlushPending();

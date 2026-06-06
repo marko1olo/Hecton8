@@ -54,9 +54,19 @@ Material:
     - _Surface: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 0
+    - _Alpha: 0.26
+    - _EdgeFade: 0.08
+    - _GlobalQualityWeight: 0.78
+    - _LowerFade: 0.03
+    - _NoiseScale: 31
+    - _NoiseStrength: 0.14
+    - _Softness: 0.32
+    - _UpperFade: 0.52
     m_Colors:
-    - _BaseColor: {r: 0.45, g: 0.76, b: 0.78, a: 0.1}
-    - _Color: {r: 0.45, g: 0.76, b: 0.78, a: 0.1}
+    - _BaseColor: {r: 0.52, g: 0.68, b: 0.86, a: 0.14}
+    - _Color: {r: 0.52, g: 0.68, b: 0.86, a: 0.14}
+    - _LowerTint: {r: 0.58, g: 0.76, b: 0.98, a: 0.26}
+    - _UpperTint: {r: 0.96, g: 0.94, b: 1, a: 0.14}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &4975814425776799320

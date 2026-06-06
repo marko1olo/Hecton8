@@ -2,6 +2,14 @@
 
 ---
 
+## Current HECTON-8 Source Override
+
+This mandate preserves older illustrative `GlobalRegistry` patterns. Live HECTON-8 source and root `AGENTS.md` own exact APIs and names. Current source uses source-owned registration methods such as `GlobalRegistry.TryRegisterUpdatable`, `TryRegisterFixedTickable`, `TryRegisterSlowTickable`, `TryRegisterColdTickable`, `TryRegisterLateFrameTickable`, `TryRegisterPostFixedTickable`, and matching unregister routes where present. Do not implement legacy examples such as `GlobalRegistry.Updatables.Register(this)`, raw `RegistryBucket` exposure, or `RegisterService(ref GlobalRegistry.Audio, ...)` unless live owner source already contains that exact surface and the current route bible approves it.
+
+Apply this file's surviving doctrine as architecture law: cold dependency discovery, deterministic owner registration, no hot registry polling, no hidden `Awake` dependency wiring, no circular concrete ownership, typed signal/event boundaries, read-accessor purity, and source-backed route cards for new global authority. Exact code snippets in the older body are non-authoritative examples when they conflict with live source.
+
+---
+
 ## RULE-01 - Static Service Locator Pattern
 
 The `GlobalRegistry` is a static singleton accessor class - not a MonoBehaviour.

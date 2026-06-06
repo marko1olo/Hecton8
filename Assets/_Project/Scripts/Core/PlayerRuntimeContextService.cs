@@ -383,8 +383,7 @@ namespace Hecton8.Core
         {
             PlayerRuntimeContextService runtime =
                 s_activeRuntimeInstance ??
-                GlobalRegistry.PlayerRuntimeContextRuntime ??
-                GlobalRegistry.RegisteredPlayer as PlayerRuntimeContextService;
+                GlobalRegistry.PlayerRuntimeContextRuntime;
             if (runtime != null)
                 runtime.ShutdownServiceState();
         }
@@ -1167,8 +1166,11 @@ namespace Hecton8.Core
             IPlayerRuntimeContext registeredContext = GlobalRegistry.RegisteredPlayer;
             if (registeredContext != null && !ReferenceEquals(registeredContext, this))
             {
-                if (registeredContext is PlayerRuntimeContextService staleContextService)
-                    staleContextService.ShutdownServiceState();
+                IServiceShutdown staleContextShutdown = registeredContext as IServiceShutdown;
+                if (staleContextShutdown == null)
+                    return;
+
+                staleContextShutdown.OnServiceShutdown();
 
                 registeredContext = GlobalRegistry.RegisteredPlayer;
                 if (registeredContext != null && !ReferenceEquals(registeredContext, this))

@@ -8,11 +8,6 @@ namespace Hecton8.Modding
     /// </summary>
     internal static class ModLocalizationBridge
     {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-        }
-
         /// <summary>
         /// Rejects legacy localization files discovered for a mod directory.
         /// </summary>

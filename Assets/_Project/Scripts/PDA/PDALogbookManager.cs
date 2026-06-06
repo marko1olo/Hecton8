@@ -195,10 +195,6 @@ namespace Hecton8.PDA
         private bool NeedsCraftingScanLogPump => !_firstLaserCutterLogged || !_firstLeviathanScanLogged;
         private bool NeedsLogbookSignalPump => Application.isPlaying;
 
-        private void Awake()
-        {
-        }
-
         private void OnEnable()
         {
             TryRegisterLogbookService();

@@ -21,7 +21,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(HectonScanMarkerSystem))]
     [RequireComponent(typeof(DataArchaeologyRuntime))]
-    public sealed class ScannerTool : PlayerTool, IBatteryTool, IFastTickable, ISlowTickable, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class ScannerTool : PlayerTool, IBatteryTool, IFastTickable, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private static int s_x001ScannerToolSignalPushDropCount;
         private const int AtlasDetectionRevealStage = 2;
@@ -626,7 +626,6 @@ namespace Hecton8.Gameplay
         private float _heldPrimaryDeltaTime;
         private bool _heldPrimaryThisFrame;
         private bool _registeredScientificFastTick;
-        private bool _registeredScientificSlowTick;
         private bool _registeredScientificLateFrame;
         private bool _registeredLocalizationListener;
         private bool _registeredHotSwapListener;
@@ -967,11 +966,6 @@ namespace Hecton8.Gameplay
             RefreshScannerQualityWeight(now);
             UpdateScientificScanning(deltaTime, now);
             WriteScannerBlackBox(deltaTime, heldForBlackBox, now, frame);
-        }
-
-        public void SlowTick()
-        {
-            // Quality is sampled from continuous HomeostasisBrain state by publish/resample/black-box paths.
         }
 
         public void LateFrameTick()
@@ -1488,8 +1482,6 @@ namespace Hecton8.Gameplay
             TryRegisterHotSwapListener();
             if (!_registeredScientificFastTick)
                 _registeredScientificFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Player);
-            if (!_registeredScientificSlowTick)
-                _registeredScientificSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
             if (!_registeredScientificLateFrame)
                 _registeredScientificLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
@@ -1500,12 +1492,6 @@ namespace Hecton8.Gameplay
             {
                 GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Player);
                 _registeredScientificFastTick = false;
-            }
-
-            if (_registeredScientificSlowTick)
-            {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
-                _registeredScientificSlowTick = false;
             }
 
             if (_registeredScientificLateFrame)

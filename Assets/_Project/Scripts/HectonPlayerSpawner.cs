@@ -59,6 +59,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     private const float SpawnSearchTwoPi = 6.2831853071795864769f;
     private const float NearshoreDiagonal = 0.70710678118f;
     private const uint KccVelocitySpawnerMaxAgeFrames = 12u;
+    private const string ProductionPlayerPrefabGuid = "1c4db7a430141e5408e01b6ce4ed19d7";
 
     // COLD ALLOC: float[1024] — spawn spiral trigonometry lookup — owner: HectonPlayerSpawner
     private static readonly float[] s_spawnSinLut = new float[SpawnAngleLutSize];
@@ -107,6 +108,9 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     [Header("=== Player ===")]
+    [Tooltip("Production Player.prefab source. Must resolve to GUID 1c4db7a430141e5408e01b6ce4ed19d7 when assigned through Unity.")]
+    [SerializeField] private GameObject productionPlayerPrefab;
+
     [Tooltip("Player Rigidbody reference assigned through the Inspector.")]
     [SerializeField] private Rigidbody playerRigidbody;
 
@@ -245,7 +249,19 @@ public class HectonPlayerSpawner : MonoBehaviour
             InitializeSpawnTrigLut();
         }
 
-        IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+        IPlayerRuntimeContext playerContext = ResolveProductionPlayerContext();
+        if (playerRigidbody != null && !TryAcceptProductionPlayerRigidbody(playerRigidbody, out _playerMovement))
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogSpawnerError(
+                "[HectonPlayerSpawner] Assigned Rigidbody is not the production player authority root. " +
+                "Movement, interaction, and physics components are required.",
+                this);
+#endif
+            playerRigidbody = null;
+            _playerMovement = null;
+        }
+
         if (playerRigidbody == null && playerContext != null)
             playerRigidbody = playerContext.PlayerRigidbody;
         if (_playerMovement == null && playerContext != null)
@@ -262,10 +278,13 @@ public class HectonPlayerSpawner : MonoBehaviour
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransformRoot) &&
                 playerTransformRoot != null)
             {
-                playerTransformRoot.TryGetComponent(out playerRigidbody);
-                if (_playerMovement == null)
+                if (!TryAcceptProductionPlayerTransform(
+                        playerTransformRoot,
+                        out playerRigidbody,
+                        out _playerMovement))
                 {
-                    playerTransformRoot.TryGetComponent(out _playerMovement);
+                    playerRigidbody = null;
+                    _playerMovement = null;
                 }
 
                 if (playerRigidbody != null)
@@ -293,10 +312,28 @@ public class HectonPlayerSpawner : MonoBehaviour
         }
         else if (_playerMovement == null)
         {
-            playerRigidbody.TryGetComponent(out _playerMovement);
+            if (!TryAcceptProductionPlayerRigidbody(playerRigidbody, out _playerMovement))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                LogSpawnerError(
+                    "[HectonPlayerSpawner] Player Rigidbody reference failed production authority validation.",
+                    this);
+#endif
+                playerRigidbody = null;
+                _playerMovement = null;
+            }
         }
 
         // ── Finalnaya proverka posle vseh popytok poiska ──
+        if (playerRigidbody == null &&
+            TryInstantiateProductionPlayerPrefab(out playerRigidbody, out _playerMovement))
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogSpawner(
+                "[HectonPlayerSpawner] Production Player.prefab cold-instantiated through spawner source route.");
+#endif
+        }
+
         if (playerRigidbody == null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -328,6 +365,16 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// </summary>
     public async Awaitable SpawnPlayerAsync(CancellationToken ct)
     {
+        if (!TryAcceptProductionPlayerRigidbody(playerRigidbody, out _playerMovement))
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogSpawnerError(
+                "[HectonPlayerSpawner] Spawn rejected: production player movement/interaction/physics authority is missing.",
+                this);
+#endif
+            return;
+        }
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         LogSpawner("[HectonPlayerSpawner] Starting safe spawn point search.");
 #endif
@@ -745,6 +792,90 @@ public class HectonPlayerSpawner : MonoBehaviour
         return vegetationBridge != null &&
                vegetationBridge.TryGetCachedTerrainHeight(x, z, out groundY) &&
                float.IsFinite(groundY);
+    }
+
+    private static IPlayerRuntimeContext ResolveProductionPlayerContext()
+    {
+        IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+        return playerContext != null &&
+               ProductionPlayerAuthorityUtility.IsProductionPlayerAuthorityObject(playerContext.PlayerObject)
+            ? playerContext
+            : null;
+    }
+
+    private static bool TryAcceptProductionPlayerTransform(
+        Transform playerTransform,
+        out Rigidbody body,
+        out HectonPlayerMovement movement)
+    {
+        body = null;
+        movement = null;
+        if (playerTransform == null)
+            return false;
+
+        if (!ProductionPlayerAuthorityUtility.IsProductionPlayerAuthorityObject(playerTransform.gameObject))
+            return false;
+
+        return playerTransform.TryGetComponent(out body) &&
+               body != null &&
+               playerTransform.TryGetComponent(out movement) &&
+               movement != null;
+    }
+
+    private static bool TryAcceptProductionPlayerRigidbody(
+        Rigidbody body,
+        out HectonPlayerMovement movement)
+    {
+        movement = null;
+        if (body == null ||
+            !ProductionPlayerAuthorityUtility.IsProductionPlayerAuthorityObject(body.gameObject))
+        {
+            return false;
+        }
+
+        return body.TryGetComponent(out movement) && movement != null;
+    }
+
+    private bool TryInstantiateProductionPlayerPrefab(
+        out Rigidbody body,
+        out HectonPlayerMovement movement)
+    {
+        body = null;
+        movement = null;
+        if (productionPlayerPrefab == null)
+            return false;
+
+        GameObject instance = Instantiate(productionPlayerPrefab, transform.position, transform.rotation);
+        if (instance != null)
+            instance.name = productionPlayerPrefab.name;
+
+        if (instance != null &&
+            TryAcceptProductionPlayerTransform(instance.transform, out body, out movement))
+        {
+            return true;
+        }
+
+        DestroyInvalidProductionPrefabInstance(instance);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        LogSpawnerError(
+            "[HectonPlayerSpawner] Production Player.prefab rejected after instantiate: " +
+            "movement, interaction, and Rigidbody authority are required.",
+            this);
+#endif
+        body = null;
+        movement = null;
+        return false;
+    }
+
+    private static void DestroyInvalidProductionPrefabInstance(GameObject instance)
+    {
+        if (instance == null)
+            return;
+
+        if (Application.isPlaying)
+            UnityEngine.Object.Destroy(instance);
+        else
+            UnityEngine.Object.DestroyImmediate(instance);
     }
 
     private SpawnSearchResult EvaluatePoint(float x, float z)

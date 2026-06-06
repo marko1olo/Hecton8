@@ -1,7 +1,7 @@
 "Kind","Source","Destination","FileCount","Bytes"
 "Directory","Docs\2026-04-30_Codex_Full_Project_Forensic_Audit","Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\2026-04-30_Codex_Full_Project_Forensic_Audit","34","823480"
 "Directory","Docs\ARCHIVARIUS REPORTS","Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\ARCHIVARIUS REPORTS","155","4001736"
-"Directory","Docs\SPACE_ENGINE_RESEARCH","Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\SPACE_ENGINE_RESEARCH","208","16875277"
+"PurgedDirectory","Docs\SPACE_ENGINE_RESEARCH","PURGED_2026-06-06","208","16875277"
 "Directory","Docs\Legacy_World_Reference","Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\Legacy_World_Reference","3","27336"
 "Directory","Docs\Legacy_Backlog","Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\Legacy_Backlog","5","368603"
 "Directory","Docs\Reports\2026-05-15_COMPUTE_AUDIT","Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\2026-05-15_COMPUTE_AUDIT","21","126495"

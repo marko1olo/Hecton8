@@ -105,7 +105,28 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | mesh prefab review queue validator | `Tools/ValidateMeshPrefabReviewQueue.py`, `Tools/test_validate_mesh_prefab_review_queue.py` |
 | visual source promotion queue validator | `Tools/ValidateVisualSourcePromotionQueue.py`, `Tools/test_validate_visual_source_promotion_queue.py` |
 | audio route decision matrix validator | `Tools/ValidateAudioRouteDecisionMatrices.py`, `Tools/test_validate_audio_route_decision_matrices.py` |
+| audio critical cue source coverage validator | `Tools/ValidateAudioCriticalCueSourceCoverage.py`, `Tools/test_validate_audio_critical_cue_source_coverage.py` |
 | asset owner packet index validator | `Tools/ValidateAssetOwnerPacketIndex.py`, `Tools/test_validate_asset_owner_packet_index.py` |
+| audio listening policy queue validator | `Tools/ValidateAudioListeningPolicyQueues.py`, `Tools/test_validate_audio_listening_policy_queues.py` |
+| audio direct-ref detail validator | `Tools/ValidateAudioDirectRefDetail.py`, `Tools/test_validate_audio_direct_ref_detail.py` |
+| texture import role matrix validator | `Tools/ValidateTextureImportRoleMatrix.py`, `Tools/test_validate_texture_import_role_matrix.py` |
+| texture role technical-ledger validator | `Tools/ValidateTextureRoleTechnicalLedger.py`, `Tools/test_validate_texture_role_technical_ledger.py` |
+| Batch31 local PBR import-intent artifact validator | `Tools/ValidateBatch31LocalPbrImportIntentArtifacts.py`, `Tools/test_validate_batch31_local_pbr_import_intent_artifacts.py` |
+| Batch31 promotion-prep artifact validator | `Tools/ValidateBatch31PromotionPrepArtifacts.py`, `Tools/test_validate_batch31_promotion_prep_artifacts.py` |
+| VFX particle budget catalog validator | `Tools/ValidateVfxParticleBudgetCatalog.py`, `Tools/test_validate_vfx_particle_budget_catalog.py` |
+| visual asset review queue validator | `Tools/ValidateVisualAssetReviewQueue.py`, `Tools/test_validate_visual_asset_review_queue.py` |
+| asset action queue validator | `Tools/ValidateAssetActionQueue.py`, `Tools/test_validate_asset_action_queue.py` |
+| proof artifact index validator | `Tools/ValidateAssetProofArtifactIndex.py`, `Tools/test_validate_asset_proof_artifact_index.py` |
+| audio waveform proof artifact validator | `Tools/ValidateAudioWaveformProofArtifacts.py`, `Tools/test_validate_audio_waveform_proof_artifacts.py` |
+| audio scene static route validator | `Tools/ValidateAudioSceneStaticRoute.py`, `Tools/test_validate_audio_scene_static_route.py` |
+| audio Addressables P0 synthesis validator | `Tools/ValidateAudioAddressablesP0Synthesis.py`, `Tools/test_validate_audio_addressables_p0_synthesis.py` |
+| audio import meta policy validator | `Tools/ValidateAudioImportMetaPolicy.py`, `Tools/test_validate_audio_import_meta_policy.py` |
+| visual reference owner matrix validator | `Tools/ValidateVisualReferenceOwnerMatrix.py`, `Tools/test_validate_visual_reference_owner_matrix.py` |
+| visual reference current rejection matrix validator | `Tools/ValidateVisualReferenceCurrentRejectionMatrix.py`, `Tools/test_validate_visual_reference_current_rejection_matrix.py` |
+| mass-deletion dirty-set validator | `Tools/ValidateMassDeletionDirtySet.py`, `Tools/test_validate_mass_deletion_dirty_set.py` |
+| asset front file-map validator | `Tools/ValidateAssetFrontFileMap.py`, `Tools/test_validate_asset_front_file_map.py` |
+| asset static validator runner | `Tools/RunAssetStaticValidators.py`, `Tools/test_run_asset_static_validators.py` |
+| MapMagic erosion source-route validator | `Tools/ValidateMapMagicErosionSourceRoute.py`, `Tools/test_validate_mapmagic_erosion_source_route.py` |
 
 ## Rule
 

@@ -279,6 +279,7 @@ Examples:
 - Generated assets: `PROJECT_BIBLES.md` -> `PROCEDURAL_ASSET_PIPELINE.md`, `3dmodel.md`, relevant asset family bible, texture/material playbooks -> matching `TOOL_*`, `REND_*`, `OPT_*` mandates.
 - Writing/narrative/public copy: `writing.md`, `narrative.md`, `localization.md`, or `textes.md` as routed by `PROJECT_BIBLES.md`.
 - Standalone batch/controller/external-agent process work: this file -> `HECTON8_ORCHESTRATOR.md` -> `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md` only when real GUI/process control is involved -> active orchestration evidence.
+- Autonomous local VS Code Codex GUI control: this file -> `HECTON8_ORCHESTRATOR.md` -> `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md` -> `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md` only when the user explicitly asks for workstation/Codex GUI control.
 
 ## Code And Ownership Discipline
 
@@ -375,6 +376,8 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 [FORBID] Do not read `HECTON8_ORCHESTRATOR.md`, `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`, `AgentGuiOps.ps1`, or `ProbeAgents.ps1` merely because you spawn internal subagents. Internal subagents are ordinary delegation and are governed by `Delegation And Subagents`.
 
 [REQ] Explicit standalone multi-agent waves, batch, controller, and task-file work must use the `HECTON8_ORCHESTRATOR.md` lane contracts. Assign `LANE_CLASS`, valid completion, invalid completion, kill switch, and evidence budget before dispatching or judging standalone agents.
+
+[REQ] Explicit autonomous local VS Code Codex GUI control must also read `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md`. That file is process-control law only for current workstation/Codex GUI operation; it is not a normal implementation, docs, or internal-subagent authority.
 
 [REQ] New or materially rewritten serious `taskslocal` batches must pass `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict` before distribution. Historical batches may be inspected with `--allow-legacy`; do not make old task folders a standing red gate unless they are reissued.
 

@@ -7163,6 +7163,39 @@ Current state:
 - The ProbeF log remains a blocker until current Unity import/re-run proves the source bypass is active and no `HydraulicErosionDeltaApplyJob` or TempJob leak remains.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.
 
+## 2026-06-06 Unity Worker Dialogue Reference Rejection Cursor 99
+
+Current front:
+
+- Reviewed the pasted Unity-worker dialogue, the latest h8_1914 screenshots, mandatory surface reference images, and static screenshot metadata.
+- Process gate remained red with Unity/dotnet/ILPP/PackageManager activity, so no Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, or raw YAML edit was performed.
+
+Controller verdict:
+
+- The Unity worker's green haze / temporary water-skin / h8_1914 A/B direction is rejected as acceptance. It proved the current route is broken; it did not repair the route.
+- `h8_1914_surface_crest_recovery_probe.png` is rejected for slab water, lower-right rectangular patch, black detached shore chunks, acid/green terrain, weak Aegir integration, and no player/HUD/tool proof.
+- `h8_1914_surface_water_recovery_probe.png` is rejected for visible rectangular water-skin edges, neon green/acid water, black coastline, no foam/contact truth, and non-production metadata.
+- Mandatory references require bright cyan/blue ocean, wave/depth read, foam/wet shoreline contact, sculpted cliffs, dense readable flora/geology after base route, and integrated sky/Aegir.
+
+Controller actions:
+
+- Created `Docs/Orchestration/UNITY_WORKER_DIALOGUE_REFERENCE_REJECTION_20260606.md`.
+- Created `Docs/Orchestration/MODIFIED_SOURCE_DIFF_STATIC_TRIAGE_20260606.md`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_02_SURFACE_AUTHORITATIVE_ROUTE.txt`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_04_H8_1475_FALSE_PROOF_BLOCKER.txt`.
+
+Subagent integration:
+
+- Mendel and Gibbs found no clear static issue in their reviewed `NativeFaultDumpWriter` replacement slices; Unity verification is still absent.
+- Ohm found a high proof-discipline issue: `H8VisualProofCapture1912.cs` changed `PumpMapMagicGeneration` from `18.0f` to `90.0f` in the already rejected h8_1914 `CaptureSurfaceCrestRecoveryProbeAndExit` route. This strengthens a diagnostic route and must not be treated as h8_1475 or no-mutation proof.
+
+Current state:
+
+- Owner02 must recover the authoritative MapMagic + Crest + terrain + sky route instead of repeating green overlay/card probes.
+- Owner04 must not use or extend `H8VisualProofCapture1912` for h8_1475.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
 ## 2026-06-06 Rule Routing Shim Repair Cursor 101
 
 Current front:
@@ -7192,3 +7225,2783 @@ Current state:
 
 - Active stale shim risk for `.vscode`, `.cursor`, and deprecated GitHub persona is statically repaired.
 - Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Asset Audio Queue Validator Cursor 102
+
+Current front:
+
+- Continued asset/audio static lane while Unity/process gate remained blocked by CPU pressure.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime audio code, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Added `Tools/ValidateAudioListeningPolicyQueues.py`.
+- Added `Tools/test_validate_audio_listening_policy_queues.py`.
+- Integrated the validator into `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv/.md`.
+- Updated current static-count anchors in `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`, `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`, `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`, and `taskslocal/asset_system_20260605/README.md`.
+- Updated `Tools/test_validate_asset_static_summary.py` expected row total.
+
+Validation:
+
+- `python Tools/ValidateAudioListeningPolicyQueues.py` returned `AUDIO_LISTENING_POLICY_QUEUES_OK listening=13:p0=5 import_policy=8:p0=4`.
+- `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14658`.
+- `python Tools/ValidateAudioRouteDecisionMatrices.py` returned `AUDIO_ROUTE_DECISION_MATRICES_OK audio_route_owner_requirement_matrix=13:p0=5 audio_mix_priority_decision_queue=10:p0=5 audio_critical_cue_coverage_matrix=12:p0=8`.
+- `python Tools/ValidateAssetOwnerPacketIndex.py` returned `ASSET_OWNER_PACKET_INDEX_OK rows=37 present=32 output_only=5`.
+- `python -m unittest Tools/test_validate_asset_static_summary.py Tools/test_validate_audio_listening_policy_queues.py Tools/test_validate_audio_route_decision_matrices.py Tools/test_validate_asset_owner_packet_index.py` ran `19` tests OK.
+- Scoped `git diff --check` over changed asset/audio docs and tools returned CRLF normalization warnings only.
+
+Current state:
+
+- Current curated asset CSV static set remains `62` files, now `14658` rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is now `151` rows.
+- Audio listening queue and import-policy exception table now have an offline guardrail against false ready statuses, order drift, missing referenced paths, and missing runtime/listening/import proof language.
+- Process sample after validation listed no named Unity/dotnet/compiler/import busy process, but CPU was `81.1265`; Unity/build/import/readback remains blocked by CPU policy.
+- Runtime/Unity/product/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 MapMagic Terrain Job Safety Source Repair Cursor 104
+
+Current front:
+
+- Continued Owner09 after ProbeJ/ProbeK logs moved the blocker away from the older ProbeF queued delta-apply path.
+- Read mandates: `OPT_Native_Memory_Collections_JobSystem_Protocol`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits`, and `VOX_MapMagic_Voxel_Seam_Alignment_Integration`, plus `terrain.md`, `systems.md`, and `performance.md`.
+- Initial process sample was green (`CPU=29`, no Unity/dotnet/csc processes), so scoped runtime source edits were allowed.
+- Later process sample turned red (`CPU=100`, active `Unity` and `UnityPackageManager`), so no dotnet build, Unity import, Play Mode, readback, profiler, screenshot, scene save, prefab save, material save, Addressables mutation, project-setting mutation, or raw YAML edit was performed.
+
+Facts:
+
+- ProbeJ log records zero `HydraulicErosionDeltaApplyJob` hits and zero `TempJob` warnings, but two failures from unassigned `HydraulicErosionJob.HeightDeltaBudget` during direct `ScheduleFourPhaseSliced(...)`.
+- ProbeK log records zero `HydraulicErosionDeltaApplyJob`, zero `HeightDeltaBudget`, and zero `TempJob` warnings, but two failures from `UnityEditor.EditorApplication.isUpdating` called off the main thread inside `HectonAnomalyEngine.ScheduleClosedBasinDetection(...)`.
+
+Source actions:
+
+- `Assets/_Project/Scripts/World/HydraulicErosionJob.cs`: marked optional `HeightDeltaBudget` with `NativeDisableContainerSafetyRestriction` plus `NativeDisableParallelForRestriction`, and added the required three-paragraph safety justification. The invariant is that direct MapMagic erosion keeps `QueueHeightDeltas == 0`, and queued mode checks `IsCreated`/`Length` before enqueue.
+- `Assets/_Project/Scripts/World/HectonAnomalyEngine.cs`: added editor main-thread id capture through `UnityEditor.InitializeOnLoadMethod`; `ShouldUseEditorDirectExecution(...)` now returns `false` before touching `EditorApplication` when called from a MapMagic worker thread.
+
+Controller actions:
+
+- Updated `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+
+Current state:
+
+- Source-side repair is applied.
+- Compile/import/runtime proof is absent and blocked by process gate.
+- Next green-gate Unity proof must require zero `HydraulicErosionDeltaApplyJob`, `HeightDeltaBudget has not been assigned`, `get_isUpdating can only be called from the main thread`, `InvalidOperationException`, and TempJob leak warnings.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 ProbeL MapMagic Diagnostic And Visual Rejection Cursor 107
+
+Current front:
+
+- Reviewed fresh `Docs/Logs/UnityIntegratePlanetaryCanvasGraph_DisableAnomaly_20260606_015935.log`.
+- Reviewed fresh `Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeL_20260606_022301.log`.
+- Reviewed fresh `Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.png` and metadata.
+- Did not launch Unity, dotnet build, Play Mode, profiler, screenshots, imports, scene save, prefab save, material save, Addressables mutation, project-setting mutation, or raw YAML mutation.
+
+Facts:
+
+- The graph integration log recorded `CS0121` at `Assets/_Project/Scripts/Editor/PlanetaryCanvasMapMagicGraphIntegrator.cs:90`, ambiguous `Graph.Link(...)`.
+- Earlier diagnostic source repair applied a typed mud-layer unlink. That route was later superseded by production-intent graph restoration; do not use typed null unlink as the final Owner09 route.
+- ProbeL log counts: `HydraulicErosionDeltaApplyJob=0`, `HeightDeltaBudget=0`, `get_isUpdating=0`, `TempJob=0`, `Thread failed=0`, `InvalidOperationException=0`, `error CS=0`.
+- ProbeL log still records one Unity `MemoryLeaks` payload.
+- ProbeL metadata shows `HectonHydraulicErosionMapMagicNode enabled=False` and `HectonAnomalyMapMagicNode enabled=False`.
+- ProbeL h8_1914 screenshot remains visually rejected: hard rectangular water/terrain split, black undercut shoreline chunks, flat brown terrain plate, and non-production composition.
+
+Controller actions:
+
+- Updated `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+
+Current state:
+
+- Named ProbeJ/ProbeK job/thread blockers are cleared in a diagnostic h8_1914 route.
+- Production terrain generation is not accepted because erosion/anomaly are disabled and MemoryLeaks remains.
+- Surface visual proof remains rejected.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Texture Import Role Validator Cursor 103
+
+Current front:
+
+- Continued texture/PBR static lane while Unity/process gate remained red.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, shader, Addressables, `.meta`, project-setting, runtime code, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Added `Tools/ValidateTextureImportRoleMatrix.py`.
+- Added `Tools/test_validate_texture_import_role_matrix.py`.
+- Integrated the validator into `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv/.md`.
+- Updated static-count anchors in `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`, `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`, `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`, and `taskslocal/asset_system_20260605/README.md`.
+- Updated `Tools/test_validate_asset_static_summary.py` expected row total.
+
+Validation:
+
+- `python Tools/ValidateTextureImportRoleMatrix.py` returned `TEXTURE_IMPORT_ROLE_MATRIX_OK roles=13:p0=4 batch31=7:blocked_masks=3`.
+- `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14660`.
+- `python Tools/ValidateAudioListeningPolicyQueues.py` returned `AUDIO_LISTENING_POLICY_QUEUES_OK listening=13:p0=5 import_policy=8:p0=4`.
+- `python -m unittest Tools/test_validate_asset_static_summary.py Tools/test_validate_texture_import_role_matrix.py Tools/test_validate_audio_listening_policy_queues.py Tools/test_validate_audio_route_decision_matrices.py Tools/test_validate_asset_owner_packet_index.py` ran `25` tests OK.
+- Stale-count scan found no old total anchors; one `714656` source-byte value in `AUDIO_FILE_TECHNICAL_PROPERTIES_20260605.csv` is a false numeric substring hit.
+- Scoped `git diff --check` over changed texture/audio/asset docs and tools returned CRLF normalization warnings only.
+
+Current state:
+
+- Current curated asset CSV static set remains `62` files, now `14660` rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is now `153` rows.
+- Texture import-role matrix and Batch31 channel-semantics queue now have an offline guardrail against wrong sRGB/linear semantics, missing source paths, packed-mask false promotion, order drift, and proof-language erosion.
+- Process sample after validation: CPU `100`; active `Unity`, `dotnet`, `Unity.ILPP.Runner`, `Unity.ILPP.Trigger`, `UnityPackageManager`, and Unity support processes. Unity/build/import/readback remains blocked.
+- Runtime/Unity/product/visual acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Visual Asset Review Queue Validator Cursor 104
+
+Current front:
+
+- Continued visual asset static lane while Unity/process gate remained red.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, shader, Addressables, project-setting, runtime code, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Added `Tools/ValidateVisualAssetReviewQueue.py`.
+- Added `Tools/test_validate_visual_asset_review_queue.py`.
+- Integrated the validator into `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv/.md`.
+- Updated static-count anchors in `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`, `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`, `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`, and `taskslocal/asset_system_20260605/README.md`.
+- Updated `Tools/test_validate_asset_static_summary.py` expected row total.
+
+Validation:
+
+- `python Tools/ValidateVisualAssetReviewQueue.py` returned `VISUAL_ASSET_REVIEW_QUEUE_OK rows=11 p0=2`.
+- `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14662`.
+- `python Tools/ValidateTextureImportRoleMatrix.py` returned `TEXTURE_IMPORT_ROLE_MATRIX_OK roles=13:p0=4 batch31=7:blocked_masks=3`.
+- `python Tools/ValidateAudioListeningPolicyQueues.py` returned `AUDIO_LISTENING_POLICY_QUEUES_OK listening=13:p0=5 import_policy=8:p0=4`.
+- `python -m unittest Tools/test_validate_asset_static_summary.py Tools/test_validate_visual_asset_review_queue.py Tools/test_validate_texture_import_role_matrix.py Tools/test_validate_audio_listening_policy_queues.py Tools/test_validate_audio_route_decision_matrices.py Tools/test_validate_asset_owner_packet_index.py` ran `30` tests OK.
+- Scoped `git diff --check` over changed visual/texture/audio/asset docs and tools returned CRLF normalization warnings only.
+
+Current state:
+
+- Current curated asset CSV static set remains `62` files, now `14662` rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is now `155` rows.
+- Visual asset review queue now has an offline guardrail against order drift, non-pending statuses, missing checked source paths, missing proof language, and weak visual rejection wording.
+- Runtime/Unity/product/visual acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Asset Action Queue Validator Cursor 105
+
+Current front:
+
+- Continued asset dispatch static lane while Unity/process gate remained red.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, shader, Addressables, project-setting, runtime code, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Added `Tools/ValidateAssetActionQueue.py`.
+- Added `Tools/test_validate_asset_action_queue.py`.
+- Corrected stale root action-queue affected path from an Environment-prefab route to `Assets/_Project/Prefabs/Hecton Ocean.prefab`.
+- Integrated the validator into `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv/.md`.
+- Updated static-count anchors in `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`, `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.md`, `Docs/AssetAudit/ASSET_SYSTEM_INDEX_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`, `Docs/Reports/AssetSystem_20260605/ASSET_WORKER_BOARD_20260605.md`, and `taskslocal/asset_system_20260605/README.md`.
+- Updated `Tools/test_validate_asset_static_summary.py` expected row total.
+
+Validation:
+
+- `python Tools/ValidateAssetActionQueue.py` returned `ASSET_ACTION_QUEUE_OK rows=11 p0=4 p1=5 p2=2`.
+- `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14664`.
+- `python Tools/ValidateVisualAssetReviewQueue.py` returned `VISUAL_ASSET_REVIEW_QUEUE_OK rows=11 p0=2`.
+- `python -m unittest Tools/test_validate_asset_static_summary.py Tools/test_validate_asset_action_queue.py Tools/test_validate_visual_asset_review_queue.py Tools/test_validate_texture_import_role_matrix.py Tools/test_validate_audio_listening_policy_queues.py Tools/test_validate_audio_route_decision_matrices.py Tools/test_validate_asset_owner_packet_index.py` ran `35` tests OK.
+- Scoped stale-count/path scan found no old row-total anchors and no stale Environment-prefab path; remaining numeric matches were data substrings `714656` and `598908`.
+- Scoped `git diff --check` over changed action/visual/texture/audio/asset docs and tools returned CRLF normalization warnings only.
+
+Current state:
+
+- Current curated asset CSV static set remains `62` files, now `14664` rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is now `157` rows.
+- Root action queue now has an offline guardrail against priority/order drift, non-pending statuses, missing owner packets, missing explicit project paths, and weak proof/action language.
+- Process sample after validation: CPU `100`; active `Unity`, `dotnet`, `Unity.ILPP.Runner`, `UnityPackageManager`, and `UnityShaderCompiler`. Unity/build/import/readback remains blocked.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Owner09 Hilbert Thread-Safety Integration Cursor 105
+
+Current front:
+
+- Integrated Hilbert's static review of the ProbeK MapMagic anomaly blocker.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, or raw YAML edit was performed by this controller pass.
+
+Facts:
+
+- ProbeK failed because `HectonAnomalyEngine.ShouldUseEditorDirectExecution(...)` read `UnityEditor.EditorApplication.isUpdating/isCompiling` from a MapMagic worker thread.
+- The direct job `Execute()` path is not the illegal part; the illegal part is the UnityEditor main-thread-only property read before the scheduling decision.
+- Current source already has an unverified thread-id guard. It is a static repair, not proof.
+- Lowest-risk fallback if proof fails: remove editor direct execution from MapMagic worker scheduling entirely, or make it an explicit caller option with MapMagic passing `false`. Catching `UnityException` is rejected.
+
+Controller actions:
+
+- Updated `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+
+Current state:
+
+- Owner09 remains `SOURCE_REPAIR_APPLIED_PENDING_UNITY_PROOF`.
+- Fresh Unity proof must show zero `get_isUpdating`, zero `Thread failed`, zero `HeightDeltaBudget`, zero `HydraulicErosionDeltaApplyJob`, zero `TempJob`, and MapMagic draft/main terrain tasks either complete or report a new exact blocker.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Owner09 Dual Anomaly Entry Point Cursor 106
+
+Current front:
+
+- Local static read confirmed `ShouldUseEditorDirectExecution(...)` is called by two anomaly scheduling entry points, not one.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, or raw YAML edit was performed.
+
+Facts:
+
+- `HectonAnomalyEngine.ScheduleClosedBasinDetection(...)` calls `ShouldUseEditorDirectExecution(...)`.
+- `HectonAnomalyEngine.ScheduleRidgeFeatureDetection(...)` also calls `ShouldUseEditorDirectExecution(...)`.
+- Therefore the fresh Unity proof must cover both anomaly scheduling entry points, or explicitly record which one did not execute in the route.
+
+Controller actions:
+
+- Updated `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt`.
+
+Current state:
+
+- Owner09 proof criteria expanded to basin plus ridge anomaly scheduling.
+- Runtime/Unity/product status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Owner09 Terrain Probe Evidence Validator Cursor 108
+
+Current front:
+
+- Added an offline gate so rejected diagnostic terrain captures cannot be reused as production visual or generation proof.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, or raw YAML edit was performed.
+
+Controller actions:
+
+- Added `Tools/ValidateTerrainProbeEvidence.py`.
+- Added `Tools/test_validate_terrain_probe_evidence.py`.
+- Updated `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+
+Validation:
+
+- `python -m unittest Tools/test_validate_terrain_probe_evidence.py` now runs `16` tests OK with `1` skipped historical-artifact test.
+- `python Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbeL_20260606_022301.log --metadata Docs\Screenshots\MCP\h8_1914_surface_crest_recovery_probe.txt --require-production` returns `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`.
+
+Current state:
+
+- The current ProbeL path remains rejected for `missing-log`, `editor_only_unsaved`, `h8_1914`, disabled erosion, disabled anomaly, unlinked anomaly height, unlinked splat sediment, height output not eroded, and splat height not eroded. Historical ProbeL memory-leak evidence is not live proof because the log is absent from current `Docs\Logs`.
+- Latest unsuffixed batchmode probe refresh `Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbe_20260606_054748.log` recorded `Tundra build success`, wrote fresh h8_1914 PNG/TXT, then rejected with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`: Unity `MemoryLeaks`, diagnostic h8_1914 metadata, erosion/anomaly disabled, anomaly/sediment unlinked, and non-eroded height/splat links.
+- Next unsuffixed batchmode probe refresh `Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbe_20260606_060418.log` failed before capture on TerminalOS editor decryption DTO contract references and rejects with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=11`. `Hecton8.UI.TerminalOS.Editor.asmdef`, `TerminalOsLayoutValidator.cs`, and `OscilloscopeDecryptionTunerWindow.cs` now include the direct `Hecton8.Core.Contracts` reference/imports; Unity import proof is pending.
+- Follow-up unsuffixed batchmode probe refresh `Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbe_20260606_061409.log` compile-proves the TerminalOS source fix externally with Tundra success and fresh PNG/TXT output. It still rejects with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9` on Unity `MemoryLeaks` and diagnostic graph metadata. Visual inspection rejects the later 06:24 PNG: rectangular water/terrain bands, hard horizon strip, detached dark shoreline chunks, and weak Aegir atmosphere integration.
+- EditorGPU batchmode probe refresh `Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbe_EditorGPU_20260606_062050.log` rejects with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9` and names Crest proof-route leak callstacks from `H8VisualProofCapture1912.InvokeCrestRunUpdate`. `H8VisualProofCapture1912.cs` now performs source-side cleanup before exit by disabling the Crest `OceanRenderer`, forcing `_debug._destroyResourcesInOnDisable`, pumping the editor loop, and destroying the temporary HideAndDontSave ocean material. Fresh post-patch Unity proof is pending.
+- Post-cleanup no-terrain-shell logs `Docs\Logs\UnityCaptureSurfaceNoTerrainShell_EditorGPU_20260606_062938.log`, `_063306.log`, and `Docs\Logs\UnityCaptureSurfaceNoTerrainShell_AutorunEditorGPU_20260606_064605.log` are compile/import-only Tundra-success evidence with no scoped `error CS`, but no PNG/TXT capture output. `_064605` rejects with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`. `Docs\Logs\UnityMapMagicGraphIntegrator_20260606_063611.log` aborted because another Unity instance had the project open, so no graph integration proof or mutation exists.
+- Future Owner09 acceptance proof must pass `Tools\ValidateTerrainProbeEvidence.py --require-production` on fresh terrain proof log and metadata.
+- Runtime/Unity/product/visual status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Owner09 MapMagic Queued Delta Cleanup Cursor 109
+
+Current front:
+
+- Removed stale queued-delta queue/budget leftovers from the production MapMagic hydraulic erosion node while Unity/process gate remained red.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, graph mutation, or raw YAML edit was performed.
+
+Controller actions:
+
+- Updated `Assets/_Project/Scripts/Plugins/MapMagic/HectonHydraulicErosionMapMagicNode.cs`.
+- Updated `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+
+Validation:
+
+- Static grep found no `HeightDeltaQueueLabel`, `HeightDeltaBudgetLabel`, `RegisterTempJobQueue`, `RegisterTempJobBudget`, `ResolveHeightDeltaQueueCapacity`, `ResolveHeightDeltaApplyBudget`, `NativeQueue<HydraulicErosionHeightDelta>`, `heightDeltaBudget`, `heightDeltas`, or `ScheduleFourPhaseSlicedWithDeltaApply` in `HectonHydraulicErosionMapMagicNode.cs`.
+- Route grep shows `HectonHydraulicErosionMapMagicNode.cs` calls only `ScheduleFourPhaseSliced(...)`; the remaining queued delta caller is `Assets/_Project/Scripts/Editor/ErosionTestHarness.cs`.
+- `python Tools\Docs\TestTaskLocalLaneContracts.py taskslocal\night_controller_20260605 --strict` returned `TASKLOCAL_LANE_CONTRACT_CHECK=PASS`.
+- Scoped `git diff --check` returned CRLF normalization warnings only.
+
+Current state:
+
+- Owner09 task 5 is static-complete; Unity compile/import proof remains absent.
+- Queued delta apply remains quarantined to `ErosionTestHarness` and scheduler source until explicit queued-path proof exists.
+- Runtime/Unity/product/visual status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Owner09 Sentinel Id Cleanup Cursor 110
+
+Current front:
+
+- Hardened production MapMagic node TempJob cleanup against pointer-read unregister risk.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, graph mutation, or raw YAML edit was performed.
+
+Controller actions:
+
+- Updated `Assets/_Project/Scripts/Plugins/MapMagic/HectonHydraulicErosionMapMagicNode.cs` so `RegisterTempJobBuffers(...)` returns five Sentinel registration ids.
+- Changed `DisposeTracked(...)` to call `NativeMemorySentinel.Unregister(id)` before array disposal instead of `NativeMemorySentinel.UnregisterNativeArray(array)`.
+- Updated `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+
+Validation:
+
+- Static grep in `HectonHydraulicErosionMapMagicNode.cs` found `RegisterTempJobBuffers(...)` and id-based `DisposeTracked(...)`; no `UnregisterNativeArray`, queued delta apply, `NativeQueue<HydraulicErosionHeightDelta>`, `heightDeltaBudget`, or `heightDeltas` remained in the node.
+- `python Tools\Docs\TestTaskLocalLaneContracts.py taskslocal\night_controller_20260605 --strict` returned `TASKLOCAL_LANE_CONTRACT_CHECK=PASS`.
+- `python -m unittest Tools/test_validate_terrain_probe_evidence.py` ran `5` tests OK.
+- Scoped `git diff --check` returned CRLF normalization warnings only.
+
+Current state:
+
+- Owner09 task 6 is static-complete for the production MapMagic node; Unity compile/import proof remains absent.
+- Broader Sentinel pointer-unregister migration remains outside this scoped terrain proof unless another owner route requests it.
+- Runtime/Unity/product/visual status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Owner09 Erosion Harness Quarantine Cleanup Cursor 111
+
+Current front:
+
+- Hardened `ErosionTestHarness` NativeArray cleanup while preserving it as the queued delta proof quarantine lane.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, graph mutation, or raw YAML edit was performed.
+
+Controller actions:
+
+- Updated `Assets/_Project/Scripts/Editor/ErosionTestHarness.cs` so main buffers, shelf preview buffers, and PNG scratch buffers store Sentinel registration ids.
+- Changed harness `DisposeTracked(...)` to use `NativeMemorySentinel.Unregister(id)` before disposal.
+- Left `NativeQueue` cleanup on `UnregisterNativeQueue(owner,label)` because Sentinel queue tracking is pointerless.
+- Updated `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+
+Validation:
+
+- Static grep found no `NativeMemorySentinel.UnregisterNativeArray` or old one-argument `DisposeTracked(ref ...)` in `ErosionTestHarness.cs`.
+- Route grep shows queued delta apply remains only in `ErosionTestHarness.cs` and scheduler source; production MapMagic still calls direct `ScheduleFourPhaseSliced(...)`.
+- `python Tools\Docs\TestTaskLocalLaneContracts.py taskslocal\night_controller_20260605 --strict` returned `TASKLOCAL_LANE_CONTRACT_CHECK=PASS`.
+- Scoped `git diff --check` returned CRLF normalization warnings only.
+
+Current state:
+
+- Owner09 task 7 is static-complete; Unity compile/import and queued-path runtime proof remain absent.
+- Queued delta apply is still not accepted for production MapMagic.
+- Runtime/Unity/product/visual status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Owner09 Queued Delta Quarantine Marker Cursor 112
+
+Current front:
+
+- Added a source-local quarantine marker beside the only queued delta apply caller.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, graph mutation, or raw YAML edit was performed.
+
+Controller actions:
+
+- Updated `Assets/_Project/Scripts/Editor/ErosionTestHarness.cs` with `QUEUED_DELTA_APPLY_QUARANTINED` at `ScheduleFourPhaseSlicedWithDeltaApply(...)`.
+- Updated `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+
+Current state:
+
+- Owner09 task 8 is static-complete.
+- Queued delta apply remains editor-only quarantine; production MapMagic remains direct-only.
+- Runtime/Unity/product/visual status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Owner09 Source Route Validator Cursor 113
+
+Current front:
+
+- Added an offline source-route guard for the MapMagic hydraulic erosion/anomaly repair set.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, graph mutation, or raw YAML edit was performed.
+
+Controller actions:
+
+- Added `Tools/ValidateMapMagicErosionSourceRoute.py`.
+- Added `Tools/test_validate_mapmagic_erosion_source_route.py`.
+- Updated `Tools/test_validate_terrain_probe_evidence.py` to skip the real ProbeL artifact test when artifacts are absent and to require CLI hard rejection for a missing required log.
+- Updated `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+
+Validation:
+
+- `python Tools\ValidateMapMagicErosionSourceRoute.py` returned `MAPMAGIC_EROSION_SOURCE_ROUTE_OK`.
+- `python -m unittest Tools/test_validate_mapmagic_erosion_source_route.py` now runs `13` tests OK.
+- `python -m unittest Tools/test_validate_terrain_probe_evidence.py` now runs `16` tests OK with `1` skipped historical-artifact test.
+
+Current state:
+
+- Owner09 now has static regression coverage for direct-only production MapMagic scheduling, queued delta flags, hidden queued callers outside scheduler/harness, id-based NativeArray cleanup across first-party MapMagic plugin cleanup, old one-argument `DisposeTracked` regressions, queued harness quarantine marker, anomaly dependency-completion and worker-thread guard ordering, `HeightDeltaBudget` safety comments, production graph wiring, and enabled erosion/anomaly recovery defaults.
+- Runtime/Unity/product/visual status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Owner09 Production Graph Source Restoration Cursor 114
+
+Current front:
+
+- Restored production-intent source wiring in the MapMagic graph integrator after manual diff review found the diagnostic erosion/anomaly bypass still in source.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, graph asset mutation, or raw YAML edit was performed.
+
+Controller actions:
+
+- Updated `Assets/_Project/Scripts/Editor/PlanetaryCanvasMapMagicGraphIntegrator.cs`.
+- `erosionNode.erodedHeightOut` now drives height output, splat height input, and anomaly height input.
+- `erosionNode.sedimentMaskOut` now drives splat sediment input.
+- `anomalyNode.brineMaskOut` now drives mud texture layers and increments `BrineMudLinks`.
+- Recovery defaults now leave `erosionNode.enabled` and `anomalyNode.enabled` true.
+- Updated `Tools/ValidateMapMagicErosionSourceRoute.py` and `Tools/test_validate_mapmagic_erosion_source_route.py` to reject diagnostic graph bypass and require production graph wiring.
+- Updated Owner09 review and task index docs.
+
+Validation:
+
+- `python Tools\ValidateMapMagicErosionSourceRoute.py` returned `MAPMAGIC_EROSION_SOURCE_ROUTE_OK`.
+- `python -m unittest Tools/test_validate_mapmagic_erosion_source_route.py` ran `13` tests OK.
+- Static grep found no diagnostic `graph.Link(null, anomalyNode.heightIn)`, `anomalyNode.enabled = false`, `erosionNode.enabled = false`, or mud-layer null unlink in `PlanetaryCanvasMapMagicGraphIntegrator.cs`.
+- Scoped `git diff --check` returned CRLF normalization warnings only.
+
+Current state:
+
+- Source route is production-intent again.
+- Serialized `ACTUAL TERRAIN.asset` may still be in diagnostic bypass state from the earlier Unity run; it requires Unity API readback/reintegration when process gate is green.
+- Runtime/Unity/product/visual status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Asset Proof Artifact Index Validator Cursor 109
+
+Current front:
+
+- Continued static asset/proof-adjacent lane while CPU/process gate remained red for Unity/build/import work.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, raw YAML edit, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Visually inspected `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png`.
+- Visually inspected `Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.png` and kept it diagnostic rejected.
+- Visually inspected `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_contact_sheet.png` as static source only.
+- Added mandatory visual reference, h8_1914 crest diagnostic, and Batch31 PromotionPrep rows to `Docs/AssetAudit/ASSET_PROOF_ARTIFACT_INDEX_20260605.csv`.
+- Added `Tools/ValidateAssetProofArtifactIndex.py`.
+- Added `Tools/test_validate_asset_proof_artifact_index.py`.
+- Integrated the validator into `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv/.md`.
+- Updated static-count anchors in the asset-front summary, controller synthesis, worker board, system index, next-action board, tasklocal README, and static-summary test.
+
+Validation:
+
+- `python Tools\ValidateAssetProofArtifactIndex.py` returned `ASSET_PROOF_ARTIFACT_INDEX_OK rows=35 mandatory_refs=15 diagnostic_rejected=4`.
+- `python Tools\ValidateAssetStaticSummary.py --summary Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14671`.
+- `python -m unittest Tools\test_validate_asset_static_summary.py Tools\test_validate_asset_proof_artifact_index.py Tools\test_validate_asset_action_queue.py Tools\test_validate_visual_asset_review_queue.py Tools\test_validate_texture_import_role_matrix.py Tools\test_validate_audio_listening_policy_queues.py Tools\test_validate_audio_route_decision_matrices.py Tools\test_validate_asset_owner_packet_index.py` ran `40` tests OK.
+- Scoped stale-anchor scan found no remaining `14664`, `157 rows`, or `parses as 30 rows` anchors in the touched asset-front docs.
+- Scoped `git diff --check -- ...` returned CRLF normalization warnings only.
+
+Current state:
+
+- Current curated asset CSV set is `62` files, `14671` data rows, zero empty cells.
+- `ASSET_PROOF_ARTIFACT_INDEX_20260605.csv` is now `35` rows.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is now `159` rows.
+- Mandatory visual references are indexed as comparison targets only, not acceptance proof.
+- h8_1914 diagnostic screenshots remain negative evidence only.
+- Batch31 PromotionPrep PBR candidates remain `SOURCE_ONLY_USEFUL` / `BLOCKED_CHANNEL_SEMANTICS` until shader target, import, material, scene, memory, and screenshot proof exist.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Controller Sidecar Integration Cursor 111
+
+Current front:
+
+- Acting as orchestrator/controller after context compression and user-supplied Unity-worker dialogue.
+- Process gate remains red. Latest refresh saw CPU approximately 94 percent with `Unity`, `dotnet`, and `UnityPackageManager` active.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, raw YAML, or runtime source mutation was performed by this controller pass.
+
+Integrated evidence:
+
+- Bernoulli: ProbeN/ProbeO and the active process set are not acceptance proof. h8_1914 remains diagnostic-only.
+- Pauli: historical comparison anchors mapped: `857689d2b` for Apr28 sky/Crest/scene, `06cff4605` plus first-week-May commits for MapMagic graph comparison, and `b81b0da81^` for pre-divergence terrain/sky shader comparison.
+- Dirac: serialized scene/MapMagic diff classified. `[MUSIC_SYSTEM]` root addition is likely intentional but needs runtime duplicate/config proof; `ACTUAL TERRAIN.asset` intentionally disables anomaly and rewires/clears anomaly/mud/brine links.
+- Avicenna: first-20 player/HUD route remains blocked. `02_HECTON_WORLD` static player is scene-local shell-bound; production `Player.prefab`, HUD, PDA, pause, save, walk/swim/movement route proof is absent.
+
+Controller actions:
+
+- Updated `Docs/Orchestration/SURFACE_AUTHORITATIVE_ROUTE_RECOVERY_MATRIX_20260605.md`.
+- Updated `Docs/Orchestration/MODIFIED_SOURCE_DIFF_STATIC_TRIAGE_20260606.md`.
+- Updated `Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_01_UNITY_GATE_READBACK.txt`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_02_SURFACE_AUTHORITATIVE_ROUTE.txt`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_03_PLAYER_HUD_MOVEMENT_ROUTE.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+
+Current state:
+
+- Last accepted evidence: static Python/CSV/document validators only, where named in their reports.
+- Last rejected evidence: h8_1914 ProbeN/ProbeO and latest overwritten `h8_1914_surface_crest_recovery_probe.*`.
+- Active owner gate: Owner01 must produce a no-mutation Unity readback before Owners02/03/04 can claim product or h8_1475 proof.
+- Next action: keep static fronts moving while Unity gate is red; when gate turns green, require process samples, editor state, console state, active player/HUD/input/camera readback, Crest/terrain/sky readback, and dirty-state before/after.
+- Runtime/Unity/product/visual status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 ProbeO Compile Gate Cursor 112
+
+Current front:
+
+- ProbeO completed after the sidecar integration refresh and overwrote `Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.*` again at approximately `03:13`.
+- Process gate stayed red: later samples saw CPU 87-100 percent with active `dotnet` and `VBCSCompiler`.
+- No Unity readback, build, import command, Play Mode, profiler, scene/prefab/material mutation, or source edit was performed by this controller pass.
+
+Evidence:
+
+- `Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeO_20260606_030119.log` records `Modification date of Assets\_Project\Scripts\SeamGapDitherRenderer.cs changed while running Csc`.
+- The same log records `CS0103` for `_registeredToDispatcher` at `SeamGapDitherRenderer.cs(322,21)`, then `Tundra build failed` and `Editor compiler errors found. Will not reload assemblies`.
+- Current source inspection shows `SeamGapDitherRenderer.cs` line 322 now uses `_registeredLateFrame = false`, so ProbeO is likely a moving-worktree compile snapshot, but only a fresh clean compile/import can prove that.
+- ProbeO also emits Unity `MemoryLeaks`.
+- Historical ProbeO log evidence rejected with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=13` while the log was present. Current file-state recheck rejects with `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9` because the ProbeO log is absent and h8_1914 metadata remains diagnostic.
+
+Controller actions:
+
+- Updated `Docs/Orchestration/UNITY_SURFACE_CREST_CAPTURE_OBSERVATION_20260606.md`.
+- Updated `Docs/Orchestration/MODIFIED_SOURCE_DIFF_STATIC_TRIAGE_20260606.md`.
+- Updated `Docs/Orchestration/SURFACE_AUTHORITATIVE_ROUTE_RECOVERY_MATRIX_20260605.md`.
+- Updated `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_01_UNITY_GATE_READBACK.txt`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+- Spawned Planck static explorer for `SeamGapDitherRenderer.cs` compile-gate triage; no result integrated yet.
+
+Current state:
+
+- Last accepted evidence: static-only validators and source/diff classifications already named in their reports.
+- Last rejected evidence: ProbeO h8_1914 output, ProbeO compile state, and ProbeO memory payload.
+- Active owner: Owner01 must first prove process idle and clean compile/import before any Unity readback or h8_1475 packet.
+- Runtime/Unity/product/visual status remains `PENDING VERIFICATION`.
+
+Planck result integrated:
+
+- Current `SeamGapDitherRenderer.cs` no longer contains `_registeredToDispatcher`; ProbeO `CS0103` is likely stale moving-worktree compile evidence, not current source truth.
+- Current source still needs proof: dispatcher hot-swap branch resets `_registeredLateFrame` without proving old-dispatcher unregister, and throttled `transform.Find(...)` in the LateFrame path needs runtime/profiler evidence.
+- Do not patch `SeamGapDitherRenderer.cs` from ProbeO alone. Require stable-worktree compile/import proof first.
+- `Docs/Orchestration/UNITY_SURFACE_CREST_CAPTURE_OBSERVATION_20260606.md` now records the ProbeO `MemoryLeaks` payload and the same source-lifecycle proof risks.
+
+Validator work:
+
+- Updated `Tools/ValidateTerrainProbeEvidence.py` so compile-poisoned terrain proof logs reject on `compile-error`, `tundra-build-failed`, `editor-compiler-errors`, and `compile-input-mutated`; incomplete capture-output logs, missing/empty production metadata, missing `captureTruth`, and missing required production link rows also reject.
+- Updated `Tools/test_validate_terrain_probe_evidence.py`.
+- `python -m unittest Tools/test_validate_terrain_probe_evidence.py` ran 16 tests OK with 1 skipped historical-artifact test.
+- Current ProbeO validation with `--require-production` returned `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9` because the log is absent and h8_1914 metadata remains diagnostic.
+
+## 2026-06-06 Owner03 Player Spawn Route Cursor 113
+
+Current front:
+
+- Hooke completed a static-only runtime-route exploration. No Unity, build, import, Play Mode, profiler, screenshots, heavy tests, code edits, scene edits, prefab edits, or raw YAML mutation were performed by the sidecar.
+
+Integrated evidence:
+
+- Production `Player.prefab` GUID is `1c4db7a430141e5408e01b6ce4ed19d7`.
+- Static search found no runtime/bootstrap/scene reference to that GUID.
+- `02_HECTON_WORLD` still statically contains a scene-local active `Player` with no prefab instance/asset relation and `HectonWorldShellController1428`.
+- `GameBootstrapper` has serialized current-player refs but no player prefab field; it resolves from `BootstrapState` or scene tag and publishes/repositions existing objects.
+- `HectonPlayerSpawner` has a `Rigidbody playerRigidbody` reference and teleports existing Rigidbody/motor/root; it is not a prefab factory.
+- `PlayerRuntimeContextService` can bind an existing root but cannot instantiate production `Player.prefab`.
+- Scene tag lookup can accept the shell named `Player`.
+
+Controller actions:
+
+- Updated `Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md`.
+- Updated `Docs/Orchestration/H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_03_PLAYER_HUD_MOVEMENT_ROUTE.txt`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_04_H8_1475_FALSE_PROOF_BLOCKER.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+
+Current state:
+
+- Owner03 is blocked by static spawn-route evidence, not only missing screenshot proof.
+- If Unity readback proves shell-only, valid repair is a cold owner-correct production prefab binding/spawn route through Unity tooling or scene prefab ownership. Patching `HectonWorldShellController1428` into production movement is rejected.
+- h8_1475 remains blocked until production player, walking, swimming, camera, interaction, HUD/visor, PDA, pause, and save/load route are proven.
+
+Validator work:
+
+- Added `Tools/ValidatePlayerRouteStaticEvidence.py`.
+- Added `Tools/test_validate_player_route_static_evidence.py`.
+- Initial `python -m unittest Tools/test_validate_player_route_static_evidence.py` ran 3 tests OK.
+- Hardened `python -B -m unittest Tools.test_validate_player_route_static_evidence` ran 4 tests OK.
+- Hardened `python -B Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` rejects current evidence with 25 blockers: scene shell player, missing exact production prefab instance binding, missing scene/runtime production prefab route, missing HUD/movement/interaction route, bootstrap tagged-shell acceptance, bootstrap mark/publish without production validation, spawner bootstrap-transform Rigidbody fallback, Player.prefab PDA/pause/swim/HUD null routes, disabled/null HUD compositor, forced overlay, and Suit HUD null runtime refs.
+
+## 2026-06-06 ProbeR Hazard Compile Gate Cursor 114
+
+Current front:
+
+- Process gate still not green. Latest refresh saw CPU around 49 percent but active `dotnet`; Unity/build/readback remains blocked.
+- New logs appeared: `UnityCaptureSurfaceCrestActualTerrainProbeR_20260606_033941.log` and `UnityCompileAfterHazardFix_20260606_034456.log`.
+- No Unity command was launched by this controller pass.
+
+Evidence:
+
+- ProbeR records multiple source mutations while Csc was running.
+- ProbeR records repeated `CS0136` at `HectonHazardManager.cs(87,39)` for local `zoneManager`, then Tundra build failures.
+- Current `HectonHazardManager.cs` line 87 is `HazardZoneManager existingZoneManager = TryResolveZoneManager();`, so the exact ProbeR compile error is likely stale moving-worktree evidence.
+- `UnityCompileAfterHazardFix_20260606_034456.log` records Tundra build success, but active `dotnet` means this is not an idle-process clean readiness gate.
+- Historical ProbeR validation returned `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=12` while the log was present. Current file-state recheck returns `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9` because the ProbeR log is absent and h8_1914 metadata remains diagnostic.
+
+Controller actions:
+
+- Updated `Docs/Orchestration/MODIFIED_SOURCE_DIFF_STATIC_TRIAGE_20260606.md`.
+- Updated `Docs/Orchestration/MAPMAGIC_HYDRAULIC_EROSION_JOB_SAFETY_STATIC_REVIEW_20260606.md`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_01_UNITY_GATE_READBACK.txt`.
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_09_MAPMAGIC_EROSION_JOB_SAFETY.txt`.
+- Updated `taskslocal/night_controller_20260605/BATCH_INDEX.txt`.
+
+Current state:
+
+- ProbeR is rejected diagnostic/compile-poison evidence.
+- CompileAfterHazardFix is useful but insufficient until Owner01 gets idle process samples and a clean compile/import/readback window.
+- Runtime/Unity/product/visual status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 ProbeS ProbeT Process Gate Cursor 115
+
+Current front:
+
+- Latest process refresh saw CPU 100 with `Unity`, `dotnet`, `UnityPackageManager`, and `UnityShaderCompiler` active.
+- New logs appeared: `UnityCaptureSurfaceCrestActualTerrainProbeS_20260606_034800.log` and `UnityCaptureSurfaceCrestActualTerrainProbeT_20260606_034946.log`.
+
+Evidence:
+
+- Historical ProbeS evidence showed a short Tundra success.
+- Historical ProbeT evidence was a Unity startup/package-discovery lane at the inspected tail and did not write a new screenshot.
+- `Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.*` still has last write time around `03:13`.
+- `python Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbeS_20260606_034800.log --metadata Docs\Screenshots\MCP\h8_1914_surface_crest_recovery_probe.txt --require-production` returned `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`.
+- `python Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbeT_20260606_034946.log --metadata Docs\Screenshots\MCP\h8_1914_surface_crest_recovery_probe.txt --require-production` returned `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`.
+
+Controller action:
+
+- Updated `taskslocal/night_controller_20260605/NIGHT_OWNER_01_UNITY_GATE_READBACK.txt`.
+
+Current state:
+
+- Owner01 remains `PROCESS_GATE_RED`.
+- ProbeS/T are not acceptance packets and do not supersede ProbeO/ProbeR rejections.
+
+## 2026-06-06 Static Validator Pair Cursor 116
+
+Current front:
+
+- Ran only lightweight Python validators. No Unity, build, import, Play Mode, profiler, scene, prefab, material, Addressables, or raw YAML mutation.
+
+Validation:
+
+- `python -B -m unittest Tools.test_validate_terrain_probe_evidence Tools.test_validate_player_route_static_evidence` ran 20 tests OK with 1 skipped historical-artifact test.
+- `python -m unittest Tools/test_validate_mapmagic_erosion_source_route.py Tools/test_validate_terrain_probe_evidence.py Tools/test_validate_player_route_static_evidence.py` ran 36 tests OK with 1 skipped historical-artifact test.
+
+Current state:
+
+- Terrain proof guard, MapMagic source-route guard, and player-route static guard are green at unit-test level.
+- Runtime/Unity/product/visual status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Audio Waveform Proof Artifact Validator Cursor 110
+
+Current front:
+
+- Continued static asset/audio lane while Unity/dotnet/ILPP process gate remained red.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, raw YAML edit, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Visually inspected `Docs/AssetAudit/AudioVisual/audio_waveform_contact_sheet_20260605.png`.
+- Added `Tools/ValidateAudioWaveformProofArtifacts.py`.
+- Added `Tools/test_validate_audio_waveform_proof_artifacts.py`.
+- Tightened waveform rows in `Docs/AssetAudit/ASSET_PROOF_ARTIFACT_INDEX_20260605.csv` so `Underwater_Ambient`, breath loop, and suit-loop waveform previews explicitly reject acceptance boundaries.
+- Integrated the waveform validator into `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv/.md`.
+- Updated static-count anchors in the asset-front summary, controller synthesis, worker board, system index, next-action board, tasklocal README, and static-summary test.
+
+Validation:
+
+- `python Tools\ValidateAudioWaveformProofArtifacts.py` returned `AUDIO_WAVEFORM_PROOF_ARTIFACTS_OK stats=11 linked=7 placeholder_blocked=1`.
+- `python Tools\ValidateAssetProofArtifactIndex.py` returned `ASSET_PROOF_ARTIFACT_INDEX_OK rows=35 mandatory_refs=15 diagnostic_rejected=4`.
+- `python Tools\ValidateAssetStaticSummary.py --summary Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14673`.
+- `python -m unittest Tools\test_validate_asset_static_summary.py Tools\test_validate_asset_proof_artifact_index.py Tools\test_validate_audio_waveform_proof_artifacts.py Tools\test_validate_asset_action_queue.py Tools\test_validate_visual_asset_review_queue.py Tools\test_validate_texture_import_role_matrix.py Tools\test_validate_audio_listening_policy_queues.py Tools\test_validate_audio_route_decision_matrices.py Tools\test_validate_asset_owner_packet_index.py` ran `45` tests OK.
+- Scoped stale-anchor scan found no remaining `14671`, `159 rows`, or `rows=14671` anchors in the touched asset-front docs.
+- Scoped `git diff --check -- ...` returned CRLF normalization warnings only.
+
+Current state:
+
+- Current curated asset CSV set is `62` files, `14673` data rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is now `161` rows.
+- Audio waveform sheets/stats remain `AUDIO_WAVEFORM_QA` only.
+- `VOStub_Chen_Log01_EN` remains `PLACEHOLDER_BLOCKED`.
+- Player breath/suit/ambient/music waveform rows are linked to listening queue blockers but cannot be used as listening, mix, routing, runtime, memory, or 0 B/frame proof.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Asset Front File Map Validator Cursor 111
+
+Current front:
+
+- Continued static asset-front routing lane while dotnet/VBCSCompiler process gate remained red.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, raw YAML edit, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Added `Tools/ValidateAssetFrontFileMap.py`.
+- Added `Tools/test_validate_asset_front_file_map.py`.
+- Integrated the validator into `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv/.md`.
+- Validator now checks mapped path existence, duplicate paths, required validator rows, declared `_rows` counts for mapped CSV files, and `NotProofOf` boundary wording.
+- Updated static-count anchors in the asset-front summary, controller synthesis, worker board, system index, next-action board, tasklocal README, and static-summary test.
+
+Validation:
+
+- `python Tools\ValidateAssetFrontFileMap.py` returned `ASSET_FRONT_FILE_MAP_OK rows=163 csv_rows=64`.
+- `python Tools\ValidateAssetStaticSummary.py --summary Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14675`.
+- `python -m unittest Tools\test_validate_asset_static_summary.py Tools\test_validate_asset_front_file_map.py Tools\test_validate_asset_proof_artifact_index.py Tools\test_validate_audio_waveform_proof_artifacts.py Tools\test_validate_asset_action_queue.py Tools\test_validate_visual_asset_review_queue.py Tools\test_validate_texture_import_role_matrix.py Tools\test_validate_audio_listening_policy_queues.py Tools\test_validate_audio_route_decision_matrices.py Tools\test_validate_asset_owner_packet_index.py` ran `50` tests OK.
+- Scoped stale-anchor scan found no remaining `14673`, `161 rows`, or `rows=14673` anchors in the touched asset-front docs.
+- Scoped `git diff --check -- ...` returned CRLF normalization warnings only.
+
+Current state:
+
+- Current curated asset CSV set is `62` files, `14675` data rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is now `163` rows.
+- Future asset-front file-map drift now fails if a mapped CSV row count changes without updating the map.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Asset Static Validator Runner Cursor 112
+
+Current front:
+
+- Continued offline asset-front validation lane while Unity/dotnet/ILPP process gate remained red.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, raw YAML edit, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Added `Tools/RunAssetStaticValidators.py`.
+- Added `Tools/test_run_asset_static_validators.py`.
+- Integrated runner rows into `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv/.md`.
+- Aligned `Tools/ValidateAssetFrontFileMap.py` and `Tools/test_validate_asset_front_file_map.py` to the moving file-map state after parallel MapMagic source-route validator rows appeared.
+- Updated static-count anchors in the asset-front summary, controller synthesis, worker board, system index, next-action board, tasklocal README, and static-summary test.
+
+Validation:
+
+- `python Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=16`.
+- Runner outputs included `MAPMAGIC_EROSION_SOURCE_ROUTE_OK` from the newly included offline MapMagic source-route validator.
+- `python -m unittest Tools\test_run_asset_static_validators.py Tools\test_validate_asset_static_summary.py Tools\test_validate_asset_front_file_map.py Tools\test_validate_asset_proof_artifact_index.py Tools\test_validate_audio_waveform_proof_artifacts.py Tools\test_validate_asset_action_queue.py Tools\test_validate_visual_asset_review_queue.py Tools\test_validate_texture_import_role_matrix.py Tools\test_validate_audio_listening_policy_queues.py Tools\test_validate_audio_route_decision_matrices.py Tools\test_validate_asset_owner_packet_index.py` ran `53` tests OK.
+- Scoped stale-anchor scan found no remaining `14677`, `165 rows`, `rows=14677`, or `count=15` anchors in the touched asset-front docs/tools.
+- Scoped `git diff --check -- ...` returned CRLF normalization warnings only.
+
+Current state:
+
+- Current curated asset CSV set is `62` files, `14679` data rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is now `167` rows.
+- Aggregate runner gives future agents one offline command for current asset-static hygiene.
+- Runner success remains static-only and does not prove Unity import, material binding, visual quality, audio mix, runtime memory, GC, build, or owner execution.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Visual Contact Sheet Manual Review Cursor 113
+
+Current front:
+
+- Continued static visual source review lane while Unity/dotnet/ILPP process gate remained red.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, raw YAML edit, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Visually inspected `Docs/AssetAudit/ContactSheets/water_foam_caustic_contact_sheet.png`.
+- Visually inspected `Docs/AssetAudit/ContactSheets/sky_aegir_cloud_contact_sheet.png`.
+- Visually inspected `Docs/AssetAudit/ContactSheets/terrain_geology_contact_sheet.png`.
+- Visually inspected `Docs/AssetAudit/ContactSheets/flora_coral_fauna_contact_sheet.png`.
+- Visually inspected `Docs/AssetAudit/ContactSheets/ui_textures_contact_sheet.png`.
+- Visually inspected `Docs/AssetAudit/ContactSheets/unknown_textures_contact_sheet.png`.
+- Visually inspected `Docs/AssetAudit/ContactSheets/generated_source_only_contact_sheet.png`.
+- Added one unknown-texture manual boundary note to `Docs/AssetAudit/ASSET_PROOF_ARTIFACT_INDEX_20260605.md`.
+
+Findings:
+
+- Water/foam: `foam.png` is rejected as visible shoreline foam; droplet/runoff sources are support masks/normals only.
+- Sky/Aegir: most sources are masks/bands; baked Aegir disc is soft/toy-like as hero sky; dark panoramas do not satisfy bright surface floor.
+- Terrain/geology: Batch31 wet basalt/sand candidates are useful, but generated tiles remain source-only until channel semantics, terrain receiver, import, material, and route proof exist.
+- Flora/coral/fauna: raw coral/kelp families are useful, but material proof and streaming-mip blockers remain.
+- UI: detailed icon candidates exist; `oxygen-tank.png` is mask/silhouette only and cannot stand as final oxygen HUD icon.
+- Unknown/generated: useful detail sources exist, but unresolved owner/material role blocks route promotion.
+
+Validation:
+
+- `python Tools\ValidateAssetProofArtifactIndex.py` returned `ASSET_PROOF_ARTIFACT_INDEX_OK rows=35 mandatory_refs=15 diagnostic_rejected=4`.
+- `python Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=16`.
+- Scoped `git diff --check -- ...` returned CRLF normalization warnings only.
+
+Current state:
+
+- Contact sheets remain `STATIC_IMAGE_QA` / source-review evidence only.
+- No contact sheet is accepted as Unity import, material binding, scene screenshot, memory, Frame Debugger, route, or product visual proof.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Controller Surface Audio Integration Cursor 117
+
+Current front:
+
+- Refreshed after context loss from the active orchestration memory, latest owner files, reports, logs, screenshots, process state, and the user's pasted Unity-worker dialogue.
+- CPU was approximately `97%`; Unity/dotnet/build/import/readback remained blocked by process policy. This controller pass did not launch Unity, dotnet, import, Play Mode, profiler, screenshots, scene save, prefab save, material save, Addressables mutation, or project-setting mutation.
+- Latest h8_1914 surface screenshots remain rejection evidence. Last accepted runtime/product proof remains absent.
+
+Controller actions:
+
+- Integrated Owner06 audio recheck: one `[MUSIC_SYSTEM]` scene anchor exists, but runtime audio remains pending Play Mode, mixer fallback, pool spawn, residency, and 0 B/frame proof.
+- Integrated Sartre validator: `Tools/ValidateAudioSceneStaticRoute.py` / tests now reject current repo with `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=2` for missing Addressables route and P0 direct Player audio refs.
+- Integrated historical surface anchors into `Docs/Orchestration/UNITY_WORKER_DIALOGUE_REFERENCE_REJECTION_20260606.md`: `857689d2b`, `06cff4605`, `2442f78e9`, `474759516`, `fd33b9521`, `7073862dd`, and `b81b0da81^` are comparison anchors only, not raw revert instructions.
+- Delegated Fermat to classify rejected green/haze/water-card residue.
+
+Fermat residue classification:
+
+- Dangerous: `Assets/_Project/Scripts/Editor/H8VisualProofCapture1912.cs` because the proof tool mutates Crest/MapMagic/Terrain before capture and must not be h8_1475 base.
+- Dangerous: `Assets/MapMagic/Map_Graph/New Gen/ACTUAL TERRAIN.asset` because it is a production asset in dirty terrain/probe graph state; restore only through owner-approved Unity/API route, no raw YAML patch.
+- Negative evidence only: `Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.*` and old h8_1912/h8_1914 screenshots.
+- Not surface-attributed by static diff: `Assets/_Project/Scenes/02_HECTON_WORLD.unity`; current diff is audio `[MUSIC_SYSTEM]` ownership.
+- Collateral source requiring owner review: `Assets/_Project/Scripts/SeamGapDitherRenderer.cs`.
+
+Current state:
+
+- Surface owner must not continue green overlay/card/haze symptom work. Next valid path is no-mutation readback against historical anchors when process gate is green.
+- h8_1475 must not reuse `H8VisualProofCapture1912.cs`.
+- Owner09 must treat `ACTUAL TERRAIN.asset` as dirty production graph state until Unity graph readback/reintegration proves otherwise.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Audio Scene Validator Runner Integration Cursor 118
+
+Current front:
+
+- Continued static asset/audio guard integration while Unity readback remained blocked. Latest process sample had CPU `100`; scoped `Unity`/`UnityPackageManager`/`UnityShaderCompiler`/`dotnet`/`csc`/`MSBuild` table was empty, but CPU alone keeps the Unity gate red.
+- No Unity, dotnet build, import, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, raw YAML edit, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Integrated `Tools/ValidateAudioSceneStaticRoute.py --no-fail` into `Tools/RunAssetStaticValidators.py`.
+- Added the validator and test to `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv/.md`.
+- Updated static anchors to current asset-front state: file-map rows `173`, curated rows `14685`, aggregate runner count `19`.
+- Updated `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` so the audio-scene route rejection is explicit instead of hidden inside runner output.
+
+Validation:
+
+- `python -B Tools\ValidateAssetFrontFileMap.py` returned `ASSET_FRONT_FILE_MAP_OK rows=173 csv_rows=64`.
+- `python -B Tools\ValidateAssetStaticSummary.py --summary Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14685`.
+- `python -B -m unittest Tools.test_validate_asset_front_file_map Tools.test_validate_asset_static_summary Tools.test_run_asset_static_validators Tools.test_validate_audio_scene_static_route` ran `17` tests OK.
+- `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=19`; within that output, `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=2` remained visible for missing Addressables settings/groups/entries and P0 direct Player audio refs.
+- Scoped stale-anchor scan found no remaining previous asset-front count anchors in active docs/tasklocal/tools.
+- Scoped `git diff --check -- ...` returned CRLF normalization warnings only.
+
+Current state:
+
+- Asset static hygiene is internally consistent, but audio runtime remains rejected/static-blocked. Runner success is not runtime readiness.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Batch31 PromotionPrep Static Validator Cursor 114
+
+Current front:
+
+- Continued offline asset-front validation lane after process refresh showed active Unity/import processes.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, raw YAML edit, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Added `Tools/ValidateBatch31PromotionPrepArtifacts.py`.
+- Added `Tools/test_validate_batch31_promotion_prep_artifacts.py`.
+- Integrated the Batch31 validator into `Tools/RunAssetStaticValidators.py`.
+- Added Batch31 validator rows to `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv/.md`.
+- Updated asset-front static anchors through current `14685` rows, file-map rows `173`, and aggregate runner count `19`.
+
+Validation:
+
+- `python Tools\ValidateBatch31PromotionPrepArtifacts.py` returned `BATCH31_PROMOTION_PREP_ARTIFACTS_OK packages=3 files=28 blocked_masks=3`.
+- `python Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=19`, while `ValidateAudioSceneStaticRoute.py --no-fail` printed `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=2`.
+- `python -m unittest Tools\test_run_asset_static_validators.py Tools\test_validate_asset_static_summary.py Tools\test_validate_asset_front_file_map.py Tools\test_validate_batch31_promotion_prep_artifacts.py Tools\test_validate_asset_proof_artifact_index.py Tools\test_validate_audio_waveform_proof_artifacts.py Tools\test_validate_asset_action_queue.py Tools\test_validate_visual_asset_review_queue.py Tools\test_validate_texture_import_role_matrix.py Tools\test_validate_audio_listening_policy_queues.py Tools\test_validate_audio_route_decision_matrices.py Tools\test_validate_asset_owner_packet_index.py Tools\test_validate_visual_source_promotion_queue.py Tools\test_validate_mesh_prefab_review_queue.py Tools\test_validate_foam_contact_decision_queue.py Tools\test_validate_mapmagic_erosion_source_route.py` ran `79` tests OK.
+- Scoped stale-anchor scan found no remaining old `14679`, `167`, `rows=14679`, or `count=16` asset-front anchors in the touched docs/tools.
+- Scoped `git diff --check -- ...` returned CRLF normalization warnings only.
+
+Current state:
+
+- Current curated asset CSV set is `62` files, `14685` data rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is now `169` rows.
+- Batch31 PromotionPrep artifacts are hash/manifest/blocker validated as `STATIC_IMAGE_PREP_ONLY`.
+- Batch31 remains blocked for Unity promotion until MRAO/ARM channel semantics, material/shader layout, Unity import readback, residency, and route screenshot proof exist.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Batch31 Import-Intent Static Guard Cursor 115
+
+Current front:
+
+- Continued offline asset-front validation lane.
+- Worked with concurrent asset-front changes already present in the worktree, including `audio_scene_static_route`.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, raw YAML edit, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Added `Tools/ValidateBatch31LocalPbrImportIntentArtifacts.py`.
+- Added `Tools/test_validate_batch31_local_pbr_import_intent_artifacts.py`.
+- Integrated the Batch31 local PBR import-intent artifact validator into `Tools/RunAssetStaticValidators.py`.
+- Added import-intent validator rows to `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv/.md`.
+- Reconciled concurrent file-map/runner drift from `audio_scene_static_route`.
+- Updated asset-front static anchors to `14685` current rows, file-map rows to `173`, and aggregate runner count to `19`.
+
+Validation:
+
+- `python Tools\ValidateBatch31LocalPbrImportIntentArtifacts.py` returned `BATCH31_LOCAL_PBR_IMPORT_INTENT_OK rows=21 empty_cells=36 runtime_rows=6 blocked_masks=3`.
+- `python Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=19`; `ValidateAudioSceneStaticRoute.py --no-fail` still reports `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=2`.
+- `python -m unittest Tools\test_run_asset_static_validators.py Tools\test_validate_asset_static_summary.py Tools\test_validate_asset_front_file_map.py Tools\test_validate_batch31_local_pbr_import_intent_artifacts.py Tools\test_validate_batch31_promotion_prep_artifacts.py Tools\test_validate_audio_scene_static_route.py Tools\test_validate_asset_proof_artifact_index.py Tools\test_validate_audio_waveform_proof_artifacts.py Tools\test_validate_asset_action_queue.py Tools\test_validate_visual_asset_review_queue.py Tools\test_validate_texture_import_role_matrix.py Tools\test_validate_audio_listening_policy_queues.py Tools\test_validate_audio_route_decision_matrices.py Tools\test_validate_asset_owner_packet_index.py Tools\test_validate_visual_source_promotion_queue.py Tools\test_validate_mesh_prefab_review_queue.py Tools\test_validate_foam_contact_decision_queue.py Tools\test_validate_mapmagic_erosion_source_route.py` ran `90` tests OK.
+- Scoped stale-anchor scan found no remaining previous asset-front count anchors in the touched docs/tools.
+- Scoped `git diff --check -- ...` returned CRLF normalization warnings only.
+
+Current state:
+
+- Current curated asset CSV set is `62` files, `14685` data rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is now `173` rows.
+- Aggregate asset static runner now covers `19` offline validators.
+- Batch31 local PBR import-intent remains sparse sidecar evidence: `21` rows, `36` intentional empty cells, `6` runtime candidate rows, `3` blocked MRAO mask rows.
+- Batch31 remains blocked for Unity promotion until MRAO/ARM channel semantics, material/shader layout, Unity import readback, residency, and route screenshot proof exist.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Asset Runner/File-Map Crosscheck Cursor 116
+
+Current front:
+
+- Continued offline asset-front validation lane while process refresh showed active `dotnet` processes.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, raw YAML edit, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Hardened `Tools/ValidateAssetFrontFileMap.py` so it derives validator script paths from `Tools/RunAssetStaticValidators.py` and fails if any runner validator is missing from `ASSET_FRONT_FILE_MAP_20260605.csv`.
+- Added a unit test for runner-validator/file-map coverage.
+- The new guard exposed missing file-map rows for `Tools/ValidateVfxParticleBudgetCatalog.py`.
+- Added VFX particle budget validator/test rows to `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv/.md`.
+- Updated asset-front static anchors to `14687` current rows and file-map rows to `175`.
+
+Validation:
+
+- `python Tools\ValidateAssetFrontFileMap.py` returned `ASSET_FRONT_FILE_MAP_OK rows=175 csv_rows=64`.
+- `python Tools\ValidateAssetStaticSummary.py --summary Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14687`.
+- `python Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=19`; `ValidateAudioSceneStaticRoute.py --no-fail` still reports `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=2`.
+- `python -m unittest Tools\test_run_asset_static_validators.py Tools\test_validate_asset_static_summary.py Tools\test_validate_asset_front_file_map.py Tools\test_validate_batch31_local_pbr_import_intent_artifacts.py Tools\test_validate_batch31_promotion_prep_artifacts.py Tools\test_validate_audio_scene_static_route.py Tools\test_validate_asset_proof_artifact_index.py Tools\test_validate_audio_waveform_proof_artifacts.py Tools\test_validate_asset_action_queue.py Tools\test_validate_visual_asset_review_queue.py Tools\test_validate_texture_import_role_matrix.py Tools\test_validate_audio_listening_policy_queues.py Tools\test_validate_audio_route_decision_matrices.py Tools\test_validate_asset_owner_packet_index.py Tools\test_validate_visual_source_promotion_queue.py Tools\test_validate_mesh_prefab_review_queue.py Tools\test_validate_foam_contact_decision_queue.py Tools\test_validate_mapmagic_erosion_source_route.py Tools\test_validate_vfx_particle_budget_catalog.py` ran `96` tests OK.
+- Scoped stale-anchor scan found no remaining old `14681`, `14683`, `14685`, `169`, `171`, `173`, `count=17`, or `count=18` asset-front anchors in the touched docs/tools.
+- Scoped `git diff --check -- ...` returned CRLF normalization warnings only.
+
+Current state:
+
+- Current curated asset CSV set is `62` files, `14687` data rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is now `175` rows.
+- Aggregate asset static runner covers `19` offline validators, and file-map validation now crosschecks runner validator coverage.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Batch31 Manual Image QA Cursor 117
+
+Current front:
+
+- Continued static image QA for generated Batch31 local PBR source candidates.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, raw YAML edit, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Visually inspected `Docs/GeneratedAssets/Batch31_LocalPBR/Batch31_LocalPBR_contact_sheet.png`.
+- Visually inspected `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_contact_sheet.png`.
+- Tightened the Batch31 manual image QA note in `Docs/AssetAudit/ASSET_PROOF_ARTIFACT_INDEX_20260605.md`.
+
+Findings:
+
+- Wet basalt has stronger material identity than checkerboard/placeholder terrain, but carries visible turquoise source-contamination/watermark-like streak risk and remains shoreline-only until seam, scale, material, and route proof exist.
+- Photic seabed and photic shell-sand are bright and detail-rich enough as source direction, but visually overlap; both cannot be promoted together without a distinct biome/material role split.
+- MRAO RGB previews are not production proof. Packed-mask semantics remain blocked until ARM/MRAO target layout is proven.
+
+Validation:
+
+- `python Tools\ValidateAssetProofArtifactIndex.py` returned `ASSET_PROOF_ARTIFACT_INDEX_OK rows=35 mandatory_refs=15 diagnostic_rejected=4`.
+- `python Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=19`; `ValidateAudioSceneStaticRoute.py --no-fail` still reports `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=2`.
+- `python -m unittest Tools\test_validate_asset_proof_artifact_index.py Tools\test_validate_asset_front_file_map.py Tools\test_validate_asset_static_summary.py` ran `15` tests OK.
+- Scoped `git diff --check -- ...` returned CRLF normalization warnings only.
+
+Current state:
+
+- Batch31 generated images remain static source direction only.
+- Batch31 remains blocked for Unity promotion until MRAO/ARM channel semantics, material/shader layout, Unity import readback, residency, and route screenshot proof exist.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Audio Direct Ref Detail Cursor 118
+
+Current front:
+
+- Continued static asset/audio validation while process refresh showed active `dotnet` processes.
+- No Unity readback, import, build, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, raw YAML edit, or `Assets/` mutation was performed.
+
+Controller actions:
+
+- Added `Tools/ValidateAudioDirectRefDetail.py` and unit coverage for `Docs/AssetAudit/AUDIO_DIRECT_REF_DETAIL_20260605.csv/.md`.
+- Integrated the audio direct-ref detail validator into `Tools/RunAssetStaticValidators.py`.
+- Added the validator/test/report rows to `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv/.md`.
+- Updated asset-front static anchors to `14689` current data rows and file-map rows to `177`.
+- Preserved `ValidateAudioSceneStaticRoute.py --no-fail` as a rejected static route gate; it still reports blockers instead of passing audio runtime readiness.
+
+Validation:
+
+- `python Tools\ValidateAudioDirectRefDetail.py` returned `AUDIO_DIRECT_REF_DETAIL_OK rows=28 p0=4 footsteps=20 ui=4`.
+- `python Tools\ValidateAssetFrontFileMap.py` returned `ASSET_FRONT_FILE_MAP_OK rows=177 csv_rows=64`.
+- `python Tools\ValidateAssetStaticSummary.py --summary Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14689`.
+- `python Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=20`; `ValidateAudioSceneStaticRoute.py --no-fail` still reports `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=2`.
+- `python -m unittest ...` ran the current asset-front validator bundle: `104` tests OK.
+- Targeted stale-anchor scan found no remaining old summary anchors for `14681`, `14683`, `14685`, `14687`, file-map `169`, `171`, `173`, `175`, or runner `count=17`, `count=18`, `count=19`; broad numeric scan only hit unrelated GUID/ref-count data.
+- Scoped `git diff --check -- ...` returned CRLF normalization warnings only.
+
+Current state:
+
+- Current curated asset CSV set is `62` files, `14689` data rows, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv` is now `177` rows.
+- Aggregate asset static runner covers `20` offline validators, and file-map validation crosschecks runner validator coverage.
+- Static direct audio refs remain blocked until Unity prefab/audio lifecycle owner readback, mixer group assignment, Addressables/residency route, and 0 B/frame proof exist.
+- Latest aggregate runner view of `ValidateAudioSceneStaticRoute.py --no-fail` reports `player-direct-audio-refs: total=26 underwater_ambient=0 dive_splash=2 footstep=20 ui=4`; `AUDIO_DIRECT_REF_DETAIL_20260605.csv` still records `28` static rows including `2` underwater ambient rows, so the next static audio task should reconcile current prefab scan versus recorded detail before any owner packet is consumed.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Audio Prefab Direct-Ref Reconciliation Cursor 119
+
+Current front:
+
+- Reconciled static audio-direct-ref docs/tools against the current `Assets/_Project/Prefabs/Player.prefab` source state.
+- No Unity readback, import, build, Play Mode, profiler, scene, material, Addressables, project-setting, runtime source mutation, graph mutation, raw YAML edit by this controller, or `Assets/` mutation by this controller was performed.
+- Current working-tree prefab diff, produced outside this controller lane, source-clears prior `Underwater Ambient.wav` refs (`m_Resource`, `_driverClip`) and prior `dive_splash.wav` refs (`waterEntrySplashClip`, `waterExitSplashClip`).
+
+Controller actions:
+
+- Synchronized `Docs/AssetAudit/AUDIO_DIRECT_REF_DETAIL_20260605.csv/.md` to current prefab static truth: `24` direct refs total, `0` P0 direct refs, `20` footstep refs, `4` UI refs.
+- Hardened `Tools/ValidateAudioDirectRefDetail.py` so the detail CSV must match a fresh `Player.prefab` static scan and rejects stale ambient/splash rows.
+- Updated audio route/action/policy/remediation docs and owner packets to treat ambient/splash as `source-cleared but pending Unity prefab readback`, not as current direct prefab refs and not as accepted runtime removal.
+- Updated aggregate curated static row anchors to `62` files, `14685` data rows, zero empty cells.
+- Added explicit stale-sidecar caveats to `ASSET_GUID_REFERENCE_MATRIX_20260605.md`, `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.md`, `AUDIO_PROFILE_USAGE_REVIEW_20260605.md`, `Docs/Audio/README.md`, `ASSET_SYSTEM_INDEX_20260605.md`, `ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`, `ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md`, and `ASSET_WORKER_BOARD_20260605.md`: generated GUID/profile sidecars still contain older ambient/splash Player-prefab direct rows until regenerated.
+
+Validation:
+
+- `python Tools\ValidateAudioDirectRefDetail.py` returned `AUDIO_DIRECT_REF_DETAIL_OK rows=24 p0=0 footsteps=20 ui=4`.
+- `python Tools\ValidateAudioSceneStaticRoute.py --no-fail` returned `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1`; hard blocker is Addressables absent, with mixer fallback warnings still present.
+- `python Tools\ValidateAssetStaticSummary.py --summary Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14685`.
+- `python Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=20`.
+- `python -m unittest ...` ran the current asset-front validator bundle: `108` tests OK.
+- Targeted stale-anchor scan found no old `26/28/14687/14689` direct-ref summary anchors.
+- Scoped `git diff --check -- ...` returned CRLF normalization warnings only.
+
+Current state:
+
+- Current Player direct-ref truth: `24` total direct `AudioClip` refs, `0` P0 direct refs, `20` footstep refs, `4` UI refs.
+- Prior `Underwater Ambient.wav` and `dive_splash.wav` prefab direct refs are only source-cleared until Unity prefab readback, import readback, route owner ledger, runtime playback or absence proof, listening proof, memory/residency proof, and `0 B/frame` proof exist.
+- Generated sidecars `Docs/Audio/audio_profile_usage_20260605.csv`, `ASSET_GUID_REFERENCE_MATRIX_20260605.csv`, and `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` are parse-clean but semantically stale for those four old Player audio rows until regenerated.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Player Guard Hardening And Surface Steering Cursor 119
+
+Current front:
+
+- Resumed after context loss and refreshed from active orchestration memory, owner files, reports, screenshots, pasted Unity-worker dialogue, and process state.
+- Latest process sample was CPU `100` with active `dotnet` and `VBCSCompiler`; Unity/MCP/Play/scene/material/prefab/import/build work remained blocked.
+- No Unity, dotnet build, import, Play Mode, profiler, scene, prefab, material, Addressables, project-setting, runtime source mutation, graph mutation, or raw YAML edit was performed.
+
+Controller actions:
+
+- Closed Harvey player-route sidecar after integrating its static guard recommendations.
+- Closed Zeno surface-route sidecar after integrating its no-mutation historical-anchor steering.
+- Hardened `Tools/ValidatePlayerRouteStaticEvidence.py` so it rejects not only scene shell / missing prefab GUID / existing Rigidbody route, but also exact missing production prefab instance binding, missing HUD/movement/interaction refs, bootstrap tagged-shell acceptance, bootstrap mark/publish without production validation, spawner bootstrap-transform Rigidbody fallback, Player.prefab PDA/pause/swim/HUD null routes, disabled/null HUD compositor, forced screen-space overlay, and Suit HUD null runtime refs.
+- Updated `Tools/test_validate_player_route_static_evidence.py` for the expanded blocker set and synthetic pass fixture.
+- Updated Owner03, Owner04, batch index, and player/HUD synthesis so h8_1475 cannot start from scenic proof while the player/HUD/PDA/pause/save/walk/swim route is rejected.
+- Integrated Zeno's surface steering: historical anchors remain readback/A-B comparison inputs only; green haze, water cards, raw YAML revert, blind Crest material assignment, and decorative dressing before water/terrain/sky base repair remain rejected.
+
+Validation:
+
+- `python -B -m unittest Tools.test_validate_player_route_static_evidence` ran 4 tests OK.
+- `python -B Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` returned `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=25 notes=2`.
+- `python -B -m unittest Tools.test_validate_terrain_probe_evidence Tools.test_validate_player_route_static_evidence` ran 20 tests OK with 1 skipped historical-artifact test.
+- `python -B -m unittest Tools.test_validate_mapmagic_erosion_source_route Tools.test_validate_terrain_probe_evidence Tools.test_validate_player_route_static_evidence` ran 36 tests OK with 1 skipped historical-artifact test.
+
+Current state:
+
+- Player route remains `P0 BLOCKED / STATIC ONLY`.
+- Surface route remains `VISUAL_REJECTED / PENDING UNITY READBACK`.
+- h8_1914 and green/water-card probes remain failure evidence only.
+- h8_1475 remains blocked by runtime authority, not only visual quality.
+- Runtime/Unity/product/visual/audio acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Unity Worker Dialogue And Surface Route Lock Cursor 120
+
+Current front:
+
+- Refreshed from pasted Unity-worker dialogue, current orchestration reports, tasklocal owners, mandatory visual references, h8_1914 screenshots, and process state.
+- Process gate is red. Latest process sample showed active `Unity`, `dotnet`, `Unity.ILPP.Runner`, `UnityAutoQuitter`, licensing, and crash-handler processes; CPU sample was `82`. No Unity/MCP/Play/build/import/profiler/scene/material/prefab action was performed in this controller pass.
+- Sidecar explorers launched:
+  - Hubble: late-April / first-week-May authoritative surface route forensics.
+  - Halley: `H8VisualProofCapture1912` / h8_1914 false-proof risk audit.
+  - Lovelace: Unity gate/readback stabilization audit.
+
+Evidence reviewed:
+
+- `C:\Users\danat\.codex\attachments\2f281a38-64e6-4996-8703-bf2ace6239e8\pasted-text.txt`.
+- `Docs/Orchestration/UNITY_WORKER_DIALOGUE_REFERENCE_REJECTION_20260606.md`.
+- `Docs/Orchestration/UNITY_SURFACE_CREST_CAPTURE_OBSERVATION_20260606.md`.
+- `Docs/Orchestration/MODIFIED_SOURCE_DIFF_STATIC_TRIAGE_20260606.md`.
+- `Docs/Orchestration/SERIALIZED_UNITY_ASSET_DIRTY_TRIAGE_20260606.md`.
+- `taskslocal/night_controller_20260605/NIGHT_OWNER_02_SURFACE_AUTHORITATIVE_ROUTE.txt`.
+- Mandatory reference images:
+  - `base.webp`: readable blue photic-water/base benchmark.
+  - `beauty.webp`: photic shallows with readable water, terrain, flora, vehicle, and material scale.
+  - `BEST ILLUST - ON SURFACE...png`: target surface composition with cyan/blue ocean, shore foam, readable cliffs/flora, sky/clouds, Aegir scale.
+  - `CLIFFS AND WATER PREVIOUSLY IN DEVELOPMENT...jpg`: late-development water/cliffs reference.
+  - `CLIFFS SKY AND GAS GIANT PREVIOUSLY IN DEVELOPMENT...jpg.jpg`: late-development sky/Aegir/waterline reference.
+- Current rejected images:
+  - `Docs/Screenshots/MCP/h8_1914_surface_crest_recovery_probe.png`.
+  - `Docs/Screenshots/MCP/h8_1914_surface_water_recovery_probe.png`.
+
+Controller verdict:
+
+- The Unity-worker route failed at the problem definition level. It treated missing surface ocean/terrain route as tint, haze, and temporary-card tuning.
+- Current h8_1914 imagery is below the floor structurally: rectangular slab/card water, black clipped terrain, weak wet shoreline/contact, no accepted Crest/MapMagic/sky route proof, and no player/HUD/tool witness.
+- The green water-card branch is killed as a product route. It can remain historical failure evidence only.
+- The late-April / first-week-May MapMagic + Crest + sky route is the correct comparison target, but only as no-mutation readback/A-B evidence. Raw YAML revert, blind Crest assignment, or third-party shader wrapper work remains rejected.
+- Decorative rocks/flora/coral placement remains postponed until water, shoreline, terrain material/height route, sky/Aegir, and player/HUD/tool proof gates stop failing.
+
+Validation:
+
+- `python -B Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbeO_20260606_030119.log --metadata Docs\Screenshots\MCP\h8_1914_surface_crest_recovery_probe.txt --require-production` returned `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`.
+- `python -B Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` returned `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=25 notes=2`.
+- `python -B Tools\ValidateAssetProofArtifactIndex.py` returned `ASSET_PROOF_ARTIFACT_INDEX_OK rows=35 mandatory_refs=15 diagnostic_rejected=4`.
+- `python -B Tools\Docs\TestTaskLocalLaneContracts.py taskslocal\night_controller_20260605 --strict` returned `TASKLOCAL_LANE_CONTRACT_CHECK=PASS`.
+- `python -B -m unittest Tools.test_validate_terrain_probe_evidence Tools.test_validate_player_route_static_evidence Tools.test_validate_asset_proof_artifact_index` ran `24` tests OK with `1` skipped historical-artifact test.
+
+Current state:
+
+- Surface route: `VISUAL_ROUTE_INVALID / ROOT_ROUTE_RECOVERY_REQUIRED`.
+- h8_1914: `DIAGNOSTIC_REJECTED / NOT_ACCEPTANCE`.
+- h8_1475: `BLOCKED_BY_PLAYER_ROUTE_AND_PROOF_TOOL`.
+- Player/HUD/movement: `P0 BLOCKED / STATIC_ONLY`.
+- Unity gate: `RED`.
+- Next local controller action: keep independent static fronts moving while sidecars run; integrate sidecar results into Owner01/02/04 routing; do not let any worker restart green overlay/card tuning.
+
+## 2026-06-06 Proof Gate And Process Refresh Cursor 121
+
+Current front:
+
+- Evidence refresh after context compression read orchestration tail, newest owner/task files, newest reports, latest logs, screenshots/proof state, process state, and dirty set.
+- Latest process sample: `VBCSCompiler` PID 19600 active, CPU `100`. Unity/process gate remains red.
+- Latest dirty-set sample: `11406` rows. Dirty set is not frozen or classified.
+- No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, runtime source, graph, raw YAML, or build action was performed.
+
+Controller actions:
+
+- Spawned sidecar explorers:
+  - Volta: mass deletion dirty-set classifier.
+  - Lorentz: no-mutation proof harness gate scout.
+  - Mencius: audio static discrepancy scout.
+- Added `NIGHT_OWNER_10_PROOF_HARNESS_NO_MUTATION_GATE.txt`.
+- Updated `BATCH_INDEX.txt` so Owner10 is a `TOOLING_AUTOMATION` proof gate.
+- Updated Owner01 with current process/log blockers and latest h8_1914 relaunch logs.
+- Updated Owner04 so h8_1475 depends on a no-mutation proof-harness gate before any candidate harness can be accepted.
+
+Fresh evidence:
+
+- `Docs\Logs\UnityCompileClean_20260606_0515_current_import.log` is missing and cannot be cited.
+- `Docs\Logs\UnityCompileClean_20260606_051745_stable_import.log` has Tundra success markers and final Unity return code 0, but remains compile/import-only evidence. It contains licensing/token warnings, Csc input mutation markers, invalid assembly load skips, and no runtime/player/visual/profiler/graph proof.
+- `Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbe_20260606_052914.log` launches `H8VisualProofCapture1912.CaptureSurfaceCrestRecoveryProbeAndExit` and records script compilation requested because AssetDatabase observed script-related changes. It is not a proof packet.
+- `Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbe_20260606_053214.log` launches the same h8_1914 capture route. It is not a proof packet.
+
+Current state:
+
+- Unity gate: `RED`.
+- h8_1914: `DIAGNOSTIC_REJECTED / RELAUNCHED / NOT_ACCEPTANCE`.
+- h8_1475: `BLOCKED_BY_OWNER01_OWNER03_OWNER10`.
+- Proof harness route: `MUTATION_GATE_REQUIRED`.
+- Dirty set: `MOVING / MASS_DELETION_RISK`.
+- Next local controller action: run lane-contract validation after task update, then integrate sidecar outputs without touching Unity.
+
+## 2026-06-06 Sidecar Integration Cursor 122
+
+Current front:
+
+- Integrated Hubble, Lorentz, Mencius, Volta, and Herschel sidecar results.
+- Latest static asset runner: `ASSET_STATIC_VALIDATORS_OK count=20`.
+- Latest static audio truth: `AUDIO_DIRECT_REF_DETAIL_OK rows=24 p0=0 footsteps=20 ui=4`; `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1` for missing Addressables settings/groups/entries.
+- Latest process sample remains blocked by CPU `100`. No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, runtime source, graph, raw YAML, or build action was performed.
+
+Controller actions:
+
+- Integrated Hubble surface anchors into `SURFACE_AUTHORITATIVE_ROUTE_RECOVERY_MATRIX_20260605.md`, `UNITY_READBACK_P0_FIELD_MATRIX_20260605.md`, and Owner02.
+- Integrated Mencius audio reconciliation into `AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md`, `ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`, and Owner06.
+- Added `NIGHT_OWNER_11_MASS_DELETION_DIRTY_SET_CLASSIFIER.txt` and updated the batch index. Owner11 is required before any integration/commit/clean-checkpoint language.
+- Recorded Herschel's no-mutation proof-harness gate implementation in Owner10.
+
+Sidecar verdicts:
+
+- Hubble: `857689d2b` Apr 28 is the strongest Crest/Ocean/Sky readback anchor; `2442f78e9`/`474759516` are MapMagic/anomaly/splat/water-transition anchors; `b81b0da81` May 10 is a likely night/orange/packed-control divergence point, not a recovery target.
+- Lorentz: `H8VisualProofCapture1912` mutates scene/render/MapMagic/terrain/material/camera and writes raw editor PNG. It is disqualified as h8_1475 acceptance tooling.
+- Mencius: old audio `28/26` direct-ref reports are stale. Current static source has `24` P1 direct refs and `0` current direct ambient/splash P0 rows.
+- Volta: dirty set has `11219` tracked deletions with high evidence and production risk (`Docs=7917`, `Assets=74`, `Tools=65`). Deletion acceptance is blocked pending owner classification.
+- Herschel: `Tools/ValidateVisualProofCaptureGuardrails.py --mode harness-candidate --strict` rejects current `H8VisualProofCapture1912.cs` as canonical harness source with `43` violations.
+
+Current state:
+
+- Surface route: `STATIC_ANCHORS_REFINED / UNITY_READBACK_BLOCKED`.
+- Audio route: `ADDRESSABLES_P0_BLOCKED / PLAYER_DIRECT_P0_STATIC_CLEARED / UNITY_READBACK_BLOCKED`.
+- Proof harness route: `STATIC_GATE_IMPLEMENTED / H8_1912_1914_REJECTED_AS_CANONICAL`.
+- Dirty set: `OWNER11_CLASSIFICATION_REQUIRED`.
+- h8_1475: `BLOCKED_BY_OWNER01_OWNER03_OWNER10_OWNER11`.
+
+## 2026-06-06 External Unity Probe Loop Rejection Cursor 123
+
+Current front:
+
+- External Unity activity restarted at `2026-06-06 06:04`.
+- Process gate red: active `Unity`, `Unity.ILPP.Runner`, multiple `Unity.ILPP.Trigger`, `UnityPackageManager`, `dotnet`, and `UnityAutoQuitter`; CPU `100`.
+- Dirty-set sample grew to `11438` rows.
+- No Unity/MCP/Play/profiler/scene/prefab/material/Addressables/ProjectSettings/runtime-source/graph/raw-YAML/build action was performed by this controller pass.
+
+Evidence:
+
+- `Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbe_20260606_054748.log` relaunches `H8VisualProofCapture1912.CaptureSurfaceCrestRecoveryProbeAndExit`, writes `h8_1914_surface_crest_recovery_probe.png/.txt`, then emits Unity `MemoryLeaks`.
+- `Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbe_20260606_060418.log` relaunches the same route, records TerminalOS editor `CS0246`/`CS0012` for decryption DTO contracts, `Tundra build failed`, and has no complete capture output.
+- `Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbe_20260606_061409.log` relaunches the same route after the TerminalOS source fix, records Tundra build success, writes PNG/TXT, then emits Unity `MemoryLeaks`.
+- `Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbe_EditorGPU_20260606_062050.log` records Tundra build success and Unity `MemoryLeaks` with Crest query/ocean buffer callstacks.
+- `Docs\Logs\UnityCaptureSurfaceNoTerrainShell_AutorunEditorGPU_20260606_064605.log` records Tundra success/no scoped `error CS`, but no PNG/TXT capture output; `Docs\Logs\UnityMapMagicGraphIntegrator_20260606_063611.log` aborted because another Unity instance had the project open.
+- `ValidateTerrainProbeEvidence.py --require-production` rejects `_054748` with `blockers=9`, `_060418` with `blockers=11`, `_061409` with `blockers=9`, `EditorGPU_062050` with `blockers=9`, and `NoTerrainShell_AutorunEditorGPU_064605` with `blockers=9`. The 05:47, 06:14, and EditorGPU logs include `unity-memory-leaks`; the 06:04 log includes `compile-error`, `tundra-build-failed`, and `capture-output-missing`; the no-terrain-shell log remains compile/import-only.
+- Current Python guard packet: `python -m unittest Tools/test_validate_mapmagic_erosion_source_route.py Tools/test_validate_terrain_probe_evidence.py Tools/test_validate_player_route_static_evidence.py` ran 46 tests OK with 1 skipped historical-artifact test after adding the direct `graph.Link(...)` overload-regression guard, anomaly upstream-source exclusion guard, terrain generator-enabled production gates, non-production `captureTruth` hard gate, current player static route coverage, and skycard-horizon capture wiring guard; `python Tools\ValidateMapMagicErosionSourceRoute.py` returns `MAPMAGIC_EROSION_SOURCE_ROUTE_OK`; `python Tools\Docs\TestTaskLocalLaneContracts.py taskslocal\night_controller_20260605 --strict` returns `TASKLOCAL_LANE_CONTRACT_CHECK=PASS`.
+- Current process gate sample remains red by CPU threshold alone: CPU `100`, blocker processes `0`, so Unity graph integration/capture/proof remains blocked.
+
+Current state:
+
+- Unity gate: `RED`.
+- h8_1914: `EXTERNAL_RELAUNCH / DIAGNOSTIC_REJECTED`.
+- h8_1475: `BLOCKED`.
+- Surface route: `NO_ACCEPTED_PROOF`.
+- Next controller action: keep static lanes moving; do not let h8_1914 probe loop overwrite the product route.
+
+## 2026-06-06 Deletion Matrix Integration Cursor 124
+
+Current front:
+
+- Integrated Nash Owner11 report: `Docs/Orchestration/MASS_DELETION_DIRTY_SET_CLASSIFICATION_20260606.md`.
+- No deletion, restore, move, stage, commit, Unity, build, import, Play Mode, profiler, scene, prefab, material, raw YAML, or runtime action was performed.
+
+Evidence:
+
+- Resampled dirty set: `11438` status rows, `11225` tracked deletions, `173` tracked modifications, `40` untracked rows, `0` staged rows.
+- Top deletion folders: `Docs=7929`, `.codexbuild=2490`, `.codex-artifacts=325`, `igra=242`, `Assets=76`, `Tools=65`.
+- High-risk classes: `Assets/_Project=31`, `Docs/Reports=1686`, `Docs/Screenshots=216`, `Docs/AgentLogs=13`, `Docs/Tasks=7`, source-tooling deletions outside bin/obj=2.
+- `Docs/Tasks/POLISH.txt` is in the deletion wave.
+- `git diff --check -- Docs/Orchestration/MASS_DELETION_DIRTY_SET_CLASSIFICATION_20260606.md` returned clean.
+
+Current state:
+
+- Deletion acceptance: `BLOCKED`.
+- Commit readiness: `BLOCKED`.
+- Integration/clean-checkpoint language: `BLOCKED`.
+- Required next action: owner disposition for generated cache/proof artifacts, Docs evidence/provenance, production `Assets/_Project`, source tooling, third-party/native outputs, and stale build outputs.
+
+## 2026-06-06 Audio Addressables Static Guard Cursor 125
+
+Current front:
+
+- Unity/process gate remains blocked by CPU pressure. No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables settings, ProjectSettings, raw YAML, build, import, or runtime action was performed.
+- Audio static truth remains: `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1`; the hard blocker is missing Addressables settings/groups/entries.
+- Current Player-prefab direct audio static scan remains `24` refs with P0 `0`: footsteps `20`, UI `4`, underwater ambient `0`, dive splash `0`.
+
+Controller actions:
+
+- Added `Tools/ValidateAudioAddressablesP0Synthesis.py`.
+- Added `Tools/test_validate_audio_addressables_p0_synthesis.py`.
+- Added the new validator to `Tools/RunAssetStaticValidators.py`.
+- Updated `ASSET_FRONT_FILE_MAP_20260605.csv/.md`, `ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`, active asset synthesis boards, and the night controller batch index to current static counts.
+
+Fresh evidence:
+
+- `python Tools\ValidateAudioAddressablesP0Synthesis.py` returned `AUDIO_ADDRESSABLES_P0_SYNTHESIS_OK blockers=1 direct_refs=24 p0=0 footsteps=20 ui=4 fallback_required=3`.
+- `python Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=22`.
+- `python Tools\ValidateAssetFrontFileMap.py` returned `ASSET_FRONT_FILE_MAP_OK rows=179 csv_rows=64`.
+- `python Tools\ValidateAssetStaticSummary.py --summary Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14687`.
+
+Current state:
+
+- Audio route: `ADDRESSABLES_P0_BLOCKED / PLAYER_DIRECT_P0_STATIC_CLEARED / STATIC_ONLY / PENDING UNITY PROOF`.
+- Static validator runner: `22` commands.
+- Curated CSV parse set: `62` files, `14687` rows, zero empty cells.
+- Deletion acceptance and clean-checkpoint language remain blocked by Owner11 classification.
+
+## 2026-06-06 Unity Worker Dialogue Gate Hardening Cursor 125
+
+Current front:
+
+- Refreshed from the user-provided Unity-worker dialogue attachment, current `H8VisualProofCapture1912.cs` diff, Owner10, and process state.
+- Latest process sample: CPU `100`; Unity/build/import/profiler/scene/prefab/material actions remain blocked.
+- No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, runtime source, graph, raw YAML, deletion, restore, move, stage, or build action was performed.
+
+Controller verdict:
+
+- The worker dialogue is not a near-miss. It shows proof poisoning: green/card/haze A-B work, private Crest `RunUpdate`, MapMagic global height rewrites, terrain material/layer/presentation overrides, camera culling/clip mutation, editor sleeps, and raw h8_1914 capture output.
+- This can be useful only as failure evidence. It cannot be accepted as h8_1475, production surface proof, or product visual progress.
+
+Controller actions:
+
+- Hardened `Tools/ValidateVisualProofCaptureGuardrails.py` harness-candidate gate to reject `AssetDatabase.ImportAsset`, behaviour enable toggles, camera near/far/culling writes, Reflection/private `Invoke`, `Thread.Sleep`, editor-loop pumping, terrain presentation overrides, serialized MapMagic `globals.*` writes, and direct `mapMagicObject.globals.*` writes.
+- Updated `Tools/test_validate_visual_proof_capture_guardrails.py`.
+- Integrated the harness-candidate quarantine into `Tools/RunAssetStaticValidators.py` as `visual_proof_harness_candidate_quarantine`.
+- Updated `Docs/AssetAudit/H8_VISUAL_PROOF_CAPTURE_1912_STATIC_RISK_REVIEW_20260605.md`.
+- Updated Owner10 with the new rejection evidence.
+
+Validation:
+
+- `python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` ran `10` tests OK.
+- `python -B -m unittest Tools.test_run_asset_static_validators Tools.test_validate_visual_proof_capture_guardrails` ran `13` tests OK.
+- `python -B Tools\ValidateVisualProofCaptureGuardrails.py --mode harness-candidate --source Assets\_Project\Scripts\Editor\H8VisualProofCapture1912.cs --strict` rejected current source as expected: `REJECT_CANONICAL_HARNESS_SOURCE violations=79 diagnostic_only=true`.
+- `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=7 asset_refs=15`.
+- `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=22`; inside that output, `PASS_DIAGNOSTIC_REJECTION_SOURCE violations=79 diagnostic_only=true` keeps `H8VisualProofCapture1912.cs` quarantined as diagnostic, not proof.
+
+Current state:
+
+- Proof harness route: `STATIC_GATE_HARDENED / CURRENT_1912_REJECTED_AS_CANONICAL`.
+- h8_1914: `DIAGNOSTIC_REJECTED / PROOF_POISONING_RISK`.
+- h8_1475: `BLOCKED_BY_OWNER01_OWNER03_OWNER10_OWNER11`.
+- Unity gate: `RED`.
+
+## 2026-06-06 Unity Process Gate Tooling Cursor 126
+
+Current front:
+
+- Unity/process gate stayed red after the proof-harness hardening pass.
+- No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, runtime source, graph, raw YAML, deletion, restore, move, stage, or build action was performed.
+
+Controller actions:
+
+- Added `Tools/ValidateUnityProcessGate.py`.
+- Added `Tools/test_validate_unity_process_gate.py`.
+- Updated Owner01 to use the tool as the reusable CPU/process classifier.
+
+Validation:
+
+- `python -B -m unittest Tools.test_validate_unity_process_gate` ran `4` tests OK.
+- `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=63.0 cpu_over=1 blocker_processes=0 threshold=50.0`.
+- `python -B Tools\Docs\TestTaskLocalLaneContracts.py taskslocal\night_controller_20260605 --strict` returned `TASKLOCAL_LANE_CONTRACT_CHECK=PASS`.
+
+Current state:
+
+- Unity gate: `RED_BY_CPU`.
+- Unity/MCP/Play/import/build/profiler/scene/material/prefab actions: `FORBIDDEN`.
+- Allowed work: static tooling, static source/doc audits, sidecar read-only investigations, and owner task refinement.
+
+## 2026-06-06 Player/HUD Repair Map Cursor 127
+
+Current front:
+
+- Integrated Poincare static player/HUD/movement repair map.
+- No source edit, Unity, MCP, Play Mode, profiler, scene, prefab, material, raw YAML, deletion, restore, move, stage, or build action was performed.
+
+Evidence:
+
+- `python -B Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` still returns `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=25 notes=2`.
+- Source-only repair candidates are `GameBootstrapper.cs`, `SceneInstantiationGate.cs`, `BootstrapState.cs`, and `HectonPlayerSpawner.cs`.
+- Those files can fail-close shell/tagged-player acceptance and non-production publish/mark/fallback routes.
+- They cannot wire `Player.prefab`, `HUD_Internal`, `Suit_HUD_Canvas`, scene `Player`, PDA/pause/save refs, HUD render route, or runtime movement proof without Unity API readback/editing.
+
+Current state:
+
+- Player/HUD/movement: `P0 BLOCKED / STATIC_ONLY`.
+- Valid next action while Unity gate is red: source repair spec or source-only hardening with mandatory mandate read and `[ANALYSIS]`.
+- Valid Unity action after gate green: readback-first prefab/scene/HUD route proof; raw YAML remains forbidden.
+
+## 2026-06-06 Deletion Resample Cursor 128
+
+Current front:
+
+- Integrated Peirce read-only dirty deletion resample.
+- No deletion, restore, archive move, stage, commit, Unity, build, import, Play Mode, profiler, scene, prefab, material, raw YAML, or runtime action was performed.
+
+Evidence:
+
+- Current read-only sample: `11458` status rows, `11233` tracked deletions, `179` tracked modifications, `46` untracked rows, `0` staged rows.
+- Current high-risk deletion counts: `Assets=84`, `Assets/_Project=38`, deleted `.meta=327`, deleted `.unity=18`, deleted `.cs=50`, deleted `.asset=11`, `Docs/Reports=1686`, `Docs/Screenshots=216`, `Docs/AgentLogs=13`, `Docs/Tasks=7`.
+- Exact source-tooling deletions outside `bin/obj`: `Tools/workspace_hygiene_1331.py`, `Tools/workspace_hygiene_apex_reaudit_1331.py`.
+- `Docs/Tasks/POLISH.txt` remains deleted in the dirty wave.
+- `.meta` pairing is clean for deleted `.cs`/`.shader`/`.asset` and current `Assets` pairs, but that is only corruption hygiene. It is not deletion approval.
+
+Current state:
+
+- Deletion acceptance: `BLOCKED`.
+- Commit readiness: `BLOCKED`.
+- Integration/clean-checkpoint language: `BLOCKED`.
+- Required action: owner disposition for `Assets/_Project`, source tools, `Docs/Reports`, `Docs/Screenshots`, `Docs/AgentLogs`, `Docs/Tasks`, black-box dumps, and generated cache/build/proof artifacts.
+
+## 2026-06-06 Three-Sample Process Gate Cursor 129
+
+Current front:
+
+- Ran a fresh process gate only. No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, runtime source, raw YAML, deletion, restore, move, stage, or build action was performed.
+
+Evidence:
+
+- `python -B Tools\ValidateUnityProcessGate.py --samples 3 --interval-seconds 10 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=3 max_sample_cpu=100.0 cpu_over=3 blocker_processes=15 threshold=50.0`.
+- Sample 1: CPU `96.0`, one `dotnet` blocker.
+- Sample 2: CPU `100.0`, seven `dotnet` blockers.
+- Sample 3: CPU `100.0`, seven `dotnet` blockers.
+
+Current state:
+
+- Unity gate: `RED_BY_CPU_AND_DOTNET`.
+- Unity/MCP/Play/import/build/profiler/scene/material/prefab/raw-YAML actions: `FORBIDDEN`.
+- Allowed work remains static tooling, source/doc audits, sidecar workers, and owner task refinement only.
+
+## 2026-06-06 Surface Historical Readback Matrix Cursor 130
+
+Current front:
+
+- Integrated Wegener read-only historical surface matrix.
+- No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, runtime source, raw YAML, deletion, restore, move, stage, checkout, copy, revert, or build action was performed.
+
+Evidence:
+
+- Apr28 `857689d2b` remains the strongest Crest/ocean/sky comparison anchor, not a revert instruction.
+- May6 `2442f78e9` and May7 `474759516` remain MapMagic/anomaly/splat/water-transition comparison anchors.
+- `b81b0da81`/`e94c11c4d` remains a pre-divergence sky/terrain comparison point and likely suspect divergence area, not a recovery target.
+- Current static blockers from Wegener: missing UPM Crest package file while vendored `Assets/Crest` is used, `MapMagicRuntimeBridge.waterSurfaceLevel: 0` versus underwater `waterLevelFallback: 14.02`, scene skybox GUID resolving to `Mat_HectonSky.mat` not `MAT_AegirSky_Master`, modified `ACTUAL TERRAIN.asset` with mixed old/current MapMagic node namespaces, and absent `WaterTransitionHandler` scene text hit.
+
+Current state:
+
+- Surface route: `P0 BLOCKED / STATIC_MATRIX_READY / UNITY_READBACK_REQUIRED`.
+- h8_1914 remains diagnostic rejected.
+- No historical asset may be copied/reverted/applied without Unity readback, owner decision, and proof.
+
+## 2026-06-06 Mass Deletion Gate Implementation Cursor 131
+
+Current front:
+
+- Integrated Banach static mass-deletion gate implementation.
+- No deletion, restore, archive move, stage, commit, Unity, build, import, Play Mode, profiler, scene, prefab, material, raw YAML, or runtime action was performed.
+
+Controller actions:
+
+- `Tools\ValidateMassDeletionDirtySet.py` now enforces the dirty deletion gate.
+- `Tools\RunAssetStaticValidators.py` includes `ValidateMassDeletionDirtySet.py --no-fail`, so high-risk deletion rejection is surfaced before the rest of asset-front validation.
+- `Docs\AssetAudit\ASSET_FRONT_FILE_MAP_20260605.*` and `Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` include the new validator.
+- Owner11 is now `STATIC_GATE_IMPLEMENTED / DELETION_ACCEPTANCE_BLOCKED`.
+
+Fresh evidence:
+
+- `python -B -m unittest Tools.test_validate_mass_deletion_dirty_set Tools.test_run_asset_static_validators Tools.test_validate_asset_front_file_map` ran `16` tests OK.
+- `python -B Tools\ValidateAssetFrontFileMap.py` returned `ASSET_FRONT_FILE_MAP_OK rows=183 csv_rows=64`.
+- `python -B Tools\ValidateMassDeletionDirtySet.py --no-fail` returned `MASS_DELETION_DIRTY_SET_REJECTED blockers=11 high_risk_deletions=true owner_disposition=false`.
+- `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=24` while preserving `MASS_DELETION_DIRTY_SET_REJECTED blockers=11` and `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1` in output.
+
+Latest deletion sample from the gate:
+
+- status rows `11468`;
+- tracked deletions `11233`;
+- tracked modifications `184`;
+- untracked rows `51`;
+- staged rows `0`;
+- `Assets=84`;
+- `Assets/_Project=38`;
+- `Docs/Reports=1686`;
+- `Docs/Screenshots=216`;
+- `Docs/AgentLogs=13`;
+- `Docs/Tasks=7`;
+- `Docs/Tasks/POLISH.txt` deleted;
+- `.meta` pairing clean but explicitly not deletion approval.
+
+Current state:
+
+- Deletion acceptance: `BLOCKED_BY_STATIC_GATE`.
+- Commit readiness: `BLOCKED`.
+- Integration/clean-checkpoint language: `BLOCKED`.
+- Required action remains owner restore/archive/disposition, not validator bypass.
+
+## 2026-06-06 Direct Visual Reference Recheck Cursor 132
+
+Current front:
+
+- Performed direct local image inspection of the current mandatory reference folder and current rejected screenshots.
+- No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, runtime source, raw YAML, deletion, restore, move, stage, checkout, copy, revert, or build action was performed.
+
+Evidence:
+
+- Added `Docs/Orchestration/VISUAL_REFERENCE_DIRECT_RECHECK_20260606.md`.
+- Old path `Docs/ОБЯЗАТЕЛЬНЫЕ ПРИМЕРЫ ПО КАРТИНКАМ` is absent.
+- Current mandatory path is `Docs/mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)/`.
+- Directly viewed the surface reference, `beauty.webp`, prior in-development cliffs/water image, current h8_1914 crest/water probes, and h8_1474 surface screenshot.
+
+Verdict:
+
+- Current h8_1914 fails structurally: slab/card water, hard rectangular bands, black detached shore chunks, acid terrain, no foam/contact, weak Aegir atmosphere, and no player/HUD/tool witness.
+- h8_1474 is also not accepted; it is less card-obvious than h8_1914 but still below the mandatory surface/shallow floor.
+- The old in-development cliffs/water reference proves the project previously had better waterline/shore/depth signals than current h8_1914, so this is a route regression, not a target impossibility.
+
+Current state:
+
+- Visual route: `CURRENT_SURFACE_VISUAL_REJECTED`.
+- Valid next Unity action after gate green: readback active Crest/material/water level, MapMagic terrain/anomaly/splat, sky/Aegir slots, then repair base water/shore/terrain/sky before decorative placement.
+
+## 2026-06-06 Visual Reference Owner Matrix Validator Cursor 132
+
+Current front:
+
+- Integrated a static mandatory visual-reference owner-matrix validator and synchronized the asset-front aggregate maps.
+- No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, runtime source, raw YAML, deletion, restore, move, stage, checkout, copy, revert, or build action was performed.
+
+Controller actions:
+
+- Added `Tools\ValidateVisualReferenceOwnerMatrix.py` and `Tools\test_validate_visual_reference_owner_matrix.py`.
+- The validator checks `VREF-01` through `VREF-15`, path-ledger file existence and byte sizes, PNG/JPEG/WEBP dimensions from image headers, mandatory image-read digest coverage by source filename, owner packet IDs, required proof-artifact text, status, and direct rejection text.
+- Removed redundant `Reject if` prose prefixes from `Docs\AssetAudit\VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv`; row count and meanings stayed unchanged.
+- Synchronized `Docs\AssetAudit\ASSET_FRONT_FILE_MAP_20260605.*`, `Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`, active asset-front synthesis docs, local task indexes, and runner counts after the parallel mass-deletion gate was already in `RunAssetStaticValidators.py`.
+
+Fresh evidence:
+
+- `python Tools\ValidateVisualReferenceOwnerMatrix.py` returned `VISUAL_REFERENCE_OWNER_MATRIX_OK rows=15 images=15`.
+- `python Tools\ValidateAssetFrontFileMap.py` returned `ASSET_FRONT_FILE_MAP_OK rows=183 csv_rows=64`.
+- `python Tools\ValidateAssetStaticSummary.py --summary Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14691`.
+- `python Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=24` while preserving `MASS_DELETION_DIRTY_SET_REJECTED blockers=11` and `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1` in output.
+- Full offline asset-front unit bundle ran `126` tests OK.
+- Scoped stale-count scan found no active `14687`, `14689`, `179`, `181`, `count=22`, or `count=23` references in current asset-front docs/tools/task-local files.
+- Scoped `git diff --check` returned no whitespace errors; Git reported CRLF normalization warnings only.
+
+Current state:
+
+- Mandatory visual-reference owner matrix: `STATIC_VALIDATED / PENDING UNITY VISUAL PROOF`.
+- Asset-front file map: `183` rows.
+- Curated static CSV parse set: `62` files, `14691` rows, zero empty cells.
+- Static validator runner: `24` commands.
+- Runtime/Unity visual acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Visual Reference Current Rejection Guard Cursor 133
+
+Current front:
+
+- Integrated static guard for the visual-reference-vs-current rejection matrix.
+- No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, runtime source, raw YAML, deletion, restore, move, stage, checkout, copy, revert, or build action was performed.
+
+Controller actions:
+
+- Added `Tools\ValidateVisualReferenceCurrentRejectionMatrix.py` and `Tools\test_validate_visual_reference_current_rejection_matrix.py`.
+- Added the validator to `Tools\RunAssetStaticValidators.py`.
+- Synchronized file-map, static summary, active asset-front synthesis, worker board, next-action board, and task-local handoff counts.
+- Updated active guardrail count text to current `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=9 asset_refs=16`.
+
+Fresh evidence:
+
+- `python Tools\ValidateVisualReferenceCurrentRejectionMatrix.py` returned `VISUAL_REFERENCE_CURRENT_REJECTION_MATRIX_OK rows=10 diagnostic_rejected=2`.
+- `python Tools\ValidateAssetFrontFileMap.py` returned `ASSET_FRONT_FILE_MAP_OK rows=185 csv_rows=64`.
+- `python Tools\ValidateAssetStaticSummary.py --summary Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14693`.
+- `python Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=25` while preserving `MASS_DELETION_DIRTY_SET_REJECTED blockers=11` and `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1` in output.
+- Full offline asset-front unit bundle ran `131` tests OK.
+- Latest mass-deletion gate sample: `11471` status rows, `11233` tracked deletions, `184` tracked modifications, `54` untracked rows, `0` staged rows.
+- Scoped stale-count scan found no active old `14687/14689/14691`, `179/181/183`, `count=22/23/24`, or `risks=8 asset_refs=15` references in current asset-front docs/tools/task-local files.
+- Scoped `git diff --check` returned no whitespace errors; Git reported CRLF normalization warnings only.
+
+Current state:
+
+- Visual-reference current rejection matrix: `STATIC_VALIDATED / REJECTION_ONLY / PENDING H8_1475 PROOF`.
+- Asset-front file map: `185` rows.
+- Curated static CSV parse set: `62` files, `14693` rows, zero empty cells.
+- Static validator runner: `25` commands.
+- Runtime/Unity visual acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Mesh Prefab Queue Row Evidence Cursor 134
+
+Current front:
+
+- Hardened the static mesh/prefab review queue validator after sidecar explorer identified row-level false-handoff risk.
+- No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, runtime source, raw YAML, deletion, restore, move, stage, checkout, copy, revert, or build action was performed.
+
+Controller actions:
+
+- Extended `Tools\ValidateMeshPrefabReviewQueue.py` to validate row backing evidence, not just broad counts.
+- Added representative prefab resolution for `ProceduralFinals geology`.
+- Added static evidence checks for ProceduralFinals geology `49`, BioForge kelp/tube coral `150`, PorousRock `50` with MeshCollider rejection boundary, and ocean/prototype readback rows `2`.
+- Extended `Tools\test_validate_mesh_prefab_review_queue.py` from 4 to 7 tests.
+- Updated active asset-front summary and synthesis text with the expanded validator output.
+
+Fresh evidence:
+
+- `python Tools\ValidateMeshPrefabReviewQueue.py` returned `MESH_PREFAB_REVIEW_QUEUE_OK baked=89 baked_proxy_refs=89 proxy=88 placeholders=30 construction=10 geology=49 bioforge=150 porous=50 ocean=2`.
+- `python -m unittest Tools\test_validate_mesh_prefab_review_queue.py` ran `7` tests OK.
+- `python Tools\ValidateAssetFrontFileMap.py` returned `ASSET_FRONT_FILE_MAP_OK rows=185 csv_rows=64`.
+- `python Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=25` while preserving `MASS_DELETION_DIRTY_SET_REJECTED blockers=11` and `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1` in output.
+- Full offline asset-front unit bundle ran `135` tests OK.
+- Latest mass-deletion gate sample: `11477` status rows, `11233` tracked deletions, `188` tracked modifications, `56` untracked rows, `0` staged rows.
+- Scoped stale mesh-output scan found no active stale `4 tests OK` mesh-prefab validator text; output scan only found the new extended string.
+- Scoped `git diff --check` returned no whitespace errors; Git reported CRLF normalization warnings only.
+
+Current state:
+
+- Mesh/prefab review queue: `STATIC_ROW_EVIDENCE_VALIDATED / PENDING UNITY PREFAB MATERIAL COLLIDER VISUAL PROOF`.
+- Known static blockers remain: WorldProceduralProxy visible placement, ProceduralPlaceholders, Construction Final primitive product-face pool, PorousRock MeshCollider proof, proxy flora materials, and third-party/ocean material readback.
+- Runtime/Unity visual acceptance remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Attachment/Process Refresh Cursor 134
+
+Current front:
+
+- Re-read the attached Unity-worker dialogue path and the active worker-rejection document.
+- Ran fresh static/process gates only.
+- No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, runtime source, raw YAML, deletion, restore, move, stage, checkout, copy, revert, or build action was performed.
+
+Evidence:
+
+- `C:\Users\danat\.codex\attachments\2f281a38-64e6-4996-8703-bf2ace6239e8\pasted-text.txt` is already represented by `Docs/Orchestration/UNITY_WORKER_DIALOGUE_REFERENCE_REJECTION_20260606.md`.
+- Fresh process gate: `python Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=100.0 cpu_over=1 blocker_processes=0 threshold=50.0`.
+- Blockers in that sample: none by process name; CPU threshold alone keeps Unity proof gated.
+- Fresh full static asset runner: `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=25` while preserving `MASS_DELETION_DIRTY_SET_REJECTED blockers=11`, `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1`, and `PASS_DIAGNOSTIC_REJECTION_SOURCE violations=79 diagnostic_only=true`.
+- Fresh mass deletion gate: `status-rows=11471`, tracked deletions `11233`, tracked modifications `184`, untracked `54`, staged `0`.
+- Fresh player static gate: `python Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` currently returns `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=19 notes=4`.
+- `git status --short` row count is now `11471`.
+
+Controller interpretation:
+
+- Unity remains `RED_BY_CPU_AND_UNITY_IMPORT_COMPILER_PROCESS`.
+- h8_1914 remains diagnostic quarantine, not h8_1475 proof.
+- The player blocker count has moved from the previously documented `25`, then `19`, to current `21`; this is not accepted as progress until the exact delta is classified as real static repair, validator weakening, or dirty-worktree drift.
+- Spawned Bohr to audit the player-route static gate delta.
+- Spawned Tesla to statically map surface water/shore/sky owner candidates after freeing completed agent slots.
+- James remains pending on source-only fail-closed hardening.
+
+Current state:
+
+- Surface route: `CURRENT_SURFACE_VISUAL_REJECTED / UNITY_READBACK_BLOCKED`.
+- Player/HUD/movement: `P0 BLOCKED / STATIC_RECHECK_CHANGED / DELTA_AUDIT_RUNNING`.
+- Proof harness: `STATIC_GATE_IMPLEMENTED / H8_1914_DIAGNOSTIC_QUARANTINED`.
+- Deletion acceptance: `BLOCKED_BY_STATIC_GATE`.
+
+## 2026-06-06 Owner09 Unity Gate / h8_1916 Refresh Cursor 135
+
+Current front:
+
+- A green process-gate sample briefly opened a Unity window: `UNITY_PROCESS_GATE_GREEN samples=1 max_sample_cpu=47.0 cpu_over=0 blocker_processes=0`.
+- Attempted Unity graph integration with `Hecton8.Editor.PlanetaryCanvasMapMagicGraphIntegrator.RunBatchmode`.
+- No raw YAML, scene, prefab, material, deletion, restore, move, stage, checkout, copy, or revert action was performed.
+
+Evidence:
+
+- `Docs\Logs\UnityMapMagicGraphIntegrator_20260606_073258.log` aborted before executing graph integration because another Unity instance had `C:\hades\Hecton8` open. It produced no `CodexArtifacts/planetary-canvas-graph-integration-2026-05-05.json`, no graph readback, and no serialized graph proof.
+- The conflicting Unity instance was `CaptureSurfaceCrestCleanTerrainProbeAndExit`; it completed `Docs\Logs\UnityCaptureSurfaceCrestCleanTerrainProbe_EditorGPU_20260606_073231.log` with Tundra success and wrote `Docs\Screenshots\MCP\h8_1916_surface_crest_clean_terrain_probe.png/.txt`.
+- `python Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestCleanTerrainProbe_EditorGPU_20260606_073231.log --metadata Docs\Screenshots\MCP\h8_1916_surface_crest_clean_terrain_probe.txt --require-production` currently returns `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`: non-production `captureTruth`, Unity `MemoryLeaks`, `editor_only_unsaved`, erosion disabled, anomaly disabled, anomaly height unlinked, splat sediment unlinked, height output not eroded, and splat height not eroded.
+- Visual inspection of h8_1916 rejects flat green water, hard horizon band, detached black shoreline chunks, and crude terrain silhouette.
+- Latest post-capture process gate is red: CPU `40`, blocker process `dotnet pid=1876`; Unity graph integration/capture/proof remains gated.
+
+Current state:
+
+- Graph integration: `NOT_RUN / BLOCKED_BY_OPEN_UNITY_INSTANCE`.
+- h8_1916: `COMPILE_AND_CAPTURE_PRESENT / TERRAIN_PROOF_REJECTED / VISUAL_REJECTED`.
+- Surface route: `NO_ACCEPTED_PRODUCTION_TERRAIN_PROOF`.
+
+## 2026-06-06 Cursor 135 Owner Integration
+
+Current front:
+
+- Integrated completed player-route delta audit, source-hardening report, and surface owner-candidate audit.
+- Reviewed newest April-route probe log and `h8_1915` screenshot/metadata.
+- Ran static/process gates only. No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, raw YAML, deletion, restore, move, stage, checkout, copy, revert, or build action was performed by this controller pass.
+
+Fresh evidence:
+
+- Process gate: `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=94.0 cpu_over=1 blocker_processes=6 threshold=50.0`; blockers were `dotnet`, `Unity`, `Unity.ILPP.Runner`, `UnityAutoQuitter`, `UnityPackageManager`, and `UnityShaderCompiler`.
+- Player static gate: `python -B Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` currently returns `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=19 notes=4`.
+- Static asset runner: `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=25` while preserving `PASS_DIAGNOSTIC_REJECTION_SOURCE violations=79 diagnostic_only=true`, `MASS_DELETION_DIRTY_SET_REJECTED blockers=11`, and `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1`.
+- Dirty-set gate: `python -B Tools\ValidateMassDeletionDirtySet.py --no-fail` returned `11477` status rows, `11233` tracked deletions, `188` tracked modifications, `56` untracked rows, `0` staged rows.
+- Latest log inspected: `Docs/Logs/UnityCaptureSurfaceCrestAprilRouteProbe_EditorGPU_20260606_075327.log`.
+- Latest April-route probe validation: `python -B Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestAprilRouteProbe_EditorGPU_20260606_075327.log --metadata Docs\Screenshots\MCP\h8_1915_surface_crest_april_route_probe.txt --require-production` returns `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`, including non-production `captureTruth`.
+
+Integrated subagent outcomes:
+
+- Bohr classified the player-route blocker-count movement as `UNKNOWN_DIRTY_DRIFT`. It is not accepted as clean repair or as clean validator weakening. Current Owner03 remains blocked by 21 static blockers.
+- James source-only hardening is useful but insufficient. It hardens publish/mark/spawn fallback routes, but cannot create production scene/prefab/HUD wiring. Current static guard still rejects 21 blockers.
+- Tesla completed static surface candidate audit. Owner02 readback questions are now Crest/ocean, OceanSinglePass depth foam/wake, shoreline/contact foam, MapMagic/coast terrain, Sky_System/celestial, Aegir visual route, weather/atmosphere bridge, emergency `Hecton Ocean` grid, and `H8VisualProofCapture1912` quarantine.
+
+h8_1915 verdict:
+
+- `h8_1915_surface_crest_april_route_probe` is `REJECTED_AS_ACCEPTANCE / USEFUL_AS_FAILURE_EVIDENCE`.
+- Positive static readback: active Crest route reports `MAT_H8_SurfaceCrestOcean_1428` in the diagnostic capture, Crest camera/viewpoint bound to Main Camera, ocean runtime active, and a real MapMagic graph summary.
+- Blocking route facts: capture is editor-only unsaved; `H8VisualProofCapture1912` still uses private Crest invocation and mutating diagnostic behavior; Unity emits `MemoryLeaks`; MapMagic hydraulic erosion is disabled; anomaly is disabled; anomaly height and splat sediment are unlinked; height/splat do not source from erosion.
+- Direct visual critique: water is less empty than h8_1914 but still reads as cyan/green diagnostic ocean under a hard horizon strip; coast/islands are black clipped chunks; foam/contact truth is weak; foreground terrain is a yellow-green carpet; Aegir remains oversized/weakly integrated; no player/HUD/tool witness exists.
+
+Current state:
+
+- Surface route: `CURRENT_SURFACE_VISUAL_REJECTED / H8_1915_REJECTED_AS_ACCEPTANCE / READBACK_FIELDS_USEFUL`.
+- Player/HUD/movement: `P0 BLOCKED / UNKNOWN_DIRTY_DRIFT / CURRENT_STATIC_REJECTED_19`.
+- Proof harness: `H8VisualProofCapture1912_DIAGNOSTIC_ONLY / CAN_REJECT / CANNOT_ACCEPT`.
+- Unity lane: `PROCESS_GATE_RED`.
+- Deletion acceptance: `BLOCKED_BY_STATIC_GATE`.
+
+## 2026-06-06 Cursor 136 Player Static Guard Tightening
+
+Current front:
+
+- Performed a source-only tooling correction on the player-route static validator.
+- No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, raw YAML, deletion, restore, move, stage, checkout, copy, revert, or build action was performed.
+
+Change:
+
+- Updated `Tools/ValidatePlayerRouteStaticEvidence.py` so `BootstrapState` marker-interface production guard is accepted only when source files also prove:
+  - `HectonPlayerMovement` implements `IBootstrapProductionPlayerMovementAuthority`;
+  - `PlayerInteraction` implements `IBootstrapProductionPlayerInteractionAuthority`;
+  - `HectonWorldShellController1428` implements `IBootstrapLegacyWorldShellOwner`.
+- The validator no longer requires concrete gameplay/world class names inside `BootstrapState.cs`, preserving the contracts-assembly boundary.
+- `runtime-missing-production-prefab-guid` remains a blocker when bootstrap/spawner do not reference the production `Player.prefab` GUID.
+- Updated `Tools/test_validate_player_route_static_evidence.py` with a marker-interface implementation test.
+
+Fresh evidence:
+
+- `python -B -m unittest Tools.test_validate_player_route_static_evidence` ran `5` tests OK.
+- `python -B Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` currently returns `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=19 notes=4`.
+- `git diff --check -- Tools\ValidatePlayerRouteStaticEvidence.py Tools\test_validate_player_route_static_evidence.py` returned no whitespace errors.
+
+Current state:
+
+- Player/HUD/movement: `P0 BLOCKED / STATIC_VALIDATOR_FALSE_POSITIVE_REMOVED / CURRENT_STATIC_REJECTED_19`.
+- Removed blocker class: false-positive `bootstrap-publish-player-without-production-validation`.
+- Remaining blockers: scene-local shell, missing production prefab scene binding, missing HUD prefabs, missing movement/interaction scene refs, runtime missing production prefab guid, PDA/pause/swim/HUD null routes, disabled/unbound HUD render camera/compositor, forced overlay, and null Suit HUD runtime refs.
+
+## 2026-06-06 Cursor 137 Active Sidecar Fronts
+
+Controller action:
+
+- Closed completed James, Bohr, and Tesla after integration.
+- Spawned five read-only sidecar fronts while Unity/process gate remains red.
+
+Active sidecar agents:
+
+- Franklin `019e9b01-9f3a-74f3-a0dd-10be5a6baa05`: Owner03 UI/HUD null route repair mapper.
+- Averroes `019e9b01-b7e2-7b23-a63f-34fb6d4b99da`: Owner03 production player binding repair mapper.
+- Feynman `019e9b01-d0f2-74c2-becb-4b7817885719`: Owner02 h8_1915 surface root repair planner.
+- Descartes `019e9b05-e0f6-71e3-b88a-8ab3831cafe8`: flora/geology/coral placement readiness auditor.
+- Ampere `019e9b05-fa73-7503-9edd-6ffdc87a3d90`: first-20 gameplay/lore content route auditor.
+
+Rules for these fronts:
+
+- Read-only static/source/docs/assets evidence only.
+- No Unity, dotnet, build/import/Play/profiler, scene, prefab, material, ProjectSettings, raw YAML, deletion, restore, move, stage, checkout, or commit.
+- Results are controller input, not acceptance proof.
+
+Immediate local status:
+
+- Unity/process lane remains blocked by active `dotnet` even when CPU sample drops below threshold.
+- Local tooling guard state: `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=19 notes=4`.
+
+## 2026-06-06 Cursor 138 h8_1916 Rejection
+
+Current front:
+
+- Reviewed newest external clean-terrain probe.
+- Ran static/process/guardrail checks only. No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, raw YAML, deletion, restore, move, stage, checkout, copy, revert, or build action was performed by this controller pass.
+
+Evidence:
+
+- New log: `Docs/Logs/UnityCaptureSurfaceCrestCleanTerrainProbe_EditorGPU_20260606_073231.log`.
+- New artifacts: `Docs/Screenshots/MCP/h8_1916_surface_crest_clean_terrain_probe.png/.txt`.
+- `python -B Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestCleanTerrainProbe_EditorGPU_20260606_073231.log --metadata Docs\Screenshots\MCP\h8_1916_surface_crest_clean_terrain_probe.txt --require-production` currently returns `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`, including non-production `captureTruth`.
+- `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=60.0 cpu_over=1 blocker_processes=0 threshold=50.0`.
+- `python -B Tools\ValidateVisualProofCaptureGuardrails.py --mode harness-candidate --source Assets\_Project\Scripts\Editor\H8VisualProofCapture1912.cs --allow-diagnostic-rejection` first returned a diagnostic rejection with 81 violations; later refined source drift count is `violations=93`.
+
+h8_1916 verdict:
+
+- `h8_1916` is `REJECTED_AS_ACCEPTANCE / USEFUL_AS_FAILURE_EVIDENCE`.
+- It improves one symptom: terrain layers are cleaner than prior acid/yellow variants.
+- It does not fix production route blockers: editor-only unsaved capture, Unity `MemoryLeaks`, disabled hydraulic erosion, disabled anomaly, anomaly height unlinked, splat sediment unlinked, height/splat not sourced from erosion.
+- Direct visual critique: black clipped coast/island chunks remain, ocean has a hard horizon band, shoreline contact/foam remains weak, Aegir is still oversized/weakly integrated, and there is no player/HUD/tool witness.
+- `H8VisualProofCapture1912` worsened as an acceptance candidate: guardrail count rose from `79` through `81` to current `93`, adding more static probe object state/material routes.
+
+Current state:
+
+- Surface route: `CURRENT_SURFACE_VISUAL_REJECTED / H8_1916_REJECTED_AS_ACCEPTANCE / CLEANER_TERRAIN_SYMPTOM_ONLY`.
+- Proof harness: `H8VisualProofCapture1912_DIAGNOSTIC_ONLY / VIOLATIONS_93_CURRENT`.
+- Unity lane: `PROCESS_GATE_RED_BY_CPU`.
+
+## 2026-06-06 Cursor 139 Audio Import Meta Guard Integration
+
+Current front:
+
+- Integrated an offline audio import `.meta` policy guard into the asset-front static runner and file-map contracts.
+- Reconciled active asset-front row counts and proof-harness guardrail drift after concurrent `h8_1916` source changes.
+- Ran static/process gates only. No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, raw YAML, deletion, restore, move, stage, checkout, copy, revert, import, reimport, or build action was performed by this controller pass.
+
+Evidence:
+
+- `python -B Tools\ValidateAudioImportMetaPolicy.py --no-fail` returned `AUDIO_IMPORT_META_POLICY_REJECTED blockers=41 rows=138 missing_meta=0 load_mismatch=27 compression_mismatch=0 quality_mismatch=14 force_mono_policy=0 sample_rate_policy=0 preload_background_policy=0 short_streaming_policy=0`.
+- `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=26` while preserving `MASS_DELETION_DIRTY_SET_REJECTED blockers=11`, `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1`, `AUDIO_IMPORT_META_POLICY_REJECTED blockers=41`, and `PASS_DIAGNOSTIC_REJECTION_SOURCE violations=93 diagnostic_only=true`.
+- Full offline asset-front unit bundle returned `Ran 152 tests ... OK`.
+- `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=13 asset_refs=17`.
+- `python -B Tools\ValidateVisualProofCaptureGuardrails.py --mode harness-candidate --source Assets\_Project\Scripts\Editor\H8VisualProofCapture1912.cs --allow-diagnostic-rejection` returned `PASS_DIAGNOSTIC_REJECTION_SOURCE violations=93 diagnostic_only=true`.
+- `python -B Tools\ValidateAssetStaticSummary.py --summary Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14695`.
+- `python -B Tools\ValidateAssetFrontFileMap.py` returned `ASSET_FRONT_FILE_MAP_OK rows=187 csv_rows=64`.
+- Latest dirty-set sample from the full runner: `11484` status rows, `11233` tracked deletions, `189` tracked modifications, `62` untracked rows, `0` staged rows.
+- Latest process gate: `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=82.0 cpu_over=1 blocker_processes=13 threshold=50.0`; blockers included `dotnet`, `Unity`, `Unity.ILPP.Runner`, `Unity.ILPP.Trigger`, `UnityAutoQuitter`, and `UnityPackageManager`.
+- Scoped stale-count scans for active asset/task files returned no hits for old `14693`, `rows=185`, `count=25`, `risks=10 asset_refs=15`, `risks=9 asset_refs=16`, 79-violation, or 81-violation text.
+- Scoped `git diff --check` returned no whitespace errors; Git reported CRLF normalization warnings only.
+
+Controller interpretation:
+
+- Audio import state is now fail-closed at static level: ledger/AudioImporter `.meta` drift is visible in the aggregate runner but is not repaired or accepted.
+- The 41 audio import blockers are static drift evidence only. Unity import readback, runtime mix, listening pass, GC, memory, Addressables, and build readiness remain unproven.
+- `H8VisualProofCapture1912` is worsening as an acceptance candidate; current source is still diagnostic/rejection-only and cannot produce canonical h8_1475 acceptance proof.
+- Deletion acceptance remains blocked by the mass-deletion dirty-set guard.
+- Unity/runtime proof remains blocked by process gate.
+
+Current state:
+
+- Audio import policy: `STATIC_DRIFT_REJECTED / 41_BLOCKERS / PENDING UNITY IMPORT READBACK`.
+- Asset static runner: `OK_COUNT_26_WITH_REJECTION_GUARDS`.
+- Static summary/file map: `14695_ROWS / 187_FILE_MAP_ROWS`.
+- Proof harness: `H8VisualProofCapture1912_DIAGNOSTIC_ONLY / VIOLATIONS_93`.
+- Unity lane: `PROCESS_GATE_RED_BY_CPU_AND_ACTIVE_UNITY_DOTNET_ILPP`.
+
+## 2026-06-06 Cursor 140 Audio Critical Cue Source Guard
+
+Current front:
+
+- Integrated an offline validator for `AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.csv` candidate-source paths against `Docs/Audio/audio_asset_ledger.csv`, `AUDIO_FILE_TECHNICAL_PROPERTIES_20260605.csv`, disk existence, missing-source sentinels, and placeholder boundaries.
+- Reconciled active asset-front counts after adding the guard.
+- Re-sampled proof-harness source drift and Unity/process state.
+- Static/process gates only. No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, raw YAML, deletion, restore, move, stage, checkout, copy, revert, import, reimport, or build action was performed by this controller pass.
+
+Evidence:
+
+- `python -B Tools\ValidateAudioCriticalCueSourceCoverage.py --no-fail` returned `AUDIO_CRITICAL_CUE_SOURCE_COVERAGE_REJECTED blockers=2 rows=12 candidate_paths=28 ledger_matches=27 missing_source_rows=2 placeholder_rows=1`.
+- Blockers surfaced:
+  - `AUDCUE-08`: missing candidate file `Assets/_Project/Audio/Movement/swimming underwater.mp3`; current ledger path is not that string.
+  - `AUDCUE-12`: weak placeholder boundary text for VO stubs.
+- `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=27` while preserving `MASS_DELETION_DIRTY_SET_REJECTED blockers=11`, `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1`, `AUDIO_IMPORT_META_POLICY_REJECTED blockers=41`, `AUDIO_CRITICAL_CUE_SOURCE_COVERAGE_REJECTED blockers=2`, and `PASS_DIAGNOSTIC_REJECTION_SOURCE violations=102 diagnostic_only=true`.
+- `python -B -m unittest ...` full offline asset-front bundle returned `Ran 158 tests ... OK`.
+- `python -B Tools\ValidateAssetStaticSummary.py --summary Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14697`.
+- `python -B Tools\ValidateAssetFrontFileMap.py` returned `ASSET_FRONT_FILE_MAP_OK rows=189 csv_rows=64`.
+- Latest dirty-set sample from the full runner: `11491` status rows, `11233` tracked deletions, `191` tracked modifications, `67` untracked rows, `0` staged rows.
+- `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=15 asset_refs=19`.
+- `python -B Tools\ValidateVisualProofCaptureGuardrails.py --mode harness-candidate --source Assets\_Project\Scripts\Editor\H8VisualProofCapture1912.cs --allow-diagnostic-rejection` returned `PASS_DIAGNOSTIC_REJECTION_SOURCE violations=102 diagnostic_only=true`.
+- Latest process gate: `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=63.0 cpu_over=1 blocker_processes=5 threshold=50.0`; blockers were `Unity`, `Unity.ILPP.Runner`, `UnityAutoQuitter`, `UnityPackageManager`, and `UnityShaderCompiler`.
+- Scoped active stale scans returned no hits for old `14695`, `rows=187`, `count=26`, `risks=13 asset_refs=17`, or `violations=93` text except unrelated FNV constants.
+- Scoped `git diff --check` returned no whitespace errors; Git reported CRLF normalization warnings only.
+
+Controller interpretation:
+
+- Critical cue source coverage is now fail-closed at static level. The aggregate runner exposes stale/missing cue candidate sources without mutating audio import settings or Unity assets.
+- This is not source-authoring completion, listening proof, runtime mix proof, import proof, GC proof, memory proof, Addressables readiness, or build proof.
+- `H8VisualProofCapture1912` remains diagnostic/rejection-only and is getting worse as an acceptance candidate.
+- Unity/runtime proof remains blocked by process gate.
+- Deletion acceptance remains blocked by the mass-deletion dirty-set guard.
+
+Current state:
+
+- Critical cue source coverage: `STATIC_DRIFT_REJECTED / 2_BLOCKERS`.
+- Audio import policy: `STATIC_DRIFT_REJECTED / 41_BLOCKERS / PENDING UNITY IMPORT READBACK`.
+- Asset static runner: `OK_COUNT_27_WITH_REJECTION_GUARDS`.
+- Static summary/file map: `14697_ROWS / 189_FILE_MAP_ROWS`.
+- Proof harness: `H8VisualProofCapture1912_DIAGNOSTIC_ONLY / VIOLATIONS_102`.
+- Unity lane: `PROCESS_GATE_RED_BY_CPU_AND_ACTIVE_UNITY_IMPORT_COMPILER_PROCESSES`.
+
+## 2026-06-06 Cursor 139 Owner03 Sidecar Integration
+
+Current front:
+
+- Integrated Franklin Owner03 UI/HUD null route map and Averroes production player binding map.
+- Ran no Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, raw YAML, deletion, restore, move, stage, checkout, copy, revert, or build action in this controller integration.
+
+Franklin UI/HUD map:
+
+- `Player.prefab` has `PlayerPDA` nulls for `pdaPanel`, `pdaCanvasGroup`, eight tabs, and `controlsRebindUI`.
+- `Player.prefab` has pause/smoke route nulls for `pauseMenu` and construction tab route.
+- `PlayerBuilder._swimContract` is null.
+- `SuitHUDPresentationController` has null `overlayModernHud`, `projectedModernHud`, `canvasOverlay`, `projectionSourceOverlay`, and `screenCompositor`.
+- `HUD_Render_Camera` exists but is disabled and lacks a target texture by static prefab evidence.
+- `HectonSuitHUDExtensions` has null flashlight/primary HUD/canvas refs.
+- `HUD_Internal` compositor is disabled, has null `targetCanvas`/`visorController`, and forces `ScreenSpaceOverlay`.
+- `Suit_HUD_Canvas` is `ScreenSpaceOverlay` and has null projection/player/survival/underwater refs.
+- Static HUD source scan found no direct named `.text =`, `SetText`, `string.Format`, or `ToString()` hits in the scoped HUD/PDA/pause/interaction files, but GC proof is absent.
+
+Averroes production binding map:
+
+- `GameBootstrapper` owns scene readiness, player disable/spawn/activate, and runtime publication.
+- `BootstrapState.PublishCurrentPlayerObject` now rejects legacy shell-owned objects and requires production movement marker, interaction marker, and `Rigidbody`.
+- `SceneInstantiationGate.MarkPlayerInstantiated` uses `ProductionPlayerAuthorityUtility.IsProductionPlayerAuthorityObject`.
+- `HectonPlayerSpawner` can reposition an accepted production `Rigidbody`; it does not instantiate the production prefab.
+- `HectonPlayerMovement`, `PlayerInteraction`, and `HectonWorldShellController1428` provide the marker-interface source proof used by the tightened validator.
+- The active scene still statically contains a scene-local shell `Player`; production `Player.prefab` GUID `1c4db7a430141e5408e01b6ce4ed19d7` is absent from `02_HECTON_WORLD`.
+- Many world systems may still serialize refs to the shell transform. Disabling/untagging the shell before Unity API rebind is dangerous.
+
+Owner03 repair boundary:
+
+- Safe future Unity path after process gate green: readback scene refs first, load production `Player.prefab`, enumerate shell-bound fields, instantiate/bind production prefab through Unity API, rebind world/streaming/procedural systems, then disable/untag shell, then repair prefab HUD/PDA/pause/swim/compositor nulls through prefab-stage API.
+- Raw YAML mutation remains forbidden.
+- Source-only patch candidates are limited to editor validation and tighter static validators. They cannot create scene/prefab runtime proof.
+
+Current state:
+
+- Player/HUD/movement: `P0 BLOCKED / CURRENT_STATIC_REJECTED_19 / REPAIR_PLAN_STATIC_READY`.
+- Proof gap: Unity compile/import, Unity readback, Play Mode walking/swimming/ascend-descend/camera/interaction/PDA/pause/save, and 0 B HUD/input GC proof all remain absent.
+
+## 2026-06-06 Cursor 140 Owner02 Surface Plan Integration
+
+Current front:
+
+- Integrated Feynman h8_1915/h8_1916 surface root repair planner.
+- No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, raw YAML, deletion, restore, move, stage, checkout, copy, revert, or build action was performed by this controller integration.
+
+Feynman root-cause classification:
+
+- `PROOF_HARNESS_CONTAMINATION`: `H8VisualProofCapture1912` creates editor-only unsaved mutating diagnostic captures. `h8_1915` and `h8_1916` are failure evidence only.
+- `MAPMAGIC_GRAPH_OWNERSHIP/LINKING`: active `ACTUAL TERRAIN.asset` readback has erosion disabled, anomaly disabled, height/splat sourced from `HectonBiomeMatrixMapMagicPostProcessNode`, `splat.sedimentIn` unlinked, and `anomaly.heightIn` unlinked. This is the first root blocker before ocean/foam/sky polish.
+- `CREST_MATERIAL/VIEWPOINT/EXTENT`: prior saved-route/readback history used vendor `Assets/Crest/Crest/Materials/Ocean.mat`; latest editor-only diagnostic captures report `MAT_H8_SurfaceCrestOcean_1428`, but they cannot prove saved production ownership. Crest damping inputs are inactive/misaligned at very high Y. Do not blind-swap material.
+- `SHORELINE_FOAM/DATA_ALIGNMENT`: active foam ribbon exists but is not proven to be driven by terrain depth/Crest contact/sediment; visual contact remains weak.
+- `WEATHER/HAZE/HORIZON`: temp haze is contamination, but h8_1916 proves the hard horizon band persists even when haze is inactive.
+- `SKY/AEGIR`: Aegir route renders but scale/light/veil/horizon integration is rejected. Do not tune Aegir before terrain/ocean/contact pass.
+
+Accepted future repair order after Unity gate green:
+
+1. No-mutation Unity readback: active owners for MapMagic graph, Crest material/viewpoint/extents, terrain layers/splats, foam/contact inputs, skybox/Aegir/cloud/weather.
+2. Repair MapMagic graph ownership first: enable erosion/anomaly; link eroded height to height output, splat height, anomaly height; link sediment to splat sediment; save through Unity/editor graph route only.
+3. Regenerate/apply terrain and rerun `ValidateTerrainProbeEvidence.py --require-production`; clear graph blockers and editor-only-unsaved proof blocker.
+4. Then repair Crest through owner route: project-owned ocean material, viewpoint/extents/clipping/foam/depth inputs. No blind material assignment.
+5. Then repair foam/contact from eroded shoreline/depth/contact/sediment/Crest data. No decorative foam cards.
+6. Then repair weather/horizon without temp haze/darkness cover.
+7. Then repair sky/Aegir scale, veil, lighting, clouds, water reflection readability.
+8. Final proof requires player/HUD/tool witness plus long shot and close shoreline shot.
+
+Current state:
+
+- Surface route: `CURRENT_SURFACE_VISUAL_REJECTED / MAPMAGIC_GRAPH_ROOT_BLOCKER / CREST_FOAM_SKY_AFTER_GRAPH`.
+- h8_1915/h8_1916: `REJECTED_AS_ACCEPTANCE / USEFUL_AS_FAILURE_EVIDENCE`.
+
+## 2026-06-06 Cursor 141 h8_1917 Daylight Rejection
+
+Current front:
+
+- External Unity completed `Docs/Logs/UnityCaptureSurfaceCrestDaylightProbe_EditorGPU_20260606_074642.log`.
+- It wrote `Docs/Screenshots/MCP/h8_1917_surface_crest_daylight_probe.png/.txt`.
+- No Unity, MCP, Play Mode, profiler, scene, prefab, material, Addressables, ProjectSettings, raw YAML, deletion, restore, move, stage, checkout, copy, revert, or build action was launched by this controller pass.
+
+Evidence classification:
+
+- `python -B Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestDaylightProbe_EditorGPU_20260606_074642.log --metadata Docs\Screenshots\MCP\h8_1917_surface_crest_daylight_probe.txt --require-production` returned `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=10`.
+- Blockers: non-production `captureTruth`, Unity `MemoryLeaks`, `compile-input-mutated`, editor-only unsaved capture, erosion disabled, anomaly disabled, anomaly height unlinked, splat sediment unlinked, height output not eroded, and splat height not eroded.
+- Useful readback: active Crest route reports `MAT_H8_SurfaceCrestOcean_1428`, but the MapMagic graph remains disabled/unlinked and production terrain proof remains absent.
+- Visual review rejects h8_1917: overbearing Aegir, black hard horizon strip, cyan slab water, dark clipped shoreline masses, weak/no shoreline contact foam, and crude terrain silhouette.
+
+Current state:
+
+- h8_1917: `REJECTED_AS_ACCEPTANCE / USEFUL_AS_FAILURE_EVIDENCE_ONLY`.
+- Surface route: `CURRENT_SURFACE_VISUAL_REJECTED / MAPMAGIC_GRAPH_ROOT_BLOCKER_STILL_FIRST`.
+
+## 2026-06-06 Cursor 142 Graph Integrator Blocked
+
+Current front:
+
+- Process gate briefly returned green: `UNITY_PROCESS_GATE_GREEN samples=3 max_sample_cpu=49.0 cpu_over=0 blocker_processes=0`.
+- Scoped Unity graph integration attempt launched:
+  `UnityMapMagicGraphIntegrator_20260606_080219.log`.
+- The attempt aborted before graph integration because another Unity instance had the project open.
+
+Blocker evidence:
+
+- Competing Unity route was `CaptureSurfaceCrestCoastHorizonProbeAndExit`, log `Docs/Logs/UnityCaptureSurfaceCrestCoastHorizonProbe_EditorGPU_20260606_080213.log`, PID `14532`.
+- Immediate gate recheck returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=54.0 cpu_over=1 blocker_processes=6`.
+- Blockers included `csc pid=18256`, `dotnet pid=18756` running `dotnet test GhaCacheDoctor.slnx`, Unity PID `14532`, `Unity.ILPP.Runner pid=16316`, `UnityAutoQuitter pid=16960`, and `UnityPackageManager pid=19268`.
+- `UnityMapMagicGraphIntegrator_20260606_080219.log` produced no graph integration proof, no graph mutation, and no readback artifact.
+
+Current state:
+
+- MapMagic graph integration: `PENDING VERIFICATION / BLOCKED_BY_COMPETING_UNITY_INSTANCE`.
+- Unity lane: `PROCESS_GATE_RED`.
+
+## 2026-06-06 Cursor 143 h8_1918 Coast-Horizon Rejection
+
+Current front:
+
+- External Unity completed `Docs/Logs/UnityCaptureSurfaceCrestCoastHorizonProbe_EditorGPU_20260606_080213.log`.
+- It wrote `Docs/Screenshots/MCP/h8_1918_surface_crest_coast_horizon_probe.png/.txt`.
+
+Evidence classification:
+
+- `python -B Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestCoastHorizonProbe_EditorGPU_20260606_080213.log --metadata Docs\Screenshots\MCP\h8_1918_surface_crest_coast_horizon_probe.txt --require-production` returned `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`.
+- Blockers: non-production `captureTruth`, Unity `MemoryLeaks`, editor-only unsaved capture, erosion disabled, anomaly disabled, anomaly height unlinked, splat sediment unlinked, height output not eroded, and splat height not eroded.
+- Visual review rejects h8_1918: overbearing Aegir, black hard horizon strip, cyan slab water, black clipped shoreline masses, weak/no shoreline contact foam, and noisy gold/speckled terrain.
+
+Current state:
+
+- h8_1918: `REJECTED_AS_ACCEPTANCE / USEFUL_AS_FAILURE_EVIDENCE_ONLY`.
+- Surface route: `CURRENT_SURFACE_VISUAL_REJECTED / MAPMAGIC_GRAPH_ROOT_BLOCKER_STILL_FIRST`.
+
+## 2026-06-06 Cursor 144 Stale Daylight Compile Evidence
+
+Current front:
+
+- External Unity log `Docs/Logs/UnityCaptureSurfaceCrestDaylightProbe_EditorGPU_20260606_080535.log` failed compile with stale/moving-source skycard-horizon rows in `H8VisualProofCapture1912.cs`.
+- Errors included `CS7036` for missing `disableSurfaceSkyCardsForHorizonProbe` callsite arguments and `CS0103` for missing `DisableSurfaceSkyCardsForHorizonProbe`.
+- Current source now contains the named callsite arguments and helper; this log is compile-poison/stale-source evidence, not current compile proof.
+
+Static guard:
+
+- Added `test_surface_crest_probe_source_wires_skycard_horizon_parameter` in `Tools/test_validate_terrain_probe_evidence.py`.
+- Focused terrain test packet: `python -m unittest Tools/test_validate_terrain_probe_evidence.py` ran 21 tests OK with 1 skipped historical-artifact test.
+
+Current state:
+
+- `H8VisualProofCapture1912.cs`: `STATIC_SOURCE_GUARDED / UNITY_COMPILE_PROOF_PENDING`.
+- Unity lane: `PROCESS_GATE_RED_BY_STALE_DAYLIGHT_UNITY_PID_17268`.
+
+## 2026-06-06 Cursor 142 Compaction Refresh And Dialogue/Ampere/Descartes Integration
+
+Current front:
+
+- Acting as controller/orchestrator after context compaction.
+- No Unity, MCP, Play Mode, profiler, import/build, scene, prefab, material, ProjectSettings, raw YAML, deletion, restore, move, stage, checkout, copy, revert, or commit action was performed in this refresh.
+
+Fresh process state:
+
+- `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=90.0 cpu_over=1 blocker_processes=6 threshold=50.0`.
+- Blockers: `dotnet`, `Unity`, `Unity.ILPP.Runner`, `Unity.ILPP.Trigger`, `UnityAutoQuitter`, and `UnityPackageManager`.
+- Unity/MCP/Play/import/build/profiler/scene/prefab/material/raw-YAML work remains forbidden from this evidence.
+
+Pasted Unity-worker dialogue classification:
+
+- Evidence class is static pasted dialogue plus existing diagnostic screenshots/logs.
+- The worker line is rejected as a direction: green haze, green/acid water overlays, temporary water-skin cards, and extension of `H8VisualProofCapture1912` produced diagnostic failure evidence, not product progress.
+- The corrected surface target remains the mandatory reference set: bright cyan/blue readable ocean, shore foam/contact, lit material-scale terrain, integrated Aegir/sky/clouds, and player/HUD/tool witness for first-20 proof.
+- h8_1917 proves that even activating `MAT_H8_SurfaceCrestOcean_1428` in a diagnostic route is insufficient while MapMagic terrain, horizon/shore contact, and player/HUD witness remain broken.
+
+Ampere first-20 content result:
+
+- Ampere completed first-20 gameplay/lore content audit as `STATIC_DOC + STATIC_SOURCE only`.
+- Opening objective, first exit, oxygen/pressure cue, first scan/salvage, first return/safe anchor, and first unease/threat all have content owners and lore packets, but none can be accepted as text-only.
+- Hard blocker: active production player/HUD/PDA/objective proof is absent; accepted surface/shallows visual proof is absent; scannable/salvage/tool prompt bindings are absent; save/load/safe anchor runtime proof is absent.
+- Quest-route conflict remains: copper proof route, scanner-first route, titanium-to-scanner route, and leviathan/radio route all appear in current docs/data. Integrator must choose one first-20 spine after Owner02/Owner03 are repaired.
+- New synthesis: `Docs/Orchestration/FIRST_20_CONTENT_ROUTE_STATIC_SYNTHESIS_20260606.md`.
+
+Descartes asset placement result:
+
+- Candidate pools exist: strongest geology candidates under `Assets/_Project/Prefabs/Nature/Rocks/ProceduralFinals`; flora/coral candidates under `Assets/_Project/Prefabs/Nature/Flora/Baked` and `BioForge/Shallows`.
+- None are production-approved from static evidence. Material/import/visual/collider/Addressables proof is absent.
+- Rejected/dev-only pools include `WorldProceduralProxy`, `WorldRuntime/ProceduralPlaceholders`, generated proxy folders, and `OrganicMisc/Final` because proxy/primitive/no-LOD contamination remains.
+- Placement must wait until Owner02 base route passes. Cosmetic rocks/flora/coral cannot mask broken water, shore, terrain, lighting, or sky.
+
+Rule-routing refresh:
+
+- Root `AGENTS.md`, `.codexrules/AGENTS.md`, and `.github/agents/AGENTS.md` are byte-identical by SHA256 `C5B2D3C222D1F6EA78D0652FF1B8512428986C5C6323AAFD3DB6E2B7136B9FE0`.
+- `C:\Users\danat\.codex\AGENTS.md` is currently a 3727-byte router that routes HECTON-8 work to root `AGENTS.md`, `Docs/AGENT_AUTHORITY_ROUTING.md`, `PROJECT_BIBLES.md`, `VISION_LOCKS.md`, `TASTE.md`, and `.agents-skills/README.md`.
+- `python -B Tools/Docs/TestAgentRuleRouting.py --help` executed the routing check and returned `AGENT_RULE_ROUTING_CHECK=PASS`, `mandates=80`, `root_agents_lines=409`.
+- Therefore Owner07 should not restart a broad rewrite from the pasted old assumption. The correct work is no-loss verification, shim/mirror drift protection, and stale generic-rule quarantine.
+
+Current state:
+
+- Owner01: process gate red. No Unity work.
+- Owner02: surface route rejected; MapMagic graph root blocker first.
+- Owner03: player/HUD/movement blocked; source-only route prep exists but runtime proof absent.
+- Owner07: rule routing is mostly repaired; preserve no-loss provenance and run routing checks only.
+- Owner08: flora/geology/coral candidates mapped, but placement blocked until base route passes.
+- Owner10: `H8VisualProofCapture1912` remains diagnostic/rejection-only with `violations=93`.
+
+## 2026-06-06 Cursor 143 Process Gate Resample
+
+- `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=82.0 cpu_over=1 blocker_processes=5 threshold=50.0`.
+- Blockers: `Unity`, `Unity.ILPP.Runner`, `Unity.ILPP.Trigger`, `UnityAutoQuitter`, and `UnityPackageManager`.
+- Unity/MCP/Play/import/build/profiler/scene/prefab/material/raw-YAML work remains forbidden.
+
+## 2026-06-06 Cursor 144 Static Sidecar Dispatch
+
+Spawned read-only sidecars while Unity gate is red:
+
+- Hegel `019e9b19-95aa-7a02-92a1-b0f01250b868`: audio import/meta and scene-route blocker mapper.
+- Gauss `019e9b19-f037-7803-a7d7-4b0faee376c0`: mass-deletion dirty-set current classifier.
+- Lagrange `019e9b1a-596d-7843-bd8b-a48dc35f3471`: proof harness quarantine/cleanup planner.
+
+Rules for these sidecars:
+
+- Static/source/docs/assets evidence only.
+- No Unity, dotnet, build/import/Play/profiler, scene, prefab, material, ProjectSettings, raw YAML, deletion, restore, move, stage, checkout, or commit.
+- Results are controller input, not acceptance proof.
+
+## 2026-06-06 Cursor 146 Hegel/Gauss Static Integration
+
+Hegel audio result:
+
+- Evidence class: `STATIC_AUDIO_IMPORTER_META / STATIC_ASSET_YAML`.
+- `AUDIO_IMPORT_META_POLICY_REJECTED blockers=41 rows=138`.
+- Breakdown: `missing_meta=0`, `load_mismatch=27`, `compression_mismatch=0`, `quality_mismatch=14`, `force_mono_policy=0`, `sample_rate_policy=0`, `preload_background_policy=0`, `short_streaming_policy=0`.
+- Load mismatches: 8 ambient and 4 player loops are `CompressedInMemory -> Streaming`; 13 SFX, 1 UI, and 1 VO stub are `CompressedInMemory -> DecompressOnLoad`.
+- Quality mismatches: 14 clips currently at quality `0.70` while ledger expects `0.45`. Do not lower quality blindly; long ambient/player-loop policy needs listening/memory authority.
+- Scene route blocker: `Assets/AddressableAssetsData` has settings/groups/entries count `0`.
+- Mixer nulls remain fallback-required static risks, not runtime proof.
+
+Gauss dirty-set result:
+
+- Evidence class: `STATIC_GIT_STATUS / STATIC_FILESYSTEM`.
+- `MASS_DELETION_DIRTY_SET_REJECTED blockers=11 high_risk_deletions=true owner_disposition=false`.
+- Current counts: status rows `11493`, tracked deletions `11233`, modifications `191`, untracked `69`, staged `0`.
+- High-risk deleted extensions: `.cs=50`, `.prefab=28`, `.unity=18`, `.asset=11`, `.meta=327`.
+- High-risk domains: `Assets=84`, `Assets/_Project=38`, `Tools=2`, `Docs/Reports=1686`, `Docs/Screenshots=216`, `Docs/AgentLogs=13`, `Docs/Tasks=7`; `Docs/Tasks/POLISH.txt` is deleted.
+- `.meta` pairing is `PAIRING_CLEAN_BUT_NOT_DELETION_APPROVAL`; no integration/commit/clean checkpoint is valid without owner disposition.
+
+Current state:
+
+- Audio: static blockers mapped; Unity import/readback/listening/memory/GC proof absent.
+- Dirty set: deletion acceptance blocked; no restore/delete/stage/commit action allowed without explicit owner decision.
+
+## 2026-06-06 Cursor 147 Process Gate Resample
+
+- `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=54.0 cpu_over=1 blocker_processes=5 threshold=50.0`.
+- Blockers: `dotnet`, `Unity`, `Unity.ILPP.Runner`, `UnityAutoQuitter`, and `UnityPackageManager`.
+- Unity/MCP/Play/import/build/profiler/scene/prefab/material/raw-YAML work remains forbidden.
+
+## 2026-06-06 Cursor 148 Compaction Refresh / Current Gate
+
+- Controller refresh after context compaction read active orchestration memory, owner lanes, newest reports/screenshots, pasted Unity-worker dialogue, and current process state.
+- `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=100.0 cpu_over=1 blocker_processes=6 threshold=50.0`.
+- Blockers: `dotnet pid=7672`, `Unity pid=19032`, `Unity.ILPP.Runner pid=14924`, `UnityAutoQuitter pid=14280`, `UnityPackageManager pid=14908`, and `UnityShaderCompiler pid=10868`.
+- Unity/MCP/Play/import/build/profiler/scene/prefab/material/raw-YAML work remains forbidden.
+- Current front: static orchestration only.
+- Last accepted evidence: static guardrails and routing checks.
+- Last rejected evidence: h8_1915/h8_1916/h8_1917/h8_1918/h8_1919 diagnostic surface captures and current process gate.
+- Active owner: controller routes Owner01/02/03/10 while Plato and Carson run static sidecars.
+- Next action: integrate Lagrange/Singer, then keep independent static fronts moving until Unity gate is green.
+
+## 2026-06-06 Cursor 149 Lagrange Proof-Harness Integration
+
+Lagrange completed as `STATIC_SOURCE / STATIC_TOOL` only.
+
+- Current guard results: allow-diagnostic mode on `H8VisualProofCapture1912.cs` prints `PASS_DIAGNOSTIC_REJECTION_SOURCE`; strict mode rejects it as canonical proof source.
+- `H8VisualProofCapture1912.cs` remains diagnostic/rejection-only because it writes raw MCP screenshots, mutates scene/object state, assigns temp materials, changes MapMagic globals, invokes Crest privately, changes camera/capture state, and saves/marks scene in destructive routes.
+- Canonical h8_1475 harness must be separate under `Assets/_Project/Scripts/Editor/Proof/`, readback-only, and output only under `Docs/Screenshots/HectonProofPackets/h8_1475_{session}/`.
+- Required packet shape: `manifest.json`, `manifest.sha256`, copied Unity log, six production PNG views, route/HUD/player/tool witness JSON, and dirty-state audit.
+- Missing static tests to add later: ban `Camera.main`/scene-search heuristics in canonical harness, require dirty pre/post audit fields, ban canonical writes outside `HectonProofPackets`, and prove player/HUD/tool witnesses come from production owners.
+- Current scan found no `H8_VISUAL_PROOF_REQUEST`, `h8_visual_proof_request`, `InitializeOnLoadMethod`, `EditorApplication.delayCall`, or `EditorApplication.update` tokens inside `H8VisualProofCapture1912.cs`.
+- `Docs/Screenshots/MCP/h8_visual_proof_request.txt` still exists as a stale marker artifact. Do not delete during the current dirty-set crisis without owner disposition.
+
+## 2026-06-06 Cursor 150 Singer First-20 Spine Integration
+
+Singer completed as `STATIC_DOC / STATIC_SOURCE` only.
+
+- Recommended active spine: Black Keel / claim / P-63 shallow salvage route, using current copper/resource director path as the first runtime-bindable substrate.
+- Concrete order: wake/safe anchor -> bright shallow exit -> oxygen/pressure cue -> physical salvage/resource action -> `Data_Copper` or equivalent route material -> repair/build/useful improvement -> P-63/Black Keel evidence packet -> save/load return.
+- Copper-only route remains proof substrate, not product identity.
+- Titanium-to-scanner and scanner-first/leviathan/radio routes are deferred until scanner/craft/objective/event bindings prove in Play Mode.
+- Static conflicts: objective order split between `FirstHourDirector.cs`, `Quest_Graph.json`, and `First_Hour_Quests.json`; unproven scan/interaction trigger bridges; `quest_first_breath` threshold mismatch; safe-anchor and lore-gating runtime proof absent.
+- New synthesis: `Docs/Orchestration/FIRST_20_QUEST_DATA_SPINE_CONFLICT_20260606.md`.
+
+## 2026-06-06 Cursor 151 Static Sidecar Dispatch
+
+Spawned read-only sidecars while Unity gate is red:
+
+- Plato `019e9b38-a9ef-78b2-858e-56a7af857dc7`: historical end-April/first-week-May surface-water/terrain/sky route comparison against current source/assets.
+- Carson `019e9b38-c3d9-75f0-83e0-2387abf8b8b8`: rule adapter drift audit across global/project/tool-specific AGENTS/rules files.
+
+Rules for these sidecars:
+
+- Static/source/docs/assets evidence only.
+- No Unity, dotnet, build/import/Play/profiler, scene, prefab, material, ProjectSettings, raw YAML, deletion, restore, move, stage, checkout, or commit.
+- Results are controller input, not acceptance proof.
+
+## 2026-06-06 Cursor 152 Marker Artifact Follow-Up
+
+- Initial screenshot directory listing showed `Docs/Screenshots/MCP/h8_visual_proof_request.txt`, contradicting the earlier cleanup note.
+- Fresh focused check superseded that listing: `Get-ChildItem Docs\Screenshots\MCP -Filter h8_visual_proof_request*` returned no files.
+- `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=16 asset_refs=19`.
+- Current state: no live `h8_visual_proof_request*` marker blocker found. `H8VisualProofCapture1912` still remains diagnostic/rejection-only.
+
+## 2026-06-06 Cursor 153 Carson Cursor-Rule Drift Repair
+
+Carson completed as `STATIC_DOC / STATIC_FILESYSTEM` only and identified active Cursor `.mdc` drift.
+
+- Before repair, `.cursor/index.mdc`, `.cursor/rules/code-organization.mdc`, `.cursor/rules/unity-core.mdc`, and `.cursor/rules/unity-architecture.mdc` were `alwaysApply: true` or active generic Unity rule surfaces.
+- Stale patterns included `GameManager.Instance`, `UnityEngine.Pool`, `EventChannel`, `YourCompany`, hot lifecycle examples, `Resources.Load`, Netcode for GameObjects, and UI Toolkit-only stance.
+- Controller archived old Cursor rule bodies under `Docs/DEPRECATED/CursorRulesHistorical_20260606/`.
+- Controller replaced `.cursor/index.mdc` with a thin always-on HECTON router and `.cursor/rules/*.mdc` with historical stubs. `.cursor/rules/AGENTS.md` remains the Cursor shim.
+- `Docs/AGENT_AUTHORITY_ROUTING.md` now classifies Cursor `.mdc` files and archive provenance.
+- `Tools/Docs/TestAgentRuleRouting.py` now checks Cursor drift and archive pointers.
+- Verification: `python -B Tools\Docs\TestAgentRuleRouting.py` -> `AGENT_RULE_ROUTING_CHECK=PASS mandates=80 root_agents_lines=409`; stale generic scan over `.cursor` returned no matches; `alwaysApply: true` remains only in `.cursor/index.mdc`; `git diff --check` returned only LF/CRLF warnings.
+- Root `AGENTS.md` was not edited.
+- New synthesis: `Docs/Orchestration/CURSOR_RULES_DRIFT_STATIC_AUDIT_20260606.md`.
+
+## 2026-06-06 Cursor 154 Proof Marker / Static Gate Recheck
+
+- Fresh screenshot directory listing showed live `Docs/Screenshots/MCP/h8_visual_proof_request.txt`; focused follow-up scan found it gone before deletion, and git status for `h8_visual_proof_request*` files was empty.
+- Marker class remains a rejected hidden diagnostic launcher artifact, not proof.
+- `python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` returned 16 tests OK.
+- `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=17 asset_refs=19`.
+- Allow-diagnostic mode on `H8VisualProofCapture1912.cs` returned `PASS_DIAGNOSTIC_REJECTION_SOURCE violations=123 diagnostic_only=true`.
+- Strict canonical harness mode returned `REJECT_CANONICAL_HARNESS_SOURCE violations=123 diagnostic_only=true`.
+- `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=27`.
+- `python -B Tools\Docs\TestAgentRuleRouting.py` returned `AGENT_RULE_ROUTING_CHECK=PASS mandates=80 root_agents_lines=409`.
+- `python -B Tools\Docs\TestTaskLocalLaneContracts.py taskslocal\night_controller_20260605 --strict` returned `TASKLOCAL_LANE_CONTRACT_CHECK=PASS`.
+
+## 2026-06-06 Cursor 155 Plato Surface Anchor Integration
+
+Plato/static comparison integrated as `STATIC_DOC / STATIC_SOURCE / SCREENSHOT_REVIEW`.
+
+- New synthesis: `Docs/Orchestration/SURFACE_HISTORICAL_ROUTE_ANCHORS_STATIC_20260606.md`.
+- Reference review: mandatory surface image and project-local May refs require readable blue/cyan water, shore foam/contact, wet readable cliffs, bright sky, and integrated Aegir.
+- Current h8_1917/h8_1919 diagnostics are rejected: slab/card water, hard horizon band, black shore, missing wetness/foam/contact, disconnected Aegir, no player/HUD/tool witness.
+- Current static route facts: `02_HECTON_WORLD` MapMagic graph points to sandbox GUID `569d36fc879e1e044a410c62ce64a383`, not `ACTUAL TERRAIN` GUID `4b0faac2e4d571e49b4a4ad83e927683`; scene MapMagic component is disabled; `terrainSettings.material` is null.
+- Current static water/contact facts: scene Crest runtime binds Crest `Ocean.mat`; `Ocean_Crest.prefab` has depth/foam defaults off; first-party `MAT_H8_SurfaceCrestOcean_1428` exists but is not the static scene binding; wet apron and wet ribs exist but are inactive.
+- Next green Unity window: readback first, then route repair order terrain -> Crest readable water -> shoreline contact/wetness -> sky/Aegir integration -> h8_1475 canonical proof.
+- No Unity/scene/prefab/material edits were made in this integration.
+
+## 2026-06-06 Cursor 156 Post-Compaction Static Gate Rerun
+
+- Fresh focused listing found no live `Docs/Screenshots/MCP/h8_visual_proof_request*` marker files.
+- Process gate is still red: `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=60.0 cpu_over=1 blocker_processes=1 threshold=50.0`, blocker `dotnet pid=20456`.
+- No Unity/MCP/Play/import/build/profiler/scene/prefab/material/raw-YAML work is allowed while this gate remains red.
+- `python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` returned 18 tests OK.
+- `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=17 asset_refs=19`.
+- `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=27`.
+- `python -B Tools\Docs\TestAgentRuleRouting.py` returned `AGENT_RULE_ROUTING_CHECK=PASS mandates=80 root_agents_lines=409`.
+- `python -B Tools\Docs\TestTaskLocalLaneContracts.py taskslocal\night_controller_20260605 --strict` returned `TASKLOCAL_LANE_CONTRACT_CHECK=PASS`.
+- Static blockers still surfaced by the validator: unresolved 11k+ mass deletion dirty set, audio source/import blockers, and absent Addressables settings/groups. This is not Unity readiness, visual acceptance, h8_1475 proof, or product acceptance.
+
+## 2026-06-06 Cursor 157 Static Sidecar Dispatch 2
+
+Spawned four independent read-only sidecars while Unity/process gate remains red:
+
+- Euler `019e9b5e-29fb-7de3-83e6-7d64295003e9`: non-Cursor rule adapter drift audit.
+- Schrodinger `019e9b5e-4464-7742-8b3c-42326aeb826e`: first-20 player/UI/movement spine audit.
+- Dewey `019e9b5e-694a-7660-8ba8-eb1367cbd95c`: next-green surface route Unity readback checklist.
+- Archimedes `019e9b5e-822b-7892-8c0f-6dfb0ee3a4ca`: rocks/flora/coral/asset dressing inventory.
+
+All are restricted to static docs/source/assets. Forbidden: Unity, dotnet build/test, import, Play Mode, profiler, scene/prefab/material/raw-YAML mutation, deletion, restore, move, stage, checkout, or commit.
+
+## 2026-06-06 Cursor 158 Static Audio/Proof Guard Repairs
+
+- Euler `019e9b5e-29fb-7de3-83e6-7d64295003e9` completed non-Cursor rule adapter audit: no actionable stale/generic/contradictory drift. `.codexrules/AGENTS.md` and `.github/agents/AGENTS.md` are byte-identical mirrors of root; `.agent/rules/AGENTS.md` delegates to root; global `C:\Users\danat\.codex\AGENTS.md` says root overrides it for HECTON-8.
+- Audio `AUDCUE-08` had a stale path `Assets/_Project/Audio/Movement/swimming underwater.mp3`; corrected to existing `Assets/_Project/Audio/Movement/swimming - underwater.ogg` in `Docs/AssetAudit/AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.csv`.
+- `python -B -m unittest Tools.test_validate_audio_critical_cue_source_coverage` returned 6 tests OK.
+- `python -B Tools\ValidateAudioCriticalCueSourceCoverage.py --no-fail` now reports only one source-coverage blocker: `AUDCUE-12` weak placeholder VO boundary. This is not playback/import/runtime proof.
+- `H8VisualProofCapture1912` drift exposed shared `CaptureSurfaceAndExit` opening the scene before disabled-route reject; added the reject at method start.
+- `python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` returned 18 tests OK.
+- `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=17 asset_refs=19`.
+- `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=27`; it still surfaces unresolved mass deletion dirty set, `AUDCUE-12`, Addressables absence, and audio import policy blockers.
+- No Unity/import/build/Play/profiler/scene/prefab/material/raw-YAML work was performed.
+
+## 2026-06-06 Cursor 159 First-20 Player/Surface Planner Integration
+
+- Schrodinger `019e9b5e-4464-7742-8b3c-42326aeb826e` completed `STATIC_SOURCE / STATIC_DOC` first-20 player/UI/movement audit.
+- Owner03 synthesis updated: production owners exist (`GameBootstrapper`, `HectonPlayerSpawner`, `BootstrapState`, `HectonPlayerMovement`, `HectonPlayerMotor`, `InputDispatcher`, `PlayerInteraction`, HUD/visor candidates, `FirstHourDirector`), but proof is blocked by first-20 timing gaps, unverified production prefab/scene wiring, incomplete discrete input buffering, ambiguous HUD route, KCC/fallback proof gap, and unproven save/load roundtrip.
+- First-20 scene-flow docs corrected: current first-20 proof uses `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`; `01_ORBIT` remains enabled standalone/YELLOW prologue route, not mandatory first-20 acceptance until GREEN proof and root authority update.
+- Edited docs: `FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md`, `FIRST_20_MINUTES_ROUTE_BRIEF.md`, `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, `PROJECT_RUNTIME_TOPOLOGY.md`, `PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md`.
+- Dewey `019e9b5e-694a-7660-8ba8-eb1367cbd95c` completed `STATIC_PLAN` next-green surface readback checklist.
+- Owner02/surface synthesis updated with exact readback fields for process preflight, MapMagic/terrain, Crest/ocean, shoreline contact, sky/Aegir/lighting, and player/HUD/tool witness; h8_1475 packet prerequisites now include six named screenshots and continuous `global_quality_weight`.
+- No Unity/import/build/Play/profiler/scene/prefab/material/raw-YAML work was performed.
+
+## 2026-06-06 Cursor 160 Asset Dressing / Proof Harness Integration
+
+- Archimedes `019e9b5e-822b-7892-8c0f-6dfb0ee3a4ca` completed `STATIC_ASSET_TEXT / STATIC_YAML_READBACK` rocks/flora/coral inventory.
+- Owner08 synthesis updated with ranked first-use order: `Rocks/ProceduralFinals`, `BioForge/Shallows/TubeCoral`, `BioForge/Shallows/Kelp`, `BioForge/Shallows/PorousRock` after collider proof, Baked `family_*` after material proof, Photic source meshes/materials as source support only, legacy rocks/Baked/GOTOVYE pools secondary after vendor/import/collider proof.
+- Visible use remains rejected for `WorldProceduralProxy`, `WorldRuntime/ProceduralPlaceholders`, and any primitive/proxy material scatter used to hide slab water, black shoreline, broken terrain, weak sky, or missing player/HUD/tool proof.
+- Owner10 updated for final shared-route drift: `CaptureSurfaceAndExit`, `CaptureSurfaceCrestProbeAndExit`, and `CaptureWithPoseAndExit` now all reject disabled diagnostic routes before scene open. Focused check reported `main=True`, `crest=True`, `pose=True`.
+- Latest visual evidence `h8_1921_surface_owner_lighting_nonmutating.png` is rejected as acceptance: rectangular water sheet, black clipped shoreline/island mass, weak/no wet contact or foam, toy-integrated overbearing Aegir, and no production player/HUD/tool/movement witness.
+- Process gate is still red by CPU (`UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=56.0 blocker_processes=0`). No Unity/MCP/Play/import/build/profiler/scene/prefab/material/raw-YAML work is allowed.
+- No Unity/import/build/Play/profiler/scene/prefab/material/raw-YAML work was performed in this integration.
+
+## 2026-06-06 Cursor 161 Proof Guard Source Reality Correction
+
+- Fresh proof-guard unit run contradicted prior memory: actual `H8VisualProofCapture1912.cs` still had `CaptureSurfaceAndExit` and `CaptureWithPoseAndExit` opening `02_HECTON_WORLD` before disabled-route reject.
+- Controller patched the actual source. Current focused source check: `main=True reject=10862 open=11085`, `crest=True reject=13645 open=13868`, `pose=True reject=17931 open=18154`.
+- `python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` returned 18 tests OK.
+- `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=20 asset_refs=19`.
+- `python -B -m unittest Tools.test_validate_audio_critical_cue_source_coverage Tools.test_validate_visual_proof_capture_guardrails` returned 24 tests OK; `AUDCUE-12` remains printed as a known static audio blocker.
+- `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=27` with `PASS_DIAGNOSTIC_REJECTION_SOURCE violations=130 diagnostic_only=true`; remaining blockers are unresolved mass deletion dirty set, `AUDCUE-12`, Addressables absence, and audio import meta policy.
+- This is source quarantine only. It is not Unity compile/import/runtime, h8_1475 proof, visual acceptance, terrain acceptance, or production player/HUD/tool proof.
+
+## 2026-06-06 Cursor 162 Cicero Mass-Deletion Disposition Audit
+
+- Cicero `019e9b7e-0292-7bc2-8cef-63a92221cb60` completed `STATIC_SOURCE / STATIC_GIT_STATUS` dirty-set disposition audit.
+- Fresh validator result remains rejected: `MASS_DELETION_DIRTY_SET_REJECTED blockers=11 high_risk_deletions=true owner_disposition=false`.
+- Current counts: status rows `11536`, tracked deletions `11233`, tracked modifications `210`, untracked `93`, staged `0`.
+- High-risk deletion classes remain: `Assets=84`, `Assets/_Project=38`, source tools outside `bin/obj=2`, `Docs/Reports=1686`, `Docs/Screenshots=216`, `Docs/AgentLogs=13`, `Docs/Tasks=7`, `Docs/Tasks/POLISH.txt` deleted, `.cs=50`, `.asset=11`, `.unity=18`, `.meta=327`.
+- Both expected disposition artifacts are absent: `Docs/AssetAudit/MASS_DELETION_DIRTY_SET_DISPOSITION.md` and `Docs/MASS_DELETION_DIRTY_SET_DISPOSITION.md`.
+- Controller decision remains `RED`: no cleanup, integration, clean checkpoint, staging, or commit readiness can be claimed from this dirty set. Clean `.meta` pairing is hygiene only, not approval.
+- Owner11 and `Docs/Orchestration/MASS_DELETION_DIRTY_SET_CLASSIFICATION_20260606.md` updated.
+
+## 2026-06-06 Cursor 163 Locke Audio / Addressables Static Blocker Map
+
+- Locke `019e9b7d-e9e9-77a0-88f1-988b532a453d` completed `STATIC_FILE_YAML_META / STATIC_VALIDATOR` audit.
+- Addressables route is absent, not merely unproved: `Assets/AddressableAssetsData` exists but has settings/groups/entries count `0`; package `com.unity.addressables` `2.9.1` is declared in `Packages/manifest.json`.
+- Future Unity owner must create or restore Addressables settings, profiles, schemas, required groups, labels, entries, and load mode through Unity APIs. Readback-only cannot pass because there is no route to read.
+- Exact mixer nulls retained: `MusicDirectorConfig_Global.asset:25-26`, `PFB_HectonMusicDirectorRoot.prefab:44/:173/:302`, and `PFB_SpatialAudioManagerRoot.prefab:553-558`.
+- `AUDCUE-12` remains blocked by VO stub boundary at `Docs/AssetAudit/AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.csv:13`.
+- Audio import policy remains rejected: 41 blockers across 29 unique assets, 27 load mismatches, 14 quality mismatches. No raw `.meta` edits are allowed; Unity importer mutation/readback is required.
+- Owner06 and `Docs/Orchestration/AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md` updated.
+
+## 2026-06-06 Cursor 164 Epicurus Surface Next-Green Packet
+
+- Epicurus `019e9b7e-1ace-7961-8ac6-a6e0ff303542` completed `STATIC_METADATA / DIRECT_SCREENSHOT_REVIEW / STATIC_PLAN`.
+- `h8_1921_surface_owner_lighting_nonmutating` remains failure evidence only: active scene/Crest/terrain/Aegir exist, but MapMagic is disabled with grid `0`, sandbox graph is active, Crest uses `Ocean.mat` with `_viewpoint=NULL` and `_camera=NULL`, sea-floor depth is disabled, input tiles are inactive, and no production player/HUD/tool witness exists.
+- Direct image rejection remains: rectangular slab water, black clipped shore, weak/no wet contact, overbearing Aegir, landscape-only proof.
+- Next-green readback order locked: process preflight -> player/camera/HUD baseline -> MapMagic/terrain -> Crest/ocean -> shoreline/contact -> sky/Aegir/lighting -> dirty/console/stats -> h8_1475.
+- First allowed Unity API changes after readback only: production MapMagic/terrain binding repair, Crest material/viewpoint/camera/depth/foam/input ownership repair, existing wet apron/rib/foam/contact object and mask/profile repair. No water cards, haze cards, temp materials, raw YAML, or mutating capture harness.
+- Owner02 and `Docs/Orchestration/SURFACE_HISTORICAL_ROUTE_ANCHORS_STATIC_20260606.md` updated.
+
+## 2026-06-06 Cursor 165 Kant Player/HUD/Movement Static Blocker Map
+
+- Kant `019e9b7d-d11d-76b0-a240-8f7b2b487089` ran `python -B Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` read-only. Result remains `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=19 notes=4`.
+- Scene/player blocker: `02_HECTON_WORLD` still has a scene-local active `Player` shell; production `Player.prefab` GUID `1c4db7a430141e5408e01b6ce4ed19d7` is absent from scene text; `HUD_Internal`, `Suit_HUD_Canvas`, movement, and interaction GUIDs are absent.
+- Source owners exist (`HectonPlayerSpawner`, `BootstrapState`, `SceneInstantiationGate`, `GameBootstrapper`, `InputDispatcher`, `HectonPlayerMovement`, `HectonPlayerMotor`, `PlayerInteraction`), but they are not active production binding proof.
+- Prefab/UI blockers remain: `PlayerPDA` null panel/canvas/tabs/rebind refs, pause route null, `_swimContract` null, `HUD_Render_Camera` disabled/unbound, `SuitHUDPresentationController` null overlay/projected/compositor refs, `HectonSuitHUDExtensions` HUD/flashlight refs null, `HUD_Internal` disabled/null/forced overlay, `Suit_HUD_Canvas` overlay/null runtime refs.
+- Do not raw-YAML bind production prefab, convert legacy shell into production authority, bypass `ProductionPlayerAuthorityUtility`, force overlay as final gameplay HUD, or claim save/load from source presence.
+- Owner03 and `Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md` updated.
+
+## 2026-06-06 Cursor 166 h8_1924 Flat-Sky Proof Drift Quarantine
+
+- Static validation found proof-source drift again: `CaptureSurfaceAndExit` and `CaptureWithPoseAndExit` had lost reject-before-open ordering, and new `CaptureSurfaceFlatSkyOnlyProbeAndExit` opened the world scene, disabled renderers/terrains, configured flat sky, and rendered a diagnostic PNG.
+- Controller patched `H8VisualProofCapture1912.cs`: shared main/crest/pose routes reject before scene open; h8_1924 flat-sky route now writes disabled-route output only.
+- `Tools\ValidateVisualProofCaptureGuardrails.py` now rejects h8_1924 if it contains scene open, flat-sky config, scene-renderer disabling, or render calls.
+- `Tools\test_validate_visual_proof_capture_guardrails.py` now covers h8_1924 route disabling.
+- Verification: `python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` returned 19 tests OK.
+- Verification: `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=22 asset_refs=19`.
+- Focused source check: `main=True reject=11945 open=12168`, `crest=True reject=14779 open=15002`, `pose=True reject=19409 open=19632`, `h8_1924_disabled=True`.
+- This remains proof-harness quarantine only, not Unity compile/import/runtime proof, h8_1475 proof, terrain proof, visual acceptance, or player/HUD/tool proof.
+
+## 2026-06-06 Cursor 167 Pure-Ocean False Proof Quarantine
+
+- Evidence refresh after pasted Unity-worker dialogue: current front is surface-route recovery, not screenshot hue tuning. Last rejected evidence: `h8_1921` slab/black-shore route and `h8_1925` sterile pure-ocean uniform-sky probe.
+- `h8_1925_surface_crest_pure_ocean_uniform_sky_probe` reviewed directly. It is rejected as product proof because it removes terrain, shoreline contact, Aegir composition, player, HUD, tool, movement, and route witness.
+- Source patched: `CaptureSurfaceCrestFlatSkyHorizonProbeAndExit`, `CaptureSurfaceCrestPureOceanFlatSkyProbeAndExit`, and `CaptureSurfaceCrestPureOceanUniformSkyProbeAndExit` now write disabled-route output only.
+- Source patched again after live drift: `CaptureSurfaceAndExit`, `CaptureSurfaceCrestProbeAndExit`, and `CaptureWithPoseAndExit` all reject disabled diagnostic routes before `EditorSceneManager.OpenScene`.
+- Validator hardened with `validate_pure_ocean_direct_execute_routes_disabled(...)`; unit suite now covers h8_1922/h8_1923/h8_1925.
+- Verification: focused source check `main=True`, `crest=True`, `pose=True`; h8_1922/h8_1923/h8_1924/h8_1925 direct routes disabled.
+- Verification: `python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` returned 20 tests OK.
+- Verification: `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=22 asset_refs=19`.
+- Verification: `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=27`; remaining blockers remain mass deletion dirty set, `AUDCUE-12`, Addressables absence, and audio import meta policy.
+- Process gate is red due active dotnet/MSBuild/VBCSCompiler. No Unity, import, build, scene, prefab, material, raw YAML, delete, restore, stage, or commit action was performed.
+- Active owner/front: controller holds proof-harness quarantine and surface-route readback plan. Next valid Unity action waits for green process gate and starts with no-mutation readback, not visual tuning.
+
+## 2026-06-06 Cursor 168 Persistent Proof Route And Audio Anchor Regression
+
+- New proof-harness drift added `ApplySurfaceSceneCrestTerrainWiringAndExit` and `CaptureSurfaceOwnerLightingAfterSceneWiringAndExit`.
+- The apply route opened `02_HECTON_WORLD`, wrote Crest/MapMagic/camera/terrain state, called `SetDirty`, `AssetDatabase.SaveAssets`, and `EditorSceneManager.SaveScene`. This is rejected as proof-tool behavior.
+- Source patched: h8_1926 and h8_1927 direct routes now write disabled-route output only.
+- Validator hardened with `validate_persistent_scene_wiring_routes_disabled(...)`; unit suite now covers h8_1926/h8_1927.
+- Verification: `python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` returned 21 tests OK.
+- Verification: `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=23 asset_refs=19`.
+- Focused source check confirms h8_1922/h8_1923/h8_1924/h8_1925/h8_1926/h8_1927 direct routes are disabled and have no nearby scene-open/save terms.
+- Fresh `python -B Tools\RunAssetStaticValidators.py` now fails `audio_addressables_p0_synthesis`, not proof harness: `scene-anchor-count` reports `02_HECTON_WORLD` has `0` active `[MUSIC_SYSTEM]` / `HectonMusicDirectorAnchor`; Addressables remain absent.
+- `rg` finds `[MUSIC_SYSTEM]` in `01_MAIN_MENU.unity` only. `02_HECTON_WORLD.unity` is modified in the working tree, but no raw YAML repair was performed.
+- Current blockers: mass deletion dirty set, audio scene anchor missing, Addressables absence, `AUDCUE-12`, audio import meta policy, player/HUD route blockers, and surface route readback failure.
+- Active owner/front: controller keeps proof harness locked and audio route downgraded. Future Unity owner must restore/read back the world music anchor through Unity API before Addressables/mixer/import proof.
+
+## 2026-06-06 Cursor 169 Pasteur Historical Surface Route Forensics
+
+- Pasteur `019e9b9c-615c-75d2-917c-cb8975ec248e` completed `STATIC_GIT / STATIC_SERIALIZED_YAML_READ / STATIC_SCREENSHOT_REVIEW / STATIC_DOC_REVIEW`. No Unity, dotnet, import, build, Play Mode, profiler, edits, scene/prefab/material/YAML mutation, delete, restore, stage, or commit.
+- Verdict: end-April / first-week-May surface was a real route: Crest ocean + textured MapMagic terrain/cliffs + Hecton sky/Aegir material. Current route is a broken hybrid, not a minor lighting drift.
+- Historical anchor: commit `857689d2b` touched `02_HECTON_WORLD.unity`, `Ocean_Crest.prefab`, Crest `Ocean.mat`, and `Mat_HectonSky.mat`; historical Crest had sea-floor depth and foam enabled and `Ocean.mat` carried foam/transparency/underwater/shallow-subsurface keywords.
+- Current broken anchor: `Ocean_Crest.prefab` points at `MAT_H8_SurfaceCrestOcean_1428` with null viewpoint/camera and depth/foam off; `h8_1921` runtime uses Crest `Ocean.mat` with null viewpoint/camera, no follow camera, depth off, inactive input tiles; MapMagic is disabled, sandbox graph active, grid count `0`.
+- `h8_1917`/`h8_1919` remain unsaved diagnostic probes; `h8_1925` remains isolated water false proof.
+- Owner02 synthesis and task file updated. Next green Unity action remains no-mutation readback, then one canonical route repair through Unity API: Crest owner, MapMagic/terrain owner, shoreline contact, sky/Aegir, and h8_1475 with player/HUD/tool witness.
+
+## 2026-06-06 Cursor 170 Aquinas Player/HUD Binding Refinement
+
+- Aquinas completed `STATIC_SOURCE / STATIC_SCENE_TEXT / STATIC_PREFAB_TEXT / STATIC_VALIDATOR`; no Unity/build/import/profiler/edit work.
+- Fresh `ValidatePlayerRouteStaticEvidence.py --require-production-static` remains red with 18 blockers and 5 notes. Source owners exist; active binding does not.
+- Failure is scene-local shell authority, absent exact production `Player.prefab` scene binding, missing HUD prefab scene refs, and null PDA/pause/swim/HUD/compositor/flashlight prefab routes.
+- Owner03 synthesis and task file updated with repair sequence: prefab sources first, linked production prefab instances through Unity API, shell-consumer rebind only after readback, validator follows prefab source identity if needed, no raw YAML/shell conversion.
+- Player/HUD/movement remains `PENDING UNITY API REPAIR` and cannot be waived by landscape or water screenshots.
+
+## 2026-06-06 Cursor 171 Guard Re-Drift And Player Count Refresh
+
+- Fresh proof-guard run caught h8_1926/h8_1927 direct-route drift in the actual source again. Public `ApplySurfaceSceneCrestTerrainWiringAndExit` and `CaptureSurfaceOwnerLightingAfterSceneWiringAndExit` were patched to write disabled-route output only.
+- Verification: `python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` returned 21 tests OK.
+- Verification: `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=25 asset_refs=19 categories=diagnostic_unsaved_capture,editor_material_clone,scene_dirty_mark,scene_save,serialized_object_mutation`.
+- Owner10 updated with cursor 152. The risk count increase is diagnostic debt, not product proof. `H8VisualProofCapture1912.cs` remains rejected as canonical proof tooling.
+- Player static guard fresh result is `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=18 notes=5`. This is not accepted repair; the shell marker moved to a note while production prefab scene binding, HUD prefab refs, movement/interaction refs, and HUD/PDA/pause/swim null routes remain blockers.
+
+## 2026-06-06 Cursor 172 h8_1928 After-Polish Quarantine
+
+- Fresh source readback found new public h8_1928 routes: `CaptureSurfaceOwnerLightingAfterPolishAndExit` and `ApplySurfaceLightingMaterialPolishAndExit`.
+- Controller disabled both public entries. h8_1926/h8_1927/h8_1928 public routes now all write disabled diagnostic output only.
+- Validator hardened: persistent route quarantine now includes h8_1928 capture/apply and forbids direct `ApplySurfaceLightingMaterialPolishInternalAndExit`.
+- Verification: `python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` returned 21 tests OK.
+- Verification: `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=27 asset_refs=21 categories=diagnostic_unsaved_capture,editor_material_clone,scene_dirty_mark,scene_save,serialized_object_mutation`.
+- Owner10 cursor 153 updated. This remains proof-harness quarantine only; no Unity compile/import/runtime/visual acceptance is claimed.
+
+## 2026-06-06 Cursor 173 Static Gate And Process Snapshot
+
+- Spawned static sidecars:
+  - Avicenna `019e9bb0-8fe7-73f3-a2af-779818215a6a`: proof harness public route inventory.
+  - Kuhn `019e9bb0-a9a2-72d2-a741-54022299fdeb`: audio world anchor repair packet.
+  - Godel `019e9bb0-c265-7852-adeb-e869dcfb3115`: mass deletion disposition packet.
+- Fresh `python -B Tools\RunAssetStaticValidators.py` fails `audio_addressables_p0_synthesis`, not proof harness.
+- Audio hard blockers: `scene-anchor-count` found `0` active `[MUSIC_SYSTEM] / HectonMusicDirectorAnchor` in `02_HECTON_WORLD`; Addressables settings/groups/entries are `0`; `AUDCUE-12` and audio import policy remain blocked.
+- Mass deletion dirty set remains rejected in the same output: status rows `11549`, tracked deletions `11233`, tracked modifications `212`, untracked `104`, staged `0`.
+- Player static guard remains red: `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=18 notes=5`.
+- Process gate is red: `UNITY_PROCESS_GATE_RED` because seven `dotnet.exe` MSBuild nodeReuse processes are active. Sample CPU was `19.0`, below threshold, but blocker processes keep Unity/build/import/scene/prefab/material work forbidden.
+- No Unity, build, import, scene, prefab, material, raw YAML, delete, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 174 Public Proof Route Inventory Gate
+
+- Controller added a public execute-route inventory gate to `Tools\ValidateVisualProofCaptureGuardrails.py`.
+- Current `H8VisualProofCapture1912.cs` inventory is 22 public `static void` entries. Any new public proof entry now fails validator unless explicitly registered and covered.
+- Unit suite now includes `test_public_execute_route_inventory_rejects_unregistered_entries`.
+- Verification: `python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` returned 22 tests OK.
+- Verification: `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=27 asset_refs=21`.
+- This is drift containment only. Existing diagnostic mutating helper debt remains and the file is still rejected as canonical proof tooling.
+
+## 2026-06-06 Cursor 175 Godel Mass-Deletion Disposition Packet
+
+- Godel `019e9bb0-c265-7852-adeb-e869dcfb3115` completed static-only dirty-set disposition audit. No edits, deletion, restore, move, archive, staging, commit, Unity, import, build, Play Mode, profiler, scene/prefab/material/YAML action.
+- Fresh gate: `MASS_DELETION_DIRTY_SET_REJECTED blockers=11 high_risk_deletions=true owner_disposition=false`.
+- Counts: status rows `11551`, tracked deletions `11233`, tracked modifications `212`, untracked `106`, staged `0`.
+- Top deletion classes: `Docs=7929`, `.codexbuild=2490`, `.codex-artifacts=325`, `igra=242`, `.codex-build=90`, `Assets=84`, `Tools=65`, `NativeAudio=2`, root/temp `7`.
+- High-risk classes: `Assets/_Project=38`, source tools outside `bin/obj=2`, `Docs/Reports=1686`, `Docs/Screenshots=216`, `Docs/AgentLogs=13`, `Docs/Tasks=7`, `Docs/Archive=4749`, `Docs/DEPRECATED=676`, `.cs=50`, `.prefab=28`, `.unity=18`, `.asset=11`, `.meta=327`.
+- Critical examples include deleted `AddressablesCompatibility.cs`, `HectonMapMagicVegetationBridgeFloraVisualSway.cs`, `POLISH.txt`, and black-box dump artifacts.
+- Both owner-disposition files remain absent. Cleanup, integration, staging, and commit readiness remain `RED`.
+
+## 2026-06-06 Cursor 176 Unsafe Public Proof-Route Hard-Disable
+
+- Avicenna `019e9bb0-8fe7-73f3-a2af-779818215a6a` completed proof-harness public-route inventory and found remaining unsafe allowances in h8_1921, h8_1920, quarantine, and the disabled-route rejector.
+- Controller patched `H8VisualProofCapture1912.cs`: h8_1921, h8_1920, and `QuarantineSurfaceRejectsAndExit` now write disabled-route output only.
+- `RejectDisabledMutatingDiagnosticRoute` is deny-all. It no longer preserves per-capture allow exceptions.
+- `ValidateVisualProofCaptureGuardrails.py` now validates unsafe public route disablement and absence of rejector allow exceptions.
+- Unit suite now covers both gates.
+- Verification: `$env:TEMP='C:\tmp'; $env:TMP='C:\tmp'; python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` returned 24 tests OK.
+- Verification: `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=25 asset_refs=21`.
+- This is source quarantine only. It is not Unity compile/import/runtime, h8_1475 proof, visual acceptance, or production player/HUD/tool proof.
+
+## 2026-06-06 Cursor 177 Kuhn Audio Repair Packet
+
+- Kuhn `019e9bb0-a9a2-72d2-a741-54022299fdeb` completed static-only audio repair planning.
+- Correct owner paths: `PFB_HectonMusicDirectorRoot.prefab`, `PFB_SpatialAudioManagerRoot.prefab`, `MusicDirectorConfig_Global.asset`, and `MasterMixer.mixer`.
+- Audio blockers remain hard: `02_HECTON_WORLD` has `0` active `[MUSIC_SYSTEM] / HectonMusicDirectorAnchor`, Addressables settings/groups/entries are absent, `AUDCUE-12` is placeholder-blocked, and importer policy is red.
+- Future Unity owner packet: restore exactly one active world music anchor through Unity scene APIs, bind config GUID `3fe2e07be4fdac24cb6b2f12b438dcc3`, restore Addressables groups `Core`, `High_Res`, `Overkill` through Unity APIs, and wire mixer groups from `MasterMixer.mixer`.
+- Owner06 and audio synthesis updated. No raw YAML or Unity mutation was performed.
+
+## 2026-06-06 Cursor 178 Full Mandatory Visual Reference Readback
+
+- User reasserted the mandatory reference folder. Controller enumerated the folder and directly inspected all 15 image references plus the empty-body direction marker.
+- Surface references demand complete route repair: readable blue/cyan water, wave scale, foam/wet-rock contact, cliff/terrain relief, flora/geology density after the base route, integrated Aegir/cloud/sky atmosphere, and player/HUD/tool witness.
+- Depth references demand silhouette readability, saturation, biolum structure, and cockpit/HUD witness. Darkness is not accepted as cover for weak art.
+- Current h8_1914/h8_1917/h8_1919/h8_1921/h8_1925-style captures remain rejected. Prior project-local MapMagic + Crest references are visibly ahead of current output, so this is a route regression.
+- Updated `Docs/Orchestration/VISUAL_REFERENCE_DIRECT_RECHECK_20260606.md` and Owner02. Future rocks/flora/coral placement is late-stage dressing after base surface route repair, not camouflage.
+
+## 2026-06-06 Cursor 179 Asset Front File-Map Settled
+
+- `RunAssetStaticValidators.py` briefly reported `asset_front_file_map` failure with `expected 191 file-map rows, got 189`.
+- Franklin `019e9bce-7d38-71a3-8db1-57ece3fc144f` completed read-only static sidecar review.
+- Current live state no longer reproduces the failure: `python -B Tools\ValidateAssetFrontFileMap.py` returns `ASSET_FRONT_FILE_MAP_OK rows=191 csv_rows=64`.
+- The 191-row map includes `Tools/ValidateAssetFrontFileMap.py` and `Tools/test_validate_asset_front_file_map.py`; the validator expectation is not stale.
+- Controller corrected the test row's `RowsOrScope` from `5_tests` to `6_tests`.
+- Verification: `$env:TEMP='C:\tmp'; $env:TMP='C:\tmp'; python -B -m unittest Tools.test_validate_asset_front_file_map` returned 6 tests OK.
+- Fresh `python -B Tools\RunAssetStaticValidators.py` returns `ASSET_STATIC_VALIDATORS_OK count=28` while still printing no-fail rejections for mass deletion, audio route, import policy, texture ledger, and diagnostic proof-source debt.
+
+## 2026-06-06 Cursor 180 Staged Mass-Deletion Escalation
+
+- Fresh static runner now reports the mass-deletion wave as staged: `status-rows=11557`, tracked deletions `11233`, tracked modifications `215`, untracked `109`, staged `11234`.
+- Direct staged readback confirms `git diff --cached --name-status` contains `D=11233` and `M=1`.
+- Staged high-risk counts include `Assets/_Project=38`, deleted `.cs=50`, and `.unity/.prefab/.asset/.meta=384`.
+- Critical staged examples include `AddressablesCompatibility.cs`, `HectonMapMagicVegetationBridgeFloraVisualSway.cs`, `Docs/Tasks/POLISH.txt`, and black-box dump artifacts.
+- Controller did not stage, unstage, restore, delete, or commit. This is current index state.
+- Decision: `STAGED_MASS_DELETION_REJECTED / COMMIT_BLOCKED / OWNER_DISPOSITION_ABSENT`.
+
+## 2026-06-06 Cursor 181 Mass-Deletion Current-State Correction
+
+- Later fresh `python -B Tools\ValidateMassDeletionDirtySet.py --no-fail` returns `MASS_DELETION_DIRTY_SET_OK blockers=0 high_risk_deletions=false owner_disposition=false`.
+- Current sample: status rows `329`, tracked deletions `0`, tracked modifications `214`, untracked `115`, staged `0`.
+- Direct `git diff --cached --name-status` and `git diff --name-status --diff-filter=D` produce no output.
+- Controller did not stage, unstage, restore, delete, or commit. The earlier staged-red snapshot is superseded by current git state.
+- The repository remains heavily dirty, so commit/handoff still requires scoped review; mass deletion is no longer the current blocker.
+- Decision: `MASS_DELETION_WAVE_ABSENT_CURRENTLY / DIRTY_WORKTREE_REMAINS`.
+
+## 2026-06-06 Cursor 182 Texture Role-Ledger Static Runner Refresh
+
+- Added texture role-vs-technical-ledger guard: `Tools\ValidateTextureRoleTechnicalLedger.py` plus `Tools\test_validate_texture_role_technical_ledger.py`.
+- Integrated it into `Tools\RunAssetStaticValidators.py`; fresh full runner returns `ASSET_STATIC_VALIDATORS_OK count=28`.
+- Current asset static summary/file map is `14699_ROWS / 191_FILE_MAP_ROWS`.
+- Fresh mass-deletion readback remains OK with tracked deletions `0` and staged `0`; cursor 180 is stale history, cursor 181 is current.
+- Remaining static/no-fail blockers: missing `02_HECTON_WORLD` audio anchor, Addressables absent, `AUDCUE-12`, audio import meta policy `41`, texture role-ledger `3`, and diagnostic proof-harness source debt `161`.
+- No Unity, import, build, scene/prefab/material/YAML, delete, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 183 Owner21 Texture Blocker Handoff
+
+- Updated `taskslocal\asset_system_20260605\ASSET_OWNER_21_TEXTURE_STREAMING_MIP_STATIC_RISK_PACKET.md` with exact texture role-ledger blockers.
+- Blockers: no flora/coral albedo row with `streaming_mips=1`, no flora/coral normal/detail/mask row with `streaming_mips=1`, and `Assets/_Project/Art/Sprites/oxygen-tank.png` reports `sRGB=1` while `ui_oxygen_mask` expects mask/linear role proof.
+- Future repair must use Unity importer/API readback and HUD/material proof. Static `.meta` text and role matrix are not acceptance.
+- No Unity/import/material/sprite atlas/prefab/scene/YAML/delete/restore/stage/commit action was performed.
+
+## 2026-06-06 Cursor 184 Persistent Polish Bypass Quarantine
+
+- External launcher bypass found: `SurfaceCrestOceanMaterialAssignmentFixer.ApplySurfaceRoutePersistentPolishAndExit` delegated to `SurfaceRoutePersistentPolishRunner.ApplyAndExit`, outside the existing `H8VisualProofCapture1912` route inventory.
+- Source patched: public `SurfaceRoutePersistentPolishRunner.ApplyAndExit` and `CaptureAndExit` now write disabled/rejected diagnostic output only; mutating bodies are private internal debt. The Crest fixer now calls `WriteDisabledPersistentPolishRouteAndExit(...)` directly.
+- Guard patched: `ValidateVisualProofCaptureGuardrails.py` now validates both runner public methods and the fixer bypass route. Unit coverage added.
+- Verification: combined packet `python -m unittest Tools/test_validate_mapmagic_erosion_source_route.py Tools/test_validate_terrain_probe_evidence.py Tools/test_validate_player_route_static_evidence.py Tools/test_validate_visual_proof_capture_guardrails.py` returned `Ran 71 tests OK (skipped=1)`.
+- Verification: `python Tools\ValidateMapMagicErosionSourceRoute.py` returned `MAPMAGIC_EROSION_SOURCE_ROUTE_OK`; `python Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=25 asset_refs=21`; tasklocal strict lane contracts PASS; `git diff --check` produced only CRLF warnings.
+- Runtime state: `DirectHost_20260606_1216` ended without `h8_1928` output. A new external `UnityCompileOnly_Wait_20260606_1228` Unity process is active; process gate is red on CPU/process blockers. No scoped MapMagic integrator, Unity repair, scene/prefab/material mutation, or visual proof was run.
+- Current decision: proof harness containment improved, but surface route remains `PENDING VERIFICATION` and h8_1475 remains blocked by missing production route proof.
+
+## 2026-06-06 Cursor 185 Deferred Persistent-Polish Closure
+
+- Fresh source scan found remaining public runner entries `DeferredApplyAndExit` and `DeferredCaptureAndExit`, plus hidden env/deferred autorun source in `SurfaceRoutePersistentPolishRunner`.
+- Source patched: deferred public entries now write disabled output directly; env-var `H8_SURFACE_ROUTE_POLISH_MODE`, `[InitializeOnLoadMethod]`, `EditorApplication.delayCall`, and `QueueDeferredMode` path were removed.
+- Guard patched: persistent-polish bypass validator now covers deferred apply/capture and rejects runner hidden autorun terms if reintroduced.
+- Verification: `python -m unittest Tools/test_validate_visual_proof_capture_guardrails.py` returned 25 tests OK; `python Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=25 asset_refs=21`; combined visual/terrain/player/MapMagic packet returned 71 tests OK with 1 skipped historical-artifact test; tasklocal strict lane contracts PASS.
+- `git diff --check` is red only on unrelated scene YAML trailing whitespace at `Assets/_Project/Scenes/02_HECTON_WORLD.unity:102258`; no raw YAML cleanup was performed.
+- External Unity launches remain non-proof: `WaitNoQuit_20260606_1240` and `FinalTry_20260606_1258` reached Bee compile start only and produced no h8_1928 output by latest check. Process gate remains red because external Unity/ILPP/UPM and CPU are active.
+
+## 2026-06-06 Cursor 186 Fixer Public-Route Hard-Disable
+
+- Static audit found the same surface-polish bypass still exposed through public fixer entries: `AssignAndExit`, `ForceTextReserializeWorldSceneAndExit`, `ApplySurfaceRoutePersistentPolishAndExit`, and `InvokeSurfaceRoutePrivatePolishAndExit`.
+- Source patched: all four public entries now write disabled output through `SurfaceRoutePersistentPolishRunner.WriteDisabledPersistentPolishRouteAndExit(...)`.
+- Guard patched: persistent-polish validator now checks all four fixer entries and rejects prefab/scene assignment, force reserialize, reflection/private invoke, scene dirty/save, AssetDatabase save, and delegation back to runner public/deferred routes.
+- Verification: `python -m unittest Tools/test_validate_visual_proof_capture_guardrails.py` returned 25 tests OK; `python Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=25 asset_refs=21`; combined visual/terrain/player/MapMagic packet returned 71 tests OK with 1 skipped historical-artifact test.
+- Runtime/proof status unchanged: external Unity is still compiling/running and current logs are not acceptance proof. No Unity scene/prefab/material/proof repair was launched by this controller.
+
+## 2026-06-06 Cursor 187 h8_1928 Disabled Artifact Confirmed
+
+- External `UnitySurfaceRoutePersistentPolishApply_FinalTry_20260606_1258.log` compiled and executed the disabled route.
+- `Docs/Screenshots/MCP/h8_1928_surface_lighting_material_polish_apply.txt` now records `captureTruth=disabled_diagnostic_route` and `status=REJECTED_DISABLED_DIRECT_EXECUTE_METHOD`.
+- The same log contains Unity `MemoryLeaks`, so this is proof-harness quarantine evidence only. It is not visual proof, runtime proof, surface acceptance, or h8_1475 evidence.
+- Current gate remains red after Unity exits because external `.dotnet-daily` MSBuild nodeReuse/VBCSCompiler processes are active and CPU samples exceed threshold. Scoped MapMagic graph integration remains blocked.
+
+## 2026-06-06 Cursor 188 Runner/Fixer Public Inventory Gate
+
+- `ValidateVisualProofCaptureGuardrails.py` now inventories public routes for both `SurfaceRoutePersistentPolishRunner` and `SurfaceCrestOceanMaterialAssignmentFixer`.
+- Unexpected public routes in either bypass class now fail the guardrail validator before another direct `executeMethod` can become proof-looking output.
+- Verification: visual proof guard tests 25 OK; combined visual/terrain/player/MapMagic packet 71 OK with 1 skipped historical-artifact test; `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=25 asset_refs=21`.
+
+## 2026-06-06 Cursor 189 H8EditorBridge1297 Quarantine
+
+- External launcher switched to `Hecton8.EditorTools.H8EditorBridge1297.RunAndExit`.
+- Source readback showed the bridge reflected into private `SurfaceRoutePersistentPolishRunner.ApplyInternalAndExit`.
+- Source patched: `RunAndExit` now writes disabled output for `h8_1928_surface_bridge1297_private_polish_invoke`.
+- Guard patched: `ValidateVisualProofCaptureGuardrails.py` now inventories `H8EditorBridge1297` public routes and rejects reflection/private invocation terms.
+- Verification: visual proof guard suite 26 OK; combined visual/terrain/player/MapMagic packet 72 OK with 1 skipped historical-artifact test; guardrail validator OK.
+
+## 2026-06-06 Cursor 184 Mencius Audio Import Handoff Integrated
+
+- Mencius `019e9bde-a159-7cf2-a16e-a8fc0f0e456f` updated `taskslocal\asset_system_20260605\ASSET_OWNER_19_AUDIO_IMPORT_AUTHORITY_ADOPTION_PACKET.md`.
+- The handoff maps the current `AUDIO_IMPORT_META_POLICY_REJECTED blockers=41` into future Unity-owner classes: long ambience/player-loop streaming policy, short SFX/UI/VO `DecompressOnLoad`, quality mismatch policy, and explicit non-actions.
+- Static triage maps those blocker counts to 29 unique assets: 8 ambient, 4 player_loop, 15 sfx, 1 ui, and 1 voice stub.
+- Controller review ran `python -B Tools\ValidateAudioImportMetaPolicy.py --no-fail`; result remains rejected by static importer meta and pending Unity import readback/listening proof.
+- No Unity/import/build/profiler, `.meta`, mixer, Addressables, prefab, scene, delete, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 185 Owner-Index And Proof-Wrapper Repair
+
+- Updated `Docs\AssetAudit\ASSET_OWNER_PACKET_INDEX_20260605.csv` after packet growth: Owner19 line count `189`, Owner21 line count `216`.
+- Re-disabled `Assets\_Project\Scripts\Editor\SurfaceCrestOceanMaterialAssignmentFixer.cs` wrapper `ApplySurfaceRoutePersistentPolishAndExit()` so it calls `WriteDisabledPersistentPolishRouteAndExit(...)` instead of `DeferredApplyAndExit()`.
+- Verification: `python -B Tools\ValidateAssetOwnerPacketIndex.py` OK; `python -B -m unittest Tools\test_validate_asset_owner_packet_index.py Tools\test_validate_visual_proof_capture_guardrails.py` ran 30 tests OK; `python -B Tools\RunAssetStaticValidators.py` returns `ASSET_STATIC_VALIDATORS_OK count=28`.
+- This is source quarantine/static validator hygiene only. No Unity compile/import/runtime proof, scene/prefab/material/YAML mutation, delete, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 186 Process Gate Still Red
+
+- Read-only process sample found active `Unity` and `UnityPackageManager`.
+- CPU counter sample returned `100`.
+- Unity/import/build/Play Mode/profiler/scene/prefab/material work remains blocked by process gate.
+- Controller remains on static/source-side asset, texture, audio, and proof-harness routing.
+
+## 2026-06-06 Cursor 187 Audio Synthesis Current Blocker Refresh
+
+- Updated Owner28 with the exact `AUDCUE-12` placeholder-VO blocker: `VOStub_Chen_Log01_EN/RU` cannot define final warning loudness, timing, localization, subtitle proof, runtime dispatch, or accessibility behavior.
+- Updated `Tools\ValidateAudioAddressablesP0Synthesis.py`, its tests, and `Docs\Orchestration\AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md` to current static source truth: one `[MUSIC_SYSTEM]` anchor is statically present, Addressables settings/groups/entries remain absent.
+- Current synthesis output is `AUDIO_ADDRESSABLES_P0_SYNTHESIS_OK blockers=1 direct_refs=24 p0=0 footsteps=20 ui=4 fallback_required=3`.
+- Updated `ASSET_OWNER_PACKET_INDEX_20260605.csv` for Owner28 line count `223`.
+- Verification: audio synthesis validator OK; audio synthesis/scene/critical-cue tests 16 OK; full `RunAssetStaticValidators.py` returns `ASSET_STATIC_VALIDATORS_OK count=28`.
+- Static only. No Unity/import/build/profiler, `.meta`, Addressables, mixer, prefab, scene/YAML, delete, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 185 Maxwell Flora/Oxygen Texture Repair Packet
+
+- Maxwell `019e9bdb-4c6d-7123-a947-8bbb8d73e8db` completed static-only texture role-ledger sidecar. Agent closed after final.
+- `ValidateTextureRoleTechnicalLedger.py --no-fail` remains rejected with 3 blockers: flora/coral albedo streaming mips absent, flora/coral normal/detail/mask streaming mips absent, and `oxygen-tank.png` sRGB mismatch for `ui_oxygen_mask`.
+- Local controller readback agrees: 44 imported flora/coral rows under `WorldProceduralFlora/Imported` all report `meta_streaming_mips=0`; split is 11 albedo and 33 normal/detail/mask rows.
+- `oxygen-tank.png.meta` reports Sprite type with `sRGBTexture=1`, no mips, no streaming mips. Since the role matrix classifies it as a mask, the current importer setting is wrong unless UI owner reclassifies it as a colored icon.
+- Future repair is Unity importer/API only: set flora/coral streaming mips by role, keep albedo sRGB true, keep detail/mask/normal linear, and set oxygen mask sRGB false if mask role remains.
+- Updated Owner08 synthesis and Owner21 texture packet. No raw `.meta`, import/reimport, Unity, scene/prefab/material/YAML, delete, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 186 Planck Player/HUD Binding Split
+
+- Planck `019e9bd7-f51f-73b3-a10a-e9d0607f234e` completed static-only player/HUD/movement sidecar. Agent closed after final.
+- Hard P0 remains: `02_HECTON_WORLD` still has scene-local shell `Player`; exact production `Player.prefab` GUID, HUD prefab GUIDs, movement GUID, and interaction GUID are absent from scene text.
+- `Player.prefab` contains movement and interaction source components, but prefab source presence is not active scene/runtime binding proof.
+- HUD/PDA route remains broken by null/disabled/overlay state: `PlayerPDA` refs, `HUD_Render_Camera`, `SuitHUDPresentationController`, `HectonSuitHUDExtensions`, `HUD_Internal`, and `Suit_HUD_Canvas`.
+- Planck found validator caveats to fix: dev `UIRuntimeSmokeTester.pauseMenu` should not fail production pause route; root `PlayerBuilder._swimContract` may be overbroad if active held tool prefabs already carry swim contracts; `SuitAdvisoryController` nulls are a missing reported risk.
+- Updated Owner03 synthesis. Next non-Unity code front is validator refinement that does not weaken production prefab/HUD binding requirements. Unity repair remains blocked by process gate until green.
+
+## 2026-06-06 Cursor 182 Player/HUD/Movement 19/4 Refresh
+
+- Fresh `python -B Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` returns `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=19 notes=4`.
+- Full UI and full walking/swimming/movement remain P0 blocked.
+- Blocker groups: scene-local shell player, absent production `Player.prefab` scene GUID/instance, missing `HUD_Internal`/`Suit_HUD_Canvas`/movement/interaction scene refs, PDA/pause/swim/HUD null routes, disabled/unbound HUD camera/compositor, forced overlay, and ScreenSpaceOverlay Suit HUD.
+- Positive source notes are not runtime proof: production prefab source route exists, production authority guard exists, and `SpawnPlayerAsync` exists.
+- Required next green Unity pass: readback active Player/HUD objects, repair prefab internals, bind linked production Player/HUD prefab instances through Unity API, rebind shell consumers after readback, rerun static guard, then Play Mode proof for walk, swim, ascend/descend, camera, interaction, PDA, pause, save/load, HUD/input GC, Console, profiler, and player/HUD/tool witness.
+
+## 2026-06-06 Cursor 187 Player/HUD Validator Refinement
+
+- Refined `Tools\ValidatePlayerRouteStaticEvidence.py` so dev `Hecton8.Dev.UIRuntimeSmokeTester.pauseMenu` null no longer masquerades as a production pause blocker.
+- Root `Hecton8.Building.PlayerBuilder._swimContract` null is now a Unity-readback note, not the same hard blocker as an active production held-tool route.
+- Added explicit `SuitAdvisoryController` serialized survival/HUD null note; source has cold resolve, but Unity readback remains required.
+- Fresh static result: `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=17 notes=7`.
+- Hard P0 did not improve: scene-local shell player, missing production `Player.prefab`/HUD/movement/interaction scene bindings, PDA/HUD nulls, disabled HUD camera, forced overlay, and `Suit_HUD_Canvas` ScreenSpaceOverlay remain rejected.
+- Verification: `python -B -m unittest Tools.test_validate_player_route_static_evidence` ran 7 tests OK; `python -B Tools\ValidatePlayerRouteStaticEvidence.py --require-production-static` remains rejected as expected.
+- No Unity, import, build, Play Mode, profiler, scene/prefab/material/YAML mutation, delete, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 188 Static Runner Gate Repair
+
+- Reclosed `SurfaceRoutePersistentPolishRunner` public `DeferredApplyAndExit`, `DeferredCaptureAndExit`, `ApplyAndExit`, and `CaptureAndExit` routes so each writes disabled/rejected persistent-polish output instead of entering mutating internals.
+- Current audio static truth supersedes older anchor-missing cursors: `02_HECTON_WORLD` has one active static `[MUSIC_SYSTEM] / HectonMusicDirectorAnchor`; this is not runtime proof.
+- Updated `Tools\ValidateAudioAddressablesP0Synthesis.py` and the audio synthesis doc so the expected current audio scene-route blocker count is `1`: `addressables-absent`.
+- Verification: `python -B Tools\RunAssetStaticValidators.py` returns `ASSET_STATIC_VALIDATORS_OK count=28`; tasklocal strict lane contracts PASS; scoped diff check has only CRLF warnings.
+- Remaining no-fail/static debt printed by the runner: `AUDCUE-12`, Addressables absent, 3 null music-prefab `OutputAudioMixerGroup` refs pending Unity proof, audio import meta policy 41 blockers, texture role-ledger 3 blockers, and diagnostic proof-source violations.
+- No Unity, import, build, Play Mode, profiler, scene/prefab/material/YAML mutation, delete, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 189 Unity Gate Red Recheck
+
+- `python -B Tools\ValidateUnityProcessGate.py` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=100.0 cpu_over=1 blocker_processes=3 threshold=50.0`.
+- Blockers: `Unity pid=11580`, `Unity.ILPP.Trigger pid=15152`, `UnityPackageManager pid=5060`.
+- Unity/API/build/import/Play Mode/profiler/scene/prefab/material work remains blocked. Continue static/source sidecar work only.
+
+## 2026-06-06 Cursor 189 Addressables Owner15 Refresh
+
+- Updated `taskslocal\asset_system_20260605\ASSET_OWNER_15_ADDRESSABLES_ASSET_GROUP_EXECUTION_BLOCKERS_PACKET.md` with current static audio/Addressables truth.
+- Static scene route now narrows to one hard blocker: Addressables data/settings/groups/entries are absent. The scene `HectonMusicDirectorAnchor` exists statically, but this is not runtime/audio proof.
+- Current synthesis remains `AUDIO_ADDRESSABLES_P0_SYNTHESIS_OK blockers=1 direct_refs=24 p0=0 footsteps=20 ui=4 fallback_required=1`.
+- Future Addressables repair remains Unity owner/API work only after process gate green; no raw YAML/settings mutation was performed.
+
+## 2026-06-06 Cursor 190 Texture Role-Ledger Target Inventory
+
+- Updated `taskslocal\asset_system_20260605\ASSET_OWNER_21_TEXTURE_STREAMING_MIP_STATIC_RISK_PACKET.md` with exact flora importer targets behind the streaming-mip blockers.
+- The current `flora_coral` role row covers both coral and kelp assets under `WorldProceduralFlora/Imported`; fixing only `family.coral.*` would leave the validator red.
+- Future repair remains Unity importer/API only: no raw `.meta` mutation, no import/reimport run by this controller, and no runtime or visual proof claim.
+
+## 2026-06-06 Cursor 191 AUDCUE-12 Sidecar Integration
+
+- Einstein completed the bounded audio sidecar; agent closed after review.
+- Updated `taskslocal\asset_system_20260605\ASSET_OWNER_28_AUDIO_REMEDIATION_EXECUTION_PACKET.md` with the current `AUDCUE-12` static blocker: `weak_placeholder_boundary`.
+- Owner28 now blocks VO stub promotion until final VO bank, localization/subtitle, import readback, listening, runtime dispatch, accessibility, GC/profiler, memory, and lifecycle proof exist.
+- `Docs\AssetAudit\ASSET_OWNER_PACKET_INDEX_20260605.csv` Owner28 line count is `230`; owner index validates OK.
+
+## 2026-06-06 Cursor 192 Audio Import Mismatch Inventory
+
+- Updated `taskslocal\asset_system_20260605\ASSET_OWNER_19_AUDIO_IMPORT_AUTHORITY_ADOPTION_PACKET.md` with exact import mismatch assets behind the 41 static audio import blockers.
+- Inventory now names 29 unique assets: ambient/player-loop load+quality rows, short SFX/UI/VO load rows, and two bubble quality-only rows.
+- This is static routing evidence only; no importer, raw `.meta`, Unity, Addressables, mixer, prefab, or scene mutation was performed.
+
+## 2026-06-06 Cursor 193 Asset File-Map Summary Resync
+
+- Current file-map validator contract is `ASSET_FRONT_FILE_MAP_OK rows=193 csv_rows=64`.
+- Updated `Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` to total `14701` current rows.
+- This is static asset-runner hygiene only; no runtime, import, visual, audio, memory, or build proof is implied.
+
+## 2026-06-06 Cursor 194 Asset Static Runner Count Refresh
+
+- Fresh full asset runner returns `ASSET_STATIC_VALIDATORS_OK count=29`.
+- Player-route static evidence is now part of the aggregate runner and still rejects production player/HUD binding statically: `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=17 notes=7`.
+- This is static/source hygiene only; no Unity, import, Play Mode, profiler, visual, audio, memory, or build proof is implied.
+
+## 2026-06-06 Cursor 195 Controller Synthesis Current Blocker Refresh
+
+- Updated `Docs\Reports\AssetSystem_20260605\ASSET_FRONT_CONTROLLER_SYNTHESIS_20260605.md` to current static counts and blocker labels.
+- Audio current state now names Addressables absence and MusicDirector prefab fallback notes instead of stale config-null wording.
+- Added current player/HUD route blocker row: `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=17 notes=7`.
+
+## 2026-06-06 Cursor 194 SurfaceRoute1929 Proof Quarantine
+
+- External Unity launch selected `Hecton8.EditorTools.SurfaceRoute1929PolishProofRunner.ApplyAndExit`.
+- Source readback showed the route could mutate `02_HECTON_WORLD` lighting/materials/camera, save scene/assets, and emit h8_1929 proof-looking artifacts outside the canonical proof packet.
+- Patched public `ApplyAndExit` and `CaptureAndExit` to write disabled/rejected output only.
+- Hardened `Tools\ValidateVisualProofCaptureGuardrails.py` with `SurfaceRoute1929PolishProofRunner` public-route inventory and public-body mutation/render/autorun rejection.
+- Verification: `python -m unittest Tools/test_validate_visual_proof_capture_guardrails.py` returned 27 tests OK; combined visual/terrain/player/MapMagic packet returned 74 tests OK with 1 skipped; `python Tools\ValidateVisualProofCaptureGuardrails.py` remains OK.
+- Runtime status: active `UnitySurfaceRoute1929PolishApply_20260606_123144.log` is not acceptance proof because it started before this source repair imported. Process gate remains red on CPU saturation, so no Unity/MapMagic repair launch was performed.
+
+## 2026-06-06 Cursor 195 SurfaceRoute1930 Authoring Bridge Quarantine
+
+- Fresh scan found `SurfaceRoute1930AuthoringBridge` delegating to internal persistent runner methods for another surface-polish authoring/proof route.
+- Patched `SurfaceRoute1930AuthoringBridge.ApplyAndExit` / `CaptureAndExit` to write disabled output through `SurfaceRoutePersistentPolishRunner.WriteDisabledPersistentPolishRouteAndExit(...)`.
+- Patched `SurfaceRoutePersistentPolishRunner.ApplyAuthoringRoute1930AndExit` / `CaptureAuthoringRoute1930AndExit` so same-assembly callers also get disabled output only.
+- Hardened `Tools\ValidateVisualProofCaptureGuardrails.py` to validate both the internal 1930 persistent runner routes and the bridge public route inventory.
+- Verification: visual proof guard suite returned 28 tests OK; combined visual/terrain/player/MapMagic packet returned 75 tests OK with 1 skipped; `py_compile` and `TestTaskLocalLaneContracts.py --strict` passed.
+- Runtime status: no Unity/import/build/Play/profiler/scene/material/graph/screenshot action was launched because process gate remains red with Unity/dotnet/ILPP/UPM blockers.
+
+## 2026-06-06 Cursor 196 SurfaceRoute1931 Authoring Bridge Quarantine
+
+- Fresh scan found `SurfaceSceneAuthoring1931Bridge` plus internal persistent runner 1931 authoring/capture methods.
+- Patched `SurfaceSceneAuthoring1931Bridge.ApplyAndExit` / `CaptureAndExit` to write disabled output through `SurfaceRoutePersistentPolishRunner.WriteDisabledPersistentPolishRouteAndExit(...)`.
+- Patched `SurfaceRoutePersistentPolishRunner.ApplyAuthoringRoute1931AndExit` / `CaptureAuthoringRoute1931AndExit` so same-assembly callers also get disabled output only.
+- Hardened `Tools\ValidateVisualProofCaptureGuardrails.py` to validate both the internal 1931 persistent runner routes and the bridge public route inventory.
+- Verification: visual proof guard suite returned 29 tests OK; combined visual/terrain/player/MapMagic packet returned 76 tests OK with 1 skipped; `py_compile` and `TestTaskLocalLaneContracts.py --strict` passed.
+- Runtime status: external `UnitySurfaceRoute1931AuthoringApply_20260606_130223.log` failed before executeMethod on compile errors; no disabled artifact or acceptance proof exists.
+
+## 2026-06-06 Cursor 197 Compile Blocker Source Triage
+
+- Classified the latest 1931 Unity log as compile-failure evidence, not proof evidence.
+- Current source readback shows logged missing `BaseAirlock` APIs, logged missing `LifePodDamageSystem` APIs, and logged missing `UnregisterUpdatable` layer arguments are already present in current source.
+- Patched the live `BarterRuntimeSmokeTester` `ReadOnlySpan<char>` logging conversion to `.ToString()`.
+- Static checks found no remaining layerless `GlobalRegistry.UnregisterUpdatable(this)` calls and no remaining `new string(PDAExchangeSystem.ResolveStatusLabel(...))` conversion.
+- Compile proof remains pending because process/CPU gate is still red; no Unity/build/import/Play/profiler work was launched.
+
+## 2026-06-06 Cursor 196 Proof Harness Optional-Bridge Quarantine And Runner Recheck
+
+- Current source readback shows `SurfaceCrestOceanMaterialAssignmentFixer.cs` and `H8EditorBridge1297.cs` are absent from `Assets\_Project\Scripts\Editor`; they are not tracked git files in this checkout. Do not recreate them to satisfy stale validator assumptions.
+- Hardened `Tools\ValidateVisualProofCaptureGuardrails.py` so absent optional bypass/bridge files are accepted as stronger quarantine, while present files are still checked by public-route inventory and disabled-body rules.
+- `CaptureWithPoseAndExit` remains deleted; current `H8VisualProofCapture1912.cs` no longer reports `camera_render_state_mutation`, and the unit expectation now enforces that absence.
+- Focused verification: `python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` ran 27 tests OK; `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=25 asset_refs=21`; harness candidate remains `PASS_DIAGNOSTIC_REJECTION_SOURCE violations=147 diagnostic_only=true`.
+- Wide static verification: combined 54-test packet OK; `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=29`; `python -B Tools\Docs\TestTaskLocalLaneContracts.py taskslocal\night_controller_20260605 --strict` PASS.
+- Expected no-fail debts remain printed by the runner: Player/HUD `17 blockers / 7 notes`, Addressables absent, `AUDCUE-12`, audio import meta policy, texture role-ledger 3 blockers, and diagnostic visual proof-source debt.
+- No Unity, import, build, Play Mode, profiler, Addressables mutation, prefab/scene/material/YAML mutation, delete, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 197 Proof Harness Dead Internal Deletion
+
+- Deleted dead private `H8VisualProofCapture1912` methods `ApplySurfaceSceneCrestTerrainWiringInternalAndExit` and `ApplySurfaceLightingMaterialPolishInternalAndExit`; public routes already write disabled diagnostic output and no longer need private SaveScene/MapMagic/material-polish bodies retained in source.
+- Current source no longer contains proof-harness `scene_save` or `scene_dirty_mark` categories; the unit suite now asserts those categories stay absent from the current canonical-harness rejection.
+- Focused verification: `python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` ran 29 tests OK; `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=21 asset_refs=21`; harness candidate is now `PASS_DIAGNOSTIC_REJECTION_SOURCE violations=137 diagnostic_only=true`.
+- Full asset runner remains OK: `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=29`.
+- Remaining proof-harness debt is still rejected: raw MCP output, raw camera render/readpixels/png encode, scene-open/search heuristics, reflection/Crest update, MapMagic mutation/pump, temp materials, object destruction, and legacy h8_1912/1913/1914 diagnostic ids.
+- No Unity, import, build, Play Mode, profiler, scene/prefab/material/YAML mutation, delete outside the two source methods, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 198 Huygens Placement Sidecar Integration
+
+- Huygens completed static-only rocks/flora/coral placement critic sidecar. No edits, Unity, build/import, prefab/scene/material mutation, stage, or commit.
+- Ranked candidate pools remain: `Nature/Rocks/ProceduralFinals` first; `BioForge/Shallows/TubeCoral`; `BioForge/Shallows/Kelp`; `Nature/Flora/Baked`; conditional `PorousRock`/`GOTOVYE_PREFABY_KAMNEY` only after collider proxy proof.
+- Hard rejects remain: `WorldProceduralProxy`, `WorldRuntime/ProceduralPlaceholders`, `OrganicMisc/Final`, visible proxy/placeholder materials, and any scatter used to hide failed water, shoreline, terrain, sky/Aegir, player/HUD/tool proof.
+- Placement is still blocked by base-route failure plus material/import/LOD/collider/Addressables proof gaps. In particular, 44 `WorldProceduralFlora/Imported` texture rows still need streaming-mip/import proof before shallow flora/coral promotion.
+- Later Unity-safe tiny patch plan: after base water/shore/terrain/sky route is non-rejected, use Unity API only for one controlled proof parent with 6-8 `ProceduralFinals` geology prefabs on route edges and 2-3 TubeCoral/Kelp only after material/import proof passes.
+- No production placement approval is implied; status remains `PENDING VERIFICATION`.
+
+## 2026-06-06 Cursor 199 Proof Harness Main Capture Helper Deletion
+
+- Direct-disabled public `CaptureSurfaceAndExit`, `CaptureSurfaceAfterQuarantineAndExit`, and `CaptureSurfacePatchAAndExit`; each now writes disabled diagnostic output instead of calling a shared raw-render helper.
+- Deleted private `CaptureSurfaceAndExit(string captureName, ...)`; absence is treated as stronger quarantine by `ValidateVisualProofCaptureGuardrails.py`.
+- Focused verification: visual proof guard suite ran 29 tests OK; harness candidate dropped to `PASS_DIAGNOSTIC_REJECTION_SOURCE violations=134 diagnostic_only=true`.
+- Full runner remains `ASSET_STATIC_VALIDATORS_OK count=29`; tasklocal strict lane contracts PASS.
+- Remaining raw-render debt is still present through shared Crest diagnostic routes, so no canonical proof acceptance is implied.
+
+## 2026-06-06 Cursor 200 Poincare Player/HUD Repair Plan Integration
+
+- Poincare completed static-only player/HUD Unity repair planner sidecar. No edits, Unity, build, import, scene save, prefab save, staging, or commit.
+- Future Unity/API owner touch list: `02_HECTON_WORLD.unity`, `Player.prefab`, `HUD_Internal.prefab`, `Suit_HUD_Canvas.prefab`, bootstrap/spawner source, player movement/input/interaction source, PDA/pause/visor/HUD/advisory controllers, and the player-route validator/tests after repair.
+- Required repair order remains: read back shell and all Player/HUD/PDA/spawner objects; repair prefab internals with `PrefabUtility.LoadPrefabContents` plus `SerializedObject`; instantiate linked production `Player.prefab`; bind or create `HectonPlayerSpawner.productionPlayerPrefab`; rebind shell consumers; only then untag/deactivate/dev-gate the shell.
+- Hard rejects: raw YAML, shell-as-production, two tagged Players, hierarchy-order bootstrap resolution, final ScreenSpaceOverlay HUD, deleting shell/deprecated prompt UI before readback, bypassing `ProductionPlayerAuthorityUtility`.
+- Proof gates remain walk/swim/ascend/descend, camera, PDA, pause, interaction, HUD projection/compositor, Console clean, profiler/GCMonitor `0 B/frame`, and static validator or stronger Unity readback evidence.
+- Status remains `STATIC ONLY / PENDING UNITY READBACK`.
+
+## 2026-06-06 Cursor 201 Banach Visual Reference Critic Integration
+
+- Banach completed static-only visual reference critic sidecar. No edits, Unity, build, import, Play Mode, profiler, or scene/prefab/material mutation.
+- Verdict remains `REJECTED / PENDING UNITY + h8_1475 SCREENSHOT PROOF`.
+- Top P0 failures: no valid h8_1475 proof packet; slab-like surface ocean; failed shoreline contact; failed terrain/coast material truth; toy-integrated Aegir/sky; empty/slab 0-5 m underwater route; absent production player/HUD/tool witness.
+- P1 failures: unproven 20-50 m medium/deep hero route; product-face source gates fail; flora/coral/UI sources are candidates, not active proof.
+- Banach inspected all 15 mandatory visual references plus current screenshots/contact sheets. Current visual route must not be hidden with raw MCP PNGs, controller prose, cards, green haze, bloom/fog, darkness, or decorative rocks/flora/coral.
+- Updated visual/surface docs with this static verdict. No visual acceptance or runtime proof is claimed.
+
+## 2026-06-06 Cursor 197 UI Oxygen/HUD Route Blocker Refresh
+
+- Updated `taskslocal\asset_system_20260605\ASSET_OWNER_17_UI_OXYGEN_SPRITE_ATLAS_PACKET.md` with the current oxygen/HUD static blocker facts.
+- `oxygen-tank.png` remains a blocked route decision, not a blind importer fix: role ledger expects mask/linear sRGB false, current source is sRGB true, and `Suit_HUD_Canvas.prefab` statically references it.
+- `ui/OXYGEN.png` remains detailed-icon candidate-only until HUD binding, SpriteAtlas ownership, importer readback, compact readability, localization/accessibility, and zero-GC HUD update proof exist.
+- Current readback found no `.spriteatlas` / `.spriteatlasv2` assets under `Assets\_Project`; production HUD route remains statically rejected with `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=17 notes=7`.
+- Verification: `python -B Tools\ValidateAssetOwnerPacketIndex.py` OK; `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=29`.
+- No Unity, import, reimport, raw `.meta`, SpriteAtlas YAML, prefab/scene/material/YAML mutation, Addressables, build, Play Mode, profiler, delete, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 198 Asset Start-Here/Action-Queue Current Blocker Refresh
+
+- Updated `Docs\AssetAudit\README.md`, `Docs\AssetAudit\ASSET_ACTION_QUEUE_20260605.md`, and `Docs\AssetAudit\ASSET_ACTION_QUEUE_20260605.csv` to match current static runner output.
+- Current audio P0 surface now names Addressables absence and MusicDirector prefab mixer fallback notes; stale `MusicDirectorConfig_Global.asset` null mixer wording was removed from the current queue.
+- Audio lifecycle now names 24 direct P1 Player footstep/UI clip refs; stale P0 ambient/splash direct-ref wording was narrowed to Unity readback follow-up only.
+- UI oxygen queue now names the `oxygen-tank.png` mask/sRGB/HUD-reference route decision and routes future work through Owner17.
+- Verification: `python -B Tools\ValidateAssetActionQueue.py` returned `ASSET_ACTION_QUEUE_OK rows=11 p0=4 p1=5 p2=2`; `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=29`.
+- No Unity, import, reimport, raw `.meta`, prefab/scene/material/YAML mutation, Addressables, build, Play Mode, profiler, delete, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 199 Asset Static Summary Fallback-Count Refresh
+
+- Updated `Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` so the audio Addressables synthesis line matches current runner output: `fallback_required=1`.
+- Verification: `python -B Tools\ValidateAssetStaticSummary.py --summary Docs\Reports\AssetSystem_20260605\ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returned `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14701`; `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=29`.
+- No Unity, import, reimport, raw `.meta`, prefab/scene/material/YAML mutation, Addressables, build, Play Mode, profiler, delete, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 202 Audio Current Blocker Consolidation
+
+- Integrated Chandrasekhar's static-only audio/Addressables sidecar into `AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md` and `NIGHT_OWNER_06_AUDIO_ADDRESSABLES_ROUTE.txt`.
+- Fresh local checks confirm current audio static route: `ValidateAudioSceneStaticRoute.py --no-fail` reports one hard blocker, `addressables-absent`; `ValidateAudioAddressablesP0Synthesis.py` reports `AUDIO_ADDRESSABLES_P0_SYNTHESIS_OK blockers=1 direct_refs=24 p0=0 footsteps=20 ui=4 fallback_required=1`.
+- Rejected stale audio claims: current `02_HECTON_WORLD` music anchor is not missing; `MusicDirectorConfig_Global` mixer refs are not currently null; current `Player.prefab` direct audio refs are 24 P1 refs, not 28, and current P0 ambient/splash direct refs are 0 pending Unity prefab readback.
+- Remaining audio blockers: Addressables data route absent, 3 null MusicDirector prefab `AudioSource.OutputAudioMixerGroup` refs, 6 null SpatialAudioManager mixer/routing refs, `AUDCUE-12` placeholder boundary, import policy `41` blockers, and all Unity/runtime/listening/profiler proof.
+- No Unity, import, reimport, raw `.meta`, prefab/scene/material/YAML mutation, Addressables, build, Play Mode, profiler, delete, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 203 Proof Harness Crest Machinery Removal
+
+- Direct-disabled public h8_1914-h8_1918 surface Crest proof routes in `H8VisualProofCapture1912.cs`.
+- Deleted the private shared Crest capture route, raw `RenderCamera`, raw `WriteMetadata`, and the dead Crest/MapMagic/material/terrain helper machinery from that source.
+- Cleaned stale risk-only usings/constants/static Unity object fields. Current source is disabled executeMethod inventory plus disabled-output writer.
+- Verification: visual proof guard suite returned 30 tests OK; `ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=0 asset_refs=0 categories=`; harness candidate returned `PASS_DIAGNOSTIC_REJECTION_SOURCE violations=2 diagnostic_only=true`; `RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=29`; tasklocal strict returned PASS.
+- Disabled outputs now target `Docs/RejectedDiagnostics/H8VisualProofCapture1912`; old h8_1912/h8_1913/h8_1914 capture names were downgraded to `disabled_legacy_*` where applicable. No Unity, import, reimport, prefab/scene/material/YAML mutation, build, Play Mode, profiler, delete, restore, stage, or commit action was performed.
+
+## 2026-06-06 Cursor 204 AUDCUE-12 Placeholder Boundary Hardening
+
+- Updated `AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.csv` so `AUDCUE-12` explicitly says `Placeholder VO stubs cannot set final warning loudness timing localization or subtitle proof`.
+- Updated `test_validate_audio_critical_cue_source_coverage.py`, Owner28, audio synthesis, and static summary surfaces to match the current state.
+- Fresh source coverage now returns `AUDIO_CRITICAL_CUE_SOURCE_COVERAGE_OK blockers=0 rows=12 candidate_paths=28 ledger_matches=28 missing_source_rows=2 placeholder_rows=1`.
+- This does not promote VO stubs. `AUDCUE-12` remains `PLACEHOLDER_BLOCKED / PENDING VERIFICATION` until final VO bank, localization/subtitle timing, Unity import readback, runtime dispatch, listening, GC, memory, and mix proof exist.
+- Verification: audio critical cue unit suite returned 6 tests OK; `RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=29`.
+- No Unity, import, reimport, raw `.meta`, prefab/scene/material/YAML mutation, Addressables, build, Play Mode, profiler, delete, restore, stage, or commit action was performed.

@@ -99,6 +99,8 @@ namespace MapMagic.Nodes.MatrixGenerators
             MatrixWorld dst = new MatrixWorld(src.rect, src.worldPos, src.worldSize);
             NativeArray<float> input = default;
             NativeArray<float> output = default;
+            int inputRegistrationId = 0;
+            int outputRegistrationId = 0;
             JobHandle handle = default;
             bool scheduled = false;
 
@@ -107,8 +109,8 @@ namespace MapMagic.Nodes.MatrixGenerators
                 // COLD ALLOC: NativeArray<float>[cellCount * 2] - MapMagic SpaceEngine ridged terrain product generation - owner: HectonSpaceEngine098RidgedMultifractalMapMagicNode
                 input = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 output = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                HectonSpaceEngine098MapMagicUtility.RegisterTempJobArray(input, NativeMemoryOwner, "ridgedInput");
-                HectonSpaceEngine098MapMagicUtility.RegisterTempJobArray(output, NativeMemoryOwner, "ridgedOutput");
+                inputRegistrationId = HectonSpaceEngine098MapMagicUtility.RegisterTempJobArray(input, NativeMemoryOwner, "ridgedInput");
+                outputRegistrationId = HectonSpaceEngine098MapMagicUtility.RegisterTempJobArray(output, NativeMemoryOwner, "ridgedOutput");
                 HectonSpaceEngine098MapMagicUtility.CopyMatrixToNative(src.arr, input);
 
                 var parameters = new SpaceEngine098RidgedMultifractalParams
@@ -150,10 +152,8 @@ namespace MapMagic.Nodes.MatrixGenerators
                 if (scheduled)
                     HectonSpaceEngine098MapMagicUtility.CompleteColdMapMagicJob(ref handle, ref scheduled, BarrierWarningHash, ContextHash);
 
-                HectonSpaceEngine098MapMagicUtility.DisposeTracked(input);
-                HectonSpaceEngine098MapMagicUtility.DisposeTracked(output);
-                input = default;
-                output = default;
+                HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref input, ref inputRegistrationId);
+                HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref output, ref outputRegistrationId);
             }
         }
     }
@@ -248,6 +248,9 @@ namespace MapMagic.Nodes.MatrixGenerators
             NativeArray<float> input = default;
             NativeArray<float> output = default;
             NativeArray<float3> craterCenters = default;
+            int inputRegistrationId = 0;
+            int outputRegistrationId = 0;
+            int craterCentersRegistrationId = 0;
             JobHandle handle = default;
             bool scheduled = false;
 
@@ -258,9 +261,9 @@ namespace MapMagic.Nodes.MatrixGenerators
                 input = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 output = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 craterCenters = new NativeArray<float3>(safeCraterCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                HectonSpaceEngine098MapMagicUtility.RegisterTempJobArray(input, NativeMemoryOwner, "craterInput");
-                HectonSpaceEngine098MapMagicUtility.RegisterTempJobArray(output, NativeMemoryOwner, "craterOutput");
-                HectonSpaceEngine098MapMagicUtility.RegisterTempJobArray(craterCenters, NativeMemoryOwner, "craterCentersAup");
+                inputRegistrationId = HectonSpaceEngine098MapMagicUtility.RegisterTempJobArray(input, NativeMemoryOwner, "craterInput");
+                outputRegistrationId = HectonSpaceEngine098MapMagicUtility.RegisterTempJobArray(output, NativeMemoryOwner, "craterOutput");
+                craterCentersRegistrationId = HectonSpaceEngine098MapMagicUtility.RegisterTempJobArray(craterCenters, NativeMemoryOwner, "craterCentersAup");
                 HectonSpaceEngine098MapMagicUtility.CopyMatrixToNative(src.arr, input);
 
                 uint resolvedSeed = HectonSpaceEngine098MapMagicUtility.ResolveSeed(seed, src);
@@ -313,12 +316,9 @@ namespace MapMagic.Nodes.MatrixGenerators
                 if (scheduled)
                     HectonSpaceEngine098MapMagicUtility.CompleteColdMapMagicJob(ref handle, ref scheduled, BarrierWarningHash, ContextHash);
 
-                HectonSpaceEngine098MapMagicUtility.DisposeTracked(input);
-                HectonSpaceEngine098MapMagicUtility.DisposeTracked(output);
-                HectonSpaceEngine098MapMagicUtility.DisposeTracked(craterCenters);
-                input = default;
-                output = default;
-                craterCenters = default;
+                HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref input, ref inputRegistrationId);
+                HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref output, ref outputRegistrationId);
+                HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref craterCenters, ref craterCentersRegistrationId);
             }
         }
     }
@@ -408,6 +408,8 @@ namespace MapMagic.Nodes.MatrixGenerators
             MatrixWorld dst = new MatrixWorld(src.rect, src.worldPos, src.worldSize);
             NativeArray<float> input = default;
             NativeArray<float> output = default;
+            int inputRegistrationId = 0;
+            int outputRegistrationId = 0;
             JobHandle handle = default;
             bool scheduled = false;
 
@@ -416,8 +418,8 @@ namespace MapMagic.Nodes.MatrixGenerators
                 // COLD ALLOC: NativeArray<float>[cellCount * 2] - MapMagic SpaceEngine rille product generation - owner: HectonSpaceEngine098RilleMapMagicNode
                 input = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 output = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                HectonSpaceEngine098MapMagicUtility.RegisterTempJobArray(input, NativeMemoryOwner, "rilleInput");
-                HectonSpaceEngine098MapMagicUtility.RegisterTempJobArray(output, NativeMemoryOwner, "rilleOutput");
+                inputRegistrationId = HectonSpaceEngine098MapMagicUtility.RegisterTempJobArray(input, NativeMemoryOwner, "rilleInput");
+                outputRegistrationId = HectonSpaceEngine098MapMagicUtility.RegisterTempJobArray(output, NativeMemoryOwner, "rilleOutput");
                 HectonSpaceEngine098MapMagicUtility.CopyMatrixToNative(src.arr, input);
                 float heightScale = HectonSpaceEngine098MapMagicUtility.ResolveHeightScaleMeters(src, data, heightScaleMeters);
 
@@ -457,10 +459,8 @@ namespace MapMagic.Nodes.MatrixGenerators
                 if (scheduled)
                     HectonSpaceEngine098MapMagicUtility.CompleteColdMapMagicJob(ref handle, ref scheduled, BarrierWarningHash, ContextHash);
 
-                HectonSpaceEngine098MapMagicUtility.DisposeTracked(input);
-                HectonSpaceEngine098MapMagicUtility.DisposeTracked(output);
-                input = default;
-                output = default;
+                HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref input, ref inputRegistrationId);
+                HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref output, ref outputRegistrationId);
             }
         }
     }
@@ -478,20 +478,22 @@ namespace MapMagic.Nodes.MatrixGenerators
             return cellCount > 0 && width * height <= cellCount ? cellCount : 0;
         }
 
-        internal static void RegisterTempJobArray<T>(NativeArray<T> array, string owner, string label)
+        internal static int RegisterTempJobArray<T>(NativeArray<T> array, string owner, string label)
             where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(array, owner, label, NativeAllocationLifetime.TempJob);
+            return NativeMemorySentinel.RegisterNativeArray(array, owner, label, NativeAllocationLifetime.TempJob);
         }
 
-        internal static void DisposeTracked<T>(NativeArray<T> array)
+        internal static void DisposeTracked<T>(ref NativeArray<T> array, ref int registrationId)
             where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
+            NativeMemorySentinel.Unregister(registrationId);
+            registrationId = 0;
             array.Dispose();
+            array = default;
         }
 
         internal static void CopyMatrixToNative(float[] source, NativeArray<float> destination)

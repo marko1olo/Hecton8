@@ -3704,6 +3704,8 @@ namespace Hecton8.Core.Contracts.Signals
                 guardCode = DynamicMusicScalarSignalGuardCode;
             if (SanitizeUnit01(ref signal.PitchKick01))
                 guardCode = DynamicMusicScalarSignalGuardCode;
+            if (SanitizeUnit01(ref signal.MusicActivity01))
+                guardCode = DynamicMusicScalarSignalGuardCode;
 
             return guardCode;
         }

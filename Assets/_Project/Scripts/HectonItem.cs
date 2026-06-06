@@ -11,7 +11,7 @@
 // CHANGE v3.1 (POOL-SAFE SETTLE):
 //   Removed async Awaitable SettleAndSleepAsync because destroyCancellationToken
 //   does not fire on SetActive(false) pooled despawn. Replaced with an
-//   ITickable state machine and timer. Zero GC.
+//   IFixedTickable state machine and timer. Zero GC.
 //   OnDisable resets state for pooled reuse.
 // ============================================================================
 
@@ -34,7 +34,7 @@ namespace Hecton8.Items
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(InteractionHighlighter))]
     [DisallowMultipleComponent]
-    public class HectonItem : MonoBehaviour, IInteractable, IInteractableTextProvider, ITickable, IUpdatable, IFixedTickable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider, ILocalizationLanguageChangedListener
+    public class HectonItem : MonoBehaviour, IInteractable, IInteractableTextProvider, IFixedTickable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider, ILocalizationLanguageChangedListener
     {
         private static int s_x001HectonItemSignalPushDropCount;
         private const float OverflowScatterImpulse = 2.5f;
@@ -168,11 +168,6 @@ namespace Hecton8.Items
         private void OnDestroy()
         {
             InteractableRegistry.InvalidateTree(this);
-        }
-
-        // ITickable
-        public void Tick(float deltaTime)
-        {
         }
 
         public void FixedTick(float fixedDeltaTime)

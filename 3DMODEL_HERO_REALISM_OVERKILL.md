@@ -34,6 +34,12 @@ This file is mandatory when any condition is true:
 
 Hero classification does not allow runtime generation. It increases offline bake effort, not runtime authority.
 
+## 2A. Runtime And Hot-Path Boundary
+
+Hero status raises offline source, bake, render-proof, LOD, collider, and material requirements. It never grants runtime authority to build or repair the asset.
+
+Hot paths must not generate hero mesh detail, retopologize, decimate, bake normals/AO/curvature, fit colliders, synthesize masks, swap material channel semantics, search visual triangles for interaction, or create runtime material clones. Runtime may load the serialized hero package, choose approved LOD/variant/residency, drive authored shader parameters, and read named anchors or collider proxies. `GlobalQualityWeight` scales fidelity selection only; it must not change collision truth, sockets, prefab identity, save identity, or gameplay facts.
+
 ## 3. Realism Stack
 
 Every hero asset must be built in four visible layers:

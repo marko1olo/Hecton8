@@ -39,6 +39,8 @@ First-20 route moment: addresses static music-profile and cue-source ambiguity f
 
 CSV output: `Docs/Audio/audio_profile_usage_20260605.csv`.
 
+Known stale slice: this sidecar still records older direct `Player.prefab` rows for `Underwater Ambient.wav` and `dive_splash.wav`. Current `Player.prefab` static scan reports `0` direct refs for those two cues and `24` direct refs total, all footstep/UI. Use `Docs/AssetAudit/AUDIO_DIRECT_REF_DETAIL_20260605.csv` and `Tools/ValidateAudioDirectRefDetail.py` as current Player direct-ref truth until this profile usage scan is regenerated.
+
 ## MusicDirector Config Map
 
 | Config Field | Referenced Asset | Referenced Profile Id / Note |

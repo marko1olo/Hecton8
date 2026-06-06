@@ -269,6 +269,14 @@ Every report must use one of these labels:
 
 Do not collapse these labels. Static documentation work cannot claim runtime proof.
 
+Evidence class mapping:
+
+- Proof state label is the report status.
+- Evidence class is the artifact type behind the status, such as `STATIC_DOC`, `STATIC_SOURCE`, `PACKAGE_LOCK`, `CLI_COMPILE`, `UNITY_CONSOLE`, `PLAYMODE`, `PROFILER`, `FRAME_DEBUGGER`, or `PLAYER_BUILD`.
+- `STATIC VERIFIED` may be backed by `STATIC_DOC`, `STATIC_SOURCE`, package/manifests, generated files, or static tool output only. It must not imply Unity import, runtime behavior, profiler, GC, visual, platform, or save/load proof.
+- `EDITOR VERIFIED`, `PLAYMODE VERIFIED`, `PROFILER VERIFIED`, and `PLAYER-CAPTURE VERIFIED` require the matching runtime/editor artifact class and path.
+- If the proof state label and evidence class disagree, use the lower claim and mark the rest `PENDING VERIFICATION`.
+
 ## 12. Domain Proof Matrix
 
 Minimum proof by domain:

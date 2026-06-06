@@ -29,14 +29,14 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _CausticStrength: 0.24
-    - _FillLight: 1.24
+    - _CausticStrength: 0.3
+    - _FillLight: 1.4
     - _TextureScale: 0.13
-    - _WetSpec: 0.19
+    - _WetSpec: 0.24
     m_Colors:
     - _CausticColor: {r: 0.72, g: 0.9, b: 1, a: 1}
-    - _RidgeTint: {r: 0.86, g: 0.8, b: 0.68, a: 1}
-    - _ShadowTint: {r: 0.18, g: 0.22, b: 0.22, a: 1}
-    - _Tint: {r: 0.72, g: 0.69, b: 0.6, a: 1}
+    - _RidgeTint: {r: 0.93, g: 0.84, b: 0.68, a: 1}
+    - _ShadowTint: {r: 0.3, g: 0.34, b: 0.32, a: 1}
+    - _Tint: {r: 0.78, g: 0.71, b: 0.58, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

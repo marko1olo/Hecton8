@@ -388,7 +388,7 @@ localDir = quaternion_rotate(inverse(listenerRot), sourcePos - listenerPos)
 
 // Azimuth approximation (x/z ratio)
 azimuthFast = localDir.x / (abs(localDir.z) + 0.001)  // -1 to 1
-azimuthRad = azimuthFast * (pi/2)  // Good enough for LUT index
+azimuthRad = azimuthFast * (pi/2)  // Bounded LUT-index approximation; validate error before acceptance.
 
 // Elevation approximation
 horizontalLen = sqrt(localDir.x^2 + localDir.z^2)

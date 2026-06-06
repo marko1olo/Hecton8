@@ -105,7 +105,7 @@ Generated ledgers:
 - `Docs/AssetAudit/TEXTURE_MATERIAL_USAGE_REVIEW_20260605.md`
 - `Docs/AssetAudit/TEXTURE_AUTHORING_RECIPES_20260605.md`
 - `Docs/Audio/audio_asset_ledger.csv`: production-facing static audio ledger with cue IDs, class, import settings, pending owners, pending Addressables fields, placeholder flags, route use, and risk notes.
-- `Docs/Audio/audio_profile_usage_20260605.csv`: 227 rows mapping MusicDirector profiles/config/direct prefab audio refs.
+- `Docs/Audio/audio_profile_usage_20260605.csv`: 227 rows mapping MusicDirector profiles/config/direct prefab audio refs; older sidecar snapshot still contains prior `Underwater Ambient.wav` and `dive_splash.wav` Player-prefab direct rows, so use `AUDIO_DIRECT_REF_DETAIL_20260605.csv` and `Tools/ValidateAudioDirectRefDetail.py` for current direct-ref truth until the profile usage scan is regenerated.
 - `Docs/AssetAudit/AUDIO_PROFILE_USAGE_REVIEW_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/UI_SPRITE_ROUTE_STATIC_TABLE_3216_20260605.md`
 - `Docs/Reports/AssetSystem_20260605/AUDIO_IMPORT_POLICY_DECISION_BRIEF_3217_20260605.md`
@@ -439,9 +439,9 @@ Use `Docs/AssetAudit/VISUAL_ASSET_REVIEW_QUEUE_20260605.csv` for visual target o
 
 Latest asset-front parse summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`.
 
-- Current asset CSV set: 62 files, 14656 data rows, zero empty cells.
+- Current asset CSV set: 62 files, 14699 data rows, zero empty cells.
 - `GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.csv`: 26 rows, 13 columns, zero empty cells.
-- `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`: 15 folders, 17 columns, zero empty cells; covers 138 audio ledger rows and 28 direct prefab refs by folder.
+- `AUDIO_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`: 15 folders, 17 columns, zero empty cells; covers 138 audio ledger rows and older direct-ref folder context; current `Player.prefab` static direct-ref detail is 24 rows and pending Unity readback.
 - `TEXTURE_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`: 56 folders, 20 columns, zero empty cells; covers 190 texture ledger rows, 50 generated/source-only rows, 54 active-build-scene usage rows, 70 visible-route user rows, and 43 proxy/placeholder usage rows.
 - `MESH_PREFAB_SOURCE_FOLDER_ROUTE_MATRIX_20260605.csv`: 40 folders, 11 columns, zero empty cells; covers 602 prefabs, 221 without static `LODGroup` token, 183 with built-in primitive mesh refs, and 76 with static `MeshCollider` token.
 - `AUDIO_FILE_TECHNICAL_PROPERTIES_20260605.csv`: 138 rows, 23 columns, zero empty cells.
@@ -451,8 +451,8 @@ Latest asset-front parse summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATI
 - `MATERIAL_FILE_TECHNICAL_PROPERTIES_20260605.csv`: 392 rows, 16 columns, zero empty cells; static `WorldProceduralProxy` material token rows = 41.
 - `PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.csv`: 602 rows, 18 columns, zero empty cells.
 - `MODEL_FILE_IMPORT_RISK_MATRIX_20260605.csv`: 16 rows, 18 columns, zero empty cells.
-- `ASSET_GUID_REFERENCE_MATRIX_20260605.csv`: 7420 rows, 21 columns, zero empty cells; static GUID graph counts 3932 referenced rows, 3488 unreferenced rows, 630 active-world reachable rows, 25 direct audio scene/prefab review rows, and 3090 non-first-party or legacy path rows.
-- `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv`: 800 rows, 15 columns, zero empty cells; static owner triage counts 655 P0 active-route rows, 145 P1 scene-route rows, and 8 owner lanes.
+- `ASSET_GUID_REFERENCE_MATRIX_20260605.csv`: 7420 rows, 21 columns, zero empty cells; static GUID graph counts 3932 referenced rows, 3488 unreferenced rows, 630 active-world reachable rows, 25 direct audio scene/prefab review rows, and 3090 non-first-party or legacy path rows. Known stale audio rows: prior `Underwater Ambient.wav` and `dive_splash.wav` direct Player-prefab refs remain in this generated snapshot after current source-clearing; current direct-ref truth is the audio direct-ref validator.
+- `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv`: 800 rows, 15 columns, zero empty cells; static owner triage counts 655 P0 active-route rows, 145 P1 scene-route rows, and 8 owner lanes. Known stale audio rows mirror the GUID matrix until regenerated.
 - `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv`: 3488 rows, 15 columns, zero empty cells; static cleanup-review triage counts 9 action buckets and 31 rows >= 8 MB.
 - `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv`: 124 rows, 10 columns, zero empty cells; all rows remain readback/remediation targets, not material acceptance.
 - `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv`: 39 rows, 11 columns, zero empty cells; all rows remain prefab readback/replacement targets, not prefab acceptance.
@@ -485,7 +485,8 @@ Latest asset-front parse summary: `Docs/Reports/AssetSystem_20260605/ASSET_STATI
 - `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv`: 4 rows, 15 columns, zero empty cells; route decision/source-field readback only, not compile proof, Unity proof, GC/profiler proof, or runtime dump artifact acceptance.
 - `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv`: 10 rows, 15 columns, zero empty cells; source coverage matrix only, not import, material binding, screenshot, Frame Debugger, memory, or visual acceptance.
 - `ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.csv`: 16 rows, 9 columns, zero empty cells.
-- `ASSET_FRONT_FILE_MAP_20260605.csv`: 149 rows, 7 columns, zero empty cells.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 191 rows, 7 columns, zero empty cells.
+- `Tools/ValidateTextureRoleTechnicalLedger.py --no-fail`: rejects 3 static role-vs-ledger blockers: flora/coral streaming mips mismatch for albedo and normal/detail/mask roles, plus `ui_oxygen_mask` sRGB mismatch. This is static ledger hygiene only, not Unity import/material/visual proof.
 - `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`: 10 rows, 15 columns, zero empty cells; visual source queue only, no import/material/screenshot/Frame Debugger/memory acceptance. `Tools/ValidateVisualSourcePromotionQueue.py` returns `VISUAL_SOURCE_PROMOTION_QUEUE_OK rows=10 p0=4 p1=5 p2=1 vhsc_links=6`.
 - Current touched asset docs reported zero replacement characters.
 - Scoped asset-front `git diff --check` reported no whitespace errors.

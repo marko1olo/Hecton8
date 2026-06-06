@@ -56,11 +56,11 @@ namespace Hecton8.Interaction
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Player/Player Interaction")]
-    public sealed class PlayerInteraction : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class PlayerInteraction : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IBootstrapProductionPlayerInteractionAuthority
     {
         private static int s_x001PlayerInteractionSignalPushDropCount;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
-        private const string DefaultLookTargetPrompt = "OPEN HATCH";
+        private const string DefaultLookTargetPrompt = "INTERACT";
         private static readonly char[] s_promptScratch = new char[PlayerLookTargetPromptCache.MaxCharsPerPrompt];
 
         // ====================================================================

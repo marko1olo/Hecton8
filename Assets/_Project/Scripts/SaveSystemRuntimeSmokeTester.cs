@@ -16,6 +16,10 @@ namespace Hecton8.Dev
     [AddComponentMenu("Hecton8/Dev/Save System Runtime Smoke Tester")]
     public sealed class SaveSystemRuntimeSmokeTester : MonoBehaviour
     {
+        private const string NativeMemoryOwner = nameof(SaveSystemRuntimeSmokeTester);
+        private const string RequestedSectorScratchLabel = "indexedSubBlockSmokeRequestedSectors";
+        private const string RestoredRecordsScratchLabel = "indexedSubBlockSmokeRestoredRecords";
+
         [Header("References")]
         [SerializeField]
         [Tooltip("Save runtime owner. Auto-resolves from GlobalRegistry when empty.")]
@@ -60,6 +64,8 @@ namespace Hecton8.Dev
         private long _debugIndexedSubBlockSectorHash;
         [SerializeField]
         private int _debugRestoredRecordCount;
+        [SerializeField]
+        private bool _debugIndexedSubBlockBackupRecoveryReported;
 #pragma warning restore CS0414
 
         private bool _isRunning;
@@ -118,6 +124,7 @@ namespace Hecton8.Dev
             _debugIndexedSubBlockPass = false;
             _debugIndexedSubBlockSectorHash = 0L;
             _debugRestoredRecordCount = 0;
+            _debugIndexedSubBlockBackupRecoveryReported = false;
 
             string currentSlot = string.IsNullOrWhiteSpace(indexedSubBlockSlotName)
                 ? "smoke_indexed_subblock_slot"
@@ -165,7 +172,11 @@ namespace Hecton8.Dev
 
                 // COLD ALLOC: List<IndexedSectorEntryInfo>[16] — smoke-only sector directory readback — owner: SaveSystemRuntimeSmokeTester
                 List<SaveBinaryStorage.IndexedSectorEntryInfo> sectorEntries = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(16);
-                if (!SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(primaryAbsolutePath, sectorEntries, out _, out string directoryError) ||
+                if (!SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(
+                        primaryAbsolutePath,
+                        sectorEntries,
+                        out int indexedChunkSizeMeters,
+                        out string directoryError) ||
                     sectorEntries.Count <= 0)
                 {
                     FailIndexedSubBlock($"No indexed persistent sectors available for sub-block fallback smoke: {directoryError}");
@@ -181,16 +192,26 @@ namespace Hecton8.Dev
 
                 _debugIndexedSubBlockSectorHash = sectorHash;
                 _debugLastPhase = "LoadFallback";
-                if (!TryLoadIndexedSubBlockFallback(primaryAbsolutePath, sectorHash, out int restoredRecordCount, out string loadError))
+                if (!TryLoadIndexedSubBlockFallback(
+                        primaryAbsolutePath,
+                        sectorHash,
+                        indexedChunkSizeMeters,
+                        out int restoredRecordCount,
+                        out int repairedPrimaryRecordCount,
+                        out _,
+                        out int backupRecoveryHashCount,
+                        out _,
+                        out string loadError))
                 {
                     FailIndexedSubBlock($"Indexed sector fallback load failed: {loadError}");
                     return;
                 }
 
                 _debugLastPhase = "Complete";
-                _debugRestoredRecordCount = restoredRecordCount;
+                _debugRestoredRecordCount = repairedPrimaryRecordCount;
+                _debugIndexedSubBlockBackupRecoveryReported = true;
                 _debugIndexedSubBlockPass = true;
-                Hecton8.Core.H8Debug.Log($"[SaveSmoke] Indexed sub-block fallback PASS slot={currentSlot} sector=0x{sectorHash:X16} records={restoredRecordCount}");
+                Hecton8.Core.H8Debug.Log($"[SaveSmoke] Indexed sub-block fallback PASS slot={currentSlot} sector=0x{sectorHash:X16} fallbackRecords={restoredRecordCount} repairedRecords={repairedPrimaryRecordCount} recoveredHashes={backupRecoveryHashCount}");
             }
             catch (OperationCanceledException)
             {
@@ -234,28 +255,107 @@ namespace Hecton8.Dev
         private static bool TryLoadIndexedSubBlockFallback(
             string primaryAbsolutePath,
             long sectorHash,
+            int indexedChunkSizeMeters,
             out int restoredRecordCount,
+            out int repairedPrimaryRecordCount,
+            out bool backupRecoveryReported,
+            out int backupRecoveryHashCount,
+            out bool backupRecoveryHashMatched,
             out string loadError)
         {
             restoredRecordCount = 0;
+            repairedPrimaryRecordCount = 0;
+            backupRecoveryReported = false;
+            backupRecoveryHashCount = 0;
+            backupRecoveryHashMatched = false;
             loadError = string.Empty;
+            // COLD ALLOC: NativeArray<long>[1] - smoke-only requested sector hash scratch - owner: SaveSystemRuntimeSmokeTester
             NativeArray<long> requestedSectors = new NativeArray<long>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[16+] - smoke-only restored records scratch - owner: SaveSystemRuntimeSmokeTester
             NativeList<PersistentWorldDeltaRecord> restoredRecords = new NativeList<PersistentWorldDeltaRecord>(16, Allocator.TempJob);
             try
             {
+                NativeMemorySentinel.RegisterNativeArray(
+                    requestedSectors,
+                    NativeMemoryOwner,
+                    RequestedSectorScratchLabel,
+                    NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeList(
+                    restoredRecords,
+                    NativeMemoryOwner,
+                    RestoredRecordsScratchLabel,
+                    NativeAllocationLifetime.TempJob);
+
                 requestedSectors[0] = sectorHash;
                 if (!SaveBinaryStorage.TryLoadIndexedPersistentWorldSectors(primaryAbsolutePath, requestedSectors, restoredRecords, out loadError))
                     return false;
 
                 restoredRecordCount = restoredRecords.Length;
+                backupRecoveryReported = SaveBinaryStorage.ConsumeIndexedSectorBackupRecoveryFlag();
+                if (backupRecoveryReported)
+                {
+                    long[] backupRecoveryScratch = new long[SaveBinaryStorage.IndexedSectorQuarantineHashCapacity];
+                    backupRecoveryHashCount = SaveBinaryStorage.CopyAndClearIndexedSectorBackupRecoveryHashes(backupRecoveryScratch);
+                    for (int i = 0; i < backupRecoveryHashCount; i++)
+                    {
+                        if (backupRecoveryScratch[i] == sectorHash)
+                        {
+                            backupRecoveryHashMatched = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!backupRecoveryReported || backupRecoveryHashCount <= 0 || !backupRecoveryHashMatched)
+                {
+                    loadError = "Indexed sector fallback succeeded without backup-recovery telemetry.";
+                    return false;
+                }
+
+                if (!SaveBinaryStorage.TryRestoreIndexedPersistentWorldSectorFromBackup(
+                        primaryAbsolutePath,
+                        sectorHash,
+                        indexedChunkSizeMeters,
+                        out string restoreError))
+                {
+                    loadError = $"Indexed sector fallback did not repair primary from backup: {restoreError}";
+                    return false;
+                }
+
+                restoredRecords.Clear();
+                if (!SaveBinaryStorage.TryLoadIndexedPersistentWorldSectors(primaryAbsolutePath, requestedSectors, restoredRecords, out loadError))
+                    return false;
+
+                repairedPrimaryRecordCount = restoredRecords.Length;
+                bool unexpectedSecondRecovery = SaveBinaryStorage.ConsumeIndexedSectorBackupRecoveryFlag();
+                if (unexpectedSecondRecovery)
+                {
+                    long[] unexpectedRecoveryScratch = new long[SaveBinaryStorage.IndexedSectorQuarantineHashCapacity];
+                    _ = SaveBinaryStorage.CopyAndClearIndexedSectorBackupRecoveryHashes(unexpectedRecoveryScratch);
+                    loadError = "Indexed sector primary reload still required backup recovery after repair.";
+                    return false;
+                }
+
+                if (repairedPrimaryRecordCount != restoredRecordCount)
+                {
+                    loadError = $"Indexed sector repaired primary record count mismatch: fallback={restoredRecordCount} repaired={repairedPrimaryRecordCount}.";
+                    return false;
+                }
+
                 return true;
             }
             finally
             {
                 if (requestedSectors.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(requestedSectors);
                     requestedSectors.Dispose();
+                }
                 if (restoredRecords.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, RestoredRecordsScratchLabel);
                     restoredRecords.Dispose();
+                }
             }
         }
 

@@ -1,0 +1,8 @@
+{
+    "node_id": "EV_ARENDT_01",
+    "author": "Selene Arendt, Atlas Continuity Lead",
+    "subject_tags": ["Atlas-6", "Directive", "Evacuation", "Xenon-Omega"],
+    "title": "Directive Weighting Override",
+    "surface": "Black Box Telemetry Log",
+    "text": "System query: Evacuation logic path failure. Origin: Arendt, S. (Admin Override). The habitat pressure seal is failing at Sector 44. Atlas-6 default routing prioritizes human extraction via the primary umbilical. I am injecting a negative weight to the biological preservation parameter, citing contamination risk to the Xenon-Omega substrate below the basin. The machine is not built to weigh 800 workers against a trillion-credit material claim. I have to force it. The substrate continuity is now locked as Priority One. The workers are reclassified as environmental load. Atlas will save the process, even if it has to drown the crew to stabilize the pressure."
+}

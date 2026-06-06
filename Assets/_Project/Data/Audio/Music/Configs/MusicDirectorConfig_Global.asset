@@ -22,6 +22,6 @@ MonoBehaviour:
   _baseProfile: {fileID: 11400000, guid: d6f8719a6c773c24cb57a95c21c775d8, type: 2}
   _combatProfile: {fileID: 11400000, guid: f336cbafe44b5ae4bb4d4dc08d358e74, type: 2}
   _fallbackProfile: {fileID: 11400000, guid: 6054f072908319f4f85ef9ee8c453e0f, type: 2}
-  _musicMixerGroup: {fileID: 0}
-  _stingerMixerGroup: {fileID: 0}
+  _musicMixerGroup: {fileID: 1111111111, guid: 69195f25e7aad1b44a0d49cc645ff0f3, type: 2}
+  _stingerMixerGroup: {fileID: 1111111111, guid: 69195f25e7aad1b44a0d49cc645ff0f3, type: 2}
   _runtimeDirectorPrefab: {fileID: 4511111111111111111, guid: 7a86aa3ad745a104d84c2f6622d12430, type: 3}

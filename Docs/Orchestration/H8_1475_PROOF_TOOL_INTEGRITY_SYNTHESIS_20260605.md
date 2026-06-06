@@ -2,7 +2,7 @@
 
 Status: `PENDING VERIFICATION`.
 Evidence class: `STATIC_SOURCE`, `STATIC_DOC`.
-Subagent source: Godel and Bacon proof-tool integrity audits.
+Subagent source: Godel, Bacon, and Turing proof-tool integrity audits.
 
 No Unity run, Play Mode, scene save, prefab save, material save, import, profiler, Frame Debugger, project-setting mutation, Addressables build, or runtime code mutation was performed.
 
@@ -56,11 +56,61 @@ Bacon's static recheck confirms the current 1912 runner is too dirty for canonic
 
 Result: a future owner must create a separate editor-only harness under `Assets/_Project/Scripts/Editor/Proof/`. Extending 1912 for h8_1475 is rejected.
 
+## Turing Recheck - Current 1912 Must Be Isolated
+
+Turing's static recheck strengthens the rejection:
+
+- current source has `PumpMapMagicGeneration(..., 90.0f)` in `CaptureSurfaceCrestRecoveryProbeAndExit`;
+- the 90-second MapMagic pump is not proof hardening. It makes a rejected h8_1914 diagnostic route more proof-looking and more expensive;
+- diagnostic-only labeling is not sufficient if the method remains available as a tempting proof path;
+- future edit should either isolate this method behind an explicit diagnostic-only owner/guard or revert the 90-second pump if no named diagnostic owner needs it;
+- `Assets/_Project/Scripts/Editor/Proof/` is the required separate location for the new h8_1475 harness, not an extension point inside 1912.
+
+Additional hard rejects for the future h8_1475 harness:
+
+- `SetActive`, renderer enable/disable, transform mutation, `sharedMaterial` assignment, temp haze/material probes;
+- `SaveScene`, `MarkSceneDirty`, `ApplyModifiedPropertiesWithoutUndo`;
+- MapMagic `Refresh`, `StartGenerate`, `tiles.Pin`, generation pumping, or any proof capture that changes route state;
+- raw MCP PNG substitution, binary quality labels, short/dirty logs, and player-capture overclaim.
+
+## ProbeO Recheck - Compile And Memory Gate
+
+The latest observed ProbeO log strengthens the anti-false-proof rejection:
+
+- `Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeO_20260606_030119.log` overwrote the h8_1914 surface crest screenshot/metadata at approximately `03:13`.
+- The log records `SeamGapDitherRenderer.cs` changing while Csc was running.
+- The log records `CS0103` for `_registeredToDispatcher`, `Tundra build failed`, and `Editor compiler errors found. Will not reload assemblies`.
+- The log emits a Unity `MemoryLeaks` payload.
+- Current source inspection suggests the error may be a stale moving-worktree compile snapshot, but only a fresh clean compile/import after the dirty set stabilizes can prove that.
+
+Result: h8_1475 cannot proceed on any ProbeO-derived artifact. Canonical proof requires a clean process gate, clean compile/import state, and a clean post-capture log window before visual review.
+
+## Avicenna Recheck - Runtime Authority Gate
+
+Avicenna's static recheck confirms h8_1475 is blocked by runtime authority:
+
+- `02_HECTON_WORLD` statically contains a scene-local active `Player` bound to `HectonWorldShellController1428`.
+- Production `Player.prefab` contains candidate movement/HUD/PDA pieces, but its prefab GUID is not statically proven in `02_HECTON_WORLD`.
+- HUD/PDA/pause/save candidates exist but have null/overlay/scene-active proof gaps.
+
+Result: scenic water/sky/terrain captures are invalid for h8_1475 until Owner03 proves active production player, walking, swimming, camera, interaction, HUD/visor, PDA, pause, and save/load routes.
+
+Hooke's bootstrap recheck makes this a hard spawn-route blocker:
+
+- no runtime/bootstrap/scene reference to production `Player.prefab` GUID `1c4db7a430141e5408e01b6ce4ed19d7` was found;
+- `GameBootstrapper` publishes `BootstrapState`/scene-tag player candidates and calls a spawner or repositions an existing object, but does not instantiate `Player.prefab`;
+- `HectonPlayerSpawner` is an existing-Rigidbody/root teleporter, not a prefab factory;
+- scene tag lookup can accept the scene-local shell named `Player`.
+
+Result: h8_1475 cannot claim player capture until readback proves the production prefab route exists or a Unity-safe repair creates that route.
+
 ## Canonical h8_1475 Blockers
 
 - No `h8_1475` output path.
 - Raw MCP output, not proof-packet output.
 - No `manifest.json`, no `manifest.sha256`, no copied Unity log, no canonical six production screenshots.
+- No fresh clean compile/import proof after the moving-worktree ProbeO `SeamGapDitherRenderer.cs` compile failure.
+- No active production player/HUD/PDA/pause/save route proof; static bootstrap search currently finds no production `Player.prefab` spawn/bind path.
 - Editor-only visual probes mutate Crest, terrain generation, haze, GameObject activation, transforms, and materials.
 - Scene quarantine path can alter `02_HECTON_WORLD.unity`.
 - Diagnostic predicate logic is name/token-based, not route-owner-state based.
@@ -71,7 +121,7 @@ Result: a future owner must create a separate editor-only harness under `Assets/
 1. Do not extend `H8VisualProofCapture1912` for canonical acceptance.
 2. Create a new no-mutation harness under `Assets/_Project/Scripts/Editor/Proof/`.
 3. Output only to `Docs/Screenshots/HectonProofPackets/h8_1475_{session}/`.
-4. Hard-ban `SaveScene`, `MarkSceneDirty`, `ApplyModifiedPropertiesWithoutUndo`, renderer disabling, temp material assignment, MapMagic generation, hidden haze probes, and any scene state mutation.
+4. Hard-ban `SaveScene`, `MarkSceneDirty`, `ApplyModifiedPropertiesWithoutUndo`, `SetActive`, renderer enable/disable, transform mutation, `sharedMaterial` assignment, temp material assignment, MapMagic generation/pinning/pumping, hidden haze probes, and any scene state mutation.
 5. Use route-owned production cameras/anchors and read-only serialized readback. No editor cheat camera for canonical proof.
 6. Read Crest, terrain, sky, HUD, player, and route predicates without mutating them. Write readback JSON into the packet.
 7. Capture the six ProofGate views, compute hashes/sizes/dimensions, write manifest and `manifest.sha256`.

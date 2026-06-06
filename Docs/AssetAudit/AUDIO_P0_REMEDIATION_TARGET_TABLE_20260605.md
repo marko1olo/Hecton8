@@ -31,10 +31,10 @@ The source remediation matrix and owner packet report `6` P0 rows.
 |---|---|---|---|---|
 | 1 | `Assets/_Project/Data/Audio/Music/Configs/MusicDirectorConfig_Global.asset` | `_stingerMixerGroup` is null. | MusicDirector config route blocked. | Audio/MusicDirector owner |
 | 2 | `Assets/_Project/Data/Audio/Music/Configs/MusicDirectorConfig_Global.asset` | `_musicMixerGroup` is null. | MusicDirector config route blocked. | Audio/MusicDirector owner |
-| 3 | `Assets/_Project/Audio/Movement/dive_splash.wav` | Direct `Player.prefab` `AudioClip` ref at line `1067`, field context `waterExitSplashClip`. | `CompressedInMemory`, `ADPCM`, `1.729s`; source probe only. | Player/audio lifecycle owner |
-| 4 | `Assets/_Project/Audio/Movement/dive_splash.wav` | Direct `Player.prefab` `AudioClip` ref at line `1066`, field context `waterEntrySplashClip`. | `CompressedInMemory`, `ADPCM`, `1.729s`; source probe only. | Player/audio lifecycle owner |
-| 5 | `Assets/_Project/Audio/Underwater Ambient.wav` | Direct `Player.prefab` `AudioClip` ref at line `137`, field context `m_Resource`. | `Streaming`, `Vorbis`, quality `0.45`, `193s`; long-bed loudness deferred. | Player/audio lifecycle owner |
-| 6 | `Assets/_Project/Audio/Underwater Ambient.wav` | Direct `Player.prefab` `AudioClip` ref at line `239`, field context `_driverClip`. | `Streaming`, `Vorbis`, quality `0.45`, `193s`; long-bed loudness deferred. | Player/audio lifecycle owner |
+| 3 | `Assets/_Project/Audio/Movement/dive_splash.wav` | Current source has prior `waterExitSplashClip` direct ref removed from `Player.prefab`; source-cleared state needs Unity readback. | `CompressedInMemory`, `ADPCM`, `1.729s`; playback/absence proof still absent. | Player/audio lifecycle owner |
+| 4 | `Assets/_Project/Audio/Movement/dive_splash.wav` | Current source has prior `waterEntrySplashClip` direct ref removed from `Player.prefab`; source-cleared state needs Unity readback. | `CompressedInMemory`, `ADPCM`, `1.729s`; playback/absence proof still absent. | Player/audio lifecycle owner |
+| 5 | `Assets/_Project/Audio/Underwater Ambient.wav` | Current source has `Player.prefab` line `137` `m_Resource` set to `{fileID: 0}`; prior direct ref is source-cleared. | `Streaming`, `Vorbis`, quality `0.45`, `193s`; Unity prefab/import/runtime proof still absent. | Player/audio lifecycle owner |
+| 6 | `Assets/_Project/Audio/Underwater Ambient.wav` | Current source has `Player.prefab` line `239` `_driverClip` set to `{fileID: 0}`; prior direct ref is source-cleared. | `Streaming`, `Vorbis`, quality `0.45`, `193s`; Unity prefab/import/runtime proof still absent. | Player/audio lifecycle owner |
 
 Static direct prefab refs do not prove runtime failure. They block readiness because owner route, load/release path, Addressables status, playback path, mixer route, listening result, memory residency, and `0 B/frame` proof are absent.
 
@@ -43,7 +43,7 @@ Static direct prefab refs do not prove runtime failure. They block readiness bec
 - Unity-read `MusicDirectorConfig_Global.asset`; capture `_musicMixerGroup` and `_stingerMixerGroup` state.
 - Close the MusicDirector route through approved mixer groups or a documented owned DSP/native bypass.
 - Runtime-capture MusicDirector profile entry/exit, crossfade, music/stinger path, warning ducking, silence windows, Console state, and managed callback safety.
-- Unity-read `Player.prefab`; map all four P0 direct refs to owning components and serialized fields. Do not trust line numbers without readback.
+- Unity-read `Player.prefab`; confirm prior P0 direct refs are source-cleared and map any retained/replacement fields to owning components. Do not trust line numbers without readback.
 - Unity import-read P0 clips: load type, compression, quality, sample rate, force mono, preload/background flags, loop flags, platform overrides, and source/import channel behavior.
 - Classify each retained direct ref by owner, cue id/hash, load phase, release/shutdown phase, playback route, priority/ducking, fallback, Addressables group/key or fixed-startup exception, and hot-path allocation proof.
 - Prove playback with runtime capture, listening notes in first-exit/shallow/warning-overlap contexts, Profiler/GCMonitor `0 B/frame`, and Memory Profiler or equivalent residency proof for retained long beds.

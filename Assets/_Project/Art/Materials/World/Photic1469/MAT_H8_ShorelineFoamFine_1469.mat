@@ -47,19 +47,19 @@ Material:
     - _Cutoff: 0.5
     - _DstBlend: 10
     - _DstBlendAlpha: 10
-    - _EdgeFade: 0.1
+    - _EdgeFade: 0.12
     - _QueueOffset: 0
     - _SampleGI: 0
-    - _Softness: 0.36
+    - _Softness: 0.42
     - _SrcBlend: 5
     - _SrcBlendAlpha: 1
     - _Surface: 1
-    - _Threshold: 0.07
+    - _Threshold: 0.045
     - _XRMotionVectorsPass: 1
     - _ZWrite: 0
     m_Colors:
-    - _BaseColor: {r: 0.9, g: 0.97, b: 1, a: 0.54}
-    - _Color: {r: 0.9, g: 0.97, b: 1, a: 0.54}
+    - _BaseColor: {r: 0.92, g: 0.98, b: 1, a: 0.68}
+    - _Color: {r: 0.92, g: 0.98, b: 1, a: 0.68}
     - _FoamColor: {r: 1, g: 0.995, b: 0.94, a: 1}
     - _TilingA: {r: 1.95, g: 0.52, b: 0.006, a: 0.0025}
     - _TilingB: {r: 3.15, g: 0.92, b: -0.007, a: 0.003}

@@ -1,0 +1,8 @@
+{
+    "node_id": "EV_VARNEK_01",
+    "author": "Iliya Varnek, Aegir Operations Risk",
+    "subject_tags": ["Great Tide", "Liability", "Infrastructure"],
+    "title": "Risk Model Amendment 44-B",
+    "surface": "Corporate Memo",
+    "text": "The cryosphere collapse model presents a 14% deviation from the projected baseline. Standard operating procedure dictates a halt to deep basin operations until the thermal sheer is recalculated. However, applying the mean average across the entire Aegir orbital window smooths the curve to a 4% variance. A 4% variance protects the extraction schedule. I have authorized the downgrade of the tide-margin alert from Critical to Monitored. The Atlas-6 load balancers will absorb the physical stress. Do not log this as a local anomaly. We are engineering a margin, not forecasting weather."
+}

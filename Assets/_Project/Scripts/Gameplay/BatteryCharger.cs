@@ -498,7 +498,6 @@ namespace Hecton8.Gameplay
         public void OnPowerStatusChanged(bool hasPower)
         {
             _hasPower = hasPower;
-            UpdateAllIndicators();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -524,7 +523,6 @@ namespace Hecton8.Gameplay
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegister();
             RebuildLocalizedTextCache();
-            UpdateAllIndicators();
         }
 
         private void OnDisable()
@@ -645,7 +643,6 @@ namespace Hecton8.Gameplay
                 QueueChargerAudio(ChargerAudioClipInsert, _cachedTransform != null ? _cachedTransform.position : transform.position);
 
             OnBatteryInserted?.Invoke(slotIndex);
-            UpdateSlotIndicator(slotIndex);
 
             return true;
         }
@@ -723,10 +720,7 @@ namespace Hecton8.Gameplay
             slots[slotIndex].currentCharge = 0f;
 
             if (battery != null)
-            {
                 OnBatteryRemoved?.Invoke(slotIndex);
-                UpdateSlotIndicator(slotIndex);
-            }
 
             return battery;
         }
@@ -881,17 +875,6 @@ namespace Hecton8.Gameplay
 
             string key = !string.IsNullOrEmpty(item.PersistentId) ? item.PersistentId : item.itemName;
             return string.IsNullOrEmpty(key) ? 1u : unchecked((uint)Hecton.Localization.LocHash.Compute(key));
-        }
-
-        private void UpdateAllIndicators()
-        {
-        }
-
-        /// <summary>
-        /// Legacy renderer indicators are disabled. LED state is GPU-driven from ChargerVisualStateDTO.
-        /// </summary>
-        private void UpdateSlotIndicator(int slotIndex)
-        {
         }
 
         private void PreserveColdInspectorCompatibility()

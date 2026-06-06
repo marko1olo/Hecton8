@@ -238,11 +238,6 @@ namespace Hecton8.Tools
             AreEquipmentBuffersReady() &&
             _equipmentSignalLanesReady;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-        }
-
         public static ModularEquipmentEngine EnsureRuntimeInstance()
         {
             IModularEquipmentService registered = GlobalRegistry.ModularEquipment;

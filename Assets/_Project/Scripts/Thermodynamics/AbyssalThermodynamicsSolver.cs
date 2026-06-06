@@ -14,7 +14,7 @@ namespace Hecton8.Thermodynamics
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Thermodynamics/Abyssal Thermodynamics Solver")]
-    public sealed unsafe partial class AbyssalThermodynamicsSolver : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed unsafe partial class AbyssalThermodynamicsSolver : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         public const int MinResolution = 16;
         public const int MaxResolution = 32;
@@ -97,7 +97,6 @@ namespace Hecton8.Thermodynamics
         private bool _hasPendingJob;
         private bool _nativeReady;
         private bool _registeredUpdate;
-        private bool _registeredSlow;
         private bool _registeredLate;
         private bool _registeredOrigin;
         private bool _registeredHotSwapListener;
@@ -375,11 +374,6 @@ namespace Hecton8.Thermodynamics
             _pendingHandle = dependency;
             _hasPendingJob = true;
             H8Memory.RegisterActiveJob(SystemID.Thermodynamics, _pendingHandle);
-        }
-
-        public void SlowTick()
-        {
-            // Profile IO is boot/editor driven. Runtime cadence must not poll the filesystem.
         }
 
         public void LateFrameTick()
@@ -889,8 +883,6 @@ namespace Hecton8.Thermodynamics
 
             if (!_registeredUpdate)
                 _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            if (!_registeredSlow)
-                _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             if (!_registeredLate)
                 _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
@@ -899,13 +891,10 @@ namespace Hecton8.Thermodynamics
         {
             if (_registeredUpdate)
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            if (_registeredSlow)
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             if (_registeredLate)
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
 
             _registeredUpdate = false;
-            _registeredSlow = false;
             _registeredLate = false;
         }
 

@@ -141,19 +141,19 @@ Enabled scenes in `ProjectSettings/EditorBuildSettings.asset`:
 3. `Assets/_Project/Scenes/01_ORBIT.unity`
 4. `Assets/_Project/Scenes/02_HECTON_WORLD.unity`
 
-Current new-game route is the static route already recorded by the first-20-minutes contracts:
+Enabled scene list includes `01_ORBIT`, but enabled list is not production handoff proof. Current first-20 proof follows the root production handoff:
 
 ```text
-00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD
+00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD
 ```
 
-Load-game resume may still enter `02_HECTON_WORLD` directly from `01_MAIN_MENU`. Sandbox scenes exist under `Assets/_Project/Scenes`, but they are not enabled build-spine proof.
+Load-game resume may still enter `02_HECTON_WORLD` directly from `01_MAIN_MENU`. `01_ORBIT` remains an enabled standalone/YELLOW prologue route; it is not mandatory first-20 acceptance until its route card is GREEN and root scene-flow authority is updated. Sandbox scenes exist under `Assets/_Project/Scenes`, but they are not enabled build-spine proof.
 
 Authority drift note:
 
-- `AGENTS.md` still contains older no-orbit scene-flow wording.
-- Current BuildSettings, first-20 route docs, and `PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md` include `01_ORBIT`.
-- Treat this as unresolved until owner/integrator updates `AGENTS.md` or removes `01_ORBIT`.
+- `ProjectSettings/EditorBuildSettings.asset` still enables `01_ORBIT`.
+- `PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md` remains `YELLOW / STATIC_SOURCE_ONLY`.
+- Treat any `01_ORBIT` main-handoff claim as unresolved until that route card is GREEN and root scene-flow authority is updated.
 - Do not claim Play Mode route proof from this static state.
 
 ## Core Source Spine

@@ -62,14 +62,20 @@ def main() -> int:
     agent_rules_agents = ROOT / ".agent" / "rules" / "AGENTS.md"
     vscode_agents = ROOT / ".vscode" / "AGENTS.md"
     cursor_agents = ROOT / ".cursor" / "rules" / "AGENTS.md"
+    cursor_index = ROOT / ".cursor" / "index.mdc"
     project_gemini = ROOT / "GEMINI.md"
     routing = ROOT / "Docs" / "AGENT_AUTHORITY_ROUTING.md"
     governance = ROOT / "Docs" / "DOC_GOVERNANCE.md"
     quality_gates = ROOT / "Docs" / "QUALITY_GATES.md"
     docs_readme = ROOT / "Docs" / "README.md"
+    root_docs_reference = ROOT / "Docs" / "ROOT_DOCS_REFERENCE.md"
     project_bibles = ROOT / "PROJECT_BIBLES.md"
+    combined_bibles_builder = ROOT / "Tools" / "Docs" / "BuildProjectRootBiblesCombined.py"
+    lane_contract_gate = ROOT / "Tools" / "Docs" / "TestTaskLocalLaneContracts.py"
     orchestrator = ROOT / "HECTON8_ORCHESTRATOR.md"
+    autonomous_orchestrator = ROOT / "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md"
     skills_readme = ROOT / ".agents-skills" / "README.md"
+    global_registry_mandate = ROOT / ".agents-skills" / "ARCH_Global_Registry_ServiceLocator_DI_Init.txt"
     ledger = ROOT / "Docs" / "AGENTS_RULE_DETAIL_LEDGER.md"
     data_bible = ROOT / "data.md"
     physics_bible = ROOT / "physics.md"
@@ -87,6 +93,7 @@ def main() -> int:
     historical_agent_rules_archive = ROOT / "Docs" / "DEPRECATED" / "AgentRulesHistorical_20260605"
     visual_reference_folder = ROOT / "Docs" / "mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)"
     historical_agent_shims_archive = ROOT / "Docs" / "DEPRECATED" / "AgentShimsHistorical_20260606"
+    historical_cursor_rules_archive = ROOT / "Docs" / "DEPRECATED" / "CursorRulesHistorical_20260606"
 
     root_text = root_agents.read_bytes()
     for mirror in (codex_agents, github_agents):
@@ -120,6 +127,7 @@ def main() -> int:
         "TryReserve",
         "MCP/Unity proof",
         "Do not read `HECTON8_ORCHESTRATOR.md`",
+        "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md",
         "TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict",
     ):
         assert_contains(errors, root_agents, needle)
@@ -152,6 +160,10 @@ def main() -> int:
     assert_contains(errors, routing, "Subagent use by an ordinary implementation")
     assert_contains(errors, routing, "Internal subagent spawning")
     assert_contains(errors, routing, "does not require `HECTON8_ORCHESTRATOR.md`")
+    assert_contains(errors, routing, "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md")
+    assert_contains(errors, project_bibles, "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md")
+    assert_contains(errors, root_docs_reference, "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md")
+    assert_contains(errors, root_docs_reference, "GEMINI.md")
     assert_contains(errors, project_bibles, "lane contracts")
     assert_contains(errors, project_bibles, "subagent rules")
     assert_contains(errors, project_bibles, "ordinary subagent rules")
@@ -160,6 +172,10 @@ def main() -> int:
     assert_contains(errors, governance, "TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict")
     assert_contains(errors, quality_gates, "Tasklocal Lane Contract Gate")
     assert_contains(errors, quality_gates, "TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict")
+    assert_contains(errors, lane_contract_gate, "same-wave/sibling dependency guard")
+    assert_contains(errors, lane_contract_gate, "DEPENDENCY_GUARD_TERMS")
+    assert_contains(errors, lane_contract_gate, "DEPENDENCY_OUTPUT_TERMS")
+    assert_contains(errors, lane_contract_gate, "weak dependency wording passed")
 
     if not visual_reference_folder.exists():
         fail(errors, f"{visual_reference_folder}: missing mandatory visual reference folder")
@@ -243,6 +259,54 @@ def main() -> int:
             archived = historical_agent_rules_archive / rule_file.name
             if not archived.exists():
                 fail(errors, f"{archived}: missing archived body for historical agent rule")
+
+    cursor_index_text = read_text(cursor_index)
+    for needle in (
+        "THIN_ROUTER / NOT_PROJECT_LAW",
+        "C:\\hades\\Hecton8\\AGENTS.md",
+        "C:\\hades\\Hecton8\\Docs\\AGENT_AUTHORITY_ROUTING.md",
+        "complete document",
+        "Docs/DEPRECATED/CursorRulesHistorical_20260606/index.mdc",
+    ):
+        if needle not in cursor_index_text:
+            fail(errors, f"{cursor_index}: Cursor router missing {needle}")
+    if "alwaysApply: true" not in cursor_index_text:
+        fail(errors, f"{cursor_index}: Cursor root router must remain alwaysApply")
+    if not (historical_cursor_rules_archive / "index.mdc").exists():
+        fail(errors, f"{historical_cursor_rules_archive / 'index.mdc'}: missing archived Cursor index body")
+
+    generic_cursor_patterns = (
+        "GameManager.Instance",
+        "UnityEngine.Pool",
+        "EventChannel",
+        "EventChannels",
+        "YourCompany",
+        "Update(",
+        "FixedUpdate(",
+        "LateUpdate(",
+        "OnUpdate(",
+        "Resources.Load",
+        "Netcode for GameObjects",
+        "UI Toolkit (not UGUI)",
+    )
+    for cursor_rule in (ROOT / ".cursor" / "rules").glob("*.mdc"):
+        text = read_text(cursor_rule)
+        if "alwaysApply: true" in text:
+            fail(errors, f"{cursor_rule}: historical Cursor rule must not alwaysApply")
+        if re.search(r"(?m)^globs:", text):
+            fail(errors, f"{cursor_rule}: historical Cursor rule must not keep active globs")
+        if "HISTORICAL REFERENCE ONLY" not in text:
+            fail(errors, f"{cursor_rule}: missing historical-reference marker")
+        if "NOT_PROJECT_LAW" not in text:
+            fail(errors, f"{cursor_rule}: missing non-authority marker")
+        if "Docs/DEPRECATED/CursorRulesHistorical_20260606" not in text:
+            fail(errors, f"{cursor_rule}: missing Cursor archive pointer")
+        for forbidden in generic_cursor_patterns:
+            if forbidden in text:
+                fail(errors, f"{cursor_rule}: active Cursor stub carries stale generic rule text: {forbidden}")
+        archived = historical_cursor_rules_archive / "rules" / cursor_rule.name
+        if not archived.exists():
+            fail(errors, f"{archived}: missing archived body for Cursor historical rule")
 
     if GLOBAL_CODEX.exists():
         global_text = read_text(GLOBAL_CODEX)
@@ -332,9 +396,80 @@ def main() -> int:
     ):
         assert_contains(errors, path, needle)
 
-    for authority_doc in (routing, governance, docs_readme, project_bibles):
+    for authority_doc in (routing, docs_readme, project_bibles):
         for needle in ("GEMINI.md", ".gemini", "Gemini/Antigravity"):
             assert_not_contains(errors, authority_doc, needle)
+
+    route_files = set(re.findall(r": `([^`]+\.md)`", read_text(project_bibles)))
+    route_bibles_exempt_from_first20 = {"TASTE.md", "VISION_LOCKS.md", "quality.md"}
+    route_completeness_patterns = {
+        "GlobalQualityWeight": r"GlobalQualityWeight",
+        "proof/evidence/artifacts": r"Proof|Evidence|Artifacts",
+        "rejection language": r"Reject|Rejection|Forbidden|Forbid|Banned|Ban",
+        "acceptance language": r"Acceptance Sentence|Acceptance Statement|accepted only",
+        "runtime/truth/boundary section": r"(?im)^## .*?(Runtime|Hot|Performance|Truth|Ownership|Boundary)",
+    }
+    combined_builder_text = read_text(combined_bibles_builder)
+    for route_file in sorted(route_files):
+        route_path = ROOT / route_file
+        if not route_path.exists():
+            fail(errors, f"{project_bibles}: route bible missing on disk: {route_file}")
+            continue
+        route_text = read_text(route_path)
+        if route_file not in route_bibles_exempt_from_first20 and "First-20 Route Hook" not in route_text:
+            fail(errors, f"{route_path}: missing First-20 Route Hook")
+        for label, pattern in route_completeness_patterns.items():
+            if not re.search(pattern, route_text, re.IGNORECASE | re.MULTILINE):
+                fail(errors, f"{route_path}: missing route completeness marker for {label}")
+        if f'"{route_file}"' not in combined_builder_text:
+            fail(errors, f"{combined_bibles_builder}: SOURCE_FILES missing route bible {route_file}")
+
+    for path, forbidden in (
+        (ROOT / ".agents-skills" / "AUDIO_Hrtf_Binaural_Spatialization.txt", "Good enough"),
+        (ROOT / "streaming.md", "World streaming must consider"),
+    ):
+        assert_not_contains(errors, path, forbidden)
+    assert_contains(errors, ROOT / "streaming.md", "World streaming decisions must evaluate")
+
+    allowed_root_docs = {
+        "AGENTS.md",
+        "PROJECT_BIBLES.md",
+        "VISION_LOCKS.md",
+        "TASTE.md",
+        "textes.md",
+        "MASTER_RELEASE_WORK_PLAN.md",
+        "BUILD_PLAYTEST_ISSUES.md",
+        "GEMINI.md",
+        "HECTON8_ORCHESTRATOR.md",
+        "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md",
+        *route_files,
+    }
+    for root_md in ROOT.glob("*.md"):
+        if root_md.name not in allowed_root_docs:
+            fail(errors, f"{root_md}: root markdown is not allowed by PROJECT_BIBLES.md / ROOT_DOCS_REFERENCE.md")
+
+    for required_route in (
+        "3DMODEL_HARD_SURFACE_MODULES.md",
+        "3DMODEL_EQUIPMENT_PROPS.md",
+        "3DMODEL_FLORA_CORAL.md",
+        "3DMODEL_FAUNA.md",
+        "3DMODEL_GEOLOGY_ROCKS.md",
+        "3DMODEL_TEXTURES_MATERIALS.md",
+    ):
+        if required_route not in route_files:
+            fail(errors, f"{project_bibles}: missing generated-asset family route {required_route}")
+
+    for path, needle in (
+        (autonomous_orchestrator, "LOCAL GUI ORCHESTRATION LAW"),
+        (autonomous_orchestrator, "current VS Code Codex"),
+        (autonomous_orchestrator, "HECTON8_ORCHESTRATOR.md"),
+        (autonomous_orchestrator, "Historical Mission Capture Boundary"),
+        (global_registry_mandate, "Current HECTON-8 Source Override"),
+        (global_registry_mandate, "Do not implement legacy examples"),
+        (global_registry_mandate, "GlobalRegistry.TryRegisterUpdatable"),
+    ):
+        assert_contains(errors, path, needle)
+    assert_not_contains(errors, autonomous_orchestrator, "Current User Mission, Captured")
 
     assert_order(errors, governance, "../PROJECT_BIBLES.md", "../.agents-skills/README.md")
     assert_order(errors, docs_readme, "PROJECT_BIBLES.md", ".agents-skills/README.md")

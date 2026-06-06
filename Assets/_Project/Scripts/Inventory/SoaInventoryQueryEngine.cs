@@ -306,12 +306,18 @@ namespace Hecton8.Inventory
                    buffers.ActiveSlotCount.IsCreated;
         }
 
-        public static NativeArray<uint> AsUIntQuantityView(NativeArray<int> quantities)
+        internal static NativeArray<uint> AsUIntQuantityOwnerAlias(NativeArray<int> quantities)
         {
             if (!quantities.IsCreated)
                 return default;
 
             return quantities.Reinterpret<uint>(UnsafeUtility.SizeOf<int>());
+        }
+
+        [System.Obsolete("Use AsUIntQuantityOwnerAlias; legacy mutable wrapper retained for compatibility.", false)]
+        public static NativeArray<uint> AsUIntQuantityView(NativeArray<int> quantities)
+        {
+            return AsUIntQuantityOwnerAlias(quantities);
         }
 
         public static JobHandle ScheduleMockInventory(
@@ -325,7 +331,7 @@ namespace Hecton8.Inventory
         {
             return ScheduleMockInventory(
                 itemHashIds,
-                AsUIntQuantityView(quantities),
+                AsUIntQuantityOwnerAlias(quantities),
                 durabilities,
                 activeSlotCount,
                 requestedCount,
@@ -375,7 +381,7 @@ namespace Hecton8.Inventory
         {
             return ScheduleQuery(
                 itemHashIds,
-                AsUIntQuantityView(quantities),
+                AsUIntQuantityOwnerAlias(quantities),
                 activeSlotCount,
                 results,
                 targetHashId,
@@ -423,7 +429,7 @@ namespace Hecton8.Inventory
         {
             return ScheduleQueryBatch(
                 itemHashIds,
-                AsUIntQuantityView(quantities),
+                AsUIntQuantityOwnerAlias(quantities),
                 activeSlotCount,
                 targetHashIds,
                 results,
@@ -474,7 +480,7 @@ namespace Hecton8.Inventory
         {
             return ScheduleMutation(
                 itemHashIds,
-                AsUIntQuantityView(quantities),
+                AsUIntQuantityOwnerAlias(quantities),
                 durabilities,
                 activeSlotCount,
                 result,

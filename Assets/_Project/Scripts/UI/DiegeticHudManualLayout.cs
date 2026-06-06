@@ -70,10 +70,6 @@ namespace Hecton8.UI
             UnregisterLayout(this);
         }
 
-        private void OnDestroy()
-        {
-        }
-
         public void SetTargets(Transform[] newTargets)
         {
             targets = newTargets;

@@ -290,6 +290,28 @@ namespace Hecton8.Crafting
 
         public static bool TryReadFastFailVaultBuffers(
             IDataVault vault,
+            out NativeArray<RecipeRequirementDTO>.ReadOnly requirements,
+            out NativeArray<ulong>.ReadOnly craftableWords,
+            out NativeArray<CraftingFastFailTelemetryEntry>.ReadOnly telemetry,
+            out NativeArray<int>.ReadOnly telemetryCursor,
+            out NativeArray<int>.ReadOnly transactionResults)
+        {
+            requirements = default;
+            craftableWords = default;
+            telemetry = default;
+            telemetryCursor = default;
+            transactionResults = default;
+
+            return TryReadFastFailBufferReadOnly<RecipeRequirementDTO>(vault, BufferID.ShinobuFastFailRequirementDtos, out requirements) &&
+                   TryReadFastFailBufferReadOnly<ulong>(vault, BufferID.ShinobuFastFailCraftableWords, out craftableWords) &&
+                   TryReadFastFailBufferReadOnly<CraftingFastFailTelemetryEntry>(vault, BufferID.ShinobuFastFailTelemetryRing, out telemetry) &&
+                   TryReadFastFailBufferReadOnly<int>(vault, BufferID.ShinobuFastFailTelemetryCursor, out telemetryCursor) &&
+                   TryReadFastFailBufferReadOnly<int>(vault, BufferID.ShinobuFastFailTransactionResults, out transactionResults);
+        }
+
+        [System.Obsolete("Use the NativeArray<T>.ReadOnly overload; legacy mutable wrapper retained for compatibility.", false)]
+        public static bool TryReadFastFailVaultBuffers(
+            IDataVault vault,
             out NativeArray<RecipeRequirementDTO> requirements,
             out NativeArray<ulong> craftableWords,
             out NativeArray<CraftingFastFailTelemetryEntry> telemetry,
@@ -751,6 +773,16 @@ namespace Hecton8.Crafting
             return vault != null &&
                    vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
                    vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private static bool TryReadFastFailBufferReadOnly<T>(IDataVault vault, BufferID bufferId, out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
                    buffer.IsCreated;
         }
 

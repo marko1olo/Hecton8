@@ -613,6 +613,7 @@ namespace Hecton8.World
             TryRegisterHotSwapListener();
 
             ResolveSurvivalSystem();
+            SyncMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f);
 
             QueueSoundscapeShaderTier(_currentTier);
         }
@@ -750,11 +751,15 @@ namespace Hecton8.World
         {
             DrainSignals();
 
-            if (survivalSystem == null)
+            if (survivalSystem == null && !ResolveSurvivalSystem())
+            {
+                SyncMusicDirectorSoundscapeContext(_currentTier, 0f);
                 return;
+            }
 
             float depth = survivalSystem != null ? survivalSystem.Depth : 0f;
             SoundscapeTier newTier = CalculateTier(depth, _currentTier);
+            SyncMusicDirectorSoundscapeContext(newTier, depth);
 
             if (newTier == _currentTier) return;
 
@@ -949,6 +954,7 @@ namespace Hecton8.World
                 ? BiomeMatrixDirector.ActiveRuntimeInstance.CurrentProfile
                 : null;
             director.SetMatrixBiomeProfile(profile);
+            director.SetSoundscapeTierContext(CalculateTier(depthMeters, _currentTier), depthMeters);
             _lastMatrixBiomeId = profile != null ? profile.matrixIndex : 0;
             _lastMatrixMusicProfile = director.ActiveMatrixBiomeMusicProfile;
         }
@@ -1008,6 +1014,14 @@ namespace Hecton8.World
             director = GlobalRegistry.MusicDirector;
             _musicDirector = director;
             return _musicDirector != null;
+        }
+
+        private void SyncMusicDirectorSoundscapeContext(SoundscapeTier tier, float depthMeters)
+        {
+            if (!TryResolveMusicDirector(out HectonMusicDirector director))
+                return;
+
+            director.SetSoundscapeTierContext(tier, depthMeters);
         }
 
         private void CacheAudioService(IAudioService audioService)

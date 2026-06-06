@@ -56,8 +56,8 @@ Source-backed snapshot for agent onboarding:
 - Unity editor version: `6000.4.1f1`.
 - Primary project root: `Assets/_Project`.
 - Enabled build-spine scenes: `00_BOOTSTRAP`, `01_MAIN_MENU`, `01_ORBIT`, `02_HECTON_WORLD`.
-- New-game route: `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`.
-- Authority drift: `AGENTS.md` still contains older no-orbit scene-flow wording. Do not change the scene route from this baseline alone; follow `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` and require owner/integrator decision.
+- Current production handoff route: `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`.
+- Orbit status: `01_ORBIT` is enabled in BuildSettings and source-visible, but remains a standalone/YELLOW prologue route until `PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md` is GREEN and root scene-flow authority is updated.
 - First-party asmdef count under `Assets/_Project`: `171` in the 2026-06-01 static filesystem check.
 - First-party script directory count under `Assets/_Project/Scripts`: `56` in the 2026-06-01 static filesystem check.
 - URP package: `com.unity.render-pipelines.universal` `17.4.0`.

@@ -10,7 +10,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Hecton Player Camera Rig")]
-    public sealed class HectonPlayerCameraRig : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class HectonPlayerCameraRig : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const float MinimumBlendSharpness = 0.01f;
         private const float MinimumBlendDeltaTime = 0.0001f;
@@ -29,7 +29,6 @@ namespace Hecton8.Gameplay
         [SerializeField, Tooltip("Tracking-space root reparented under active AUP anchors for VR cockpit motion.")]
         private Transform trackingSpaceRoot;
 
-        private bool _registered;
         private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
         private bool _registeredHotSwapListener;
@@ -101,12 +100,6 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterHotSwapListener();
             TryUnregister();
-        }
-
-        /// <inheritdoc />
-        public void Tick(float dt)
-        {
-            // Camera presentation is owned by VISUAL_SYNC/LateFrameTick.
         }
 
         /// <inheritdoc />
@@ -286,8 +279,6 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying)
                 return;
 
-            if (!_registered)
-                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
             if (!_registeredOriginShiftListener)
@@ -311,11 +302,6 @@ namespace Hecton8.Gameplay
                 _registeredLateFrame = false;
             }
 
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-                _registered = false;
-            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -343,7 +329,6 @@ namespace Hecton8.Gameplay
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            _registered = false;
             _registeredLateFrame = false;
             if (currentService != null && isActiveAndEnabled)
                 TryRegister();

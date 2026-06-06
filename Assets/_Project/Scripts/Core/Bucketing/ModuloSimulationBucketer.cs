@@ -1347,7 +1347,7 @@ namespace Hecton8.Core.Bucketing
             [FieldOffset(60)] public uint StateHash;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct LoadBalancingJob : IJob
         {
             [ReadOnly, NativeDisableContainerSafetyRestriction] public NativeArray<float> EntityCostsMs;

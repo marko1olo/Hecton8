@@ -4,7 +4,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.UI;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;

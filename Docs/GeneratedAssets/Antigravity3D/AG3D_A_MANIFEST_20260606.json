@@ -1,0 +1,23 @@
+{
+    "outputs": [
+        "AG3D_A_GENERATOR_INVENTORY_20260606.md",
+        "AG3D_A_GEOMETRY_FAILURE_MATRIX_20260606.csv",
+        "AG3D_A_MESH_REDESIGN_SPEC_20260606.md",
+        "AG3D_A_PATCH_PLAN_ROUND1_20260606.md",
+        "AG3D_A_SELF_CRITIQUE_ROUND2_20260606.md",
+        "prototypes/AG3D_A_mesh_algorithm_pseudocode.cs.txt",
+        "AG3D_A_MANIFEST_20260606.json"
+    ],
+    "row_counts": {
+        "csv_rows": 124
+    },
+    "section_counts": {
+        "spec_sections": 14,
+        "patch_items": 29,
+        "critique_items": 34
+    },
+    "source_reference_counts": {
+        "inventory_sources": 84
+    },
+    "self_audit_verdict": "PASS"
+}

@@ -54,7 +54,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IInitializable, IGlobalRegistryHotSwapListener, IPlayerMovementContracts, IPlayerKinematicsMovementRuntime, IPlayerCuttingTensionService, IPlayerHypoxiaPresentationSink
+    public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IInitializable, IGlobalRegistryHotSwapListener, IPlayerMovementContracts, IPlayerKinematicsMovementRuntime, IPlayerCuttingTensionService, IPlayerHypoxiaPresentationSink, IBootstrapProductionPlayerMovementAuthority
     {
         private int _signalPushDropCount;
         [StructLayout(LayoutKind.Explicit, Size = 96)]
@@ -185,7 +185,6 @@ namespace Hecton8.Gameplay
         private const float VrHorizonLockReturnSeconds = 0.5f;
         private const float MinLocalGravitySqr = 0.000001f;
         private const float LocalGravityRetargetEpsilonSqr = 0.0001f;
-        private const string DefaultWaterEntrySplashClipPath = "Assets/_Project/Audio/Movement/dive_splash.wav";
         private const float VrComfortShaderPublishEpsilon = 0.0001f;
         private const float VrComfortMinimumFrameRateHz = 60f;
         private const float VrComfortTelemetryStep01 = 0.05f;
@@ -319,10 +318,6 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 15f)] private float waterEntryImpactFovExpand = 4.5f;
         [Tooltip("Negative FOV rebound applied after the initial water-entry expansion.")]
         [SerializeField, Range(0f, 12f)] private float waterEntryImpactFovCompress = 2.1f;
-        [Tooltip("3D splash clip for fast downward surface entries.")]
-        [SerializeField] private AudioClip waterEntrySplashClip;
-        [Tooltip("3D splash clip for fast upward surface breaches. Falls back to entry clip when null.")]
-        [SerializeField] private AudioClip waterExitSplashClip;
         [Tooltip("Minimum vertical speed required before a surface-pierce splash one-shot is played.")]
         [SerializeField, Range(0f, 20f)] private float surfacePierceSplashMinSpeed = 3.5f;
         [Tooltip("Vertical speed where surface-pierce splash volume reaches maximum.")]
@@ -3931,12 +3926,6 @@ namespace Hecton8.Gameplay
         internal void ExecuteEnvironmentStressPhase(float fixedDeltaTime, PlayerTransportPreset activeTransportPreset)
         {
             UpdateHullStress(fixedDeltaTime, activeTransportPreset);
-        }
-
-        private void ApplyBufferedEnvironmentalForces()
-        {
-            // Intentionally retained as an empty compatibility stub.
-            // Phase 4 ownership moved this work into HectonPlayerEnvironmentHandler and HectonPlayerMotor.
         }
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -11066,18 +11055,8 @@ namespace Hecton8.Gameplay
             if (exitedWater)
                 EmitBreachImpactFeedback(math.lerp(0.45f, 1f, speedT));
 
-            AudioClip clip = enteredWater
-                ? waterEntrySplashClip
-                : (waterExitSplashClip != null ? waterExitSplashClip : waterEntrySplashClip);
-            if (clip == null)
-                return;
-
             float volume = math.lerp(surfacePierceSplashMinVolume, surfacePierceSplashMaxVolume, speedT);
-            float pitch = enteredWater
-                ? math.lerp(1.02f, 0.94f, speedT)
-                : math.lerp(1.08f, 1.16f, speedT);
-
-            QueuePresentationAudioAtPoint(clip, ResolvePlayerAupRuntimePosition(), volume, pitch);
+            PublishPlayerWaterSplashSignal(volume, enteredWater, EffectiveWaterSurfaceY, verticalSpeed);
 
             if (exitedWater)
             {
@@ -13842,19 +13821,8 @@ namespace Hecton8.Gameplay
             if (heavyTowCenterOfMassLateralShift < 0f) heavyTowCenterOfMassLateralShift = 0f;
             if (heavyTowCenterOfMassDownShift < 0f) heavyTowCenterOfMassDownShift = 0f;
 
-            TryAssignEditorAuthoringDefaults();
-
             RefreshGroundSlopeCache();
             CacheBaseCollisionProfile();
-        }
-
-        private void TryAssignEditorAuthoringDefaults()
-        {
-            if (waterEntrySplashClip == null)
-                waterEntrySplashClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DefaultWaterEntrySplashClipPath);
-
-            if (waterExitSplashClip == null)
-                waterExitSplashClip = waterEntrySplashClip;
         }
 
         private void OnDrawGizmosSelected()

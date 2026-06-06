@@ -2958,6 +2958,8 @@ namespace Hecton8.Core
     public interface IAudioLogRuntime
     {
         int DiscoveredAudioLogCount { get; }
+        bool IsPlaying { get; }
+        bool IsNarrativeQueueBlocked { get; }
         bool IsAudioLogDiscovered(string logId);
         bool IsAudioLogDiscovered(uint logHash);
         bool TryPlayAudioLog(string logId);

@@ -17,6 +17,7 @@ from typing import Iterable
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT_RESOLVED = REPO_ROOT.resolve()
 DEFAULT_SOURCE_ROOT = REPO_ROOT / "Assets" / "_Project" / "Scripts"
 DEFAULT_REPORT_PATH = REPO_ROOT / "Docs" / "AgentLogs" / "PolishMandateStaticAudit_HFI_AUDIT.md"
 DEFAULT_JSON_PATH = REPO_ROOT / "Docs" / "AgentLogs" / "PolishMandateStaticAudit_HFI_AUDIT.json"
@@ -59,8 +60,8 @@ STRUCT_DECL_RE = re.compile(r"\b(?:public|private|internal|protected)?\s*(?:read
 AUTO_PROPERTY_RE = re.compile(r"\{\s*get\s*;\s*(?:private\s+)?set\s*;")
 TYPE_DECL_RE = re.compile(
     r"^\s*(?P<access>public|private|internal|protected)?\s*"
-    r"(?:(?:static|sealed|abstract|partial|readonly|unsafe)\s+)*"
-    r"(?:(?:class|struct|interface)\s+\w+|record\s+(?:class\s+|struct\s+)?\w+)"
+    r"(?:(?:static|sealed|abstract|partial|readonly|unsafe|ref)\s+)*"
+    r"(?:(?:class|struct|interface)\s+(?P<name>\w+)|record\s+(?:class\s+|struct\s+)?(?P<record_name>\w+))"
 )
 BINARY_HARDWARE_CONTROL_RE = re.compile(r"^\s*(?:if|else\s+if|switch|case|return|while|for)\b|[?:]")
 BINARY_HARDWARE_EXPLICIT_TOKEN_RE = re.compile(
@@ -76,6 +77,10 @@ PRIVATE_NATIVE_OWNER_LOCAL_SCRATCH_RE = re.compile(
     r"(?:scratch|openSet|closedSet|queue|commands|hits|slots|sortRecords|toLoad|toUnload)",
     re.IGNORECASE,
 )
+PRIVATE_NATIVE_PREWARMED_BANK_RE = re.compile(
+    r"(?:RecordBanks|NativeArray<[^>]+>\[\]|prewarmed|borrowed by .*jobs)",
+    re.IGNORECASE,
+)
 PRIVATE_NATIVE_BLACKBOX_RE = re.compile(r"(?:blackBox|black_box|telemetry|Telemetry|Ring|ring)")
 PRIVATE_NATIVE_VAULT_ALIAS_RE = re.compile(
     r"\b(?:Vault alias|GlobalDataVault owns backing memory|owner owns backing memory)\b",
@@ -84,7 +89,10 @@ PRIVATE_NATIVE_VAULT_ALIAS_RE = re.compile(
 PRIVATE_NATIVE_STATIC_QUEUE_RE = re.compile(r"^\s*private\s+static\s+NativeQueue\s*<")
 PRIVATE_NATIVE_DECL_RE = re.compile(
     r"^\s*private\s+(?P<modifiers>(?:static\s+|readonly\s+|volatile\s+|unsafe\s+)*)"
-    r"Native(?:Array|List|HashMap|ParallelHashMap|Queue)\s*<[^>]+>\s*(?P<tail>.*)"
+    r"Native(?:Array|List|HashMap|ParallelHashMap|Queue)\s*<[^>]+>\s*(?P<readonly>\.ReadOnly)?\s*(?P<tail>.*)"
+)
+PRIVATE_NATIVE_READONLY_RE = re.compile(
+    r"Native(?:Array|List|HashMap|ParallelHashMap|Queue)\s*<[^>]+>\s*\.ReadOnly\b"
 )
 PRIVATE_NATIVE_METHOD_RETURN_RE = re.compile(r"^\w+\s*(?:<[^>]+>)?\s*\(")
 PRIVATE_NATIVE_QA_DEV_RE = re.compile(
@@ -96,7 +104,7 @@ PRIVATE_NATIVE_SIGNAL_BRIDGE_RE = re.compile(
     re.IGNORECASE,
 )
 PRIVATE_NATIVE_VAULT_RESOLVER_RE = re.compile(
-    r"(?:Vault alias|GlobalDataVault owns backing memory|owner owns backing memory|ResolveVault|VaultGenerationHandle|IDataVault|BufferID|SystemID|TryResolveHandle)",
+    r"(?:Vault alias|GlobalDataVault owns backing memory|owner owns backing memory|ResolveVault|ResolveBuffer|VaultGenerationHandle|IDataVault|BufferID|SystemID|TryResolveHandle)",
     re.IGNORECASE,
 )
 PRIVATE_NATIVE_CLASSIFICATION_KEYS = (
@@ -104,11 +112,15 @@ PRIVATE_NATIVE_CLASSIFICATION_KEYS = (
     "privateNativeCollectionStaticQueueLane",
     "privateNativeCollectionBlackBoxTelemetry",
     "privateNativeCollectionOwnerLocalScratch",
+    "privateNativeCollectionPrewarmedNativeBank",
+    "privateNativeCollectionReadOnlyView",
     "privateNativeCollectionUnclassified",
 )
 PRIVATE_NATIVE_DECLARATION_KIND_KEYS = (
     "privateNativeDeclarationField",
     "privateNativeDeclarationMethodReturn",
+    "privateNativeDeclarationReadOnlyView",
+    "privateNativeDeclarationExpressionProperty",
     "privateNativeDeclarationAmbiguous",
 )
 PRIVATE_NATIVE_BUILD_SURFACE_KEYS = (
@@ -124,6 +136,7 @@ PRIVATE_NATIVE_PRIMARY_RISK_BUCKET_KEYS = (
     "privateNativeRiskVaultAliasOrVaultResolver",
     "privateNativeRiskOwnerLocalRuntimeNativeState",
     "privateNativeRiskEditorOrProofNativeState",
+    "privateNativeRiskReadOnlyNativeView",
     "privateNativeRiskUnclassifiedNativeCollection",
 )
 PUBLIC_API_NATIVE_COLLECTION_RE = re.compile(
@@ -153,13 +166,57 @@ NATIVE_API_EXPOSURE_BUILD_SURFACE_KEYS = (
 NATIVE_API_EXPOSURE_RISK_BUCKET_KEYS = (
     "nativeApiRiskCoreVaultOrAllocatorSurface",
     "nativeApiRiskEditorOrProofSurface",
+    "nativeApiRiskRuntimeReadNamedMutableView",
+    "nativeApiRiskRuntimeObsoleteMutableCompatibilityView",
     "nativeApiRiskRuntimeDiagnosticNamedMutableView",
+    "nativeApiRiskRuntimeOwnerAliasMutableView",
+    "nativeApiRiskRuntimeReinterpretMutableView",
+    "nativeApiRiskRuntimeWriteLeaseMutableView",
+    "nativeApiRiskRuntimeJobAliasMutableView",
+    "nativeApiRiskRuntimeNativePayloadMutableView",
+    "nativeApiRiskRuntimeDisposeMutableRef",
     "nativeApiRiskRuntimeOutRefMutableView",
     "nativeApiRiskRuntimeReturnMutableView",
     "nativeApiRiskRuntimeAmbiguousMutableView",
 )
+NATIVE_API_READ_NAMED_RE = re.compile(
+    r"\b(?:TryRead|Read|GetRead|TryGetRead|ResolveRead|TryResolveRead)\w*\s*\(",
+    re.IGNORECASE,
+)
+NATIVE_API_OBSOLETE_COMPATIBILITY_RE = re.compile(
+    r"(?:\[System\.Obsolete|\[Obsolete|legacy compatibility|legacy mutable|retained for legacy)",
+    re.IGNORECASE,
+)
 NATIVE_API_DIAGNOSTIC_NAME_RE = re.compile(
     r"(?:ForEditor|Debug|Diagnostic|Readback|Tuner|Snapshot|Telemetry|Inspector|Gizmo)",
+    re.IGNORECASE,
+)
+NATIVE_API_OWNER_ALIAS_RE = re.compile(
+    r"(?:OwnerAlias|OwnerView|ResolveAlias|ResolveView|TryResolveDragArrays)",
+    re.IGNORECASE,
+)
+NATIVE_API_OWNER_TYPE_CONTEXT_RE = re.compile(
+    r"(?:VaultLane|VaultView)",
+    re.IGNORECASE,
+)
+NATIVE_API_REINTERPRET_VIEW_RE = re.compile(
+    r"(?:Reinterpret|AsUIntQuantityView)",
+    re.IGNORECASE,
+)
+NATIVE_API_WRITE_LEASE_RE = re.compile(
+    r"(?:TryAcquire|Acquire|OpenOrAcquire|WriteLock|WriteBuffer|WriteBuffers|PanelStateWrite|QuestDagWriteBuffer|CsrLanes)",
+    re.IGNORECASE,
+)
+NATIVE_API_JOB_ALIAS_RE = re.compile(
+    r"(?:ExtractJobAliases|JobAliases)",
+    re.IGNORECASE,
+)
+NATIVE_API_NATIVE_PAYLOAD_RE = re.compile(
+    r"(?:NativePayload|GpuUploadSourceLease|GpuUpload|GraphicsBuffer)",
+    re.IGNORECASE,
+)
+NATIVE_API_DISPOSE_RE = re.compile(
+    r"(?:DisposeTracked|DisposeTransientPayload|Dispose.*Native|Release.*Native)",
     re.IGNORECASE,
 )
 UNITY_TIME_KIND_KEYS = (
@@ -176,6 +233,7 @@ UNITY_TIME_RISK_BUCKET_KEYS = (
     "unityTimeRiskEditorOrProof",
     "unityTimeRiskFrameStampOrTelemetry",
     "unityTimeRiskCooldownOrPerfLog",
+    "unityTimeRiskVisualPresentationClock",
     "unityTimeRiskGameplayDelta",
     "unityTimeRiskGameplayWallClock",
 )
@@ -185,6 +243,32 @@ UNITY_TIME_WALL_RE = re.compile(r"\bTime\.time\b")
 UNITY_TIME_DIAGNOSTIC_RE = re.compile(
     r"(?:warning|warn|log|debug|perf|profile|watchdog|cooldown|next|telemetry|dump|diagnostic)",
     re.IGNORECASE,
+)
+UNITY_TIME_VISUAL_PRESENTATION_RE = re.compile(
+    r"(?:Visual|Vfx|VFX|Rendering|Render|Camera|Hud|HUD|UI|Light|Lighting|Haze|Caustic|Particle|Fx|FX)",
+    re.IGNORECASE,
+)
+EMPTY_RUNTIME_TICK_METHOD_RE = re.compile(
+    r"^\s*(?:public|private|protected|internal)?\s*"
+    r"(?P<modifiers>(?:(?:static|virtual|override|sealed|new|unsafe)\s+)*)"
+    r"(?:void|async\s+void)\s+"
+    r"(?P<name>Update|FixedUpdate|LateUpdate|Tick|FixedTick|SlowTick|ColdTick|FrostTick|"
+    r"LateFrameTick|PostFixedTick|PreSimulationTick|SimulationTick|VisualSyncTick|OnUpdate)"
+    r"\s*\((?P<params>[^)]*)"
+)
+EMPTY_COMPILE_UNIT_MARKER_RE = re.compile(
+    r"(?:intentionally empty|empty compile unit|retired legacy stubs|shims were removed)",
+    re.IGNORECASE,
+)
+COMPATIBILITY_NOOP_CONTEXT_RE = re.compile(
+    r"\bcompatibility\b.{0,80}\bno-?op\b|\bno-?op\b.{0,80}\bcompatibility\b",
+    re.IGNORECASE,
+)
+METHOD_SIGNATURE_RE = re.compile(
+    r"^\s*(?:public|private|protected|internal)?\s*"
+    r"(?:(?:static|virtual|override|sealed|new|unsafe|async)\s+)*"
+    r"[\w.<>,\[\]?]+\s+"
+    r"(?P<name>[A-Za-z_]\w*)\s*\("
 )
 STRING_LITERAL_RE = re.compile(
     r"""
@@ -206,10 +290,16 @@ class Finding:
 
 
 def normalize_path(path: Path, repo_root: Path = REPO_ROOT) -> str:
-    try:
-        return path.resolve().relative_to(repo_root.resolve()).as_posix()
-    except ValueError:
+    if not path.is_absolute():
         return path.as_posix()
+    try:
+        return path.relative_to(repo_root).as_posix()
+    except ValueError:
+        try:
+            root = REPO_ROOT_RESOLVED if repo_root == REPO_ROOT else repo_root.resolve()
+            return path.resolve().relative_to(root).as_posix()
+        except ValueError:
+            return path.as_posix()
 
 
 def should_skip(path: Path) -> bool:
@@ -225,10 +315,15 @@ def iter_cs_files(source_root: Path) -> list[Path]:
 
 
 def strip_line_comment(line: str) -> str:
-    return line.split("//", 1)[0]
+    marker = line.find("//")
+    if marker < 0:
+        return line
+    return line[:marker]
 
 
 def strip_string_literals(line: str) -> str:
+    if '"' not in line:
+        return line
     return STRING_LITERAL_RE.sub('""', line)
 
 
@@ -248,6 +343,10 @@ def is_binary_hardware_switch_line(scan_code: str) -> bool:
 
 
 def classify_private_native_collection(raw_line: str) -> str:
+    if PRIVATE_NATIVE_READONLY_RE.search(raw_line):
+        return "privateNativeCollectionReadOnlyView"
+    if PRIVATE_NATIVE_PREWARMED_BANK_RE.search(raw_line):
+        return "privateNativeCollectionPrewarmedNativeBank"
     if PRIVATE_NATIVE_VAULT_ALIAS_RE.search(raw_line):
         return "privateNativeCollectionVaultAlias"
     if PRIVATE_NATIVE_STATIC_QUEUE_RE.search(raw_line):
@@ -265,12 +364,18 @@ def classify_private_native_declaration_kind(scan_code: str) -> str:
         return "privateNativeDeclarationAmbiguous"
 
     tail = match.group("tail").strip()
+    if match.group("readonly") is not None:
+        return "privateNativeDeclarationReadOnlyView"
+    if tail.startswith("[]"):
+        return "privateNativeDeclarationField"
+    if PRIVATE_NATIVE_METHOD_RETURN_RE.search(tail):
+        return "privateNativeDeclarationMethodReturn"
+    if "=>" in tail:
+        return "privateNativeDeclarationExpressionProperty"
     paren_index = tail.find("(")
     semicolon_index = tail.find(";")
     if semicolon_index >= 0 and (paren_index < 0 or semicolon_index < paren_index):
         return "privateNativeDeclarationField"
-    if PRIVATE_NATIVE_METHOD_RETURN_RE.search(tail):
-        return "privateNativeDeclarationMethodReturn"
     return "privateNativeDeclarationAmbiguous"
 
 
@@ -324,6 +429,8 @@ def classify_private_native_primary_risk(
     declaration_kind: str,
     build_surface: str,
 ) -> str:
+    if declaration_kind == "privateNativeDeclarationReadOnlyView":
+        return "privateNativeRiskReadOnlyNativeView"
     if declaration_kind == "privateNativeDeclarationMethodReturn":
         return "privateNativeRiskMethodReturningNativeCollection"
     if build_surface != "privateNativeBuildPlayerRuntime":
@@ -349,11 +456,11 @@ def record_private_native_classification(
     line_number: int,
     raw_line: str,
     scan_code: str,
+    build_surface: str,
     lines: list[str] | None,
 ) -> None:
     results[classify_private_native_collection(raw_line)].append(finding)
     declaration_kind = classify_private_native_declaration_kind(scan_code)
-    build_surface = classify_private_native_build_surface(rel)
     primary_risk = classify_private_native_primary_risk(
         rel,
         raw_line,
@@ -420,25 +527,57 @@ def classify_native_api_build_surface(rel: str) -> str:
     return "nativeApiExposureBuildPlayerRuntime"
 
 
-def classify_native_api_primary_risk(rel: str, signature: str, kind: str, build_surface: str) -> str:
+def classify_native_api_primary_risk(
+    rel: str,
+    signature: str,
+    kind: str,
+    build_surface: str,
+    type_context: str = "",
+    declaration_context: str = "",
+) -> str:
     if build_surface != "nativeApiExposureBuildPlayerRuntime":
         return "nativeApiRiskEditorOrProofSurface"
 
     normalized = rel.replace("\\", "/")
     if (
         "/Core/Memory/" in normalized
+        or normalized.endswith("/Core/Contracts/CoreLowLevelUtilities.cs")
         or normalized.endswith("/Core/HectonArenaAllocator.cs")
+        or normalized.endswith("/Core/NativeArenaArray.cs")
         or normalized.endswith("/Core/Memory/H8Memory.cs")
         or normalized.endswith("/Core/Memory/GlobalDataVault.cs")
     ):
         return "nativeApiRiskCoreVaultOrAllocatorSurface"
 
-    if NATIVE_API_DIAGNOSTIC_NAME_RE.search(signature) is not None:
-        return "nativeApiRiskRuntimeDiagnosticNamedMutableView"
+    if NATIVE_API_OBSOLETE_COMPATIBILITY_RE.search(declaration_context) is not None:
+        return "nativeApiRiskRuntimeObsoleteMutableCompatibilityView"
+
+    if (
+        NATIVE_API_OWNER_ALIAS_RE.search(signature) is not None
+        or NATIVE_API_OWNER_TYPE_CONTEXT_RE.search(type_context) is not None
+    ):
+        return "nativeApiRiskRuntimeOwnerAliasMutableView"
+
+    if NATIVE_API_REINTERPRET_VIEW_RE.search(signature) is not None:
+        return "nativeApiRiskRuntimeReinterpretMutableView"
 
     if kind == "nativeApiExposureOutRefMutable":
+        if NATIVE_API_READ_NAMED_RE.search(signature) is not None:
+            return "nativeApiRiskRuntimeReadNamedMutableView"
+        if NATIVE_API_WRITE_LEASE_RE.search(signature) is not None:
+            return "nativeApiRiskRuntimeWriteLeaseMutableView"
+        if NATIVE_API_JOB_ALIAS_RE.search(signature) is not None:
+            return "nativeApiRiskRuntimeJobAliasMutableView"
+        if NATIVE_API_NATIVE_PAYLOAD_RE.search(signature) is not None:
+            return "nativeApiRiskRuntimeNativePayloadMutableView"
+        if NATIVE_API_DISPOSE_RE.search(signature) is not None:
+            return "nativeApiRiskRuntimeDisposeMutableRef"
+        if NATIVE_API_DIAGNOSTIC_NAME_RE.search(signature) is not None:
+            return "nativeApiRiskRuntimeDiagnosticNamedMutableView"
         return "nativeApiRiskRuntimeOutRefMutableView"
     if kind == "nativeApiExposureMutableReturn":
+        if NATIVE_API_DIAGNOSTIC_NAME_RE.search(signature) is not None:
+            return "nativeApiRiskRuntimeDiagnosticNamedMutableView"
         return "nativeApiRiskRuntimeReturnMutableView"
     return "nativeApiRiskRuntimeAmbiguousMutableView"
 
@@ -448,10 +587,12 @@ def record_native_api_exposure_classification(
     finding: Finding,
     rel: str,
     signature: str,
+    type_context: str = "",
+    declaration_context: str = "",
 ) -> None:
     kind = classify_native_api_exposure_kind(signature)
     build_surface = classify_native_api_build_surface(rel)
-    risk = classify_native_api_primary_risk(rel, signature, kind, build_surface)
+    risk = classify_native_api_primary_risk(rel, signature, kind, build_surface, type_context, declaration_context)
     results[kind].append(finding)
     results[build_surface].append(finding)
     results[risk].append(finding)
@@ -474,13 +615,15 @@ def classify_unity_time_build_surface(rel: str) -> str:
     return "unityTimeBuildPlayerRuntime"
 
 
-def classify_unity_time_primary_risk(raw_line: str, scan_code: str, kind: str, build_surface: str) -> str:
+def classify_unity_time_primary_risk(rel: str, raw_line: str, scan_code: str, kind: str, build_surface: str) -> str:
     if build_surface != "unityTimeBuildPlayerRuntime":
         return "unityTimeRiskEditorOrProof"
     if kind == "unityTimeFrameCount":
         return "unityTimeRiskFrameStampOrTelemetry"
     if UNITY_TIME_DIAGNOSTIC_RE.search(raw_line) is not None:
         return "unityTimeRiskCooldownOrPerfLog"
+    if kind == "unityTimeWallClock" and UNITY_TIME_VISUAL_PRESENTATION_RE.search(rel) is not None:
+        return "unityTimeRiskVisualPresentationClock"
     if kind == "unityTimeDelta":
         return "unityTimeRiskGameplayDelta"
     return "unityTimeRiskGameplayWallClock"
@@ -495,10 +638,97 @@ def record_unity_time_classification(
 ) -> None:
     kind = classify_unity_time_kind(scan_code)
     build_surface = classify_unity_time_build_surface(rel)
-    risk = classify_unity_time_primary_risk(raw_line, scan_code, kind, build_surface)
+    risk = classify_unity_time_primary_risk(rel, raw_line, scan_code, kind, build_surface)
     results[kind].append(finding)
     results[build_surface].append(finding)
     results[risk].append(finding)
+
+
+def method_preceding_context(lines: list[str], line_number: int, limit: int = 8) -> str:
+    start = max(0, line_number - 1 - limit)
+    return "\n".join(lines[start : line_number - 1])
+
+
+def first_nonempty_text(lines: list[str]) -> str:
+    for line in lines:
+        text = line.strip()
+        if text:
+            return text
+    return "<empty file>"
+
+
+def is_explicit_empty_csharp_compile_unit(lines: list[str]) -> bool:
+    if EMPTY_COMPILE_UNIT_MARKER_RE.search("\n".join(lines[:16])) is None:
+        return False
+    for raw_line in lines:
+        code = strip_string_literals(strip_line_comment(raw_line)).strip()
+        if code:
+            return False
+    return True
+
+
+def has_empty_method_body(lines: list[str], line_number: int) -> bool:
+    cursor = line_number - 1
+    brace_line = -1
+    brace_tail = ""
+    while cursor < len(lines) and cursor < line_number + 8:
+        code = strip_string_literals(strip_line_comment(lines[cursor])).strip()
+        if code:
+            if "=>" in code or ";" in code:
+                return False
+            brace_index = code.find("{")
+            if brace_index >= 0:
+                brace_line = cursor
+                brace_tail = code[brace_index + 1 :]
+                break
+        cursor += 1
+
+    if brace_line < 0:
+        return False
+
+    closing_index = brace_tail.find("}")
+    if closing_index >= 0:
+        return brace_tail[:closing_index].strip() == ""
+    if brace_tail.strip():
+        return False
+
+    cursor = brace_line + 1
+    while cursor < len(lines):
+        code = strip_string_literals(strip_line_comment(lines[cursor])).strip()
+        if not code:
+            cursor += 1
+            continue
+        return code.startswith("}")
+
+    return False
+
+
+def is_empty_compatibility_noop_method(lines: list[str], line_number: int) -> bool:
+    first_code = strip_string_literals(strip_line_comment(lines[line_number - 1]))
+    if METHOD_SIGNATURE_RE.search(first_code) is None:
+        return False
+    context = method_preceding_context(lines, line_number).lower()
+    if "legacy no-op retained for external callers" in context:
+        return False
+    if COMPATIBILITY_NOOP_CONTEXT_RE.search(context) is None:
+        return False
+    return has_empty_method_body(lines, line_number)
+
+
+def is_empty_runtime_tick_or_update_method(lines: list[str], line_number: int) -> bool:
+    first_code = strip_string_literals(strip_line_comment(lines[line_number - 1]))
+    method_match = EMPTY_RUNTIME_TICK_METHOD_RE.search(first_code)
+    if method_match is None:
+        return False
+    modifiers = method_match.group("modifiers") or ""
+    if "virtual" in modifiers or "override" in modifiers:
+        return False
+    if "DispatcherTimingDTO" in (method_match.group("params") or ""):
+        return False
+    legacy_context = method_preceding_context(lines, line_number).lower()
+    if "legacy" in legacy_context and ("serialized" in legacy_context or "compatibility" in legacy_context):
+        return False
+    return has_empty_method_body(lines, line_number)
 
 
 def empty_results() -> dict[str, list[Finding]]:
@@ -512,6 +742,9 @@ def empty_results() -> dict[str, list[Finding]]:
             "burstMissingFloatPrecision": [],
             "nativeCollectionPublicMutableApiExposure": [],
             "nativeApiExposurePrivateNestedSuppressed": [],
+            "emptyCompatibilityNoopMethod": [],
+            "emptyCompileUnitMarker": [],
+            "emptyRuntimeTickOrUpdateMethod": [],
         }
     )
     for key in (
@@ -551,10 +784,10 @@ def record_line_patterns(
     rel: str,
     line_number: int,
     raw_line: str,
-    code: str,
+    scan_code: str,
+    build_surface: str,
     lines: list[str] | None = None,
 ) -> None:
-    scan_code = strip_string_literals(code)
     checks = (
         ("packOne", "Pack"),
         ("privateNativeCollectionField", "Native"),
@@ -562,12 +795,14 @@ def record_line_patterns(
         ("unityUpdateMethod", "Update"),
         ("unityRandom", "Random"),
         ("unityTimeCritical", "Time."),
-        ("linqSurface", "Linq" if "Linq" in code else "."),
         ("globalQualityWeight", "GlobalQualityWeight"),
         ("noAlias", "[NoAlias]"),
     )
     for key, token in checks:
         if token in scan_code and LINE_PATTERNS[key].search(scan_code):
+            if key == "unityUpdateMethod" and build_surface == "privateNativeBuildEditorOnly":
+                continue
+
             finding = Finding(rel, line_number, raw_line.strip())
             results[key].append(finding)
             if key == "privateNativeCollectionField":
@@ -578,12 +813,36 @@ def record_line_patterns(
                     line_number,
                     raw_line,
                     scan_code,
+                    build_surface,
                     lines,
                 )
             if key == "unityTimeCritical":
                 record_unity_time_classification(results, finding, rel, raw_line, scan_code)
 
-    if is_binary_hardware_switch_line(scan_code):
+    if (
+        (
+            "System.Linq" in scan_code
+            or ".Where" in scan_code
+            or ".Select" in scan_code
+            or ".Any" in scan_code
+            or ".First" in scan_code
+            or ".ToList" in scan_code
+        )
+        and LINE_PATTERNS["linqSurface"].search(scan_code)
+    ):
+        if build_surface != "privateNativeBuildEditorOnly":
+            results["linqSurface"].append(Finding(rel, line_number, raw_line.strip()))
+
+    if (
+        (
+            "Tier" in scan_code
+            or "LowEnd" in scan_code
+            or "HighEnd" in scan_code
+            or "Quest" in scan_code
+            or "PcOnly" in scan_code
+        )
+        and is_binary_hardware_switch_line(scan_code)
+    ):
         results["binaryHardwareSwitch"].append(Finding(rel, line_number, raw_line.strip()))
 
 
@@ -591,12 +850,29 @@ def scan_all(files: Iterable[Path]) -> dict[str, list[Finding]]:
     results = empty_results()
     for path in files:
         rel = normalize_path(path)
-        lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+        try:
+            source_text = path.read_text(encoding="utf-8", errors="ignore")
+        except FileNotFoundError:
+            continue
+        lines = source_text.splitlines()
+        build_surface = classify_private_native_build_surface(rel)
+        is_player_runtime = build_surface == "privateNativeBuildPlayerRuntime"
+        source_text_lower = source_text.lower() if is_player_runtime else ""
+        may_have_compatibility_noop = (
+            "compatibility" in source_text_lower
+            and ("no-op" in source_text_lower or "noop" in source_text_lower)
+        )
+        if path.suffix.lower() == ".cs" and is_explicit_empty_csharp_compile_unit(lines):
+            results["emptyCompileUnitMarker"].append(Finding(rel, 1, first_nonempty_text(lines)))
         in_struct = False
         depth = 0
         brace_depth = 0
-        pending_type_access: list[str] = []
+        pending_private_type_count = 0
+        pending_type_entries: list[tuple[bool, str]] = []
         type_stack: list[tuple[int, str]] = []
+        private_type_stack: list[int] = []
+        private_type_depth = 0
+        type_depth = 0
         line_count = len(lines)
         line_number = 1
         while line_number <= line_count:
@@ -606,17 +882,48 @@ def scan_all(files: Iterable[Path]) -> dict[str, list[Finding]]:
 
             while type_stack and brace_depth < type_stack[-1][0]:
                 type_stack.pop()
-            inside_private_type = any(access == "private" for _, access in type_stack)
+                type_depth -= 1
+            while private_type_stack and brace_depth < private_type_stack[-1]:
+                private_type_stack.pop()
+                private_type_depth -= 1
+            inside_type = type_depth > 0
+            inside_private_type = private_type_depth > 0
+            type_context = ".".join(entry[1] for entry in type_stack)
 
-            record_line_patterns(results, rel, line_number, raw_line, code, lines)
-            if is_public_mutable_native_api_exposure(lines, line_number, scan_code):
+            record_line_patterns(results, rel, line_number, raw_line, scan_code, build_surface, lines)
+            if (
+                is_player_runtime
+                and may_have_compatibility_noop
+                and "(" in raw_line
+                and is_empty_compatibility_noop_method(lines, line_number)
+            ):
+                results["emptyCompatibilityNoopMethod"].append(Finding(rel, line_number, raw_line.strip()))
+            if (
+                is_player_runtime
+                and "(" in raw_line
+                and ("Tick" in raw_line or "Update" in raw_line)
+                and is_empty_runtime_tick_or_update_method(lines, line_number)
+            ):
+                results["emptyRuntimeTickOrUpdateMethod"].append(Finding(rel, line_number, raw_line.strip()))
+            if (
+                ("Native" in scan_code or ("(" in scan_code and PUBLIC_API_NATIVE_COLLECTION_RE.search(scan_code)))
+                and is_public_mutable_native_api_exposure(lines, line_number, scan_code)
+            ):
                 signature = collect_signature(lines, line_number)
                 finding = Finding(rel, line_number, signature)
                 if inside_private_type:
                     results["nativeApiExposurePrivateNestedSuppressed"].append(finding)
                 else:
                     results["nativeCollectionPublicMutableApiExposure"].append(finding)
-                    record_native_api_exposure_classification(results, finding, rel, signature)
+                    declaration_context = method_preceding_context(lines, line_number, limit=4) + "\n" + signature
+                    record_native_api_exposure_classification(
+                        results,
+                        finding,
+                        rel,
+                        signature,
+                        type_context,
+                        declaration_context,
+                    )
 
             if "[BurstCompile" in scan_code:
                 attr_parts = [scan_code.strip()]
@@ -626,11 +933,11 @@ def scan_all(files: Iterable[Path]) -> dict[str, list[Finding]]:
                     attr_parts.append(strip_string_literals(strip_line_comment(lines[cursor - 1])).strip())
                 record_burst_attribute(results, rel, line_number, " ".join(attr_parts))
 
-            if not in_struct and STRUCT_DECL_RE.search(scan_code):
+            if not in_struct and "struct" in scan_code and STRUCT_DECL_RE.search(scan_code):
                 in_struct = True
                 depth = 0
 
-            if in_struct and AUTO_PROPERTY_RE.search(scan_code):
+            if in_struct and "get;" in scan_code and "set;" in scan_code and AUTO_PROPERTY_RE.search(scan_code):
                 results["structAutoProperties"].append(Finding(rel, line_number, raw_line.strip()))
 
             if in_struct:
@@ -639,14 +946,27 @@ def scan_all(files: Iterable[Path]) -> dict[str, list[Finding]]:
                     in_struct = False
                     depth = 0
 
-            type_decl = TYPE_DECL_RE.search(scan_code)
-            if type_decl is not None:
-                pending_type_access.append(type_decl.group("access") or "")
+            if "class" in scan_code or "struct" in scan_code or "interface" in scan_code or "record" in scan_code:
+                type_match = TYPE_DECL_RE.search(scan_code)
+                if type_match is not None:
+                    access = type_match.group("access") or ""
+                    type_name = type_match.group("name") or type_match.group("record_name") or ""
+                    is_private_type = access == "private" or (inside_type and access == "") or inside_private_type
+                    pending_type_entries.append((is_private_type, type_name))
+                    if is_private_type:
+                        pending_private_type_count += 1
 
             open_count = scan_code.count("{")
-            if open_count > 0 and pending_type_access:
-                for _ in range(min(open_count, len(pending_type_access))):
-                    type_stack.append((brace_depth + 1, pending_type_access.pop(0)))
+            if open_count > 0 and pending_type_entries:
+                for _ in range(min(open_count, len(pending_type_entries))):
+                    _, type_name = pending_type_entries.pop(0)
+                    type_stack.append((brace_depth + 1, type_name))
+                    type_depth += 1
+            if open_count > 0 and pending_private_type_count:
+                for _ in range(min(open_count, pending_private_type_count)):
+                    private_type_stack.append(brace_depth + 1)
+                    private_type_depth += 1
+                    pending_private_type_count -= 1
 
             brace_depth += open_count - scan_code.count("}")
 
@@ -677,16 +997,19 @@ def scan_struct_properties(files: Iterable[Path]) -> list[Finding]:
     findings: list[Finding] = []
     for path in files:
         rel = normalize_path(path)
-        lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+        try:
+            lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+        except FileNotFoundError:
+            continue
         in_struct = False
         depth = 0
         for line_number, raw_line in enumerate(lines, 1):
             code = strip_line_comment(raw_line)
-            if not in_struct and STRUCT_DECL_RE.search(code):
+            if not in_struct and "struct" in code and STRUCT_DECL_RE.search(code):
                 in_struct = True
                 depth = 0
 
-            if in_struct and AUTO_PROPERTY_RE.search(code):
+            if in_struct and "get;" in code and "set;" in code and AUTO_PROPERTY_RE.search(code):
                 findings.append(Finding(rel, line_number, raw_line.strip()))
 
             if in_struct:
@@ -787,6 +1110,14 @@ def write_markdown(path: Path, payload: dict[str, object]) -> None:
             "",
             "- `Pack=1`, private persistent native collections, and Burst attribute drift are platform-portability risks until each hit is classified as cold file-format, owner-local scratch, or hot runtime.",
             "- `jobHandleComplete`, Unity `Update` methods, `Time.*`, and `UnityEngine.Random` are not automatically defects, but they are mandatory review surfaces for gameplay/runtime code.",
+            "- `emptyCompatibilityNoopMethod` flags explicit compatibility no-op methods in player runtime code; delete them or replace them with a real compatibility bridge.",
+            "- `emptyCompileUnitMarker` flags explicit empty C# files that preserve no type/API and should usually be deleted instead of kept as source markers.",
+            "- `emptyRuntimeTickOrUpdateMethod` marks runtime tick/update surfaces that perform no work and should usually be deleted instead of registered.",
+            "- `nativeApiRiskRuntimeReadNamedMutableView` flags runtime APIs whose names promise read access while exposing mutable native buffers.",
+            "- `nativeApiRiskRuntimeObsoleteMutableCompatibilityView` tracks deprecated mutable compatibility wrappers separately from active read-named API debt.",
+            "- `nativeApiRiskRuntimeReinterpretMutableView` flags writable native views created through reinterpret helpers; these need owner/alias review, not blind read-only conversion.",
+            "- `nativeApiRiskRuntimeWriteLeaseMutableView`, `nativeApiRiskRuntimeJobAliasMutableView`, `nativeApiRiskRuntimeNativePayloadMutableView`, and `nativeApiRiskRuntimeDisposeMutableRef` separate intentional write/lease/job/payload/disposal surfaces from generic mutable API debt.",
+            "- `unityTimeRiskVisualPresentationClock` separates wall-clock presentation animation from gameplay clock debt.",
             "- Binary hardware switches are suspect unless they are presentation-only or build-time/platform setup. Runtime scalability should flow through continuous `GlobalQualityWeight` curves.",
             "- This audit is a pressure map. It does not mutate code and does not prove frame cost.",
             "",

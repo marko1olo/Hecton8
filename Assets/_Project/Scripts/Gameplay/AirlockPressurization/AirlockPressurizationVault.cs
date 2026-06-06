@@ -88,48 +88,68 @@ namespace Hecton8.Gameplay.AirlockPressurization
             return true;
         }
 
+        public static bool TryReadAirlocks(IDataVault vault, out NativeArray<AirlockStateDTO>.ReadOnly airlocks)
+        {
+            return TryReadOnlyBuffer<AirlockStateDTO>(vault, AirlockPressurizationBufferIds.AirlockStates, out airlocks);
+        }
+
+        [System.Obsolete("Use the NativeArray<T>.ReadOnly overload; legacy mutable wrapper retained for compatibility.", false)]
         public static bool TryReadAirlocks(IDataVault vault, out NativeArray<AirlockStateDTO> airlocks)
         {
-            airlocks = default;
-            return vault != null &&
-                   vault.TryGetGenerationHandle<AirlockStateDTO>(
-                       AirlockPressurizationBufferIds.AirlockStates,
-                       out VaultGenerationHandle<AirlockStateDTO> handle) &&
-                   vault.TryReadHandle(in handle, out airlocks) &&
-                   airlocks.IsCreated;
+            return TryReadLegacyMutableBuffer<AirlockStateDTO>(vault, AirlockPressurizationBufferIds.AirlockStates, out airlocks);
         }
 
+        public static bool TryReadTelemetry(IDataVault vault, out NativeArray<AirlockTelemetryEntry>.ReadOnly telemetry)
+        {
+            return TryReadOnlyBuffer<AirlockTelemetryEntry>(vault, AirlockPressurizationBufferIds.TelemetryRing, out telemetry);
+        }
+
+        [System.Obsolete("Use the NativeArray<T>.ReadOnly overload; legacy mutable wrapper retained for compatibility.", false)]
         public static bool TryReadTelemetry(IDataVault vault, out NativeArray<AirlockTelemetryEntry> telemetry)
         {
-            telemetry = default;
-            return vault != null &&
-                   vault.TryGetGenerationHandle<AirlockTelemetryEntry>(
-                       AirlockPressurizationBufferIds.TelemetryRing,
-                       out VaultGenerationHandle<AirlockTelemetryEntry> handle) &&
-                   vault.TryReadHandle(in handle, out telemetry) &&
-                   telemetry.IsCreated;
+            return TryReadLegacyMutableBuffer<AirlockTelemetryEntry>(vault, AirlockPressurizationBufferIds.TelemetryRing, out telemetry);
         }
 
+        public static bool TryReadTuning(IDataVault vault, out NativeArray<AirlockTuningDTO>.ReadOnly tuning)
+        {
+            return TryReadOnlyBuffer<AirlockTuningDTO>(vault, AirlockPressurizationBufferIds.Tuning, out tuning);
+        }
+
+        [System.Obsolete("Use the NativeArray<T>.ReadOnly overload; legacy mutable wrapper retained for compatibility.", false)]
         public static bool TryReadTuning(IDataVault vault, out NativeArray<AirlockTuningDTO> tuning)
         {
-            tuning = default;
-            return vault != null &&
-                   vault.TryGetGenerationHandle<AirlockTuningDTO>(
-                       AirlockPressurizationBufferIds.Tuning,
-                       out VaultGenerationHandle<AirlockTuningDTO> handle) &&
-                   vault.TryReadHandle(in handle, out tuning) &&
-                   tuning.IsCreated;
+            return TryReadLegacyMutableBuffer<AirlockTuningDTO>(vault, AirlockPressurizationBufferIds.Tuning, out tuning);
         }
 
+        public static bool TryReadDebugGizmos(IDataVault vault, out NativeArray<AirlockDebugGizmoDTO>.ReadOnly gizmos)
+        {
+            return TryReadOnlyBuffer<AirlockDebugGizmoDTO>(vault, AirlockPressurizationBufferIds.DebugGizmos, out gizmos);
+        }
+
+        [System.Obsolete("Use the NativeArray<T>.ReadOnly overload; legacy mutable wrapper retained for compatibility.", false)]
         public static bool TryReadDebugGizmos(IDataVault vault, out NativeArray<AirlockDebugGizmoDTO> gizmos)
         {
-            gizmos = default;
+            return TryReadLegacyMutableBuffer<AirlockDebugGizmoDTO>(vault, AirlockPressurizationBufferIds.DebugGizmos, out gizmos);
+        }
+
+        private static bool TryReadOnlyBuffer<T>(IDataVault vault, BufferID bufferId, out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
             return vault != null &&
-                   vault.TryGetGenerationHandle<AirlockDebugGizmoDTO>(
-                       AirlockPressurizationBufferIds.DebugGizmos,
-                       out VaultGenerationHandle<AirlockDebugGizmoDTO> handle) &&
-                   vault.TryReadHandle(in handle, out gizmos) &&
-                   gizmos.IsCreated;
+                   vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private static bool TryReadLegacyMutableBuffer<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
         }
     }
 }

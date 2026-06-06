@@ -1,0 +1,226 @@
+Failure ID,Asset Family,Material Issue,UV Mapping Issue,Vertex Color Data Defect,Technical Solution
+S-001,PFB_family_rock_small_floor,Missing contact shadows,Cylindrical projection distortion,Blue channel empty,Enforce hemispherical raycast to bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-002,PFB_family_rock_small_floor,Albedo tiling,Seams on flat planes,Red channel missing noise data,Apply triplanar projection in shader; bake noise to red vertex channel for macro-variation.
+S-003,PFB_family_rock_small_floor,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-004,PFB_family_rock_cluster_medium,Z-fighting on overlap,Identical UVs on instances,Alpha channel missing blend data,Implement CSG boolean union; pack unique UV islands; bake slope to alpha for sand blending.
+S-005,PFB_family_rock_cluster_medium,Missing contact shadows,Stretching on sharp ridges,Blue channel empty,Enforce QEM decimation to preserve ridges; bake AO into blue channel (0 B/frame).
+S-006,PFB_family_rock_cluster_medium,Visible texture seams,Cylindrical projection distortion,Red channel missing noise data,Apply triplanar projection in shader; bake noise to red vertex channel for macro-variation.
+S-007,PFB_family_rock_cluster_medium,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-008,PFB_family_rock_arch_large,Missing contact shadows,Under-sampled inner curve UVs,Blue channel empty,Adaptive grid evaluation; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-009,PFB_family_rock_arch_large,Albedo tiling,Cylindrical projection distortion,Red channel missing noise data,Apply triplanar projection in shader; bake noise to red vertex channel for macro-variation.
+S-010,PFB_family_rock_arch_large,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-011,PFB_family_rock_shelf_large,Missing sediment mask,Stretching on vertical walls,Alpha channel missing blend data,Extrude upward-facing polygons; bake slope to alpha for sand blending (0 B/frame).
+S-012,PFB_family_rock_shelf_large,Missing contact shadows,Cylindrical projection distortion,Blue channel empty,Enforce hemispherical raycast to bake AO into blue channel.
+S-013,PFB_family_rock_shelf_large,Visible texture seams,Seams on flat planes,Red channel missing noise data,Apply triplanar projection in shader; bake noise to red vertex channel for macro-variation.
+S-014,PFB_family_rock_shelf_large,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-015,PFB_family_cave_entrance,Missing contact shadows,Under-sampled inner curve UVs,Blue channel empty,Toroidal SDF subtraction; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-016,PFB_family_cave_entrance,Albedo tiling,Cylindrical projection distortion,Red channel missing noise data,Apply triplanar projection in shader; bake noise to red vertex channel for macro-variation.
+S-017,PFB_family_cave_entrance,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-018,PFB_family_cave_entrance,Inverted normal shading,Identical UVs on instances,Alpha channel missing blend data,Winding order verification pass; pack unique UV islands; bake slope to alpha.
+S-019,PFB_family_pocket_hazard,Symmetrical shading,Stretching on sharp ridges,Blue channel empty,Anisotropic scaling; bake AO into blue channel (0 B/frame).
+S-020,PFB_family_pocket_hazard,Missing chemical deposit mask,Cylindrical projection distortion,Green channel missing sulfur data,Calculate distance gradient from apex; write to green channel for sulfur material blend.
+S-021,PFB_family_pocket_hazard,Visible texture seams,Seams on flat planes,Red channel missing noise data,Apply triplanar projection in shader; bake noise to red vertex channel for macro-variation.
+S-022,PFB_family_pocket_hazard,Incorrect roughness,UV island overlap,Alpha channel missing blend data,Offset UV islands by asset index; map cavity to alpha channel for roughness modulation.
+S-023,PFB_family_pocket_resource,Missing contact shadows,Under-sampled inner curve UVs,Blue channel empty,Terrain conformity raycast; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-024,PFB_family_pocket_resource,Albedo tiling,Cylindrical projection distortion,Red channel missing noise data,Apply triplanar projection in shader; bake noise to red vertex channel for macro-variation.
+S-025,PFB_family_pocket_resource,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-026,PFB_family_pocket_safe,Invisible backfaces,Identical UVs on instances,Alpha channel missing blend data,Inward extrusion pass; pack unique UV islands; bake slope to alpha.
+S-027,PFB_family_pocket_safe,Missing contact shadows,Stretching on sharp ridges,Blue channel empty,Voronoi cell deletion; bake AO into blue channel (0 B/frame).
+S-028,PFB_family_pocket_safe,Visible texture seams,Cylindrical projection distortion,Red channel missing noise data,Apply triplanar projection in shader; bake noise to red vertex channel for macro-variation.
+S-029,PFB_family_pocket_safe,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-030,PFB_family_coral_low,Missing contact shadows,Seams on flat planes,Blue channel empty,Enforce hemispherical raycast to bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-031,PFB_family_coral_low,Albedo tiling,Under-sampled inner curve UVs,Red channel missing noise data,Apply triplanar projection in shader; bake noise to red vertex channel for macro-variation.
+S-032,PFB_family_coral_low,Incorrect roughness,Cylindrical projection distortion,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-033,PFB_family_coral_low,Identical clones shading,UV island overlap,Alpha channel missing blend data,Enforce rotational variance; pack unique UV islands; bake slope to alpha.
+S-034,PFB_family_coral_plate,Missing stem shadowing,Identical UVs on instances,Blue channel empty,Generate central stalk; bake AO into blue channel (0 B/frame).
+S-035,PFB_family_coral_plate,Linear edge shading,Stretching on sharp ridges,Red channel missing noise data,Apply perimeter noise displacement; bake noise to red vertex channel.
+S-036,PFB_family_coral_plate,Excessive underside brightness,Cylindrical projection distortion,Blue channel empty,Clamp blue channel to zero for downward-facing polygons (0 B/frame).
+S-037,PFB_family_coral_plate,Incorrect roughness,Seams on flat planes,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-038,PFB_family_coral_branching,Lack of depth taper,UV island overlap,Alpha channel missing blend data,Depth-based radius multiplier; pack unique UV islands; bake slope to alpha.
+S-039,PFB_family_coral_branching,Tiling artifacts,Identical UVs on instances,Blue channel empty,Island offset scrambling; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-040,PFB_family_coral_branching,Solid interior shading,Under-sampled inner curve UVs,Red channel missing noise data,Volumetric boolean subtraction; bake noise to red vertex channel for macro-variation.
+S-041,PFB_family_coral_branching,Incorrect roughness,Cylindrical projection distortion,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-042,PFB_family_coral_brittle,Lack of multi-plane depth,UV island overlap,Alpha channel missing blend data,Multi-plane layering; pack unique UV islands; bake slope to alpha.
+S-043,PFB_family_coral_brittle,Invisible backfaces,Identical UVs on instances,Blue channel empty,Duplicate and invert faces; bake AO into blue channel (0 B/frame).
+S-044,PFB_family_coral_brittle,Missing contact shadows,Stretching on sharp ridges,Red channel missing noise data,Enforce hemispherical raycast; bake noise to red vertex channel.
+S-045,PFB_family_coral_brittle,Incorrect roughness,Cylindrical projection distortion,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-046,PFB_family_coral_massive,Aggressive normal smoothing,Seams on flat planes,Alpha channel missing blend data,Enforce 30-degree smoothing threshold; pack unique UV islands; bake slope to alpha.
+S-047,PFB_family_coral_massive,Shallow cavity shading,UV island overlap,Blue channel empty,Increase displacement amplitude; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-048,PFB_family_coral_massive,Albedo tiling,Identical UVs on instances,Red channel missing noise data,Apply triplanar projection in shader; bake noise to red vertex channel for macro-variation.
+S-049,PFB_family_coral_massive,Incorrect roughness,Under-sampled inner curve UVs,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-050,PFB_family_kelp_abyssal,Missing sway animation,Cylindrical projection distortion,Red channel missing sway data,Map normalized height to red channel for vertex shader sway (0 B/frame).
+S-051,PFB_family_kelp_abyssal,Intersecting strap shading,UV island overlap,Blue channel empty,Repulsion simulation pass; bake AO into blue channel.
+S-052,PFB_family_kelp_abyssal,Missing contact shadows,Identical UVs on instances,Alpha channel missing blend data,Enforce hemispherical raycast; pack unique UV islands; bake slope to alpha.
+S-053,PFB_family_kelp_abyssal,Incorrect roughness,Stretching on sharp ridges,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-054,PFB_family_kelp_canopy,Missing bioluminescence,Cylindrical projection distortion,Green channel missing emissive data,Assign max value to green channel on crown nodes for emissive shader.
+S-055,PFB_family_kelp_canopy,Flat frond edge shading,Seams on flat planes,Red channel missing noise data,Sine wave displacement on boundary; bake noise to red vertex channel.
+S-056,PFB_family_kelp_canopy,Uniform height shading,UV island overlap,Blue channel empty,Random vertical scaling; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-057,PFB_family_kelp_canopy,Incorrect roughness,Identical UVs on instances,Alpha channel missing blend data,Offset UV islands by asset index; pack unique UV islands; bake slope to alpha.
+S-058,PFB_family_kelp_patch_dense,Barren ground shading,Under-sampled inner curve UVs,Red channel missing noise data,Secondary scatter pass; bake noise to red vertex channel for macro-variation.
+S-059,PFB_family_kelp_patch_dense,Uniform density shading,Cylindrical projection distortion,Blue channel empty,Noise-masked distribution; bake AO into blue channel (0 B/frame).
+S-060,PFB_family_kelp_patch_dense,Missing contact shadows,UV island overlap,Green channel empty,Enforce hemispherical raycast; map cavity to green channel for roughness modulation.
+S-061,PFB_family_kelp_patch_dense,Incorrect roughness,Identical UVs on instances,Alpha channel missing blend data,Offset UV islands by asset index; pack unique UV islands; bake slope to alpha.
+S-062,PFB_family_kelp_tall,Smooth stipe shading,Stretching on sharp ridges,Red channel missing noise data,Intermittent radial expansion; bake noise to red vertex channel.
+S-063,PFB_family_kelp_tall,Flow field disconnect,Cylindrical projection distortion,Blue channel empty,Align lean to flow vector; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-064,PFB_family_kelp_tall,Missing root shadowing,Seams on flat planes,Green channel empty,Recursive root branching; map cavity to green channel for roughness modulation.
+S-065,PFB_family_kelp_tall,Incorrect roughness,UV island overlap,Alpha channel missing blend data,Offset UV islands by asset index; pack unique UV islands; bake slope to alpha.
+S-066,PFB_family_plant_giant,Thin stem shading,Identical UVs on instances,Red channel missing noise data,Dynamic radius scaling; bake noise to red vertex channel for macro-variation.
+S-067,PFB_family_plant_giant,Flimsy leaf shading,Under-sampled inner curve UVs,Blue channel empty,Central rib extrusion; bake AO into blue channel (0 B/frame).
+S-068,PFB_family_plant_giant,Low-res tower texture,Cylindrical projection distortion,Green channel empty,Scale UVs to 1024px/m; map cavity to green channel for roughness modulation.
+S-069,PFB_family_plant_giant,Incorrect roughness,UV island overlap,Alpha channel missing blend data,Offset UV islands by asset index; pack unique UV islands; bake slope to alpha.
+S-070,PFB_family_creature_spawn_passive,Floating ring shading,Stretching on sharp ridges,Red channel missing noise data,Vertex-level terrain projection; bake noise to red vertex channel.
+S-071,PFB_family_creature_spawn_passive,Artificial torus shading,Cylindrical projection distortion,Blue channel empty,Perlin noise deformation; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-072,PFB_family_creature_spawn_passive,Stalk weld seam,Seams on flat planes,Green channel empty,Programmatic vertex weld; map cavity to green channel for roughness modulation.
+S-073,PFB_family_creature_spawn_passive,Incorrect roughness,UV island overlap,Alpha channel missing blend data,Offset UV islands by asset index; pack unique UV islands; bake slope to alpha.
+S-074,PFB_family_creature_spawn_predator,Excessive emissive bloom,Identical UVs on instances,Red channel missing noise data,Clamp emissive multiplier to 0.2; bake noise to red vertex channel.
+S-075,PFB_family_creature_spawn_predator,Missing crevice occlusion,Under-sampled inner curve UVs,Blue channel empty,Cavity mapping pass; aggressive blue channel darkening for localized AO.
+S-076,PFB_family_creature_spawn_predator,Truncated teeth shading,Cylindrical projection distortion,Green channel empty,Converge final extrusion loop; map cavity to green channel for roughness.
+S-077,PFB_family_creature_spawn_predator,Incorrect roughness,UV island overlap,Alpha channel missing blend data,Offset UV islands by asset index; pack unique UV islands; bake slope to alpha.
+S-078,PFB_family_zone_apex,Visible in build,Seams on flat planes,Red channel missing noise data,Assign EditorOnly_Invisible material; bake noise to red vertex channel.
+S-079,PFB_family_zone_apex,Shadow casting enabled,Identical UVs on instances,Blue channel empty,renderer.shadowCastingMode = Off; bake AO into blue channel (0 B/frame).
+S-080,PFB_family_zone_apex,Incorrect roughness,Under-sampled inner curve UVs,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-081,PFB_family_zone_threat,Collider blocking pathing,Cylindrical projection distortion,Alpha channel missing blend data,Strip Collider component on save; pack unique UV islands; bake slope to alpha.
+S-082,PFB_family_zone_threat,Missing contact shadows,UV island overlap,Blue channel empty,Enforce hemispherical raycast; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-083,PFB_family_zone_threat,Incorrect roughness,Seams on flat planes,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-084,PFB_family_egg_cluster,Opaque rock material,Identical UVs on instances,Red channel missing noise data,Assign Subsurface Scattering (SSS) shader; bake noise to red vertex channel for macro-variation.
+S-085,PFB_family_egg_cluster,Missing thickness map,Under-sampled inner curve UVs,Alpha channel missing thickness data,Calculate mesh depth; bake to alpha channel for SSS shader transmission.
+S-086,PFB_family_egg_cluster,Grid-aligned packing,Cylindrical projection distortion,Blue channel empty,Relaxed Poisson disk sampling; bake AO into blue channel (0 B/frame).
+S-087,PFB_family_egg_cluster,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-088,PFB_family_egg_cluster__nest,Flat floor shading,Seams on flat planes,Red channel missing noise data,Concavity deformation pass; bake noise to red vertex channel for macro-variation.
+S-089,PFB_family_egg_cluster__nest,Missing contact shadows,Identical UVs on instances,Blue channel empty,Enforce hemispherical raycast; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-090,PFB_family_egg_cluster__nest,Incorrect roughness,Under-sampled inner curve UVs,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-091,PFB_family_debris_field,Identical clone shading,Cylindrical projection distortion,Alpha channel missing blend data,Enforce 3-axis rotational variance; pack unique UV islands; bake slope to alpha.
+S-092,PFB_family_debris_field,Uniform density shading,UV island overlap,Blue channel empty,Multi-node scattering system; bake AO into blue channel (0 B/frame).
+S-093,PFB_family_debris_field,Incorrect roughness,Seams on flat planes,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-094,PFB_family_debris_field__strip,Linear float shading,Identical UVs on instances,Red channel missing noise data,Continuous terrain raycast conformity; bake noise to red vertex channel.
+S-095,PFB_family_debris_field__strip,Hovering base shading,Under-sampled inner curve UVs,Blue channel empty,Grounding pass with negative offset; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-096,PFB_family_debris_field__strip,Incorrect roughness,Cylindrical projection distortion,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-097,PFB_family_ruin_module,Perfect 90-degree corners,UV island overlap,Alpha channel missing blend data,Edge chamfering pass; pack unique UV islands; bake slope to alpha.
+S-098,PFB_family_ruin_module,Texture tiling,Seams on flat planes,Blue channel empty,Triplanar mapping shader; bake AO into blue channel (0 B/frame).
+S-099,PFB_family_ruin_module,Incorrect roughness,Identical UVs on instances,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-100,PFB_family_ruin_cluster,Modular snapping failure,Under-sampled inner curve UVs,Red channel missing noise data,Grid-based socket snapping; bake noise to red vertex channel for macro-variation.
+S-101,PFB_family_ruin_cluster,Missing contact shadows,Cylindrical projection distortion,Blue channel empty,Enforce hemispherical raycast; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-102,PFB_family_ruin_cluster,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-103,PFB_family_ruin_megastructure,Impostor pop-in,Identical UVs on instances,Alpha channel missing blend data,Protected silhouette decimation; pack unique UV islands; bake slope to alpha.
+S-104,PFB_family_ruin_megastructure,Texture tiling,Seams on flat planes,Blue channel empty,Triplanar mapping shader; bake AO into blue channel (0 B/frame).
+S-105,PFB_family_ruin_megastructure,Incorrect roughness,Under-sampled inner curve UVs,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-106,PFB_family_route_power,Straight cable shading,Cylindrical projection distortion,Red channel missing noise data,Catenary curve sag mathematics; bake noise to red vertex channel.
+S-107,PFB_family_route_power,Missing contact shadows,UV island overlap,Blue channel empty,Enforce hemispherical raycast; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-108,PFB_family_route_power,Incorrect roughness,Identical UVs on instances,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-109,PFB_family_rock_small_floor,Missing collision hull,Seams on flat planes,Alpha channel missing blend data,QuickHull proxy generation; pack unique UV islands; bake slope to alpha.
+S-110,PFB_family_rock_small_floor,Normal discontinuity,Under-sampled inner curve UVs,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-111,PFB_family_rock_small_floor,Incorrect roughness,Cylindrical projection distortion,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-112,PFB_family_rock_cluster_medium,Missing collision hull,UV island overlap,Red channel missing noise data,V-HACD convex decomposition; bake noise to red vertex channel for macro-variation.
+S-113,PFB_family_rock_cluster_medium,Normal discontinuity,Identical UVs on instances,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-114,PFB_family_rock_cluster_medium,Incorrect roughness,Seams on flat planes,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-115,PFB_family_rock_arch_large,Missing collision hull,Under-sampled inner curve UVs,Alpha channel missing blend data,V-HACD convex decomposition; pack unique UV islands; bake slope to alpha.
+S-116,PFB_family_rock_arch_large,Normal discontinuity,Cylindrical projection distortion,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-117,PFB_family_rock_arch_large,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-118,PFB_family_rock_shelf_large,Missing collision hull,Identical UVs on instances,Red channel missing noise data,V-HACD convex decomposition; bake noise to red vertex channel for macro-variation.
+S-119,PFB_family_rock_shelf_large,Normal discontinuity,Seams on flat planes,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-120,PFB_family_rock_shelf_large,Incorrect roughness,Under-sampled inner curve UVs,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-121,PFB_family_cave_entrance,Missing collision hull,Cylindrical projection distortion,Alpha channel missing blend data,V-HACD convex decomposition; pack unique UV islands; bake slope to alpha.
+S-122,PFB_family_cave_entrance,Normal discontinuity,UV island overlap,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-123,PFB_family_cave_entrance,Incorrect roughness,Identical UVs on instances,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-124,PFB_family_pocket_hazard,Missing collision hull,Seams on flat planes,Red channel missing noise data,QuickHull proxy generation; bake noise to red vertex channel for macro-variation.
+S-125,PFB_family_pocket_hazard,Normal discontinuity,Under-sampled inner curve UVs,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-126,PFB_family_pocket_hazard,Incorrect roughness,Cylindrical projection distortion,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-127,PFB_family_pocket_resource,Missing collision hull,UV island overlap,Alpha channel missing blend data,QuickHull proxy generation; pack unique UV islands; bake slope to alpha.
+S-128,PFB_family_pocket_resource,Normal discontinuity,Identical UVs on instances,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-129,PFB_family_pocket_resource,Incorrect roughness,Seams on flat planes,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-130,PFB_family_pocket_safe,Missing collision hull,Under-sampled inner curve UVs,Red channel missing noise data,V-HACD convex decomposition; bake noise to red vertex channel for macro-variation.
+S-131,PFB_family_pocket_safe,Normal discontinuity,Cylindrical projection distortion,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-132,PFB_family_pocket_safe,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-133,PFB_family_coral_low,Missing collision hull,Identical UVs on instances,Alpha channel missing blend data,QuickHull proxy generation; pack unique UV islands; bake slope to alpha.
+S-134,PFB_family_coral_low,Normal discontinuity,Seams on flat planes,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-135,PFB_family_coral_low,Incorrect roughness,Under-sampled inner curve UVs,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-136,PFB_family_coral_plate,Missing collision hull,Cylindrical projection distortion,Red channel missing noise data,QuickHull proxy generation; bake noise to red vertex channel for macro-variation.
+S-137,PFB_family_coral_plate,Normal discontinuity,UV island overlap,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-138,PFB_family_coral_plate,Incorrect roughness,Identical UVs on instances,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-139,PFB_family_coral_branching,Missing collision hull,Seams on flat planes,Alpha channel missing blend data,V-HACD convex decomposition; pack unique UV islands; bake slope to alpha.
+S-140,PFB_family_coral_branching,Normal discontinuity,Under-sampled inner curve UVs,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-141,PFB_family_coral_branching,Incorrect roughness,Cylindrical projection distortion,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-142,PFB_family_coral_brittle,Missing collision hull,UV island overlap,Red channel missing noise data,QuickHull proxy generation; bake noise to red vertex channel for macro-variation.
+S-143,PFB_family_coral_brittle,Normal discontinuity,Identical UVs on instances,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-144,PFB_family_coral_brittle,Incorrect roughness,Seams on flat planes,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-145,PFB_family_coral_massive,Missing collision hull,Under-sampled inner curve UVs,Alpha channel missing blend data,V-HACD convex decomposition; pack unique UV islands; bake slope to alpha.
+S-146,PFB_family_coral_massive,Normal discontinuity,Cylindrical projection distortion,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-147,PFB_family_coral_massive,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-148,PFB_family_kelp_abyssal,Missing collision hull,Identical UVs on instances,Red channel missing noise data,QuickHull proxy generation; bake noise to red vertex channel for macro-variation.
+S-149,PFB_family_kelp_abyssal,Normal discontinuity,Seams on flat planes,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-150,PFB_family_kelp_abyssal,Incorrect roughness,Under-sampled inner curve UVs,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-151,PFB_family_kelp_canopy,Missing collision hull,Cylindrical projection distortion,Alpha channel missing blend data,V-HACD convex decomposition; pack unique UV islands; bake slope to alpha.
+S-152,PFB_family_kelp_canopy,Normal discontinuity,UV island overlap,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-153,PFB_family_kelp_canopy,Incorrect roughness,Identical UVs on instances,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-154,PFB_family_kelp_patch_dense,Missing collision hull,Seams on flat planes,Red channel missing noise data,QuickHull proxy generation; bake noise to red vertex channel for macro-variation.
+S-155,PFB_family_kelp_patch_dense,Normal discontinuity,Under-sampled inner curve UVs,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-156,PFB_family_kelp_patch_dense,Incorrect roughness,Cylindrical projection distortion,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-157,PFB_family_kelp_tall,Missing collision hull,UV island overlap,Alpha channel missing blend data,QuickHull proxy generation; pack unique UV islands; bake slope to alpha.
+S-158,PFB_family_kelp_tall,Normal discontinuity,Identical UVs on instances,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-159,PFB_family_kelp_tall,Incorrect roughness,Seams on flat planes,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-160,PFB_family_plant_giant,Missing collision hull,Under-sampled inner curve UVs,Red channel missing noise data,V-HACD convex decomposition; bake noise to red vertex channel for macro-variation.
+S-161,PFB_family_plant_giant,Normal discontinuity,Cylindrical projection distortion,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-162,PFB_family_plant_giant,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-163,PFB_family_creature_spawn_passive,Missing collision hull,Identical UVs on instances,Alpha channel missing blend data,QuickHull proxy generation; pack unique UV islands; bake slope to alpha.
+S-164,PFB_family_creature_spawn_passive,Normal discontinuity,Seams on flat planes,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-165,PFB_family_creature_spawn_passive,Incorrect roughness,Under-sampled inner curve UVs,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-166,PFB_family_creature_spawn_predator,Missing collision hull,Cylindrical projection distortion,Red channel missing noise data,QuickHull proxy generation; bake noise to red vertex channel for macro-variation.
+S-167,PFB_family_creature_spawn_predator,Normal discontinuity,UV island overlap,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-168,PFB_family_creature_spawn_predator,Incorrect roughness,Identical UVs on instances,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-169,PFB_family_zone_apex,Missing collision hull,Seams on flat planes,Alpha channel missing blend data,V-HACD convex decomposition; pack unique UV islands; bake slope to alpha.
+S-170,PFB_family_zone_apex,Normal discontinuity,Under-sampled inner curve UVs,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-171,PFB_family_zone_apex,Incorrect roughness,Cylindrical projection distortion,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-172,PFB_family_zone_threat,Missing collision hull,UV island overlap,Red channel missing noise data,QuickHull proxy generation; bake noise to red vertex channel for macro-variation.
+S-173,PFB_family_zone_threat,Normal discontinuity,Identical UVs on instances,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-174,PFB_family_zone_threat,Incorrect roughness,Seams on flat planes,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-175,PFB_family_egg_cluster,Missing collision hull,Under-sampled inner curve UVs,Alpha channel missing blend data,V-HACD convex decomposition; pack unique UV islands; bake slope to alpha.
+S-176,PFB_family_egg_cluster,Normal discontinuity,Cylindrical projection distortion,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-177,PFB_family_egg_cluster,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-178,PFB_family_egg_cluster__nest,Missing collision hull,Identical UVs on instances,Red channel missing noise data,QuickHull proxy generation; bake noise to red vertex channel for macro-variation.
+S-179,PFB_family_egg_cluster__nest,Normal discontinuity,Seams on flat planes,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-180,PFB_family_egg_cluster__nest,Incorrect roughness,Under-sampled inner curve UVs,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-181,PFB_family_debris_field,Missing collision hull,Cylindrical projection distortion,Alpha channel missing blend data,V-HACD convex decomposition; pack unique UV islands; bake slope to alpha.
+S-182,PFB_family_debris_field,Normal discontinuity,UV island overlap,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-183,PFB_family_debris_field,Incorrect roughness,Identical UVs on instances,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-184,PFB_family_debris_field__strip,Missing collision hull,Seams on flat planes,Red channel missing noise data,QuickHull proxy generation; bake noise to red vertex channel for macro-variation.
+S-185,PFB_family_debris_field__strip,Normal discontinuity,Under-sampled inner curve UVs,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-186,PFB_family_debris_field__strip,Incorrect roughness,Cylindrical projection distortion,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-187,PFB_family_ruin_module,Missing collision hull,UV island overlap,Alpha channel missing blend data,QuickHull proxy generation; pack unique UV islands; bake slope to alpha.
+S-188,PFB_family_ruin_module,Normal discontinuity,Identical UVs on instances,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-189,PFB_family_ruin_module,Incorrect roughness,Seams on flat planes,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-190,PFB_family_ruin_cluster,Missing collision hull,Under-sampled inner curve UVs,Red channel missing noise data,V-HACD convex decomposition; bake noise to red vertex channel for macro-variation.
+S-191,PFB_family_ruin_cluster,Normal discontinuity,Cylindrical projection distortion,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-192,PFB_family_ruin_cluster,Incorrect roughness,UV island overlap,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-193,PFB_family_ruin_megastructure,Missing collision hull,Identical UVs on instances,Alpha channel missing blend data,V-HACD convex decomposition; pack unique UV islands; bake slope to alpha.
+S-194,PFB_family_ruin_megastructure,Normal discontinuity,Seams on flat planes,Blue channel empty,Automated normal continuity check; bake AO into blue channel (0 B/frame).
+S-195,PFB_family_ruin_megastructure,Incorrect roughness,Under-sampled inner curve UVs,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-196,PFB_family_route_power,Missing collision hull,Cylindrical projection distortion,Red channel missing noise data,QuickHull proxy generation; bake noise to red vertex channel for macro-variation.
+S-197,PFB_family_route_power,Normal discontinuity,UV island overlap,Blue channel empty,Automated normal continuity check; bake AO into blue channel adhering to 0 B/frame shader constraints.
+S-198,PFB_family_route_power,Incorrect roughness,Identical UVs on instances,Green channel empty,Offset UV islands by asset index; map cavity to green channel for roughness modulation.
+S-199,PFB_family_rock_small_floor,Macro-variation missing,Seams on flat planes,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-200,PFB_family_rock_cluster_medium,Macro-variation missing,UV island overlap,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-201,PFB_family_rock_arch_large,Macro-variation missing,Identical UVs on instances,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-202,PFB_family_rock_shelf_large,Macro-variation missing,Under-sampled inner curve UVs,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-203,PFB_family_cave_entrance,Macro-variation missing,Cylindrical projection distortion,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-204,PFB_family_pocket_hazard,Macro-variation missing,UV island overlap,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-205,PFB_family_pocket_resource,Macro-variation missing,Identical UVs on instances,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-206,PFB_family_pocket_safe,Macro-variation missing,Seams on flat planes,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-207,PFB_family_coral_low,Macro-variation missing,Under-sampled inner curve UVs,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-208,PFB_family_coral_plate,Macro-variation missing,Cylindrical projection distortion,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-209,PFB_family_coral_branching,Macro-variation missing,UV island overlap,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-210,PFB_family_coral_brittle,Macro-variation missing,Identical UVs on instances,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-211,PFB_family_coral_massive,Macro-variation missing,Seams on flat planes,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-212,PFB_family_kelp_abyssal,Macro-variation missing,Under-sampled inner curve UVs,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-213,PFB_family_kelp_canopy,Macro-variation missing,Cylindrical projection distortion,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-214,PFB_family_kelp_patch_dense,Macro-variation missing,UV island overlap,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-215,PFB_family_kelp_tall,Macro-variation missing,Identical UVs on instances,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-216,PFB_family_plant_giant,Macro-variation missing,Seams on flat planes,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-217,PFB_family_creature_spawn_passive,Macro-variation missing,Under-sampled inner curve UVs,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-218,PFB_family_creature_spawn_predator,Macro-variation missing,Cylindrical projection distortion,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-219,PFB_family_zone_apex,Macro-variation missing,UV island overlap,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-220,PFB_family_zone_threat,Macro-variation missing,Identical UVs on instances,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-221,PFB_family_egg_cluster,Macro-variation missing,Seams on flat planes,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-222,PFB_family_egg_cluster__nest,Macro-variation missing,Under-sampled inner curve UVs,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-223,PFB_family_debris_field,Macro-variation missing,Cylindrical projection distortion,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-224,PFB_family_debris_field__strip,Macro-variation missing,UV island overlap,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.
+S-225,PFB_family_ruin_module,Macro-variation missing,Identical UVs on instances,Red channel empty,Implement 3D noise sample along normal; pack into red vertex channel.

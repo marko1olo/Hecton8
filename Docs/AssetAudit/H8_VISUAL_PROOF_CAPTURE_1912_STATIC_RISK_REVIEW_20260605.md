@@ -58,6 +58,24 @@ Reject any proof packet that:
 - changes Crest/OceanRenderer serialized fields before capture and presents the frame as production state;
 - saves `02_HECTON_WORLD.unity` during a no-mutation proof lane.
 
+## 2026-06-06 Dialogue Refresh
+
+The pasted Unity-worker dialogue and current source diff show the proof-risk widened, not narrowed.
+
+New static risk classes in current `H8VisualProofCapture1912.cs` include:
+
+- `System.Reflection` / private Crest `RunUpdate` invocation;
+- `System.Threading.Thread.Sleep` editor-loop pumping;
+- camera near/far/culling mutation;
+- behaviour enable toggles around Crest;
+- MapMagic `globals.height`, height apply, and interpolation overrides;
+- terrain `materialTemplate`, layers, instancing, pixel error, and basemap distance overrides;
+- `EditorApplication.QueuePlayerLoopUpdate` / `SceneView.RepaintAll` frame pumping.
+
+`Tools/ValidateVisualProofCaptureGuardrails.py --mode harness-candidate --strict` now rejects these patterns. Current source rejects with `REJECT_CANONICAL_HARNESS_SOURCE violations=102 diagnostic_only=true` after the latest concurrent source drift and refined pattern pass.
+
+This still does not prove a canonical harness exists. It proves the current runner is more strongly quarantined as diagnostic-only.
+
 ## Regression Model
 
 - CPU: no runtime measurement.
@@ -67,3 +85,15 @@ Reject any proof packet that:
 - Visual: diagnostic probe output can reject visible failure, not promote acceptance.
 
 Final status: `PENDING VERIFICATION / PROOF_TOOL_RISK`.
+
+## 2026-06-06 Crest Machinery Removal Update
+
+Current `H8VisualProofCapture1912.cs` no longer contains the old Crest/MapMagic/material/terrain mutation machinery. Public h8_1914-h8_1918 routes are disabled-output routes only. Private shared Crest capture, raw `RenderCamera`, raw `WriteMetadata`, `System.Reflection`, MapMagic generation, terrain presentation writes, material clones, static Unity object state, and raw image readback have been removed from this source.
+
+Fresh static checks:
+
+- `python -B -m unittest Tools.test_validate_visual_proof_capture_guardrails` returned 30 tests OK.
+- `python -B Tools\ValidateVisualProofCaptureGuardrails.py` returned `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=0 asset_refs=0 categories=`.
+- `python -B Tools\ValidateVisualProofCaptureGuardrails.py --mode harness-candidate --allow-diagnostic-rejection` returned `PASS_DIAGNOSTIC_REJECTION_SOURCE violations=2 diagnostic_only=true`.
+
+Reject stale review claims that current `H8VisualProofCapture1912.cs` still contains private Crest `RunUpdate`, MapMagic generation, terrain layer/material mutation, raw camera render, raw readback, temp material clone proof paths, old MCP output root, or legacy h8_1912/h8_1913/h8_1914 capture names. The remaining rejection is class/status only: disabled diagnostic route payload text. This is still not a canonical h8_1475 proof harness and not visual acceptance.

@@ -47,7 +47,7 @@ CSV companion: `Docs/AssetAudit/ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605
 ### audio_routing_import_source_remediation
 
 - Source table: `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` (6 rows).
-- Primary blockers: MusicDirector _musicMixerGroup null=1; _stingerMixerGroup null=1; Player.prefab direct refs=4 including dive_splash and Underwater Ambient.wav.
+- Primary blockers: MusicDirector _musicMixerGroup null=1; _stingerMixerGroup null=1; current Player.prefab P0 direct refs=0, with prior dive_splash and Underwater Ambient fields source-cleared but pending Unity prefab readback and playback/absence proof.
 - First action: Unity-read MusicDirectorConfig_Global.asset and Player.prefab direct refs; classify each retained cue by owner, cue id/hash, load phase, release phase, playback route, fallback, and Addressables or fixed-startup exception.
 - Required proof: Config/prefab readback; import readback; runtime MusicDirector and player cue capture; listening notes; owner ledger; Addressables or exception route; Profiler/GCMonitor 0 B/frame; memory/residency proof for retained long beds.
 - Forbidden shortcut: No mixer routing claim from static refs; no runtime readiness from prefab serialization; no generic streaming SFX; no string cue route; no MasterAudio shortcut; no raw YAML prefab/mixer/import mutation.

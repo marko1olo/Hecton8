@@ -9,10 +9,23 @@ namespace Hecton8.Tests.Editor
         private const string RendererPath = "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs";
         private const string PrologueAudioPath = "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs";
         private const string DirectorPath = "Assets/_Project/Scripts/Narrative/Prologue/AwaitableDropSequenceDirector.cs";
+        private const string MainMenuScenePath = "Assets/_Project/Scenes/01_MAIN_MENU.unity";
+        private const string WorldScenePath = "Assets/_Project/Scenes/02_HECTON_WORLD.unity";
+        private const string MasterMixerPath = "Assets/_Project/MasterMixer.mixer";
         private const string PrologueSignalWarmupPath = "Assets/_Project/Scripts/Core/Signals/PrologueReentrySignals.cs";
         private const string MusicDirectorPath = "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs";
+        private const string MusicDirectorConfigPath = "Assets/_Project/Data/Audio/Music/Configs/MusicDirectorConfig_Global.asset";
+        private const string MusicDirectorPrefabPath = "Assets/_Project/Prefabs/Audio/PFB_HectonMusicDirectorRoot.prefab";
+        private const string DynamicMusicSignalPath = "Assets/_Project/Scripts/Core/Contracts/Signals/DynamicMusicScalarSignal.cs";
+        private const string SignalBusRuntimePath = "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs";
         private const string DynamicMusicSynthPath = "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs";
+        private const string SystemsDebugUiPath = "Assets/_Project/Scripts/UI/HectonSystemsDebugUI.cs";
+        private const string SettingsManagerPath = "Assets/_Project/Scripts/UI/SettingsManager.cs";
+        private const string ObjectPoolManagerPath = "Assets/_Project/Scripts/ObjectPoolManager.cs";
         private const string VocalBankRuntimePath = "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs";
+        private const string SoundscapeSystemPath = "Assets/_Project/Scripts/World/SoundscapeSystem.cs";
+        private const string AcousticZoneControllerPath = "Assets/_Project/Scripts/AcousticZoneController.cs";
+        private const string AdaptiveStemMixerPath = "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs";
 
         [Test]
         public void ReentryAudioCutoffsMatchVacuumPlasmaSplashdownContract()
@@ -181,6 +194,457 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("ResolveDepthZoneReadModel()", resolveDependencies);
             StringAssert.Contains("CachePlayerRuntimeContext(GlobalRegistry.Player", coldRefresh);
             StringAssert.Contains("CacheAudioService(GlobalRegistry.Audio", coldRefresh);
+        }
+
+        [Test]
+        public void DynamicMusicScalarSignalCarriesMusicActivityInStableSanitizedSlot()
+        {
+            string signal = Read(DynamicMusicSignalPath);
+            string signalBusRuntime = Read(SignalBusRuntimePath);
+
+            StringAssert.Contains("SignalStrideBytes = 64", signal);
+            StringAssert.Contains("[StructLayout(LayoutKind.Explicit, Size = DynamicMusicScalarSignalLayout.SignalStrideBytes)]", signal);
+            StringAssert.Contains("[FieldOffset(32)] public uint SourceHash", signal);
+            StringAssert.Contains("[FieldOffset(40)] public float MusicActivity01", signal);
+            StringAssert.Contains("SourceMusicDirectorHash", signal);
+            StringAssert.Contains("FlagSuppressReactiveImpulses = 1u << 3", signal);
+            StringAssert.Contains("SanitizeUnit01(ref signal.MusicActivity01)", signalBusRuntime);
+            AssertTextBefore(signal, "public uint SourceHash", "public float MusicActivity01");
+        }
+
+        [Test]
+        public void MusicDirectorAnchorsExistInMenuAndWorldScenes()
+        {
+            const string configGuid = "3fe2e07be4fdac24cb6b2f12b438dcc3";
+            const string prefabGuid = "7a86aa3ad745a104d84c2f6622d12430";
+            const string masterMixerGuid = "69195f25e7aad1b44a0d49cc645ff0f3";
+            const string musicGroupReference = "{fileID: 1111111111, guid: " + masterMixerGuid + ", type: 2}";
+            string mainMenuScene = Read(MainMenuScenePath);
+            string worldScene = Read(WorldScenePath);
+            string config = Read(MusicDirectorConfigPath);
+            string prefab = Read(MusicDirectorPrefabPath);
+
+            Assert.That(CountOccurrences(mainMenuScene, "Hecton8.Audio.HectonMusicDirectorAnchor"), Is.EqualTo(1));
+            Assert.That(CountOccurrences(worldScene, "Hecton8.Audio.HectonMusicDirectorAnchor"), Is.EqualTo(1));
+            StringAssert.Contains("_config: {fileID: 11400000, guid: " + configGuid + ", type: 2}", mainMenuScene);
+            StringAssert.Contains("_config: {fileID: 11400000, guid: " + configGuid + ", type: 2}", worldScene);
+            StringAssert.Contains("_runtimeDirectorPrefab: {fileID: 4511111111111111111, guid: " + prefabGuid + ", type: 3}", config);
+            StringAssert.Contains("_musicMixerGroup: " + musicGroupReference, config);
+            StringAssert.Contains("_stingerMixerGroup: " + musicGroupReference, config);
+            StringAssert.Contains("m_EditorClassIdentifier: Hecton8.Core::Hecton8.Audio.HectonMusicDirector", prefab);
+        }
+
+        [Test]
+        public void MusicVolumeSettingsDriveMasterMixerMusicBus()
+        {
+            const string masterMixerGuid = "69195f25e7aad1b44a0d49cc645ff0f3";
+            const string musicGroupGuid = "aaaaaaaa1111111111111111aaaaaaaa";
+            const string musicVolumeGuid = "11111111111111111111111111111111";
+            const string musicGroupReference = "{fileID: 1111111111, guid: " + masterMixerGuid + ", type: 2}";
+            string settingsManager = Read(SettingsManagerPath);
+            string mainMenuScene = Read(MainMenuScenePath);
+            string masterMixer = Read(MasterMixerPath);
+            string config = Read(MusicDirectorConfigPath);
+            string musicProperty = ExtractMethodBody(settingsManager, "public float MusicVolume");
+            string applyAudio = ExtractMethodBody(settingsManager, "private bool ApplyAudioMixerSettings()");
+            string applyMixer = ExtractMethodBody(settingsManager, "private bool ApplyMixerVolume(");
+
+            StringAssert.Contains("name: MusicVolume", masterMixer);
+            StringAssert.Contains("m_Name: Music", masterMixer);
+            StringAssert.Contains("m_GroupID: " + musicGroupGuid, masterMixer);
+            StringAssert.Contains("m_Volume: " + musicVolumeGuid, masterMixer);
+            StringAssert.Contains("audioMixer: {fileID: 24100000, guid: " + masterMixerGuid + ", type: 2}", mainMenuScene);
+            StringAssert.Contains("ApplyMixerVolume(\"MusicVolume\", clamped)", musicProperty);
+            StringAssert.Contains("ApplyMixerVolume(\"MusicVolume\", _cachedMusicVolume)", applyAudio);
+            StringAssert.Contains("audioMixer.SetFloat(parameterName, db)", applyMixer);
+            StringAssert.Contains("_musicMixerGroup: " + musicGroupReference, config);
+            StringAssert.Contains("_stingerMixerGroup: " + musicGroupReference, config);
+        }
+
+        [Test]
+        public void MusicDirectorRuntimePoolFallbackWarmsReserveBeforeSpawn()
+        {
+            string musicDirector = Read(MusicDirectorPath);
+            string objectPool = Read(ObjectPoolManagerPath);
+            string instantiate = ExtractMethodBody(musicDirector, "private static bool TryInstantiateConfiguredRuntimeDirector(");
+            string reserve = ExtractMethodBody(musicDirector, "private static void EnsureRuntimeDirectorPoolReserve(");
+            string resolvePool = ExtractMethodBody(musicDirector, "private static IObjectPoolService ResolveRuntimeObjectPool()");
+            string warmup = ExtractMethodBody(objectPool, "public void Warmup(GameObject prefab, int count)");
+            string spawn = ExtractMethodBody(objectPool, "public GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation, bool allowExpand)");
+
+            StringAssert.Contains("RuntimeDirectorPoolReserveCount = 1", musicDirector);
+            StringAssert.Contains("EnsureRuntimeDirectorPoolReserve(pool, runtimeDirectorPrefab);", instantiate);
+            AssertTextBefore(instantiate, "EnsureRuntimeDirectorPoolReserve(pool, runtimeDirectorPrefab);", "pool.Spawn(runtimeDirectorPrefab");
+            StringAssert.Contains("pool.Warmup(runtimeDirectorPrefab, RuntimeDirectorPoolReserveCount);", reserve);
+            StringAssert.Contains("ObjectPoolManager.ActiveRuntimeInstance", resolvePool);
+            StringAssert.Contains("Pool pool = PreparePool(prefab, registry);", warmup);
+            StringAssert.Contains("if (!_pools.TryGetValue(prefabId, out Pool pool))", spawn);
+            StringAssert.Contains("return null;", spawn);
+        }
+
+        [Test]
+        public void ProceduralMusicActivityUsesPhrasesAndYieldsToEmergencyBreath()
+        {
+            string musicDirector = Read(MusicDirectorPath);
+            string update = ExtractMethodBody(musicDirector, "private void UpdateProceduralMusicActivity(");
+            string forceOpen = ExtractMethodBody(musicDirector, "private bool ShouldForceProceduralMusicOpen()");
+            string wait = ExtractMethodBody(musicDirector, "private void BeginProceduralWait(");
+            string phrase = ExtractMethodBody(musicDirector, "private float ResolveProceduralPhraseSeconds(");
+            string target = ExtractMethodBody(musicDirector, "private float ResolveProceduralMusicActivityTarget01()");
+            string publish = ExtractMethodBody(musicDirector, "private void PublishDynamicMusicScalars(");
+            string stopPublish = ExtractMethodBody(musicDirector, "private void PublishProceduralMusicStopSignal()");
+            string stinger = ExtractMethodBody(musicDirector, "private void InjectProceduralStinger(");
+            string overrideStart = ExtractMethodBody(musicDirector, "private void ForceOverrideTrackInternal(");
+            string stop = ExtractMethodBody(musicDirector, "private void StopMusicInternal(");
+            string stressRefresh = ExtractMethodBody(musicDirector, "private void RefreshPlayerCriticalStressSignal()");
+            string emergencyDominance = ExtractMethodBody(musicDirector, "private float ResolveEmergencyAudioDominance01()");
+            string emergencyGate = ExtractMethodBody(musicDirector, "private bool IsEmergencyBreathDominant()");
+            string warningDuck = ExtractMethodBody(musicDirector, "private void RefreshVocalWarningMusicDucking()");
+            string warningDuckResolve = ExtractMethodBody(musicDirector, "private static float ResolveVocalWarningMusicDuck01(");
+            string speechDuck = ExtractMethodBody(musicDirector, "private void RefreshForegroundSpeechMusicDucking()");
+            string speechApply = ExtractMethodBody(musicDirector, "private float ApplyForegroundSpeechMusicDuck01(");
+            string speechActive = ExtractMethodBody(musicDirector, "private bool IsForegroundSpeechActive()");
+            string audioLogDuck = ExtractMethodBody(musicDirector, "private void RefreshNarrativeAudioLogMusicDucking()");
+            string speechDuckResolve = ExtractMethodBody(musicDirector, "private float ResolveForegroundSpeechMusicDuck01()");
+
+            StringAssert.Contains("public enum MusicActivityReason", musicDirector);
+            StringAssert.Contains("CurrentMusicActivity01 => math.saturate(_proceduralMusicActivity01)", musicDirector);
+            StringAssert.Contains("CurrentMusicActivityReason => _musicActivityReason", musicDirector);
+            StringAssert.Contains("public SoundscapeTier CurrentSoundscapeTier", musicDirector);
+            StringAssert.Contains("public float CurrentSoundscapePressure01", musicDirector);
+            StringAssert.Contains("public void SetSoundscapeTierContext(SoundscapeTier tier, float depthMeters)", musicDirector);
+            StringAssert.Contains("_soundscapePressureWeight", musicDirector);
+            StringAssert.Contains("_soundscapeDepthHintMeters", musicDirector);
+            StringAssert.Contains("CriticalPlayerStressDominatesThreshold = 0.88f", musicDirector);
+            StringAssert.Contains("PlayerStressSignalHoldFrames = 8", musicDirector);
+            StringAssert.Contains("VocalWarningMusicDuckDefault01 = 0.38f", musicDirector);
+            StringAssert.Contains("VocalWarningMusicDuckCritical01 = 0.62f", musicDirector);
+            StringAssert.Contains("NarrativeAudioLogMusicDuck01 = 0.48f", musicDirector);
+            StringAssert.Contains("RefreshPlayerCriticalStressSignal();", musicDirector);
+            StringAssert.Contains("SignalBus<PlayerStressSignal>.TryGetLatest", stressRefresh);
+            StringAssert.Contains("_lastPlayerStressSignalSeenFrame == int.MinValue", stressRefresh);
+            StringAssert.Contains("frame - _lastPlayerStressSignalSeenFrame > PlayerStressSignalHoldFrames", stressRefresh);
+            StringAssert.Contains("_playerCriticalStress01 = math.saturate(signal.Stress01)", stressRefresh);
+            StringAssert.Contains("_playerCriticalStress01 = 0f", stressRefresh);
+            StringAssert.Contains("math.max(_oxygenDanger01, _playerCriticalStress01)", emergencyDominance);
+            StringAssert.Contains("_playerCriticalStress01 >= CriticalPlayerStressDominatesThreshold", emergencyGate);
+            StringAssert.Contains("RefreshVocalWarningRuntimeIfStale();", warningDuck);
+            StringAssert.Contains("IVocalWarningSystem vocalWarningSystem = ResolveVocalWarningSystem()", warningDuck);
+            StringAssert.Contains("vocalWarningSystem.IsWarningActive", warningDuck);
+            StringAssert.Contains("ResolveVocalWarningMusicDuck01(warningId)", warningDuck);
+            StringAssert.Contains("RefreshVocalWarningMusicDucking();", speechDuck);
+            StringAssert.Contains("RefreshNarrativeAudioLogMusicDucking();", speechDuck);
+            StringAssert.Contains("safeActivity01 * (1f - duck01)", speechApply);
+            StringAssert.Contains("RefreshForegroundSpeechMusicDucking();", speechActive);
+            StringAssert.Contains("ResolveForegroundSpeechMusicDuck01() > 0.001f", speechActive);
+            StringAssert.Contains("IAudioLogRuntime audioLogRuntime = ResolveAudioLogRuntime()", audioLogDuck);
+            StringAssert.Contains("audioLogRuntime.IsPlaying || audioLogRuntime.IsNarrativeQueueBlocked", audioLogDuck);
+            StringAssert.Contains("NarrativeAudioLogMusicDuck01", audioLogDuck);
+            StringAssert.Contains("math.max(_vocalWarningMusicDuck01, _narrativeAudioLogMusicDuck01)", speechDuckResolve);
+            StringAssert.Contains("VocalWarningId.CrushDepth", warningDuckResolve);
+            StringAssert.Contains("VocalWarningId.HullBreach", warningDuckResolve);
+            StringAssert.Contains("VocalWarningId.OxygenLow", warningDuckResolve);
+            StringAssert.Contains("ShouldForceProceduralMusicOpen()", update);
+            StringAssert.Contains("StartProceduralPhrase(true);", update);
+            StringAssert.Contains("BeginProceduralWait(", update);
+            StringAssert.Contains("StartProceduralPhrase(false)", update);
+            StringAssert.Contains("_proceduralMusicActivity01 = MoveTowards(", update);
+            StringAssert.Contains("ResolveSoundscapeRestScale(_currentSoundscapeTier)", wait);
+            StringAssert.Contains("ResolveSoundscapePhraseScale(_currentSoundscapeTier)", phrase);
+            StringAssert.Contains("!IsEmergencyBreathDominant()", forceOpen);
+            StringAssert.Contains("_combatLatched", forceOpen);
+            StringAssert.Contains("_tenseExplorationLatched", forceOpen);
+            StringAssert.Contains("_currentBaseContext", forceOpen);
+            StringAssert.Contains("IsEmergencyBreathDominant()", target);
+            StringAssert.Contains("MusicActivityReason.Emergency", target);
+            StringAssert.Contains("MusicActivityReason.Combat", target);
+            StringAssert.Contains("MusicActivityReason.Exploration", target);
+            StringAssert.Contains("return 0f", target);
+            StringAssert.Contains("MusicActivityReason.Menu", target);
+            StringAssert.Contains("MusicActivityReason.Prologue", target);
+            StringAssert.Contains("if (_menuSceneActive)", target);
+            StringAssert.Contains("if (_prologueSceneActive)", target);
+            StringAssert.Contains("_playbackState != PlaybackState.Playing", target);
+            StringAssert.Contains("ResolveSoundscapePressure01(_currentSoundscapeTier)", target);
+            StringAssert.Contains("soundscapePressure01 * 0.12f", target);
+            StringAssert.Contains("ResolveEmergencyAudioDominance01()", target);
+            StringAssert.Contains("ApplyForegroundSpeechMusicDuck01(", target);
+            StringAssert.Contains("bool foregroundSpeechActive = IsForegroundSpeechActive();", publish);
+            StringAssert.Contains("emergencyBreathDominates || foregroundSpeechActive", publish);
+            StringAssert.Contains("float activity01 = emergencyBreathDominates ? 0f", publish);
+            StringAssert.Contains("flags |= DynamicMusicScalarSignal.FlagSuppressReactiveImpulses", publish);
+            StringAssert.Contains("PushDynamicMusicSignal(", publish);
+            StringAssert.Contains("DynamicMusicScalarSignal.FlagExternalScalars | DynamicMusicScalarSignal.FlagSuppressReactiveImpulses", stopPublish);
+            StringAssert.Contains("PublishProceduralMusicStopSignal();", stop);
+            StringAssert.Contains("signal.MusicActivity01 = math.saturate", musicDirector);
+            StringAssert.Contains("if (IsEmergencyBreathDominant() || IsForegroundSpeechActive())", stinger);
+            StringAssert.Contains("bool emergencyBreathDominates = IsEmergencyBreathDominant();", overrideStart);
+            StringAssert.Contains("float overrideSignal01 = emergencyBreathDominates ? 0f : _overrideVolume", overrideStart);
+            StringAssert.Contains("flags |= DynamicMusicScalarSignal.FlagSuppressReactiveImpulses", overrideStart);
+            StringAssert.Contains("_musicActivityReason = MusicActivityReason.Emergency", overrideStart);
+            StringAssert.Contains("flags |= DynamicMusicScalarSignal.FlagStingerImpulse | DynamicMusicScalarSignal.FlagOverrideImpulse", overrideStart);
+            AssertTextBefore(overrideStart, "bool emergencyBreathDominates = IsEmergencyBreathDominant();", "PushDynamicMusicSignal(");
+            AssertTextBefore(target, "if (IsEmergencyBreathDominant())", "if (_overrideActive)");
+            AssertTextBefore(target, "if (IsEmergencyBreathDominant())", "if (_menuSceneActive)");
+            AssertTextBefore(publish, "bool emergencyBreathDominates = IsEmergencyBreathDominant();", "float activity01 = emergencyBreathDominates ? 0f");
+            AssertTextBefore(publish, "bool foregroundSpeechActive = IsForegroundSpeechActive();", "float damageImpulse01");
+            AssertTextBefore(emergencyGate, "RefreshPlayerCriticalStressSignal();", "float liveOxygenDanger01");
+            AssertTextBefore(stop, "_debugMusicActivity01 = 0f", "PublishProceduralMusicStopSignal();");
+        }
+
+        [Test]
+        public void SoundscapeTierContextFeedsMusicDirectorPhrasing()
+        {
+            string soundscape = Read(SoundscapeSystemPath);
+            string musicDirector = Read(MusicDirectorPath);
+            string slowTick = ExtractMethodBody(soundscape, "public void SlowTick()");
+            string onEnable = ExtractMethodBody(soundscape, "private void OnEnable()");
+            string depthTier = ExtractMethodBody(soundscape, "void IBiomeMatrixEventListener.OnDepthTierChanged(");
+            string sync = ExtractMethodBody(soundscape, "private void SyncMusicDirectorSoundscapeContext(");
+            string setContext = ExtractMethodBody(musicDirector, "public void SetSoundscapeTierContext(");
+            string resolveProfile = ExtractMethodBody(musicDirector, "private HectonMusicBiomeProfile ResolveProfile(");
+            string soundscapeProfile = ExtractMethodBody(musicDirector, "private HectonMusicBiomeProfile ResolveSoundscapeTierProfile(");
+            string resolveLayerDepth = ExtractMethodBody(musicDirector, "private float ResolveLayerDepthMeters()");
+            string tension = ExtractMethodBody(musicDirector, "private float ResolveTension01()");
+            string route = ExtractMethodBody(musicDirector, "private void UpdateLayerRouting(");
+
+            StringAssert.Contains("SyncMusicDirectorSoundscapeContext(_currentTier", onEnable);
+            StringAssert.Contains("SyncMusicDirectorSoundscapeContext(newTier, depth)", slowTick);
+            AssertTextBefore(slowTick, "SyncMusicDirectorSoundscapeContext(newTier, depth)", "if (newTier == _currentTier)");
+            StringAssert.Contains("director.SetSoundscapeTierContext(CalculateTier(depthMeters, _currentTier), depthMeters)", depthTier);
+            StringAssert.Contains("director.SetSoundscapeTierContext(tier, depthMeters)", sync);
+            StringAssert.Contains("SoundscapeTier safeTier = SanitizeSoundscapeTier(tier)", setContext);
+            StringAssert.Contains("ResolveSoundscapeDepthHintMeters(safeTier)", setContext);
+            StringAssert.Contains("float pressure01 = ResolveSoundscapePressure01(safeTier)", setContext);
+            StringAssert.Contains("bool tierChanged = _currentSoundscapeTier != safeTier", setContext);
+            StringAssert.Contains("_debugSoundscapePressure01 = pressure01", setContext);
+            StringAssert.Contains("if (tierChanged)", setContext);
+            StringAssert.Contains("ReevaluateContext(true);", setContext);
+            StringAssert.Contains("ResolveSoundscapeTierProfile()", resolveProfile);
+            AssertTextBefore(resolveProfile, "ResolveSoundscapeTierProfile()", "return _fallbackProfile");
+            StringAssert.Contains("case SoundscapeTier.Thermal", soundscapeProfile);
+            StringAssert.Contains("_thermalProfile != null ? _thermalProfile", soundscapeProfile);
+            StringAssert.Contains("case SoundscapeTier.DeepAbyss", soundscapeProfile);
+            StringAssert.Contains("_abyssProfile != null ? _abyssProfile", soundscapeProfile);
+            StringAssert.Contains("case SoundscapeTier.Darkness", soundscapeProfile);
+            StringAssert.Contains("_shelfProfile != null ? _shelfProfile", soundscapeProfile);
+            StringAssert.Contains("case SoundscapeTier.Shallow", soundscapeProfile);
+            StringAssert.Contains("_shallowProfile != null ? _shallowProfile", soundscapeProfile);
+            StringAssert.Contains("return math.max(0f, _soundscapeDepthHintMeters);", resolveLayerDepth);
+            StringAssert.Contains("soundscapePressure01 * _soundscapePressureWeight", tension);
+            StringAssert.Contains("_debugSoundscapePressure01 = soundscapePressure01", tension);
+            StringAssert.Contains("math.max(InverseLerp(20f, 900f, depthMeters), soundscapePressure01)", route);
+            StringAssert.Contains("soundscapePressure01 * 0.18f", route);
+        }
+
+        [Test]
+        public void MusicDirectorLayerMixerRouteAppliesCachedOptionalExposedParameters()
+        {
+            string musicDirector = Read(MusicDirectorPath);
+            string bind = ExtractMethodBody(musicDirector, "private void BindRuntimeVoiceRoutingCold()");
+            string route = ExtractMethodBody(musicDirector, "private void UpdateLayerRouting(");
+            string apply = ExtractMethodBody(musicDirector, "private void ApplyLayerMixerState(");
+            string normalize = ExtractMethodBody(musicDirector, "private static float NormalizedLayerValueToDb(");
+            string tryApply = ExtractMethodBody(musicDirector, "private bool TryApplyLayerMixerParameter(");
+            string reset = ExtractMethodBody(musicDirector, "private void ResetLayerMixerStateCache()");
+
+            StringAssert.Contains("_debugLayerMixerRouteAvailable", musicDirector);
+            StringAssert.Contains("public float CurrentRhythmLayer01 => math.saturate(_layerRhythm01)", musicDirector);
+            StringAssert.Contains("public float CurrentBassLayer01 => math.saturate(_layerBass01)", musicDirector);
+            StringAssert.Contains("public float CurrentAtmosphereLayer01 => math.saturate(_layerAtmosphere01)", musicDirector);
+            StringAssert.Contains("public float CurrentDangerLayer01 => math.saturate(_layerDanger01)", musicDirector);
+            StringAssert.Contains("public bool CurrentLayerMixerRouteAvailable => _debugLayerMixerRouteAvailable", musicDirector);
+            StringAssert.Contains("ResetLayerMixerStateCache();", bind);
+            StringAssert.Contains("ApplyLayerMixerState(true);", bind);
+            StringAssert.Contains("float emergencyAudio01 = ResolveEmergencyAudioDominance01()", route);
+            StringAssert.Contains("_playerCriticalStress01 * 0.16f", route);
+            StringAssert.Contains("ApplyLayerMixerState(false);", route);
+            StringAssert.Contains("NormalizedLayerValueToDb(_layerRhythm01)", apply);
+            StringAssert.Contains("NormalizedLayerValueToDb(_layerBass01)", apply);
+            StringAssert.Contains("NormalizedLayerValueToDb(_layerAtmosphere01)", apply);
+            StringAssert.Contains("NormalizedLayerValueToDb(_layerDanger01)", apply);
+            StringAssert.Contains("_debugLayerMixerRouteAvailable = anyRouteAvailable", apply);
+            StringAssert.Contains("Mathf.Log10(clamped)", normalize);
+            StringAssert.Contains("MixerFloorDb", normalize);
+            StringAssert.Contains("MixerCeilingDb", normalize);
+            StringAssert.Contains("string.IsNullOrEmpty(parameterName)", tryApply);
+            StringAssert.Contains("unavailable && !force", tryApply);
+            StringAssert.Contains("math.abs(lastValueDb - valueDb) < 0.05f", tryApply);
+            StringAssert.Contains("_layerMixer.SetFloat(parameterName, valueDb)", tryApply);
+            StringAssert.Contains("unavailable = true", tryApply);
+            StringAssert.Contains("lastValueDb = float.MinValue", tryApply);
+            StringAssert.Contains("_rhythmLayerParameterUnavailable = false", reset);
+            AssertTextBefore(bind, "ResetLayerMixerStateCache();", "ApplyLayerMixerState(true);");
+            AssertTextBefore(tryApply, "if (unavailable && !force)", "if (!_layerMixer.SetFloat(parameterName, valueDb))");
+        }
+
+        [Test]
+        public void AcousticZoneMusicAmbientDuckingUsesMusicDirectorStateOffAudioThread()
+        {
+            string acousticZone = Read(AcousticZoneControllerPath);
+            string hotSwap = ExtractMethodBody(acousticZone, "public void OnGlobalRegistryServiceReplaced(");
+            string clear = ExtractMethodBody(acousticZone, "private void ClearCachedRegistryServices()");
+            string coldCache = ExtractMethodBody(acousticZone, "private void CacheRegistryServicesCold()");
+            string cacheMusic = ExtractMethodBody(acousticZone, "private void CacheMusicDirector(");
+            string tick = ExtractMethodBody(acousticZone, "public void Tick(");
+            string diagnostics = ExtractMethodBody(acousticZone, "private void UpdateDiagnostics(");
+            string mix = ExtractMethodBody(acousticZone, "private void UpdateAmbientLoopMix(");
+            string duckUpdate = ExtractMethodBody(acousticZone, "private void UpdateMusicAmbientDucking(");
+            string duckTarget = ExtractMethodBody(acousticZone, "private float ResolveMusicAmbientDuckTarget01(");
+            string duckWeight = ExtractMethodBody(acousticZone, "private float ResolveMusicAmbientDuckReasonWeight01(");
+            string duckVolume = ExtractMethodBody(acousticZone, "private float ResolveMusicAmbientDuckVolumeScale()");
+            string onValidate = ExtractMethodBody(acousticZone, "private void OnValidate()");
+
+            StringAssert.Contains("musicAmbientDuckMax", acousticZone);
+            StringAssert.Contains("_debugMusicAmbientDuck", acousticZone);
+            StringAssert.Contains("GlobalRegistryServiceSlot.MusicDirectorRuntime", hotSwap);
+            StringAssert.Contains("CacheMusicDirector(currentService as HectonMusicDirector)", hotSwap);
+            StringAssert.Contains("_cachedMusicDirector = null", clear);
+            StringAssert.Contains("_currentMusicAmbientDuck01 = 0f", clear);
+            StringAssert.Contains("CacheMusicDirector(GlobalRegistry.MusicDirector)", coldCache);
+            StringAssert.Contains("musicDirector != null && musicDirector.isActiveAndEnabled", cacheMusic);
+            StringAssert.Contains("UpdateMusicAmbientDucking(AcousticZoneState.Surface, deltaTime)", tick);
+            StringAssert.Contains("UpdateMusicAmbientDucking(currentZone, deltaTime)", tick);
+            Assert.That(
+                tick.IndexOf("RefreshSoundscapeTierContext(false);", StringComparison.Ordinal),
+                Is.LessThan(tick.LastIndexOf("UpdateMusicAmbientDucking(currentZone, deltaTime)", StringComparison.Ordinal)));
+            StringAssert.Contains("ResolveMusicAmbientDuckVolumeScale()", diagnostics);
+            StringAssert.Contains("targetVolume *= ResolveMusicAmbientDuckVolumeScale();", mix);
+            StringAssert.Contains("ResolveMusicAmbientDuckTarget01(zone)", duckUpdate);
+            StringAssert.Contains("ApproximateOneMinusExpNegPositive(math.max(0.01f, sharpness) * deltaTime)", duckUpdate);
+            StringAssert.Contains("_debugMusicAmbientDuck = _currentMusicAmbientDuck01", duckUpdate);
+            StringAssert.Contains("zone != AcousticZoneState.Underwater", duckTarget);
+            StringAssert.Contains("HectonMusicDirector musicDirector = _cachedMusicDirector", duckTarget);
+            StringAssert.Contains("musicDirector.CurrentMusicActivityReason", duckTarget);
+            StringAssert.Contains("HectonMusicDirector.MusicActivityReason.Emergency", duckTarget);
+            StringAssert.Contains("HectonMusicDirector.MusicActivityReason.Rest", duckTarget);
+            StringAssert.Contains("musicDirector.CurrentMusicActivity01", duckTarget);
+            StringAssert.Contains("ResolveMusicAmbientDuckReasonWeight01(reason)", duckTarget);
+            AssertTextBefore(duckTarget, "HectonMusicDirector.MusicActivityReason.Emergency", "musicDirector.CurrentMusicActivity01");
+            AssertTextBefore(duckTarget, "HectonMusicDirector.MusicActivityReason.Rest", "musicDirector.CurrentMusicActivity01");
+            StringAssert.Contains("MusicActivityReason.Exploration", duckWeight);
+            StringAssert.Contains("MusicActivityReason.Base", duckWeight);
+            StringAssert.Contains("MusicActivityReason.Tense", duckWeight);
+            StringAssert.Contains("MusicActivityReason.Combat", duckWeight);
+            StringAssert.Contains("MusicActivityReason.Override", duckWeight);
+            StringAssert.Contains("math.lerp(1f, math.max(0.1f, 1f - musicAmbientDuckMax)", duckVolume);
+            StringAssert.Contains("if (musicAmbientDuckMax < 0f) musicAmbientDuckMax = 0f", onValidate);
+            StringAssert.Contains("if (foregroundMusicAmbientDuckWeight > 1f) foregroundMusicAmbientDuckWeight = 1f", onValidate);
+            Assert.That(duckUpdate.IndexOf("GlobalRegistry.", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(duckTarget.IndexOf("GlobalRegistry.", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(mix.IndexOf("GlobalRegistry.", StringComparison.Ordinal), Is.LessThan(0));
+        }
+
+        [Test]
+        public void MusicDebugHudShowsActivityReasonWithoutStringFormatting()
+        {
+            string debugUi = Read(SystemsDebugUiPath);
+            string setter = ExtractMethodBody(debugUi, "private void SetMusicTensionActivityText(");
+            string layerSetter = ExtractMethodBody(debugUi, "private void SetMusicLayerText(");
+            string compact = ExtractMethodBody(debugUi, "private static int WriteCompactBudgetEntry(");
+            string reason = ExtractMethodBody(debugUi, "private static string ResolveMusicReasonCode(");
+
+            StringAssert.Contains("private readonly char[] _musicTensionBuffer = new char[32]", debugUi);
+            StringAssert.Contains("private readonly char[] _musicLayerBuffer = new char[40]", debugUi);
+            StringAssert.Contains("music.CurrentMusicActivityReason", debugUi);
+            StringAssert.Contains("debugMusicReason = ResolveMusicReasonCode(music.CurrentMusicActivityReason)", debugUi);
+            StringAssert.Contains("CreateLabel(\"MusicLayerLabel\", \"MUSIC LAYERS\"", debugUi);
+            StringAssert.Contains("_titleValue == null || _musicLayerValue == null", debugUi);
+            StringAssert.Contains("SetMusicLayerText(", debugUi);
+            StringAssert.Contains("music.CurrentRhythmLayer01", debugUi);
+            StringAssert.Contains("music.CurrentBassLayer01", debugUi);
+            StringAssert.Contains("music.CurrentAtmosphereLayer01", debugUi);
+            StringAssert.Contains("music.CurrentDangerLayer01", debugUi);
+            StringAssert.Contains("music.CurrentLayerMixerRouteAvailable", debugUi);
+            StringAssert.Contains("ResolveMusicReasonCode(reason)", setter);
+            StringAssert.Contains("WriteCompactBudgetEntry(_musicLayerBuffer, index, 'R'", layerSetter);
+            StringAssert.Contains("WriteCompactBudgetEntry(_musicLayerBuffer, index, 'B'", layerSetter);
+            StringAssert.Contains("WriteCompactBudgetEntry(_musicLayerBuffer, index, 'A'", layerSetter);
+            StringAssert.Contains("WriteCompactBudgetEntry(_musicLayerBuffer, index, 'D'", layerSetter);
+            StringAssert.Contains("mixerRouteAvailable ? '+' : '-'", layerSetter);
+            StringAssert.Contains("value.TryFormat(buffer.AsSpan(index)", compact);
+            StringAssert.Contains("MusicActivityReason.Emergency", reason);
+            StringAssert.Contains("return \"EMG\"", reason);
+            StringAssert.Contains("MusicActivityReason.Combat", reason);
+            StringAssert.Contains("return \"CBT\"", reason);
+            StringAssert.Contains("MusicActivityReason.Exploration", reason);
+            StringAssert.Contains("return \"EXP\"", reason);
+            Assert.That(setter.IndexOf("string.Format", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(setter.IndexOf(".ToString(", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(layerSetter.IndexOf("string.Format", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(layerSetter.IndexOf(".ToString(", StringComparison.Ordinal), Is.LessThan(0));
+        }
+
+        [Test]
+        public void DynamicMusicHostRoutingUsesMusicDirectorAndSettingsOnlyOffAudioThread()
+        {
+            string synth = Read(DynamicMusicSynthPath);
+            string coldTick = ExtractMethodBody(synth, "public void ColdTick()");
+            string hotSwap = ExtractMethodBody(synth, "public void OnGlobalRegistryServiceReplaced(");
+            string route = ExtractMethodBody(synth, "private void ApplyAudioHostMixerRoute()");
+            string fallback = ExtractMethodBody(synth, "private float ResolveFallbackMusicHostVolume01()");
+            string drain = ExtractMethodBody(synth, "private void DrainSignalInputs()");
+            string schedule = ExtractMethodBody(synth, "private void ScheduleSynthJobs(");
+            string mockJob = ExtractMethodBody(synth, "private unsafe struct GenerateMockTensionJob");
+            string callback = ExtractMethodBody(synth, "private void OnAudioFilterRead(");
+
+            StringAssert.Contains("CacheMusicDirectorCold();", coldTick);
+            StringAssert.Contains("CacheSettingsManagerCold();", coldTick);
+            StringAssert.Contains("GlobalRegistryServiceSlot.SettingsRuntime", hotSwap);
+            StringAssert.Contains("CacheSettingsManager(currentService as SettingsManager)", hotSwap);
+            StringAssert.Contains("GlobalRegistryServiceSlot.MusicDirectorRuntime", hotSwap);
+            StringAssert.Contains("CacheMusicDirector(currentService as HectonMusicDirector)", hotSwap);
+            StringAssert.Contains("HectonMusicDirector musicDirector = _cachedMusicDirector", route);
+            StringAssert.Contains("musicDirector.DedicatedMusicMixerGroup", route);
+            StringAssert.Contains("_hostSource.volume = ResolveFallbackMusicHostVolume01();", route);
+            StringAssert.Contains("audioService.AmbientGroup", route);
+            StringAssert.Contains("SettingsManager settings = _cachedSettingsManager", fallback);
+            StringAssert.Contains("settings.MusicVolume", fallback);
+            StringAssert.Contains("bool signalIsMusicDirectorScalar", drain);
+            StringAssert.Contains("if (signalIsMusicDirectorScalar || !receivedMusicDirectorScalar)", drain);
+            StringAssert.Contains("if (signalIsMusicDirectorScalar)", drain);
+            StringAssert.Contains("else if (!receivedMusicDirectorScalar && signal.MusicActivity01 > 0f)", drain);
+            StringAssert.Contains("FlagSuppressReactiveImpulses", drain);
+            StringAssert.Contains("_externalDamageImpulse01 = 0f", drain);
+            StringAssert.Contains("_externalMusicActivity01 = 0f", drain);
+            StringAssert.Contains("MusicDirectorScalarGraceTicks", synth);
+            StringAssert.Contains("!_allowMockPlaybackWithoutDirector", drain);
+            StringAssert.Contains("!receivedMusicDirectorScalar", drain);
+            StringAssert.Contains("Volatile.Write(ref _suppressReactiveMusicImpulses", drain);
+            StringAssert.Contains("Volatile.Read(ref _suppressReactiveMusicImpulses)", schedule);
+            StringAssert.Contains("mockJob.SuppressReactiveImpulses", schedule);
+            StringAssert.Contains("public int SuppressReactiveImpulses", mockJob);
+            StringAssert.Contains("? 0f", mockJob);
+            StringAssert.Contains("scalar.StingerImpulse = SuppressReactiveImpulses != 0", mockJob);
+            AssertTextBefore(drain, "if (signalIsMusicDirectorScalar)", "if ((signal.Flags & DynamicMusicScalarSignal.FlagSuppressReactiveImpulses)");
+            AssertTextBefore(drain, "if (suppressReactiveImpulses)", "_pendingStingerImpulse = math.saturate(stingerImpulse);");
+            AssertTextBefore(drain, "!_allowMockPlaybackWithoutDirector", "_pendingStingerImpulse = math.saturate(stingerImpulse);");
+            Assert.That(route.IndexOf("GlobalRegistry.", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(fallback.IndexOf("GlobalRegistry.", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(callback.IndexOf("ResolveFallbackMusicHostVolume01", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(callback.IndexOf("SettingsManager", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(callback.IndexOf("MusicDirector", StringComparison.Ordinal), Is.LessThan(0));
+        }
+
+        [Test]
+        public void AdaptiveStemBridgeFeedsContextButNeverMusicActivityOrReactivePunches()
+        {
+            string adaptiveStem = Read(AdaptiveStemMixerPath);
+            string apply = ExtractMethodBody(adaptiveStem, "private void ApplyMixFrameToUnityAudio(");
+            string push = ExtractMethodBody(adaptiveStem, "private void PushDynamicMusicSignal(");
+
+            StringAssert.Contains("ProceduralSynthOwnsStemTransport", apply);
+            StringAssert.Contains("PushDynamicMusicSignal(tension, depthMeters, quality);", apply);
+            StringAssert.Contains("DynamicMusicScalarSignal.FlagExternalScalars |", push);
+            StringAssert.Contains("DynamicMusicScalarSignal.FlagSuppressReactiveImpulses", push);
+            StringAssert.Contains("signal.Tension01 = math.saturate", push);
+            StringAssert.Contains("signal.DepthMeters = math.max", push);
+            StringAssert.Contains("signal.GlobalQualityWeight = math.saturate", push);
+            StringAssert.Contains("signal.DamageImpulse01 = 0f", push);
+            StringAssert.Contains("signal.MusicActivity01 = 0f", push);
+            StringAssert.Contains("DynamicMusicScalarSignal.SourceAdaptiveStemHash", push);
+            Assert.That(apply.IndexOf("frame.IoPressure01", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(push.IndexOf("damageImpulse", StringComparison.OrdinalIgnoreCase), Is.LessThan(0));
         }
 
         [Test]

@@ -454,7 +454,6 @@ namespace Hecton8.VFX
             TryRegisterLateFrame();
 
             TryResolveGameplayDependencies();
-            SyncDependencySubscriptions();
             EnsureProceduralCameraJuiceBuffers();
             EnsureCameraSpeedLineParticles();
 
@@ -468,8 +467,6 @@ namespace Hecton8.VFX
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
             TryUnregisterHotSwapListener();
-
-            UnhookDependencyEvents();
 
             InteractionEvents.Unregister(this);
             TryUnregisterPhysicsImpactListener();
@@ -704,7 +701,6 @@ namespace Hecton8.VFX
             if (ReferenceEquals(_playerRuntimeContext, playerRuntimeContext))
                 return;
 
-            UnhookDependencyEvents();
             _playerRuntimeContext = playerRuntimeContext;
             if (_survivalSystemReference == null)
                 _survivalSystem = playerRuntimeContext != null ? playerRuntimeContext.SurvivalSystem : null;
@@ -712,8 +708,6 @@ namespace Hecton8.VFX
                 _playerMovement = playerRuntimeContext != null ? playerRuntimeContext.PlayerMovement : null;
 
             SyncDependencyFlags();
-            if (isActiveAndEnabled)
-                SyncDependencySubscriptions();
         }
 
         private void BindSubmarineRuntime(ISubmarineRuntimeContext submarineRuntimeContext)
@@ -852,7 +846,6 @@ namespace Hecton8.VFX
             {
                 _dependencyResolveSlowTickCountdown = 4;
                 RefreshGameplayDependenciesFromCachedRuntime();
-                SyncDependencySubscriptions();
             }
             else
             {
@@ -2566,14 +2559,6 @@ namespace Hecton8.VFX
         {
             _healthO2EffectsEnabled = _survivalSystem != null;
             _sprintFOVEnabled = _playerMovement != null;
-        }
-
-        private void SyncDependencySubscriptions()
-        {
-        }
-
-        private void UnhookDependencyEvents()
-        {
         }
 
         private void UpdateHealthPostProcessing()

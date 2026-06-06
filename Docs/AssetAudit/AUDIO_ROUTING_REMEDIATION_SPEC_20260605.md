@@ -52,8 +52,8 @@ Proof gate:
 
 Problem:
 
-- Static profile usage review found 28 direct AudioClip refs in `Assets/_Project/Prefabs/Player.prefab`.
-- Heavy/loop clips include `Underwater Ambient.wav`; short footsteps/UI/movement clips are also direct serialized refs.
+- Current static prefab scan found 24 direct AudioClip refs in `Assets/_Project/Prefabs/Player.prefab`; prior `Underwater Ambient.wav` and `dive_splash.wav` direct refs are source-cleared but pending Unity prefab readback.
+- Heavy/loop clips include `Underwater Ambient.wav` as readback/removal proof debt; direct serialized refs currently remain in footstep/UI routes only.
 - Static refs do not prove Addressables ownership, release route, zero-GC lifecycle, or hot-path playback safety.
 
 Required owner action:

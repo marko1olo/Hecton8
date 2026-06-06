@@ -125,7 +125,7 @@ Material:
     m_Floats:
     - _AddPrecomputedVelocity: 0
     - _AegirGlowIntensity: 0
-    - _AegirHaloIntensity: 0.74
+    - _AegirHaloIntensity: 0.58
     - _AegirHaloPower: 2.9
     - _AegirLensingEdgeWidth: 0.07
     - _AegirLensingRadius: 0.32
@@ -178,15 +178,15 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _HazeFalloff: 2.8
-    - _HazeIntensity: 0.24
-    - _HazeSunTintStrength: 0.16
-    - _HighCloudOpacity: 1
+    - _HazeFalloff: 3.529331
+    - _HazeIntensity: 0.35822824
+    - _HazeSunTintStrength: 0.21612202
+    - _HighCloudOpacity: 0.82
     - _HighCloudParallaxStrength: 0
     - _HighCloudSpeedMult: 0.08
-    - _HorizonMistShelfHeight: 0.135
-    - _HorizonMistShelfIntensity: 0.28
-    - _HorizonMistShelfSoftness: 0.18
+    - _HorizonMistShelfHeight: 0.17135337
+    - _HorizonMistShelfIntensity: 0.50342965
+    - _HorizonMistShelfSoftness: 0.10277342
     - _Metallic: 0
     - _NightBlend: 0
     - _OcclusionStrength: 1
@@ -196,7 +196,7 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _SkyLuminanceMultiplier: 1.16
+    - _SkyLuminanceMultiplier: 1
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
@@ -218,7 +218,7 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _AegirHaloColor: {r: 0.5, g: 0.62, b: 0.92, a: 1}
+    - _AegirHaloColor: {r: 0.52, g: 0.6, b: 0.78, a: 1}
     - _AuroraColorA: {r: 0.2, g: 0.62, b: 0.82, a: 1}
     - _AuroraColorB: {r: 0.58, g: 0.48, b: 1.05, a: 1}
     - _AuroraScale: {r: 2.2, g: 5.8, b: 0, a: 0}
@@ -232,14 +232,14 @@ Material:
     - _CloudTiling: {r: 1.55, g: 0.86, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _HazeColor: {r: 0.68, g: 0.78, b: 0.88, a: 1}
-    - _HighCloudColor: {r: 0.82, g: 0.84, b: 0.94, a: 1}
-    - _HighCloudTiling: {r: 7.2, g: 3.4, b: 0, a: 0}
+    - _HazeColor: {r: 0.5402711, g: 0.53269815, b: 0.65191215, a: 1}
+    - _HighCloudColor: {r: 0.76, g: 0.78, b: 0.9, a: 1}
+    - _HighCloudTiling: {r: 6, g: 3, b: 0, a: 0}
     - _NightCloudColor: {r: 0.0256, g: 0.018000001, b: 0.0528, a: 1}
     - _RotationAxis: {r: 1, g: 0.3, b: 0, a: 0}
-    - _SkyColorHorizon: {r: 0.56, g: 0.72, b: 0.88, a: 1}
-    - _SkyColorNadir: {r: 0.2, g: 0.34, b: 0.48, a: 1}
-    - _SkyColorZenith: {r: 0.28, g: 0.48, b: 0.68, a: 1}
+    - _SkyColorHorizon: {r: 0.67925006, g: 0.62109584, b: 0.8221152, a: 1}
+    - _SkyColorNadir: {r: 0.015263435, g: 0.025418293, b: 0.066037714, a: 1}
+    - _SkyColorZenith: {r: 0.1, g: 0.16, b: 0.5, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _StarColor: {r: 1, g: 1, b: 1, a: 1}
     - _StarTiling: {r: 1, g: 1, b: 0, a: 0}

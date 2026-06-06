@@ -4,6 +4,12 @@ Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: tools, devices, cockpit parts, lab machinery, storage containers, cables, handholds, consoles, valves, pumps, lights, sensors, and small generated set dressing.
 
+## First-20 Route Hook
+
+- First-20 moment: first repair tool, scanner target, pump/valve, cockpit readout, salvage container, cable route, or handhold that teaches the player machinery under pressure.
+- Route blocker removed: prevents opening-route equipment from becoming decorative clutter, primitive silhouettes, unreadable displays, or interaction anchors with no functional visual truth.
+- Proof class: STATIC_DOC until function report, socket/anchor report, LOD/collider proof, display/material proof, Unity import evidence, compact capture, and route screenshot exist.
+
 ## 1. Prop Law
 
 Generated props must look manufactured, handled, repaired, and used under pressure. A prop is not accepted because it has a primitive silhouette and a material. It must communicate function: grip, hinge, screw, latch, display, sensor, vent, cable route, seal, wear, and scale.
@@ -90,6 +96,12 @@ Collision uses primitives:
 Interaction raycast targets may use a simplified trigger surface or named socket. Visual mesh triangles are not interaction truth.
 
 All prop geometry, labels, display masks, UVs, LODs, sockets, pivots, colliders, and interaction anchors are generated and validated offline. Runtime may only load serialized prefabs, read named anchors, and update approved material/UI state. Runtime does not create prop meshes, cook prop colliders, generate labels, unwrap UVs, or search visual triangles for interaction truth.
+
+## 6A. Runtime And Hot-Path Boundary
+
+Equipment runtime truth is serialized prefab identity, pivot, socket names, interaction anchors, collider proxies, material slots, and approved UI/display state. Hot paths must not create meshes, labels, UVs, display atlases, colliders, sockets, pivots, material instances, or per-prop metadata.
+
+Runtime may animate lights, displays, needles, damage state, wetness, and interaction highlighting only through predeclared material/UI channels and cached owner references. `GlobalQualityWeight` may choose prebuilt fidelity variants, label sharpness, LOD distance, and optional display detail; it must not change interaction truth, collider truth, socket identity, save identity, or material channel semantics.
 
 ## 7. Continuous Quality Scaling
 

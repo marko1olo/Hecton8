@@ -1,0 +1,133 @@
+NIGHT_OWNER_11_MASS_DELETION_DIRTY_SET_CLASSIFIER
+Role: mass deletion dirty-set classification owner.
+Status: STATIC_GATE_IMPLEMENTED / DELETION_ACCEPTANCE_BLOCKED
+
+Lane contract:
+LANE_CLASS: QA_PROOF
+VALID_COMPLETION: exact deletion ownership classification plus keep/restore/archive decision matrix, or exact blocker report.
+INVALID_COMPLETION: blanket cleanup approval, commit-readiness claim, or deletion acceptance without per-domain owner.
+KILL_SWITCH: production `Assets`, `Tools`, `Docs/Reports`, `Docs/Screenshots`, `Docs/AgentLogs`, or `Docs/Tasks` deletion without responsible owner blocks integration.
+EVIDENCE_BUDGET: one read-only git classification plus one owner matrix.
+
+Objective:
+Prevent the current mass dirty-set deletion wave from being treated as harmless cleanup. Split generated-cache cleanup from production asset/tool/evidence deletion risk.
+
+Authority:
+- AGENTS.md
+- HECTON8_ORCHESTRATOR.md only if acting as controller
+- quality.md, testing.md, release.md
+- Docs/QUALITY_GATES.md
+- Docs/AGENT_AUTHORITY_ROUTING.md
+- .agents-skills/QA_Evidence_Text_Filter_Audit.txt
+
+Owned scope:
+- Read-only git/status/diff classification.
+- Write only a concise owner matrix/report under `Docs/Orchestration/` if implementation is assigned.
+- No file deletion, restore, move, staging, commit, Unity run, build, import, or raw YAML edit.
+
+Current evidence:
+- Volta read-only classification reported `11219` tracked deletions, `153` modified tracked files, `34` untracked files, and `0` staged changes.
+- Deleted top-level counts: `Docs=7917`, `.codexbuild=2490`, `.codex-artifacts=325`, `igra=242`, `.codex-build=90`, `Assets=74`, `Tools=65`, root `6`, `NativeAudio=2`.
+- Risky deleted file types: `.meta=320`, `.cs=50`, `.prefab=28`, `.unity=17`, `.asset=11`, `.shader=0`.
+- `Assets` orphan signal did not show deleted non-meta assets with surviving `.meta` or deleted `.meta` for existing base files, but production risk remains high.
+- `Tools` deletions are mostly `obj/bin`, but include source tools `Tools/workspace_hygiene_1331.py` and `Tools/workspace_hygiene_apex_reaudit_1331.py`.
+- Nash classification report exists at `Docs/Orchestration/MASS_DELETION_DIRTY_SET_CLASSIFICATION_20260606.md`.
+- Nash resample: `11438` status rows, `11225` tracked deletions, `173` tracked modifications, `40` untracked rows, `0` staged rows.
+- Updated high-risk counts: `Docs=7929`, `.codexbuild=2490`, `.codex-artifacts=325`, `igra=242`, `Assets=76`, `Tools=65`.
+- High-risk classes: `Assets/_Project=31`, `Docs/Reports=1686`, `Docs/Screenshots=216`, `Docs/AgentLogs=13`, `Docs/Tasks=7`, `Tools` source outside bin/obj=2.
+- Deleted `Docs/Tasks/POLISH.txt` is present in the deletion wave and blocks any blanket cleanup acceptance.
+- `git diff --check -- Docs/Orchestration/MASS_DELETION_DIRTY_SET_CLASSIFICATION_20260606.md` returned exit code `0`.
+- Current disposition: deletion acceptance blocked, commit readiness blocked, integration/clean-checkpoint language blocked until each high-risk class has owner disposition.
+- Peirce/controller resample: `11458` status rows, `11233` tracked deletions, `179` tracked modifications, `46` untracked rows, `0` staged rows.
+- Updated high-risk counts: `Assets=84`, `Assets/_Project=38`, deleted `.meta=327`, deleted `.unity=18`, deleted `.cs=50`, deleted `.asset=11`, `Docs/Reports=1686`, `Docs/Screenshots=216`, `Docs/AgentLogs=13`, `Docs/Tasks=7`.
+- Exact current source-tooling deletions outside `bin/obj`: `Tools/workspace_hygiene_1331.py`, `Tools/workspace_hygiene_apex_reaudit_1331.py`.
+- `Assets` `.meta` pairing is clean in the current resample, but this does not approve production deletion. `Assets/_Project`, `Docs/Tasks/POLISH.txt`, proof screenshots/reports/logs, and black-box dump deletions remain `RESTORE / ARCHIVE WITH MANIFEST / BLOCK UNTIL OWNER`.
+- Banach implemented `Tools/ValidateMassDeletionDirtySet.py` and `Tools/test_validate_mass_deletion_dirty_set.py`.
+- Runner integration: `Tools/RunAssetStaticValidators.py` now starts with `ValidateMassDeletionDirtySet.py --no-fail`; this surfaces deletion rejection while allowing the rest of the static runner to proceed.
+- Latest live gate: `python -B Tools\ValidateMassDeletionDirtySet.py --no-fail` printed `MASS_DELETION_DIRTY_SET_REJECTED blockers=11 high_risk_deletions=true owner_disposition=false`, with `11468` status rows, `11233` tracked deletions, `184` tracked modifications, `51` untracked rows, and `0` staged rows.
+- Latest full static runner: `python -B Tools\RunAssetStaticValidators.py` returned `ASSET_STATIC_VALIDATORS_OK count=27` while preserving the mass-deletion rejection output, `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1`, `AUDIO_IMPORT_META_POLICY_REJECTED blockers=41`, and `AUDIO_CRITICAL_CUE_SOURCE_COVERAGE_REJECTED blockers=2`.
+- Latest file-map guard: `python -B Tools\ValidateAssetFrontFileMap.py` returned `ASSET_FRONT_FILE_MAP_OK rows=189 csv_rows=64`.
+
+Tasks:
+1. Re-sample `git status --short`, `git diff --name-status`, `git diff --name-only --diff-filter=D`, and staged status.
+2. Group deletions by top-level folder, file type, and production/evidence/cache class.
+3. Split deletions into at least:
+   - generated cache/proof build artifacts;
+   - docs evidence/provenance;
+   - production `Assets/_Project`;
+   - source/tooling;
+   - third-party/legacy/non-production.
+4. For `Assets`, report non-meta/meta pair integrity and any orphan risk.
+5. For `Docs`, identify whether `Reports`, `Screenshots`, `AgentLogs`, `Tasks`, and orchestration evidence are being removed.
+6. For `Tools`, separate `bin/obj` from source files.
+7. Produce owner decision matrix: keep deletion, restore, archive elsewhere, or blocked pending owner.
+8. Do not approve integration, commit, or clean checkpoint until each high-risk deletion class has an owner.
+
+Acceptance:
+- Exact counts and paths for high-risk deletion classes.
+- No blanket cleanup language.
+- Clear owner/action per deletion class.
+
+Rejection:
+- Deleting proof/evidence history without owner.
+- Accepting production `Assets` deletions because `.meta` pairs look matched.
+- Treating `.codexbuild` cleanup as proof that `Docs` or `Assets` deletions are safe.
+- Any staging/restore/delete action without explicit scoped owner instruction.
+
+Low/Middle/High/Ultra:
+Deletion safety is lane-independent. No hardware tier changes source-control truth or evidence provenance.
+
+2026-06-06 cursor 134 dirty-set refresh:
+- `python -B Tools\ValidateMassDeletionDirtySet.py --no-fail` returned `MASS_DELETION_DIRTY_SET_REJECTED blockers=11 high_risk_deletions=true owner_disposition=false`.
+- Current sample: `11491` status rows, `11233` tracked deletions, `191` tracked modifications, `67` untracked rows, `0` staged rows.
+- High-risk counts remain: `Assets=84`, `Assets/_Project=38`, `Tools` source outside `bin/obj=2`, `Docs/Reports=1686`, `Docs/Screenshots=216`, `Docs/AgentLogs=13`, `Docs/Tasks=7`, `Docs/Tasks/POLISH.txt` deleted.
+- `.meta` pairing is clean but remains explicitly not deletion approval.
+
+2026-06-06 cursor 135 Gauss dirty-set map:
+- Gauss ran static-only `git status --short` and `python -B Tools\ValidateMassDeletionDirtySet.py --no-fail`.
+- Current validator result: `MASS_DELETION_DIRTY_SET_REJECTED blockers=11 high_risk_deletions=true owner_disposition=false`.
+- Counts: status rows `11493`, tracked deletions `11233`, modifications `191`, untracked `69`, staged `0`.
+- Deleted high-risk extensions: `.cs=50`, `.prefab=28`, `.unity=18`, `.asset=11`, `.meta=327`.
+- Deleted domains: `Assets=84`, `Assets/_Project=38`, `Tools=2`, `Docs/Reports=1686`, `Docs/Screenshots=216`, `Docs/AgentLogs=13`, `Docs/Tasks=7`.
+- `Docs/Tasks/POLISH.txt` remains deleted.
+- `.meta` pairing result remains `PAIRING_CLEAN_BUT_NOT_DELETION_APPROVAL`: `asset_payloads=21`, `missing_meta=0`, `deleted_meta_without_payload=42`.
+- High-risk examples include deleted sandbox/bisect scenes and `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraVisualSway.cs`.
+- Safe action remains: do not integrate, commit, clean, restore, or delete anything from this set until explicit owner disposition exists.
+
+2026-06-06 cursor 136 Cicero disposition audit:
+- Cicero completed static-only disposition audit. No edits, restore/delete/move/stage/commit, Unity/import/build/Play/profiler/test.
+- Fresh validator result remains rejected: `MASS_DELETION_DIRTY_SET_REJECTED blockers=11 high_risk_deletions=true owner_disposition=false`.
+- Counts: status rows `11536`, tracked deletions `11233`, tracked modifications `210`, untracked `93`, staged `0`.
+- Current high-risk classes: `Assets=84`, `Assets/_Project=38`, source tools outside `bin/obj=2`, `Docs/Reports=1686`, `Docs/Screenshots=216`, `Docs/AgentLogs=13`, `Docs/Tasks=7`, `Docs/Tasks/POLISH.txt` deleted, deleted `.cs=50`, `.asset=11`, `.unity=18`, `.meta=327`.
+- Both expected disposition artifacts are missing: `Docs/AssetAudit/MASS_DELETION_DIRTY_SET_DISPOSITION.md` and `Docs/MASS_DELETION_DIRTY_SET_DISPOSITION.md`.
+- Controller matrix remains: no disposition file = `RED`; production source/assets/scenes = `CRITICAL`; reports/screenshots/logs/tasks = `HIGH`; clean meta pairing = hygiene only, not approval; generated/cache cleanup cannot approve unrelated production/evidence deletions.
+- Updated synthesis: `Docs/Orchestration/MASS_DELETION_DIRTY_SET_CLASSIFICATION_20260606.md`.
+
+2026-06-06 cursor 137 Godel disposition packet:
+- Godel completed static-only disposition packet. No edits, restore/delete/move/stage/commit, Unity/import/build/Play/profiler/test.
+- Fresh validator result: `MASS_DELETION_DIRTY_SET_REJECTED blockers=11 high_risk_deletions=true owner_disposition=false`.
+- Counts: status rows `11551`, tracked deletions `11233`, tracked modifications `212`, untracked `106`, staged `0`.
+- Top deletion breakdown: `Docs=7929`, `.codexbuild=2490`, `.codex-artifacts=325`, `igra=242`, `.codex-build=90`, `Assets=84`, `Tools=65`, `NativeAudio=2`, root/temp `7`.
+- High-risk classes still include `Assets/_Project=38`, `Tools` source outside `bin/obj=2`, `Docs/Reports=1686`, `Docs/Screenshots=216`, `Docs/AgentLogs=13`, `Docs/Tasks=7`, `Docs/Archive=4749`, `Docs/DEPRECATED=676`, `.cs=50`, `.prefab=28`, `.unity=18`, `.asset=11`, `.meta=327`.
+- Critical examples: `Assets/_Project/Scripts/Compatibility/AddressablesCompatibility.cs`, `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraVisualSway.cs`, `Tools/workspace_hygiene_1331.py`, `Tools/workspace_hygiene_apex_reaudit_1331.py`, `Docs/Tasks/POLISH.txt`, and `Docs/AgentLogs/Dump_*.bin` / `*.h8dump`.
+- Both expected owner-disposition artifacts are still absent. Cleanup/stage/commit remains `RED`.
+
+2026-06-06 cursor 138 staged deletion escalation:
+- Fresh `RunAssetStaticValidators.py` output now reports the deletion wave as staged: `status-rows=11557`, tracked deletions `11233`, tracked modifications `215`, untracked `109`, staged `11234`.
+- Direct staged readback confirms `D=11233` and `M=1` in `git diff --cached --name-status`.
+- Staged high-risk counts include `Assets/_Project=38`, deleted `.cs=50`, and `.unity/.prefab/.asset/.meta=384`.
+- Staged critical examples include `AddressablesCompatibility.cs`, `HectonMapMagicVegetationBridgeFloraVisualSway.cs`, `Docs/Tasks/POLISH.txt`, and black-box dump artifacts.
+- Controller did not stage, unstage, restore, delete, or commit. This is a readback of current index state.
+- Decision worsens from dirty-set red to commit-blocking red: `STAGED_MASS_DELETION_REJECTED / COMMIT_BLOCKED / OWNER_DISPOSITION_ABSENT`.
+
+2026-06-06 cursor 139 current deletion state correction:
+- Later fresh `python -B Tools\ValidateMassDeletionDirtySet.py --no-fail` now returns `MASS_DELETION_DIRTY_SET_OK blockers=0 high_risk_deletions=false owner_disposition=false`.
+- Current sample: status rows `329`, tracked deletions `0`, tracked modifications `214`, untracked `115`, staged `0`.
+- Direct `git diff --cached --name-status` and `git diff --name-status --diff-filter=D` both produce no output.
+- Controller did not stage, unstage, restore, delete, or commit. The earlier staged-deletion snapshot is superseded by current git status.
+- Decision: `MASS_DELETION_WAVE_ABSENT_CURRENTLY / DIRTY_WORKTREE_REMAINS / COMMIT_STILL_NOT_READY_WITHOUT_SCOPED_REVIEW`.
+
+2026-06-06 cursor 140 runner-refresh confirmation:
+- Fresh full asset static runner still reports mass deletion as current OK: tracked deletions `0`, staged `0`.
+- Commit readiness is still not claimed because the worktree has many modifications/untracked rows and must be reviewed by scope.
+- No staging, unstaging, restore, delete, or commit action was performed.

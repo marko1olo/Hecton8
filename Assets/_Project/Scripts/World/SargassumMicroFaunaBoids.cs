@@ -28,7 +28,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-101)]
-    public sealed class SargassumMicroFaunaBoids : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, Hecton8.Gameplay.IFlashlightEventListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IMicroFaunaPresentationPulseSink, IGlobalRegistryHotSwapListener
+    public sealed class SargassumMicroFaunaBoids : MonoBehaviour, IFixedTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, Hecton8.Gameplay.IFlashlightEventListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IMicroFaunaPresentationPulseSink, IGlobalRegistryHotSwapListener
     {
         private static int s_x001SargassumMicroFaunaBoidsSignalPushDropCount;
         private static SargassumMicroFaunaBoids s_activeRuntimeInstance;
@@ -1727,7 +1727,6 @@ namespace Hecton8.World
         private bool _simulationBucketerProbeAttempted;
         private int _lastFieldRevision = -1;
         private float _simulationInterpolationAlpha = 1f;
-        private bool _registeredTick;
         private bool _registeredFixedTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
@@ -2126,14 +2125,6 @@ namespace Hecton8.World
             ApplyRuntimeOffsetToSwarmData(-shiftOffset);
         }
 
-        /// <summary>
-        /// Runs GPU flocking and issues one indirect draw call when the field is valid.
-        /// </summary>
-        /// <param name="dt">Frame delta supplied by GameTickManager.</param>
-        public void Tick(float dt)
-        {
-        }
-
         private void RunMicroFaunaVisualSync(float dt)
         {
             RecordFoodChainTelemetry(FoodChainTelemetryFlagTick, _fieldCenter, 0u, 0u);
@@ -2348,7 +2339,6 @@ namespace Hecton8.World
             {
                 FlushThreatVoxelPayloadRefreshVisualSync();
                 RunMicroFaunaVisualSync(SystemDispatcher.CurrentFrameDeltaTime);
-                CompletePendingLeviathanNodeBuild(forceComplete: false);
                 CompletePendingFoveatedSimulationDecision(forceComplete: false);
                 CompletePendingPredatorConsumption(forceComplete: false);
                 FlushQueuedMicroFaunaGpuUploads();
@@ -8510,11 +8500,6 @@ namespace Hecton8.World
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registeredTick)
-            {
-                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            }
-
             if (!_registeredFixedTick)
             {
                 _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
@@ -8556,12 +8541,6 @@ namespace Hecton8.World
 
         private void TryUnregister()
         {
-
-            if (_registeredTick)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = false;
-            }
 
             if (_registeredFixedTick)
             {
@@ -9025,10 +9004,6 @@ namespace Hecton8.World
             float wrappedDuration = math.floor(_simulationTime / SimulationPhaseWrapSeconds) * SimulationPhaseWrapSeconds;
             _simulationTime -= wrappedDuration;
             _simulationPhaseOffset += wrappedDuration;
-        }
-
-        private void CompletePendingLeviathanNodeBuild(bool forceComplete)
-        {
         }
 
         private void UploadActiveLeviathanSnapshot()

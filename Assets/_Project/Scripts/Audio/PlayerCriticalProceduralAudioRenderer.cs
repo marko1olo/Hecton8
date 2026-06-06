@@ -92,6 +92,17 @@ namespace Hecton8.Audio
         private const float KineticImpactThudMinimumExcitation = 0.015f;
         private const float KineticImpactPortalEchoMasterGain = 0.46f;
         private const float KineticImpactDefaultWaterlineY = 0f;
+        private const float PlayerWaterSplashMinimumVerticalSpeed = 0.75f;
+        private const float PlayerWaterSplashReferenceVerticalSpeed = 10f;
+        private const float PlayerWaterSplashThudDurationSeconds = 0.14f;
+        private const float PlayerWaterSplashEntryStartHertz = 112f;
+        private const float PlayerWaterSplashExitStartHertz = 138f;
+        private const float PlayerWaterSplashEntryEndHertz = 28f;
+        private const float PlayerWaterSplashExitEndHertz = 46f;
+        private const float PlayerWaterSplashLowPassHertz = 760f;
+        private const float PlayerWaterSplashExitLowPassHertz = 1120f;
+        private const float PlayerWaterSplashMaximumThudExcitation = 0.58f;
+        private const float PlayerWaterSplashImpactStressScale = 0.08f;
         private const float ImpactClangMinimumExcitation = 0.12f;
         private const float ImpactClangFundamentalHertz = 150f;
         private const float ImpactClangPitchSpread = 0.22f;
@@ -6802,12 +6813,62 @@ namespace Hecton8.Audio
                 HandleProceduralAudioEvent(in audioEvent);
             }
 
+            ReadOnlySpan<PlayerWaterSplashSignal> waterSplashes = SignalBus<PlayerWaterSplashSignal>.GetFrameSnapshot();
+            for (int i = 0; i < waterSplashes.Length; i++)
+            {
+                PlayerWaterSplashSignal splash = waterSplashes[i];
+                HandlePlayerWaterSplashSignal(in splash);
+            }
+
             ReadOnlySpan<BaseStructuralWarningSignal> baseWarnings = SignalBus<BaseStructuralWarningSignal>.GetFrameSnapshot();
             for (int i = 0; i < baseWarnings.Length; i++)
             {
                 BaseStructuralWarningSignal warning = baseWarnings[i];
                 HandleBaseStructuralWarningSignal(in warning);
             }
+        }
+
+        private void HandlePlayerWaterSplashSignal(in PlayerWaterSplashSignal signal)
+        {
+            float intensity = math.saturate(math.isfinite(signal.Intensity01) ? signal.Intensity01 : 0f);
+            float verticalSpeed = math.max(0f, math.isfinite(signal.VerticalSpeed) ? signal.VerticalSpeed : 0f);
+            float speed01 = math.saturate(
+                (verticalSpeed - PlayerWaterSplashMinimumVerticalSpeed) *
+                math.rcp(math.max(0.001f, PlayerWaterSplashReferenceVerticalSpeed - PlayerWaterSplashMinimumVerticalSpeed)));
+            float audible01 = math.saturate(intensity * math.lerp(0.35f, 1f, speed01));
+            if (audible01 <= KineticImpactThudMinimumExcitation)
+                return;
+
+            bool submerged = signal.IsSubmerged != 0;
+            float thudExcitation = math.saturate(audible01 * PlayerWaterSplashMaximumThudExcitation);
+            float startHertz = math.lerp(
+                submerged ? PlayerWaterSplashEntryStartHertz : PlayerWaterSplashExitStartHertz,
+                submerged ? PlayerWaterSplashEntryStartHertz * 1.18f : PlayerWaterSplashExitStartHertz * 1.12f,
+                speed01);
+            float endHertz = submerged ? PlayerWaterSplashEntryEndHertz : PlayerWaterSplashExitEndHertz;
+            float lowPassHertz = math.lerp(
+                PlayerWaterSplashLowPassHertz,
+                submerged ? PlayerWaterSplashLowPassHertz : PlayerWaterSplashExitLowPassHertz,
+                speed01);
+            float impactStress = math.saturate(audible01 * PlayerWaterSplashImpactStressScale);
+
+            TryEnqueueImpactAudioEvent(
+                impactStress,
+                0f,
+                0f,
+                0f,
+                0f,
+                0f,
+                lowPassHertz,
+                1f,
+                thudExcitation,
+                PlayerWaterSplashThudDurationSeconds,
+                startHertz,
+                endHertz,
+                math.lerp(0.08f, 0.2f, speed01),
+                lowPassHertz,
+                0f);
+            _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, impactStress);
         }
 
         private void HandleProceduralAudioEvent(in AudioEvent audioEvent)

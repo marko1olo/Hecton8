@@ -46,16 +46,16 @@ namespace Hecton8.Editor
             HectonAnomalyMapMagicNode anomalyNode = EnsureGenerator<HectonAnomalyMapMagicNode>(graph, 120f, 150f, out bool createdAnomaly);
             ConfigureRecoveryDefaults(erosionNode, anomalyNode);
 
-            IOutlet<object> sourceOutlet = ResolveHeightSource(graph, heightOutput, tectonicNode, erosionNode, splatNode);
+            IOutlet<object> sourceOutlet = ResolveHeightSource(graph, heightOutput, tectonicNode, erosionNode, splatNode, anomalyNode);
             if (sourceOutlet == null)
                 return IntegrationReport.Failure(graphPath, "No valid upstream height source found.");
 
-            graph.Link(sourceOutlet, tectonicNode);
-            graph.Link(tectonicNode, erosionNode.heightIn);
-            graph.Link(tectonicNode, splatNode.heightIn);
-            graph.Link(null, splatNode.sedimentIn);
-            graph.Link(tectonicNode, anomalyNode.heightIn);
-            graph.Link(tectonicNode, heightOutput);
+            LinkGraph(graph, sourceOutlet, tectonicNode);
+            LinkGraph(graph, tectonicNode, erosionNode.heightIn);
+            LinkGraph(graph, erosionNode.erodedHeightOut, splatNode.heightIn);
+            LinkGraph(graph, erosionNode.sedimentMaskOut, splatNode.sedimentIn);
+            LinkGraph(graph, erosionNode.erodedHeightOut, anomalyNode.heightIn);
+            LinkGraph(graph, erosionNode.erodedHeightOut, heightOutput);
 
             int rockLinks = 0;
             int sandLinks = 0;
@@ -72,22 +72,22 @@ namespace Hecton8.Editor
                     TextureSemantic semantic = ResolveTextureSemantic(layer);
                     if (semantic == TextureSemantic.Rock)
                     {
-                        graph.Link(splatNode.rockOut, layer);
+                        LinkGraph(graph, splatNode.rockOut, layer);
                         rockLinks++;
                     }
                     else if (semantic == TextureSemantic.Silt)
                     {
-                        graph.Link(splatNode.siltOut, layer);
+                        LinkGraph(graph, splatNode.siltOut, layer);
                         siltLinks++;
                     }
                     else if (semantic == TextureSemantic.Sand)
                     {
-                        graph.Link(splatNode.sandOut, layer);
+                        LinkGraph(graph, splatNode.sandOut, layer);
                         sandLinks++;
                     }
                     else if (semantic == TextureSemantic.Mud)
                     {
-                        graph.Link(anomalyNode.brineMaskOut, layer);
+                        LinkGraph(graph, anomalyNode.brineMaskOut, layer);
                         brineMudLinks++;
                     }
                 }
@@ -145,13 +145,18 @@ namespace Hecton8.Editor
             return default;
         }
 
+        private static void LinkGraph(Graph graph, IOutlet<object> outlet, IInlet<object> inlet)
+        {
+            graph.Link(outlet, inlet);
+        }
+
         private static void ConfigureRecoveryDefaults(
             HectonHydraulicErosionMapMagicNode erosionNode,
             HectonAnomalyMapMagicNode anomalyNode)
         {
             if (erosionNode != null)
             {
-                erosionNode.enabled = false;
+                erosionNode.enabled = true;
                 erosionNode.dropletCount = Math.Max(1, Math.Min(erosionNode.dropletCount, 32000));
                 erosionNode.maxLifetime = Math.Max(1, Math.Min(erosionNode.maxLifetime, 32));
                 erosionNode.maxOperationsPerSlice = Math.Max(128, Math.Min(erosionNode.maxOperationsPerSlice, 768));
@@ -162,7 +167,10 @@ namespace Hecton8.Editor
             }
 
             if (anomalyNode != null)
+            {
+                anomalyNode.enabled = true;
                 anomalyNode.maxFloodCells = Math.Max(1024, Math.Min(anomalyNode.maxFloodCells, 8192));
+            }
         }
 
         private static IOutlet<object> ResolveHeightSource(
@@ -170,18 +178,19 @@ namespace Hecton8.Editor
             HeightOutput200 heightOutput,
             HectonBiomeMatrixMapMagicPostProcessNode tectonicNode,
             HectonHydraulicErosionMapMagicNode erosionNode,
-            HectonTerrainSplatmapMapMagicNode splatNode)
+            HectonTerrainSplatmapMapMagicNode splatNode,
+            HectonAnomalyMapMagicNode anomalyNode)
         {
             IOutlet<object> source = graph.GetLink(tectonicNode);
-            if (IsUsableSource(source, tectonicNode, erosionNode, splatNode))
+            if (IsUsableSource(source, tectonicNode, erosionNode, splatNode, anomalyNode))
                 return source;
 
             source = graph.GetLink(erosionNode.heightIn);
-            if (IsUsableSource(source, tectonicNode, erosionNode, splatNode))
+            if (IsUsableSource(source, tectonicNode, erosionNode, splatNode, anomalyNode))
                 return source;
 
             source = graph.GetLink(heightOutput);
-            if (IsUsableSource(source, tectonicNode, erosionNode, splatNode))
+            if (IsUsableSource(source, tectonicNode, erosionNode, splatNode, anomalyNode))
                 return source;
 
             Generator[] generators = graph != null ? graph.generators : null;
@@ -201,7 +210,8 @@ namespace Hecton8.Editor
             IOutlet<object> outlet,
             HectonBiomeMatrixMapMagicPostProcessNode tectonicNode,
             HectonHydraulicErosionMapMagicNode erosionNode,
-            HectonTerrainSplatmapMapMagicNode splatNode)
+            HectonTerrainSplatmapMapMagicNode splatNode,
+            HectonAnomalyMapMagicNode anomalyNode)
         {
             if (outlet == null)
                 return false;
@@ -212,7 +222,8 @@ namespace Hecton8.Editor
 
             return generator != tectonicNode &&
                    generator != erosionNode &&
-                   generator != splatNode;
+                   generator != splatNode &&
+                   generator != anomalyNode;
         }
 
         private static TextureSemantic ResolveTextureSemantic(TexturesOutput200.TextureLayer layer)

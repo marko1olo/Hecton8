@@ -262,10 +262,10 @@ namespace Hecton8.Core
 
     /// <summary>
     /// Global manager for entity change detectors.
-    /// Batch flushing for all tracked entities.
+    /// Runtime owners flush detectors explicitly when their own state changes.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class EntityChangeManager : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+    public sealed class EntityChangeManager : MonoBehaviour, IServiceHeartbeat, IServiceShutdown
     {
         // COLD ALLOC: Dictionary<string, EntityChangeDetector>[256] - entity change detector registry - owner: EntityChangeManager
         private static readonly Dictionary<string, EntityChangeDetector> _detectors = new Dictionary<string, EntityChangeDetector>(256);
@@ -275,9 +275,7 @@ namespace Hecton8.Core
         {
             _detectors.Clear();
         }
-        private bool _registered = false;
         private bool _serviceRegistered;
-        private bool _hotSwapRegistered;
 
         /// <inheritdoc />
         public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
@@ -320,11 +318,6 @@ namespace Hecton8.Core
         private void OnEnable()
         {
             TryRegisterService();
-            if (Application.isPlaying && !_serviceRegistered)
-                return;
-
-            TryRegisterHotSwapListener();
-            TryRegister();
         }
 
         private void OnDisable()
@@ -340,27 +333,8 @@ namespace Hecton8.Core
         /// <inheritdoc />
         public void OnServiceShutdown()
         {
-            TryUnregister();
-            TryUnregisterHotSwapListener();
             TryUnregisterService();
             _detectors.Clear();
-        }
-
-        public void OnGlobalRegistryServiceReplaced(
-            GlobalRegistryServiceSlot serviceSlot,
-            object previousService,
-            object currentService)
-        {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
-                currentService == null ||
-                !_serviceRegistered ||
-                !isActiveAndEnabled)
-            {
-                return;
-            }
-
-            TryUnregister();
-            TryRegister();
         }
 
         private void TryRegisterService()
@@ -386,47 +360,6 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterEntityChangeManagerRuntime(this);
             _serviceRegistered = false;
-        }
-
-        public void Tick(float deltaTime)
-        {
-            // This Tick is a placeholder.
-            // Individual systems call detector.FlushChanges() when needed.
-            // The manager just provides singleton + caching.
-        }
-
-        private void TryRegister()
-        {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
-        }
-
-        private void TryUnregister()
-        {
-            if (!_registered)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-            _registered = false;
-        }
-
-        private void TryRegisterHotSwapListener()
-        {
-            if (_hotSwapRegistered || !Application.isPlaying)
-                return;
-
-            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
-        }
-
-        private void TryUnregisterHotSwapListener()
-        {
-            if (!_hotSwapRegistered)
-                return;
-
-            GlobalRegistry.TryUnregisterHotSwapListener(this);
-            _hotSwapRegistered = false;
         }
 
         /// <summary>

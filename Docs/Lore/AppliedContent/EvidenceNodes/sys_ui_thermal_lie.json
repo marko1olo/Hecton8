@@ -1,0 +1,12 @@
+{
+    "node_id": "SYS_UI_THERMAL_LIE",
+    "author": "HectonSubmarineOS",
+    "subject_tags": [
+        "UI",
+        "Thermal",
+        "Liability"
+    ],
+    "title": "Thermal Sheer Warning",
+    "surface": "System HUD",
+    "text": "STATUS: MONITORED BACKGROUND ACTIVITY. Ambient thermal variance within engineered margins. Hull tension: Nominal. [WARNING CANCELED BY VARNEK OVERRIDE]"
+}

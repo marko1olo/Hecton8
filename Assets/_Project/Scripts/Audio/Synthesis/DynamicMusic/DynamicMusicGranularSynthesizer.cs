@@ -7,12 +7,14 @@ using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.UI;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
 
 namespace Hecton8.Audio.Synthesis
@@ -155,7 +157,7 @@ namespace Hecton8.Audio.Synthesis
         [FieldOffset(44)] public float LastDepthMeters;
         [FieldOffset(48)] public float LastCutoffHz;
         [FieldOffset(52)] public uint Flags;
-        [FieldOffset(56)] private uint _pad0;
+        [FieldOffset(56)] public float MusicActivity01;
         [FieldOffset(60)] private uint _pad1;
     }
 
@@ -184,7 +186,7 @@ namespace Hecton8.Audio.Synthesis
     [DefaultExecutionOrder(-3880)]
     [RequireComponent(typeof(AudioSource))]
     [AddComponentMenu("Hecton8/Audio/Dynamic Music Granular Synthesizer")]
-    public sealed unsafe class DynamicMusicGranularSynthesizer : MonoBehaviour, IColdTickable, IUpdatable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed unsafe class DynamicMusicGranularSynthesizer : MonoBehaviour, IColdTickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         public const int VoiceCapacity = 128;
         public const int TelemetryCapacity = 300;
@@ -194,6 +196,7 @@ namespace Hecton8.Audio.Synthesis
 
         private const int DefaultAudioChannels = 2;
         private const int DefaultScheduleSamples = 2048;
+        private const int RuntimeDriverClipSampleCount = 256;
         private const float DefaultBasePitchHz = 73.416f;
         private const float DefaultBaseGrainDensity = 32f;
         private const float DefaultTensionMultiplier = 1.35f;
@@ -208,6 +211,7 @@ namespace Hecton8.Audio.Synthesis
         private const float DefaultStingerDecaySeconds = 0.7f;
         private const float MinimumDeltaSeconds = 0.0001f;
         private const float MaximumDeltaSeconds = 0.25f;
+        private const int MusicDirectorScalarGraceTicks = 12;
         private const uint DefaultSynthSeed = 0x51350B75u;
         private const uint DefaultWaveformHash = 0xC31105E5u;
         private const uint FlagNonFinite = 1u << 0;
@@ -268,8 +272,8 @@ namespace Hecton8.Audio.Synthesis
         [SerializeField, Range(0f, 1f)] private float _mockTensionBias01;
         [SerializeField, Min(0f)] private float _mockDepthMeters = 900f;
         [SerializeField, Range(0f, 1f)] private float _mockQualityBias01 = 1f;
-        [SerializeField] private AudioClip _driverClip;
         [SerializeField] private bool _autoCreateRuntimeInstance = true;
+        [SerializeField] private bool _allowMockPlaybackWithoutDirector;
 
         private ref struct DynamicMusicVaultViews
         {
@@ -300,7 +304,11 @@ namespace Hecton8.Audio.Synthesis
         private VaultGenerationHandle<ScalabilityStateDTO> _scalabilityStateHandle;
 
         private IDataVault _dataVault;
+        private IAudioService _cachedAudioService;
+        private HectonMusicDirector _cachedMusicDirector;
+        private SettingsManager _cachedSettingsManager;
         private AudioSource _hostSource;
+        private AudioClip _runtimeDriverClip;
 #if UNITY_EDITOR
         private string _resolvedCsvPath;
         private string _lastResolvedCsvRelativePath;
@@ -311,7 +319,10 @@ namespace Hecton8.Audio.Synthesis
         private float _externalDepthMeters;
         private float _externalQualityWeight = 1f;
         private float _externalDamageImpulse01;
+        private float _externalMusicActivity01;
         private int _externalScalarPublished;
+        private int _musicDirectorScalarMissedTicks;
+        private int _suppressReactiveMusicImpulses;
         private float _pendingDamageImpulse;
         private float _pendingStingerImpulse;
         private int _nativeAllocated;
@@ -507,6 +518,23 @@ namespace Hecton8.Audio.Synthesis
             return true;
         }
 
+        public bool TryGetEditorSharedState(out DynamicMusicSharedStateDTO state)
+        {
+            state = default;
+            IDataVault vault = _dataVault;
+            if (Volatile.Read(ref _nativeAllocated) == 0 ||
+                vault == null ||
+                !IsDynamicMusicVaultHandle(in _sharedStateHandle, BufferID.AudioDynamicSynthSharedState) ||
+                !vault.TryReadOnlyHandle(in _sharedStateHandle, out NativeArray<DynamicMusicSharedStateDTO>.ReadOnly sharedState) ||
+                sharedState.Length <= 0)
+            {
+                return false;
+            }
+
+            state = sharedState[0];
+            return true;
+        }
+
         public bool TryGetEditorOutputSample(int sampleIndex, out float sample)
         {
             sample = 0f;
@@ -638,6 +666,7 @@ namespace Hecton8.Audio.Synthesis
 
             EnsureDynamicMusicSignalLaneCold();
             CacheDataVaultCold();
+            CacheAudioServiceCold();
             EnsureVaultStorage();
 #if UNITY_EDITOR
             RefreshCsvPathCold();
@@ -657,6 +686,7 @@ namespace Hecton8.Audio.Synthesis
 
             EnsureDynamicMusicSignalLaneCold();
             CacheDataVaultCold();
+            CacheAudioServiceCold();
             EnsureVaultStorage();
 #if UNITY_EDITOR
             RefreshCsvPathCold();
@@ -684,6 +714,7 @@ namespace Hecton8.Audio.Synthesis
         {
             UnregisterRuntime();
             DisposeVaultStorage();
+            DestroyRuntimeDriverClip();
         }
 
         private bool RejectInvalidAudioFilterHostCold()
@@ -741,10 +772,6 @@ namespace Hecton8.Audio.Synthesis
                 ConfigureAudioHostCached();
         }
 
-        public void SlowTick()
-        {
-        }
-
         public void ColdTick()
         {
             if (Volatile.Read(ref _nativeAllocated) == 0)
@@ -752,6 +779,9 @@ namespace Hecton8.Audio.Synthesis
 
             TryRefreshScalabilityStateHandleCold();
             RefreshGlobalQualitySnapshotCold();
+            CacheAudioServiceCold();
+            CacheMusicDirectorCold();
+            CacheSettingsManagerCold();
             PollCsvRulesCold();
             Volatile.Write(ref _audioHostConfigDirty, 1);
         }
@@ -761,6 +791,27 @@ namespace Hecton8.Audio.Synthesis
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+            {
+                CacheAudioService(currentService as IAudioService);
+                Volatile.Write(ref _audioHostConfigDirty, 1);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.SettingsRuntime)
+            {
+                CacheSettingsManager(currentService as SettingsManager);
+                Volatile.Write(ref _audioHostConfigDirty, 1);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.MusicDirectorRuntime)
+            {
+                CacheMusicDirector(currentService as HectonMusicDirector);
+                Volatile.Write(ref _audioHostConfigDirty, 1);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -830,6 +881,7 @@ namespace Hecton8.Audio.Synthesis
         {
             if (ReferenceEquals(_activeInstance, this))
                 _activeInstance = null;
+            _cachedAudioService = null;
             if (Interlocked.Exchange(ref _registeredHotSwap, 0) != 0)
                 GlobalRegistry.UnregisterHotSwapListener(this);
             if (Interlocked.Exchange(ref _registeredColdTick, 0) != 0)
@@ -844,6 +896,36 @@ namespace Hecton8.Audio.Synthesis
         private void CacheDataVaultCold()
         {
             RebindDataVaultCold(GlobalRegistry.DataVault);
+        }
+
+        private void CacheAudioServiceCold()
+        {
+            CacheAudioService(GlobalRegistry.Audio);
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _cachedAudioService = audioService != null && audioService.IsInitialized ? audioService : null;
+        }
+
+        private void CacheMusicDirectorCold()
+        {
+            CacheMusicDirector(GlobalRegistry.MusicDirector);
+        }
+
+        private void CacheMusicDirector(HectonMusicDirector musicDirector)
+        {
+            _cachedMusicDirector = musicDirector != null && musicDirector.isActiveAndEnabled ? musicDirector : null;
+        }
+
+        private void CacheSettingsManagerCold()
+        {
+            CacheSettingsManager(GlobalRegistry.Settings);
+        }
+
+        private void CacheSettingsManager(SettingsManager settingsManager)
+        {
+            _cachedSettingsManager = settingsManager != null && settingsManager.isActiveAndEnabled ? settingsManager : null;
         }
 
         private void RebindDataVaultCold(IDataVault nextVault)
@@ -1311,9 +1393,11 @@ namespace Hecton8.Audio.Synthesis
             _hostSource.spatialBlend = 0f;
             _hostSource.dopplerLevel = 0f;
             _hostSource.volume = 1f;
+            ApplyAudioHostMixerRoute();
 
-            if (_driverClip != null && _hostSource.clip != _driverClip)
-                _hostSource.clip = _driverClip;
+            EnsureRuntimeDriverClipCold(sampleRate);
+            if (_runtimeDriverClip != null && _hostSource.clip != _runtimeDriverClip)
+                _hostSource.clip = _runtimeDriverClip;
 
             if (_hostSource.clip == null)
             {
@@ -1323,6 +1407,59 @@ namespace Hecton8.Audio.Synthesis
 
             if (!_hostSource.isPlaying && Application.isPlaying)
                 _hostSource.Play();
+        }
+
+        private void EnsureRuntimeDriverClipCold(int sampleRate)
+        {
+            int safeSampleRate = math.max(8000, sampleRate);
+            if (_runtimeDriverClip != null && _runtimeDriverClip.frequency == safeSampleRate)
+                return;
+
+            DestroyRuntimeDriverClip();
+            // COLD ALLOC: AudioClip[256 samples] - silent AudioSource driver for OnAudioFilterRead host - owner: DynamicMusicGranularSynthesizer
+            _runtimeDriverClip = AudioClip.Create(
+                "H8_DynamicMusic_FilterDriver",
+                RuntimeDriverClipSampleCount,
+                1,
+                safeSampleRate,
+                false);
+        }
+
+        private void DestroyRuntimeDriverClip()
+        {
+            if (_runtimeDriverClip == null)
+                return;
+
+            Destroy(_runtimeDriverClip);
+            _runtimeDriverClip = null;
+        }
+
+        private void ApplyAudioHostMixerRoute()
+        {
+            HectonMusicDirector musicDirector = _cachedMusicDirector;
+            AudioMixerGroup musicGroup = musicDirector != null ? musicDirector.DedicatedMusicMixerGroup : null;
+            if (musicGroup != null)
+            {
+                if (_hostSource.outputAudioMixerGroup != musicGroup)
+                    _hostSource.outputAudioMixerGroup = musicGroup;
+                _hostSource.volume = 1f;
+                return;
+            }
+
+            _hostSource.volume = ResolveFallbackMusicHostVolume01();
+
+            IAudioService audioService = _cachedAudioService;
+            if (audioService == null || audioService.AmbientGroup == null)
+                return;
+
+            if (_hostSource.outputAudioMixerGroup != audioService.AmbientGroup)
+                _hostSource.outputAudioMixerGroup = audioService.AmbientGroup;
+        }
+
+        private float ResolveFallbackMusicHostVolume01()
+        {
+            SettingsManager settings = _cachedSettingsManager;
+            return settings != null ? math.saturate(settings.MusicVolume) : 1f;
         }
 
         private void TryRefreshScalabilityStateHandleCold()
@@ -1498,17 +1635,36 @@ namespace Hecton8.Audio.Synthesis
             float damageImpulse = math.saturate(_pendingDamageImpulse);
             float stingerImpulse = math.saturate(_pendingStingerImpulse);
             _pendingDamageImpulse = 0f;
+            bool receivedMusicDirectorScalar = false;
+            bool suppressReactiveImpulses = false;
 
             ReadOnlySpan<DynamicMusicScalarSignal> musicSignals = SignalBus<DynamicMusicScalarSignal>.GetFrameSnapshot();
             for (int i = 0; i < musicSignals.Length; i++)
             {
                 DynamicMusicScalarSignal signal = musicSignals[i];
+                bool signalIsMusicDirectorScalar = signal.SourceHash == DynamicMusicScalarSignal.SourceMusicDirectorHash;
                 if ((signal.Flags & DynamicMusicScalarSignal.FlagExternalScalars) != 0u)
                 {
-                    _externalTension01 = math.saturate(FiniteOrFallback(signal.Tension01, 0f));
-                    _externalDepthMeters = math.max(0f, FiniteOrFallback(signal.DepthMeters, 0f));
-                    _externalQualityWeight = math.saturate(FiniteOrFallback(signal.GlobalQualityWeight, 1f));
-                    _externalDamageImpulse01 = math.saturate(FiniteOrFallback(signal.DamageImpulse01, 0f));
+                    if (signalIsMusicDirectorScalar || !receivedMusicDirectorScalar)
+                    {
+                        _externalTension01 = math.saturate(FiniteOrFallback(signal.Tension01, 0f));
+                        _externalDepthMeters = math.max(0f, FiniteOrFallback(signal.DepthMeters, 0f));
+                        _externalQualityWeight = math.saturate(FiniteOrFallback(signal.GlobalQualityWeight, 1f));
+                        _externalDamageImpulse01 = math.saturate(FiniteOrFallback(signal.DamageImpulse01, 0f));
+                    }
+
+                    if (signalIsMusicDirectorScalar)
+                    {
+                        _externalMusicActivity01 = math.saturate(FiniteOrFallback(signal.MusicActivity01, 0f));
+                        receivedMusicDirectorScalar = true;
+                        if ((signal.Flags & DynamicMusicScalarSignal.FlagSuppressReactiveImpulses) != 0u)
+                            suppressReactiveImpulses = true;
+                    }
+                    else if (!receivedMusicDirectorScalar && signal.MusicActivity01 > 0f)
+                    {
+                        _externalMusicActivity01 = math.saturate(FiniteOrFallback(signal.MusicActivity01, 0f));
+                    }
+
                     _externalScalarPublished = 1;
                 }
 
@@ -1544,6 +1700,38 @@ namespace Hecton8.Audio.Synthesis
                 stingerImpulse = math.max(stingerImpulse, breachImpulse * 1.35f);
             }
 
+            if (suppressReactiveImpulses)
+            {
+                damageImpulse = 0f;
+                stingerImpulse = 0f;
+                _externalDamageImpulse01 = 0f;
+                _externalMusicActivity01 = 0f;
+            }
+
+            if (receivedMusicDirectorScalar)
+            {
+                _musicDirectorScalarMissedTicks = 0;
+            }
+            else if (_musicDirectorScalarMissedTicks < MusicDirectorScalarGraceTicks)
+            {
+                _musicDirectorScalarMissedTicks++;
+            }
+            else
+            {
+                _externalMusicActivity01 = 0f;
+            }
+
+            if (!receivedMusicDirectorScalar &&
+                _musicDirectorScalarMissedTicks >= MusicDirectorScalarGraceTicks &&
+                !_allowMockPlaybackWithoutDirector)
+            {
+                damageImpulse = 0f;
+                stingerImpulse = 0f;
+                _externalDamageImpulse01 = 0f;
+                suppressReactiveImpulses = true;
+            }
+
+            Volatile.Write(ref _suppressReactiveMusicImpulses, suppressReactiveImpulses ? 1 : 0);
             _pendingStingerImpulse = math.saturate(stingerImpulse);
             _pendingDamageImpulse = damageImpulse;
         }
@@ -1608,10 +1796,22 @@ namespace Hecton8.Audio.Synthesis
                 float externalTension = math.saturate(_externalTension01);
                 float externalDepthMeters = math.max(0f, _externalDepthMeters);
                 float externalQuality = hasExternalScalars ? math.saturate(_externalQualityWeight) : 1f;
+                float externalActivity = hasExternalScalars
+                    ? math.saturate(_externalMusicActivity01)
+                    : (_allowMockPlaybackWithoutDirector ? 1f : 0f);
+                bool suppressReactiveImpulses = Volatile.Read(ref _suppressReactiveMusicImpulses) != 0;
+                if (suppressReactiveImpulses)
+                    externalActivity = 0f;
                 float damageImpulse = math.saturate(_pendingDamageImpulse);
                 damageImpulse = math.saturate(math.max(damageImpulse, _externalDamageImpulse01));
                 float stingerImpulse = math.saturate(_pendingStingerImpulse);
+                if (suppressReactiveImpulses)
+                {
+                    damageImpulse = 0f;
+                    stingerImpulse = 0f;
+                }
                 _pendingDamageImpulse = 0f;
+                _pendingStingerImpulse = 0f;
                 _externalDamageImpulse01 = 0f;
 
                 GenerateMockTensionJob mockJob = default;
@@ -1625,6 +1825,8 @@ namespace Hecton8.Audio.Synthesis
                 mockJob.DamageImpulse01 = damageImpulse;
                 mockJob.StingerImpulse01 = math.max(stingerImpulse, damageImpulse);
                 mockJob.GlobalQualityWeight = math.saturate(globalQuality * math.saturate(_mockQualityBias01) * externalQuality);
+                mockJob.MusicActivity01 = math.saturate(math.max(externalActivity, math.max(stingerImpulse, damageImpulse * 0.45f)));
+                mockJob.SuppressReactiveImpulses = suppressReactiveImpulses ? 1 : 0;
                 JobHandle mockHandle = mockJob.Schedule();
 
                 ModulateSynthParametersJob modulateJob = default;
@@ -1850,6 +2052,7 @@ namespace Hecton8.Audio.Synthesis
             state.LastDepthMeters = scalar.DepthMeters;
             state.LastCutoffHz = scalar.LpfCutoffHz;
             state.Flags = flags;
+            state.MusicActivity01 = math.saturate(scalar.TargetVolume);
             views.SharedState[0] = state;
         }
 
@@ -2267,9 +2470,13 @@ namespace Hecton8.Audio.Synthesis
 
         private static void ZeroManagedAudioBuffer(float[] data, int start, int count)
         {
-            int end = math.min(data.Length, start + count);
-            for (int i = math.max(0, start); i < end; i++)
-                data[i] = 0f;
+            if (data == null || count <= 0)
+                return;
+
+            int safeStart = math.clamp(start, 0, data.Length);
+            int safeCount = math.min(count, data.Length - safeStart);
+            if (safeCount > 0)
+                Array.Clear(data, safeStart, safeCount);
         }
 
         private static float ResolveElapsedMicroseconds(long startTicks)
@@ -2335,6 +2542,8 @@ namespace Hecton8.Audio.Synthesis
             public float DamageImpulse01;
             public float StingerImpulse01;
             public float GlobalQualityWeight;
+            public float MusicActivity01;
+            public int SuppressReactiveImpulses;
 
             public void Execute()
             {
@@ -2348,9 +2557,12 @@ namespace Hecton8.Audio.Synthesis
                 float depthWave = 0.5f + 0.5f * MathLodApproximation.ApproxSinBhaskara(slowPhase);
                 float fallbackDepthMeters = math.max(ExternalDepthMeters, depthWave * tuning.DepthMaxMeters);
                 float depthMeters = HasExternalScalars != 0 ? ExternalDepthMeters : fallbackDepthMeters;
-                float fallbackTension = dangerWave * 0.35f + DamageImpulse01 * 0.85f;
+                float damageImpulse = SuppressReactiveImpulses != 0 ? 0f : math.saturate(FiniteOrFallback(DamageImpulse01, 0f));
+                float stingerImpulse = SuppressReactiveImpulses != 0 ? 0f : math.saturate(FiniteOrFallback(StingerImpulse01, 0f));
+                float musicActivity = SuppressReactiveImpulses != 0 ? 0f : math.saturate(FiniteOrFallback(MusicActivity01, 0f));
+                float fallbackTension = dangerWave * 0.35f + damageImpulse * 0.85f;
                 float tension = HasExternalScalars != 0
-                    ? math.saturate(math.max(ExternalTension01, DamageImpulse01 * 0.85f))
+                    ? math.saturate(math.max(ExternalTension01, damageImpulse * 0.85f))
                     : math.saturate(math.max(ExternalTension01, fallbackTension));
                 float depth01 = math.saturate(depthMeters * math.rcp(math.max(0.0001f, tuning.DepthMaxMeters)));
                 float cutoff = math.max(tuning.LpfMinHz, 22000f - depthMeters * tuning.LpfDepthHzPerMeter);
@@ -2361,8 +2573,11 @@ namespace Hecton8.Audio.Synthesis
                 scalar.DepthMeters = FiniteOrFallback(depthMeters, 0f);
                 scalar.Depth01 = depth01;
                 scalar.GlobalQualityWeight = math.saturate(FiniteOrFallback(GlobalQualityWeight, 1f));
-                scalar.DamageImpulse01 = math.saturate(FiniteOrFallback(DamageImpulse01, 0f));
-                scalar.StingerImpulse = math.saturate(math.max(FiniteOrFallback(StingerImpulse01, 0f), scalar.StingerImpulse));
+                scalar.DamageImpulse01 = damageImpulse;
+                scalar.StingerImpulse = SuppressReactiveImpulses != 0
+                    ? 0f
+                    : math.saturate(math.max(stingerImpulse, scalar.StingerImpulse));
+                scalar.TargetVolume = musicActivity;
                 scalar.LfoFrequency = tuning.LfoFrequency;
                 scalar.LpfCutoffHz = math.clamp(FiniteOrFallback(cutoff, 22000f), tuning.LpfMinHz, 22000f);
                 _ = DeltaSeconds;
@@ -2385,17 +2600,21 @@ namespace Hecton8.Audio.Synthesis
                 float qualityDenominator = math.max(0.0001f, tuning.QualityMax - tuning.QualityMin);
                 float q = math.saturate((scalar.GlobalQualityWeight - tuning.QualityMin) * math.rcp(qualityDenominator));
                 float qSmooth = Smooth01(q);
+                float musicActivity = math.saturate(math.max(scalar.TargetVolume, math.max(scalar.StingerImpulse * 0.85f, scalar.DamageImpulse01 * 0.35f)));
                 int activeVoices = math.clamp((int)math.lerp(16f, 128f, qSmooth), 1, math.max(1, VoiceCapacityValue));
+                if (musicActivity <= 0.0001f)
+                    activeVoices = 1;
+
                 float tension = math.saturate(scalar.TensionIndex * tuning.TensionMultiplier);
                 float density = tuning.BaseGrainDensity * math.lerp(0.55f, 1.85f, tension) * math.lerp(0.5f, 1.15f, qSmooth);
                 float lfoPhase = scalar.Frame * tuning.LfoFrequency * 0.016666668f;
                 float heartbeat = 0.55f + 0.45f * MathLodApproximation.ApproxSinBhaskara(lfoPhase * math.PI * 2f);
                 float pitchBend = 1f + tension * 0.18f + scalar.DamageImpulse01 * 0.32f;
-                float baseVolume = tuning.BaseVolume * math.lerp(0.72f, 1.15f, tension) * math.lerp(0.7f, 1f, qSmooth);
+                float baseVolume = tuning.BaseVolume * math.lerp(0.72f, 1.15f, tension) * math.lerp(0.7f, 1f, qSmooth) * musicActivity;
                 float normalization = math.rsqrt(math.max(1f, activeVoices));
                 float safeSampleRate = math.max(8000f, SampleRate);
 
-                scalar.BaseDensity = density;
+                scalar.BaseDensity = density * musicActivity;
                 scalar.TargetPitch = tuning.BasePitchHz * pitchBend;
                 scalar.TargetVolume = baseVolume * heartbeat;
                 scalar.ActiveVoices = activeVoices;

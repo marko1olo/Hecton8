@@ -179,7 +179,7 @@ namespace Hecton8.UI
             TryRegisterHotSwapListener();
             font = LocalizedFontResolver.ResolveReadableFont(font, _localization);
             EnsureUiBuilt();
-            RebindOwnerSubscriptions();
+            ResolveOwners();
             PDAIntrusionEvents.Register(this);
             PDAEvents.Register(this);
             RegisterToTickManager();
@@ -195,7 +195,6 @@ namespace Hecton8.UI
             TryUnregisterHotSwapListener();
             PDAIntrusionEvents.Unregister(this);
             PDAEvents.Unregister(this);
-            UnbindOwnerSubscriptions();
             UnregisterFromTickManager();
             HideOverlay();
         }
@@ -207,7 +206,6 @@ namespace Hecton8.UI
             PDAIntrusionEvents.AssertUnregistered(this, nameof(HectonOSBootManager));
             PDAEvents.Unregister(this);
             PDAEvents.AssertUnregistered(this, nameof(HectonOSBootManager));
-            UnbindOwnerSubscriptions();
             UnregisterFromTickManager();
         }
 
@@ -342,17 +340,6 @@ namespace Hecton8.UI
 
             _fatalPressureLatched = true;
             StartSequence(BootReason.PressureRecovery, DefaultRecoverySlot);
-        }
-
-        private void RebindOwnerSubscriptions()
-        {
-            UnbindOwnerSubscriptions();
-            ResolveOwners();
-
-        }
-
-        private void UnbindOwnerSubscriptions()
-        {
         }
 
         private bool ResolveOwners()

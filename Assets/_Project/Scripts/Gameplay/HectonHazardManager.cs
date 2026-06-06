@@ -79,8 +79,15 @@ namespace Hecton8.Gameplay
 
             if (type == HazardType.Radiation)
             {
-                if (!Application.isPlaying || id == 0 || !TrackRadiationFacadeId(id))
+                if (!Application.isPlaying || id == 0 || !TrackRadiationFacadeId(id, out bool addedFacadeId))
                     return false;
+
+                if (addedFacadeId)
+                {
+                    HazardZoneManager existingZoneManager = TryResolveZoneManager();
+                    if (existingZoneManager != null)
+                        existingZoneManager.UnregisterZone(id);
+                }
 
                 RadiationHazardGrid.RegisterSource(id, in positionAup, intensity, radius);
                 return true;
@@ -195,8 +202,9 @@ namespace Hecton8.Gameplay
             return GlobalRegistry.HazardZones;
         }
 
-        private static bool TrackRadiationFacadeId(int id)
+        private static bool TrackRadiationFacadeId(int id, out bool added)
         {
+            added = false;
             if (id == 0)
                 return false;
 
@@ -211,6 +219,7 @@ namespace Hecton8.Gameplay
 
             _radiationFacadeIds[_radiationFacadeIdCount] = id;
             _radiationFacadeIdCount++;
+            added = true;
             return true;
         }
 

@@ -1,0 +1,20 @@
+HECTON-8 Batch30 inventory resource sheet triage - 2026-06-06
+
+Source: TX_B30_InventoryResourceSheet_3x3_Source_20260606_Gemini.png
+Status: STATIC_SOURCE_DRAFT. Not imported. Not runtime proof.
+
+Usable draft candidates for cleanup/crop testing:
+- DRAFT_TX_B30_Inventory_02_BatteryCell.png
+- DRAFT_TX_B30_Inventory_03_FreshwaterCanister.png
+- DRAFT_TX_B30_Inventory_04_RationCartridge.png
+- DRAFT_TX_B30_Inventory_05_MedInjectorAmpoule.png
+- DRAFT_TX_B30_Inventory_07_ScannerPuckModule.png
+- DRAFT_TX_B30_Inventory_08_DataCoreCartridge.png
+
+Weak/reject-or-regenerate candidates:
+- DRAFT_TX_B30_Inventory_01_OxygenMicroTank.png: top gauge/cap crowding, less crop-safe.
+- DRAFT_TX_B30_Inventory_06_RepairMultitool.png: over-busy silhouette; likely weak at small inventory size.
+- DRAFT_TX_B30_Inventory_09_PressureSalvageCase.png: bottom crop risk from source sheet.
+
+Prompt lesson:
+Generate inventory item render sheets, not flat HUD icon sheets. Use in-world pressure-rated props, no captions required but captions can be cropped if items are strong. Reject mobile-game cartoon, thick icon outline, toy colors, and non-crop-safe object framing.

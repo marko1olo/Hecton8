@@ -32,6 +32,12 @@ Any procedural asset task starts here, then routes into the matching specialist 
 
 If a generated object can be touched, collided with, scanned, salvaged, repaired, entered, cut, opened, or used as cover, its visual mesh is not the only artifact. It also needs collider proxies, interaction anchors, material IDs, LODs, bounds, prefab metadata, and validation output.
 
+## Runtime And Hot-Path Boundary
+
+The procedural pipeline owns offline authoring, validation, manifests, and serialized asset packages. Runtime owners consume those packages through streaming, Addressables or approved data routes, prefab identity, LOD/HLOD selection, instancing, shader animation, and cached interaction/collision proxies.
+
+Hot paths must not run procedural generation, topology repair, UV unwrap, atlas packing, texture synthesis, normal/AO/curvature baking, collider fitting/cooking, prefab assembly, manifest mutation, or scene search to repair generated packages. `GlobalQualityWeight` may select approved variants, density, residency, LOD distance, shader presentation, and proof/capture detail only. It must not change collider identity, anchors, sockets, save identity, route ownership, DTO layout, material channel semantics, or gameplay truth.
+
 ## Required Output Package
 
 Every generator must emit a complete asset package, not an isolated mesh.

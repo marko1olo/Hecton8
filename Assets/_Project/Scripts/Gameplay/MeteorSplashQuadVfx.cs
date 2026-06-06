@@ -9,7 +9,7 @@ namespace Hecton8.Gameplay
     /// Two-quad meteor splash fake. No particle systems, no per-impact mesh mutation.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class MeteorSplashQuadVfx : MonoBehaviour, IPoolable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class MeteorSplashQuadVfx : MonoBehaviour, IPoolable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int SingleQuad = 1;
         private static readonly Matrix4x4[] s_splashMatrix = new Matrix4x4[SingleQuad];
@@ -73,10 +73,6 @@ namespace Hecton8.Gameplay
 
             TryUnregisterDispatcher();
             TryRegisterDispatcher();
-        }
-
-        public void Tick(float deltaTime)
-        {
         }
 
         public void LateFrameTick()

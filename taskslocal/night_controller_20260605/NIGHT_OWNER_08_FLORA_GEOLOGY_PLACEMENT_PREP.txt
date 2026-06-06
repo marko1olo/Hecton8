@@ -53,3 +53,37 @@ Acceptance:
 
 Low/Middle/High/Ultra:
 Low uses fewer but high-quality silhouettes and impostors. Middle adds route density. High/Ultra spend budget on richer near-field flora/geology, VAT/motion, shadows where justified, and denser ecology without changing route truth.
+
+2026-06-06 cursor 134 Descartes static candidate integration:
+- Descartes completed read-only/static audit. No edits, Unity, dotnet, build/import, Play Mode, profiler, prefab/material/YAML mutation.
+- Verdict: candidate pools exist, but none are production-approved. Placement must wait until rejected surface water, shore, terrain, and sky base route passes. Cosmetic rocks/flora/coral cannot hide broken base art.
+- Strongest geology candidate: `Assets/_Project/Prefabs/Nature/Rocks/ProceduralFinals` with 49 prefabs, LODGroups present, no primitive refs, no MeshCollider tokens by static YAML scan. Blocked by material/import/visual proof.
+- Candidate flora/coral pools: `Assets/_Project/Prefabs/Nature/Flora/Baked` with 89 prefabs; `BioForge/Shallows/Kelp` with 100; `BioForge/Shallows/TubeCoral` with 50. All remain blocked by material/import/visual proof.
+- Blocked candidates: `BioForge/Shallows/PorousRock` and `GOTOVYE_PREFABY_KAMNEY` have MeshCollider tokens on all scanned prefabs; require collider route proof or replacement.
+- Rejected/dev-only pools: `WorldProceduralProxy`, `WorldRuntime/ProceduralPlaceholders`, generated proxy folders, and `OrganicMisc/Final` due proxy/primitive/no-LOD contamination.
+- Future Unity checks: LOD thresholds/crossfade, material texture GUIDs/import roles, alpha/dither/shadows/SRP Batcher, collider proxy vs render mesh misuse, texture compression/mips/readable flags, Addressables/residency ownership, no material clones, no hot-path allocations, screenshot proof.
+- Future placement sequence: after Owner02 base route passes, run no-mutation Unity readback; classify materials/colliders/imports; place a tiny controlled test patch through Unity API/editor tooling; capture screenshot plus console/import/Frame Debugger/profiler evidence; only then promote placement.
+
+2026-06-06 cursor 135 Archimedes static asset dressing ranking:
+- Archimedes completed read-only/static asset-dressing inventory. No Unity, dotnet build/test, import, Play Mode, profiler, prefab/material/YAML mutation, deletion, restore, move, stage, or commit.
+- Ranked first-use candidate order: `Assets/_Project/Prefabs/Nature/Rocks/ProceduralFinals/`; `Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows/TubeCoral/`; `Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows/Kelp/`; `Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows/PorousRock/` after collider proof; `Assets/_Project/Prefabs/Nature/Flora/Baked/family_*` after final material proof; `Assets/_Project/Art/Meshes/World/Photic*/` and matching `Materials/World/Photic*/` as source/art-direction support only; legacy rocks/Baked/GOTOVYE pools as secondary after vendor/import/collider proof.
+- Visible placement remains rejected for `Assets/_Project/Prefabs/WorldProceduralProxy/`, `Assets/_Project/Prefabs/WorldRuntime/ProceduralPlaceholders/`, and any primitive/proxy material pool used to hide slab water, black shoreline, broken terrain, weak sky, or missing player/HUD/tool proof.
+- Next valid Unity sequence: Owner02 base-route readback/repair first; then no-mutation material/collider/LOD readback for ranked pools; then a tiny controlled proof patch; then compact/high screenshots plus console/import/Stats/Frame Debugger proof.
+- Updated synthesis: `Docs/Orchestration/FLORA_GEOLOGY_PLACEMENT_PREP_SYNTHESIS_20260605.md`.
+
+2026-06-06 cursor 136 Maxwell texture role-ledger repair packet:
+- Maxwell completed read-only/static importer-ledger sidecar. No edits, Unity, import/reimport, build, scene/prefab/material/YAML mutation, deletion, restore, stage, or commit.
+- Fresh blocker is real: `ValidateTextureRoleTechnicalLedger.py --no-fail` returns `TEXTURE_ROLE_TECHNICAL_LEDGER_REJECTED blockers=3`.
+- Flora/coral imported textures under `Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported` have mipmaps enabled but streaming mips off: 11 albedo rows and 33 normal/detail/mask rows all report `meta_streaming_mips=0`.
+- `Assets/_Project/Art/Sprites/oxygen-tank.png` is classified as `ui_oxygen_mask/mask`; static meta reports Sprite type with `sRGBTexture=1`, so it is wrong for mask/linear role unless UI owner reclassifies it as a colored icon.
+- Future Unity repair only: use `TextureImporter` / `AssetDatabase`, never raw `.meta`. Set flora/coral albedo streaming mips on with sRGB true; set detail/mask streaming mips on with sRGB false; set normal type/linear/streaming mips on; set oxygen mask sRGB false if mask role remains.
+- After Unity repair, regenerate `TEXTURE_FILE_TECHNICAL_PROPERTIES_20260605.csv`, rerun `ValidateTextureRoleTechnicalLedger.py`, and update `Tools/test_validate_texture_role_technical_ledger.py` because the current first test intentionally expects the known rejection.
+- Updated synthesis: `Docs/Orchestration/FLORA_GEOLOGY_PLACEMENT_PREP_SYNTHESIS_20260605.md`.
+
+2026-06-06 cursor 137 Huygens placement sidecar:
+- Huygens completed a read-only/static placement critic. No edits, Unity, import, build, Play Mode, profiler, prefab/material/scene mutation, stage, or commit.
+- Candidate ranking stays brutal: `Nature/Rocks/ProceduralFinals` first; `BioForge/Shallows/TubeCoral`; `BioForge/Shallows/Kelp`; `Nature/Flora/Baked`; conditional `PorousRock` and `GOTOVYE_PREFABY_KAMNEY` only after collider proxy proof.
+- Rejected visible pools: `WorldProceduralProxy`, `WorldRuntime/ProceduralPlaceholders`, `OrganicMisc/Final`, proxy/placeholder materials, primitive refs, and scatter that hides broken water/shore/terrain/sky/player/HUD/tool proof.
+- Missing gates before placement: material slot/shader/SRP batcher readback, 44 flora texture importer repairs, LOD/crossfade/cull readback, collider proxy proof, Addressables group/label/load/release proof, compact and high screenshots.
+- Later tiny patch: after base route is non-rejected, Unity API only, one proof parent, 6-8 `ProceduralFinals` rocks on route edges, 2-3 TubeCoral and 2-3 Kelp only after material/import proof. Preserve oxygen sightline, tool targets, salvage readability, and negative space.
+- Status remains `PENDING UNITY READBACK / BLOCKED BY BASE SURFACE ROUTE`.

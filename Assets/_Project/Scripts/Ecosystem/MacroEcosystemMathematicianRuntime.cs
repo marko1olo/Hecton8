@@ -20,7 +20,7 @@ namespace Hecton8.Ecosystem
     /// <summary>
     /// SHINOBU_300 data-only macro ecosystem solver. It owns no GameObjects and never calls Unity physics.
     /// </summary>
-    public unsafe sealed partial class MacroEcosystemMathematicianRuntime : IFrostTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
+    public unsafe sealed partial class MacroEcosystemMathematicianRuntime : IFrostTickable, IGlobalRegistryHotSwapListener, IDisposable
     {
         private const int GridWidth = 100;
         private const int GridHeight = 100;
@@ -338,11 +338,6 @@ namespace Hecton8.Ecosystem
                 if (!keepJobPins)
                     UnlockJobBuffers();
             }
-        }
-
-        /// <inheritdoc />
-        public void LateFrameTick()
-        {
         }
 
         /// <inheritdoc />

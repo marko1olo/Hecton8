@@ -3403,7 +3403,6 @@ namespace Hecton8.World
             _saveService = null;
             _playerRuntimeContext = null;
             _playerInventoryService = null;
-            UnregisterNativeMemorySentinelAllocations();
             ShutdownWorldTelemetryDumpWorkerCold();
 
             DisposeVaultBackedStorage();
@@ -5152,6 +5151,7 @@ namespace Hecton8.World
             PersistentWorldDeltaRecord[] stagedRecords = null;
             Dictionary<uint, EntityDataRecord> stagedEntityStates = null;
             bool quarantinedSectorResetApplied = false;
+            bool backupRecoveredSectorRepairApplied = false;
 
             try
             {
@@ -5224,6 +5224,22 @@ namespace Hecton8.World
                         quarantineResetScratch);
                 }
 
+                if (SaveBinaryStorage.ConsumeIndexedSectorBackupRecoveryFlag())
+                {
+                    if (!IsIndexedSectorAsyncGenerationCurrent(asyncGeneration))
+                    {
+                        await Awaitable.MainThreadAsync();
+                        return;
+                    }
+
+                    // COLD ALLOC: long[16] - per-operation backup recovery repair scratch, only allocated after a recovery flag.
+                    long[] backupRecoveryScratch = new long[SaveBinaryStorage.IndexedSectorQuarantineHashCapacity];
+                    backupRecoveredSectorRepairApplied = RestoreBackupRecoveredIndexedSectorsFromBackup(
+                        indexedSectorSavePath,
+                        indexedChunkSizeMeters,
+                        backupRecoveryScratch);
+                }
+
                 if (!IsIndexedSectorAsyncGenerationCurrent(asyncGeneration))
                 {
                     await Awaitable.MainThreadAsync();
@@ -5269,6 +5285,11 @@ namespace Hecton8.World
 
                 if (quarantinedSectorResetApplied)
                     Hecton8.UI.NotificationEvents.TryPushCritical(LocalizedSectorCorruptionMessage.AsSpan());
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (backupRecoveredSectorRepairApplied)
+                    Hecton8.Core.H8Debug.LogWarning("[PersistentWorldRegistry] Indexed sector paging repaired primary sectors from backup.");
+#endif
 
                 await AwaitSectorPrefabPrewarmAsync(stagedRecords);
                 if (!IsIndexedSectorAsyncGenerationCurrent(asyncGeneration))
@@ -5401,6 +5422,45 @@ namespace Hecton8.World
             }
 
             return resetApplied;
+        }
+
+        private static bool RestoreBackupRecoveredIndexedSectorsFromBackup(
+            string indexedSectorSavePath,
+            int indexedChunkSizeMeters,
+            long[] backupRecoveryScratch)
+        {
+            if (backupRecoveryScratch == null || backupRecoveryScratch.Length <= 0)
+                return false;
+
+            int recoveryCount = SaveBinaryStorage.CopyAndClearIndexedSectorBackupRecoveryHashes(backupRecoveryScratch);
+            if (recoveryCount <= 0 || string.IsNullOrEmpty(indexedSectorSavePath))
+                return false;
+
+            bool repairApplied = false;
+            for (int i = 0; i < recoveryCount; i++)
+            {
+                long sectorHash = backupRecoveryScratch[i];
+                if (sectorHash == long.MinValue)
+                    continue;
+
+                if (!SaveBinaryStorage.TryRestoreIndexedPersistentWorldSectorFromBackup(
+                        indexedSectorSavePath,
+                        sectorHash,
+                        indexedChunkSizeMeters,
+                        out string restoreError))
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Hecton8.Core.H8Debug.LogWarning(
+                        $"[PersistentWorldRegistry] Backup-recovered indexed sector repair failed for 0x{sectorHash:X16}: {restoreError}");
+#endif
+                    continue;
+                }
+
+                repairApplied = true;
+                backupRecoveryScratch[i] = long.MinValue;
+            }
+
+            return repairApplied;
         }
 
         private async Awaitable AwaitSectorPrefabPrewarmAsync(PersistentWorldDeltaRecord[] stagedRecords)
@@ -9203,10 +9263,6 @@ namespace Hecton8.World
             while (_dehydrateQueue.TryDequeue(out _))
             {
             }
-        }
-
-        private void UnregisterNativeMemorySentinelAllocations()
-        {
         }
 
         private void RegisterPersistentMemoryBudget()

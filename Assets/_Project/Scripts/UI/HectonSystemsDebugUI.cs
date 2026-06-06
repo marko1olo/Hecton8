@@ -91,7 +91,7 @@ namespace Hecton8.UI
         private Vector2 anchoredPosition = new Vector2(26f, -28f);
 
         [SerializeField, Tooltip("Panel size in canvas pixels.")]
-        private Vector2 panelSize = new Vector2(448f, 388f);
+        private Vector2 panelSize = new Vector2(448f, 410f);
 
         [SerializeField, Tooltip("Refresh cadence for the overlay text.")]
         [Range(0.1f, 2f)]
@@ -127,6 +127,7 @@ namespace Hecton8.UI
         [SerializeField] private string debugFaunaBiome = "None";
         [SerializeField] private string debugFaunaBias = "None";
         [SerializeField] private string debugMusicProfile = "None";
+        [SerializeField] private string debugMusicReason = "SLNT";
         [SerializeField] private string debugSoundscapeTier = "Surface";
         [SerializeField] private string debugUnderwaterBudget = "MISSING";
         [SerializeField] private string debugCameraBudget = "MISSING";
@@ -145,6 +146,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _faunaLimitValue;
         private TextMeshProUGUI _musicTensionValue;
         private TextMeshProUGUI _musicProfileValue;
+        private TextMeshProUGUI _musicLayerValue;
         private TextMeshProUGUI _soundscapeTierValue;
         private TextMeshProUGUI _underwaterBudgetValue;
         private TextMeshProUGUI _cameraBudgetValue;
@@ -178,6 +180,7 @@ namespace Hecton8.UI
         private string _lastFaunaLimitValue = string.Empty;
         private string _lastMusicTensionValue = string.Empty;
         private string _lastMusicProfileValue = string.Empty;
+        private string _lastMusicLayerValue = string.Empty;
         private string _lastSoundscapeTierValue = string.Empty;
         private string _lastUnderwaterBudgetValue = string.Empty;
         private string _lastCameraBudgetValue = string.Empty;
@@ -193,8 +196,10 @@ namespace Hecton8.UI
         private readonly char[] _renderScaleBuffer = new char[16];
         // COLD ALLOC: char[40] - fauna-limit diagnostic buffer - owner: HectonSystemsDebugUI
         private readonly char[] _faunaLimitsBuffer = new char[40];
-        // COLD ALLOC: char[16] - music-tension diagnostic buffer - owner: HectonSystemsDebugUI
-        private readonly char[] _musicTensionBuffer = new char[16];
+        // COLD ALLOC: char[32] - music tension/activity/reason diagnostic buffer - owner: HectonSystemsDebugUI
+        private readonly char[] _musicTensionBuffer = new char[32];
+        // COLD ALLOC: char[40] - music layer diagnostic buffer - owner: HectonSystemsDebugUI
+        private readonly char[] _musicLayerBuffer = new char[40];
         // COLD ALLOC: char[40] - underwater budget diagnostic buffer - owner: HectonSystemsDebugUI
         private readonly char[] _underwaterBudgetBuffer = new char[40];
         // COLD ALLOC: char[40] - camera budget diagnostic buffer - owner: HectonSystemsDebugUI
@@ -209,6 +214,8 @@ namespace Hecton8.UI
         private int _lastFaunaLimitLength = -1;
         private int _lastMusicTensionHash;
         private int _lastMusicTensionLength = -1;
+        private int _lastMusicLayerHash;
+        private int _lastMusicLayerLength = -1;
         private int _lastUnderwaterBudgetHash;
         private int _lastUnderwaterBudgetLength = -1;
         private int _lastCameraBudgetHash;
@@ -479,7 +486,7 @@ namespace Hecton8.UI
                 _root = existing as RectTransform;
             }
 
-            if (_root != null && _titleValue == null)
+            if (_root != null && (_titleValue == null || _musicLayerValue == null))
             {
                 Destroy(_root.gameObject);
                 _root = null;
@@ -561,23 +568,26 @@ namespace Hecton8.UI
             CreateLabel("FaunaLimitLabel", "FAUNA LIMITS", new Vector2(16f, -222f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
             _faunaLimitValue = CreateValue("FaunaLimitValue", new Vector2(224f, -222f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
 
-            CreateLabel("MusicTensionLabel", "MUSIC TENSION", new Vector2(16f, -254f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            CreateLabel("MusicTensionLabel", "MUSIC T/A", new Vector2(16f, -254f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
             _musicTensionValue = CreateValue("MusicTensionValue", new Vector2(224f, -254f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
 
             CreateLabel("MusicProfileLabel", "MUSIC PROFILE", new Vector2(16f, -276f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
             _musicProfileValue = CreateValue("MusicProfileValue", new Vector2(224f, -276f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
 
-            CreateLabel("SoundscapeTierLabel", "SOUNDSCAPE", new Vector2(16f, -298f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
-            _soundscapeTierValue = CreateValue("SoundscapeTierValue", new Vector2(224f, -298f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+            CreateLabel("MusicLayerLabel", "MUSIC LAYERS", new Vector2(16f, -298f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _musicLayerValue = CreateValue("MusicLayerValue", new Vector2(224f, -298f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
 
-            CreateLabel("UnderwaterBudgetLabel", "UNDERWATER FX", new Vector2(16f, -320f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
-            _underwaterBudgetValue = CreateValue("UnderwaterBudgetValue", new Vector2(224f, -320f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+            CreateLabel("SoundscapeTierLabel", "SOUNDSCAPE", new Vector2(16f, -320f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _soundscapeTierValue = CreateValue("SoundscapeTierValue", new Vector2(224f, -320f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
 
-            CreateLabel("CameraBudgetLabel", "CAMERA FX", new Vector2(16f, -342f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
-            _cameraBudgetValue = CreateValue("CameraBudgetValue", new Vector2(224f, -342f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+            CreateLabel("UnderwaterBudgetLabel", "UNDERWATER FX", new Vector2(16f, -342f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _underwaterBudgetValue = CreateValue("UnderwaterBudgetValue", new Vector2(224f, -342f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
 
-            CreateLabel("StressLabel", "STRESS HARNESS", new Vector2(16f, -364f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
-            _stressValue = CreateValue("StressValue", new Vector2(224f, -364f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+            CreateLabel("CameraBudgetLabel", "CAMERA FX", new Vector2(16f, -364f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _cameraBudgetValue = CreateValue("CameraBudgetValue", new Vector2(224f, -364f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
+
+            CreateLabel("StressLabel", "STRESS HARNESS", new Vector2(16f, -386f), new Vector2(172f, 18f), 10.5f, FontStyles.Bold);
+            _stressValue = CreateValue("StressValue", new Vector2(224f, -386f), new Vector2(192f, 18f), 10.5f, FontStyles.Normal);
         }
 
         private void RefreshDiagnostics()
@@ -593,6 +603,7 @@ namespace Hecton8.UI
                 _faunaLimitValue == null ||
                 _musicTensionValue == null ||
                 _musicProfileValue == null ||
+                _musicLayerValue == null ||
                 _soundscapeTierValue == null ||
                 _underwaterBudgetValue == null ||
                 _cameraBudgetValue == null ||
@@ -670,17 +681,32 @@ namespace Hecton8.UI
             if (music != null)
             {
                 _lastMusicTensionValue = string.Empty;
-                SetFloatText(_musicTensionValue, _musicTensionBuffer, music.CurrentTension01, "0.00", ref _lastMusicTensionHash, ref _lastMusicTensionLength);
+                SetMusicTensionActivityText(
+                    _musicTensionValue,
+                    music.CurrentTension01,
+                    music.CurrentMusicActivity01,
+                    music.CurrentMusicActivityReason);
+                SetMusicLayerText(
+                    _musicLayerValue,
+                    music.CurrentRhythmLayer01,
+                    music.CurrentBassLayer01,
+                    music.CurrentAtmosphereLayer01,
+                    music.CurrentDangerLayer01,
+                    music.CurrentLayerMixerRouteAvailable);
                 string profileLabel = music.ActiveResolvedProfile != null ? music.ActiveResolvedProfile.name : MissingLabel;
                 SetDynamicText(_musicProfileValue, profileLabel, ref _lastMusicProfileValue);
                 debugMusicProfile = profileLabel;
+                debugMusicReason = ResolveMusicReasonCode(music.CurrentMusicActivityReason);
             }
             else
             {
                 InvalidateDynamicBufferCache(ref _lastMusicTensionHash, ref _lastMusicTensionLength);
+                InvalidateDynamicBufferCache(ref _lastMusicLayerHash, ref _lastMusicLayerLength);
                 SetDynamicText(_musicTensionValue, MissingLabel, ref _lastMusicTensionValue);
                 SetDynamicText(_musicProfileValue, MissingLabel, ref _lastMusicProfileValue);
+                SetDynamicText(_musicLayerValue, MissingLabel, ref _lastMusicLayerValue);
                 debugMusicProfile = MissingLabel;
+                debugMusicReason = MissingLabel;
             }
 
             string soundscapeLabel = soundscape != null ? ResolveSoundscapeLabel(soundscape.CurrentTier) : MissingLabel;
@@ -834,6 +860,7 @@ namespace Hecton8.UI
             _faunaLimitValue = null;
             _musicTensionValue = null;
             _musicProfileValue = null;
+            _musicLayerValue = null;
             _soundscapeTierValue = null;
             _underwaterBudgetValue = null;
             _cameraBudgetValue = null;
@@ -854,6 +881,7 @@ namespace Hecton8.UI
             _lastFaunaLimitValue = string.Empty;
             _lastMusicTensionValue = string.Empty;
             _lastMusicProfileValue = string.Empty;
+            _lastMusicLayerValue = string.Empty;
             _lastSoundscapeTierValue = string.Empty;
             _lastUnderwaterBudgetValue = string.Empty;
             _lastCameraBudgetValue = string.Empty;
@@ -862,6 +890,7 @@ namespace Hecton8.UI
             InvalidateDynamicBufferCache(ref _lastRenderScaleHash, ref _lastRenderScaleLength);
             InvalidateDynamicBufferCache(ref _lastFaunaLimitHash, ref _lastFaunaLimitLength);
             InvalidateDynamicBufferCache(ref _lastMusicTensionHash, ref _lastMusicTensionLength);
+            InvalidateDynamicBufferCache(ref _lastMusicLayerHash, ref _lastMusicLayerLength);
             InvalidateDynamicBufferCache(ref _lastUnderwaterBudgetHash, ref _lastUnderwaterBudgetLength);
             InvalidateDynamicBufferCache(ref _lastCameraBudgetHash, ref _lastCameraBudgetLength);
             InvalidateDynamicBufferCache(ref _lastStressHash, ref _lastStressLength);
@@ -1090,6 +1119,66 @@ namespace Hecton8.UI
             ApplyDynamicBufferIfChanged(label, _faunaLimitsBuffer, index, ref _lastFaunaLimitHash, ref _lastFaunaLimitLength);
         }
 
+        private void SetMusicTensionActivityText(
+            TMP_Text label,
+            float tension01,
+            float activity01,
+            HectonMusicDirector.MusicActivityReason reason)
+        {
+            if (label == null)
+                return;
+
+            int index = 0;
+            index = WriteBudgetEntry(_musicTensionBuffer, index, 'T', math.saturate(tension01), "0.00");
+            index = WriteLiteral(_musicTensionBuffer, index, " | ");
+            index = WriteBudgetEntry(_musicTensionBuffer, index, 'A', math.saturate(activity01), "0.00");
+            index = WriteLiteral(_musicTensionBuffer, index, " | ");
+            index = WriteLiteral(_musicTensionBuffer, index, ResolveMusicReasonCode(reason));
+            ApplyDynamicBufferIfChanged(label, _musicTensionBuffer, index, ref _lastMusicTensionHash, ref _lastMusicTensionLength);
+        }
+
+        private void SetMusicLayerText(
+            TMP_Text label,
+            float rhythm01,
+            float bass01,
+            float atmosphere01,
+            float danger01,
+            bool mixerRouteAvailable)
+        {
+            if (label == null)
+                return;
+
+            int index = 0;
+            index = WriteCompactBudgetEntry(_musicLayerBuffer, index, 'R', math.saturate(rhythm01), "0.00");
+            index = WriteLiteral(_musicLayerBuffer, index, " ");
+            index = WriteCompactBudgetEntry(_musicLayerBuffer, index, 'B', math.saturate(bass01), "0.00");
+            index = WriteLiteral(_musicLayerBuffer, index, " ");
+            index = WriteCompactBudgetEntry(_musicLayerBuffer, index, 'A', math.saturate(atmosphere01), "0.00");
+            index = WriteLiteral(_musicLayerBuffer, index, " ");
+            index = WriteCompactBudgetEntry(_musicLayerBuffer, index, 'D', math.saturate(danger01), "0.00");
+            index = WriteLiteral(_musicLayerBuffer, index, " M");
+            if (index < _musicLayerBuffer.Length)
+                _musicLayerBuffer[index++] = mixerRouteAvailable ? '+' : '-';
+            ApplyDynamicBufferIfChanged(label, _musicLayerBuffer, index, ref _lastMusicLayerHash, ref _lastMusicLayerLength);
+        }
+
+        private static string ResolveMusicReasonCode(HectonMusicDirector.MusicActivityReason reason)
+        {
+            switch (reason)
+            {
+                case HectonMusicDirector.MusicActivityReason.Rest: return "REST";
+                case HectonMusicDirector.MusicActivityReason.Exploration: return "EXP";
+                case HectonMusicDirector.MusicActivityReason.Base: return "BASE";
+                case HectonMusicDirector.MusicActivityReason.Tense: return "TNS";
+                case HectonMusicDirector.MusicActivityReason.Combat: return "CBT";
+                case HectonMusicDirector.MusicActivityReason.Menu: return "MENU";
+                case HectonMusicDirector.MusicActivityReason.Prologue: return "PRO";
+                case HectonMusicDirector.MusicActivityReason.Override: return "OVR";
+                case HectonMusicDirector.MusicActivityReason.Emergency: return "EMG";
+                default: return "SLNT";
+            }
+        }
+
         private static bool SetBudgetTripletText(
             TMP_Text label,
             char[] buffer,
@@ -1180,6 +1269,18 @@ namespace Hecton8.UI
 
             buffer[index++] = prefix;
             buffer[index++] = ' ';
+            if (!value.TryFormat(buffer.AsSpan(index), out int length, format))
+                return index;
+
+            return index + length;
+        }
+
+        private static int WriteCompactBudgetEntry(char[] buffer, int index, char prefix, float value, string format)
+        {
+            if (buffer == null || index >= buffer.Length)
+                return index;
+
+            buffer[index++] = prefix;
             if (!value.TryFormat(buffer.AsSpan(index), out int length, format))
                 return index;
 

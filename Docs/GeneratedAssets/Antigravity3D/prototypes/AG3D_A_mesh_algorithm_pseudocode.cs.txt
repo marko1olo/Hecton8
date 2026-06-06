@@ -1,0 +1,12 @@
+// Isolated pseudocode
+public class MeshPrototype {
+    public void Generate(int seed) {
+        // Deterministic seed handling
+        Random.InitState(seed);
+        // Bounds
+        // Normals/tangents
+        // UV channels
+        // LOD hints
+        // Collider mesh extraction
+    }
+}

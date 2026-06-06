@@ -146,7 +146,7 @@ namespace Hecton8.Dev
 
                 if (!exchangeSystem.CanExecute(offer, out PDAExchangeSystem.ExchangeStatus beforeStatus))
                 {
-                    Fail($"Offer not executable before smoke: {PDAExchangeSystem.ResolveStatusLabel(beforeStatus)}");
+                    Fail("Offer not executable before smoke: " + PDAExchangeSystem.ResolveStatusLabel(beforeStatus).ToString());
                     return;
                 }
 

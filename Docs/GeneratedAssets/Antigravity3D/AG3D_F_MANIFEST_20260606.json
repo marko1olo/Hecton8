@@ -1,0 +1,23 @@
+{
+  "outputs": [
+    "controller_audits/AG3D_F_GATE_AUDIT_20260606.csv",
+    "AG3D_F_FALSE_PASS_REPORT_20260606.md",
+    "AG3D_F_REPAIR_TASKS_FOR_NEXT_AGENTS_20260606.md",
+    "AG3D_F_MANIFEST_20260606.json"
+  ],
+  "fail_count": 22,
+  "pass_count": 43,
+  "top_10_hard_failures": [
+    "AG3D_A_MESH_REDESIGN_SPEC_20260606.md size is 21778, which is less than 35000 bytes hard gate.",
+    "prototypes/AG3D_A_mesh_algorithm_pseudocode.cs.txt size is 306, which is less than 20000 bytes hard gate.",
+    "AG3D_C_ASSET_BLUEPRINTS_20260606.csv schema is missing required columns (gameplay_use, depth, scale, silhouette, etc.).",
+    "AG3D_C_SCATTER_PLACEMENT_RULES_20260606.md size is 23604, which is less than 25000 bytes hard gate.",
+    "AG3D_A_MANIFEST_20260606.json falsely claims 124 csv_rows when actual is 226.",
+    "AG3D_C_MANIFEST_20260606.json byte sizes are completely fabricated and do not match reality.",
+    "AG3D_C_ASSET_BLUEPRINTS_20260606.csv contains 151 rows instead of exactly 150 rows.",
+    "AG3D_A_COMPLIANCE_SIGN_OFF_20260606.md falsely claims spec exceeds 35000 bytes.",
+    "AG3D_C_MANIFEST_20260606.json claims blueprint CSV is 24500 bytes when it is actually 26987 bytes.",
+    "AG3D_C_MANIFEST_20260606.json claims backlog CSV is 32100 bytes when it is actually 16599 bytes."
+  ],
+  "verdict": "REJECTED - MULTIPLE FALSE PASS CLAIMS DETECTED"
+}

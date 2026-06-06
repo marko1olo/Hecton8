@@ -5065,10 +5065,6 @@ namespace Hecton8.AI.Ecosystem
                    SameSnapshotHandle(in snapshotHandle);
         }
 
-        private static void EnsureDirectory(string path)
-        {
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool ValidateSnapshotHandle(in VaultGenerationHandle<byte> handle)
         {

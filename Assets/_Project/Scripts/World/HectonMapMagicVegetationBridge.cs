@@ -287,8 +287,6 @@ namespace Hecton8.World
             AbyssalPathTelemetryDumpHeaderBytes + AbyssalPathTelemetryFrameCount * AbyssalPathTelemetryDumpRowBytes;
         private const int DefaultMaxAbyssalNavNodeCapacity = 8192;
         private const int DefaultMaxAbyssalPathWaypointCapacity = 8192;
-        private const int FixedThreatSamplingHashCapacity = 65536;
-        private const int FixedArtificialStructureHashCapacity = 65536;
         private const uint AbyssalPathTelemetryContextHash = 0x41504154u;
         private const uint AbyssalPathOverBudgetHash = 0x46554E4Cu;
         private const uint AbyssalPathNanFaultHash = 0x4E414E46u;
@@ -1524,15 +1522,16 @@ namespace Hecton8.World
             {
                 private readonly FixedTileStateMap _map;
                 private int _index;
+                private TileStateEntry _current;
 
                 public Enumerator(FixedTileStateMap map)
                 {
                     _map = map;
                     _index = -1;
-                    Current = default;
+                    _current = default;
                 }
 
-                public TileStateEntry Current { get; private set; }
+                public TileStateEntry Current => _current;
 
                 public bool MoveNext()
                 {
@@ -1541,7 +1540,7 @@ namespace Hecton8.World
                         return false;
 
                     _index = next;
-                    Current = new TileStateEntry(_map._keys[next], _map._values[next]);
+                    _current = new TileStateEntry(_map._keys[next], _map._values[next]);
                     return true;
                 }
 
@@ -1678,15 +1677,16 @@ namespace Hecton8.World
             {
                 private readonly FixedChunkPayloadMap _map;
                 private int _index;
+                private ChunkPayloadEntry _current;
 
                 public Enumerator(FixedChunkPayloadMap map)
                 {
                     _map = map;
                     _index = -1;
-                    Current = default;
+                    _current = default;
                 }
 
-                public ChunkPayloadEntry Current { get; private set; }
+                public ChunkPayloadEntry Current => _current;
 
                 public bool MoveNext()
                 {
@@ -1695,7 +1695,7 @@ namespace Hecton8.World
                         return false;
 
                     _index = next;
-                    Current = new ChunkPayloadEntry(_map._keys[next], _map._values[next]);
+                    _current = new ChunkPayloadEntry(_map._keys[next], _map._values[next]);
                     return true;
                 }
 
@@ -2397,8 +2397,6 @@ namespace Hecton8.World
         private readonly Plane[] _viewFrustumPlanes = new Plane[6];
         private ChunkKey[] _densityQueryChunkKeys;
         private VegetationNativeMemory _nativeMemory;
-        private bool _artificialStructureHashSwapPending;
-        private bool _threatSamplingChunkHashSwapPending;
         private Vector3[] _abyssalAnchorPositions = Array.Empty<Vector3>();
         private Vector3[] _abyssalNavNodeSnapshot = Array.Empty<Vector3>();
         private Vector3[] _abyssalPathSnapshot = Array.Empty<Vector3>();
@@ -2753,8 +2751,6 @@ namespace Hecton8.World
             EnsureVegetationMemoryTelemetryCold();
             EnsureHLODSnapshotCapacityCold();
             PreallocateAbyssalNavigationBuffers();
-            EnsureThreatSamplingChunkHashBuffersCapacity(FixedThreatSamplingHashCapacity);
-            EnsureArtificialStructureHashBuffersCapacity(FixedArtificialStructureHashCapacity);
             InitializeChunkPools();
             _runtimeLifecycleActive = true;
             _runtimeTeardownComplete = false;
@@ -2812,9 +2808,6 @@ namespace Hecton8.World
                 includeThreatAttractorGrid: false);
             EnsureHLODSnapshotCapacityCold();
             PreallocateAbyssalNavigationBuffers();
-            EnsureThreatSamplingChunkHashBuffersCapacity(FixedThreatSamplingHashCapacity);
-            EnsureArtificialStructureHashBuffersCapacity(FixedArtificialStructureHashCapacity);
-            InitializeLargeFloraVisualSwayState();
             BindRendererSources();
             CacheWeatherService(GlobalRegistry.Weather);
             RefreshColdRuntimeDependencies();
@@ -2830,7 +2823,6 @@ namespace Hecton8.World
                 return;
 
             BindRendererSources();
-            TryWarmupLargeFloraVisualSwayState();
             TryRegister();
         }
 
@@ -2867,7 +2859,6 @@ namespace Hecton8.World
             DisposeArtificialStructureSnapshot();
             DisposePoolDefragState();
             DisposeCanopyGridState();
-            DisposeLargeFloraVisualSwayState();
             ClearRendererBindings();
             ReleaseBuffers();
             ReleaseVegetationMemoryTelemetryResources();
@@ -2920,7 +2911,6 @@ namespace Hecton8.World
             DisposeArtificialStructureSnapshot();
             DisposePoolDefragState();
             DisposeCanopyGridState();
-            DisposeLargeFloraVisualSwayState();
             ClearRendererBindings();
             ReleaseBuffers();
             ReleaseVegetationMemoryTelemetryResources();
@@ -2967,7 +2957,6 @@ namespace Hecton8.World
 
             UpdatePlayerMotionState(dt);
             UpdateNativePoolDefragState(dt);
-            UpdateLargeFloraVisualSwayState(clampedDt);
 
             if (QueueResidentTileCacheValidation())
             {
@@ -3003,7 +2992,6 @@ namespace Hecton8.World
             if (QueueDeferredStartupProgressIfPending())
                 return;
 
-            TryWarmupLargeFloraVisualSwayState();
             RefreshResidency();
             SyncMegaWreckInteriorTerrainHoles();
             EvictDistantTerrainHoles();
@@ -3015,7 +3003,6 @@ namespace Hecton8.World
             {
                 RebuildArtificialStructureThreatSnapshot();
                 PrepareThreatSamplingSnapshot();
-                CommitThreatSpatialSnapshotBufferSwaps();
                 ScheduleThreatSpatialVisualSolvePhase();
             }
             UpdateVegetationAudioHandoff();
@@ -4789,7 +4776,6 @@ namespace Hecton8.World
         private void PrepareThreatSamplingSnapshot()
         {
             _threatSamplingChunkCount = 0;
-            _threatSamplingChunkHashSwapPending = false;
             if (_densityQueryChunkCount <= 0 ||
                 !TryReadDensityThreatAttractorSnapshot(
                     out _,
@@ -4800,45 +4786,6 @@ namespace Hecton8.World
             }
 
             _threatSamplingChunkCount = _densityQueryChunkCount;
-        }
-
-        private void RebuildThreatSamplingChunkHash(Vector3 gridCenter)
-        {
-            _threatSamplingChunkHashSwapPending = false;
-        }
-
-        private int EstimateThreatSamplingChunkHashEntries(VegetationDensityChunkRecord chunk, Vector3 gridCenter)
-        {
-            if (_ecosystemThreatGridResolution <= 0 ||
-                threatGridCellSize <= 0f ||
-                !math.isfinite(threatGridCellSize) ||
-                !IsFinite(gridCenter) ||
-                !math.isfinite(chunk.MinX) ||
-                !math.isfinite(chunk.MaxX) ||
-                !math.isfinite(chunk.MinZ) ||
-                !math.isfinite(chunk.MaxZ))
-            {
-                return 0;
-            }
-
-            GetThreatGridBounds(gridCenter, out float minGridX, out float maxGridX, out float minGridZ, out float maxGridZ);
-            float minX = math.max(chunk.MinX, minGridX);
-            float maxX = math.min(chunk.MaxX, maxGridX);
-            float minZ = math.max(chunk.MinZ, minGridZ);
-            float maxZ = math.min(chunk.MaxZ, maxGridZ);
-            if (minX > maxX || minZ > maxZ)
-                return 0;
-
-            float inverseThreatGridCellSize = math.rcp(threatGridCellSize);
-            int minCellX = math.clamp((int)math.floor((minX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            return math.max(0, (maxCellX - minCellX + 1) * (maxCellZ - minCellZ + 1));
-        }
-
-        private void StampThreatSamplingChunkHash(VegetationDensityChunkRecord chunk, Vector3 gridCenter, int chunkIndex)
-        {
         }
 
         private void RebuildArtificialStructureThreatSnapshot()
@@ -4852,8 +4799,6 @@ namespace Hecton8.World
             {
                 _artificialStructureCount = 0;
                 ReleaseVegetationMemoryBuffer(ref _nativeMemory.ArtificialStructureRecordsHandle);
-                EnsureArtificialStructureHashBuffersCapacity(1);
-                _artificialStructureHashSwapPending = true;
 
                 return;
             }
@@ -4867,19 +4812,8 @@ namespace Hecton8.World
                     out NativeArray<ArtificialStructureRecord> artificialStructureRecords))
             {
                 _artificialStructureCount = 0;
-                EnsureArtificialStructureHashBuffersCapacity(1);
-                _artificialStructureHashSwapPending = true;
                 return;
             }
-
-            int estimatedHashEntries = 0;
-            for (int i = 0; i < _persistentArtificialStructureCount; i++)
-                estimatedHashEntries += EstimateArtificialStructureHashEntries(_persistentArtificialStructures[i].Bounds, targetCenter);
-
-            for (int i = 0; i < _megaWreckStreamCount; i++)
-                estimatedHashEntries += EstimateArtificialStructureHashEntries(GetMegaWreckSectionBounds(_megaWreckStreamSnapshot[i]), targetCenter);
-
-            bool hashReady = EnsureArtificialStructureHashBuffersCapacity(estimatedHashEntries);
 
             try
             {
@@ -4887,7 +4821,7 @@ namespace Hecton8.World
                 for (int i = 0; i < _persistentArtificialStructureCount; i++)
                 {
                     PersistentArtificialStructureRecord structure = _persistentArtificialStructures[i];
-                    WriteArtificialStructureRecord(ref artificialStructureRecords, structure.Bounds, structure.Type, targetCenter, writeIndex, hashReady);
+                    WriteArtificialStructureRecord(ref artificialStructureRecords, structure.Bounds, structure.Type, writeIndex);
                     writeIndex++;
                 }
 
@@ -4897,9 +4831,7 @@ namespace Hecton8.World
                         ref artificialStructureRecords,
                         GetMegaWreckSectionBounds(_megaWreckStreamSnapshot[i]),
                         StructureType.MegaWreck,
-                        targetCenter,
-                        writeIndex,
-                        hashReady);
+                        writeIndex);
                     writeIndex++;
                 }
 
@@ -4911,17 +4843,13 @@ namespace Hecton8.World
                     in _nativeMemory.ArtificialStructureRecordsHandle,
                     VegetationMemorySovereigntyConstants.OwnerSystemId);
             }
-
-            _artificialStructureHashSwapPending = true;
         }
 
         private void WriteArtificialStructureRecord(
             ref NativeArray<ArtificialStructureRecord> destination,
             Bounds bounds,
             StructureType type,
-            Vector3 gridCenter,
-            int writeIndex,
-            bool stampHash)
+            int writeIndex)
         {
             ArtificialStructureRecord record = new ArtificialStructureRecord
             {
@@ -4934,8 +4862,6 @@ namespace Hecton8.World
                 Type = (byte)type
             };
             destination[writeIndex] = record;
-            if (stampHash)
-                StampArtificialStructureHash(record, gridCenter, writeIndex);
         }
 
         private bool TryReadArtificialStructureSnapshot(out NativeArray<ArtificialStructureRecord> records)
@@ -4951,90 +4877,12 @@ namespace Hecton8.World
                 out records);
         }
 
-        private int EstimateArtificialStructureHashEntries(Bounds bounds, Vector3 gridCenter)
-        {
-            if (_ecosystemThreatGridResolution <= 0 ||
-                threatGridCellSize <= 0f ||
-                !math.isfinite(threatGridCellSize) ||
-                !IsFinite(gridCenter) ||
-                !IsFinite(bounds.min) ||
-                !IsFinite(bounds.max))
-            {
-                return 0;
-            }
-
-            GetThreatGridBounds(gridCenter, out float minGridX, out float maxGridX, out float minGridZ, out float maxGridZ);
-            float minX = math.max(bounds.min.x, minGridX);
-            float maxX = math.min(bounds.max.x, maxGridX);
-            float minZ = math.max(bounds.min.z, minGridZ);
-            float maxZ = math.min(bounds.max.z, maxGridZ);
-            if (minX > maxX || minZ > maxZ)
-                return 0;
-
-            float inverseThreatGridCellSize = math.rcp(threatGridCellSize);
-            int minCellX = math.clamp((int)math.floor((minX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellX = math.clamp((int)math.floor((maxX - minGridX) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int minCellZ = math.clamp((int)math.floor((minZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            int maxCellZ = math.clamp((int)math.floor((maxZ - minGridZ) * inverseThreatGridCellSize), 0, _ecosystemThreatGridResolution - 1);
-            return math.max(0, (maxCellX - minCellX + 1) * (maxCellZ - minCellZ + 1));
-        }
-
-        private void StampArtificialStructureHash(ArtificialStructureRecord record, Vector3 gridCenter, int recordIndex)
-        {
-        }
-
-        private bool EnsureThreatSamplingChunkHashBuffersCapacity(int requiredCapacity)
-        {
-            return true;
-        }
-
-        private bool EnsureArtificialStructureHashBuffersCapacity(int requiredCapacity)
-        {
-            return true;
-        }
-
-        private void SwapThreatSamplingChunkHashBuffers()
-        {
-        }
-
-        private void SwapArtificialStructureHashBuffers()
-        {
-        }
-
-        private void CommitThreatSpatialSnapshotBufferSwaps()
-        {
-            if (!CanRefreshThreatSpatialSnapshots())
-                return;
-
-            if (_artificialStructureHashSwapPending)
-            {
-                SwapArtificialStructureHashBuffers();
-                _artificialStructureHashSwapPending = false;
-            }
-
-            if (_threatSamplingChunkHashSwapPending)
-            {
-                SwapThreatSamplingChunkHashBuffers();
-                _threatSamplingChunkHashSwapPending = false;
-            }
-        }
-
         private void RefreshArtificialStructureSnapshotIfIdle()
         {
             if (!CanRefreshThreatSpatialSnapshots())
                 return;
 
             RebuildArtificialStructureThreatSnapshot();
-            CommitThreatSpatialSnapshotBufferSwaps();
-        }
-
-        private void GetThreatGridBounds(Vector3 gridCenter, out float minX, out float maxX, out float minZ, out float maxZ)
-        {
-            float halfExtent = (_ecosystemThreatGridResolution - 1) * 0.5f * threatGridCellSize;
-            minX = gridCenter.x - halfExtent;
-            maxX = gridCenter.x + halfExtent;
-            minZ = gridCenter.z - halfExtent;
-            maxZ = gridCenter.z + halfExtent;
         }
 
         private static Bounds GetMegaWreckSectionBounds(MegaWreckStreamSection section)
@@ -5342,7 +5190,6 @@ namespace Hecton8.World
             _totalUniverseOffset = ToVector3(_totalUniverseOffsetDouble);
             GlobalTotalUniverseOffset = _totalUniverseOffset;
             GlobalTotalUniverseOffsetDouble = _totalUniverseOffsetDouble;
-            RebaseLargeFloraVisualSwayRuntimePositions();
 
             ClearEvictionScratch();
             FixedChunkPayloadMap.Enumerator payloadEnumerator = _chunkPayloads.GetEnumerator();
@@ -9275,7 +9122,6 @@ namespace Hecton8.World
             _scheduledThreatVoxelOrigin = Vector3.zero;
             _lastThreatPropagationTime = float.NegativeInfinity;
             _threatSpatialSolveCursor = 0;
-            _threatSamplingChunkHashSwapPending = false;
         }
 
         private void DisposeFlowFieldState()
@@ -9322,7 +9168,6 @@ namespace Hecton8.World
             ReleaseVegetationMemoryBuffer(ref _nativeMemory.ArtificialStructureRecordsHandle);
 
             _artificialStructureCount = 0;
-            _artificialStructureHashSwapPending = false;
         }
 
         private void DisposePoolDefragState()

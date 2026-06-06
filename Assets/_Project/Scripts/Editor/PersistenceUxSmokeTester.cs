@@ -83,6 +83,8 @@ namespace Hecton8.Dev
 
             bool corruptionDialogPass =
                 ContainsAll(saveBinaryStorage, "ConsumeIndexedSectorQuarantineFlag", "ReportIndexedSectorQuarantine", "TryResetIndexedPersistentWorldSectorToPristine") &&
+                ContainsAll(saveBinaryStorage, "ReportIndexedSectorBackupRecovery", "CopyAndClearIndexedSectorBackupRecoveryHashes", "TryRestoreIndexedPersistentWorldSectorFromBackup", "refreshBackupBeforeCommit: false") &&
+                ContainsAll(persistentWorldRegistry, "ConsumeIndexedSectorBackupRecoveryFlag", "RestoreBackupRecoveredIndexedSectorsFromBackup") &&
                 ContainsAll(saveManager, "CriticalSectorCorruptionMessage", "NotificationEvents.PushCritical(CriticalSectorCorruptionMessage)");
 
             bool seedConsistencyPass =

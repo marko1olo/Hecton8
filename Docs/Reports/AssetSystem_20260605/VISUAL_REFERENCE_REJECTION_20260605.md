@@ -195,3 +195,24 @@ Next valid moves:
 4. Capture a valid h8_1475 packet before any visual acceptance claim.
 
 Final status: `REJECTED / PENDING UNITY PROOF`.
+
+## Banach Static Critic - 2026-06-06
+
+Evidence class: `STATIC_IMAGE_REVIEW / STATIC_DOC / NO_UNITY_READBACK`.
+
+Banach reviewed all 15 mandatory references, current screenshot/contact-sheet evidence, and the visual matrices. The rejection is unchanged.
+
+Top failures:
+
+- no valid `h8_1475` proof packet;
+- slab surface ocean;
+- failed shoreline/wet-rock/foam/contact truth;
+- failed terrain/coast material truth;
+- toy-integrated Aegir/sky;
+- empty/slab 0-5 m underwater route;
+- absent production player/HUD/tool witness;
+- unproven 20-50 m depth route;
+- unresolved product-face mesh/material gates;
+- flora/coral/UI assets remain candidates, not active proof.
+
+Do not treat raw MCP screenshots, pure-ocean frames, green haze, darkness, bloom/fog, vegetation scatter, or controller prose as acceptance evidence.

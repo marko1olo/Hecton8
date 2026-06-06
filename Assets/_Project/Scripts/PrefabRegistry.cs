@@ -8,7 +8,6 @@
 //   â€¢ Bi-directional mapping: GameObject â†” int PrefabId.
 //   â€¢ Zero GC lookups via Dictionary<int, GameObject> and Dictionary<GameObject, int>.
 //   â€¢ Editor-time assignment via [ContextMenu] or auto-registration on first access.
-//   â€¢ Optional native ID snapshot for jobs that only need prefab ID membership.
 //
 // UNITY 6.4+ COMPATIBILITY:
 //   â€¢ GetEntityId() replaces the obsolete object-instance path in Unity 6.4+.
@@ -22,12 +21,10 @@
 // ZERO GC:
 //   â€¢ Dictionary lookups â€” O(1), no allocations.
 //   â€¢ No string operations in hot paths.
-//   â€¢ NativeArray for Burst-compatible reads (after warmup).
 // ============================================================================
 
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Unity.Collections;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -276,24 +273,7 @@ namespace Hecton8.Core
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  PUBLIC API â€” NATIVE MAP (BURST)
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-        /// <summary>
-        /// Compatibility no-op. Persistent native prefab snapshots were retired because no current owner consumes them.
-        /// </summary>
-        public void WarmupNativeMap()
-        {
-        }
-
-        /// <summary>
-        /// Gets read-only access to the native prefab ID snapshot for Burst jobs.
-        /// Returns default if not warmed up.
-        /// </summary>
-        public NativeHashMap<int, int>.ReadOnly GetNativeMap()
-        {
-            return default;
-        }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC API â€” DIAGNOSTICS

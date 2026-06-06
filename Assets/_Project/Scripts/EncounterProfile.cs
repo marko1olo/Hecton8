@@ -12,7 +12,7 @@ namespace Hecton8.Systems.AI
         [Range(0f, 1f)]
         [Tooltip("Minimum normalized intensity required before this threat class becomes eligible.")]
         public float minimumIntensity;
-        [Tooltip("If false, this threat class is suppressed when the player is in the critical-health spawn suppression window.")]
+        [Tooltip("If false, this threat class is suppressed when the player is in a survival-critical health or oxygen window.")]
         public bool allowDuringCriticalHealth;
     }
 

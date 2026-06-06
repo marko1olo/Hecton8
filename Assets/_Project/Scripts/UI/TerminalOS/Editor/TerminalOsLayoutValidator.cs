@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Reflection;
+using Hecton8.Core.Contracts;
 using Hecton8.UI;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;

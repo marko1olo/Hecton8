@@ -24,11 +24,6 @@ namespace Hecton8.Bootstrap
 
         private bool _delegatedBoot;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-        }
-
         private static bool IsBootstrapScene(Scene scene)
         {
             return scene.IsValid() &&
@@ -56,10 +51,6 @@ namespace Hecton8.Bootstrap
         private void Start()
         {
             DelegateBoot();
-        }
-
-        private void OnDestroy()
-        {
         }
 
         /// <summary>

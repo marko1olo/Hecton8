@@ -13,7 +13,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4027)]
-    public sealed class SeamGapDitherRenderer : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class SeamGapDitherRenderer : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static readonly int _MatrixBufferId = Shader.PropertyToID("_HectonSeamDitherMatrices");
         private static readonly int _ColorBufferId = Shader.PropertyToID("_HectonSeamDitherColors");
@@ -95,7 +95,6 @@ namespace Hecton8.World
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IAmbientCurrentReadModel _ambientCurrentReadModel;
         private HectonMapMagicVegetationBridge _vegetationBridge;
-        private bool _registeredToDispatcher;
         private bool _registeredLateFrame;
         private int _pendingVisualInstanceCount;
         private bool _pendingVisualDrawDirty;
@@ -146,7 +145,6 @@ namespace Hecton8.World
             TryUnregister();
             TryUnregisterHotSwapListener();
             ReleaseBuffers();
-            ReleaseRuntimeMaterial();
             ReleaseQuadMesh();
         }
 
@@ -158,10 +156,6 @@ namespace Hecton8.World
             _debugRenderedInstances = 0;
             _debugSourceSeams = 0;
             _debugDrawBounds = default;
-        }
-
-        public void Tick(float deltaTime)
-        {
         }
 
         private void RunSeamDitherVisualSync()
@@ -292,9 +286,6 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return;
 
-            if (!_registeredToDispatcher)
-                _registeredToDispatcher = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
@@ -307,11 +298,6 @@ namespace Hecton8.World
                 _registeredLateFrame = false;
             }
 
-            if (_registeredToDispatcher)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registeredToDispatcher = false;
-            }
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -332,7 +318,6 @@ namespace Hecton8.World
                     _vegetationBridge = currentService as HectonMapMagicVegetationBridge;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredToDispatcher = false;
                     _registeredLateFrame = false;
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();
@@ -832,10 +817,6 @@ namespace Hecton8.World
             _visualUploadBufferIndex = 0;
             if (_drawPropertyBlock != null)
                 _drawPropertyBlock.Clear();
-        }
-
-        private void ReleaseRuntimeMaterial()
-        {
         }
 
         private void ReleaseQuadMesh()

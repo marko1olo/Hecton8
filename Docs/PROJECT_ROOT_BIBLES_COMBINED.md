@@ -1017,6 +1017,12 @@ Any procedural asset task starts here, then routes into the matching specialist 
 
 If a generated object can be touched, collided with, scanned, salvaged, repaired, entered, cut, opened, or used as cover, its visual mesh is not the only artifact. It also needs collider proxies, interaction anchors, material IDs, LODs, bounds, prefab metadata, and validation output.
 
+## Runtime And Hot-Path Boundary
+
+The procedural pipeline owns offline authoring, validation, manifests, and serialized asset packages. Runtime owners consume those packages through streaming, Addressables or approved data routes, prefab identity, LOD/HLOD selection, instancing, shader animation, and cached interaction/collision proxies.
+
+Hot paths must not run procedural generation, topology repair, UV unwrap, atlas packing, texture synthesis, normal/AO/curvature baking, collider fitting/cooking, prefab assembly, manifest mutation, or scene search to repair generated packages. `GlobalQualityWeight` may select approved variants, density, residency, LOD distance, shader presentation, and proof/capture detail only. It must not change collider identity, anchors, sockets, save identity, route ownership, DTO layout, material channel semantics, or gameplay truth.
+
 ## Required Output Package
 
 Every generator must emit a complete asset package, not an isolated mesh.
@@ -1456,7 +1462,7 @@ Under pressure, distant and speculative work is cut first. Player survival asset
 
 ## World Streaming
 
-World streaming must consider:
+World streaming decisions must evaluate:
 
 - player position and velocity;
 - depth band;
@@ -2059,6 +2065,7 @@ Rule and bible updates must:
 - keep `C:\Users\danat\.codex\AGENTS.md` as a thin global router that sends HECTON-8 work to root `AGENTS.md` and does not duplicate divergent project law;
 - keep `Docs/AGENTS_RULE_DETAIL_LEDGER.md` as the no-loss detail source for former monolithic root-law clauses until they are promoted into narrower route bibles or mandates;
 - keep `HECTON8_ORCHESTRATOR.md` lane contracts current for explicit standalone multi-agent waves, batch, controller, external GUI/process control, and task-file work;
+- keep `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md` routed only for explicit local VS Code Codex GUI/workstation control;
 - keep ordinary subagent rules available in root `AGENTS.md` and `Docs/AGENT_AUTHORITY_ROUTING.md` so delegation is a primary evidence/implementation tool without pulling GUI/process orchestration into normal work;
 - keep new or materially rewritten serious `taskslocal` batches strict-checked with `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict`; historical batches are not a standing failure surface unless explicitly reissued;
 - keep `.agent/rules/*.md` as short historical stubs with previous bodies preserved under `Docs/DEPRECATED/AgentRulesHistorical_20260605/`;
@@ -2075,6 +2082,12 @@ Rule and bible updates must:
 - Generated meshes, textures, materials, LODs, and collision: `3dmodel.md`
 - Hero generated models: `3DMODEL_HERO_REALISM_OVERKILL.md`
 - Texture family generation: `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
+- Generated hard-surface modules and pressure-rated structures: `3DMODEL_HARD_SURFACE_MODULES.md`
+- Generated equipment, tools, props, and salvage objects: `3DMODEL_EQUIPMENT_PROPS.md`
+- Generated flora and coral asset families: `3DMODEL_FLORA_CORAL.md`
+- Generated fauna asset families: `3DMODEL_FAUNA.md`
+- Generated geology, rocks, strata, and terrain-detail assets: `3DMODEL_GEOLOGY_ROCKS.md`
+- Texture and material channel rules for generated 3D assets: `3DMODEL_TEXTURES_MATERIALS.md`
 - UI, HUD, menus, terminals, cockpit panels: `ui.md`
 - Menu/frontend screens: `UI_MENU_SCREEN_STANDARDS.md`
 - Diegetic HUD/world-space panels: `UI_DIEGETIC_HUD_STANDARDS.md`
@@ -4632,6 +4645,12 @@ Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: generated creatures, shells, jaws, fins, tails, tentacles, skeletons, carcasses, VAT-ready bodies, and fauna equipment attachments.
 
+## First-20 Route Hook
+
+- First-20 moment: first readable threat silhouette, distant creature pass, carcass/evidence object, shell/organ scan, or shallow fauna encounter that teaches avoidance, risk, and route pressure.
+- Route blocker removed: prevents first-route creatures from becoming scaled capsules, decorative fish, unreadable hitboxes, or runtime animation masking weak anatomy.
+- Proof class: STATIC_DOC until body-plan declaration, deformation/topology proof, hitbox alignment, LOD/material proof, animation fallback note, compact capture, and route screenshot/clip exist.
+
 ## 1. Fauna Mesh Law
 
 Fauna geometry must support animation, readability, and fear. A generated creature made from scaled capsules or bone sticks is rejected unless it is a hidden rig proxy. The saved visual mesh must include a coherent body plan, silhouette hierarchy, asymmetry, pressure-adapted anatomy, scars, tissue thickness, hard/soft material separation, and readable attack/contact zones.
@@ -4723,6 +4742,12 @@ Fauna collision uses primitives:
 - Boxes for armored plates or broad shell regions.
 
 LOD0 render mesh is never used as MeshCollider. Bite, lunge, and damage routing must reference hitbox primitives or authored sockets, not visual triangles.
+
+## 8A. Runtime And Hot-Path Boundary
+
+Fauna runtime truth is AI owner state, animation/VAT/skinning owner state, hitbox primitives, attack/contact sockets, weak spot identity, and save identity. The visual mesh is presentation.
+
+Hot paths must not generate or mutate creature geometry, deformation topology, blendshape/VAT frames, UVs, masks, LOD chains, hitboxes, collider proxies, material instances, or skeleton/socket identity. Runtime may animate authored rigs/VAT, select approved LODs, drive shader masks, and read cached hitbox/socket data. `GlobalQualityWeight` may scale presentation density, animation/VAT sampling, diagnostics, and LOD distance only; it must not change attack reach, hitbox truth, weak spot identity, locomotion authority, AI decisions, or save state.
 
 ## 9. Rejection Gates
 
@@ -5029,6 +5054,14 @@ Every report must use one of these labels:
 - `PENDING VERIFICATION`: claim is plausible but not proven.
 
 Do not collapse these labels. Static documentation work cannot claim runtime proof.
+
+Evidence class mapping:
+
+- Proof state label is the report status.
+- Evidence class is the artifact type behind the status, such as `STATIC_DOC`, `STATIC_SOURCE`, `PACKAGE_LOCK`, `CLI_COMPILE`, `UNITY_CONSOLE`, `PLAYMODE`, `PROFILER`, `FRAME_DEBUGGER`, or `PLAYER_BUILD`.
+- `STATIC VERIFIED` may be backed by `STATIC_DOC`, `STATIC_SOURCE`, package/manifests, generated files, or static tool output only. It must not imply Unity import, runtime behavior, profiler, GC, visual, platform, or save/load proof.
+- `EDITOR VERIFIED`, `PLAYMODE VERIFIED`, `PROFILER VERIFIED`, and `PLAYER-CAPTURE VERIFIED` require the matching runtime/editor artifact class and path.
+- If the proof state label and evidence class disagree, use the lower claim and mark the rest `PENDING VERIFICATION`.
 
 ## 12. Domain Proof Matrix
 
@@ -6068,6 +6101,7 @@ Examples:
 - Generated assets: `PROJECT_BIBLES.md` -> `PROCEDURAL_ASSET_PIPELINE.md`, `3dmodel.md`, relevant asset family bible, texture/material playbooks -> matching `TOOL_*`, `REND_*`, `OPT_*` mandates.
 - Writing/narrative/public copy: `writing.md`, `narrative.md`, `localization.md`, or `textes.md` as routed by `PROJECT_BIBLES.md`.
 - Standalone batch/controller/external-agent process work: this file -> `HECTON8_ORCHESTRATOR.md` -> `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md` only when real GUI/process control is involved -> active orchestration evidence.
+- Autonomous local VS Code Codex GUI control: this file -> `HECTON8_ORCHESTRATOR.md` -> `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md` -> `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md` only when the user explicitly asks for workstation/Codex GUI control.
 
 ## Code And Ownership Discipline
 
@@ -6164,6 +6198,8 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 [FORBID] Do not read `HECTON8_ORCHESTRATOR.md`, `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`, `AgentGuiOps.ps1`, or `ProbeAgents.ps1` merely because you spawn internal subagents. Internal subagents are ordinary delegation and are governed by `Delegation And Subagents`.
 
 [REQ] Explicit standalone multi-agent waves, batch, controller, and task-file work must use the `HECTON8_ORCHESTRATOR.md` lane contracts. Assign `LANE_CLASS`, valid completion, invalid completion, kill switch, and evidence budget before dispatching or judging standalone agents.
+
+[REQ] Explicit autonomous local VS Code Codex GUI control must also read `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md`. That file is process-control law only for current workstation/Codex GUI operation; it is not a normal implementation, docs, or internal-subagent authority.
 
 [REQ] New or materially rewritten serious `taskslocal` batches must pass `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict` before distribution. Historical batches may be inspected with `--allow-legacy`; do not make old task folders a standing red gate unless they are reissued.
 
@@ -8430,6 +8466,12 @@ Source: `3DMODEL_FLORA_CORAL.md`
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Scope: kelp, seaweed, coral, roots, abyssal flora, static biological growth, harvestable plants, and non-fauna organic props.
 
+## First-20 Route Hook
+
+- First-20 moment: first colorful shallow flora/coral read, harvestable plant, route-cover plant mass, reef silhouette, or biolum/evidence organism in the opening path.
+- Route blocker removed: prevents shallow biology from becoming dark abyss leftovers, flat cards, primitive tubes, noisy blobs, or shader glow with no grown structure.
+- Proof class: STATIC_DOC until growth manifest, vertex-color semantic proof, UV/atlas proof, LOD/anchor proof, interaction proxy proof, compact capture, and route screenshot exist.
+
 ## 1. Organic Asset Law
 
 Flora and coral are not primitive cylinders, spheres, ribbons, or cones. Those shapes are allowed only as construction scaffolds. The saved mesh must include asymmetry, taper, branching hierarchy, secondary silhouette breakup, thickness variation, scars, pores, cavities, bent growth direction, and anchor geometry.
@@ -8545,6 +8587,12 @@ Evidence class: STATIC_SOURCE only. Compile, Unity import, cut-mask capture, Fra
 |---|---|---|---|---|
 | `Assets/_Project/Scripts/World/SargassumCutManager.cs` | `Hecton8.World`, `SystemID.WorldSargassum`; runtime cut-mask and terrain damage-volume service for sargassum/flora presentation. It does not generate flora/coral meshes, author root anchors, or own harvest/collision truth. | Registers global `ISargassumCutWriteService`, tick/slow/late-frame routes, DataVault stamp command buffers, compute-shader cut masks, ping-pong render textures, and shader globals for cut/damage response. External cuts enter through `RegisterExternalCut`/service calls; recent cut heat is registered in `WorldSpatialHashGrid`. | `GlobalQualityWeight` scales mask and damage-volume resolution with hysteresis. Mesh topology, vertex color semantics, root identity, harvest point identity, and collision proxies must not change by runtime mask resolution. | No generated asset readback, shader cut visual capture, compact/high comparison, Frame Debugger/GPU profiler, GCMonitor, or gameplay cut proof was provided by this static audit. |
 
+## 7.2 Runtime And Hot-Path Boundary
+
+Flora/coral runtime truth is root/anchor identity, harvest point identity, collision or trigger proxy, shader vertex color semantics, placement owner, and save/respawn state where applicable. The mesh package, UVs, atlas, masks, LODs, and interaction proxies are offline products.
+
+Hot paths must not generate branches, blades, coral pores, UVs, atlas entries, vertex color semantics, colliders, harvest anchors, or material instances. Runtime may bend, pulse, cut-mask, fade, stream, and instance prebuilt assets through approved shader/DataVault/owner routes. `GlobalQualityWeight` may scale presentation density, mask resolution, field population, and LOD distance only; it must not change root identity, harvest truth, collision proxy route, placement truth, or save identity.
+
 ## 8. Rejection Gates
 
 Reject if:
@@ -8620,6 +8668,12 @@ This file is mandatory when any condition is true:
 - Asset defines the visual identity of HECTON-8: base module, airlock, submarine equipment, leviathan/fauna body, coral forest, thermal vent, cave entrance, wreckage, command device.
 
 Hero classification does not allow runtime generation. It increases offline bake effort, not runtime authority.
+
+## 2A. Runtime And Hot-Path Boundary
+
+Hero status raises offline source, bake, render-proof, LOD, collider, and material requirements. It never grants runtime authority to build or repair the asset.
+
+Hot paths must not generate hero mesh detail, retopologize, decimate, bake normals/AO/curvature, fit colliders, synthesize masks, swap material channel semantics, search visual triangles for interaction, or create runtime material clones. Runtime may load the serialized hero package, choose approved LOD/variant/residency, drive authored shader parameters, and read named anchors or collider proxies. `GlobalQualityWeight` scales fidelity selection only; it must not change collision truth, sockets, prefab identity, save identity, or gameplay facts.
 
 ## 3. Realism Stack
 
@@ -8849,6 +8903,12 @@ Scope: generated and authored textures, material assignment, PBR masks, atlas pa
 
 For source creation recipes, AI-assisted texture prompts, procedural height/normal/MRAO bake rules, and visual acceptance gates, read `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md` before authoring or generating texture families.
 
+## First-20 Route Hook
+
+- First-20 moment: first readable wet rock, pressure-rated metal, tool surface, shallow flora/coral material, resource node, route decal, or machinery label seen in the opening route.
+- Route blocker removed: prevents generated meshes from entering the first route with flat color, blurry atlases, fake PBR channels, unreadable labels, or runtime texture repair.
+- Proof class: STATIC_DOC until texture role reports, import settings, UV/atlas proof, material previews, Unity import evidence, compact capture, and route screenshot exist.
+
 ## 1. Texture Source Law
 
 Generated meshes must use existing high-quality human-authored or AI-assisted texture assets when available. Synthetic flat colors are allowed only as validator/debug placeholders and must not ship as final art.
@@ -8974,7 +9034,15 @@ Texture import must be enforced offline:
 
 Generated meshes must reference material assets, not duplicate materials. Per-instance variation uses vertex colors, material property blocks only where approved, atlas rects, or instancing data. Runtime `renderer.material` is banned.
 
-## 9. Rejection Gates
+## 9. Runtime Truth And Hot-Path Boundary
+
+Texture and material generation is an editor/offline authoring route. Runtime truth is the imported texture asset, material asset, shader contract, atlas rect, channel manifest, streaming handle, and prefab/material reference that consume the generated output.
+
+Runtime hot paths must not create `Texture2D` assets, fill pixels, compress textures, bake masks, repack atlases, unwrap UVs, call `renderer.material`, or instantiate per-prefab materials. Runtime may only bind approved material assets, update predeclared shader parameters, select already-imported texture/atlas variants through an owner route, and stream/release tracked handles.
+
+`GlobalQualityWeight` may scale texture max size, streaming residency, decal/material detail intensity, and optional diagnostics. It must not change material channel semantics, atlas rect identity, prefab authority, gameplay truth, save identity, or shader ABI.
+
+## 10. Rejection Gates
 
 Reject if:
 
@@ -8986,7 +9054,7 @@ Reject if:
 - Runtime code is required to generate final textures.
 - Generated material count breaks SRP Batcher/instancing without proof.
 
-## 10. Proof Artifacts
+## 11. Proof Artifacts
 
 Texture and material generation must output:
 
@@ -8998,7 +9066,7 @@ Texture and material generation must output:
 - preview captures for albedo-only, normal-only, mask-channel view, flat lighting, and final URP lighting;
 - explicit `PENDING UNITY/PROFILER VERIFICATION` if only static material rules changed.
 
-## 11. Acceptance Sentence
+## 12. Acceptance Sentence
 
 A generated texture/material set is accepted only when every map has a documented PBR role, UVs or projection coordinates are measured, atlas padding survives mips, import settings are correct, material slots remain batchable, and final visual richness comes from valid offline maps rather than runtime texture generation or fake color noise.
 
@@ -9011,6 +9079,12 @@ Source: `3DMODEL_EQUIPMENT_PROPS.md`
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: tools, devices, cockpit parts, lab machinery, storage containers, cables, handholds, consoles, valves, pumps, lights, sensors, and small generated set dressing.
+
+## First-20 Route Hook
+
+- First-20 moment: first repair tool, scanner target, pump/valve, cockpit readout, salvage container, cable route, or handhold that teaches the player machinery under pressure.
+- Route blocker removed: prevents opening-route equipment from becoming decorative clutter, primitive silhouettes, unreadable displays, or interaction anchors with no functional visual truth.
+- Proof class: STATIC_DOC until function report, socket/anchor report, LOD/collider proof, display/material proof, Unity import evidence, compact capture, and route screenshot exist.
 
 ## 1. Prop Law
 
@@ -9099,6 +9173,12 @@ Interaction raycast targets may use a simplified trigger surface or named socket
 
 All prop geometry, labels, display masks, UVs, LODs, sockets, pivots, colliders, and interaction anchors are generated and validated offline. Runtime may only load serialized prefabs, read named anchors, and update approved material/UI state. Runtime does not create prop meshes, cook prop colliders, generate labels, unwrap UVs, or search visual triangles for interaction truth.
 
+## 6A. Runtime And Hot-Path Boundary
+
+Equipment runtime truth is serialized prefab identity, pivot, socket names, interaction anchors, collider proxies, material slots, and approved UI/display state. Hot paths must not create meshes, labels, UVs, display atlases, colliders, sockets, pivots, material instances, or per-prop metadata.
+
+Runtime may animate lights, displays, needles, damage state, wetness, and interaction highlighting only through predeclared material/UI channels and cached owner references. `GlobalQualityWeight` may choose prebuilt fidelity variants, label sharpness, LOD distance, and optional display detail; it must not change interaction truth, collider truth, socket identity, save identity, or material channel semantics.
+
 ## 7. Continuous Quality Scaling
 
 `GlobalQualityWeight` scales prop fidelity through offline asset variants: bevel segment count, decal density, texture resolution, label sharpness, LOD transition distance, wear mask precision, and optional hero-screen emissive detail. It never changes pivot identity, socket names, interaction anchors, collider truth, material channel semantics, or runtime generation law.
@@ -9142,6 +9222,12 @@ Source: `3DMODEL_GEOLOGY_ROCKS.md`
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: rocks, boulders, cliffs, ore nodes, cave chunks, thermal vents, mineral shelves, basalt columns, sediment layers, and geological props.
+
+## First-20 Route Hook
+
+- First-20 moment: first shoreline/exposed rock, shallow traversal shelf, resource node, cave mouth, vent mark, route landmark, or terrain-detail object that proves the world has physical geology.
+- Route blocker removed: prevents opening terrain and resource reads from becoming smooth blobs, colorized heightfields, noise spheres, or shader-only geology.
+- Proof class: STATIC_DOC until geology process manifest, topology/normal validation, LOD/collider proof, material/triplanar proof, compact capture, and route screenshot exist.
 
 ## 1. Geology Mesh Law
 
@@ -9232,6 +9318,12 @@ Geology collision uses:
 - SDF/nav proxy when navigation uses voxel authority.
 
 LOD0 MeshCollider is banned. Collision proxy must be saved as `COL_*` mesh or primitive child set and cooked offline when a mesh proxy is unavoidable.
+
+## 8A. Runtime And Hot-Path Boundary
+
+Geology runtime truth is the serialized visual package, material/mask contract, collider or SDF/nav proxy, ore/vent identity, traversal blocker identity, and route placement owner. Hot paths must not run SDF mesh generation, marching cubes, erosion, fracture, UV/triplanar setup, AO baking, collider cooking, ore-mask derivation, or visual-triangle collision.
+
+Runtime may stream prebuilt geology variants, select LOD/HLOD/impostors, drive approved wetness/vent/emission shader parameters, and read precomputed collision/nav proxies. `GlobalQualityWeight` may scale fidelity and residency only; it must not change ore identity, collision route, navigation blocker truth, material channel semantics, save identity, or route ownership.
 
 ## 9. Rejection Gates
 
@@ -10507,6 +10599,12 @@ Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: DeepReach modules, airlocks, wreckage shells, submarine components, doors, panels, corridors, pipes, supports, and industrial structure meshes.
 
+## First-20 Route Hook
+
+- First-20 moment: first shelter exit frame, airlock/dock machinery, pressure door, pump corridor, shallow wreck fragment, return-path hardware, or exposed industrial route cue.
+- Route blocker removed: prevents opening-route machinery from reading as boxes with panels, primitive socket math, or texture-only NASA-punk dressing.
+- Proof class: STATIC_DOC until generated package manifest, wireframe/collider proof, Unity import evidence, material proof, compact capture, and route screenshot exist.
+
 ## 1. Shape Language
 
 Generated hard-surface assets must look pressure-rated, serviceable, and physically manufactured. The base shape may be a box, cylinder, arch, capsule, or WFC module, but the saved mesh must carry bevels, wall thickness, panels, sockets, trim, vents, seams, welds, bolted flanges, gasket grooves, cable ports, maintenance plates, and corrosion catchments. A plain cube with material color is rejected even if it satisfies collision and socket math.
@@ -10629,7 +10727,15 @@ Hard-surface collision uses compound primitives. Preferred order:
 
 Visual bevels, bolts, wires, panels, and dents never enter collision. Collision children must be named `COL_*`, be generated offline, and use assigned physics layers before prefab save.
 
-## 9. Rejection Gates
+## 9. Runtime Truth And Hot-Path Boundary
+
+Hard-surface generation is an editor/offline authoring route. Runtime truth is the serialized prefab, scene owner, socket IDs, interaction anchors, collider proxies, material references, and LOD chain that consume the generated output.
+
+Runtime hot paths must not generate module meshes, bevels, sockets, UVs, wear masks, collider proxies, or material instances. Runtime systems may only select already-authored LODs/material variants, update approved material parameters, or stream approved prefab assets through an owner route. Socket IDs, attach planes, collider truth, route blockers, and interaction anchors must not change by quality lane.
+
+`GlobalQualityWeight` may scale presentation density, decal richness, shader detail, LOD distance, and optional diagnostics. It must not change gameplay collision, socket identity, prefab authority, route availability, or save identity.
+
+## 10. Rejection Gates
 
 Reject the generated asset if:
 
@@ -10641,7 +10747,7 @@ Reject the generated asset if:
 - Any socket seam creates a visible crack or overlap.
 - Any generated module cannot state its LOD triangle counts and collision proxy count.
 
-## 10. Proof Artifacts
+## 11. Proof Artifacts
 
 Hard-surface generation must output a compact proof packet before the prefab is accepted:
 
@@ -10658,7 +10764,7 @@ Hard-surface generation must output a compact proof packet before the prefab is 
 
 Static documents may only claim `STATIC VERIFIED`. Unity import, batching, collider, and profiler claims remain `PENDING UNITY/PROFILER VERIFICATION` until measured.
 
-## 11. Acceptance Sentence
+## 12. Acceptance Sentence
 
 A hard-surface generated asset is accepted only when it reads as pressure-rated manufactured machinery before textures are applied, proves bevels and weighted normals, keeps sockets and collision deterministic, uses shared PBR material routes, ships a full LOD/proxy chain, and provides the proof packet above.
 
@@ -11154,6 +11260,12 @@ Source: `gameplay.md`
 Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Evidence class: STATIC_DOC
 Scope: player verbs, survival loop, salvage, pressure, oxygen, tools, construction, progression, failure, mission flow, and systemic gameplay taste.
+
+## First-20 Route Hook
+
+- First-20 moment: damaged safe anchor, first semi-open shallow exit, first oxygen/pressure retreat decision, first tool/resource repair chain, first hazard response, and first return-path consequence.
+- Route blocker removed: prevents the opening from collapsing into generic pickup/crafting or a Copper Wire-only proof route with no pressure, machinery, beauty, failure, or physical decision.
+- Proof class: STATIC_DOC until play repro, save/load proof, UI/readability capture, failure evidence, and route screenshots/clips exist.
 
 ## 0. Prime Gameplay Law
 
@@ -13547,6 +13659,12 @@ Every generated visual asset must therefore ship as:
 - Separate collision proxy assets or primitive collider children named `COL_*`.
 - A validation report or manifest with triangle counts, UV density, material slots, collider type, and failure gates.
 
+## 0A. Runtime And Hot-Path Boundary
+
+The runtime owner for generated models is streaming, culling, instancing, shader animation, LOD selection, and interaction through serialized anchors/proxies. It is not generation.
+
+Hot paths must not allocate or mutate mesh topology, vertex/index buffers, UVs, tangents, texture pixels, atlas data, material instances, collider cooking, LOD chains, prefab structure, sockets, anchors, or validation manifests. `GlobalQualityWeight` may select prebuilt variants, distances, density, shader presentation, and residency only. It must not change vertex channel meaning, collider identity, socket names, save identity, prefab ownership, or gameplay truth.
+
 ## 1. Routing Map
 
 If a task asks an agent to generate or improve a 3D asset, route it through the relevant file before writing code:
@@ -13990,7 +14108,15 @@ Texture generation must scale through continuous `GlobalQualityWeight`, not bina
 
 Quality may change texture size, source bake precision, decal density, detail map intensity, and atlas page count. It must not change gameplay identity, material route ownership, prefab authority, or runtime generation law.
 
-## 8. Texture Acceptance Gates
+## 8. Runtime Truth And Hot-Path Boundary
+
+Texture source generation is offline/editor work. Runtime truth is the imported texture asset, material asset, shader/channel manifest, atlas rect, and streaming owner that consume the generated family.
+
+Runtime hot paths must not run AI texture generation, procedural pixel filling, normal/AO/MRAO derivation, compression, tile tests, atlas packing, or material-family baking. Runtime may only select already-imported variants, update predeclared shader parameters, and stream tracked texture/material handles through an owner route.
+
+`GlobalQualityWeight` may scale imported variant choice, residency, mip bias, decal/detail intensity, and optional diagnostics. It must not change material channel semantics, prefab authority, gameplay truth, save identity, or runtime generation law.
+
+## 9. Texture Acceptance Gates
 
 Before a texture family can be referenced by a generated prefab, the texture validator must test:
 
@@ -14010,7 +14136,7 @@ If any gate fails, the texture family must not be saved into the production asse
 
 Bad texture output is not a performance strategy. Compact lane may lower resolution and reuse atlases, but it still needs clear material read, correct roughness/normal behavior, and attractive scene response. "Optimized" blurry mud is rejected.
 
-## 9. Implementation Order
+## 10. Implementation Order
 
 Texture generation implementation must proceed in this order:
 

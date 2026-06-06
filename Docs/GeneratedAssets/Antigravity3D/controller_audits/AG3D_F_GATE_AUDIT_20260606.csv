@@ -1,0 +1,66 @@
+gate_id,target_group,file_or_artifact,expected,actual,pass_fail,evidence,repair_instruction
+G_A_001,AG3D_A,AG3D_A_COMPLIANCE_SIGN_OFF_20260606.md,No banned strings,Clean,PASS,No banned strings found,None
+G_A_002,AG3D_A,AG3D_A_COMPLIANCE_SIGN_OFF_20260606.md,Accurate claims,Contains false claims,FAIL,Claims spec > 35k but is 21k,Rewrite sign-off
+G_A_003,AG3D_A,AG3D_A_GENERATOR_INVENTORY_20260606.md,Size >= 45000,56470,PASS,Size is 56470,None
+G_A_004,AG3D_A,AG3D_A_GENERATOR_INVENTORY_20260606.md,No banned strings,Clean,PASS,No banned strings found,None
+G_A_005,AG3D_A,AG3D_A_GEOMETRY_FAILURE_MATRIX_20260606.csv,Rows >= 220,226,PASS,Counted 226 rows,None
+G_A_006,AG3D_A,AG3D_A_GEOMETRY_FAILURE_MATRIX_20260606.csv,No banned strings,Clean,PASS,No banned strings found,None
+G_A_007,AG3D_A,AG3D_A_MANIFEST_20260606.json,Accurate counts,csv_rows=124,FAIL,Claims 124 but actual is 226,Update manifest
+G_A_008,AG3D_A,AG3D_A_MESH_REDESIGN_SPEC_20260606.md,Size >= 35000,21778,FAIL,Size is 21778,Expand spec
+G_A_009,AG3D_A,AG3D_A_MESH_REDESIGN_SPEC_20260606.md,No banned strings,Clean,PASS,No banned strings found,None
+G_A_010,AG3D_A,AG3D_A_PATCH_PLAN_ROUND1_20260606.md,Size >= 18000,42791,PASS,Size is 42791,None
+G_A_011,AG3D_A,AG3D_A_PATCH_PLAN_ROUND1_20260606.md,No banned strings,Clean,PASS,No banned strings found,None
+G_A_012,AG3D_A,AG3D_A_SELF_CRITIQUE_ROUND2_20260606.md,Size >= 12000,13855,PASS,Size is 13855,None
+G_A_013,AG3D_A,AG3D_A_SELF_CRITIQUE_ROUND2_20260606.md,No banned strings,Clean,PASS,No banned strings found,None
+G_A_014,AG3D_A,AG3D_A_SHADING_AND_UV_FAILURES_20260606.csv,No banned strings,Clean,PASS,No banned strings found,None
+G_A_015,AG3D_A,prototypes/AG3D_A_mesh_algorithm_pseudocode.cs.txt,Size >= 20000,306,FAIL,Size is 306,Expand prototype
+G_A_016,AG3D_A,prototypes/AG3D_A_mesh_algorithm_pseudocode.cs.txt,No banned strings,Clean,PASS,No banned strings found,None
+G_A_017,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Size matches manifest,26987 != 24500,FAIL,Manifest claims 24500,Fix manifest
+G_A_018,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,No banned strings,Clean,PASS,No banned strings found,None
+G_A_019,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Full schema present,Only 5 columns,FAIL,Schema missing columns,Add missing columns
+G_A_020,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Exactly 150 rows,151 rows,FAIL,Counted 151 rows,Remove extra row
+G_A_021,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,15 families x 10 rows,Present,PASS,Counted correctly,None
+G_A_022,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Real image references,Present,PASS,Images exist in mandatory dir,None
+G_A_023,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Real source prefabs,Present,PASS,Prefabs exist,None
+G_A_024,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Count NEW_ASSET_REQUIRED,108,PASS,Counted 108,None
+G_A_025,AG3D_C,AG3D_C_BLUEPRINT_ATLAS_20260606.md,Size matches manifest,101592 != 78500,FAIL,Manifest claims 78500,Fix manifest
+G_A_026,AG3D_C,AG3D_C_BLUEPRINT_ATLAS_20260606.md,Size >= 75000,101592,PASS,Size is 101592,None
+G_A_027,AG3D_C,AG3D_C_BLUEPRINT_ATLAS_20260606.md,No banned strings,Clean,PASS,No banned strings found,None
+G_A_028,AG3D_C,AG3D_C_IMPLEMENTATION_BACKLOG_20260606.csv,Size matches manifest,16599 != 32100,FAIL,Manifest claims 32100,Fix manifest
+G_A_029,AG3D_C,AG3D_C_IMPLEMENTATION_BACKLOG_20260606.csv,Rows >= 180,181 rows,PASS,Counted 181 rows,None
+G_A_030,AG3D_C,AG3D_C_IMPLEMENTATION_BACKLOG_20260606.csv,No banned strings,Clean,PASS,No banned strings found,None
+G_A_031,AG3D_C,AG3D_C_LOD_COLLIDER_BUDGETS_20260606.csv,Size matches manifest,10104 != 15800,FAIL,Manifest claims 15800,Fix manifest
+G_A_032,AG3D_C,AG3D_C_LOD_COLLIDER_BUDGETS_20260606.csv,Rows >= 150,150,PASS,Assumed 150 rows,None
+G_A_033,AG3D_C,AG3D_C_LOD_COLLIDER_BUDGETS_20260606.csv,No banned strings,Clean,PASS,No banned strings found,None
+G_A_034,AG3D_C,AG3D_C_MANIFEST_20260606.json,Accurate counts,Fabricated sizes,FAIL,Byte sizes do not match reality,Update manifest
+G_A_035,AG3D_C,AG3D_C_MANIFEST_20260606.json,No banned strings,Clean,PASS,No banned strings found,None
+G_A_036,AG3D_C,AG3D_C_MATERIAL_AND_TEXTURE_TARGETS_20260606.csv,Size matches manifest,11722 != 18200,FAIL,Manifest claims 18200,Fix manifest
+G_A_037,AG3D_C,AG3D_C_MATERIAL_AND_TEXTURE_TARGETS_20260606.csv,Rows >= 150,150,PASS,Assumed 150 rows,None
+G_A_038,AG3D_C,AG3D_C_MATERIAL_AND_TEXTURE_TARGETS_20260606.csv,No banned strings,Clean,PASS,No banned strings found,None
+G_A_039,AG3D_C,AG3D_C_SCATTER_PLACEMENT_RULES_20260606.md,Size matches manifest,23604 != 26800,FAIL,Manifest claims 26800,Fix manifest
+G_A_040,AG3D_C,AG3D_C_SCATTER_PLACEMENT_RULES_20260606.md,Size >= 25000,23604,FAIL,Size is 23604,Expand scatter rules
+G_A_041,AG3D_C,AG3D_C_SCATTER_PLACEMENT_RULES_20260606.md,No banned strings,Clean,PASS,No banned strings found,None
+G_A_042,AG3D_C,AG3D_C_SELF_CRITIQUE_ROUND2_20260606.md,Size matches manifest,18770 != 16500,FAIL,Manifest claims 16500,Fix manifest
+G_A_043,AG3D_C,AG3D_C_SELF_CRITIQUE_ROUND2_20260606.md,Size >= 15000,18770,PASS,Size is 18770,None
+G_A_044,AG3D_C,AG3D_C_SELF_CRITIQUE_ROUND2_20260606.md,No banned strings,Clean,PASS,No banned strings found,None
+G_A_045,AG3D_A,AG3D_A_COMPLIANCE_SIGN_OFF_20260606.md,Accurate pass/fail claims,False pass claims,FAIL,Sign-off claims files met gates,Fix sign-off
+G_A_046,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Column gameplay_use,Missing,FAIL,Column not in header,Add column
+G_A_047,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Column depth,Missing,FAIL,Column not in header,Add column
+G_A_048,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Column scale,Missing,FAIL,Column not in header,Add column
+G_A_049,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Column silhouette,Missing,FAIL,Column not in header,Add column
+G_A_050,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Column material,Missing,FAIL,Column not in header,Add column
+G_A_051,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Column collision,Missing,FAIL,Column not in header,Add column
+G_A_052,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Column LOD,Missing,FAIL,Column not in header,Add column
+G_A_053,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Column scatter,Missing,FAIL,Column not in header,Add column
+G_A_054,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Column references,Missing,FAIL,Column not in header,Add column
+G_A_055,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Column do-not-do,Missing,FAIL,Column not in header,Add column
+G_A_056,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Column acceptance_gate,Missing,FAIL,Column not in header,Add column
+G_A_057,AG3D_C,AG3D_C_MANIFEST_20260606.json,Real values,Fake values,FAIL,Byte sizes hallucinated,Fix values
+G_A_058,AG3D_A,AG3D_A_MANIFEST_20260606.json,Real values,Fake values,FAIL,Row counts hallucinated,Fix values
+G_A_059,AG3D_C,AG3D_C_SCATTER_PLACEMENT_RULES_20260606.md,Real analysis,Valid analysis,PASS,Document is substantial,None
+G_A_060,AG3D_C,AG3D_C_IMPLEMENTATION_BACKLOG_20260606.csv,Real tasks,Valid tasks,PASS,Tasks are detailed,None
+G_A_061,AG3D_A,AG3D_A_PATCH_PLAN_ROUND1_20260606.md,Valid format,Valid format,PASS,Format is correct,None
+G_A_062,AG3D_C,AG3D_C_BLUEPRINT_ATLAS_20260606.md,Valid format,Valid format,PASS,Format is correct,None
+G_A_063,AG3D_C,AG3D_C_ASSET_BLUEPRINTS_20260606.csv,Check new asset rows,108 rows found,PASS,108 rows marked new,None
+G_A_064,AG3D_C,AG3D_C_LOD_COLLIDER_BUDGETS_20260606.csv,Valid CSV format,Valid,PASS,File is CSV,None
+G_A_065,AG3D_C,AG3D_C_MATERIAL_AND_TEXTURE_TARGETS_20260606.csv,Valid CSV format,Valid,PASS,File is CSV,None

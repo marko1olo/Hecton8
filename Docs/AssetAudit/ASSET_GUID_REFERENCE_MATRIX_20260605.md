@@ -9,6 +9,8 @@ This file is not Unity acceptance. GUID references prove only serialized text re
 
 CSV companion: `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.csv`.
 
+Known stale slice: current `Assets/_Project/Prefabs/Player.prefab` source-clears prior `Underwater Ambient.wav` and `dive_splash.wav` direct audio refs, while this generated GUID matrix still contains the older direct-ref rows for those assets. Use `Docs/AssetAudit/AUDIO_DIRECT_REF_DETAIL_20260605.csv` and `Tools/ValidateAudioDirectRefDetail.py` as current Player direct-ref truth until the GUID matrix is regenerated.
+
 ## Mandates Followed
 
 - `QA_Evidence_Text_Filter_Audit`

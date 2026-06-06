@@ -36,6 +36,8 @@ REQUIRED_FIELDS = (
     "KILL_SWITCH",
     "EVIDENCE_BUDGET",
 )
+DEPENDENCY_GUARD_TERMS = ("same-wave", "sibling")
+DEPENDENCY_OUTPUT_TERMS = ("dependency", "required output", "unverified output", "candidate", "blocked")
 
 
 def read_text(path: Path) -> str:
@@ -75,9 +77,15 @@ def add_issue(issues: list[str], strict: bool, message: str) -> None:
     issues.append(f"{prefix}: {message}")
 
 
+def has_field_label(text: str, field: str) -> bool:
+    if re.search(rf"(?im)^\s*(?:[-*]\s*)?.*?`?{re.escape(field)}`?\s*:", text):
+        return True
+    return bool(re.search(rf"(?is)<{re.escape(field)}>.*?</{re.escape(field)}>", text))
+
+
 def check_required_fields(path: Path, text: str, strict: bool, issues: list[str]) -> None:
     for field in REQUIRED_FIELDS:
-        if f"{field}:" not in text and f"`{field}`" not in text and field not in text:
+        if not has_field_label(text, field):
             add_issue(issues, strict, f"{rel(path)} missing {field}")
 
 
@@ -97,6 +105,14 @@ def check_index_lane_roster(index: Path, text: str, ids: dict[str, Path], strict
         row_match = re.search(rf"(?m)^.*\b{re.escape(ident)}\b.*\b({lane_pattern})\b.*$", text)
         if not row_match:
             add_issue(issues, strict, f"{rel(index)} missing lane roster row with valid LANE_CLASS for {ident}")
+
+
+def check_index_dependency_guard(index: Path, text: str, strict: bool, issues: list[str]) -> None:
+    lower = text.lower()
+    has_wave_scope = any(term in lower for term in DEPENDENCY_GUARD_TERMS)
+    has_output_policy = any(term in lower for term in DEPENDENCY_OUTPUT_TERMS)
+    if not (has_wave_scope and has_output_policy):
+        add_issue(issues, strict, f"{rel(index)} missing same-wave/sibling dependency guard")
 
 
 def check_batch(batch_dir: Path, strict: bool) -> tuple[list[str], list[str]]:
@@ -133,6 +149,7 @@ def check_batch(batch_dir: Path, strict: bool) -> tuple[list[str], list[str]]:
             if ident not in index_text:
                 add_issue(errors_or_warnings, strict, f"{rel(index)} missing task id {ident}")
         check_index_lane_roster(index, index_text, ids, strict, errors_or_warnings)
+        check_index_dependency_guard(index, index_text, strict, errors_or_warnings)
 
     for path in files:
         text = read_text(path)
@@ -157,6 +174,7 @@ def run_self_test() -> int:
                     "INVALID_COMPLETION: report-only",
                     "KILL_SWITCH: repeated same blocker",
                     "EVIDENCE_BUDGET: one static proof and one runtime proof",
+                    "Dependency guard: no same-wave sibling task output may be required; unverified outputs are CANDIDATE or BLOCKED.",
                 ]
             ),
             encoding="utf-8",
@@ -180,6 +198,41 @@ def run_self_test() -> int:
             print("TASKLOCAL_LANE_CONTRACT_SELFTEST=FAIL")
             for issue in issues:
                 print(f"- {issue}")
+            return 1
+
+        weak_batch = Path(tmp) / "weak_batch"
+        weak_batch.mkdir()
+        (weak_batch / "BATCH_INDEX.txt").write_text(
+            "\n".join(
+                [
+                    "Batch: weak_batch",
+                    "Lane roster:",
+                    "1002 OWNER LANE_CLASS: RUNTIME_SYSTEM",
+                    "VALID_COMPLETION: code plus proof",
+                    "INVALID_COMPLETION: report-only",
+                    "KILL_SWITCH: repeated same blocker",
+                    "EVIDENCE_BUDGET: one static proof and one runtime proof",
+                    "Dependency note: dependency exists.",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        (weak_batch / "1002_RUNTIME_OWNER.txt").write_text(
+            "\n".join(
+                [
+                    "LANE_CLASS: RUNTIME_SYSTEM",
+                    "VALID_COMPLETION: code plus proof",
+                    "INVALID_COMPLETION: report-only",
+                    "KILL_SWITCH: repeated same blocker",
+                    "EVIDENCE_BUDGET: one static proof and one runtime proof",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        weak_issues, _ = check_batch(weak_batch, strict=True)
+        if not any("same-wave/sibling dependency guard" in issue for issue in weak_issues):
+            print("TASKLOCAL_LANE_CONTRACT_SELFTEST=FAIL")
+            print("- weak dependency wording passed without same-wave/sibling output policy")
             return 1
     print("TASKLOCAL_LANE_CONTRACT_SELFTEST=PASS")
     return 0

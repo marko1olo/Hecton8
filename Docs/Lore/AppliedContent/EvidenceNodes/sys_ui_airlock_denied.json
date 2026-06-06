@@ -1,0 +1,11 @@
+{
+    "node_id": "SYS_UI_AIRLOCK_DENIED",
+    "author": "BaseAirlock",
+    "subject_tags": [
+        "UI",
+        "Quarantine"
+    ],
+    "title": "Airlock Cycle Denied",
+    "surface": "System HUD",
+    "text": "CYCLE FAILED. Haldane-8 Quarantine active. Xenon-Omega biomatter detected on suit exterior. You are a contamination risk to corporate infrastructure. Return to the basin or locate an authorized chemical shower. This airlock will not open."
+}

@@ -45,6 +45,14 @@ namespace Hecton8.SaveSystem
         private const int MetaCampaignSaveVersion = 71;
         private const int FirstHourDtoLockSaveVersion = 72;
         private const int ContractAuthoritySaveVersion = 73;
+        private const int HazardZoneRuntimeSaveVersion = SaveData.HazardZoneRuntimePersistenceVersion;
+        private const float PlayerKinematicVelocityHardCapMetersPerSecond = 80f;
+        private const float PlayerKinematicVelocityHardCapSq =
+            PlayerKinematicVelocityHardCapMetersPerSecond * PlayerKinematicVelocityHardCapMetersPerSecond;
+        private const float PlayerStatsNitrogenBuildUpHardCap = 160f;
+        private const float RadiationGridDefaultCellSizeMeters = 4f;
+        private const float RadiationGridMinCellSizeMeters = 0.5f;
+        private const float RadiationGridMaxCellSizeMeters = 1000f;
         private const int ProceduralFaunaStateStrideBytes = 16;
         private const int HibernatedFaunaStateStrideBytes = 112;
         private const int ModuleSorterBufferSlotMax = 8;
@@ -379,8 +387,17 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (data.version > SaveData.CurrentVersion)
+            {
+                error = $"Unsupported save data version {data.version}.";
+                return false;
+            }
+
             if (data.version != SaveData.CurrentVersion)
-                data.version = SaveData.CurrentVersion;
+            {
+                error = $"Save data version {data.version} must be migrated before writing.";
+                return false;
+            }
 
             data.contractVersionHashLo = HectonContractVersion.HashLo;
             data.contractVersionHashHi = HectonContractVersion.HashHi;
@@ -460,6 +477,7 @@ namespace Hecton8.SaveSystem
                 && writer.WriteStruct(data.environmentalStrain)
                 && WriteEcosystemState(ref writer, data.ecosystemState)
                 && WriteExternalScavengerSites(ref writer, data.externalScavengerSites)
+                && WriteHazardZoneRuntime(ref writer, data.hazardZones)
                 && WriteStringFloatDictionary(ref writer, data.toolDurabilityMap, SaveData.MaxToolDurabilityRecords)
                 && WriteStringBoolDictionary(ref writer, data.toolBrokenMap, SaveData.MaxToolDurabilityRecords)
                 && WriteIntHashSet(ref writer, data.discoveredBiomeIds, SaveData.MaxLegacyDiscoveredBiomeIds)
@@ -515,6 +533,12 @@ namespace Hecton8.SaveSystem
             if (!reader.ReadInt(out data.version))
                 return false;
 
+            if (data.version > SaveData.CurrentVersion)
+            {
+                reader.SetError($"Unsupported save data version {data.version}.");
+                return false;
+            }
+
             if (data.version >= ContractAuthoritySaveVersion)
             {
                 if (!reader.ReadStruct(out data.contractVersionHashLo) ||
@@ -552,6 +576,7 @@ namespace Hecton8.SaveSystem
                 || !reader.ReadStruct(out data.environmentalStrain)
                 || !ReadEcosystemState(ref reader, data.version, out data.ecosystemState)
                 || !ReadExternalScavengerSites(ref reader, data.version, out data.externalScavengerSites)
+                || !ReadHazardZoneRuntime(ref reader, data.version, out data.hazardZones)
                 || !ReadStringFloatDictionary(
                     ref reader,
                     out data.toolDurabilityMap,
@@ -680,6 +705,7 @@ namespace Hecton8.SaveSystem
             PlayerKinematicStateDTO playerState = data != null
                 ? PlayerKinematicStateDTO.FromPlayerStats(in data.playerStats)
                 : default;
+            SanitizePlayerKinematicState(ref playerState);
             InventoryShadowDTO inventoryShadow = data != null
                 ? InventoryShadowDTO.FromInventory(
                     in data.inventory,
@@ -756,7 +782,9 @@ namespace Hecton8.SaveSystem
                     return false;
             }
 
+            SanitizePlayerKinematicState(ref data.playerKinematicState);
             data.playerKinematicState.ApplyTo(ref data.playerStats);
+            SanitizePlayerStats(ref data.playerStats);
             data.construction.habitatFloodStateCount = floodStateCount;
             return true;
         }
@@ -770,13 +798,21 @@ namespace Hecton8.SaveSystem
         private static bool WriteRadiationGrid(ref BufferWriter writer, SaveData data)
         {
             byte[] payload = data.radiationGridRle ?? Array.Empty<byte>();
-            int safeLength = math.clamp(data.radiationGridRleLength, 0, payload.Length);
+            int payloadCapacity = math.min(payload.Length, SaveData.RadiationGridRleMaxBytes);
+            int safeLength = math.clamp(data.radiationGridRleLength, 0, payloadCapacity);
+            float radiationDose = math.isfinite(data.radiationDose) ? math.max(0f, data.radiationDose) : 0f;
+            double originX = math.isfinite(data.radiationGridOriginX) ? data.radiationGridOriginX : 0d;
+            double originY = math.isfinite(data.radiationGridOriginY) ? data.radiationGridOriginY : 0d;
+            double originZ = math.isfinite(data.radiationGridOriginZ) ? data.radiationGridOriginZ : 0d;
+            float cellSize = math.isfinite(data.radiationGridCellSizeMeters)
+                ? math.clamp(data.radiationGridCellSizeMeters, RadiationGridMinCellSizeMeters, RadiationGridMaxCellSizeMeters)
+                : RadiationGridDefaultCellSizeMeters;
 
-            return writer.WriteFloat(data.radiationDose)
-                && writer.WriteDouble(data.radiationGridOriginX)
-                && writer.WriteDouble(data.radiationGridOriginY)
-                && writer.WriteDouble(data.radiationGridOriginZ)
-                && writer.WriteFloat(data.radiationGridCellSizeMeters)
+            return writer.WriteFloat(radiationDose)
+                && writer.WriteDouble(originX)
+                && writer.WriteDouble(originY)
+                && writer.WriteDouble(originZ)
+                && writer.WriteFloat(cellSize)
                 && writer.WriteInt(safeLength)
                 && writer.WriteStructArraySlice(payload, safeLength);
         }
@@ -789,7 +825,7 @@ namespace Hecton8.SaveSystem
                 data.radiationGridOriginX = 0d;
                 data.radiationGridOriginY = 0d;
                 data.radiationGridOriginZ = 0d;
-                data.radiationGridCellSizeMeters = 4f;
+                data.radiationGridCellSizeMeters = RadiationGridDefaultCellSizeMeters;
                 data.radiationGridRleLength = 0;
                 data.radiationGridRle = Array.Empty<byte>();
                 return true;
@@ -809,10 +845,17 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            int payloadLength = data.radiationGridRle != null ? data.radiationGridRle.Length : 0;
+            int payloadLength = data.radiationGridRle != null
+                ? math.min(data.radiationGridRle.Length, SaveData.RadiationGridRleMaxBytes)
+                : 0;
             data.radiationGridRleLength = math.clamp(data.radiationGridRleLength, 0, payloadLength);
-            data.radiationGridCellSizeMeters = math.max(0.5f, data.radiationGridCellSizeMeters);
-            data.radiationDose = math.max(0f, data.radiationDose);
+            data.radiationGridCellSizeMeters = math.isfinite(data.radiationGridCellSizeMeters)
+                ? math.clamp(data.radiationGridCellSizeMeters, RadiationGridMinCellSizeMeters, RadiationGridMaxCellSizeMeters)
+                : RadiationGridDefaultCellSizeMeters;
+            data.radiationDose = math.isfinite(data.radiationDose) ? math.max(0f, data.radiationDose) : 0f;
+            data.radiationGridOriginX = math.isfinite(data.radiationGridOriginX) ? data.radiationGridOriginX : 0d;
+            data.radiationGridOriginY = math.isfinite(data.radiationGridOriginY) ? data.radiationGridOriginY : 0d;
+            data.radiationGridOriginZ = math.isfinite(data.radiationGridOriginZ) ? data.radiationGridOriginZ : 0d;
             return true;
         }
 
@@ -1213,8 +1256,16 @@ namespace Hecton8.SaveSystem
             return writer.WriteStructArraySlice(value, count);
         }
 
+        private static bool WriteHazardZoneRuntime(ref BufferWriter writer, HazardZoneRuntimeDTO value)
+        {
+            SanitizeHazardZoneRuntime(ref value);
+            return writer.WriteFloat(value.toxicityDose)
+                && writer.WriteFloat(value.toxicityPulseAccumulatorSeconds);
+        }
+
         private static bool WritePlayerStats(ref BufferWriter writer, PlayerStatsDTO value)
         {
+            SanitizePlayerStats(ref value);
             return writer.WriteFloat(value.oxygen)
                 && writer.WriteFloat(value.energy)
                 && writer.WriteFloat(value.integrity)
@@ -1262,7 +1313,7 @@ namespace Hecton8.SaveSystem
         {
             value = default;
 
-            return reader.ReadFloat(out value.oxygen)
+            bool read = reader.ReadFloat(out value.oxygen)
                 && reader.ReadFloat(out value.energy)
                 && reader.ReadFloat(out value.integrity)
                 && reader.ReadFloat(out value.weight)
@@ -1301,6 +1352,11 @@ namespace Hecton8.SaveSystem
                 && reader.ReadFloat(out value.rotZ)
                 && reader.ReadFloat(out value.rotW)
                 && ReadPlayerVelocity(ref reader, version, ref value);
+            if (!read)
+                return false;
+
+            SanitizePlayerStats(ref value);
+            return true;
         }
 
         private static bool ReadPlayerVelocity(ref BufferReader reader, int version, ref PlayerStatsDTO value)
@@ -1316,6 +1372,124 @@ namespace Hecton8.SaveSystem
             return reader.ReadFloat(out value.velX)
                 && reader.ReadFloat(out value.velY)
                 && reader.ReadFloat(out value.velZ);
+        }
+
+        private static void SanitizePlayerStats(ref PlayerStatsDTO value)
+        {
+            value.oxygen = SanitizeNonNegativeFinite(value.oxygen);
+            value.energy = SanitizeNonNegativeFinite(value.energy);
+            value.integrity = SanitizeNonNegativeFinite(value.integrity);
+            value.weight = SanitizeNonNegativeFinite(value.weight);
+            value.hunger = SanitizeNonNegativeFinite(value.hunger);
+            value.thirst = SanitizeNonNegativeFinite(value.thirst);
+
+            value.currentLifeDurationSeconds = SanitizeNonNegativeFinite(value.currentLifeDurationSeconds);
+            value.currentLifePeakDepthMeters = SanitizeNonNegativeFinite(value.currentLifePeakDepthMeters);
+            value.currentLifeLowestOxygenNormalized = Sanitize01(value.currentLifeLowestOxygenNormalized, 1f);
+            value.currentLifeLowestEnergyNormalized = Sanitize01(value.currentLifeLowestEnergyNormalized, 1f);
+            value.currentLifeLowestIntegrityNormalized = Sanitize01(value.currentLifeLowestIntegrityNormalized, 1f);
+
+            value.bleedingSecondsRemaining = SanitizeNonNegativeFinite(value.bleedingSecondsRemaining);
+            value.bleedingDamagePerSecond = SanitizeNonNegativeFinite(value.bleedingDamagePerSecond);
+            value.bleedingSeverity01 = Sanitize01(value.bleedingSeverity01, 0f);
+            value.fractureSecondsRemaining = SanitizeNonNegativeFinite(value.fractureSecondsRemaining);
+            value.fracturePenalty01 = Sanitize01(value.fracturePenalty01, 0f);
+            value.environmentTemperature = SanitizeFinite(value.environmentTemperature, 0f);
+            value.coldStressSeverity01 = Sanitize01(value.coldStressSeverity01, 0f);
+            value.heatStressSeverity01 = Sanitize01(value.heatStressSeverity01, 0f);
+            value.nitrogenBuildUp = math.clamp(
+                SanitizeNonNegativeFinite(value.nitrogenBuildUp),
+                0f,
+                PlayerStatsNitrogenBuildUpHardCap);
+
+            SanitizePosition(ref value.lastDeathPosX, ref value.lastDeathPosY, ref value.lastDeathPosZ);
+            value.lastDeathLifeDurationSeconds = SanitizeNonNegativeFinite(value.lastDeathLifeDurationSeconds);
+            value.lastDeathPeakDepthMeters = SanitizeNonNegativeFinite(value.lastDeathPeakDepthMeters);
+            value.lastDeathLowestOxygenNormalized = Sanitize01(value.lastDeathLowestOxygenNormalized, 1f);
+            value.lastDeathLowestEnergyNormalized = Sanitize01(value.lastDeathLowestEnergyNormalized, 1f);
+            value.lastDeathLowestIntegrityNormalized = Sanitize01(value.lastDeathLowestIntegrityNormalized, 1f);
+
+            SanitizePosition(ref value.posX, ref value.posY, ref value.posZ);
+            SanitizeQuaternion(ref value.rotX, ref value.rotY, ref value.rotZ, ref value.rotW);
+            SanitizeVelocity(ref value.velX, ref value.velY, ref value.velZ);
+        }
+
+        private static void SanitizePlayerKinematicState(ref PlayerKinematicStateDTO value)
+        {
+            SanitizePosition(ref value.posX, ref value.posY, ref value.posZ);
+            SanitizeQuaternion(ref value.rotX, ref value.rotY, ref value.rotZ, ref value.rotW);
+            SanitizeVelocity(ref value.velX, ref value.velY, ref value.velZ);
+        }
+
+        private static void SanitizePosition(ref float x, ref float y, ref float z)
+        {
+            if (math.all(math.isfinite(new float3(x, y, z))))
+                return;
+
+            x = 0f;
+            y = 0f;
+            z = 0f;
+        }
+
+        private static void SanitizeQuaternion(ref float x, ref float y, ref float z, ref float w)
+        {
+            float4 quaternion = new float4(x, y, z, w);
+            float lengthSq = math.lengthsq(quaternion);
+            if (!math.all(math.isfinite(quaternion)) || !math.isfinite(lengthSq) || lengthSq <= 0.000001f)
+            {
+                x = 0f;
+                y = 0f;
+                z = 0f;
+                w = 1f;
+                return;
+            }
+
+            float invLength = math.rsqrt(lengthSq);
+            x *= invLength;
+            y *= invLength;
+            z *= invLength;
+            w *= invLength;
+        }
+
+        private static void SanitizeVelocity(ref float x, ref float y, ref float z)
+        {
+            float3 velocity = new float3(x, y, z);
+            float speedSq = math.lengthsq(velocity);
+            if (!math.all(math.isfinite(velocity)) || !math.isfinite(speedSq) || speedSq <= 0.000001f)
+            {
+                x = 0f;
+                y = 0f;
+                z = 0f;
+                return;
+            }
+
+            if (speedSq <= PlayerKinematicVelocityHardCapSq)
+                return;
+
+            velocity *= PlayerKinematicVelocityHardCapMetersPerSecond * math.rsqrt(speedSq);
+            x = velocity.x;
+            y = velocity.y;
+            z = velocity.z;
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static double SanitizeNonNegativeFinite(double value)
+        {
+            return math.isfinite(value) ? math.max(0d, value) : 0d;
+        }
+
+        private static float Sanitize01(float value, float fallback)
+        {
+            return math.isfinite(value) ? math.saturate(value) : math.saturate(fallback);
         }
 
         private static bool ReadNitrogenBuildUp(ref BufferReader reader, int version, ref PlayerStatsDTO value)
@@ -1634,6 +1808,34 @@ namespace Hecton8.SaveSystem
                 out value,
                 SaveData.MaxExternalScavengerSites,
                 "externalScavengerSites");
+        }
+
+        private static bool ReadHazardZoneRuntime(ref BufferReader reader, int version, out HazardZoneRuntimeDTO value)
+        {
+            value = default;
+            if (version < HazardZoneRuntimeSaveVersion)
+                return true;
+
+            if (!reader.ReadFloat(out value.toxicityDose)
+                || !reader.ReadFloat(out value.toxicityPulseAccumulatorSeconds))
+            {
+                return false;
+            }
+
+            SanitizeHazardZoneRuntime(ref value);
+            return true;
+        }
+
+        private static void SanitizeHazardZoneRuntime(ref HazardZoneRuntimeDTO value)
+        {
+            value.toxicityDose = math.isfinite(value.toxicityDose)
+                ? math.clamp(value.toxicityDose, 0f, SaveData.HazardZoneMaxPersistedToxicityDose)
+                : 0f;
+            value.toxicityPulseAccumulatorSeconds = math.isfinite(value.toxicityPulseAccumulatorSeconds)
+                ? math.clamp(value.toxicityPulseAccumulatorSeconds, 0f, SaveData.HazardZoneMaxPersistedToxicityPulseSeconds)
+                : 0f;
+            if (value.toxicityDose <= 0f)
+                value.toxicityPulseAccumulatorSeconds = 0f;
         }
 
         private static bool WriteWorldState(ref BufferWriter writer, WorldStateDTO value)

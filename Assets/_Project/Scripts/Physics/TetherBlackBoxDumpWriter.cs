@@ -11,11 +11,6 @@ namespace Hecton8.Physics
         private const uint Version = 1u;
         private const string DumpPayloadLabel = "tetherBlackBoxDumpPayload";
 
-        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticStateForSubsystemReload()
-        {
-        }
-
         public static void WritePrimaryAndLegacy<T>(
             string primaryH8DumpPath,
             string legacyBinPath,

@@ -33,6 +33,20 @@ namespace Hecton8.Audio
             Recovery = 2
         }
 
+        public enum MusicActivityReason : byte
+        {
+            Silent = 0,
+            Rest = 1,
+            Exploration = 2,
+            Base = 3,
+            Tense = 4,
+            Combat = 5,
+            Menu = 6,
+            Prologue = 7,
+            Override = 8,
+            Emergency = 9
+        }
+
         private const int MusicVoiceCount = 2;
         private const int InvalidVoiceIndex = -1;
         private const float MixerFloorDb = -80f;
@@ -43,6 +57,13 @@ namespace Hecton8.Audio
         private const float AuthoredPressureRangeInv = 0.25f;
         private const float Random24ToUnit = 0.000000059604648f;
         private const double AupRuntimeFloatClampMeters = 3.4028234663852886E+38d;
+        private const float EmergencyBreathDominatesThreshold = 0.9f;
+        private const float CriticalPlayerStressDominatesThreshold = 0.88f;
+        private const int PlayerStressSignalHoldFrames = 8;
+        private const float VocalWarningMusicDuckDefault01 = 0.38f;
+        private const float VocalWarningMusicDuckCritical01 = 0.62f;
+        private const float NarrativeAudioLogMusicDuck01 = 0.48f;
+        private const int RuntimeDirectorPoolReserveCount = 1;
         private static readonly bool ProceduralSynthOwnsMusicPlayback = true;
         private static readonly int _PredatorThreatLayerMask = HectonLayerMasks.CreatureLayerMask;
 
@@ -179,6 +200,9 @@ namespace Hecton8.Audio
         [Tooltip("Weight of depth-zone danger and deep-environment pressure inside the final music-tension blend.")]
         [SerializeField, Range(0f, 0.8f)] private float _depthZonePressureWeight = 0.26f;
 
+        [Tooltip("Weight of the current soundscape depth tier inside the final music-tension blend.")]
+        [SerializeField, Range(0f, 0.5f)] private float _soundscapePressureWeight = 0.10f;
+
         [Tooltip("Small exploration unease contributed by strong reward-pull biomes.")]
         [SerializeField, Range(0f, 0.5f)] private float _rewardUneaseWeight = 0.12f;
 
@@ -218,6 +242,25 @@ namespace Hecton8.Audio
         [Tooltip("Maximum dynamic weight injected for adjacent-depth music near a boundary.")]
         [SerializeField, Range(0, 30)] private int _depthBlendMaxWeight = 18;
 
+        [Header("Procedural Music Phrasing")]
+        [Tooltip("Minimum length of a procedural exploration phrase before the director yields back to world sound.")]
+        [SerializeField, Min(1f)] private float _proceduralExplorationPhraseMinSeconds = 18f;
+
+        [Tooltip("Maximum length of a procedural exploration phrase before the director yields back to world sound.")]
+        [SerializeField, Min(1f)] private float _proceduralExplorationPhraseMaxSeconds = 42f;
+
+        [Tooltip("Minimum silence after a procedural phrase when the active profile has no authored pause window.")]
+        [SerializeField, Min(0f)] private float _proceduralFallbackRestMinSeconds = 45f;
+
+        [Tooltip("Maximum silence after a procedural phrase when the active profile has no authored pause window.")]
+        [SerializeField, Min(0f)] private float _proceduralFallbackRestMaxSeconds = 95f;
+
+        [Tooltip("How quickly procedural music enters when the director opens a phrase.")]
+        [SerializeField, Min(0.01f)] private float _proceduralActivityAttackSpeed = 0.85f;
+
+        [Tooltip("How quickly procedural music leaves room for world sound after a phrase.")]
+        [SerializeField, Min(0.01f)] private float _proceduralActivityReleaseSpeed = 0.38f;
+
         [Header("Fallbacks")]
         [Tooltip("Fallback pause duration when no profile-specific pause exists.")]
         [SerializeField, Min(0f)] private float _fallbackPauseSeconds = 45f;
@@ -252,9 +295,17 @@ namespace Hecton8.Audio
         [SerializeField] private float _debugLayerBass01;
         [SerializeField] private float _debugLayerAtmosphere01;
         [SerializeField] private float _debugLayerDanger01;
+        [SerializeField] private float _debugMusicActivity01;
+        [SerializeField] private bool _debugLayerMixerRouteAvailable;
         [SerializeField] private float _debugPredatorProximity01;
         [SerializeField] private float _debugStormPressure01;
         [SerializeField] private float _debugOxygenDanger01;
+        [SerializeField] private float _debugPlayerCriticalStress01;
+        [SerializeField] private float _debugEmergencyAudioDominance01;
+        [SerializeField] private float _debugVocalWarningMusicDuck01;
+        [SerializeField] private byte _debugVocalWarningId;
+        [SerializeField] private float _debugNarrativeAudioLogMusicDuck01;
+        [SerializeField] private float _debugSoundscapePressure01;
 
         private AudioSource[] _musicSources;
         private HectonMusicBiomeProfile[] _voiceProfiles;
@@ -330,6 +381,8 @@ namespace Hecton8.Audio
         private HectonBiomeMatrixProfile _observedMatrixProfile;
         private int _observedMatrixDepthTier = int.MinValue;
         private float _observedMatrixDepthMeters;
+        private SoundscapeTier _currentSoundscapeTier = SoundscapeTier.Shallow;
+        private float _soundscapeDepthHintMeters;
         private DepthZoneProfile _observedDepthZone;
         private bool _hasObservedMatrixState;
         private bool _hasObservedDepthZone;
@@ -347,6 +400,8 @@ namespace Hecton8.Audio
         private IEncounterDirectorService _cachedEncounterDirector;
         private ISurfaceWeatherReadModel _cachedSurfaceWeatherDirector;
         private IFirstHourReadModel _cachedFirstHourDirector;
+        private IVocalWarningSystem _cachedVocalWarningSystem;
+        private IAudioLogRuntime _cachedAudioLogRuntime;
         private bool _depthZoneDirectorRuntimeCached;
         private int _nextPlayerContextResolveFrame;
         private int _nextAudioServiceResolveFrame;
@@ -354,6 +409,8 @@ namespace Hecton8.Audio
         private int _nextDepthZoneResolveFrame;
         private int _nextSurfaceWeatherResolveFrame;
         private int _nextFirstHourResolveFrame;
+        private int _nextVocalWarningResolveFrame;
+        private int _nextAudioLogResolveFrame;
         private AudioMixer _layerMixer;
         private float _layerRhythm01;
         private float _layerBass01;
@@ -362,6 +419,12 @@ namespace Hecton8.Audio
         private float _predatorProximity01;
         private float _stormPressure01;
         private float _oxygenDanger01;
+        private float _playerCriticalStress01;
+        private float _vocalWarningMusicDuck01;
+        private float _narrativeAudioLogMusicDuck01;
+        private byte _vocalWarningId;
+        private int _lastPlayerStressSignalSequence;
+        private int _lastPlayerStressSignalSeenFrame = int.MinValue;
         private float _biomeGradientBlend01;
         private byte _biomeGradientA;
         private byte _biomeGradientB;
@@ -369,12 +432,19 @@ namespace Hecton8.Audio
         private float _lastBassDb = float.MinValue;
         private float _lastAtmosphereDb = float.MinValue;
         private float _lastDangerDb = float.MinValue;
+        private bool _rhythmLayerParameterUnavailable;
+        private bool _bassLayerParameterUnavailable;
+        private bool _atmosphereLayerParameterUnavailable;
+        private bool _dangerLayerParameterUnavailable;
         private float _nextEditorDebugStateTime;
         private uint _musicRandomState;
         private bool _biomeMatrixDirectorRuntimeOwned;
         private bool _encounterDirectorRuntimeOwned;
         private bool _worldZoneDirectorRuntimeOwned;
         private bool _worldZoneDirectorListenerRegistered;
+        private float _proceduralMusicActivity01;
+        private float _proceduralPhraseTimerSeconds;
+        private MusicActivityReason _musicActivityReason = MusicActivityReason.Silent;
 
         /// <summary>
         /// Currently resolved runtime profile.
@@ -391,6 +461,61 @@ namespace Hecton8.Audio
         /// Current normalized tension value used by the director.
         /// </summary>
         public float CurrentTension01 => _resolvedTension01;
+
+        /// <summary>
+        /// Current normalized permission for procedural music to be audible.
+        /// </summary>
+        public float CurrentMusicActivity01 => math.saturate(_proceduralMusicActivity01);
+
+        /// <summary>
+        /// Current high-level reason behind procedural music activity.
+        /// </summary>
+        public MusicActivityReason CurrentMusicActivityReason => _musicActivityReason;
+
+        /// <summary>
+        /// Current normalized rhythm-layer intensity.
+        /// </summary>
+        public float CurrentRhythmLayer01 => math.saturate(_layerRhythm01);
+
+        /// <summary>
+        /// Current normalized bass-layer intensity.
+        /// </summary>
+        public float CurrentBassLayer01 => math.saturate(_layerBass01);
+
+        /// <summary>
+        /// Current normalized atmosphere-layer intensity.
+        /// </summary>
+        public float CurrentAtmosphereLayer01 => math.saturate(_layerAtmosphere01);
+
+        /// <summary>
+        /// Current normalized danger-layer intensity.
+        /// </summary>
+        public float CurrentDangerLayer01 => math.saturate(_layerDanger01);
+
+        /// <summary>
+        /// True when at least one optional exposed music-layer mixer parameter is bound.
+        /// </summary>
+        public bool CurrentLayerMixerRouteAvailable => _debugLayerMixerRouteAvailable;
+
+        /// <summary>
+        /// Current soundscape depth tier mirrored from the world soundscape runtime.
+        /// </summary>
+        public SoundscapeTier CurrentSoundscapeTier => _currentSoundscapeTier;
+
+        /// <summary>
+        /// Normalized musical pressure derived from the current soundscape tier.
+        /// </summary>
+        public float CurrentSoundscapePressure01 => ResolveSoundscapePressure01(_currentSoundscapeTier);
+
+        /// <summary>
+        /// Mixer route currently used by authored music voices.
+        /// </summary>
+        public AudioMixerGroup CurrentMusicMixerGroup => ResolveMusicMixerGroup();
+
+        /// <summary>
+        /// Authored dedicated music mixer route, if one is assigned.
+        /// </summary>
+        public AudioMixerGroup DedicatedMusicMixerGroup => _musicMixerGroup;
 
         private void Awake()
         {
@@ -518,7 +643,8 @@ namespace Hecton8.Audio
         {
             DrainAcousticZoneSignal();
             DrainDirectorAISignals();
-            PublishDynamicMusicScalars(deltaTime);
+            RefreshPlayerCriticalStressSignal();
+            RefreshForegroundSpeechMusicDucking();
             if (ProceduralSynthOwnsMusicPlayback)
             {
                 UpdateStingerCooldowns(deltaTime);
@@ -527,9 +653,11 @@ namespace Hecton8.Audio
                 if (_pendingImmediateSelection)
                 {
                     _pendingImmediateSelection = false;
-                    _playbackState = PlaybackState.Playing;
+                    StartProceduralPhrase(true);
                 }
 
+                UpdateProceduralMusicActivity(deltaTime);
+                PublishDynamicMusicScalars(deltaTime);
                 WriteDebugState();
                 return;
             }
@@ -654,6 +782,30 @@ namespace Hecton8.Audio
         }
 
         /// <summary>
+        /// Mirrors the depth-tier soundscape context so music phrasing can yield to the authored world bed.
+        /// </summary>
+        public void SetSoundscapeTierContext(SoundscapeTier tier, float depthMeters)
+        {
+            SoundscapeTier safeTier = SanitizeSoundscapeTier(tier);
+            float finiteDepth = math.max(0f, math.select(0f, depthMeters, math.isfinite(depthMeters)));
+            float depthHint = math.max(finiteDepth, ResolveSoundscapeDepthHintMeters(safeTier));
+            float pressure01 = ResolveSoundscapePressure01(safeTier);
+
+            if (_currentSoundscapeTier == safeTier && math.abs(_soundscapeDepthHintMeters - depthHint) < 0.5f)
+            {
+                _debugSoundscapePressure01 = pressure01;
+                return;
+            }
+
+            bool tierChanged = _currentSoundscapeTier != safeTier;
+            _currentSoundscapeTier = safeTier;
+            _soundscapeDepthHintMeters = depthHint;
+            _debugSoundscapePressure01 = pressure01;
+            if (tierChanged)
+                ReevaluateContext(true);
+        }
+
+        /// <summary>
         /// Clears the manual biome-profile override.
         /// </summary>
         public void ClearManualBiomeProfile()
@@ -712,7 +864,7 @@ namespace Hecton8.Audio
         /// </summary>
         public void PlayDiscoveryStinger()
         {
-            if (_overrideActive || _combatLatched || _currentBaseContext)
+            if (_overrideActive || _combatLatched || _currentBaseContext || IsEmergencyBreathDominant() || IsForegroundSpeechActive())
                 return;
 
             _pendingDiscoveryStinger = true;
@@ -724,7 +876,7 @@ namespace Hecton8.Audio
         /// </summary>
         public void PlayDangerStinger()
         {
-            if (_overrideActive || _currentBaseContext)
+            if (_overrideActive || _currentBaseContext || IsEmergencyBreathDominant() || IsForegroundSpeechActive())
                 return;
 
             _pendingDangerStinger = true;
@@ -736,7 +888,7 @@ namespace Hecton8.Audio
         /// </summary>
         public void PlayRecoveryStinger()
         {
-            if (_overrideActive || _currentBaseContext)
+            if (_overrideActive || _currentBaseContext || IsEmergencyBreathDominant() || IsForegroundSpeechActive())
                 return;
 
             _pendingRecoveryStinger = true;
@@ -761,6 +913,14 @@ namespace Hecton8.Audio
 
         private void FlushPendingStingers()
         {
+            if (IsEmergencyBreathDominant() || IsForegroundSpeechActive())
+            {
+                _pendingDiscoveryStinger = false;
+                _pendingDangerStinger = false;
+                _pendingRecoveryStinger = false;
+                return;
+            }
+
             if (_pendingDiscoveryStinger)
             {
                 if (TryPlayPendingStinger(StingerKind.Discovery) || _overrideActive || _combatLatched || _currentBaseContext)
@@ -931,16 +1091,33 @@ namespace Hecton8.Audio
                 return false;
 
             GameObject runtimeDirectorPrefab = sceneConfig.RuntimeDirectorPrefab.gameObject;
-            if (!pool.HasPool(runtimeDirectorPrefab) || pool.GetAvailableCount(runtimeDirectorPrefab) <= 0)
+            EnsureRuntimeDirectorPoolReserve(pool, runtimeDirectorPrefab);
+            if (pool.GetAvailableCount(runtimeDirectorPrefab) <= 0)
                 return false;
 
-            pool.Spawn(runtimeDirectorPrefab, Vector3.zero, Quaternion.identity, false);
+            GameObject instance = pool.Spawn(runtimeDirectorPrefab, Vector3.zero, Quaternion.identity, false);
+            if (instance == null)
+                return false;
+
             return s_activeRuntimeInstance != null;
+        }
+
+        private static void EnsureRuntimeDirectorPoolReserve(IObjectPoolService pool, GameObject runtimeDirectorPrefab)
+        {
+            if (pool == null || runtimeDirectorPrefab == null)
+                return;
+
+            if (pool.GetAvailableCount(runtimeDirectorPrefab) >= RuntimeDirectorPoolReserveCount)
+                return;
+
+            pool.Warmup(runtimeDirectorPrefab, RuntimeDirectorPoolReserveCount);
         }
 
         private static IObjectPoolService ResolveRuntimeObjectPool()
         {
-            return GlobalRegistry.ObjectPoolService;
+            return GlobalRegistry.ObjectPoolService != null
+                ? GlobalRegistry.ObjectPoolService
+                : ObjectPoolManager.ActiveRuntimeInstance;
         }
 
         private void BindAuthoredVoicePool()
@@ -1010,12 +1187,27 @@ namespace Hecton8.Audio
 
             _cachedSurfaceWeatherDirector = null;
             _cachedFirstHourDirector = null;
+            _cachedVocalWarningSystem = null;
+            _cachedAudioLogRuntime = null;
             _nextPlayerContextResolveFrame = 0;
             _nextAudioServiceResolveFrame = 0;
             _nextAcousticZoneResolveFrame = 0;
             _nextDepthZoneResolveFrame = 0;
             _nextSurfaceWeatherResolveFrame = 0;
             _nextFirstHourResolveFrame = 0;
+            _nextVocalWarningResolveFrame = 0;
+            _nextAudioLogResolveFrame = 0;
+            _playerCriticalStress01 = 0f;
+            _vocalWarningMusicDuck01 = 0f;
+            _narrativeAudioLogMusicDuck01 = 0f;
+            _vocalWarningId = 0;
+            _lastPlayerStressSignalSequence = 0;
+            _lastPlayerStressSignalSeenFrame = int.MinValue;
+            _debugPlayerCriticalStress01 = 0f;
+            _debugEmergencyAudioDominance01 = ResolveEmergencyAudioDominance01();
+            _debugVocalWarningMusicDuck01 = 0f;
+            _debugVocalWarningId = 0;
+            _debugNarrativeAudioLogMusicDuck01 = 0f;
         }
 
         private void CacheReboundRuntimeService(
@@ -1061,6 +1253,12 @@ namespace Hecton8.Audio
                     break;
                 case GlobalRegistryServiceSlot.FirstHourRuntime:
                     CacheFirstHourDirector(currentService as IFirstHourReadModel, frame);
+                    break;
+                case GlobalRegistryServiceSlot.VocalWarningRuntime:
+                    CacheVocalWarningSystem(currentService as IVocalWarningSystem, frame);
+                    break;
+                case GlobalRegistryServiceSlot.AudioLogRuntime:
+                    CacheAudioLogRuntime(currentService as IAudioLogRuntime, frame);
                     break;
             }
         }
@@ -1112,6 +1310,17 @@ namespace Hecton8.Audio
             return _cachedFirstHourDirector;
         }
 
+        private IVocalWarningSystem ResolveVocalWarningSystem()
+        {
+            IVocalWarningSystem vocalWarningSystem = _cachedVocalWarningSystem;
+            return vocalWarningSystem != null && vocalWarningSystem.IsInitialized ? vocalWarningSystem : null;
+        }
+
+        private IAudioLogRuntime ResolveAudioLogRuntime()
+        {
+            return _cachedAudioLogRuntime;
+        }
+
         private void RefreshCachedRuntimeServicesCold()
         {
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
@@ -1123,6 +1332,8 @@ namespace Hecton8.Audio
             CacheDepthZoneReadModel(GlobalRegistry.DepthZoneReadModel, frame);
             CacheSurfaceWeatherDirector(GlobalRegistry.SurfaceWeatherReadModel, frame);
             CacheFirstHourDirector(GlobalRegistry.FirstHourReadModel, frame);
+            CacheVocalWarningSystem(GlobalRegistry.VocalWarnings, frame);
+            CacheAudioLogRuntime(GlobalRegistry.AudioLogRuntime, frame);
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext, int frame)
@@ -1142,6 +1353,18 @@ namespace Hecton8.Audio
         {
             _cachedAudioService = audioService != null && audioService.IsInitialized ? audioService : null;
             _nextAudioServiceResolveFrame = frame + DependencyRetryFrameInterval;
+        }
+
+        private void CacheVocalWarningSystem(IVocalWarningSystem vocalWarningSystem, int frame)
+        {
+            _cachedVocalWarningSystem = vocalWarningSystem != null && vocalWarningSystem.IsInitialized ? vocalWarningSystem : null;
+            _nextVocalWarningResolveFrame = frame + DependencyRetryFrameInterval;
+        }
+
+        private void CacheAudioLogRuntime(IAudioLogRuntime audioLogRuntime, int frame)
+        {
+            _cachedAudioLogRuntime = audioLogRuntime;
+            _nextAudioLogResolveFrame = frame + DependencyRetryFrameInterval;
         }
 
         private void CacheAcousticZone(IAcousticZoneReadModel acousticZone, int frame)
@@ -1261,6 +1484,8 @@ namespace Hecton8.Audio
 
         private void ResolveDependencies()
         {
+            RefreshVocalWarningRuntimeIfStale();
+            RefreshAudioLogRuntimeIfStale();
             ResolveDepthZoneReadModel();
 
             IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
@@ -1292,11 +1517,37 @@ namespace Hecton8.Audio
             }
         }
 
+        private void RefreshVocalWarningRuntimeIfStale()
+        {
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            IVocalWarningSystem vocalWarningSystem = _cachedVocalWarningSystem;
+            if (vocalWarningSystem != null && vocalWarningSystem.IsInitialized)
+                return;
+
+            if (frame < _nextVocalWarningResolveFrame)
+                return;
+
+            CacheVocalWarningSystem(GlobalRegistry.VocalWarnings, frame);
+        }
+
+        private void RefreshAudioLogRuntimeIfStale()
+        {
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (_cachedAudioLogRuntime != null)
+                return;
+
+            if (frame < _nextAudioLogResolveFrame)
+                return;
+
+            CacheAudioLogRuntime(GlobalRegistry.AudioLogRuntime, frame);
+        }
+
         private void BindRuntimeVoiceRoutingCold()
         {
             AudioMixerGroup musicGroup = ResolveMusicMixerGroup();
             AudioMixerGroup stingerGroup = ResolveStingerMixerGroup();
             _layerMixer = musicGroup != null ? musicGroup.audioMixer : null;
+            ResetLayerMixerStateCache();
             BindAuthoredVoicePool();
 
             if (_musicSources != null)
@@ -1311,7 +1562,7 @@ namespace Hecton8.Audio
             if (_stingerSource != null)
                 _stingerSource.outputAudioMixerGroup = stingerGroup;
 
-            ApplyLayerMixerState(false);
+            ApplyLayerMixerState(true);
         }
 
         private bool AreRuntimeVoicesReady()
@@ -1344,6 +1595,202 @@ namespace Hecton8.Audio
             SignalBus<DynamicMusicScalarSignal>.EnsureInitialized();
         }
 
+        private void StartProceduralPhrase(bool force)
+        {
+            HectonMusicBiomeProfile profile = _resolvedProfile != null ? _resolvedProfile : _fallbackProfile;
+            if (profile == null && !_overrideActive)
+            {
+                _playbackState = PlaybackState.Silent;
+                _proceduralPhraseTimerSeconds = 0f;
+                return;
+            }
+
+            if (!force &&
+                _playbackState == PlaybackState.Playing &&
+                (_combatLatched || _tenseExplorationLatched || _menuSceneActive || _prologueSceneActive || _currentBaseContext))
+            {
+                return;
+            }
+
+            _waitTimerSeconds = 0f;
+            _waitProfile = null;
+            _playbackState = _overrideActive ? PlaybackState.Override : PlaybackState.Playing;
+            _proceduralPhraseTimerSeconds = ResolveProceduralPhraseSeconds(profile);
+            TraceEvent("Procedural:Phrase", profile, null);
+        }
+
+        private void UpdateProceduralMusicActivity(float deltaTime)
+        {
+            if (!ProceduralSynthOwnsMusicPlayback)
+                return;
+
+            if (ShouldForceProceduralMusicOpen() &&
+                _playbackState != PlaybackState.Playing &&
+                _playbackState != PlaybackState.Override)
+            {
+                StartProceduralPhrase(true);
+            }
+
+            if (_playbackState == PlaybackState.Silent)
+            {
+                if (_resolvedProfile != null || _fallbackProfile != null)
+                    BeginProceduralWait(_resolvedProfile != null ? _resolvedProfile : _fallbackProfile);
+            }
+            else if (_playbackState == PlaybackState.Waiting)
+            {
+                _waitTimerSeconds -= deltaTime;
+                if (_waitTimerSeconds <= 0f)
+                    StartProceduralPhrase(false);
+            }
+            else if (_playbackState == PlaybackState.Playing)
+            {
+                if (_proceduralPhraseTimerSeconds > 0f)
+                    _proceduralPhraseTimerSeconds -= deltaTime;
+
+                if (_proceduralPhraseTimerSeconds <= 0f &&
+                    !_combatLatched &&
+                    !_tenseExplorationLatched &&
+                    !_menuSceneActive &&
+                    !_prologueSceneActive &&
+                    !_currentBaseContext)
+                {
+                    BeginProceduralWait(_resolvedProfile != null ? _resolvedProfile : _fallbackProfile);
+                }
+            }
+
+            float targetActivity01 = ResolveProceduralMusicActivityTarget01();
+            float speed = targetActivity01 > _proceduralMusicActivity01
+                ? _proceduralActivityAttackSpeed
+                : _proceduralActivityReleaseSpeed;
+            _proceduralMusicActivity01 = MoveTowards(_proceduralMusicActivity01, targetActivity01, deltaTime * math.max(0.01f, speed));
+            _debugMusicActivity01 = _proceduralMusicActivity01;
+        }
+
+        private bool ShouldForceProceduralMusicOpen()
+        {
+            return !IsEmergencyBreathDominant() &&
+                   (_menuSceneActive ||
+                    _prologueSceneActive ||
+                    _combatLatched ||
+                    _tenseExplorationLatched ||
+                    _currentBaseContext);
+        }
+
+        private void BeginProceduralWait(HectonMusicBiomeProfile profile)
+        {
+            HectonMusicBiomeProfile waitProfile = profile != null ? profile : _fallbackProfile;
+            _waitProfile = waitProfile;
+
+            float minPause = waitProfile != null ? waitProfile.MinPauseSeconds : _proceduralFallbackRestMinSeconds;
+            float maxPause = waitProfile != null ? waitProfile.MaxPauseSeconds : _proceduralFallbackRestMaxSeconds;
+            if (minPause <= 0f && maxPause <= 0f)
+            {
+                minPause = _proceduralFallbackRestMinSeconds;
+                maxPause = _proceduralFallbackRestMaxSeconds;
+            }
+
+            float restScale = ResolveSoundscapeRestScale(_currentSoundscapeTier);
+            minPause = math.max(0f, minPause * restScale);
+            maxPause = math.max(minPause, maxPause * restScale);
+
+            if (maxPause <= minPause)
+                _waitTimerSeconds = math.max(0f, minPause);
+            else
+                _waitTimerSeconds = NextRandomRange(math.max(0f, minPause), math.max(0f, maxPause));
+
+            _proceduralPhraseTimerSeconds = 0f;
+            _playbackState = PlaybackState.Waiting;
+            TraceEvent("Procedural:Rest", waitProfile, null);
+        }
+
+        private float ResolveProceduralPhraseSeconds(HectonMusicBiomeProfile profile)
+        {
+            if (_overrideActive || _menuSceneActive || _prologueSceneActive || _currentBaseContext || _combatLatched || _tenseExplorationLatched)
+                return 0f;
+
+            float minSeconds = math.max(1f, _proceduralExplorationPhraseMinSeconds);
+            float maxSeconds = math.max(minSeconds, _proceduralExplorationPhraseMaxSeconds);
+            if (profile != null)
+            {
+                float profileWindow = math.max(0f, profile.MinPauseSeconds);
+                if (profileWindow > 0f)
+                    maxSeconds = math.min(maxSeconds, math.max(minSeconds, profileWindow));
+            }
+
+            float phraseScale = ResolveSoundscapePhraseScale(_currentSoundscapeTier);
+            minSeconds = math.max(1f, minSeconds * phraseScale);
+            maxSeconds = math.max(minSeconds, maxSeconds * phraseScale);
+
+            return maxSeconds <= minSeconds ? minSeconds : NextRandomRange(minSeconds, maxSeconds);
+        }
+
+        private float ResolveProceduralMusicActivityTarget01()
+        {
+            if (IsEmergencyBreathDominant())
+            {
+                _musicActivityReason = MusicActivityReason.Emergency;
+                return 0f;
+            }
+
+            if (_overrideActive)
+            {
+                _musicActivityReason = MusicActivityReason.Override;
+                return ApplyForegroundSpeechMusicDuck01(math.saturate(_overrideVolume));
+            }
+
+            if (_menuSceneActive)
+            {
+                _musicActivityReason = MusicActivityReason.Menu;
+                return ApplyForegroundSpeechMusicDuck01(1f);
+            }
+
+            if (_prologueSceneActive)
+            {
+                _musicActivityReason = MusicActivityReason.Prologue;
+                return ApplyForegroundSpeechMusicDuck01(1f);
+            }
+
+            if (_playbackState != PlaybackState.Playing)
+            {
+                _musicActivityReason = _playbackState == PlaybackState.Silent
+                    ? MusicActivityReason.Silent
+                    : MusicActivityReason.Rest;
+                return 0f;
+            }
+
+            float soundscapePressure01 = ResolveSoundscapePressure01(_currentSoundscapeTier);
+            float depth01 = math.saturate(math.max(ResolveLayerDepthMeters() * 0.00035f, soundscapePressure01));
+            float pressure01 = math.saturate(math.max(math.max(_predatorProximity01, ResolveEmergencyAudioDominance01()), _stormPressure01));
+            float tension01 = math.saturate(_resolvedTension01);
+            if (_combatLatched)
+            {
+                _musicActivityReason = MusicActivityReason.Combat;
+                return ApplyForegroundSpeechMusicDuck01(math.saturate(0.72f + tension01 * 0.28f + pressure01 * 0.18f + soundscapePressure01 * 0.08f));
+            }
+
+            if (_tenseExplorationLatched)
+            {
+                _musicActivityReason = MusicActivityReason.Tense;
+                return ApplyForegroundSpeechMusicDuck01(math.saturate(0.48f + tension01 * 0.34f + pressure01 * 0.24f + depth01 * 0.10f + soundscapePressure01 * 0.08f));
+            }
+
+            if (_currentBaseContext)
+            {
+                _musicActivityReason = MusicActivityReason.Base;
+                return ApplyForegroundSpeechMusicDuck01(math.saturate(0.16f + tension01 * 0.16f + soundscapePressure01 * 0.06f));
+            }
+
+            _musicActivityReason = MusicActivityReason.Exploration;
+            return ApplyForegroundSpeechMusicDuck01(math.saturate(0.12f + depth01 * 0.18f + soundscapePressure01 * 0.12f + tension01 * 0.32f + pressure01 * 0.18f));
+        }
+
+        private float ApplyForegroundSpeechMusicDuck01(float activity01)
+        {
+            float safeActivity01 = math.saturate(math.isfinite(activity01) ? activity01 : 0f);
+            float duck01 = ResolveForegroundSpeechMusicDuck01();
+            return math.saturate(safeActivity01 * (1f - duck01));
+        }
+
         private void PublishDynamicMusicScalars(float deltaTime)
         {
             _ = deltaTime;
@@ -1356,7 +1803,15 @@ namespace Hecton8.Audio
             float tension01 = math.saturate(math.isfinite(_resolvedTension01) ? _resolvedTension01 : 0f);
             float depthMeters = math.max(0f, math.isfinite(rawDepthMeters) ? rawDepthMeters : 0f);
             float quality01 = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
-            float damageImpulse01 = math.saturate((_pendingDangerStinger ? 0.35f : 0f) + (_combatLatched ? 0.12f : 0f));
+            bool emergencyBreathDominates = IsEmergencyBreathDominant();
+            bool foregroundSpeechActive = IsForegroundSpeechActive();
+            float damageImpulse01 = emergencyBreathDominates || foregroundSpeechActive
+                ? 0f
+                : math.saturate((_pendingDangerStinger ? 0.35f : 0f) + (_combatLatched ? 0.12f : 0f));
+            float activity01 = emergencyBreathDominates ? 0f : math.saturate(_proceduralMusicActivity01);
+            uint flags = DynamicMusicScalarSignal.FlagExternalScalars;
+            if (emergencyBreathDominates || foregroundSpeechActive)
+                flags |= DynamicMusicScalarSignal.FlagSuppressReactiveImpulses;
             PushDynamicMusicSignal(
                 tension01,
                 depthMeters,
@@ -1364,11 +1819,15 @@ namespace Hecton8.Audio
                 damageImpulse01,
                 0f,
                 0f,
-                DynamicMusicScalarSignal.FlagExternalScalars);
+                activity01,
+                flags);
         }
 
         private void InjectProceduralStinger(StingerKind kind)
         {
+            if (IsEmergencyBreathDominant() || IsForegroundSpeechActive())
+                return;
+
             EnsureProceduralSynthRuntime();
 
             float kind01 = (float)kind * 0.5f;
@@ -1382,6 +1841,7 @@ namespace Hecton8.Audio
                 pitchKick,
                 impulse,
                 pitchKick,
+                1f,
                 DynamicMusicScalarSignal.FlagExternalScalars | DynamicMusicScalarSignal.FlagStingerImpulse);
             _stingerDuckActive = true;
             StartDuck(_stingerDuckFactor, _stingerDuckAttackSeconds);
@@ -1394,6 +1854,7 @@ namespace Hecton8.Audio
             float damageImpulse01,
             float stingerImpulse01,
             float pitchKick01,
+            float activity01,
             uint flags)
         {
             DynamicMusicScalarSignal signal = default;
@@ -1405,8 +1866,26 @@ namespace Hecton8.Audio
             signal.DamageImpulse01 = math.saturate(math.isfinite(damageImpulse01) ? damageImpulse01 : 0f);
             signal.StingerImpulse01 = math.saturate(math.isfinite(stingerImpulse01) ? stingerImpulse01 : 0f);
             signal.PitchKick01 = math.saturate(math.isfinite(pitchKick01) ? pitchKick01 : 0f);
+            signal.MusicActivity01 = math.saturate(math.isfinite(activity01) ? activity01 : 0f);
             signal.SourceHash = DynamicMusicScalarSignal.SourceMusicDirectorHash;
             SignalBus<DynamicMusicScalarSignal>.TryPushTracked(in signal, ref s_x001HectonMusicDirectorSignalPushDropCount);
+        }
+
+        private void PublishProceduralMusicStopSignal()
+        {
+            if (!ProceduralSynthOwnsMusicPlayback || !Application.isPlaying)
+                return;
+
+            EnsureProceduralSynthRuntime();
+            PushDynamicMusicSignal(
+                math.saturate(math.isfinite(_resolvedTension01) ? _resolvedTension01 : 0f),
+                ResolveLayerDepthMeters(),
+                math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f),
+                0f,
+                0f,
+                0f,
+                0f,
+                DynamicMusicScalarSignal.FlagExternalScalars | DynamicMusicScalarSignal.FlagSuppressReactiveImpulses);
         }
 
         private void RefreshLayerThreatSnapshot()
@@ -1415,6 +1894,7 @@ namespace Hecton8.Audio
 
             float depthMeters = ResolveLayerDepthMeters();
             _oxygenDanger01 = ResolveLayerOxygenDanger01();
+            RefreshPlayerCriticalStressSignal();
             _stormPressure01 = ResolveStormPressure01(depthMeters);
 
             if (_playerTransform == null)
@@ -1423,6 +1903,7 @@ namespace Hecton8.Audio
                 _debugPredatorProximity01 = 0f;
                 _debugStormPressure01 = _stormPressure01;
                 _debugOxygenDanger01 = _oxygenDanger01;
+                _debugEmergencyAudioDominance01 = ResolveEmergencyAudioDominance01();
                 return;
             }
 
@@ -1432,6 +1913,7 @@ namespace Hecton8.Audio
                 _debugPredatorProximity01 = 0f;
                 _debugStormPressure01 = _stormPressure01;
                 _debugOxygenDanger01 = _oxygenDanger01;
+                _debugEmergencyAudioDominance01 = ResolveEmergencyAudioDominance01();
                 return;
             }
 
@@ -1442,6 +1924,7 @@ namespace Hecton8.Audio
                 _debugPredatorProximity01 = 0f;
                 _debugStormPressure01 = _stormPressure01;
                 _debugOxygenDanger01 = _oxygenDanger01;
+                _debugEmergencyAudioDominance01 = ResolveEmergencyAudioDominance01();
                 return;
             }
 
@@ -1467,6 +1950,7 @@ namespace Hecton8.Audio
             _debugPredatorProximity01 = _predatorProximity01;
             _debugStormPressure01 = _stormPressure01;
             _debugOxygenDanger01 = _oxygenDanger01;
+            _debugEmergencyAudioDominance01 = ResolveEmergencyAudioDominance01();
         }
 
         private static bool TryResolveRuntimeOriginRelativeFloat3(
@@ -1496,11 +1980,13 @@ namespace Hecton8.Audio
                 return;
 
             float depthMeters = ResolveLayerDepthMeters();
-            float depth01 = InverseLerp(20f, 900f, depthMeters);
-            float rhythmTarget = math.saturate(_resolvedTension01 * 0.65f + _predatorProximity01 * 0.55f + _stormPressure01 * 0.18f);
-            float bassTarget = math.saturate(depth01 * 0.62f + _resolvedTension01 * 0.28f + _oxygenDanger01 * 0.26f + _stormPressure01 * 0.12f);
-            float atmosphereTarget = math.saturate(0.24f + depth01 * 0.58f + _stormPressure01 * 0.16f + _biomeGradientBlend01 * 0.22f - (_currentBaseContext ? 0.16f : 0f));
-            float dangerTarget = math.saturate(math.max(math.max(_predatorProximity01, _oxygenDanger01), _resolvedTension01 * 0.82f) + _stormPressure01 * 0.18f);
+            float soundscapePressure01 = ResolveSoundscapePressure01(_currentSoundscapeTier);
+            float depth01 = math.saturate(math.max(InverseLerp(20f, 900f, depthMeters), soundscapePressure01));
+            float emergencyAudio01 = ResolveEmergencyAudioDominance01();
+            float rhythmTarget = math.saturate(_resolvedTension01 * 0.65f + _predatorProximity01 * 0.55f + _stormPressure01 * 0.18f + _playerCriticalStress01 * 0.16f);
+            float bassTarget = math.saturate(depth01 * 0.54f + soundscapePressure01 * 0.18f + _resolvedTension01 * 0.28f + emergencyAudio01 * 0.26f + _stormPressure01 * 0.12f);
+            float atmosphereTarget = math.saturate(0.20f + depth01 * 0.48f + soundscapePressure01 * 0.18f + _stormPressure01 * 0.16f + _biomeGradientBlend01 * 0.22f - (_currentBaseContext ? 0.16f : 0f));
+            float dangerTarget = math.saturate(math.max(math.max(_predatorProximity01, emergencyAudio01), _resolvedTension01 * 0.82f) + _stormPressure01 * 0.18f);
 
             if (_currentBaseContext)
             {
@@ -1674,9 +2160,9 @@ namespace Hecton8.Audio
                 return math.max(0f, _survivalSystem.Depth);
 
             if (_biomeMatrixDirector != null)
-                return math.max(0f, _biomeMatrixDirector.CurrentDepthMeters);
+                return math.max(0f, math.max(_biomeMatrixDirector.CurrentDepthMeters, _soundscapeDepthHintMeters));
 
-            return 0f;
+            return math.max(0f, _soundscapeDepthHintMeters);
         }
 
         private float ResolveLayerOxygenDanger01()
@@ -1685,6 +2171,120 @@ namespace Hecton8.Audio
                 return 0f;
 
             return InverseLerp(0.35f, 0.05f, _survivalSystem.OxygenNormalized);
+        }
+
+        private void RefreshPlayerCriticalStressSignal()
+        {
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (SignalBus<PlayerStressSignal>.TryGetLatest(out PlayerStressSignal signal, out int sequence) &&
+                math.isfinite(signal.Stress01))
+            {
+                if (sequence != _lastPlayerStressSignalSequence ||
+                    _lastPlayerStressSignalSeenFrame == int.MinValue ||
+                    frame < _lastPlayerStressSignalSeenFrame)
+                {
+                    _lastPlayerStressSignalSequence = sequence;
+                    _lastPlayerStressSignalSeenFrame = frame;
+                    _playerCriticalStress01 = math.saturate(signal.Stress01);
+                }
+                else if (frame - _lastPlayerStressSignalSeenFrame > PlayerStressSignalHoldFrames)
+                {
+                    _playerCriticalStress01 = 0f;
+                }
+            }
+            else
+            {
+                _playerCriticalStress01 = 0f;
+                _lastPlayerStressSignalSeenFrame = int.MinValue;
+            }
+
+            _debugPlayerCriticalStress01 = _playerCriticalStress01;
+            _debugEmergencyAudioDominance01 = ResolveEmergencyAudioDominance01();
+        }
+
+        private float ResolveEmergencyAudioDominance01()
+        {
+            return math.saturate(math.max(_oxygenDanger01, _playerCriticalStress01));
+        }
+
+        private void RefreshVocalWarningMusicDucking()
+        {
+            RefreshVocalWarningRuntimeIfStale();
+            IVocalWarningSystem vocalWarningSystem = ResolveVocalWarningSystem();
+            if (vocalWarningSystem == null)
+            {
+                _vocalWarningMusicDuck01 = 0f;
+                _vocalWarningId = 0;
+                _debugVocalWarningMusicDuck01 = 0f;
+                _debugVocalWarningId = 0;
+                return;
+            }
+
+            byte warningId = vocalWarningSystem.CurrentWarningId;
+            bool active = vocalWarningSystem.IsWarningActive && warningId != 0;
+            _vocalWarningId = active ? warningId : (byte)0;
+            _vocalWarningMusicDuck01 = active ? ResolveVocalWarningMusicDuck01(warningId) : 0f;
+            _debugVocalWarningMusicDuck01 = _vocalWarningMusicDuck01;
+            _debugVocalWarningId = _vocalWarningId;
+        }
+
+        private void RefreshNarrativeAudioLogMusicDucking()
+        {
+            RefreshAudioLogRuntimeIfStale();
+            IAudioLogRuntime audioLogRuntime = ResolveAudioLogRuntime();
+            bool active = audioLogRuntime != null &&
+                          (audioLogRuntime.IsPlaying || audioLogRuntime.IsNarrativeQueueBlocked);
+            _narrativeAudioLogMusicDuck01 = active ? NarrativeAudioLogMusicDuck01 : 0f;
+            _debugNarrativeAudioLogMusicDuck01 = _narrativeAudioLogMusicDuck01;
+        }
+
+        private void RefreshForegroundSpeechMusicDucking()
+        {
+            RefreshVocalWarningMusicDucking();
+            RefreshNarrativeAudioLogMusicDucking();
+        }
+
+        private bool IsForegroundSpeechActive()
+        {
+            RefreshForegroundSpeechMusicDucking();
+            return ResolveForegroundSpeechMusicDuck01() > 0.001f;
+        }
+
+        private float ResolveForegroundSpeechMusicDuck01()
+        {
+            return math.saturate(math.max(_vocalWarningMusicDuck01, _narrativeAudioLogMusicDuck01));
+        }
+
+        private static float ResolveVocalWarningMusicDuck01(byte warningId)
+        {
+            switch ((VocalWarningId)warningId)
+            {
+                case VocalWarningId.CrushDepth:
+                case VocalWarningId.HullBreach:
+                case VocalWarningId.OxygenLow:
+                    return VocalWarningMusicDuckCritical01;
+                case VocalWarningId.Radiation:
+                case VocalWarningId.PowerLow:
+                    return VocalWarningMusicDuckDefault01;
+                default:
+                    return 0f;
+            }
+        }
+
+        private bool IsEmergencyBreathDominant()
+        {
+            RefreshPlayerCriticalStressSignal();
+            float liveOxygenDanger01 = math.saturate(ResolveLayerOxygenDanger01());
+            if (_survivalSystem != null)
+            {
+                _oxygenDanger01 = liveOxygenDanger01;
+                _debugOxygenDanger01 = liveOxygenDanger01;
+            }
+
+            float emergencyAudio01 = ResolveEmergencyAudioDominance01();
+            _debugEmergencyAudioDominance01 = emergencyAudio01;
+            return emergencyAudio01 >= EmergencyBreathDominatesThreshold ||
+                   _playerCriticalStress01 >= CriticalPlayerStressDominatesThreshold;
         }
 
         private float ResolveStormPressure01(float depthMeters)
@@ -1705,7 +2305,98 @@ namespace Hecton8.Audio
 
         private void ApplyLayerMixerState(bool force)
         {
-            _ = force;
+            if (_layerMixer == null)
+            {
+                _debugLayerMixerRouteAvailable = false;
+                ResetLayerMixerStateCache();
+                return;
+            }
+
+            bool anyRouteAvailable = false;
+            float rhythmDb = NormalizedLayerValueToDb(_layerRhythm01);
+            float bassDb = NormalizedLayerValueToDb(_layerBass01);
+            float atmosphereDb = NormalizedLayerValueToDb(_layerAtmosphere01);
+            float dangerDb = NormalizedLayerValueToDb(_layerDanger01);
+
+            anyRouteAvailable |= TryApplyLayerMixerParameter(
+                _rhythmLayerParameter,
+                rhythmDb,
+                ref _lastRhythmDb,
+                ref _rhythmLayerParameterUnavailable,
+                force);
+            anyRouteAvailable |= TryApplyLayerMixerParameter(
+                _bassLayerParameter,
+                bassDb,
+                ref _lastBassDb,
+                ref _bassLayerParameterUnavailable,
+                force);
+            anyRouteAvailable |= TryApplyLayerMixerParameter(
+                _atmosphereLayerParameter,
+                atmosphereDb,
+                ref _lastAtmosphereDb,
+                ref _atmosphereLayerParameterUnavailable,
+                force);
+            anyRouteAvailable |= TryApplyLayerMixerParameter(
+                _dangerLayerParameter,
+                dangerDb,
+                ref _lastDangerDb,
+                ref _dangerLayerParameterUnavailable,
+                force);
+
+            _debugLayerMixerRouteAvailable = anyRouteAvailable;
+        }
+
+        private static float NormalizedLayerValueToDb(float value01)
+        {
+            float clamped = Mathf.Clamp01(value01);
+            if (clamped <= 0.0001f)
+                return MixerFloorDb;
+
+            return Mathf.Clamp(20f * Mathf.Log10(clamped), MixerFloorDb, MixerCeilingDb);
+        }
+
+        private bool TryApplyLayerMixerParameter(
+            string parameterName,
+            float valueDb,
+            ref float lastValueDb,
+            ref bool unavailable,
+            bool force)
+        {
+            if (string.IsNullOrEmpty(parameterName))
+            {
+                unavailable = true;
+                lastValueDb = float.MinValue;
+                return false;
+            }
+
+            if (unavailable && !force)
+                return false;
+
+            if (!force && lastValueDb > float.MinValue && math.abs(lastValueDb - valueDb) < 0.05f)
+                return true;
+
+            if (!_layerMixer.SetFloat(parameterName, valueDb))
+            {
+                unavailable = true;
+                lastValueDb = float.MinValue;
+                return false;
+            }
+
+            unavailable = false;
+            lastValueDb = valueDb;
+            return true;
+        }
+
+        private void ResetLayerMixerStateCache()
+        {
+            _lastRhythmDb = float.MinValue;
+            _lastBassDb = float.MinValue;
+            _lastAtmosphereDb = float.MinValue;
+            _lastDangerDb = float.MinValue;
+            _rhythmLayerParameterUnavailable = false;
+            _bassLayerParameterUnavailable = false;
+            _atmosphereLayerParameterUnavailable = false;
+            _dangerLayerParameterUnavailable = false;
         }
 
         private void ApplyConfig(HectonMusicDirectorConfig config)
@@ -1835,7 +2526,31 @@ namespace Hecton8.Audio
                 return _abyssProfile != null ? _abyssProfile : _fallbackProfile;
             }
 
+            HectonMusicBiomeProfile soundscapeProfile = ResolveSoundscapeTierProfile();
+            if (soundscapeProfile != null)
+                return soundscapeProfile;
+
             return _fallbackProfile;
+        }
+
+        private HectonMusicBiomeProfile ResolveSoundscapeTierProfile()
+        {
+            switch (_currentSoundscapeTier)
+            {
+                case SoundscapeTier.Thermal:
+                    return _thermalProfile != null ? _thermalProfile : (_abyssProfile != null ? _abyssProfile : _fallbackProfile);
+                case SoundscapeTier.DeepAbyss:
+                case SoundscapeTier.Abyss:
+                    return _abyssProfile != null ? _abyssProfile : _fallbackProfile;
+                case SoundscapeTier.Darkness:
+                case SoundscapeTier.Twilight:
+                    return _shelfProfile != null ? _shelfProfile : _fallbackProfile;
+                case SoundscapeTier.Shallow:
+                case SoundscapeTier.Surface:
+                    return _shallowProfile != null ? _shallowProfile : _fallbackProfile;
+                default:
+                    return _fallbackProfile;
+            }
         }
 
         private float ResolveTension01()
@@ -1855,6 +2570,7 @@ namespace Hecton8.Audio
             float biomePressure01 = ResolveBiomePressure01(matrixProfile);
             float zonePressure01 = ResolveZonePressure01(currentZone);
             float depthZonePressure01 = ResolveDepthZonePressure01(depthZone);
+            float soundscapePressure01 = ResolveSoundscapePressure01(_currentSoundscapeTier);
             float rewardUnease01 = ResolveRewardUnease01(matrixProfile);
             float safePocketSuppression01 = ResolveSafePocketSuppression01(matrixProfile, currentZone);
             float firstHourPressureBoost01 = ResolveFirstHourPressureBoost01(matrixProfile, currentZone);
@@ -1864,6 +2580,7 @@ namespace Hecton8.Audio
                 biomePressure01 * _biomePressureWeight +
                 zonePressure01 * _zonePressureWeight +
                 depthZonePressure01 * _depthZonePressureWeight +
+                soundscapePressure01 * _soundscapePressureWeight +
                 rewardUnease01 * _rewardUneaseWeight +
                 firstHourPressureBoost01 * _firstHourPressureBoostWeight -
                 safePocketSuppression01 * _safePocketSuppressionWeight;
@@ -1875,6 +2592,7 @@ namespace Hecton8.Audio
             _debugBiomePressure01 = biomePressure01;
             _debugZonePressure01 = zonePressure01;
             _debugDepthZonePressure01 = depthZonePressure01;
+            _debugSoundscapePressure01 = soundscapePressure01;
             _debugRewardUnease01 = rewardUnease01;
             _debugSafePocketSuppression01 = safePocketSuppression01;
             _debugFirstHourPressureBoost01 = firstHourPressureBoost01;
@@ -2769,16 +3487,30 @@ namespace Hecton8.Audio
             if (ProceduralSynthOwnsMusicPlayback)
             {
                 EnsureProceduralSynthRuntime();
+                bool emergencyBreathDominates = IsEmergencyBreathDominant();
+                float overrideSignal01 = emergencyBreathDominates ? 0f : _overrideVolume;
+                uint flags = DynamicMusicScalarSignal.FlagExternalScalars;
+                if (emergencyBreathDominates)
+                {
+                    flags |= DynamicMusicScalarSignal.FlagSuppressReactiveImpulses;
+                    _proceduralMusicActivity01 = 0f;
+                    _debugMusicActivity01 = 0f;
+                    _musicActivityReason = MusicActivityReason.Emergency;
+                }
+                else
+                {
+                    flags |= DynamicMusicScalarSignal.FlagStingerImpulse | DynamicMusicScalarSignal.FlagOverrideImpulse;
+                }
+
                 PushDynamicMusicSignal(
                     math.saturate(math.isfinite(_resolvedTension01) ? _resolvedTension01 : 0f),
                     ResolveLayerDepthMeters(),
                     math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f),
-                    math.saturate(volume),
-                    math.saturate(volume),
-                    1f,
-                    DynamicMusicScalarSignal.FlagExternalScalars |
-                    DynamicMusicScalarSignal.FlagStingerImpulse |
-                    DynamicMusicScalarSignal.FlagOverrideImpulse);
+                    overrideSignal01,
+                    overrideSignal01,
+                    emergencyBreathDominates ? 0f : 1f,
+                    overrideSignal01,
+                    flags);
 
                 _activeVoiceIndex = InvalidVoiceIndex;
                 _playbackState = PlaybackState.Override;
@@ -2844,7 +3576,12 @@ namespace Hecton8.Audio
 
             if (ProceduralSynthOwnsMusicPlayback)
             {
+                _proceduralMusicActivity01 = 0f;
+                _proceduralPhraseTimerSeconds = 0f;
+                _musicActivityReason = MusicActivityReason.Silent;
+                _debugMusicActivity01 = 0f;
                 _stingerDuckActive = false;
+                PublishProceduralMusicStopSignal();
                 StartDuck(1f, _stingerDuckReleaseSeconds);
                 return;
             }
@@ -3322,6 +4059,110 @@ namespace Hecton8.Audio
                 pressure01 = math.max(pressure01, 0.62f);
 
             return math.saturate(pressure01);
+        }
+
+        private static SoundscapeTier SanitizeSoundscapeTier(SoundscapeTier tier)
+        {
+            switch (tier)
+            {
+                case SoundscapeTier.Surface:
+                case SoundscapeTier.Shallow:
+                case SoundscapeTier.Twilight:
+                case SoundscapeTier.Darkness:
+                case SoundscapeTier.Abyss:
+                case SoundscapeTier.DeepAbyss:
+                case SoundscapeTier.Thermal:
+                    return tier;
+                default:
+                    return SoundscapeTier.Shallow;
+            }
+        }
+
+        private static float ResolveSoundscapeDepthHintMeters(SoundscapeTier tier)
+        {
+            switch (tier)
+            {
+                case SoundscapeTier.Twilight:
+                    return 150f;
+                case SoundscapeTier.Darkness:
+                    return 500f;
+                case SoundscapeTier.Abyss:
+                    return 1000f;
+                case SoundscapeTier.DeepAbyss:
+                    return 2000f;
+                case SoundscapeTier.Thermal:
+                    return 4000f;
+                case SoundscapeTier.Surface:
+                case SoundscapeTier.Shallow:
+                default:
+                    return 0f;
+            }
+        }
+
+        private static float ResolveSoundscapePressure01(SoundscapeTier tier)
+        {
+            switch (tier)
+            {
+                case SoundscapeTier.Twilight:
+                    return 0.22f;
+                case SoundscapeTier.Darkness:
+                    return 0.42f;
+                case SoundscapeTier.Abyss:
+                    return 0.64f;
+                case SoundscapeTier.DeepAbyss:
+                    return 0.82f;
+                case SoundscapeTier.Thermal:
+                    return 0.72f;
+                case SoundscapeTier.Shallow:
+                    return 0.06f;
+                case SoundscapeTier.Surface:
+                default:
+                    return 0f;
+            }
+        }
+
+        private static float ResolveSoundscapeRestScale(SoundscapeTier tier)
+        {
+            switch (tier)
+            {
+                case SoundscapeTier.Twilight:
+                    return 1.10f;
+                case SoundscapeTier.Darkness:
+                    return 1.25f;
+                case SoundscapeTier.Abyss:
+                    return 1.40f;
+                case SoundscapeTier.DeepAbyss:
+                    return 1.55f;
+                case SoundscapeTier.Thermal:
+                    return 1.20f;
+                case SoundscapeTier.Surface:
+                    return 0.88f;
+                case SoundscapeTier.Shallow:
+                default:
+                    return 1f;
+            }
+        }
+
+        private static float ResolveSoundscapePhraseScale(SoundscapeTier tier)
+        {
+            switch (tier)
+            {
+                case SoundscapeTier.Twilight:
+                    return 0.95f;
+                case SoundscapeTier.Darkness:
+                    return 0.84f;
+                case SoundscapeTier.Abyss:
+                    return 0.76f;
+                case SoundscapeTier.DeepAbyss:
+                    return 0.70f;
+                case SoundscapeTier.Thermal:
+                    return 0.88f;
+                case SoundscapeTier.Surface:
+                    return 0.95f;
+                case SoundscapeTier.Shallow:
+                default:
+                    return 1f;
+            }
         }
 
         private static float ResolveSafePocketSuppression01(HectonBiomeMatrixProfile matrixProfile, WorldZoneAnchor currentZone)

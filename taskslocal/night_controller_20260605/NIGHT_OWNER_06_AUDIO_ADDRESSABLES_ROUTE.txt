@@ -25,6 +25,7 @@ Authority:
 Evidence basis:
 - Docs/Orchestration/ORCHESTRATOR_SUBAGENT_SYNTHESIS_20260605.md
 - Docs/Orchestration/AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md
+- Copernicus/Sartre/Mencius static rechecks, 2026-06-06: single `[MUSIC_SYSTEM]` anchor exists; MusicDirector dedicated mixer nulls require fallback Play Mode proof; current direct Player AudioClip refs are `24` P1 rows (`20` footsteps, `4` UI) with `0` direct `Underwater Ambient.wav` and `0` direct `dive_splash.wav`; `ValidateAudioSceneStaticRoute.py --no-fail` rejects current repo with one hard blocker: absent Addressables settings/groups/entries.
 - Docs/AssetAudit/AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.md
 - Docs/AssetAudit/AUDIO_DIRECT_REF_DETAIL_20260605.md
 - Docs/AssetAudit/AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.md
@@ -39,13 +40,14 @@ Tasks:
 1. Confirm MusicDirector null mixer blockers: _musicMixerGroup and _stingerMixerGroup.
 2. Confirm SpatialAudioManagerRoot null SFX/interface/ambient/threat/bed/routing mixer blockers.
 3. Decide Unity-safe config repair or owned DSP/native bypass. Do not invent event strings.
-4. Classify Player.prefab direct refs: Underwater Ambient.wav and dive_splash.wav.
+4. Confirm current Player.prefab direct refs: `24` P1 refs (`20` footsteps, `4` UI), `0` direct `Underwater Ambient.wav`, and `0` direct `dive_splash.wav`; do not revive stale P0 direct-ref packets unless Unity readback proves those refs still exist.
 5. Extend or replace the current residency validator because AudioImportDictator currently scans AudioSource.clip only and serialized AudioClip fields bypass it.
 6. Decide whether each direct ref becomes Addressables key, owned preload exception, or removed binding.
 7. Prepare hybrid audio import policy decision: duration default, player-loop exceptions, no generic streaming SFX.
 8. Prepare Addressables one-owner/one-key/one-proof matrix because Assets/AddressableAssetsData is currently empty.
 9. Do not import or mutate groups/settings while Unity gate is red.
 10. Later verify runtime profile entry/exit, crossfade, stinger, ducking, silence windows, memory, DSP underruns, and 0 B/frame.
+11. Keep `Tools/ValidateAudioSceneStaticRoute.py` as the static guard: dedicated mixer nulls are fallback-required; missing Addressables is the current hard static blocker; remaining Player direct refs are P1 lifecycle/owner proof blockers.
 
 Acceptance:
 - MusicDirector routes are non-null or explicitly bypassed by owner route.
@@ -57,3 +59,85 @@ Acceptance:
 
 Low/Middle/High/Ultra:
 Low keeps priority warnings and essential ambience. High/Ultra add richer beds/stingers only through same owner/release truth.
+
+2026-06-06 cursor 134 Hegel import/meta map:
+- Hegel ran static-only `python -B Tools\ValidateAudioImportMetaPolicy.py --no-fail` and `python -B Tools\ValidateAudioSceneStaticRoute.py --no-fail`.
+- `AUDIO_IMPORT_META_POLICY_REJECTED blockers=41 rows=138`.
+- Breakdown: `missing_meta=0`, `load_mismatch=27`, `compression_mismatch=0`, `quality_mismatch=14`, `force_mono_policy=0`, `sample_rate_policy=0`, `preload_background_policy=0`, `short_streaming_policy=0`.
+- Load mismatches: 8 ambient and 4 player loops are `CompressedInMemory -> Streaming`; 13 SFX, 1 UI, and 1 VO stub are `CompressedInMemory -> DecompressOnLoad`.
+- Example ambient/player-loop paths: `Assets/_Project/Audio/Underwater Ambient.wav`, `Assets/_Project/Audio/Atmos 1 Loop.wav`, `Assets/_Project/Audio/Breathing/inside suit sounds (too loud).wav`, `Assets/_Project/Audio/Movement/swimming - underwater.ogg`.
+- Example SFX/UI/VO paths: `Assets/_Project/Audio/Footsteps/Metal/metal step (1).wav`, `Assets/_Project/Audio/Thruster/servo_motor.wav`, `Assets/_Project/Audio/UI/electro (nope) sound.flac`, `Assets/_Project/Audio/VO/Stubs/VOStub_Chen_Log01_RU.wav`.
+- Quality mismatches: 14 clips currently have `.meta` quality `0.70`, ledger expects `0.45`; examples include `Assets/_Project/Audio/Underwater Ambient.wav` and `Assets/_Project/Audio/SFX/bubble sound (3).wav`.
+- Do not lower long ambience/player-loop quality just to satisfy the validator. Resolve policy first with listening/memory proof.
+- Short SFX/UI/VO `DecompressOnLoad` alignment is the safer next import-policy class, but it still requires Unity/import readback before acceptance.
+- Scene route blocker remains one hard static blocker: `addressables-absent`, because `Assets/AddressableAssetsData` has settings/groups/entries count `0`.
+- Fallback-required mixer nulls: `MusicDirectorConfig_Global.asset` `_musicMixerGroup` and `_stingerMixerGroup`; `PFB_HectonMusicDirectorRoot.prefab` has 3 `AudioSource OutputAudioMixerGroup` refs null. Static YAML cannot prove mixer runtime.
+
+2026-06-06 cursor 135 critical cue source correction:
+- `AUDCUE-08` stale candidate path `Assets/_Project/Audio/Movement/swimming underwater.mp3` was corrected to existing `Assets/_Project/Audio/Movement/swimming - underwater.ogg` in `Docs/AssetAudit/AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.csv`.
+- Source evidence: `AUDIO_FILE_TECHNICAL_PROPERTIES_20260605.csv` lists the `.ogg` as a 6.428s mono Vorbis player swim loop candidate with ledger quality `0.45`, `SOURCE_FILE_ONLY_NOT_IMPORT_OR_RUNTIME_PROOF`.
+- `python -B -m unittest Tools.test_validate_audio_critical_cue_source_coverage` returned 6 tests OK.
+- `python -B Tools\ValidateAudioCriticalCueSourceCoverage.py --no-fail` now reports one blocker only: `AUDCUE-12` weak placeholder VO boundary.
+- This is static ledger repair only. Addressables absence, import/meta mismatches, player-footstep/UI direct refs, mixer fallback proof, listening, latency, memory, and `0 B/frame` remain unresolved.
+
+2026-06-06 cursor 136 Locke static blocker map:
+- Locke completed static-only audio/Addressables blocker audit. No edits, Unity, import, build/test, asset mutation, `.meta` mutation, mixer mutation, Addressables mutation, or raw YAML edit.
+- Addressables route is absent, not merely unproved: `Assets/AddressableAssetsData` exists but has settings/groups/entries count `0`; `Packages/manifest.json` declares `com.unity.addressables` `2.9.1`; `ContentAuthorityBuildValidators.cs` expects settings/groups around lines `380`, `386`, `435`, `437`, `439`.
+- Future Unity owner must create or restore Addressables settings, profiles, schemas, required groups, labels, entries, and load mode through Unity APIs. Readback-only cannot pass because there is no route to read.
+- Exact mixer nulls: `MusicDirectorConfig_Global.asset:25` `_musicMixerGroup` null; `:26` `_stingerMixerGroup` null; `PFB_HectonMusicDirectorRoot.prefab:44`, `:173`, `:302` null `OutputAudioMixerGroup`; `PFB_SpatialAudioManagerRoot.prefab:553-558` null `_sfxGroup`, `_interfaceGroup`, `_ambientGroup`, `_threatGroup`, `_bedGroup`, `_routingMixer`.
+- `AUDCUE-12` remains blocked at `Docs/AssetAudit/AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.csv:13`; placeholder VO candidates are `VOStub_Chen_Log01_EN.wav` and `VOStub_Chen_Log01_RU.wav`.
+- Audio import policy remains rejected: 41 blockers across 29 unique assets, with 27 load mismatches and 14 quality mismatches. Do not raw-edit `.meta`; Unity importer mutation plus readback is required.
+- Updated synthesis: `Docs/Orchestration/AUDIO_ADDRESSABLES_P0_SYNTHESIS_20260605.md`.
+
+2026-06-06 cursor 137 scene anchor regression:
+- Fresh `python -B Tools\ValidateAudioAddressablesP0Synthesis.py` now fails before the Addressables-only expectation: `scene-anchor-count: expected exactly one active [MUSIC_SYSTEM] / HectonMusicDirectorAnchor, found 0`.
+- `rg` finds `[MUSIC_SYSTEM]` / `HectonMusicDirectorAnchor` in `01_MAIN_MENU.unity`, but not in current `02_HECTON_WORLD.unity`.
+- `Assets/_Project/Scenes/02_HECTON_WORLD.unity` is modified in the working tree. Do not raw-YAML repair it and do not assume the anchor removal was intentional.
+- `python -B Tools\RunAssetStaticValidators.py` now fails `audio_addressables_p0_synthesis`; proof harness checks still pass.
+- Current audio blockers are now: missing world scene music anchor, absent Addressables settings/groups/entries, `AUDCUE-12` placeholder boundary, and import meta policy blockers.
+- Future Unity owner must first read back/restore exactly one active `[MUSIC_SYSTEM]` scene anchor through Unity APIs, then proceed to Addressables and mixer/import repair.
+
+2026-06-06 cursor 138 fresh asset static gate snapshot:
+- Fresh `python -B Tools\RunAssetStaticValidators.py` still fails `audio_addressables_p0_synthesis`.
+- Hard audio blockers in that run: scene anchor count `0` in `02_HECTON_WORLD`, Addressables settings/groups/entries `0`, `AUDCUE-12` weak placeholder boundary, and import policy `41` blockers across `138` rows.
+- Proof harness is not the failing asset-static name in this run: `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=27 asset_refs=21`.
+- Same run still prints mass deletion dirty set rejection: status rows `11549`, tracked deletions `11233`, tracked modifications `212`, untracked `104`, staged `0`; high-risk deletion classes remain unresolved.
+- Current status: `AUDIO_SCENE_ANCHOR_MISSING / ADDRESSABLES_ROUTE_ABSENT / PENDING UNITY OWNER REPAIR`.
+
+2026-06-06 cursor 139 Kuhn final repair packet:
+- Kuhn completed static-only audio repair packet. No Unity, import, build, Play Mode, profiler, prefab/scene/mixer/Addressables mutation, raw YAML edit, delete, restore, stage, or commit.
+- Correct owner paths: `Assets/_Project/Prefabs/Audio/PFB_HectonMusicDirectorRoot.prefab`, `Assets/_Project/Prefabs/Audio/PFB_SpatialAudioManagerRoot.prefab`, `Assets/_Project/Data/Audio/Music/Configs/MusicDirectorConfig_Global.asset`, and `Assets/_Project/MasterMixer.mixer`.
+- Hard blockers remain: `02_HECTON_WORLD` has `0` active `[MUSIC_SYSTEM] / HectonMusicDirectorAnchor`, Addressables settings/groups/entries are absent, `AUDCUE-12` is placeholder-blocked, and importer policy remains red.
+- Future Unity owner must open `02_HECTON_WORLD`, create or restore exactly one active `[MUSIC_SYSTEM]` scene anchor with enabled `HectonMusicDirectorAnchor`, and bind `_config` to `MusicDirectorConfig_Global.asset` GUID `3fe2e07be4fdac24cb6b2f12b438dcc3`.
+- Runtime music prefab GUID remains `7a86aa3ad745a104d84c2f6622d12430`; the scene anchor must route through authored config, not scene search or raw YAML.
+- Addressables repair must use Unity API: `AddressableAssetSettingsDefaultObject.GetSettings(true)`, groups `Core`, `High_Res`, `Overkill`, and `BundledAssetGroupSchema.AssetLoadMode = RequestedAssetAndDependencies`.
+- Mixer repair must use `MasterMixer.mixer`: map config music/stinger to `Music` unless a stinger subgroup is authored; map spatial `SFX`, `Ambient`, interface/threat/bed/routing refs through approved groups or documented fallback.
+- This packet is a repair plan only. Runtime audio readiness still needs Unity import/Console, Play Mode, profiler/GC/memory, and listening proof.
+
+2026-06-06 cursor 140 synthesis validator alignment:
+- `Tools\ValidateAudioAddressablesP0Synthesis.py` now treats the current two static route blockers as the expected live truth: missing `02_HECTON_WORLD` music anchor and absent Addressables settings/groups/entries.
+- Fresh validator output is `AUDIO_ADDRESSABLES_P0_SYNTHESIS_OK blockers=2 direct_refs=24 p0=0 footsteps=20 ui=4 fallback_required=3`.
+- This is static consistency only. Unity owner repair is still required for the scene anchor, Addressables settings/groups/entries, mixer refs, import policy, `AUDCUE-12`, and listening/runtime proof.
+
+2026-06-06 cursor 141 scene anchor current-state correction:
+- Fresh static validator readback supersedes cursor 137-140 anchor-missing state.
+- `python -B Tools\ValidateAudioSceneStaticRoute.py --no-fail` reports `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1`.
+- Current hard scene-route blocker is `addressables-absent`: `Assets/AddressableAssetsData` has settings `0`, groups `0`, entries `0`.
+- Static YAML sees exactly one active `02_HECTON_WORLD` `[MUSIC_SYSTEM] / HectonMusicDirectorAnchor` bound to `MusicDirectorConfig_Global.asset` GUID `3fe2e07be4fdac24cb6b2f12b438dcc3`.
+- `MusicDirectorConfig_Global` `_musicMixerGroup` and `_stingerMixerGroup` are statically non-null, but the runtime music prefab still has 3 null `AudioSource OutputAudioMixerGroup` refs.
+- This is not runtime acceptance. Unity readback, Console/import, Play Mode, profiler/GC/memory, listening proof, music prefab mixer proof, import-policy repair, `AUDCUE-12`, and Addressables creation remain blocked/pending.
+
+2026-06-06 cursor 141 current static anchor readback:
+- Fresh static route now reports one active `[MUSIC_SYSTEM]` scene anchor bound to `MusicDirectorConfig_Global.asset`; this is static YAML evidence only, not Unity/runtime proof.
+- Current hard static route blocker count is `1`: Addressables settings/groups/entries remain absent.
+- `Tools\ValidateAudioAddressablesP0Synthesis.py` now returns `AUDIO_ADDRESSABLES_P0_SYNTHESIS_OK blockers=1 direct_refs=24 p0=0 footsteps=20 ui=4 fallback_required=1`.
+- Mixer fallbacks, import policy `41`, `AUDCUE-12`, Addressables lifecycle, listening, memory, GC, and runtime route proof remain blocked.
+
+2026-06-06 cursor 142 Chandrasekhar current blocker consolidation:
+- Chandrasekhar completed the static-only audio/Addressables sidecar. No edits, Unity, dotnet/build, import, mutation, stage, or commit.
+- Fresh local checks confirm current audio static route: `ValidateAudioSceneStaticRoute.py --no-fail` reports one blocker, `addressables-absent`; `ValidateAudioAddressablesP0Synthesis.py` reports `AUDIO_ADDRESSABLES_P0_SYNTHESIS_OK blockers=1 direct_refs=24 p0=0 footsteps=20 ui=4 fallback_required=1`.
+- Reject stale `scene-anchor-count=0` / `AUDIO_SCENE_ANCHOR_MISSING` claims. Current static YAML has one active `02_HECTON_WORLD` `[MUSIC_SYSTEM] / HectonMusicDirectorAnchor` bound to `MusicDirectorConfig_Global.asset` GUID `3fe2e07be4fdac24cb6b2f12b438dcc3`.
+- Reject stale `MusicDirectorConfig_Global mixer refs are null` claims. Current config `_musicMixerGroup` and `_stingerMixerGroup` are statically non-null.
+- Remaining static debts: `Assets/AddressableAssetsData` settings/groups/entries are absent; `PFB_HectonMusicDirectorRoot.prefab` has 3 null `AudioSource.OutputAudioMixerGroup` refs; `PFB_SpatialAudioManagerRoot.prefab` has 6 null mixer/routing refs; `AUDCUE-12` remains placeholder-blocked; importer policy remains `41` blockers across `138` rows.
+- `Player.prefab` current direct audio refs are 24 P1 refs: 20 footstep, 4 UI. Current P0 direct refs to `Underwater Ambient.wav` and `dive_splash.wav` are 0, pending Unity prefab readback.
+- Future Unity owner must read back first, then create/restore Addressables settings/groups/entries through Unity APIs, wire prefab mixer refs through `MasterMixer.mixer`, classify Player direct refs, repair imports through `AudioImporter`/`SaveAndReimport`, and only then run Console/import, Play Mode, profiler/GC/memory, and listening proof.

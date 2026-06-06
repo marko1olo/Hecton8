@@ -19,7 +19,7 @@ namespace Hecton8.Ecosystem
     /// <summary>
     /// SHINOBU_309 plankton/nutrient scalar-field drift. Owns Vault state; publishes only snapshots and a visual density texture.
     /// </summary>
-    public unsafe sealed partial class NutrientDriftRuntime : IFrostTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
+    public unsafe sealed partial class NutrientDriftRuntime : IFrostTickable, IGlobalRegistryHotSwapListener, IDisposable
     {
         public const int GridAxisMax = 32;
         public const int GridCellCapacity = GridAxisMax * GridAxisMax * GridAxisMax;
@@ -477,10 +477,6 @@ namespace Hecton8.Ecosystem
                 if (!keepJobGuard)
                     UnlockJobBuffers();
             }
-        }
-
-        public void LateFrameTick()
-        {
         }
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)

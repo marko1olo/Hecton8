@@ -20,7 +20,10 @@ DEFAULT_SOURCE_ROOT = REPO_ROOT / "Assets" / "_Project" / "Scripts"
 DEFAULT_REPORT_PATH = REPO_ROOT / "Docs" / "AgentLogs" / "JobCompletionAudit_HFI_AUDIT.md"
 DEFAULT_JSON_PATH = REPO_ROOT / "Docs" / "AgentLogs" / "JobCompletionAudit_HFI_AUDIT.json"
 SCHEMA = "hecton8.job_completion_audit.v1"
-CANONICAL_DISPATCHER_FENCE_SUFFIX = "Assets/_Project/Scripts/Core/DispatcherJobFence.cs"
+CANONICAL_DISPATCHER_FENCE_SUFFIXES = (
+    "Assets/_Project/Scripts/Core/DispatcherJobFence.cs",
+    "Assets/_Project/Scripts/Core/Contracts/CoreLowLevelUtilities.cs",
+)
 CANONICAL_DISPATCHER_FENCE_METHODS = {"TryComplete", "TryFinalizeCompleted"}
 PLUGIN_SYNC_GENERATOR_PATH_TOKENS = (
     "/Plugins/MapMagic/",
@@ -138,6 +141,14 @@ def likely_plugin_sync_generator(rel: str) -> bool:
     return any(token in normalized for token in PLUGIN_SYNC_GENERATOR_PATH_TOKENS)
 
 
+def is_canonical_dispatcher_fence(rel: str, method_name: str) -> bool:
+    normalized = rel.replace("\\", "/")
+    return (
+        method_name in CANONICAL_DISPATCHER_FENCE_METHODS
+        and any(normalized.endswith(suffix) for suffix in CANONICAL_DISPATCHER_FENCE_SUFFIXES)
+    )
+
+
 def extract_domain(rel: str) -> str:
     parts = rel.replace("\\", "/").split("/")
     if "Scripts" in parts:
@@ -187,8 +198,7 @@ def classify_site(rel: str, method_name: str, code: str) -> str:
 
     if (
         raw_complete
-        and rel.replace("\\", "/").endswith(CANONICAL_DISPATCHER_FENCE_SUFFIX)
-        and method_name in CANONICAL_DISPATCHER_FENCE_METHODS
+        and is_canonical_dispatcher_fence(rel, method_name)
     ):
         return "DispatcherFenceInternalRawComplete"
     if likely_plugin_sync_generator(rel):
@@ -227,7 +237,10 @@ def classify_site(rel: str, method_name: str, code: str) -> str:
 
 def scan_file(path: Path) -> list[dict[str, object]]:
     rel = normalize_path(path)
-    source = path.read_text(encoding="utf-8", errors="ignore")
+    try:
+        source = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return []
     findings: list[dict[str, object]] = []
     context: MethodContext | None = None
     for line_number, raw_line in enumerate(source.splitlines(), 1):

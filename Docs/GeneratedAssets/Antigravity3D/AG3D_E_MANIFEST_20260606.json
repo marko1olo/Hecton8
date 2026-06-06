@@ -1,0 +1,29 @@
+{
+  "manifest_id": "AG3D_E_20260606",
+  "files_generated": [
+    "AG3D_E_REAL_PREFAB_LEDGER_20260606.csv",
+    "AG3D_E_REFERENCE_IMAGE_LEDGER_20260606.csv",
+    "AG3D_E_REFERENCE_TO_PREFAB_MAP_20260606.csv",
+    "AG3D_E_VISUAL_FAILURE_TAXONOMY_20260606.md",
+    "AG3D_E_REPAIR_PROMPT_FEEDSTOCK_20260606.md"
+  ],
+  "metrics": {
+    "real_prefab_count": 88,
+    "real_image_count": 15,
+    "map_rows": 180,
+    "taxonomy_characters_approx": 25500,
+    "feedstock_characters_approx": 18200
+  },
+  "banned_string_scan": {
+    "random.choice": "0 found",
+    "ref_": "0 found",
+    "too clean": "0 found in final generative prompts",
+    "fake_PFB_names": "0 found",
+    "status": "CLEAN"
+  },
+  "compliance": {
+    "unity_executed": false,
+    "processes_controlled": false,
+    "live_assets_modified": false
+  }
+}

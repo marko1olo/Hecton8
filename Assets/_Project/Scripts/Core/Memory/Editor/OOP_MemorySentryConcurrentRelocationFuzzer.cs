@@ -1541,7 +1541,7 @@ namespace Hecton8.Core.Memory.Editor
             return value > int.MaxValue ? int.MaxValue : (int)value;
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ReadWriteStressJob : IJob
         {
             public NativeArray<int> Buffer;

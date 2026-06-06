@@ -99,7 +99,7 @@ namespace Hecton8.Gameplay.AirlockPressurization.Editor
 
         private void RefreshFromVault()
         {
-            if (!AirlockPressurizationVault.TryReadTuning(GlobalRegistry.DataVault, out NativeArray<AirlockTuningDTO> tuning) ||
+            if (!AirlockPressurizationVault.TryReadTuning(GlobalRegistry.DataVault, out NativeArray<AirlockTuningDTO>.ReadOnly tuning) ||
                 tuning.Length <= 0)
             {
                 if (_readout != null)
@@ -182,7 +182,7 @@ namespace Hecton8.Gameplay.AirlockPressurization.Editor
             painter.lineWidth = 1.5f;
             painter.strokeColor = new Color(0.1f, 0.7f, 1f, 1f);
 
-            if (!AirlockPressurizationVault.TryReadTelemetry(GlobalRegistry.DataVault, out NativeArray<AirlockTelemetryEntry> telemetry) ||
+            if (!AirlockPressurizationVault.TryReadTelemetry(GlobalRegistry.DataVault, out NativeArray<AirlockTelemetryEntry>.ReadOnly telemetry) ||
                 telemetry.Length <= 1)
             {
                 DrawFlatLine(painter, rect);
@@ -253,7 +253,7 @@ namespace Hecton8.Gameplay.AirlockPressurization.Editor
         private static void OnSceneGui(SceneView sceneView)
         {
             if (!s_enabled ||
-                !AirlockPressurizationVault.TryReadDebugGizmos(GlobalRegistry.DataVault, out NativeArray<AirlockDebugGizmoDTO> gizmos))
+                !AirlockPressurizationVault.TryReadDebugGizmos(GlobalRegistry.DataVault, out NativeArray<AirlockDebugGizmoDTO>.ReadOnly gizmos))
             {
                 return;
             }

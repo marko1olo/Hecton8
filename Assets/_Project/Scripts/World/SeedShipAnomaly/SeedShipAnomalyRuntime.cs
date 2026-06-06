@@ -863,13 +863,13 @@ namespace Hecton8.World.SeedShipAnomaly
             if (!_jobScheduled)
                 return;
 
-            if (!ForceCompleteFrameJobInPostSimulationWindow())
+            if (!CompleteFrameJobForTeardownInPostSimulationWindow())
                 return;
 
             FinishFrameJobCompletion();
         }
 
-        private bool ForceCompleteFrameJobInPostSimulationWindow()
+        private bool CompleteFrameJobForTeardownInPostSimulationWindow()
         {
             DispatcherJobFence.BeginPostSimulationSwapWindow();
             try

@@ -21,6 +21,7 @@ namespace Hecton8.SaveSystem
         private const string DefaultBeaconLabelPrefix = "BEACON";
         private const int InvalidBiomeId = BiomeDiscoveryBitMask.InvalidBiomeId;
         private const int MaxAtlasRevealStage = 4;
+        private const int PreV73RepairVersion = 73;
 
         private static bool TrimListToMax<T>(List<T> values, int maxCount, string step, List<string> steps)
         {
@@ -144,6 +145,12 @@ namespace Hecton8.SaveSystem
                 return false;
 
             int sourceVersion = data.version > 0 ? data.version : 1;
+            if (sourceVersion > SaveData.CurrentVersion)
+            {
+                summary = $"unsupported future save data version {sourceVersion}; current reader supports {SaveData.CurrentVersion}";
+                return false;
+            }
+
             bool changed = false;
             List<string> steps = new List<string>(8);
 
@@ -238,6 +245,7 @@ namespace Hecton8.SaveSystem
 
             changed |= EnsureNarrative(ref data, steps);
 
+            changed |= EnsureHazardZoneRuntime(ref data.hazardZones, sourceVersion, steps);
             changed |= EnsureInventory(ref data.inventory, steps);
             changed |= EnsureWorldState(ref data.worldState, steps);
             changed |= EnsureProceduralWorldState(ref data.proceduralWorldState, steps);
@@ -273,6 +281,40 @@ namespace Hecton8.SaveSystem
                 summary = string.Join(", ", steps);
 
             return changed;
+        }
+
+        private static bool EnsureHazardZoneRuntime(ref HazardZoneRuntimeDTO dto, int sourceVersion, List<string> steps)
+        {
+            float safeHazardToxicityDose = sourceVersion >= SaveData.HazardZoneRuntimePersistenceVersion
+                ? ClampFinite(dto.toxicityDose, 0f, SaveData.HazardZoneMaxPersistedToxicityDose)
+                : 0f;
+            float safePulseAccumulator = sourceVersion >= SaveData.HazardZoneRuntimePersistenceVersion
+                ? ClampFinite(dto.toxicityPulseAccumulatorSeconds, 0f, SaveData.HazardZoneMaxPersistedToxicityPulseSeconds)
+                : 0f;
+
+            if (safeHazardToxicityDose <= 0f)
+                safePulseAccumulator = 0f;
+
+            bool changed = !Approximately(dto.toxicityDose, safeHazardToxicityDose) ||
+                           !Approximately(dto.toxicityPulseAccumulatorSeconds, safePulseAccumulator);
+
+            dto.toxicityDose = safeHazardToxicityDose;
+            dto.toxicityPulseAccumulatorSeconds = safePulseAccumulator;
+
+            if (changed)
+                steps.Add("hazard zone toxicity state repaired");
+
+            return changed;
+        }
+
+        private static float ClampFinite(float value, float min, float max)
+        {
+            return math.isfinite(value) ? math.clamp(value, min, max) : min;
+        }
+
+        private static bool Approximately(float a, float b)
+        {
+            return math.abs(a - b) <= 0.000001f;
         }
 
         private static bool EnsureInventory(ref InventoryDTO dto, List<string> steps)
@@ -1178,7 +1220,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("lod quality preset repaired");
             }
 
-            if (sourceVersion < SaveData.CurrentVersion && !data.DynamicResolutionEnabled)
+            if (sourceVersion < PreV73RepairVersion && !data.DynamicResolutionEnabled)
             {
                 data.DynamicResolutionEnabled = true;
                 changed = true;
@@ -1794,7 +1836,7 @@ namespace Hecton8.SaveSystem
                             : 0;
 
             int clampedRevealStage = math.clamp(data.atlasSignalRevealStage, 0, MaxAtlasRevealStage);
-            if (sourceVersion < SaveData.CurrentVersion && clampedRevealStage < inferredRevealStage)
+            if (sourceVersion < PreV73RepairVersion && clampedRevealStage < inferredRevealStage)
                 clampedRevealStage = inferredRevealStage;
 
             if (clampedRevealStage != data.atlasSignalRevealStage)

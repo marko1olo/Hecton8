@@ -21,6 +21,7 @@ Date: 2026-05-11
 - PLAYER_BUILD
 
 [RULE] Any claim above its evidence class must be downgraded to `PENDING VERIFICATION`.
+[RULE] Proof state labels and evidence classes are separate fields. Use root `quality.md` labels for report status and this mandate's evidence classes for artifact type. If they conflict, the lower proof claim wins.
 [RULE] "Verified", "complete", "master grade", "0 GC", "0 errors", and timing claims require artifact paths, command lines, timestamps, and target hardware.
 [RULE] Verification has a budget: one scoped static scan and one scoped triage pass may route action. A third check of unchanged source/assets/proof requires new evidence or explicit user/controller authorization.
 [RULE] After `PENDING VERIFICATION` is established, the next useful artifact is the missing proof run, source/asset/root-route fix, or a concrete blocker note. Another validation summary that restates the missing proof is process debt.

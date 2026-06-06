@@ -3,9 +3,15 @@
 
 from __future__ import annotations
 
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+
+TOOLS_ROOT = Path(__file__).resolve().parent
+if str(TOOLS_ROOT) not in sys.path:
+    sys.path.insert(0, str(TOOLS_ROOT))
 
 import JobCompletionAudit as audit
 
@@ -132,6 +138,46 @@ public static class DispatcherJobFence
 
         self.assertEqual(payload["byClassification"]["DispatcherFenceInternalRawComplete"], 2)
         self.assertEqual(payload["rawRuntimeBlockerCount"], 0)
+
+    def test_dispatcher_fence_embedded_in_core_contracts_is_not_raw_runtime_blocker(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_job_fence_contracts_completion_") as tmp:
+            root = Path(tmp) / "Assets" / "_Project" / "Scripts"
+            fence = root / "Core" / "Contracts" / "CoreLowLevelUtilities.cs"
+            fence.parent.mkdir(parents=True)
+            fence.write_text(
+                """
+using Unity.Jobs;
+
+public static class DispatcherJobFence
+{
+    public static bool TryComplete(ref JobHandle handle, bool forceComplete)
+    {
+        handle.Complete();
+        return true;
+    }
+
+    public static bool TryFinalizeCompleted(ref JobHandle handle)
+    {
+        handle.Complete();
+        return true;
+    }
+}
+""",
+                encoding="utf-8",
+            )
+
+            payload = audit.build_payload(root)
+
+        self.assertEqual(payload["byClassification"]["DispatcherFenceInternalRawComplete"], 2)
+        self.assertEqual(payload["rawRuntimeBlockerCount"], 0)
+
+    def test_missing_file_during_scan_is_skipped(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="h8_job_missing_file_") as tmp:
+            missing = Path(tmp) / "Gone.cs"
+
+            findings = audit.scan_file(missing)
+
+        self.assertEqual([], findings)
 
     def test_mapmagic_plugin_sync_complete_is_visible_but_not_raw_runtime_blocker(self) -> None:
         with tempfile.TemporaryDirectory(prefix="h8_mapmagic_completion_") as tmp:

@@ -1,0 +1,12 @@
+{
+    "node_id": "SYS_UI_ACTUARIAL_THREAT",
+    "author": "Atlas-6 Drone Routing",
+    "subject_tags": [
+        "UI",
+        "Actuarial",
+        "Liability"
+    ],
+    "title": "Drone Target Reclassification",
+    "surface": "System HUD",
+    "text": "SCAN DETECTED: UNAUTHORIZED RECOVERY OF UNRESOLVED SYSTEM LOAD. You are handling unregistered biological material. Drone repair priority revoked. Actuarial threat level elevated. Please discard bodies to restore maintenance privileges."
+}

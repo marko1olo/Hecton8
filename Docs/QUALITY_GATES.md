@@ -20,6 +20,7 @@ Purpose: acceptance gates. This file defines what proof is required; it is not p
 - Compile proof does not prove Unity import, Console, Play Mode, profiler, GC, player build, save/load, shader, visual, or platform readiness.
 - Runtime claims require artifact paths with command or capture context, timestamp, target, exit/result, and blocker class.
 - Do not report `VERIFIED`, `COMPLETE`, or `PRODUCTION READY` from stale logs.
+- Proof state labels come from root `quality.md`. Evidence classes name the backing artifact type. Do not treat `STATIC_DOC`, `STATIC_SOURCE`, or `CLI_COMPILE` as a higher proof state than their artifact permits.
 
 ## Build Gate Protocol
 

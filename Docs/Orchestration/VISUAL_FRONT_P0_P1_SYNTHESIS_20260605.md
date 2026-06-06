@@ -98,3 +98,27 @@ Detailed active/candidate/rejected route classification is captured in `Docs/Orc
 - Do not use `H8VisualProofCapture1912.cs` diagnostic probe outputs as h8_1475 acceptance.
 
 Final status: `REJECTED / PENDING UNITY READBACK AND PROOF PACKET`.
+
+## 2026-06-06 Banach Static Visual Critic
+
+Evidence class: `STATIC_DOC / STATIC_IMAGE_REVIEW / NO_UNITY_READBACK`.
+
+Banach inspected all 15 mandatory visual references and current visual evidence/contact sheets. Verdict remains `REJECTED / PENDING UNITY + h8_1475 SCREENSHOT PROOF`.
+
+P0 failures:
+
+- no canonical `h8_1475` proof packet;
+- surface ocean still reads as a slab;
+- shoreline contact has no credible wet rock, foam, refraction, or shallow transparency proof;
+- terrain/coast material truth fails against the reference floor;
+- Aegir/sky reads toy-integrated rather than atmospheric;
+- 0-5 m underwater route is empty/slab and lacks route ecology/instrument context;
+- production player/HUD/tool witness is absent.
+
+P1 failures:
+
+- 20-50 m medium/deep hero route is unproven;
+- product-face source gates for tools, pickups, transport, player shell, sky, and ocean remain unresolved;
+- flora/coral/UI assets are candidates only until material/import/atlas binding and compact/high screenshot proof exist.
+
+Do not hide any of these with raw MCP PNGs, controller prose, green haze, bloom, fog, darkness, cards, or decorative rocks/flora/coral. Later workers must repair the base route first, then produce canonical proof.

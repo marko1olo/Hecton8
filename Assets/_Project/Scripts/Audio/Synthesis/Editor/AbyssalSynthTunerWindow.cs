@@ -22,6 +22,7 @@ namespace Hecton8.Audio.Synthesis.Editor
         private double _nextRefreshTime;
         private DynamicMusicSynthTuningDTO _tuning;
         private AudioDSPTelemetryEntry _telemetry;
+        private DynamicMusicSharedStateDTO _sharedState;
         private Slider _baseDensitySlider;
         private Slider _tensionMultiplierSlider;
         private Slider _lfoFrequencySlider;
@@ -164,6 +165,7 @@ namespace Hecton8.Audio.Synthesis.Editor
             }
 
             synth.TryGetEditorTelemetry(0, out _telemetry);
+            synth.TryGetEditorSharedState(out _sharedState);
         }
 
         private void PublishToRuntime()
@@ -213,6 +215,7 @@ namespace Hecton8.Audio.Synthesis.Editor
             _statusLabel.text =
                 "Voices " + _telemetry.ActiveVoices + "/" + DynamicMusicGranularSynthesizer.VoiceCapacity +
                 " | Tension " + _telemetry.TensionIndex.ToString("0.000") +
+                " | Activity " + _sharedState.MusicActivity01.ToString("0.00") +
                 " | Depth " + _telemetry.DepthMeters.ToString("0") + "m" +
                 " | LPF " + _telemetry.LpfCutoffHz.ToString("0") + "Hz" +
                 " | DSP " + _telemetry.DspJobMicroseconds.ToString("0.0") + "us";

@@ -46,12 +46,12 @@ P0 rows:
 
 1. `Assets/_Project/Data/Audio/Music/Configs/MusicDirectorConfig_Global.asset`: null `_stingerMixerGroup`.
 2. `Assets/_Project/Data/Audio/Music/Configs/MusicDirectorConfig_Global.asset`: null `_musicMixerGroup`.
-3. `Assets/_Project/Audio/Movement/dive_splash.wav`: direct `Player.prefab` `AudioClip` ref, reported at line `1067`, currently `CompressedInMemory`, `ADPCM`, duration `1.729s`.
-4. `Assets/_Project/Audio/Movement/dive_splash.wav`: direct `Player.prefab` `AudioClip` ref, reported at line `1066`, currently `CompressedInMemory`, `ADPCM`, duration `1.729s`.
-5. `Assets/_Project/Audio/Underwater Ambient.wav`: direct `Player.prefab` `AudioClip` ref, reported at line `137`, currently `Streaming`, `Vorbis`, duration `193s`.
-6. `Assets/_Project/Audio/Underwater Ambient.wav`: direct `Player.prefab` `AudioClip` ref, reported at line `239`, currently `Streaming`, `Vorbis`, duration `193s`.
+3. `Assets/_Project/Audio/Movement/dive_splash.wav`: prior direct `Player.prefab` `AudioClip` ref, reported at line `1067`, currently source-cleared pending Unity readback; source/import facts remain `CompressedInMemory`, `ADPCM`, duration `1.729s`.
+4. `Assets/_Project/Audio/Movement/dive_splash.wav`: prior direct `Player.prefab` `AudioClip` ref, reported at line `1066`, currently source-cleared pending Unity readback; source/import facts remain `CompressedInMemory`, `ADPCM`, duration `1.729s`.
+5. `Assets/_Project/Audio/Underwater Ambient.wav`: prior direct `Player.prefab` `AudioClip` ref, reported at line `137`, currently source-cleared pending Unity readback; source/import facts remain `Streaming`, `Vorbis`, duration `193s`.
+6. `Assets/_Project/Audio/Underwater Ambient.wav`: prior direct `Player.prefab` `AudioClip` ref, reported at line `239`, currently source-cleared pending Unity readback; source/import facts remain `Streaming`, `Vorbis`, duration `193s`.
 
-Static direct prefab refs do not prove runtime failure. They block readiness because owner, load/release route, Addressables status, playback path, and `0 B/frame` proof are absent.
+Static direct prefab refs and source-cleared prefab fields do not prove runtime failure or runtime success. They block readiness because owner, load/release route, Addressables status, playback or absence path, and `0 B/frame` proof are absent.
 
 Loudness/source probe facts:
 
@@ -61,6 +61,21 @@ Loudness/source probe facts:
 - `7` near-0dB source peak flags.
 - `11` very quiet source mean flags.
 - Source loudness is input evidence only. It is not Unity import proof, mixer proof, route mix proof, warning audibility proof, or listening acceptance.
+
+Critical cue coverage blocker:
+
+- `python -B Tools\ValidateAudioCriticalCueSourceCoverage.py` returns `AUDIO_CRITICAL_CUE_SOURCE_COVERAGE_OK blockers=0 rows=12 candidate_paths=28 ledger_matches=28 missing_source_rows=2 placeholder_rows=1`.
+- `AUDCUE-12` is no longer a weak-boundary source-coverage blocker because the matrix now explicitly labels the EN/RU stubs as placeholder. It remains `PLACEHOLDER_BLOCKED`, not final VO coverage.
+- Candidate placeholder rows are `Assets/_Project/Audio/VO/Stubs/VOStub_Chen_Log01_EN.wav` and `Assets/_Project/Audio/VO/Stubs/VOStub_Chen_Log01_RU.wav`.
+- Future VO owner must provide a final VO bank, localization/subtitle route, warning-priority route, import readback, runtime dispatch proof, accessibility proof, and listening proof before `AUDCUE-12` can move out of `PLACEHOLDER_BLOCKED`.
+- Do not tune final warning/VO policy, import quality, ducking, subtitle timing, or accessibility behavior from these stubs.
+
+AUDCUE-12 current state:
+
+- Exact static coverage state: `placeholder_rows=1` with no weak-boundary issue.
+- The EN/RU `VOStub_Chen_Log01_*` files are placeholder source probes only. They do not prove final warning cue content, loudness, timing, language coverage, subtitle timing, warning priority, import state, or runtime dispatch.
+- Required final proof: final VO source artifacts/bank, 15-locale localization/subtitle IDs and timing where warning speech is player-critical, Unity import readback, listening notes in warning-overlap context, runtime cue dispatch proof, accessibility/subtitle proof, Profiler/GC proof, and memory/lifecycle proof for any retained voice bank.
+- Remaining status: `PLACEHOLDER_BLOCKED / PENDING VERIFICATION`. Static ledger matches exist, but final source authoring, import, listening, localization/subtitle, runtime dispatch, GC, memory, and mix proof are absent.
 
 ## Non-Negotiable Boundaries
 
@@ -80,7 +95,7 @@ Loudness/source probe facts:
    - assign approved mixer groups through Unity, or
    - document an owned native/DSP bypass with owner, phase, cadence, failure mode, shutdown/release behavior, telemetry, and proof target.
 4. Prove MusicDirector runtime output after route closure: profile entry/exit, crossfade, stinger path, warning ducking, silence windows, and Console clean state.
-5. Unity-read `Player.prefab` and map the four P0 direct refs to owning components and serialized fields. Do not trust line numbers without readback.
+5. Unity-read `Player.prefab`; confirm prior P0 direct refs are source-cleared and map remaining direct refs to owning components and serialized fields. Do not trust line numbers without readback.
 6. Classify `Underwater Ambient.wav` refs:
    - routed ambient bank,
    - player-loop exception,

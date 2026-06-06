@@ -101,8 +101,6 @@ namespace Hecton8.Core
             PlayerSensoryManager runtime = s_activeRuntime != null
                 ? s_activeRuntime
                 : GlobalRegistry.PlayerSensoryRuntime;
-            if (runtime == null)
-                runtime = GlobalRegistry.RegisteredPlayerSensory as PlayerSensoryManager;
 
             if (runtime != null)
             {
@@ -241,8 +239,6 @@ namespace Hecton8.Core
             PlayerSensoryManager runtime = s_activeRuntime != null
                 ? s_activeRuntime
                 : GlobalRegistry.PlayerSensoryRuntime;
-            if (runtime == null)
-                runtime = GlobalRegistry.RegisteredPlayerSensory as PlayerSensoryManager;
 
             if (runtime != null && runtime != this)
             {

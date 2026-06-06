@@ -144,3 +144,54 @@ Rollback target: restore the prior stable-doc clause, mark affected exception ro
 - Correctness: this packet clarifies adoption blockers only. Runtime behavior, import state, lifecycle, mixer routing, and listening result remain unproved.
 
 Final status: `PENDING_VERIFICATION`.
+
+## 2026-06-06 Audio Import Blocker Execution Handoff
+
+Evidence class: `STATIC_AUDIO_IMPORTER_META`, `STATIC_SOURCE`, `STATIC_DOC`.
+Status: `PENDING UNITY IMPORT READBACK / PENDING LISTENING PROOF`.
+Command run: `python -B Tools\ValidateAudioImportMetaPolicy.py --no-fail`.
+Result: `AUDIO_IMPORT_META_POLICY_REJECTED blockers=41 rows=138 missing_meta=0 load_mismatch=27 compression_mismatch=0 quality_mismatch=14 force_mono_policy=0 sample_rate_policy=0 preload_background_policy=0 short_streaming_policy=0`.
+Scope note: the 41 blockers are blocker counts, not 41 unique clips. Static row triage maps them to 29 unique assets: 8 ambient, 4 player_loop, 15 sfx, 1 ui, and 1 voice stub.
+
+Exact static mismatch inventory:
+
+- Ambient load+quality rows, current `.meta` `CompressedInMemory/Q0.70`, ledger target `Streaming/Q0.45`: `SPACESHIP_SOUNDS_AMBIENT` `Assets/_Project/Audio/Ambient/spaceship sounds - ambient.mp3`; `ATMOS_1_LOOP` `Assets/_Project/Audio/Atmos 1 Loop.wav`; `ATMOS_2_LOOP` `Assets/_Project/Audio/Atmos 2 Loop.wav`; `ATMOS_2` `Assets/_Project/Audio/Atmos 2.wav`; `ATMOS_3` `Assets/_Project/Audio/Atmos 3.wav`; `ATMOS_5_LOOP` `Assets/_Project/Audio/Atmos 5 Loop.wav`; `ATMOS_5` `Assets/_Project/Audio/Atmos 5.wav`; `UNDERWATER_AMBIENT` `Assets/_Project/Audio/Underwater Ambient.wav`.
+- Player-loop load+quality rows, current `.meta` `CompressedInMemory/Q0.70`, ledger target `Streaming/Q0.45`: `BREATHING_BREATH_IN_AND_OUT_1` `Assets/_Project/Audio/Breathing/breathing breath in and out 1.mp3`; `INSIDE_SUIT_SOUNDS_TOO_LOUD` `Assets/_Project/Audio/Breathing/inside suit sounds (too loud).wav`; `SWIMMING_UNDERWATER` `Assets/_Project/Audio/Movement/swimming - underwater.ogg`; `SWIMMING_ONWATER` `Assets/_Project/Audio/Movement/swimming -onwater.wav`.
+- Short SFX/UI/VO load rows, current `.meta` `CompressedInMemory`, ledger target `DecompressOnLoad`: `METAL_STEP_1` `Assets/_Project/Audio/Footsteps/Metal/metal step (1).wav`; `METAL_STEP_2` `Assets/_Project/Audio/Footsteps/Metal/metal step (2).wav`; `ROCK_STEP_1` `Assets/_Project/Audio/Footsteps/Rock/rock step (1).wav`; `SAND_STEP_2` `Assets/_Project/Audio/Footsteps/Sand/sand step  (2).wav`; `SAND_STEP_3` `Assets/_Project/Audio/Footsteps/Sand/sand step  (3).wav`; `SAND_STEP_4` `Assets/_Project/Audio/Footsteps/Sand/sand step  (4).wav`; `WET_STEP_1` `Assets/_Project/Audio/Footsteps/Wet/wet step (1).wav`; `WET_STEP_3` `Assets/_Project/Audio/Footsteps/Wet/wet step (3).wav`; `WET_STEP_4` `Assets/_Project/Audio/Footsteps/Wet/wet step (4).wav`; `BUBBLE_SOUND_1` `Assets/_Project/Audio/SFX/bubble sound (1).wav`; `WATER_ENERGE_BULB` `Assets/_Project/Audio/SFX/water energe  - bulb.wav`; `SERVO_MOTOR` `Assets/_Project/Audio/Thruster/servo_motor.wav`; `THRUST_CONTINOUS` `Assets/_Project/Audio/Thruster/thrust continous.wav`; `ELECTRO_NOPE_SOUND` `Assets/_Project/Audio/UI/electro (nope) sound.flac`; `VOSTUB_CHEN_LOG01_RU` `Assets/_Project/Audio/VO/Stubs/VOStub_Chen_Log01_RU.wav`.
+- Short SFX quality-only rows, current `.meta` `Q0.70`, ledger target `Q0.45`: `BUBBLE_SOUND_3` `Assets/_Project/Audio/SFX/bubble sound (3).wav`; `BUBBLE_SOUND_4` `Assets/_Project/Audio/SFX/bubble sound (4).wav`.
+- Policy caution: the inventory names validator mismatches only. Future owner must decide whether ledger targets are correct per cue class before changing imports; player-loop and long ambience rows need latency, memory, and listening proof before adopting streaming or quality reduction.
+
+### Future Unity-Owner Classes
+
+1. Long ambience / player-loop streaming policy
+   - Current blockers: 8 ambient and 4 player_loop clips have `.meta` load type `CompressedInMemory` while the ledger expects `Streaming`; the same 12 rows also carry `.meta` quality `0.70` against ledger quality `0.45`.
+   - Representative rows: `Assets/_Project/Audio/Underwater Ambient.wav`, `Assets/_Project/Audio/Atmos 1 Loop.wav`, `Assets/_Project/Audio/Ambient/spaceship sounds - ambient.mp3`, `Assets/_Project/Audio/Breathing/inside suit sounds (too loud).wav`, `Assets/_Project/Audio/Movement/swimming - underwater.ogg`, and `Assets/_Project/Audio/Movement/swimming -onwater.wav`.
+   - Safe future owner decision: long ambience and music-like beds may move to `Streaming` only through an owned Addressables/audio-bank route with key/group, ref-count, active-bank cap, release phase, memory pressure behavior, ducking, and first-20 listening proof.
+   - Player-loop exception: breath, suit, swim, and first-person continuity loops are not generic duration-only SFX. If streaming creates start jitter, control-readability damage, or warning-mask risk, keep them `CompressedInMemory` or another prewarmed owned route until latency, memory, mix, and lifecycle proof says otherwise.
+   - Do not lower quality on long ambience/player-loop rows merely to satisfy the validator. Resolve the authority conflict and prove listening/memory behavior first.
+
+2. Short SFX / UI / VO `DecompressOnLoad` policy
+   - Current blockers: 13 SFX rows, 1 UI row, and 1 VO stub row have `.meta` load type `CompressedInMemory` while the ledger expects `DecompressOnLoad`.
+   - Representative SFX/UI/VO rows: `Assets/_Project/Audio/Footsteps/Metal/metal step (1).wav`, `Assets/_Project/Audio/Footsteps/Wet/wet step (1).wav`, `Assets/_Project/Audio/SFX/bubble sound (1).wav`, `Assets/_Project/Audio/Thruster/servo_motor.wav`, `Assets/_Project/Audio/UI/electro (nope) sound.flac`, and `Assets/_Project/Audio/VO/Stubs/VOStub_Chen_Log01_RU.wav`.
+   - Safe future owner decision: short latency-critical SFX and UI feedback should align to non-streaming `DecompressOnLoad` when Unity importer readback confirms the target class, duration, compression, force-mono, preload/background, and playback route.
+   - VO stub boundary: do not use the two placeholder VO rows to set final VO import policy. Final VO needs localization/subtitle route, loudness, runtime mix, accessibility, and memory proof.
+
+3. Quality mismatch policy
+   - Current blockers: 14 quality mismatches total.
+   - Twelve are the ambient/player-loop rows above at `.meta` quality `0.70` versus ledger `0.45`.
+   - Two are short bubble rows: `Assets/_Project/Audio/SFX/bubble sound (3).wav` and `Assets/_Project/Audio/SFX/bubble sound (4).wav`, with `.meta` quality `0.70` versus ledger `0.45`.
+   - Safe future owner decision: short SFX quality downgrades may be considered after Unity import readback and listening proof. Long ambience/player-loop quality must be resolved with compact memory evidence and listening proof, not by blind ledger conformance.
+
+4. Explicit non-actions
+   - Do not raw-edit `.meta` files.
+   - Do not mutate `Assets/`, `Packages/`, `ProjectSettings/`, prefabs, scenes, mixers, Addressables settings, validator source, or CSV ledgers from this packet.
+   - Do not create Addressables groups/keys or claim lifecycle ownership from static CSV rows.
+   - Do not claim import correctness, runtime mix, no-GC, memory fitness, DSP safety, or listening quality from this static handoff.
+   - Do not convert generic short SFX to streaming.
+   - Do not convert player-loop continuity clips by duration alone.
+
+### Next Valid Owner Action
+
+When Unity ownership is allowed, run a Unity-safe importer readback/mutation pass that targets only the classified rows above, then re-run `python -B Tools\ValidateAudioImportMetaPolicy.py --no-fail` and capture Unity import readback. Runtime acceptance still needs Addressables lifecycle proof, Memory Profiler/GC proof, DSP/audio-thread proof where applicable, and listening proof for first exit, shallow route, warning/UI overlap, breath/suit/swim continuity, silence windows, and MusicDirector transitions.
+
+Low/Middle/High/Ultra consequence: compact keeps breath, warnings, UI, tool, route, and threat cues ahead of beds; middle can admit limited current/next ambience after proof; high/ultra can add richer beds, stingers, reverb, and hydrophone detail only through the same owner/release route without changing cue truth, IDs, Addressables keys, release order, or warning source facts.

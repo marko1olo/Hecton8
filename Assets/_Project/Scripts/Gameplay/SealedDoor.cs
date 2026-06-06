@@ -9,7 +9,7 @@
 //   • ICuttable integration for LaserCutter tool.
 //
 // ZERO GC:
-//   • ITickable.Tick() — no Update(), no allocations.
+//   • Tool-hit cadence drives cutting; no Update(), no allocations.
 //   • Cached Transform, Renderer, Collider.
 //   • State machine with enum (no coroutines).
 //   • Progress callbacks and renderer updates are coalesced to fixed thresholds.
@@ -51,7 +51,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class SealedDoor : MonoBehaviour, ICuttable, ITickable, IUpdatable, ILateFrameTickable, IWfcDoorLaserCutTarget, IGlobalRegistryHotSwapListener
+    public sealed class SealedDoor : MonoBehaviour, ICuttable, ILateFrameTickable, IWfcDoorLaserCutTarget, IGlobalRegistryHotSwapListener
     {
         private static int s_x001SealedDoorSignalPushDropCount;
         // ══════════════════════════════════════════════════════════
@@ -351,22 +351,7 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ITickable
         // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Compatibility tick surface. Cutting progress is driven by tool-hit cadence.
-        /// </summary>
-        /// <param name="deltaTime">Owner-provided simulation delta.</param>
-        public void Tick(float deltaTime)
-        {
-            // Currently no per-frame logic needed
-            // Progress is driven by ApplyCutting calls from the tool
-            // This could be extended for:
-            //   - Progress decay when not cutting
-            //   - Visual effects during cutting
-            //   - Audio loop management
-        }
 
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,

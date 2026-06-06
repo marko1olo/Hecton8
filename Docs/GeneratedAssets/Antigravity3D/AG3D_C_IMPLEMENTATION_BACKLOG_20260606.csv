@@ -1,0 +1,181 @@
+backlog_id,blueprint_id,target_source_area,implementation_step,priority
+BL_001,BP_CAVE_ENT_01,PFB_family_cave_entrance.prefab,Integrate primary mesh base to biome matrix,High
+BL_002,BP_CAVE_ENT_01,PFB_family_cave_entrance.prefab,Validate ambient occlusion bake,Medium
+BL_003,BP_CAVE_ENT_02,PFB_family_cave_entrance__lip.prefab,Align normal blending for rim transitions,High
+BL_004,BP_CAVE_ENT_03,PFB_family_cave_entrance__shaft.prefab,Optimize vertical collision hull for player clearance,High
+BL_005,BP_CAVE_ENT_04,NEW_ASSET_BACKLOG,Sculpt horizontal expansion geometry,High
+BL_006,BP_CAVE_ENT_05,NEW_ASSET_BACKLOG,Configure edge jaggedness displacement map,Medium
+BL_007,BP_CAVE_ENT_06,NEW_ASSET_BACKLOG,Model bifurcated tunnel entrances,Low
+BL_008,BP_CAVE_ENT_07,NEW_ASSET_BACKLOG,Calculate stability constraints for overhang,High
+BL_009,BP_CAVE_ENT_08,NEW_ASSET_BACKLOG,Smooth crater depression to terrain delta,Medium
+BL_010,BP_CAVE_ENT_09,NEW_ASSET_BACKLOG,Establish strict X-axis local bounding box,Low
+BL_011,BP_CAVE_ENT_10,NEW_ASSET_BACKLOG,Setup upward normal projection for chimney,Medium
+BL_012,BP_CORAL_BRA_01,PFB_family_coral_branching.prefab,Compile L-system procedural ruleset,High
+BL_013,BP_CORAL_BRA_02,PFB_family_coral_branching__branch.prefab,Adjust tip branching logic for performance,Medium
+BL_014,BP_CORAL_BRA_03,PFB_family_coral_branching__mass.prefab,Pack overlapping nodes tightly without Z-fighting,High
+BL_015,BP_CORAL_BRA_04,NEW_ASSET_BACKLOG,Double internode distance parameters,Low
+BL_016,BP_CORAL_BRA_05,NEW_ASSET_BACKLOG,Widen spread angle to fan profile,Medium
+BL_017,BP_CORAL_BRA_06,NEW_ASSET_BACKLOG,Increase iteration depth recursively,High
+BL_018,BP_CORAL_BRA_07,NEW_ASSET_BACKLOG,Implement spatial pruning algorithm,High
+BL_019,BP_CORAL_BRA_08,NEW_ASSET_BACKLOG,Inject noise modifier into direction vectors,Medium
+BL_020,BP_CORAL_BRA_09,NEW_ASSET_BACKLOG,Restrict sub-branching to apical regions,Low
+BL_021,BP_CORAL_BRA_10,NEW_ASSET_BACKLOG,Apply gravity bias to procedural generation,High
+BL_022,BP_CORAL_BRI_01,PFB_family_coral_brittle__fan.prefab,Expand planar mesh geometry,High
+BL_023,BP_CORAL_BRI_02,PFB_family_coral_brittle__sprig.prefab,Taper cylindrical extrusions rapidly,Medium
+BL_024,BP_CORAL_BRI_03,NEW_ASSET_BACKLOG,Configure radial instancing from root,High
+BL_025,BP_CORAL_BRI_04,NEW_ASSET_BACKLOG,Inject secondary fold noise into fan,Low
+BL_026,BP_CORAL_BRI_05,NEW_ASSET_BACKLOG,Subtract inner core for hollow tube,High
+BL_027,BP_CORAL_BRI_06,NEW_ASSET_BACKLOG,Generate alpha punch-through lattice texture,Medium
+BL_028,BP_CORAL_BRI_07,NEW_ASSET_BACKLOG,Isolate primary spine geometry,Low
+BL_029,BP_CORAL_BRI_08,NEW_ASSET_BACKLOG,Displace base fan spherically,Medium
+BL_030,BP_CORAL_BRI_09,NEW_ASSET_BACKLOG,Limit Z-axis height for carpet effect,High
+BL_031,BP_CORAL_BRI_10,NEW_ASSET_BACKLOG,Configure high curl spline pathing,Medium
+BL_032,BP_CORAL_LOW_01,PFB_family_coral_low.prefab,Map cellular Voronoi displacement to hemisphere,High
+BL_033,BP_CORAL_LOW_02,PFB_family_coral_low__bed.prefab,Flatten mesh to conform with terrain normals,High
+BL_034,BP_CORAL_LOW_03,PFB_family_coral_low__plate.prefab,Stack planar discs logically,Medium
+BL_035,BP_CORAL_LOW_04,NEW_ASSET_BACKLOG,Amplify vertical center node,Low
+BL_036,BP_CORAL_LOW_05,NEW_ASSET_BACKLOG,Invert central vertex for depression,Medium
+BL_037,BP_CORAL_LOW_06,NEW_ASSET_BACKLOG,Stretch geometry aligned to flow vectors,High
+BL_038,BP_CORAL_LOW_07,NEW_ASSET_BACKLOG,Construct overlapping tiers,Low
+BL_039,BP_CORAL_LOW_08,NEW_ASSET_BACKLOG,Apply ridge displacement map heavily,High
+BL_040,BP_CORAL_LOW_09,NEW_ASSET_BACKLOG,Ensure zero bottom thickness for flush mount,Medium
+BL_041,BP_CORAL_LOW_10,NEW_ASSET_BACKLOG,Extract and isolate single cellular unit,Low
+BL_042,BP_CORAL_MAS_01,PFB_family_coral_massive__head.prefab,Generate solid boolean sphere primitive,High
+BL_043,BP_CORAL_MAS_02,PFB_family_coral_massive__porous.prefab,Execute 3D cellular noise subtraction,High
+BL_044,BP_CORAL_MAS_03,NEW_ASSET_BACKLOG,Squash Z scale for boulder profile,Medium
+BL_045,BP_CORAL_MAS_04,NEW_ASSET_BACKLOG,Elongate Z scale for pillar profile,Low
+BL_046,BP_CORAL_MAS_05,NEW_ASSET_BACKLOG,Subtract lower core for archway,High
+BL_047,BP_CORAL_MAS_06,NEW_ASSET_BACKLOG,Bisect mesh and offset halves,Medium
+BL_048,BP_CORAL_MAS_07,NEW_ASSET_BACKLOG,Shear top vertices to create shelf,Medium
+BL_049,BP_CORAL_MAS_08,NEW_ASSET_BACKLOG,Apply asymmetric X-Y scaling,Low
+BL_050,BP_CORAL_MAS_09,NEW_ASSET_BACKLOG,Hollow out large central volume for shelter,High
+BL_051,BP_CORAL_MAS_10,NEW_ASSET_BACKLOG,Merge four scaled instances cleanly,Medium
+BL_052,BP_CORAL_PLA_01,PFB_family_coral_plate__ledge.prefab,Extrude polygon with curled edges,High
+BL_053,BP_CORAL_PLA_02,PFB_family_coral_plate__shelf.prefab,Build multi-tiered bracket supports,High
+BL_054,BP_CORAL_PLA_03,NEW_ASSET_BACKLOG,Wind geometry around central spine,Medium
+BL_055,BP_CORAL_PLA_04,NEW_ASSET_BACKLOG,Expand edge to full semi-circle,Low
+BL_056,BP_CORAL_PLA_05,NEW_ASSET_BACKLOG,Simulate broken edge pieces via Voronoi,High
+BL_057,BP_CORAL_PLA_06,NEW_ASSET_BACKLOG,Stack 5 plates with random offsets,Medium
+BL_058,BP_CORAL_PLA_07,NEW_ASSET_BACKLOG,Apply heavy negative gravity warp to edge,High
+BL_059,BP_CORAL_PLA_08,NEW_ASSET_BACKLOG,Curl all edges upward into bowl shape,Medium
+BL_060,BP_CORAL_PLA_09,NEW_ASSET_BACKLOG,Reduce thickness to minimum structural level,Low
+BL_061,BP_CORAL_PLA_10,NEW_ASSET_BACKLOG,Double thickness and expand mounting area,Medium
+BL_062,BP_DEB_FLD_01,PFB_family_debris_field.prefab,Compile scattered wreckage topology rules,High
+BL_063,BP_DEB_FLD_02,PFB_family_debris_field__field.prefab,Distribute broad planar fragments uniformly,Medium
+BL_064,BP_DEB_FLD_03,PFB_family_debris_field__strip.prefab,Align scattering to trajectory vectors,High
+BL_065,BP_DEB_FLD_04,NEW_ASSET_BACKLOG,Concentrate heavy chunks radially,Medium
+BL_066,BP_DEB_FLD_05,NEW_ASSET_BACKLOG,Implement density gradient along trail,High
+BL_067,BP_DEB_FLD_06,NEW_ASSET_BACKLOG,Pack twisted beams tightly with high overlap,Low
+BL_068,BP_DEB_FLD_07,NEW_ASSET_BACKLOG,Spread micro-shrapnel across wide area,Medium
+BL_069,BP_DEB_FLD_08,NEW_ASSET_BACKLOG,Intersect 60 percent of volume below terrain,High
+BL_070,BP_DEB_FLD_09,NEW_ASSET_BACKLOG,Configure suspension attachments for kelp,Medium
+BL_071,BP_DEB_FLD_10,NEW_ASSET_BACKLOG,Stack modular pieces conically,Low
+BL_072,BP_DEB_SCA_01,PFB_family_debris_scatter.prefab,Generate twisted metal with edge wear,High
+BL_073,BP_DEB_SCA_02,PFB_family_debris_scatter__crate.prefab,Deform box corners to simulate crushing,Medium
+BL_074,BP_DEB_SCA_03,PFB_family_debris_scatter__scrap.prefab,Apply alpha masking for ragged torn edges,High
+BL_075,BP_DEB_SCA_04,NEW_ASSET_BACKLOG,Extrude cylinder and bend midpoint severely,Medium
+BL_076,BP_DEB_SCA_05,NEW_ASSET_BACKLOG,Displace flat plane to simulate buckling,Low
+BL_077,BP_DEB_SCA_06,NEW_ASSET_BACKLOG,Path splines with tangled intersections,High
+BL_078,BP_DEB_SCA_07,NEW_ASSET_BACKLOG,Model block core with exhaust nozzles,Medium
+BL_079,BP_DEB_SCA_08,NEW_ASSET_BACKLOG,Create sharp triangular ceramic shards,Low
+BL_080,BP_DEB_SCA_09,NEW_ASSET_BACKLOG,Form capsule with deep implosion cavity,High
+BL_081,BP_DEB_SCA_10,NEW_ASSET_BACKLOG,Deform grid lattice spherically,Medium
+BL_082,BP_KELP_CAN_01,PFB_family_kelp_canopy__crown.prefab,Generate broad leafy umbrella forms,High
+BL_083,BP_KELP_CAN_02,PFB_family_kelp_canopy__frond.prefab,Model large blade with buoyancy bladders,Medium
+BL_084,BP_KELP_CAN_03,NEW_ASSET_BACKLOG,Triple apex node count for light blocking,High
+BL_085,BP_KELP_CAN_04,NEW_ASSET_BACKLOG,Prune 50 percent of blades for light rays,Medium
+BL_086,BP_KELP_CAN_05,NEW_ASSET_BACKLOG,Apply negative buoyancy for weeping effect,Low
+BL_087,BP_KELP_CAN_06,NEW_ASSET_BACKLOG,Inject noise to lock intersecting fronds,High
+BL_088,BP_KELP_CAN_07,NEW_ASSET_BACKLOG,Scale floatation bladders by 3x,Medium
+BL_089,BP_KELP_CAN_08,NEW_ASSET_BACKLOG,Subtract voronoi shapes for predation damage,High
+BL_090,BP_KELP_CAN_09,NEW_ASSET_BACKLOG,Expand horizontal crown reach by 2.5x,Low
+BL_091,BP_KELP_CAN_10,NEW_ASSET_BACKLOG,Compress stalk while keeping crown intact,Medium
+BL_092,BP_KELP_PAT_01,PFB_family_kelp_patch_dense.prefab,Bind multiple stalks with overlapping roots,High
+BL_093,BP_KELP_PAT_02,PFB_family_kelp_patch_dense__grove.prefab,Instantiate large module with varying heights,Medium
+BL_094,BP_KELP_PAT_03,PFB_family_kelp_patch_dense__patch.prefab,Focus mid-water density in medium cluster,High
+BL_095,BP_KELP_PAT_04,NEW_ASSET_BACKLOG,Arrange stalks linearly to form wall,Medium
+BL_096,BP_KELP_PAT_05,NEW_ASSET_BACKLOG,Distribute stalks in ring leaving hollow center,Low
+BL_097,BP_KELP_PAT_06,NEW_ASSET_BACKLOG,Bias growth vectors along terrain before rise,High
+BL_098,BP_KELP_PAT_07,NEW_ASSET_BACKLOG,Blend three age variations into one volume,Medium
+BL_099,BP_KELP_PAT_08,NEW_ASSET_BACKLOG,Remove canopies and twist meshes heavily,High
+BL_100,BP_KELP_PAT_09,NEW_ASSET_BACKLOG,Create uniform low stalks with bright tips,Low
+BL_101,BP_KELP_PAT_10,NEW_ASSET_BACKLOG,Invert density to push growth outward,Medium
+BL_102,BP_KELP_TAL_01,PFB_family_kelp_tall.prefab,Extrude continuous stalk to 40m target,High
+BL_103,BP_KELP_TAL_02,PFB_family_kelp_tall__lean.prefab,Bend upper 20m with severe current vector,Medium
+BL_104,BP_KELP_TAL_03,PFB_family_kelp_tall__stalk.prefab,Isolate primary vine without blades,High
+BL_105,BP_KELP_TAL_04,NEW_ASSET_BACKLOG,Twist geometry along axis during extrusion,Medium
+BL_106,BP_KELP_TAL_05,NEW_ASSET_BACKLOG,Bifurcate stem at 15m into twin leads,Low
+BL_107,BP_KELP_TAL_06,NEW_ASSET_BACKLOG,Triple base diameter tapering to top,High
+BL_108,BP_KELP_TAL_07,NEW_ASSET_BACKLOG,Terminate abruptly at 10m with ragged edge,Medium
+BL_109,BP_KELP_TAL_08,NEW_ASSET_BACKLOG,Add spherical bulges along spline path,High
+BL_110,BP_KELP_TAL_09,NEW_ASSET_BACKLOG,Flip terminal nodes to hang downward,Low
+BL_111,BP_KELP_TAL_10,NEW_ASSET_BACKLOG,Apply sine wave to vertical path,Medium
+BL_112,BP_RCH_LRG_01,PFB_family_rock_arch_large.prefab,Sweep rock profile along parabolic arc,High
+BL_113,BP_RCH_LRG_02,PFB_family_rock_arch_large__arch.prefab,Build continuous bridge with thick keystones,Medium
+BL_114,BP_RCH_LRG_03,PFB_family_rock_arch_large__split.prefab,Introduce structural fracture at apex,High
+BL_115,BP_RCH_LRG_04,NEW_ASSET_BACKLOG,Flatten arc to span 50m wide,Medium
+BL_116,BP_RCH_LRG_05,NEW_ASSET_BACKLOG,Stretch piers vertically to 30m,Low
+BL_117,BP_RCH_LRG_06,NEW_ASSET_BACKLOG,Offset apex laterally for unbalanced look,High
+BL_118,BP_RCH_LRG_07,NEW_ASSET_BACKLOG,Intersect two perpendicular sweeps,Medium
+BL_119,BP_RCH_LRG_08,NEW_ASSET_BACKLOG,Delete one leg to form cantilever,High
+BL_120,BP_RCH_LRG_09,NEW_ASSET_BACKLOG,Apply 3D noise for sharp stalactites,Low
+BL_121,BP_RCH_LRG_10,NEW_ASSET_BACKLOG,Collapse central span leaving stumps,Medium
+BL_122,BP_RCK_MED_01,PFB_family_rock_cluster_medium.prefab,Group 3-5 distinct meshes via Voronoi,High
+BL_123,BP_RCK_MED_02,PFB_family_rock_cluster_medium__cluster.prefab,Aggregate densely with sediment buildup,Medium
+BL_124,BP_RCK_MED_03,PFB_family_rock_cluster_medium__ridge.prefab,Arrange linearly mimicking strata,High
+BL_125,BP_RCK_MED_04,PFB_family_rock_cluster_medium__stack.prefab,Balance boulders vertically,Medium
+BL_126,BP_RCK_MED_05,NEW_ASSET_BACKLOG,Place in circular formation defining basin,Low
+BL_127,BP_RCK_MED_06,NEW_ASSET_BACKLOG,Distribute loosely over 15m radius,High
+BL_128,BP_RCK_MED_07,NEW_ASSET_BACKLOG,Flatten tops by shearing along Z axis,Medium
+BL_129,BP_RCK_MED_08,NEW_ASSET_BACKLOG,Elongate vertically by 2x,High
+BL_130,BP_RCK_MED_09,NEW_ASSET_BACKLOG,Apply deep fissure boolean cuts,Low
+BL_131,BP_RCK_MED_10,NEW_ASSET_BACKLOG,Project horizontally to form ledge,Medium
+BL_132,BP_RUN_MED_01,PFB_family_ruin_cluster_medium.prefab,Assemble architectural blocks in semi-grid,High
+BL_133,BP_RUN_MED_02,PFB_family_ruin_cluster_medium__cluster.prefab,Pack broken pillars tightly,Medium
+BL_134,BP_RUN_MED_03,PFB_family_ruin_cluster_medium__corridor.prefab,Sequence archways with missing roof segments,High
+BL_135,BP_RUN_MED_04,NEW_ASSET_BACKLOG,Create flat paved area bordered by obelisks,Medium
+BL_136,BP_RUN_MED_05,NEW_ASSET_BACKLOG,Remove 40 percent of panels from dome,Low
+BL_137,BP_RUN_MED_06,NEW_ASSET_BACKLOG,Degrade terraced steps via noise erosion,High
+BL_138,BP_RUN_MED_07,NEW_ASSET_BACKLOG,Intersect continuous barrier with blast crater,Medium
+BL_139,BP_RUN_MED_08,NEW_ASSET_BACKLOG,Plunge inverted ziggurat below terrain,High
+BL_140,BP_RUN_MED_09,NEW_ASSET_BACKLOG,Lean tall narrow assembly off-center,Low
+BL_141,BP_RUN_MED_10,NEW_ASSET_BACKLOG,Heap generic brick and beam colliders,Medium
+BL_142,BP_SRV_SCR_01,PFB_family_service_scar.prefab,Excavate trench exposing pipework,High
+BL_143,BP_SRV_SCR_02,PFB_family_service_scar__pump.prefab,Center mechanical node in torn earth,Medium
+BL_144,BP_SRV_SCR_03,PFB_family_service_scar__strip.prefab,Expose parallel cable runs in linear gouge,High
+BL_145,BP_SRV_SCR_04,NEW_ASSET_BACKLOG,Reveal sub-surface grating in blast zone,Medium
+BL_146,BP_SRV_SCR_05,NEW_ASSET_BACKLOG,Emit particle zones from vertical shaft,Low
+BL_147,BP_SRV_SCR_06,NEW_ASSET_BACKLOG,Spill solidified fluid meshes from ruptured conduit,High
+BL_148,BP_SRV_SCR_07,NEW_ASSET_BACKLOG,Half-bury damaged machinery cluster in sediment,Medium
+BL_149,BP_SRV_SCR_08,NEW_ASSET_BACKLOG,Intersect trench lines into circuit board layout,High
+BL_150,BP_SRV_SCR_09,NEW_ASSET_BACKLOG,Form melted metallic crust over geology,Low
+BL_151,BP_SRV_SCR_10,NEW_ASSET_BACKLOG,Protrude only top 10 percent of mechanical forms,Medium
+BL_152,BP_CAVE_ENT_01,PFB_family_cave_entrance.prefab,Finalize LOD transitions and verify lighting,High
+BL_153,BP_CORAL_BRA_01,PFB_family_coral_branching.prefab,Verify collision primitive alignment,Medium
+BL_154,BP_CORAL_LOW_01,PFB_family_coral_low.prefab,Check subsurface scattering on material,High
+BL_155,BP_CORAL_MAS_01,PFB_family_coral_massive__head.prefab,Validate global normal map scaling,High
+BL_156,BP_CORAL_PLA_01,PFB_family_coral_plate__ledge.prefab,Test player mantle logic on flat edges,High
+BL_157,BP_DEB_FLD_01,PFB_family_debris_field.prefab,Check overlap depth with terrain,High
+BL_158,BP_DEB_SCA_01,PFB_family_debris_scatter.prefab,Validate metallic reflection roughness,Medium
+BL_159,BP_KELP_CAN_01,PFB_family_kelp_canopy__crown.prefab,Audit shadow casting cost,High
+BL_160,BP_KELP_PAT_01,PFB_family_kelp_patch_dense.prefab,Adjust ambient wind motion weights,High
+BL_161,BP_KELP_TAL_01,PFB_family_kelp_tall.prefab,Fix intersection clipping at stalk base,Medium
+BL_162,BP_RCH_LRG_01,PFB_family_rock_arch_large.prefab,Calculate vehicle clearance bounds,High
+BL_163,BP_RCK_MED_01,PFB_family_rock_cluster_medium.prefab,Verify navmesh generation around cluster,High
+BL_164,BP_RUN_MED_01,PFB_family_ruin_cluster_medium.prefab,Test line of sight culling,Medium
+BL_165,BP_SRV_SCR_01,PFB_family_service_scar.prefab,Confirm emission intensity in darkness,High
+BL_166,BP_CAVE_ENT_02,PFB_family_cave_entrance__lip.prefab,Texture painting pass for sand blending,Low
+BL_167,BP_CORAL_BRA_02,PFB_family_coral_branching__branch.prefab,Add micro-details to LOD0,Medium
+BL_168,BP_CORAL_BRI_01,PFB_family_coral_brittle__fan.prefab,Check alpha clipping artifacts,High
+BL_169,BP_CORAL_MAS_02,PFB_family_coral_massive__porous.prefab,Ensure porous holes have collision blocked,High
+BL_170,BP_DEB_FLD_02,PFB_family_debris_field__field.prefab,Add vertex colors for rust blending,Medium
+BL_171,BP_KELP_CAN_02,PFB_family_kelp_canopy__frond.prefab,Balance SSS depth,Low
+BL_172,BP_KELP_TAL_02,PFB_family_kelp_tall__lean.prefab,Align lean angle with global current vectors,High
+BL_173,BP_RCH_LRG_02,PFB_family_rock_arch_large__arch.prefab,Add barnacle decals to lower sections,Medium
+BL_174,BP_RCK_MED_02,PFB_family_rock_cluster_medium__cluster.prefab,Improve sediment transition texture,High
+BL_175,BP_RUN_MED_02,PFB_family_ruin_cluster_medium__cluster.prefab,Place secondary small debris scatters inside,Low
+BL_176,BP_SRV_SCR_02,PFB_family_service_scar__pump.prefab,Animate broken pump rotor,Medium
+BL_177,BP_CAVE_ENT_03,PFB_family_cave_entrance__shaft.prefab,Add descending particle dust effect,High
+BL_178,BP_CORAL_PLA_02,PFB_family_coral_plate__shelf.prefab,Strengthen bottom support visual thickness,Medium
+BL_179,BP_DEB_SCA_02,PFB_family_debris_scatter__crate.prefab,Ensure crate dimensions fit inventory items,High
+BL_180,BP_KELP_PAT_02,PFB_family_kelp_patch_dense__grove.prefab,Perform final LOD3 billboard generation,High

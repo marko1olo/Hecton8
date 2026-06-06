@@ -50,6 +50,36 @@ Visual degradation may add material richness around the instrument, but it canno
 | `Assets/_Project/Art/Sprites/oxygen-tank.png` | Legacy HUD mask/silhouette. Static QA says black RGB with partial alpha, and static prefab evidence points `Suit_HUD_Canvas.prefab` at this source. | Keep only as tintable mask/silhouette if a UI owner explicitly proves that role; otherwise reroute HUD oxygen icon usage away from it. It must not be treated as the detailed oxygen icon. |
 | `Assets/_Project/Art/Sprites/ui/OXYGEN.png` | Detailed oxygen canister candidate. Static QA says detailed colored oxygen icon source, but static search did not find it bound in `Suit_HUD_Canvas.prefab`. | Promote only after importer readback, SpriteAtlas ownership, HUD/inventory binding, compact readability, localization/accessibility, and allocation-safe update proof are produced by the future owner. |
 
+## 2026-06-06 Current Static Blocker Refresh
+
+Fresh static validation keeps this route blocked by source/role mismatch and HUD binding debt:
+
+- `TEXTURE_ROLE_TECHNICAL_LEDGER_REJECTED` includes `ui_oxygen_mask:mask:srgb_mismatch:Assets/_Project/Art/Sprites/oxygen-tank.png:expected=0:actual=1`.
+- `TEXTURE_IMPORT_ROLE_MATRIX_20260605.csv` classifies `Assets/_Project/Art/Sprites/oxygen-tank.png` as `ui_oxygen_mask` / `mask`, with `false_if_mask_true_if_icon` sRGB policy and `MASK_ONLY_UNLESS_PROVEN` notes.
+- `TEXTURE_IMPORT_ROLE_MATRIX_20260605.csv` classifies `Assets/_Project/Art/Sprites/ui/OXYGEN.png` as `ui_oxygen` / `icon_albedo`, `Sprite`, sRGB true, no mips/streaming, and `CANDIDATE_BLOCKED_BY_UI_BINDING_PROOF`.
+- `TEXTURE_MATERIAL_USAGE_MAP_20260605.csv` shows `oxygen-tank.png` referenced by `Assets/_Project/Prefabs/Suit_HUD_Canvas.prefab`, class `UI_SOURCE_ATLAS_PROOF_PENDING`, with `runtime_visual_proof_pending`.
+- The same HUD prefab also references `cardiogram.png`, `ring.png`, and `thunder.png` as static UI sprite sources, but this packet owns only the oxygen route decision.
+- No `.spriteatlas` or `.spriteatlasv2` assets were found under `Assets/_Project` in the current static readback.
+
+`ValidatePlayerRouteStaticEvidence.py --require-production-static --no-fail` still rejects production HUD binding statically. HUD-relevant blockers include:
+
+- `scene-missing-hud-internal-prefab-guid`
+- `scene-missing-suit-hud-prefab-guid`
+- `player-prefab-pda-null-panel-route`
+- `player-prefab-pda-null-tab-route`
+- `player-prefab-hud-presentation-null-route`
+- `player-prefab-hud-render-camera-disabled-or-unbound`
+- `player-prefab-hud-extension-null-route`
+- `hud-internal-compositor-disabled`
+- `hud-internal-compositor-null-route`
+- `hud-internal-force-overlay-route`
+- `suit-hud-canvas-overlay-render-mode`
+- `suit-hud-canvas-null-runtime-route`
+
+Future execution must not treat the sRGB mismatch as an isolated importer fix. First decide whether `oxygen-tank.png` is a linear mask, a colored icon, or part of a dual mask/icon route. If it remains a mask, importer correction to sRGB false must happen only through Unity importer/API readback after the UI owner confirms the mask role. If the HUD needs a colored oxygen icon, reclassify/bind the route instead of forcing mask policy onto `ui/OXYGEN.png`.
+
+Prefab, scene, SpriteAtlas, and importer repairs remain Unity-owner/API work. Raw prefab YAML, raw `.meta`, scene YAML, SpriteAtlas YAML, or Addressables asset edits are forbidden for this packet.
+
 ## Required Route Decision
 
 Future owner must choose one route and write the decision into the edited artifact:

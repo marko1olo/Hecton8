@@ -53,8 +53,13 @@ namespace Hecton8.SaveSystem
         /// <summary>Obschee vremya igry v sekundah.</summary>
         public double totalPlayTime;
 
+        /// <summary>Save version that first persisted delayed hazard zone toxicity dose state.</summary>
+        public const int HazardZoneRuntimePersistenceVersion = 74;
+        internal const float HazardZoneMaxPersistedToxicityDose = 64f;
+        internal const float HazardZoneMaxPersistedToxicityPulseSeconds = 0.5f;
+
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
-        public const int CurrentVersion = 73; // v73: contract authority version hash.
+        public const int CurrentVersion = HazardZoneRuntimePersistenceVersion; // v74: delayed hazard zone toxicity state.
 
         internal static void EnsureExactArrayCapacity<T>(ref T[] values, int capacity)
         {
@@ -101,6 +106,7 @@ namespace Hecton8.SaveSystem
         public EcosystemStateDTO ecosystemState;
         public VoxelDeltaPersistenceDTO voxelDeltaPersistence;
         public ExternalScavengerSiteDTO[] externalScavengerSites;
+        public HazardZoneRuntimeDTO hazardZones;
 
         /// <summary>Prochnost instrumentov (toolID → durability). v2.0 ENTERPRISE</summary>
         public Dictionary<string, float> toolDurabilityMap = new Dictionary<string, float>();
@@ -322,6 +328,7 @@ namespace Hecton8.SaveSystem
                 environmentalStrain = new EnvironmentalStrainDTO(),
                 ecosystemState = new EcosystemStateDTO(),
                 voxelDeltaPersistence = VoxelDeltaPersistenceDTO.CreateDefault(),
+                hazardZones = new HazardZoneRuntimeDTO(),
                 discoveredBiomeIds = null,
                 // COLD ALLOC: long[BiomeDiscoveryBitMask.WordCount] — packed discovered biome persistence — owner: SaveData
                 discoveredBiomeBitWords = new long[BiomeDiscoveryBitMask.WordCount],
@@ -416,8 +423,17 @@ namespace Hecton8.SaveSystem
         /// <summary>Persisted 1024-bit archaeology discovery mask word count. v64 DISCOVERY.</summary>
         public const int MaxDataArchaeologyDiscoveryWords = MaxDataArchaeologyScanStates / 64;
 
+        /// <summary>Persisted radiation grid resolution per axis. v68 RADIATION.</summary>
+        public const int RadiationGridResolution = 32;
+
+        /// <summary>Persisted radiation grid cell count. v68 RADIATION.</summary>
+        public const int RadiationGridCellCount = RadiationGridResolution * RadiationGridResolution * RadiationGridResolution;
+
+        /// <summary>Persisted sparse RLE packet byte width: ushort start, byte value, ushort run. v68 RADIATION.</summary>
+        public const int RadiationGridRlePacketSizeBytes = sizeof(ushort) + sizeof(byte) + sizeof(ushort);
+
         /// <summary>Maximum sparse RLE radiation payload. v68 RADIATION.</summary>
-        public const int RadiationGridRleMaxBytes = 81920;
+        public const int RadiationGridRleMaxBytes = RadiationGridCellCount * RadiationGridRlePacketSizeBytes;
 
         /// <summary>Maximum persisted RTG decay records. v70 RTG.</summary>
         public const int MaxRtgDecayRecords = 128;
@@ -756,6 +772,15 @@ namespace Hecton8.SaveSystem
         [FieldOffset(12)] public byte flags;
         [FieldOffset(13)] private byte _pad0;
         [FieldOffset(14)] private ushort _pad1;
+    }
+
+    [Serializable]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
+    public struct HazardZoneRuntimeDTO
+    {
+        [FieldOffset(0)] public float toxicityDose;
+        [FieldOffset(4)] public float toxicityPulseAccumulatorSeconds;
     }
 
     [Serializable]

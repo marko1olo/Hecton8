@@ -772,34 +772,34 @@ namespace Hecton8.Environment
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
         private static readonly Color MIN_AMBIENT = new Color(0.01f, 0.02f, 0.03f, 1f);
-        private static readonly Color SurfaceReadableSkyAmbientFloor = new Color(0.240f, 0.320f, 0.350f, 1f);
-        private static readonly Color SurfaceReadableEquatorAmbientFloor = new Color(0.200f, 0.280f, 0.310f, 1f);
-        private static readonly Color SurfaceReadableGroundAmbientFloor = new Color(0.120f, 0.160f, 0.180f, 1f);
+        private static readonly Color SurfaceReadableSkyAmbientFloor = new Color(0.300f, 0.380f, 0.420f, 1f);
+        private static readonly Color SurfaceReadableEquatorAmbientFloor = new Color(0.280f, 0.360f, 0.400f, 1f);
+        private static readonly Color SurfaceReadableGroundAmbientFloor = new Color(0.220f, 0.280f, 0.300f, 1f);
         private const string ProceduralSkyKeyword = "_PROCEDURALSKY_ON";
         private const string UnderwaterKeyword = "_UNDERWATER_ON";
         private const float SurfaceScatterLuminanceFloor = 0.50f;
-        private const float SurfaceOceanBaseFloorMin = 0.46f;
+        private const float SurfaceOceanBaseFloorMin = 0.50f;
         private const float SurfaceOceanBaseFloorLightSpan = 0.24f;
         private const float SurfaceOceanBaseHorizonLiftScale = 0.38f;
-        private const float SurfaceOceanBaseLuminanceFloor = 0.48f;
-        private const float SurfaceOceanShallowLuminanceFloor = 0.54f;
-        private const float SurfaceOceanShadowLuminanceFloor = 0.36f;
-        private const float SurfaceOceanShallowShadowLuminanceFloor = 0.46f;
-        private static readonly Color SurfaceOceanDaylightReadableTint = new Color(0.560f, 0.690f, 0.800f, 1f);
-        private const float SurfaceOceanBaseDaylightBlueBias = 0.18f;
-        private const float SurfaceOceanShallowDaylightBlueBias = 0.14f;
-        private const float SurfaceOceanShadowDaylightBlueBias = 0.10f;
-        private const float SurfaceOceanShallowShadowDaylightBlueBias = 0.08f;
+        private const float SurfaceOceanBaseLuminanceFloor = 0.52f;
+        private const float SurfaceOceanShallowLuminanceFloor = 0.58f;
+        private const float SurfaceOceanShadowLuminanceFloor = 0.46f;
+        private const float SurfaceOceanShallowShadowLuminanceFloor = 0.52f;
+        private static readonly Color SurfaceOceanDaylightReadableTint = new Color(0.500f, 0.660f, 0.760f, 1f);
+        private const float SurfaceOceanBaseDaylightBlueBias = 0.10f;
+        private const float SurfaceOceanShallowDaylightBlueBias = 0.08f;
+        private const float SurfaceOceanShadowDaylightBlueBias = 0.06f;
+        private const float SurfaceOceanShallowShadowDaylightBlueBias = 0.05f;
         private const float SurfaceOceanLuminanceFloorBlend = 0.86f;
         private const float SurfaceOceanShadowLuminanceFloorBlend = 0.72f;
-        private const float SurfaceOceanDiffuseShadowBlackBlend = 0.24f;
-        private const float SurfaceOceanShallowShadowBaseBlend = 0.18f;
+        private const float SurfaceOceanDiffuseShadowBlackBlend = 0.16f;
+        private const float SurfaceOceanShallowShadowBaseBlend = 0.14f;
         private const float UnderwaterScatterLuminanceFloor = 0.14f;
         private const float SharedOceanUnderwaterScatterLuminanceFloor = 0.64f;
         private const float SurfaceReadableSunIntensityFloor = 1.05f;
-        private const float SurfaceReadableAmbientIntensityFloor = 1.24f;
+        private const float SurfaceReadableAmbientIntensityFloor = 1.34f;
         private const float SurfaceReadableFogDensityCeiling = 0.001f;
-        private const float SurfaceReadableOceanDepthFogCeiling = 0.032f;
+        private const float SurfaceReadableOceanDepthFogCeiling = 0.008f;
         private const float SurfaceFogReadableLuminanceFloor = 0.58f;
         private const float SurfaceHorizonReadableLuminanceFloor = 0.62f;
         private const float SurfaceSkyReadableLuminanceFloor = 0.56f;
@@ -1065,6 +1065,7 @@ namespace Hecton8.Environment
             EnsureOceanUnderwaterPassOwnership();
             ApplyOceanMaterialBindings();
             ApplyNoirResolveGlobals();
+            ApplyInitialSurfaceDefaultsIfAboveWater();
 
             if (_runtimeVisualCallbacksActive)
             {
@@ -1094,6 +1095,20 @@ namespace Hecton8.Environment
             _lastDepthZoneProfile = null;
             _nextThermoclineAllowedTime = float.NegativeInfinity;
             _sunVisualWasDisabled = false;
+        }
+
+        private void ApplyInitialSurfaceDefaultsIfAboveWater()
+        {
+            float cameraDepth = ResolveActiveVisualCameraDepth();
+            if (ResolveUnderwaterVisualStateForCameraDepth(cameraDepth, cameraDepth))
+                return;
+
+            _cachedLightFactor = 1f;
+            _cachedCausticsStrength = 0f;
+            _cachedVisualDepth = 0f;
+            _cachedVisualIsUnderwater = false;
+            ApplySurfaceDefaults();
+            ApplySurfaceReadableRenderSettingsFloor();
         }
 
         private void EnsureGameplayCameraStackEnabled()
@@ -3988,6 +4003,10 @@ namespace Hecton8.Environment
         private void ApplyOceanMaterialBindings()
         {
             ApplyOceanMaterialBindings(oceanUnderwaterMaterial, true);
+
+            Material oceanMaterial = ResolveOceanMaterial();
+            if (oceanMaterial != null && !ReferenceEquals(oceanMaterial, oceanUnderwaterMaterial))
+                ApplyOceanMaterialBindings(oceanMaterial, false);
         }
 
         private void ApplyOceanMaterialBindings(Material targetMaterial, bool underwaterMaterial)

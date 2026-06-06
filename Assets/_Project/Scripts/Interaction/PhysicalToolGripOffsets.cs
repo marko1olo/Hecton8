@@ -55,10 +55,6 @@ namespace Hecton8.Interaction
             CacheAuthoredOffsets();
         }
 
-        private void OnDisable()
-        {
-        }
-
         private void OnDestroy()
         {
             if (ReferenceEquals(s_lastSpawnedOffsets, this))

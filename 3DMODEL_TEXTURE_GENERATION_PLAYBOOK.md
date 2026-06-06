@@ -155,7 +155,15 @@ Texture generation must scale through continuous `GlobalQualityWeight`, not bina
 
 Quality may change texture size, source bake precision, decal density, detail map intensity, and atlas page count. It must not change gameplay identity, material route ownership, prefab authority, or runtime generation law.
 
-## 8. Texture Acceptance Gates
+## 8. Runtime Truth And Hot-Path Boundary
+
+Texture source generation is offline/editor work. Runtime truth is the imported texture asset, material asset, shader/channel manifest, atlas rect, and streaming owner that consume the generated family.
+
+Runtime hot paths must not run AI texture generation, procedural pixel filling, normal/AO/MRAO derivation, compression, tile tests, atlas packing, or material-family baking. Runtime may only select already-imported variants, update predeclared shader parameters, and stream tracked texture/material handles through an owner route.
+
+`GlobalQualityWeight` may scale imported variant choice, residency, mip bias, decal/detail intensity, and optional diagnostics. It must not change material channel semantics, prefab authority, gameplay truth, save identity, or runtime generation law.
+
+## 9. Texture Acceptance Gates
 
 Before a texture family can be referenced by a generated prefab, the texture validator must test:
 
@@ -175,7 +183,7 @@ If any gate fails, the texture family must not be saved into the production asse
 
 Bad texture output is not a performance strategy. Compact lane may lower resolution and reuse atlases, but it still needs clear material read, correct roughness/normal behavior, and attractive scene response. "Optimized" blurry mud is rejected.
 
-## 9. Implementation Order
+## 10. Implementation Order
 
 Texture generation implementation must proceed in this order:
 

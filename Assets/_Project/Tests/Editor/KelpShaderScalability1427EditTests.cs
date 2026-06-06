@@ -109,6 +109,43 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void EncounterDirector_SuppressesSpawnsDuringCriticalOxygenLikeCriticalHealth()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "EncounterDirector.cs");
+            string profile = ReadProjectFile("Assets", "_Project", "Scripts", "EncounterProfile.cs");
+            string stateBody = ExtractTypeBody(source, "internal struct EncounterDirectorState");
+            string jobBody = ExtractTypeBody(source, "internal struct EncounterDirectorJob");
+            string blackBoxBody = ExtractTypeBody(source, "internal struct EncounterDirectorBlackBoxEntry");
+            string dumpBody = ExtractMethodBody(source, "private static unsafe void WriteEncounterBlackBoxRow(");
+
+            Assert.That(source, Does.Contain("private const float CriticalOxygenSpawnSuppressionThreshold = 0.15f;"));
+            Assert.That(jobBody, Does.Contain("float playerHealth01 = SanitizeNormalized01(PlayerHealthNormalized);"));
+            Assert.That(jobBody, Does.Contain("float playerOxygen01 = SanitizeNormalized01(PlayerOxygenNormalized);"));
+            Assert.That(jobBody, Does.Contain("float avgFrameTimeMs = SanitizeNonNegativeFinite(AvgFrameTimeMs);"));
+            Assert.That(source, Does.Contain("float health01 = SanitizeNormalized01(frameContext.PlayerHealthNormalized);"));
+            Assert.That(source, Does.Contain("float oxygen01 = SanitizeNormalized01(frameContext.PlayerOxygenNormalized);"));
+            Assert.That(jobBody, Does.Contain("bool healthCriticalSuppressed = playerHealth01 <= CriticalHealthSpawnSuppressionThreshold;"));
+            Assert.That(jobBody, Does.Contain("bool oxygenCriticalSuppressed = playerOxygen01 <= CriticalOxygenSpawnSuppressionThreshold;"));
+            Assert.That(jobBody, Does.Contain("bool survivalCriticalSuppressed = healthCriticalSuppressed || oxygenCriticalSuppressed;"));
+            Assert.That(jobBody, Does.Contain("bool forceSpawn = !survivalCriticalSuppressed && ForcedThreatCount > 0 && ForcedThreatClass >= 0;"));
+            Assert.That(jobBody, Does.Contain("TryResolveDesiredThreatClass(state.IntensityLevel, state.TokenBudget, survivalCriticalSuppressed"));
+            Assert.That(jobBody, Does.Contain("ResolveCheapestAllowedCost(state.IntensityLevel, survivalCriticalSuppressed"));
+            Assert.That(source, Does.Contain("AllowsSurvivalCriticalSpawn"));
+            Assert.That(source, Does.Not.Contain("AllowsCriticalHealthSpawn"));
+            Assert.That(source, Does.Not.Contain("bool criticalHealthSuppressed = PlayerHealthNormalized <= CriticalHealthSpawnSuppressionThreshold;"));
+            Assert.That(source, Does.Not.Contain("if (AvgFrameTimeMs > LoadShedThresholdMs)"));
+            Assert.That(profile, Does.Contain("survival-critical health or oxygen window"));
+            Assert.That(stateBody, Does.Contain("public uint SurvivalCriticalFlags;"));
+            Assert.That(stateBody, Does.Contain("public uint SurvivalCriticalSeverityPermille;"));
+            Assert.That(blackBoxBody, Does.Contain("public uint SurvivalCriticalFlags;"));
+            Assert.That(blackBoxBody, Does.Contain("public uint SurvivalCriticalSeverityPermille;"));
+            Assert.That(source, Does.Contain("const int rowBytes = 56;"));
+            Assert.That(dumpBody, Does.Contain("WriteUInt32LittleEndian(target, 44, entry.SurvivalCriticalFlags);"));
+            Assert.That(dumpBody, Does.Contain("WriteUInt32LittleEndian(target, 48, entry.SurvivalCriticalSeverityPermille);"));
+            Assert.That(dumpBody, Does.Contain("WriteUInt32LittleEndian(target, 52, entry.ActivePhase);"));
+        }
+
+        [Test]
         public void TetherVisuals_BlendDearLieLineContinuously()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "TetherInstance.cs");

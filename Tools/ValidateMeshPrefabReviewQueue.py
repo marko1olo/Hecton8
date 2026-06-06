@@ -14,9 +14,14 @@ QUEUE_PATH = ROOT / "Docs/AssetAudit/MESH_PREFAB_REVIEW_QUEUE_20260605.csv"
 PREFAB_PROPERTIES_PATH = ROOT / "Docs/AssetAudit/PREFAB_FILE_TECHNICAL_PROPERTIES_20260605.csv"
 
 BAKED_FLORA_PREFIX = "Assets/_Project/Prefabs/Nature/Flora/Baked"
+PROCEDURAL_FINALS_PREFIX = "Assets/_Project/Prefabs/Nature/Rocks/ProceduralFinals"
+BIOFORGE_KELP_PREFIX = "Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows/Kelp"
+BIOFORGE_TUBE_CORAL_PREFIX = "Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows/TubeCoral"
+BIOFORGE_POROUS_ROCK_PREFIX = "Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows/PorousRock"
 WORLD_PROXY_PREFIX = "Assets/_Project/Prefabs/WorldProceduralProxy"
 PLACEHOLDER_PREFIX = "Assets/_Project/Prefabs/WorldRuntime/ProceduralPlaceholders"
 CONSTRUCTION_PREFIX = "Assets/_Project/Prefabs/Construction/Final"
+OCEAN_PREFAB_NAMES = ("Hecton Ocean.prefab", "Ocean_Crest.prefab")
 WORLD_PROXY_MATERIAL_PREFIX = "Assets/_Project/Art/Materials/WorldProceduralProxy"
 MATERIAL_GUID_PATTERN = re.compile(r"fileID:\s*2100000,\s*guid:\s*([0-9a-fA-F]{32}),\s*type:\s*2")
 META_GUID_PATTERN = re.compile(r"^guid:\s*([0-9a-fA-F]{32})", re.MULTILINE)
@@ -27,6 +32,7 @@ class QueueRow:
     queue_order: str
     priority: str
     pool: str
+    representative_paths: str
     static_evidence: str
     required_proof: str
     reject_condition: str
@@ -41,6 +47,10 @@ class PrefabRow:
     builtin_primitive_mesh_ref_count: int
     mesh_collider_token_count: int
     policy_flags: str
+    folder: str = ""
+    mesh_filter_token_count: int = 0
+    renderer_token_count: int = 0
+    material_token_count: int = 0
 
 
 def display_path(path: Path) -> str:
@@ -73,6 +83,7 @@ def load_queue(path: Path = QUEUE_PATH) -> list[QueueRow]:
                 queue_order=row["queue_order"],
                 priority=row["priority"],
                 pool=row["pool"],
+                representative_paths=row["representative_paths"],
                 static_evidence=row["static_evidence"],
                 required_proof=row["required_proof"],
                 reject_condition=row["reject_condition"],
@@ -89,9 +100,13 @@ def load_prefab_rows(path: Path = PREFAB_PROPERTIES_PATH) -> list[PrefabRow]:
         rows.append(
             PrefabRow(
                 path=row["path"],
+                folder=row.get("folder", ""),
                 has_lodgroup_token=parse_bool(row["has_lodgroup_token"]),
                 builtin_primitive_mesh_ref_count=parse_int(row["builtin_primitive_mesh_ref_count"]),
+                mesh_filter_token_count=parse_int(row.get("mesh_filter_token_count", "0")),
+                renderer_token_count=parse_int(row.get("renderer_token_count", "0")),
                 mesh_collider_token_count=parse_int(row["mesh_collider_token_count"]),
+                material_token_count=parse_int(row.get("material_token_count", "0")),
                 policy_flags=row["policy_flags"],
             )
         )
@@ -102,16 +117,65 @@ def rows_under(rows: list[PrefabRow], prefix: str) -> list[PrefabRow]:
     return [row for row in rows if row.path.startswith(prefix)]
 
 
+def rows_by_path(rows: list[PrefabRow]) -> dict[str, PrefabRow]:
+    return {row.path: row for row in rows}
+
+
+def resolve_representative_prefabs(row: QueueRow, prefabs: list[PrefabRow]) -> list[PrefabRow]:
+    prefabs_by_path = rows_by_path(prefabs)
+    resolved: list[PrefabRow] = []
+    seen: set[str] = set()
+    context_parent = ""
+
+    for raw_token in row.representative_paths.split(";"):
+        token = raw_token.strip()
+        if not token:
+            continue
+
+        candidate_paths: list[str] = []
+        if token.startswith("Assets/"):
+            normalized = token.replace("\\", "/")
+            if normalized.endswith(".prefab"):
+                candidate_paths.append(normalized)
+                context_parent = str(Path(normalized).parent).replace("\\", "/")
+            else:
+                context_parent = str(Path(normalized).parent).replace("\\", "/")
+                candidate_paths.extend(prefab.path for prefab in rows_under(prefabs, normalized))
+        elif token.endswith(".prefab") and context_parent:
+            candidate_paths.append(f"{context_parent}/{token}")
+        elif context_parent:
+            sibling_prefix = f"{context_parent}/{token}"
+            candidate_paths.extend(prefab.path for prefab in rows_under(prefabs, sibling_prefix))
+
+        for candidate_path in candidate_paths:
+            prefab = prefabs_by_path.get(candidate_path)
+            if prefab is None or prefab.path in seen:
+                continue
+            resolved.append(prefab)
+            seen.add(prefab.path)
+    return resolved
+
+
+def require_row_text(row: QueueRow, field_name: str, needle: str) -> None:
+    value = getattr(row, field_name)
+    if needle.lower() not in value.lower():
+        raise SystemExit(f"FAIL: queue row {row.pool} {field_name} missing required text: {needle}")
+
+
 def validate_queue_rows(rows: list[QueueRow]) -> None:
     if len(rows) != 8:
         raise SystemExit(f"FAIL: expected 8 queue rows, got {len(rows)}")
 
     by_pool = {row.pool: row for row in rows}
     required = (
+        "ProceduralFinals geology",
         "Flora Baked pool",
+        "BioForge shallows kelp/tube coral",
+        "BioForge porous rock",
         "WorldProceduralProxy visible placement",
         "WorldRuntime ProceduralPlaceholders",
         "Construction Final product-face pool",
+        "External/prototype material refs",
     )
     for pool in required:
         if pool not in by_pool:
@@ -129,6 +193,66 @@ def validate_queue_rows(rows: list[QueueRow]) -> None:
         raise SystemExit("FAIL: WorldRuntime placeholder row must reject visible route placement")
     if by_pool["Flora Baked pool"].disposition != "CANDIDATE_MESH_POOL_BLOCKED_BY_MATERIAL":
         raise SystemExit("FAIL: Baked flora row must remain material-blocked candidate")
+    if by_pool["BioForge porous rock"].disposition != "ROUTE_REJECT_UNTIL_COLLIDER_PROOF":
+        raise SystemExit("FAIL: PorousRock row must remain collider-proof rejected")
+    if by_pool["External/prototype material refs"].disposition != "READBACK_REQUIRED":
+        raise SystemExit("FAIL: external/prototype material row must remain READBACK_REQUIRED")
+
+
+def validate_row_backing_evidence(
+    queue: list[QueueRow],
+    prefabs: list[PrefabRow],
+) -> tuple[int, int, int, int]:
+    by_pool = {row.pool: row for row in queue}
+
+    geology = rows_under(prefabs, PROCEDURAL_FINALS_PREFIX)
+    if len(geology) != 49:
+        raise SystemExit(f"FAIL: ProceduralFinals geology row expects 49 prefabs, got {len(geology)}")
+    if any(not prefab.has_lodgroup_token for prefab in geology):
+        raise SystemExit("FAIL: ProceduralFinals geology row claims LODGroup coverage but a prefab lacks it")
+    if any(prefab.builtin_primitive_mesh_ref_count != 0 for prefab in geology):
+        raise SystemExit("FAIL: ProceduralFinals geology row claims no primitive refs but a prefab has one")
+    if any(prefab.mesh_collider_token_count != 0 for prefab in geology):
+        raise SystemExit("FAIL: ProceduralFinals geology row claims no MeshCollider but a prefab has one")
+
+    geology_representatives = resolve_representative_prefabs(by_pool["ProceduralFinals geology"], prefabs)
+    if len(geology_representatives) != 3:
+        raise SystemExit(
+            "FAIL: ProceduralFinals geology representative paths must resolve to 3 scanned prefabs, "
+            f"got {len(geology_representatives)}"
+        )
+    require_row_text(by_pool["ProceduralFinals geology"], "required_proof", "collider proxy")
+    require_row_text(by_pool["ProceduralFinals geology"], "required_proof", "LOD")
+
+    bioforge = rows_under(prefabs, BIOFORGE_KELP_PREFIX) + rows_under(prefabs, BIOFORGE_TUBE_CORAL_PREFIX)
+    if len(bioforge) != 150:
+        raise SystemExit(f"FAIL: BioForge kelp/tube coral row expects 150 prefabs, got {len(bioforge)}")
+    if any(not prefab.has_lodgroup_token for prefab in bioforge):
+        raise SystemExit("FAIL: BioForge kelp/tube coral row claims LODGroup coverage but a prefab lacks it")
+    if any(prefab.builtin_primitive_mesh_ref_count != 0 for prefab in bioforge):
+        raise SystemExit("FAIL: BioForge kelp/tube coral row claims no primitive refs but a prefab has one")
+    require_row_text(by_pool["BioForge shallows kelp/tube coral"], "required_proof", "final material")
+    require_row_text(by_pool["BioForge shallows kelp/tube coral"], "reject_condition", "proxy material")
+
+    porous = rows_under(prefabs, BIOFORGE_POROUS_ROCK_PREFIX)
+    if len(porous) != 50:
+        raise SystemExit(f"FAIL: BioForge porous rock row expects 50 prefabs, got {len(porous)}")
+    if any(not prefab.has_lodgroup_token for prefab in porous):
+        raise SystemExit("FAIL: BioForge porous rock row claims LODGroup coverage but a prefab lacks it")
+    if any(prefab.mesh_collider_token_count <= 0 for prefab in porous):
+        raise SystemExit("FAIL: BioForge porous rock row claims MeshCollider refs but a prefab lacks them")
+    require_row_text(by_pool["BioForge porous rock"], "required_proof", "Collider proxy")
+    require_row_text(by_pool["BioForge porous rock"], "reject_condition", "Complex MeshCollider")
+
+    ocean = [prefab for prefab in prefabs if any(prefab.path.endswith(name) for name in OCEAN_PREFAB_NAMES)]
+    if len(ocean) != 2:
+        raise SystemExit(f"FAIL: external/prototype material row expects 2 ocean prefab evidence rows, got {len(ocean)}")
+    if not any(prefab.builtin_primitive_mesh_ref_count > 0 for prefab in ocean):
+        raise SystemExit("FAIL: external/prototype material row expects at least one ocean primitive-risk prefab")
+    require_row_text(by_pool["External/prototype material refs"], "required_proof", "third-party asset integrity")
+    require_row_text(by_pool["External/prototype material refs"], "required_proof", "no runtime material clones")
+
+    return len(geology), len(bioforge), len(porous), len(ocean)
 
 
 def validate_prefab_counts(prefabs: list[PrefabRow]) -> tuple[int, int, int, int]:
@@ -221,17 +345,21 @@ def validate_mesh_prefab_review_queue() -> tuple[int, int, int, int, int]:
     queue = load_queue()
     prefabs = load_prefab_rows()
     validate_queue_rows(queue)
+    geology, bioforge, porous, ocean = validate_row_backing_evidence(queue, prefabs)
     baked, proxy, placeholders, construction = validate_prefab_counts(prefabs)
     baked_proxy_refs = validate_proxy_material_coverage(prefabs)
-    return baked, baked_proxy_refs, proxy, placeholders, construction
+    return baked, baked_proxy_refs, proxy, placeholders, construction, geology, bioforge, porous, ocean
 
 
 def main() -> None:
-    baked, baked_proxy_refs, proxy, placeholders, construction = validate_mesh_prefab_review_queue()
+    baked, baked_proxy_refs, proxy, placeholders, construction, geology, bioforge, porous, ocean = (
+        validate_mesh_prefab_review_queue()
+    )
     print(
         "MESH_PREFAB_REVIEW_QUEUE_OK "
         f"baked={baked} baked_proxy_refs={baked_proxy_refs} "
-        f"proxy={proxy} placeholders={placeholders} construction={construction}"
+        f"proxy={proxy} placeholders={placeholders} construction={construction} "
+        f"geology={geology} bioforge={bioforge} porous={porous} ocean={ocean}"
     )
 
 

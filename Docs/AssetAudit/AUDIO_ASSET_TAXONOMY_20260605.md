@@ -29,8 +29,8 @@ No Unity run, import edit, prefab edit, build, play mode, profiler, listening pa
 ## P0 Listening And Remediation Order
 
 1. MusicDirector mixer routing: `MusicDirectorConfig_Global.asset` has null `_musicMixerGroup` and `_stingerMixerGroup`; routing proof is blocked before music taste can be judged.
-2. `Underwater Ambient.wav` direct refs: `Player.prefab` lines 137 and 239; 193s, `Streaming`, `Vorbis`, Q0.45; owner/release route and warning ducking are not proven.
-3. `dive_splash.wav` direct refs: `Player.prefab` lines 1066 and 1067; 1.729s ADPCM; duplicate/direct player route needs lifecycle classification.
+2. `Underwater Ambient.wav` prior direct refs: current source has `Player.prefab` lines 137 and 239 cleared to `{fileID: 0}`; 193s, `Streaming`, `Vorbis`, Q0.45; Unity prefab readback, owner/removal ledger, and warning ducking proof are absent.
+3. `dive_splash.wav` prior direct refs: current source has the line 1066 and 1067 splash fields removed from `Player.prefab`; 1.729s ADPCM; Unity prefab readback and water-contact playback route proof are absent.
 4. Player breath loop: `breathing breath in and out 1.mp3`; waveform peak -0.16 dBFS and RMS -14.03 dBFS; reject generic SFX classification.
 5. Suit interior loop: `inside suit sounds (too loud).wav`; filename and waveform review mark first-person mix debt.
 
@@ -61,7 +61,7 @@ That hybrid route is a recommendation, not stable authority. Mass import edits r
 
 ## Direct AudioClip Reference Risk
 
-Static profile usage found 28 direct `AudioClip` refs in `Assets/_Project/Prefabs/Player.prefab`, including `Underwater Ambient.wav`, footsteps, `dive_splash.wav`, and UI feedback clips.
+Current static prefab scan finds 24 direct `AudioClip` refs in `Assets/_Project/Prefabs/Player.prefab`: footsteps and UI feedback clips. Prior `Underwater Ambient.wav` and `dive_splash.wav` direct refs are source-cleared in the working tree and still need Unity prefab readback plus route proof.
 
 Direct prefab serialization does not prove Addressables ownership, ref-count/release route, playback route, hot-path allocation behavior, mixer/DSP route, or audio-thread safety. Future owners must classify these refs by route and either move them into owned lifecycle paths or document scoped exceptions with proof.
 

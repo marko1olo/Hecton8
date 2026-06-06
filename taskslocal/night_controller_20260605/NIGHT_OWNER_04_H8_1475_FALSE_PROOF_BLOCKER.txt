@@ -32,6 +32,10 @@ Evidence basis:
 - Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md
 - Docs/Orchestration/UNITY_OWNER_DIALOGUE_REVIEW_20260605.md
 - Docs/Orchestration/H8_1475_PROOF_TOOL_INTEGRITY_SYNTHESIS_20260605.md
+- Fermat residue classification, 2026-06-06: `H8VisualProofCapture1912.cs` currently mutates Crest/MapMagic/Terrain before capture and must not be h8_1475 base.
+- Docs/Orchestration/UNITY_WORKER_DIALOGUE_REFERENCE_REJECTION_20260606.md
+- Docs/Orchestration/MODIFIED_SOURCE_DIFF_STATIC_TRIAGE_20260606.md
+- Docs/Logs/UnityCaptureSurfaceCrestActualTerrainProbeO_20260606_030119.log
 
 Tasks:
 1. Read owner 01 and owner 03 outputs. If active player/HUD/tool route is unknown, stop with BLOCKED_BY_RUNTIME_AUTHORITY.
@@ -47,12 +51,24 @@ Tasks:
 
 Hard blocker:
 - Do not use `H8VisualProofCapture1912` as canonical h8_1475 acceptance tooling. Current source emits h8_1912/h8_1913/h8_1914 raw MCP diagnostics, not h8_1475 proof packets, and its crest/terrain/haze/quarantine paths mutate editor scene or render state.
+- The current `PumpMapMagicGeneration(..., 90.0f)` change in `CaptureSurfaceCrestRecoveryProbeAndExit` makes the rejected h8_1914 diagnostic route longer, not more valid. It is not h8_1475 proof.
+- Diagnostic-only labeling is not enough if the method remains proof-looking. Future proof-tool work must isolate this method behind an explicit diagnostic-only owner/guard or revert the 90-second pump if no named diagnostic owner needs it.
+- The new h8_1475 harness must be separate under `Assets/_Project/Scripts/Editor/Proof/` and must hard-reject `SaveScene`, `MarkSceneDirty`, `ApplyModifiedPropertiesWithoutUndo`, `SetActive`, renderer enable/disable, transform mutation, `sharedMaterial`, temp probes, MapMagic `Refresh`/`StartGenerate`/`tiles.Pin`, generation pumping, raw MCP PNG substitution, binary quality labels, short logs, and player-capture overclaim.
+- ProbeO is a current hard blocker: it records a moving-worktree Csc compile failure in `SeamGapDitherRenderer.cs`, `Tundra build failed`, `Editor compiler errors found. Will not reload assemblies`, and Unity `MemoryLeaks`. Planck static recheck says current source no longer contains the missing symbol, so do not patch blindly; h8_1475 still cannot start until Owner01 has fresh idle process samples and clean compile/import evidence.
+- Avicenna runtime-authority block applies: active production player/HUD/PDA/pause/save/walk/swim route proof is absent. Scenic or landscape-only proof remains invalid even if the surface looks better.
+- Hooke spawn-route block applies: static search found no runtime/bootstrap/scene reference to production `Player.prefab` GUID `1c4db7a430141e5408e01b6ce4ed19d7`; current bootstrap/spawner routes publish or reposition existing objects and can accept the scene-local shell named `Player`.
+- `Tools/ValidatePlayerRouteStaticEvidence.py --require-production-static` currently rejects the player route with 21 blockers after hardening/current-source recheck. h8_1475 cannot start until this static guard passes or each blocker is repaired/classified and replaced by stronger Unity readback/runtime proof.
+- Current hardened blocker classes include: scene-local shell player, missing exact production `Player.prefab` instance binding, missing scene HUD/Internal HUD/Suit HUD/movement/interaction refs, missing runtime production prefab GUID, existing-Rigidbody spawner route, bootstrap tagged-shell acceptance, bootstrap mark/publish without production validation, spawner bootstrap-transform Rigidbody fallback, Player.prefab PDA panel/tab nulls, pause menu null, swim contract null, HUD presentation nulls, HUD render camera disabled/unbound, HUD extension nulls, disabled/null HUD compositor, forced screen-space overlay, and Suit HUD overlay/null runtime refs.
+- Scenic proof, h8_1914, water/sky/terrain screenshots, or surface beauty cannot waive player-route blockers. Required superseding proof is no-mutation Unity readback plus runtime/player evidence for active prefab source identity, enabled runtime components, dispatcher registrations, input, walking, surface/underwater swimming, ascend/descend, camera, HUD render carrier, PDA, pause, save/load, interaction prompt, and GC/profiler where applicable.
+- Owner10 gate dependency: before any h8_1475 harness is accepted, the no-mutation proof-harness static gate must exist and pass against the candidate proof tooling. `H8VisualProofCapture1912` currently remains diagnostic-only because it mutates scene/render/terrain/MapMagic state and writes raw MCP artifacts. A new h8_1475 harness cannot inherit that route or its proof-looking names.
 
 Acceptance:
 - Complete manifest/checksum/log/console/dirty/readback/screenshots/comparison packet.
 - No raw MCP PNG substitution.
 - No landscape-only proof.
 - No missing player/HUD/tool route.
+- No compile/import failure or Unity `MemoryLeaks` payload in the proof log window.
+- Static player-route guard passes or is superseded by explicit Unity readback proving the production prefab route active.
 
 Rejection:
 - slab water, green seam haze, black undercuts, acid terrain, weak Aegir, no wet edge, no underwater route density, overlay HUD, primitive product face.

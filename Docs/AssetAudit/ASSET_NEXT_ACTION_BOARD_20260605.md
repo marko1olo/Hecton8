@@ -14,7 +14,7 @@ CSV companion: `Docs/AssetAudit/ASSET_NEXT_ACTION_BOARD_20260605.csv`.
 2. Water/foam contact: rejected foam is active-route reachable. Start with `TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.csv`, `TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.csv`, `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`, and `ASSET_OWNER_06_UNITY_READBACK_EXECUTION_PACKET.md`.
 3. Proxy flora/coral/kelp: `WorldProceduralProxy` material contamination reaches active world evidence. Start with texture blocker detail, visual/mesh taxonomy, mesh prefab queue, and `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`.
 4. MusicDirector routing: null music/stinger mixer refs block route-level audio judgment. Start with `AUDIO_PROFILE_ROUTE_MATRIX_20260605.csv`.
-5. Player prefab audio direct refs: 28 direct refs need owner/release/playback route. Start with `AUDIO_DIRECT_REF_DETAIL_20260605.csv`.
+5. Player prefab audio direct refs: 24 remaining direct refs need owner/release/playback route; prior `Underwater Ambient.wav` and `dive_splash.wav` direct refs are source-cleared but pending Unity prefab readback and route proof. Start with `AUDIO_DIRECT_REF_DETAIL_20260605.csv`.
 6. Import/Addressables authority: audio import policy and Addressables groups remain planning only. Start with exception/group plan CSVs and do not mutate settings.
 
 ## P1 Order
@@ -43,9 +43,9 @@ Current static parse anchor:
 
 - `Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`
 - 62 curated CSV files.
-- 14656 data rows.
+- 14699 data rows.
 - `ASSET_NEXT_ACTION_BOARD_20260605.csv`: 12 rows.
-- `ASSET_FRONT_FILE_MAP_20260605.csv`: 149 rows.
+- `ASSET_FRONT_FILE_MAP_20260605.csv`: 191 rows.
 - `AUDIO_ROUTE_OWNER_REQUIREMENT_MATRIX_20260605.csv`: 13 rows.
 - `AUDIO_MIX_PRIORITY_DECISION_QUEUE_20260605.csv`: 10 rows.
 - `AUDIO_CRITICAL_CUE_COVERAGE_MATRIX_20260605.csv`: 12 rows.
@@ -56,6 +56,7 @@ Current static parse anchor:
 - `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv`: 4 rows.
 - `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv`: 10 rows.
 - `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv`: 10 rows.
+- `TEXTURE_ROLE_TECHNICAL_LEDGER_REJECTED blockers=3`: flora/coral streaming mips mismatch and `ui_oxygen_mask` sRGB mismatch; static role-vs-ledger guard only.
 - `BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605.csv`: sparse sidecar, not in the zero-empty curated set.
 
 Unity gate remains blocked while active compiler/import/runtime processes or CPU pressure are present. Latest sample for this board showed CPU `59` with active `dotnet` and `Unity Hub`.

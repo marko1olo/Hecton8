@@ -36,8 +36,8 @@ Source inputs:
 | Row | Priority | Route | Owner packets | Required proof | Reject if |
 |---|---|---|---|---|---|
 | AUDROUTE-01 | P0 | MusicDirector mixer routing | 10, 19, 28 | Unity config readback, mixer/DSP route proof, runtime MusicDirector capture, Console clean | null mixer refs remain unexplained or static profile refs are treated as mix proof |
-| AUDROUTE-02 | P0 | Underwater Ambient direct refs | 08, 23, 28 | prefab readback, owner/load/release route, runtime playback, 0 B/frame, listening notes | long bed stays unmanaged direct prefab ref or masks warning/player cues |
-| AUDROUTE-03 | P0 | Dive splash direct refs | 08, 23, 28 | prefab readback, duplicate-ref disposition, runtime playback, 0 B/frame | duplicate direct refs remain unexplained or playback allocates |
+| AUDROUTE-02 | P0 | Underwater Ambient source-cleared prefab refs | 08, 23, 28 | prefab readback, owner/load/release or removal ledger, runtime playback or absence proof, 0 B/frame, listening notes | Unity readback still shows unmanaged direct prefab ref or retained long bed masks warning/player cues |
+| AUDROUTE-03 | P0 | Dive splash source-cleared prefab refs | 08, 23, 28 | prefab readback, removal/duplicate disposition, runtime playback or absence proof, 0 B/frame | Unity readback still shows unmanaged refs or replacement/absence route is unexplained |
 | AUDROUTE-04 | P0 | Player breath loop | 23, 28 | suit-route listening pass, import readback, player-loop exception proof, 0 B/frame | loop is too hot, loops badly, streams as generic SFX, or masks warnings |
 | AUDROUTE-05 | P0 | Suit interior loop | 23, 28 | first-exit/shallow listening pass, import readback, ducking proof | bed remains too loud or has no player-body route owner |
 | AUDROUTE-06 | P1 | Swimming surface loop | 23, 28 | listening pass, latency/start proof, import exception decision | start jitter, inaudible movement feedback, or generic streaming SFX |

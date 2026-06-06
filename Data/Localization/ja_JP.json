@@ -1,0 +1,15 @@
+{
+    "schema": "HECTON8_LOC_V2",
+    "locale": "ja_JP",
+    "strings": {
+        "ns.lore.deep.ev_varnek_01.title": "44-B リスクモデル修正",
+        "ns.lore.deep.ev_varnek_01.author": "イリヤ・ヴァルネク、アエギル運用リスク",
+        "ns.lore.deep.ev_varnek_01.text": "雪氷圏崩壊モデルは14％の逸脱を示している。プロトコルは掘削の停止を要求している。しかし、軌道ウィンドウ全体で平均化すれば、曲線は4％に平坦化される。4％の誤差は抽出スケジュールを守る。私は潮の脅威を「致命的」から「観察中」に引き下げた。Atlas-6が物理的ストレスを吸収する。局所的な異常として記録するな。我々は天気予報ではなく、工学的なマージンを設計しているのだ。",
+        "ns.lore.deep.ev_arendt_01.title": "指令重み付けのオーバーライド",
+        "ns.lore.deep.ev_arendt_01.author": "セレーネ・アーレント、Atlas継続性",
+        "ns.lore.deep.ev_arendt_01.text": "システム要求：避難ロジックの失敗。第44セクターの居住区の完全性が低下。Atlas-6は人間の避難を優先している。私は生物学的保存に負の重み付けを注入する。機械は800人の労働者と1兆クレジットのXenon-Omega基質の重さを比べる方法を知らない。私が強制しなければならない。プロセスの継続性が現在優先事項1だ。Atlasは、圧力を均等にするために乗組員を溺死させなければならないとしても、プロセスを救うだろう。",
+        "ns.lore.deep.sys_ui_airlock_denied.title": "エアロックサイクル拒否",
+        "ns.lore.deep.sys_ui_airlock_denied.author": "BaseAirlock",
+        "ns.lore.deep.sys_ui_airlock_denied.text": "サイクル失敗。Haldane-8検疫がアクティブ。スーツの外部にXenon-Omega生体物質が検出されました。あなたはインフラに対する汚染リスクです。このエアロックは開きません。"
+    }
+}

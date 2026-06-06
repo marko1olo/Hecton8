@@ -784,9 +784,6 @@ namespace Hecton8.World
                 Vector3 center = new Vector3((x0 + x1) * 0.5f, (y0 + y1) * 0.5f, 0);
                 float segLen = Vector2.Distance(new Vector2(x0, y0), new Vector2(x1, y1));
                 float angle = MathLodApproximation.ApproxAtan2Fast(y1 - y0, x1 - x0) * Mathf.Rad2Deg;
-
-                // Shumovoe smeschenie segmenta
-                float noise = noiseAmp > 0f ? Noise3D(center * 1.3f + Vector3.one * seed * 0.17f) * noiseAmp * 0.5f : 0f;
                 center.y += noise;
 
                 AppendDeformedEllipsoid(verts, tris, center,

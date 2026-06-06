@@ -4,6 +4,12 @@ Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
 Evidence class: STATIC_DOC / AUTHORING_STANDARD
 Scope: DeepReach modules, airlocks, wreckage shells, submarine components, doors, panels, corridors, pipes, supports, and industrial structure meshes.
 
+## First-20 Route Hook
+
+- First-20 moment: first shelter exit frame, airlock/dock machinery, pressure door, pump corridor, shallow wreck fragment, return-path hardware, or exposed industrial route cue.
+- Route blocker removed: prevents opening-route machinery from reading as boxes with panels, primitive socket math, or texture-only NASA-punk dressing.
+- Proof class: STATIC_DOC until generated package manifest, wireframe/collider proof, Unity import evidence, material proof, compact capture, and route screenshot exist.
+
 ## 1. Shape Language
 
 Generated hard-surface assets must look pressure-rated, serviceable, and physically manufactured. The base shape may be a box, cylinder, arch, capsule, or WFC module, but the saved mesh must carry bevels, wall thickness, panels, sockets, trim, vents, seams, welds, bolted flanges, gasket grooves, cable ports, maintenance plates, and corrosion catchments. A plain cube with material color is rejected even if it satisfies collision and socket math.
@@ -126,7 +132,15 @@ Hard-surface collision uses compound primitives. Preferred order:
 
 Visual bevels, bolts, wires, panels, and dents never enter collision. Collision children must be named `COL_*`, be generated offline, and use assigned physics layers before prefab save.
 
-## 9. Rejection Gates
+## 9. Runtime Truth And Hot-Path Boundary
+
+Hard-surface generation is an editor/offline authoring route. Runtime truth is the serialized prefab, scene owner, socket IDs, interaction anchors, collider proxies, material references, and LOD chain that consume the generated output.
+
+Runtime hot paths must not generate module meshes, bevels, sockets, UVs, wear masks, collider proxies, or material instances. Runtime systems may only select already-authored LODs/material variants, update approved material parameters, or stream approved prefab assets through an owner route. Socket IDs, attach planes, collider truth, route blockers, and interaction anchors must not change by quality lane.
+
+`GlobalQualityWeight` may scale presentation density, decal richness, shader detail, LOD distance, and optional diagnostics. It must not change gameplay collision, socket identity, prefab authority, route availability, or save identity.
+
+## 10. Rejection Gates
 
 Reject the generated asset if:
 
@@ -138,7 +152,7 @@ Reject the generated asset if:
 - Any socket seam creates a visible crack or overlap.
 - Any generated module cannot state its LOD triangle counts and collision proxy count.
 
-## 10. Proof Artifacts
+## 11. Proof Artifacts
 
 Hard-surface generation must output a compact proof packet before the prefab is accepted:
 
@@ -155,6 +169,6 @@ Hard-surface generation must output a compact proof packet before the prefab is 
 
 Static documents may only claim `STATIC VERIFIED`. Unity import, batching, collider, and profiler claims remain `PENDING UNITY/PROFILER VERIFICATION` until measured.
 
-## 11. Acceptance Sentence
+## 12. Acceptance Sentence
 
 A hard-surface generated asset is accepted only when it reads as pressure-rated manufactured machinery before textures are applied, proves bevels and weighted normals, keeps sockets and collision deterministic, uses shared PBR material routes, ships a full LOD/proxy chain, and provides the proof packet above.

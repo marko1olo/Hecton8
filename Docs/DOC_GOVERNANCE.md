@@ -38,6 +38,9 @@ Root may contain these active text anchors and standing route bibles:
 - `MASTER_RELEASE_WORK_PLAN.md`
 - `BUILD_PLAYTEST_ISSUES.md`
 - standing root route bibles listed under `Routes` in `PROJECT_BIBLES.md`
+- `GEMINI.md` as a third-party Gemini/Antigravity shim only, not project law
+- `HECTON8_ORCHESTRATOR.md` for explicit standalone batch/controller/orchestration work
+- `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md` for explicit local VS Code Codex GUI control work
 
 Active docs belong in `Docs/` or `Docs/ARCHITECTURE/`.
 

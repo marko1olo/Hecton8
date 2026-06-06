@@ -57,5 +57,78 @@ Proof required:
 - active player/HUD/input/camera readback;
 - dirty-state before/after.
 
+Latest controller blocker refresh:
+- At `2026-06-06 03:01 +04`, CPU was approximately 94 percent with `Unity`, `dotnet`, and `UnityPackageManager` active. This is `PROCESS_GATE_RED`.
+- Later refresh saw CPU 87-100 percent with active `dotnet` and `VBCSCompiler`; this is still `PROCESS_GATE_RED`.
+- Latest logs include `UnityCaptureSurfaceCrestActualTerrainProbeN_20260606_025336.log` and `UnityCaptureSurfaceCrestActualTerrainProbeO_20260606_030119.log`; these are not proof packets.
+- ProbeO contains `Modification date of Assets\_Project\Scripts\SeamGapDitherRenderer.cs changed while running Csc`, then `CS0103` for `_registeredToDispatcher` at `SeamGapDitherRenderer.cs(322,21)`, `Tundra build failed`, `Editor compiler errors found. Will not reload assemblies`, and a Unity `MemoryLeaks` payload.
+- Planck static recheck found current `SeamGapDitherRenderer.cs` no longer contains `_registeredToDispatcher`; current line 322 is `_registeredLateFrame = false;`. Treat ProbeO as stale moving-worktree compile evidence until a fresh stable-worktree compile proves clean.
+- Owner01 must still record whether `SeamGapDitherRenderer` dispatcher hot-swap creates stale registration risk and whether its throttled visual-sync `transform.Find(...)` path is acceptable under profiler/GC proof.
+- Current h8_1914 metadata remains `surface_actual_terrain_crest_recovery_probe_editor_only_unsaved` with temp haze active, terrain shell active, erosion disabled, anomaly disabled, and unlinked anomaly/sediment inputs.
+- Do not attempt Unity readback until three fresh CPU/process samples pass, compiler/import/package activity is absent, and a fresh clean compile/import state exists after the moving-worktree `SeamGapDitherRenderer.cs` snapshot.
+- ProbeR adds another moving-worktree compile wall: `UnityCaptureSurfaceCrestActualTerrainProbeR_20260606_033941.log` records repeated `CS0136` in `HectonHazardManager.cs(87,39)` plus Csc input mutation. Current source line 87 uses `existingZoneManager`, and `UnityCompileAfterHazardFix_20260606_034456.log` later records Tundra success, but active `dotnet` kept the process gate red. Owner01 must require a fresh idle-process clean compile/import, not only this later success log.
+- ProbeS/ProbeT do not green the gate: `UnityCaptureSurfaceCrestActualTerrainProbeS_20260606_034800.log` shows a short Tundra success, while `UnityCaptureSurfaceCrestActualTerrainProbeT_20260606_034946.log` is a Unity startup/package-discovery lane. Latest process refresh still had CPU 100 with `Unity`, `dotnet`, `UnityPackageManager`, and `UnityShaderCompiler` active.
+- Later controller refresh saw CPU `100` with no scoped `Unity`/`UnityPackageManager`/`UnityShaderCompiler`/`dotnet`/`csc`/`MSBuild` process rows returned. Gate is still red by CPU alone.
+- `Docs/Orchestration/UNITY_READBACK_P0_FIELD_MATRIX_20260605.md` now contains historical surface anchors and proof-tool quarantine rules. Owner01 must collect no-mutation readback against those anchors before any surface repair or h8_1475 attempt.
+- 2026-06-06 05:17-05:32 refresh:
+  - `Docs\Logs\UnityCompileClean_20260606_0515_current_import.log` is missing and cannot be cited.
+  - `Docs\Logs\UnityCompileClean_20260606_051745_stable_import.log` has Tundra success markers and final Unity return code 0, but it is compile/import evidence only. It also contains licensing/token warnings, Csc input mutation markers for `PlayerCriticalProceduralAudioRenderer.cs` and `HectonPlayerMovement.cs`, and multiple invalid assembly load skips. It does not green runtime, Play Mode, visual, profiler, graph, player, or h8_1475 proof.
+  - Latest process sample still had `VBCSCompiler` PID 19600 active and CPU `100`; this is `PROCESS_GATE_RED`.
+  - Latest dirty-set sample was `11406` rows and moving; this blocks any "stable checkpoint" or integration acceptance claim.
+  - `UnityCaptureSurfaceCrestActualTerrainProbe_20260606_052914.log` relaunches `H8VisualProofCapture1912.CaptureSurfaceCrestRecoveryProbeAndExit` and records script compilation requested because AssetDatabase observed changes. It is not a proof packet.
+  - `UnityCaptureSurfaceCrestActualTerrainProbe_20260606_053214.log` relaunches the same h8_1914 capture route. It is not a proof packet.
+  - Do not attempt Unity readback until CPU/process samples pass, no compiler/import/package process exists, the dirty set is frozen/classified, and the latest log window has no mutation-during-Csc, invalid assembly, MemoryLeaks, compile/import, or diagnostic h8_1914 markers.
+- 2026-06-06 06:04-06:06 refresh:
+  - Process gate red: active `Unity`, `Unity.ILPP.Runner`, multiple `Unity.ILPP.Trigger`, `UnityPackageManager`, `dotnet`, and `UnityAutoQuitter` rows; CPU `100`.
+  - Dirty-set sample grew to `11438` rows.
+  - `UnityCaptureSurfaceCrestActualTerrainProbe_20260606_054748.log` again launches `H8VisualProofCapture1912.CaptureSurfaceCrestRecoveryProbeAndExit`, writes `h8_1914_surface_crest_recovery_probe.png/.txt`, then emits Unity `MemoryLeaks`.
+  - `python -B Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbe_20260606_054748.log --metadata Docs\Screenshots\MCP\h8_1914_surface_crest_recovery_probe.txt --require-production` returned `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`, including `unity-memory-leaks`.
+  - `UnityCaptureSurfaceCrestActualTerrainProbe_20260606_060418.log` again launches the same h8_1914 route, records `Tundra requires additional run`, and has no complete capture output.
+  - `python -B Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestActualTerrainProbe_20260606_060418.log --metadata Docs\Screenshots\MCP\h8_1914_surface_crest_recovery_probe.txt --require-production` returned `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`, including `capture-output-missing`.
+  - These logs are external h8_1914 diagnostic relaunch evidence. They do not green process, compile, terrain, visual, runtime, or h8_1475 proof.
+- 2026-06-06 process gate tooling:
+  - Added `Tools/ValidateUnityProcessGate.py` and `Tools/test_validate_unity_process_gate.py`.
+  - `python -B -m unittest Tools.test_validate_unity_process_gate` ran 4 tests OK.
+  - `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=63.0 cpu_over=1 blocker_processes=0 threshold=50.0`.
+  - Gate remains red by CPU alone; no Unity, MCP, Play, import, build, profiler, scene, prefab, material, or raw YAML action is allowed from this evidence.
+- 2026-06-06 three-sample process gate:
+  - `python -B Tools\ValidateUnityProcessGate.py --samples 3 --interval-seconds 10 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=3 max_sample_cpu=100.0 cpu_over=3 blocker_processes=15 threshold=50.0`.
+  - Sample 1: CPU `96.0`, `dotnet` blocker PID `20592`.
+  - Sample 2: CPU `100.0`, seven `dotnet` blockers.
+  - Sample 3: CPU `100.0`, seven `dotnet` blockers.
+  - Gate is red by CPU and blocker processes. Unity/MCP/Play/import/build/profiler/scene/prefab/material/raw-YAML work remains forbidden.
+
 Low/Middle/High/Ultra:
 Same gameplay truth on all lanes. Higher lanes may collect richer proof; lower lanes still require active route truth.
+
+2026-06-06 cursor 134 process refresh:
+- `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=94.0 cpu_over=1 blocker_processes=6 threshold=50.0`.
+- Blockers: `dotnet pid=3228`, `Unity pid=19252`, `Unity.ILPP.Runner pid=9352`, `UnityAutoQuitter pid=14616`, `UnityPackageManager pid=12932`, `UnityShaderCompiler pid=16528`.
+- Unity/MCP/Play/import/build/profiler/scene/prefab/material/raw-YAML work remains forbidden from this evidence.
+
+2026-06-06 cursor 135 process/log refresh:
+- Latest external April-route log `Docs\Logs\UnityCaptureSurfaceCrestAprilRouteProbe_EditorGPU_20260606_075327.log` reached `Tundra build success`, wrote `Docs\Screenshots\MCP\h8_1915_surface_crest_april_route_probe.png/.txt`, then emitted Unity `MemoryLeaks`.
+- `h8_1915` is not Owner01 green evidence. It is produced by `H8VisualProofCapture1912`, which remains diagnostic-only and mutating by static guardrail.
+- `python -B Tools\ValidateTerrainProbeEvidence.py --log Docs\Logs\UnityCaptureSurfaceCrestAprilRouteProbe_EditorGPU_20260606_075327.log --metadata Docs\Screenshots\MCP\h8_1915_surface_crest_april_route_probe.txt --require-production` returns `TERRAIN_PROBE_EVIDENCE_REJECTED blockers=9`, including non-production `captureTruth`.
+- Unity/MCP/Play/import/build/profiler/scene/prefab/material/raw-YAML work remains forbidden from this evidence.
+
+2026-06-06 cursor 136 compaction/process refresh:
+- `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=90.0 cpu_over=1 blocker_processes=6 threshold=50.0`.
+- Blockers: `dotnet`, `Unity`, `Unity.ILPP.Runner`, `Unity.ILPP.Trigger`, `UnityAutoQuitter`, and `UnityPackageManager`.
+- This refresh supersedes any transient single-sample green. Unity/MCP/Play/import/build/profiler/scene/prefab/material/raw-YAML work remains forbidden.
+
+2026-06-06 cursor 137 process resample:
+- `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=82.0 cpu_over=1 blocker_processes=5 threshold=50.0`.
+- Blockers: `Unity`, `Unity.ILPP.Runner`, `Unity.ILPP.Trigger`, `UnityAutoQuitter`, and `UnityPackageManager`.
+- Gate remains red by CPU and Unity/import/package activity.
+
+2026-06-06 cursor 138 process resample:
+- `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=54.0 cpu_over=1 blocker_processes=5 threshold=50.0`.
+- Blockers: `dotnet`, `Unity`, `Unity.ILPP.Runner`, `UnityAutoQuitter`, and `UnityPackageManager`.
+- Gate remains red. Do not use Unity/MCP/Play/import/build/profiler/scene/prefab/material/raw-YAML.
+
+2026-06-06 cursor 139 current compaction refresh:
+- `python -B Tools\ValidateUnityProcessGate.py --samples 1 --no-fail` returned `UNITY_PROCESS_GATE_RED samples=1 max_sample_cpu=100.0 cpu_over=1 blocker_processes=6 threshold=50.0`.
+- Blockers: `dotnet pid=7672`, `Unity pid=19032`, `Unity.ILPP.Runner pid=14924`, `UnityAutoQuitter pid=14280`, `UnityPackageManager pid=14908`, and `UnityShaderCompiler pid=10868`.
+- This supersedes any older one-sample green or stale cleanup claim. Unity/MCP/Play/import/build/profiler/scene/prefab/material/raw-YAML work remains forbidden.
+- Required next green-window readback remains unchanged: process samples, blocker table, editor state, console summary, loaded scene table, player/HUD/input/camera readback, and dirty-state before/after.

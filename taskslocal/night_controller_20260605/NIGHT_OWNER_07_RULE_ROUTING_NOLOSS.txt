@@ -51,3 +51,24 @@ Rejection:
 
 Low/Middle/High/Ultra:
 Not visual. Same authority routing on all hardware.
+
+2026-06-06 cursor 134 pasted dialogue routing refresh:
+- The pasted dialogue's old claim that project `AGENTS.md` is approximately 832 lines / 74 KB is stale for current file state.
+- Current file sizes: root `AGENTS.md` 37716 bytes, `.codexrules/AGENTS.md` 37716 bytes, `.github/agents/AGENTS.md` 37716 bytes, global `C:\Users\danat\.codex\AGENTS.md` 3727 bytes.
+- Root `AGENTS.md`, `.codexrules/AGENTS.md`, and `.github/agents/AGENTS.md` are byte-identical by SHA256 `C5B2D3C222D1F6EA78D0652FF1B8512428986C5C6323AAFD3DB6E2B7136B9FE0`.
+- Global Codex `AGENTS.md` is already a thin HECTON router and preserves its previous full body at `C:\Users\danat\.codex\recovery_backups\AGENTS_full_before_router_20260605.md`.
+- `.agents-skills/README.md` reports `80` mandates. `python -B Tools/Docs/TestAgentRuleRouting.py --help` executed the routing check and returned `AGENT_RULE_ROUTING_CHECK=PASS`, `mandates=80`, `root_agents_lines=409`.
+- Correct Owner07 work is not a new broad rewrite. Correct work is preserving the current no-loss routing, verifying `.agent/rules` stubs remain non-authority, keeping mirrors synced, and preventing stale generic Unity rules from leaking back into active authority.
+- Do not edit root `AGENTS.md` unless explicitly assigned. If future shortening/splitting is assigned, use `Docs/AGENT_AUTHORITY_ROUTING.md` No-Loss Split Protocol and preserve detailed text in live route bibles, mandate files, or named recovery/provenance artifacts before removal.
+
+2026-06-06 cursor 135 Carson Cursor-rule drift repair:
+- Carson static audit found live stale generic rules under `.cursor`, not `.agent/rules`.
+- High-risk active files before repair: `.cursor/index.mdc`, `.cursor/rules/code-organization.mdc`, `.cursor/rules/unity-core.mdc`, `.cursor/rules/unity-architecture.mdc`, plus triggered/manual stale rules for performance, UI, input, networking, testing, and ECS.
+- Rejected patterns: `GameManager.Instance`, `UnityEngine.Pool`, `EventChannel`, `YourCompany`, hot lifecycle examples, `Resources.Load`, Netcode default, and UI Toolkit-only stance.
+- Controller preserved old Cursor bodies under `Docs/DEPRECATED/CursorRulesHistorical_20260606/`.
+- Controller replaced `.cursor/index.mdc` with a thin always-on HECTON router and `.cursor/rules/*.mdc` with historical stubs. `.cursor/rules/AGENTS.md` remains the Cursor shim.
+- `Docs/AGENT_AUTHORITY_ROUTING.md` now classifies Cursor `.mdc` files and archive provenance.
+- `Tools/Docs/TestAgentRuleRouting.py` now checks Cursor `.mdc` drift, archive pointers, and stale generic rule patterns.
+- Verification: `python -B Tools\Docs\TestAgentRuleRouting.py` returned `AGENT_RULE_ROUTING_CHECK=PASS mandates=80 root_agents_lines=409`; stale generic scan over `.cursor` returned no matches; `alwaysApply: true` remains only in `.cursor/index.mdc`; `git diff --check` reported LF/CRLF warnings only.
+- Root `AGENTS.md` was not edited.
+- New synthesis: `Docs/Orchestration/CURSOR_RULES_DRIFT_STATIC_AUDIT_20260606.md`.

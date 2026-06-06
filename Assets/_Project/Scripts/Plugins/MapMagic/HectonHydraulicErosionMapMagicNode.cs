@@ -29,15 +29,11 @@ namespace MapMagic.Nodes.MatrixGenerators
         private const string SedimentLabel = "sediment";
         private const string SiltLabel = "silt";
         private const string WearLabel = "wear";
-        private const string HeightDeltaQueueLabel = "heightDeltas";
-        private const string HeightDeltaBudgetLabel = "heightDeltaBudget";
         private const int FullDropletTelemetryThreshold = 1000000;
         private const int DraftDropletTelemetryThreshold = 250000;
         private const int MinDropletsPerScheduleSlice = 100;
         private const int MaxDropletsPerScheduleSlice = 1000;
         private const int CellCountTelemetryThreshold = 1048576;
-        private const int MaxTrackedHeightDeltaQueueCapacity = HydraulicErosionScheduler.RecommendedMaxTrackedHeightDeltaQueueCapacity;
-        private const int MaxHeightDeltaApplyPerJob = 8192;
         private const float BarrierStallTelemetryThresholdMs = 25f;
         private const uint DropletBudgetWarningHash = 0x48594544u;
         private const uint CellBudgetWarningHash = 0x48594543u;
@@ -262,8 +258,11 @@ namespace MapMagic.Nodes.MatrixGenerators
             NativeArray<float> sediment = default;
             NativeArray<float> silt = default;
             NativeArray<float> wear = default;
-            NativeQueue<HydraulicErosionHeightDelta> heightDeltas = default;
-            NativeArray<int> heightDeltaBudget = default;
+            int heightARegistrationId = 0;
+            int heightBRegistrationId = 0;
+            int sedimentRegistrationId = 0;
+            int siltRegistrationId = 0;
+            int wearRegistrationId = 0;
             JobHandle handle = default;
             bool handleScheduled = false;
 
@@ -274,7 +273,17 @@ namespace MapMagic.Nodes.MatrixGenerators
                 sediment = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 silt = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 wear = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                RegisterTempJobBuffers(heightA, heightB, sediment, silt, wear);
+                RegisterTempJobBuffers(
+                    heightA,
+                    heightB,
+                    sediment,
+                    silt,
+                    wear,
+                    out heightARegistrationId,
+                    out heightBRegistrationId,
+                    out sedimentRegistrationId,
+                    out siltRegistrationId,
+                    out wearRegistrationId);
 
                 for (int i = 0; i < cellCount; i++)
                     heightA[i] = math.saturate(src.arr[i]);
@@ -496,13 +505,11 @@ namespace MapMagic.Nodes.MatrixGenerators
                 if (handleScheduled)
                     DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
 
-                DisposeTracked(ref heightA);
-                DisposeTracked(ref heightB);
-                DisposeTracked(ref sediment);
-                DisposeTracked(ref silt);
-                DisposeTracked(ref wear);
-                DisposeTrackedQueue(ref heightDeltas);
-                DisposeTracked(ref heightDeltaBudget);
+                DisposeTracked(ref heightA, ref heightARegistrationId);
+                DisposeTracked(ref heightB, ref heightBRegistrationId);
+                DisposeTracked(ref sediment, ref sedimentRegistrationId);
+                DisposeTracked(ref silt, ref siltRegistrationId);
+                DisposeTracked(ref wear, ref wearRegistrationId);
             }
         }
 
@@ -538,47 +545,18 @@ namespace MapMagic.Nodes.MatrixGenerators
             NativeArray<float> heightB,
             NativeArray<float> sediment,
             NativeArray<float> silt,
-            NativeArray<float> wear)
+            NativeArray<float> wear,
+            out int heightARegistrationId,
+            out int heightBRegistrationId,
+            out int sedimentRegistrationId,
+            out int siltRegistrationId,
+            out int wearRegistrationId)
         {
-            NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(silt, NativeMemoryOwner, SiltLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
-        }
-
-        private static void RegisterTempJobQueue(NativeQueue<HydraulicErosionHeightDelta> queue, int expectedCapacity)
-        {
-            NativeMemorySentinel.RegisterNativeQueue(
-                queue,
-                expectedCapacity,
-                NativeMemoryOwner,
-                HeightDeltaQueueLabel,
-                NativeAllocationLifetime.TempJob);
-        }
-
-        private static void RegisterTempJobBudget(NativeArray<int> budget)
-        {
-            NativeMemorySentinel.RegisterNativeArray(
-                budget,
-                NativeMemoryOwner,
-                HeightDeltaBudgetLabel,
-                NativeAllocationLifetime.TempJob);
-        }
-
-        private static int ResolveHeightDeltaQueueCapacity(int dropletsPerSlice, int dropletLifetime)
-        {
-            return HydraulicErosionScheduler.ResolveTrackedHeightDeltaQueueCapacity(
-                dropletsPerSlice,
-                dropletLifetime,
-                1024,
-                MaxTrackedHeightDeltaQueueCapacity);
-        }
-
-        private static int ResolveHeightDeltaApplyBudget(int dropletsPerSlice, int dropletLifetime)
-        {
-            int queueCapacity = ResolveHeightDeltaQueueCapacity(dropletsPerSlice, dropletLifetime);
-            return math.clamp(queueCapacity / 16, 1024, MaxHeightDeltaApplyPerJob);
+            heightARegistrationId = NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
+            heightBRegistrationId = NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
+            sedimentRegistrationId = NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
+            siltRegistrationId = NativeMemorySentinel.RegisterNativeArray(silt, NativeMemoryOwner, SiltLabel, NativeAllocationLifetime.TempJob);
+            wearRegistrationId = NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
         }
 
         private static void PublishColdPathBudgetWarnings(int cellCount, int resolvedDroplets, bool isDraft)
@@ -612,24 +590,15 @@ namespace MapMagic.Nodes.MatrixGenerators
                 barrierMilliseconds);
         }
 
-        private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
+        private static void DisposeTracked<T>(ref NativeArray<T> array, ref int registrationId) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
+            NativeMemorySentinel.Unregister(registrationId);
+            registrationId = 0;
             array.Dispose();
             array = default;
-        }
-
-        private static void DisposeTrackedQueue(ref NativeQueue<HydraulicErosionHeightDelta> queue)
-        {
-            if (!queue.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, HeightDeltaQueueLabel);
-            queue.Dispose();
-            queue = default;
         }
 
         private static float ResolveCellSizeMeters(MatrixWorld matrix)

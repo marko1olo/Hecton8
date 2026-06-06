@@ -242,7 +242,6 @@ namespace Hecton8.Gameplay.Mining
         private void OnDisable()
         {
             InteractableRegistry.InvalidateTree(this);
-            CancelTerrainSnap();
             CompleteExtractionJobForBarrier();
             UnregisterRuntimeHooks();
             ReleaseActiveInstance();
@@ -251,7 +250,6 @@ namespace Hecton8.Gameplay.Mining
         private void OnDestroy()
         {
             InteractableRegistry.InvalidateTree(this);
-            CancelTerrainSnap();
             CompleteExtractionJobForBarrier();
             UnregisterRuntimeHooks();
             ReleaseActiveInstance();
@@ -278,7 +276,6 @@ namespace Hecton8.Gameplay.Mining
             _lastCarveUnscaledTime = _lastMacroUpdateUnscaledTime;
             ClearInventoryQuantities();
             ClearBlackBox();
-            CancelTerrainSnap();
             CaptureAnchorFromTransform();
             ScheduleTerrainSnap();
             InteractableRegistry.RegisterTree(this);
@@ -291,7 +288,6 @@ namespace Hecton8.Gameplay.Mining
         public void OnDespawn()
         {
             InteractableRegistry.InvalidateTree(this);
-            CancelTerrainSnap();
             CompleteExtractionJobForBarrier();
             UnregisterRuntimeHooks();
             ReleaseActiveInstance();
@@ -316,7 +312,6 @@ namespace Hecton8.Gameplay.Mining
         public void ColdTick()
         {
             double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
-            TryFinalizeTerrainSnapNoWait();
             TryFinalizeExtractionJobNoWait();
             CaptureAnchorFromTransform();
             UpdateMathLodHysteresis(now);
@@ -492,7 +487,6 @@ namespace Hecton8.Gameplay.Mining
         /// </summary>
         public void RestoreMacroRecord(in DeployableSdfDrillMacroRecord record)
         {
-            CancelTerrainSnap();
             CompleteExtractionJobForBarrier();
             CacheRuntimeDependencies();
             AllocateNativeState();
@@ -574,7 +568,6 @@ namespace Hecton8.Gameplay.Mining
                 return;
             }
 
-            CancelTerrainSnap();
             _cachedTransform.SetPositionAndRotation(runtimePosition, runtimeRotation);
             _snappedToTerrain = false;
             SetFlag(DeployableSdfDrillFlags.Snapped, false);
@@ -758,7 +751,6 @@ namespace Hecton8.Gameplay.Mining
 
             if (hydrateAfterRebind)
             {
-                CancelTerrainSnap();
                 CompleteExtractionJobForBarrier();
             }
 
@@ -835,10 +827,6 @@ namespace Hecton8.Gameplay.Mining
             _snappedToTerrain = true;
             SetFlag(DeployableSdfDrillFlags.Snapped, true);
             CaptureAnchorFromRuntimePosition(point);
-        }
-
-        private void TryFinalizeTerrainSnapNoWait()
-        {
         }
 
         private int ResolveSnapProbeMask()
@@ -983,10 +971,6 @@ namespace Hecton8.Gameplay.Mining
             _pendingRuntimePosition = position;
             _pendingRuntimeRotation = rotation;
             _pendingRuntimePoseDirty = true;
-        }
-
-        private void CancelTerrainSnap()
-        {
         }
 
         private void CaptureAnchorFromTransform()

@@ -13,6 +13,8 @@ namespace Hecton8.Audio.Editor
     public static class AdvancedAcousticsSmokeTester
     {
         private const string RendererPath = "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs";
+        private const string MainMenuScenePath = "Assets/_Project/Scenes/01_MAIN_MENU.unity";
+        private const string MasterMixerPath = "Assets/_Project/MasterMixer.mixer";
         private const string SpatialAudioPath = "Assets/_Project/Scripts/SpatialAudioManager.cs";
         private const string PhysicsApplyPath = "Assets/_Project/Scripts/PhysicsApplySystem.cs";
         private const string SpectrumSystemPath = "Assets/_Project/Scripts/Visor/SpectrumSystem.cs";
@@ -39,6 +41,9 @@ namespace Hecton8.Audio.Editor
         private const string PlayerStressVfxPath = "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs";
         private const string DeepPsychosisPath = "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs";
         private const string HectonMusicDirectorPath = "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs";
+        private const string HectonMusicDirectorConfigPath = "Assets/_Project/Data/Audio/Music/Configs/MusicDirectorConfig_Global.asset";
+        private const string SoundscapeSystemPath = "Assets/_Project/Scripts/World/SoundscapeSystem.cs";
+        private const string SettingsManagerPath = "Assets/_Project/Scripts/UI/SettingsManager.cs";
         private const string AdaptiveStemMixerPath = "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs";
         private const string DynamicMusicGranularSynthPath = "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs";
         private const string DirectorAIPath = "Assets/_Project/Scripts/HectonDirectorAI.cs";
@@ -67,6 +72,8 @@ namespace Hecton8.Audio.Editor
             builder.AppendLine("[AdvancedAcousticsSmokeTester]");
 
             string renderer = ReadAssetText(RendererPath, builder, ref failureCount);
+            string mainMenuScene = ReadAssetText(MainMenuScenePath, builder, ref failureCount);
+            string masterMixer = ReadAssetText(MasterMixerPath, builder, ref failureCount);
             string spatial = ReadAssetText(SpatialAudioPath, builder, ref failureCount);
             string physicsApply = ReadAssetText(PhysicsApplyPath, builder, ref failureCount);
             string spectrumSystem = ReadAssetText(SpectrumSystemPath, builder, ref failureCount);
@@ -93,6 +100,9 @@ namespace Hecton8.Audio.Editor
             string playerStressVfx = ReadAssetText(PlayerStressVfxPath, builder, ref failureCount);
             string deepPsychosis = ReadAssetText(DeepPsychosisPath, builder, ref failureCount);
             string musicDirector = ReadAssetText(HectonMusicDirectorPath, builder, ref failureCount);
+            string musicDirectorConfig = ReadAssetText(HectonMusicDirectorConfigPath, builder, ref failureCount);
+            string soundscapeSystem = ReadAssetText(SoundscapeSystemPath, builder, ref failureCount);
+            string settingsManager = ReadAssetText(SettingsManagerPath, builder, ref failureCount);
             string adaptiveStemMixer = ReadAssetText(AdaptiveStemMixerPath, builder, ref failureCount);
             string dynamicMusicSynth = ReadAssetText(DynamicMusicGranularSynthPath, builder, ref failureCount);
             string directorAI = ReadAssetText(DirectorAIPath, builder, ref failureCount);
@@ -346,11 +356,18 @@ namespace Hecton8.Audio.Editor
                 string adaptiveDrain = ExtractMethodBody(adaptiveStemMixer, "private void DrainSignalInputs()");
                 string adaptiveQuality = ExtractMethodBody(adaptiveStemMixer, "private float ResolveGlobalQualityWeightFromSnapshot()");
                 string adaptiveLaneConfig = ExtractMethodBody(adaptiveStemMixer, "private static void EnsureDynamicMusicSignalLaneCold()");
+                string adaptiveUnityMix = ExtractMethodBody(adaptiveStemMixer, "private void ApplyMixFrameToUnityAudio(");
+                string adaptiveMusicPush = ExtractMethodBody(adaptiveStemMixer, "private void PushDynamicMusicSignal(");
                 AssertContains(adaptiveStemMixer, "BufferID.ShinobuScalabilityState", "Adaptive stem mixer reads continuous quality from the vault-owned scalability state", builder, ref failureCount);
                 AssertContains(adaptiveQuality, "state.GlobalQualityWeight", "Adaptive stem quality resolver consumes the continuous global quality weight", builder, ref failureCount);
                 AssertNotContains(adaptiveDrain, "SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot()", "Adaptive stem mixer does not drain binary scalability events for quality", builder, ref failureCount);
                 AssertNotContains(adaptiveStemMixer, "ResolveQualityTierFallbackWeight", "Adaptive stem mixer has no quality-tier fallback mapper", builder, ref failureCount);
                 AssertContains(adaptiveLaneConfig, "lowTierFrameSignals: 64", "Dynamic music scalar signal lane keeps full minimum-quality frame capacity", builder, ref failureCount);
+                AssertContains(adaptiveUnityMix, "PushDynamicMusicSignal(tension, depthMeters, quality);", "Adaptive stem bridge forwards only context scalars into the dynamic music lane", builder, ref failureCount);
+                AssertContains(adaptiveMusicPush, "DynamicMusicScalarSignal.FlagSuppressReactiveImpulses", "Adaptive stem bridge cannot wake reactive dynamic music punches", builder, ref failureCount);
+                AssertContains(adaptiveMusicPush, "signal.DamageImpulse01 = 0f", "Adaptive stem bridge clears legacy damage impulses before publishing dynamic music scalars", builder, ref failureCount);
+                AssertContains(adaptiveMusicPush, "signal.MusicActivity01 = 0f", "Adaptive stem bridge does not claim foreground music activity", builder, ref failureCount);
+                AssertNotContains(adaptiveUnityMix, "frame.IoPressure01", "Adaptive stem bridge no longer maps IO pressure into dynamic music damage impulses", builder, ref failureCount);
             }
 
             if (dynamicMusicSynth.Length > 0)
@@ -358,16 +375,37 @@ namespace Hecton8.Audio.Editor
                 string dynamicLaneConfig = ExtractMethodBody(dynamicMusicSynth, "private static void EnsureDynamicMusicSignalLaneCold()");
                 string dynamicAudioCallback = ExtractMethodBody(dynamicMusicSynth, "private void OnAudioFilterRead(float[] data, int channels)");
                 string dynamicLateFrame = ExtractMethodBody(dynamicMusicSynth, "public void LateFrameTick()");
+                string dynamicMixerRoute = ExtractMethodBody(dynamicMusicSynth, "private void ApplyAudioHostMixerRoute()");
+                string dynamicSignalDrain = ExtractMethodBody(dynamicMusicSynth, "private void DrainSignalInputs()");
+                string dynamicSchedule = ExtractMethodBody(dynamicMusicSynth, "private void ScheduleSynthJobs(");
+                string dynamicMockJob = ExtractMethodBody(dynamicMusicSynth, "private unsafe struct GenerateMockTensionJob");
                 AssertContains(dynamicLaneConfig, "lowTierFrameSignals: 64", "Dynamic music granular synth keeps full minimum-quality scalar lane capacity", builder, ref failureCount);
                 AssertContains(dynamicMusicSynth, "ResolveGlobalQualityWeightFromSnapshot()", "Dynamic music granular synth derives quality from the continuous quality snapshot", builder, ref failureCount);
+                AssertContains(dynamicMixerRoute, "musicDirector.DedicatedMusicMixerGroup", "Dynamic music synth follows the active music director mixer route before ambient fallback", builder, ref failureCount);
+                AssertContains(dynamicMixerRoute, "ResolveFallbackMusicHostVolume01()", "Dynamic music synth applies MusicVolume as a fallback host-volume multiplier when no dedicated music route exists", builder, ref failureCount);
+                AssertContains(dynamicMixerRoute, "audioService.AmbientGroup", "Dynamic music synth keeps AmbientGroup as its final route fallback", builder, ref failureCount);
+                AssertContains(dynamicSignalDrain, "bool signalIsMusicDirectorScalar", "Dynamic music synth classifies scalar source once per signal", builder, ref failureCount);
+                AssertContains(dynamicSignalDrain, "if (signalIsMusicDirectorScalar || !receivedMusicDirectorScalar)", "Dynamic music synth lets the music director outrank fallback scalar sources", builder, ref failureCount);
+                AssertContains(dynamicSignalDrain, "else if (!receivedMusicDirectorScalar && signal.MusicActivity01 > 0f)", "Fallback music activity cannot overwrite a director scalar in the same frame", builder, ref failureCount);
+                AssertContains(dynamicSignalDrain, "FlagSuppressReactiveImpulses", "Dynamic music synth honors director emergency suppression before scheduling music punches", builder, ref failureCount);
+                AssertContains(dynamicSignalDrain, "_externalMusicActivity01 = 0f", "Dynamic music synth clears external activity during emergency suppression", builder, ref failureCount);
+                AssertContains(dynamicSignalDrain, "!_allowMockPlaybackWithoutDirector", "Dynamic music synth does not let raw damage signals wake music without a recent director scalar", builder, ref failureCount);
+                AssertContains(dynamicSchedule, "mockJob.SuppressReactiveImpulses", "Dynamic music synth carries suppression into the scheduled scalar job", builder, ref failureCount);
+                AssertContains(dynamicMockJob, "scalar.StingerImpulse = SuppressReactiveImpulses != 0", "Dynamic music scalar job clears stored stinger tail under emergency/no-director suppression", builder, ref failureCount);
                 AssertContains(dynamicAudioCallback, "TryResolvePublishedAudioThreadCopyBuffer", "Dynamic music managed callback only reads the published audio-thread copy buffer", builder, ref failureCount);
                 AssertContains(dynamicAudioCallback, "UnsafeUtility.MemCpy(destination, source", "Dynamic music managed callback copies prebuilt interleaved samples only", builder, ref failureCount);
                 AssertContains(dynamicLateFrame, "PublishAudioThreadCopyBufferLateFrame()", "Dynamic music publishes a dedicated audio-thread copy buffer from LateFrame", builder, ref failureCount);
+                AssertNotContains(dynamicMusicSynth, "PlayerStressSignal", "Dynamic music synth does not read player stress directly; the music director owns stress-to-activity policy", builder, ref failureCount);
                 AssertNotContains(dynamicAudioCallback, "TryAcquire", "Dynamic music managed callback must not acquire DataVault or mutation guards", builder, ref failureCount);
+                AssertNotContains(dynamicAudioCallback, "DataVault", "Dynamic music managed callback must not touch DataVault state", builder, ref failureCount);
+                AssertNotContains(dynamicAudioCallback, "GlobalRegistry", "Dynamic music managed callback must not query runtime registries", builder, ref failureCount);
                 AssertNotContains(dynamicAudioCallback, "ScheduleSynthJobs", "Dynamic music managed callback must not schedule synthesis work", builder, ref failureCount);
+                AssertNotContains(dynamicAudioCallback, ".Schedule(", "Dynamic music managed callback must not schedule jobs", builder, ref failureCount);
+                AssertNotContains(dynamicAudioCallback, "JobHandle", "Dynamic music managed callback must not observe or complete jobs", builder, ref failureCount);
                 AssertNotContains(dynamicAudioCallback, "GranularSynthesisJob", "Dynamic music managed callback must not synthesize samples", builder, ref failureCount);
                 AssertNotContains(dynamicAudioCallback, "Stopwatch", "Dynamic music managed callback must not measure timing on the audio thread", builder, ref failureCount);
                 AssertNotContains(dynamicAudioCallback, "AudioSettings", "Dynamic music managed callback must not query Unity audio settings on the audio thread", builder, ref failureCount);
+                AssertNotContains(dynamicAudioCallback, "ResolveElapsedMicroseconds", "Dynamic music managed callback must not call timing helpers", builder, ref failureCount);
             }
 
             if (indirectVegetationRenderer.Length > 0)
@@ -470,6 +508,39 @@ namespace Hecton8.Audio.Editor
                 string musicReboundRuntime = ExtractMethodBody(musicDirector, "private void CacheReboundRuntimeService(");
                 string musicAcousticDrain = ExtractMethodBody(musicDirector, "private void DrainAcousticZoneSignal()");
                 string musicSynthRuntime = ExtractMethodBody(musicDirector, "private void EnsureProceduralSynthRuntime()");
+                string musicResolveProfile = ExtractMethodBody(musicDirector, "private HectonMusicBiomeProfile ResolveProfile(");
+                string musicSoundscapeProfile = ExtractMethodBody(musicDirector, "private HectonMusicBiomeProfile ResolveSoundscapeTierProfile(");
+                string musicActivityUpdate = ExtractMethodBody(musicDirector, "private void UpdateProceduralMusicActivity(");
+                string musicForceOpen = ExtractMethodBody(musicDirector, "private bool ShouldForceProceduralMusicOpen()");
+                string musicWait = ExtractMethodBody(musicDirector, "private void BeginProceduralWait(");
+                string musicPhrase = ExtractMethodBody(musicDirector, "private float ResolveProceduralPhraseSeconds(");
+                string musicActivityTarget = ExtractMethodBody(musicDirector, "private float ResolveProceduralMusicActivityTarget01()");
+                string musicScalarPublish = ExtractMethodBody(musicDirector, "private void PublishDynamicMusicScalars(");
+                string musicStopScalarPublish = ExtractMethodBody(musicDirector, "private void PublishProceduralMusicStopSignal()");
+                string musicOverrideStart = ExtractMethodBody(musicDirector, "private void ForceOverrideTrackInternal(");
+                string musicStopInternal = ExtractMethodBody(musicDirector, "private void StopMusicInternal(");
+                string musicSoundscapeContext = ExtractMethodBody(musicDirector, "public void SetSoundscapeTierContext(");
+                string musicLayerRouting = ExtractMethodBody(musicDirector, "private void UpdateLayerRouting(");
+                string musicLayerApply = ExtractMethodBody(musicDirector, "private void ApplyLayerMixerState(");
+                string musicLayerNormalize = ExtractMethodBody(musicDirector, "private static float NormalizedLayerValueToDb(");
+                string musicLayerTryApply = ExtractMethodBody(musicDirector, "private bool TryApplyLayerMixerParameter(");
+                string musicLayerReset = ExtractMethodBody(musicDirector, "private void ResetLayerMixerStateCache()");
+                string musicResolveTension = ExtractMethodBody(musicDirector, "private float ResolveTension01()");
+                string musicPlayerStressRefresh = ExtractMethodBody(musicDirector, "private void RefreshPlayerCriticalStressSignal()");
+                string musicEmergencyDominance = ExtractMethodBody(musicDirector, "private float ResolveEmergencyAudioDominance01()");
+                string musicEmergencyGate = ExtractMethodBody(musicDirector, "private bool IsEmergencyBreathDominant()");
+                string musicVocalWarningDuck = ExtractMethodBody(musicDirector, "private void RefreshVocalWarningMusicDucking()");
+                string musicForegroundSpeechApply = ExtractMethodBody(musicDirector, "private float ApplyForegroundSpeechMusicDuck01(");
+                string musicForegroundSpeechActive = ExtractMethodBody(musicDirector, "private bool IsForegroundSpeechActive()");
+                string musicForegroundSpeechRefresh = ExtractMethodBody(musicDirector, "private void RefreshForegroundSpeechMusicDucking()");
+                string musicNarrativeAudioLogDuck = ExtractMethodBody(musicDirector, "private void RefreshNarrativeAudioLogMusicDucking()");
+                string musicForegroundSpeechResolve = ExtractMethodBody(musicDirector, "private float ResolveForegroundSpeechMusicDuck01()");
+                string musicVocalWarningResolve = ExtractMethodBody(musicDirector, "private static float ResolveVocalWarningMusicDuck01(");
+                string musicVocalWarningStale = ExtractMethodBody(musicDirector, "private void RefreshVocalWarningRuntimeIfStale()");
+                string musicVocalWarningResolver = ExtractMethodBody(musicDirector, "private IVocalWarningSystem ResolveVocalWarningSystem()");
+                string soundscapeSlowTick = ExtractMethodBody(soundscapeSystem, "public void SlowTick()");
+                string soundscapeDepthTier = ExtractMethodBody(soundscapeSystem, "void IBiomeMatrixEventListener.OnDepthTierChanged(");
+                string soundscapeSyncMusic = ExtractMethodBody(soundscapeSystem, "private void SyncMusicDirectorSoundscapeContext(");
                 AssertContains(musicDirector, "ResolvePlayerRuntimeContext()", "Music director player context uses a bounded cached resolver", builder, ref failureCount);
                 AssertContains(musicDirector, "ResolveAudioService()", "Music director mixer routing uses cached audio-service resolution", builder, ref failureCount);
                 AssertContains(musicDirector, "ResolveAcousticZone()", "Music director base context uses cached acoustic-zone resolution", builder, ref failureCount);
@@ -487,15 +558,97 @@ namespace Hecton8.Audio.Editor
                 AssertContains(musicReboundRuntime, "GlobalRegistryServiceSlot.DepthZoneRuntime", "Music director handles depth-zone service hot swaps", builder, ref failureCount);
                 AssertContains(musicReboundRuntime, "GlobalRegistryServiceSlot.SurfaceWeatherRuntime", "Music director handles surface-weather service hot swaps", builder, ref failureCount);
                 AssertContains(musicReboundRuntime, "GlobalRegistryServiceSlot.FirstHourRuntime", "Music director handles first-hour service hot swaps", builder, ref failureCount);
+                AssertContains(musicReboundRuntime, "GlobalRegistryServiceSlot.VocalWarningRuntime", "Music director handles vocal-warning runtime hot swaps", builder, ref failureCount);
                 AssertContains(musicDirector, "DrainAcousticZoneSignal();", "Music director drains acoustic-zone typed signals from tick lanes", builder, ref failureCount);
                 AssertContains(musicAcousticDrain, "ReadOnlySpan<AcousticZoneChangedEvent> signals = SignalBus<AcousticZoneChangedEvent>.GetFrameSnapshot();", "Music director consumes acoustic-zone changes through a ReadOnlySpan typed-lane snapshot", builder, ref failureCount);
                 AssertContains(musicAcousticDrain, "_lastAcousticZoneSignalFrame == frame", "Music director drains acoustic-zone signals at most once per frame", builder, ref failureCount);
                 AssertContains(musicAcousticDrain, "HandleAcousticZoneChanged(signal.IsInterior != 0)", "Music director routes the latest acoustic-zone signal into existing music context logic", builder, ref failureCount);
+                AssertContains(musicResolveProfile, "ResolveSoundscapeTierProfile()", "Music director falls back to soundscape tier when biome matrix does not provide a profile", builder, ref failureCount);
+                AssertContains(musicSoundscapeProfile, "case SoundscapeTier.Thermal", "Thermal soundscape tier selects thermal music profile as fallback", builder, ref failureCount);
+                AssertContains(musicSoundscapeProfile, "case SoundscapeTier.DeepAbyss", "Deep abyss soundscape tier selects abyss music profile as fallback", builder, ref failureCount);
+                AssertContains(musicSoundscapeProfile, "case SoundscapeTier.Darkness", "Darkness soundscape tier selects shelf music profile as fallback", builder, ref failureCount);
                 AssertContains(musicDirector, "DrainDirectorAISignals();", "Music director drains DirectorAI music signals from typed lanes", builder, ref failureCount);
                 AssertContains(musicDirector, "ReadOnlySpan<DirectorAIMusicSignal> signals = SignalBus<DirectorAIMusicSignal>.GetFrameSnapshot();", "Music director consumes DirectorAI cues through a ReadOnlySpan typed-lane snapshot", builder, ref failureCount);
                 AssertContains(musicDirector, "RefreshPolledMusicContext();", "Music director polls biome/depth runtime state instead of listener queues", builder, ref failureCount);
                 AssertContains(musicDirector, "RefreshObservedBiomeMatrixState()", "Music director observes biome-matrix profile/depth state without registration", builder, ref failureCount);
                 AssertContains(musicDirector, "RefreshObservedDepthZoneState()", "Music director observes depth-zone transitions without registration", builder, ref failureCount);
+                AssertContains(musicDirector, "CriticalPlayerStressDominatesThreshold = 0.88f", "Music director treats critical player stress as foreground emergency audio", builder, ref failureCount);
+                AssertContains(musicDirector, "PlayerStressSignalHoldFrames = 8", "Music director releases stale player-stress signals quickly", builder, ref failureCount);
+                AssertContains(musicDirector, "RefreshPlayerCriticalStressSignal();", "Music director refreshes player critical stress outside the audio callback", builder, ref failureCount);
+                AssertContains(musicPlayerStressRefresh, "SignalBus<PlayerStressSignal>.TryGetLatest", "Music director consumes player stress through the typed signal lane", builder, ref failureCount);
+                AssertContains(musicPlayerStressRefresh, "_lastPlayerStressSignalSeenFrame == int.MinValue", "Music director accepts the first player-stress signal even when sequence starts at zero", builder, ref failureCount);
+                AssertContains(musicPlayerStressRefresh, "frame - _lastPlayerStressSignalSeenFrame > PlayerStressSignalHoldFrames", "Music director prevents stale player stress from holding music down indefinitely", builder, ref failureCount);
+                AssertContains(musicPlayerStressRefresh, "_playerCriticalStress01 = math.saturate(signal.Stress01)", "Music director caches sanitized player stress for music policy", builder, ref failureCount);
+                AssertContains(musicPlayerStressRefresh, "_playerCriticalStress01 = 0f", "Music director clears player-stress music pressure when signal freshness expires", builder, ref failureCount);
+                AssertContains(musicEmergencyDominance, "math.max(_oxygenDanger01, _playerCriticalStress01)", "Music director merges oxygen danger and player stress into one emergency-audio dominance scalar", builder, ref failureCount);
+                AssertContains(musicEmergencyGate, "_playerCriticalStress01 >= CriticalPlayerStressDominatesThreshold", "Critical player stress can make music yield even before oxygen danger crosses its threshold", builder, ref failureCount);
+                AssertContains(musicDirector, "VocalWarningMusicDuckDefault01 = 0.38f", "Music director softly ducks music under non-critical vocal warnings", builder, ref failureCount);
+                AssertContains(musicDirector, "VocalWarningMusicDuckCritical01 = 0.62f", "Music director strongly ducks music under critical vocal warnings", builder, ref failureCount);
+                AssertContains(musicDirector, "NarrativeAudioLogMusicDuck01 = 0.48f", "Music director ducks music while narrative audio logs own speech foreground", builder, ref failureCount);
+                AssertContains(musicDirector, "CacheVocalWarningSystem(GlobalRegistry.VocalWarnings, frame)", "Music director seeds vocal-warning runtime only through the cold cache path", builder, ref failureCount);
+                AssertContains(musicDirector, "CacheAudioLogRuntime(GlobalRegistry.AudioLogRuntime, frame)", "Music director seeds audio-log runtime only through the cold cache path", builder, ref failureCount);
+                AssertContains(musicVocalWarningStale, "frame < _nextVocalWarningResolveFrame", "Music director retry-cadences missing vocal-warning runtime resolution", builder, ref failureCount);
+                AssertContains(musicVocalWarningStale, "CacheVocalWarningSystem(GlobalRegistry.VocalWarnings, frame)", "Music director late-binds vocal-warning runtime through a bounded stale resolver", builder, ref failureCount);
+                AssertContains(musicVocalWarningResolver, "vocalWarningSystem.IsInitialized", "Music director uses vocal-warning runtime only when initialized", builder, ref failureCount);
+                AssertContains(musicVocalWarningDuck, "IVocalWarningSystem vocalWarningSystem = ResolveVocalWarningSystem()", "Music director reads vocal-warning foreground state from the cached service", builder, ref failureCount);
+                AssertContains(musicVocalWarningDuck, "vocalWarningSystem.IsWarningActive", "Music director treats active vocal warnings as foreground audio", builder, ref failureCount);
+                AssertContains(musicVocalWarningDuck, "ResolveVocalWarningMusicDuck01(warningId)", "Music director maps warning identity to music duck strength", builder, ref failureCount);
+                AssertContains(musicForegroundSpeechRefresh, "RefreshVocalWarningMusicDucking();", "Foreground speech refresh includes vocal-warning state", builder, ref failureCount);
+                AssertContains(musicForegroundSpeechRefresh, "RefreshNarrativeAudioLogMusicDucking();", "Foreground speech refresh includes narrative audio-log state", builder, ref failureCount);
+                AssertContains(musicNarrativeAudioLogDuck, "IAudioLogRuntime audioLogRuntime = ResolveAudioLogRuntime()", "Music director reads audio-log foreground state from the cached service", builder, ref failureCount);
+                AssertContains(musicNarrativeAudioLogDuck, "audioLogRuntime.IsPlaying || audioLogRuntime.IsNarrativeQueueBlocked", "Narrative audio-log playback or queue block owns speech foreground", builder, ref failureCount);
+                AssertContains(musicForegroundSpeechResolve, "math.max(_vocalWarningMusicDuck01, _narrativeAudioLogMusicDuck01)", "Foreground speech duck chooses the strongest active speech owner", builder, ref failureCount);
+                AssertContains(musicForegroundSpeechApply, "safeActivity01 * (1f - duck01)", "Music activity target is reduced by foreground speech duck before publishing", builder, ref failureCount);
+                AssertContains(musicForegroundSpeechActive, "RefreshForegroundSpeechMusicDucking();", "Stinger and scalar gates refresh speech state before foreground checks", builder, ref failureCount);
+                AssertContains(musicVocalWarningResolve, "VocalWarningId.CrushDepth", "Crush-depth warnings receive critical music duck", builder, ref failureCount);
+                AssertContains(musicVocalWarningResolve, "VocalWarningId.HullBreach", "Hull-breach warnings receive critical music duck", builder, ref failureCount);
+                AssertContains(musicVocalWarningResolve, "VocalWarningId.OxygenLow", "Oxygen warnings receive critical music duck", builder, ref failureCount);
+                AssertContains(musicActivityUpdate, "ShouldForceProceduralMusicOpen()", "Music director opens procedural music immediately for non-rest critical contexts", builder, ref failureCount);
+                AssertContains(musicForceOpen, "!IsEmergencyBreathDominant()", "Emergency breath remains higher priority than forced procedural music", builder, ref failureCount);
+                AssertContains(musicForceOpen, "_combatLatched", "Combat forces procedural music out of rest", builder, ref failureCount);
+                AssertContains(musicForceOpen, "_tenseExplorationLatched", "Tense exploration forces procedural music out of rest", builder, ref failureCount);
+                AssertContains(musicForceOpen, "_currentBaseContext", "Base context keeps its low procedural bed active instead of waiting on exploration rests", builder, ref failureCount);
+                AssertContains(musicDirector, "public void SetSoundscapeTierContext(SoundscapeTier tier, float depthMeters)", "Music director accepts authoritative soundscape tier/depth context", builder, ref failureCount);
+                AssertContains(musicSoundscapeContext, "ResolveSoundscapeDepthHintMeters(safeTier)", "Music director maps soundscape tier to a depth hint when raw depth is unavailable", builder, ref failureCount);
+                AssertContains(musicSoundscapeContext, "float pressure01 = ResolveSoundscapePressure01(safeTier)", "Music director resolves soundscape pressure once per context update", builder, ref failureCount);
+                AssertContains(musicSoundscapeContext, "bool tierChanged = _currentSoundscapeTier != safeTier", "Music director detects soundscape tier transitions before writing tier state", builder, ref failureCount);
+                AssertContains(musicSoundscapeContext, "_debugSoundscapePressure01 = pressure01", "Music director exposes soundscape pressure diagnostics", builder, ref failureCount);
+                AssertContains(musicSoundscapeContext, "ReevaluateContext(true);", "Soundscape tier changes immediately refresh music profile routing", builder, ref failureCount);
+                AssertContains(musicWait, "ResolveSoundscapeRestScale(_currentSoundscapeTier)", "Exploration rest windows scale from soundscape tier so deep water can breathe", builder, ref failureCount);
+                AssertContains(musicPhrase, "ResolveSoundscapePhraseScale(_currentSoundscapeTier)", "Exploration phrase windows scale from soundscape tier instead of constant music beds", builder, ref failureCount);
+                AssertContains(musicActivityTarget, "MusicActivityReason.Emergency", "Music director exposes emergency breath as the current music activity reason", builder, ref failureCount);
+                AssertContains(musicActivityTarget, "MusicActivityReason.Combat", "Music director exposes combat as the current music activity reason", builder, ref failureCount);
+                AssertContains(musicActivityTarget, "MusicActivityReason.Exploration", "Music director exposes exploration as the current music activity reason", builder, ref failureCount);
+                AssertContains(musicActivityTarget, "ResolveSoundscapePressure01(_currentSoundscapeTier)", "Music activity target uses the soundscape tier as world-bed pressure", builder, ref failureCount);
+                AssertContains(musicActivityTarget, "ResolveEmergencyAudioDominance01()", "Music activity target treats critical player audio as pressure before the hard emergency cutoff", builder, ref failureCount);
+                AssertContains(musicActivityTarget, "ApplyForegroundSpeechMusicDuck01(", "Music activity targets are ducked while speech foreground owns the mix", builder, ref failureCount);
+                AssertContains(musicResolveTension, "soundscapePressure01 * _soundscapePressureWeight", "Music tension blend includes bounded soundscape pressure", builder, ref failureCount);
+                AssertContains(musicLayerRouting, "math.max(InverseLerp(20f, 900f, depthMeters), soundscapePressure01)", "Music layer routing falls back to soundscape tier depth pressure", builder, ref failureCount);
+                AssertContains(musicLayerRouting, "float emergencyAudio01 = ResolveEmergencyAudioDominance01()", "Music layer routing uses unified emergency-audio pressure for bass and danger layers", builder, ref failureCount);
+                AssertContains(musicLayerRouting, "_playerCriticalStress01 * 0.16f", "Critical player stress raises rhythm tension before the full music yield threshold", builder, ref failureCount);
+                AssertContains(musicLayerRouting, "ApplyLayerMixerState(false);", "Music layer routing pushes smoothed layer values toward the mixer route", builder, ref failureCount);
+                AssertContains(musicLayerApply, "NormalizedLayerValueToDb(_layerRhythm01)", "Music layer mixer routing converts rhythm intensity into dB", builder, ref failureCount);
+                AssertContains(musicLayerApply, "_debugLayerMixerRouteAvailable = anyRouteAvailable", "Music director exposes whether optional layer mixer parameters are bound", builder, ref failureCount);
+                AssertContains(musicDirector, "public float CurrentRhythmLayer01 => math.saturate(_layerRhythm01)", "Music director exposes rhythm-layer telemetry without reflection", builder, ref failureCount);
+                AssertContains(musicDirector, "public float CurrentBassLayer01 => math.saturate(_layerBass01)", "Music director exposes bass-layer telemetry without reflection", builder, ref failureCount);
+                AssertContains(musicDirector, "public float CurrentAtmosphereLayer01 => math.saturate(_layerAtmosphere01)", "Music director exposes atmosphere-layer telemetry without reflection", builder, ref failureCount);
+                AssertContains(musicDirector, "public float CurrentDangerLayer01 => math.saturate(_layerDanger01)", "Music director exposes danger-layer telemetry without reflection", builder, ref failureCount);
+                AssertContains(musicDirector, "public bool CurrentLayerMixerRouteAvailable => _debugLayerMixerRouteAvailable", "Music director exposes optional mixer-layer route availability", builder, ref failureCount);
+                AssertContains(musicLayerNormalize, "Mathf.Log10(clamped)", "Music layer dB conversion uses logarithmic amplitude mapping", builder, ref failureCount);
+                AssertContains(musicLayerTryApply, "unavailable && !force", "Missing optional music layer parameters are not retried every tick", builder, ref failureCount);
+                AssertContains(musicLayerTryApply, "_layerMixer.SetFloat(parameterName, valueDb)", "Music director writes exposed music layer mixer parameters when present", builder, ref failureCount);
+                AssertContains(musicLayerReset, "_rhythmLayerParameterUnavailable = false", "Music director resets optional layer mixer parameter cache when routing is rebound", builder, ref failureCount);
+                AssertContains(musicScalarPublish, "FlagSuppressReactiveImpulses", "Music director suppresses reactive synth punches while emergency breath dominates", builder, ref failureCount);
+                AssertContains(musicScalarPublish, "bool foregroundSpeechActive = IsForegroundSpeechActive();", "Music scalar publishing checks speech foreground before damage/stinger impulses", builder, ref failureCount);
+                AssertContains(musicScalarPublish, "emergencyBreathDominates || foregroundSpeechActive", "Speech foreground suppresses reactive music impulses without becoming a new synth source", builder, ref failureCount);
+                AssertContains(musicStopScalarPublish, "DynamicMusicScalarSignal.FlagExternalScalars | DynamicMusicScalarSignal.FlagSuppressReactiveImpulses", "Stopping procedural music immediately publishes zero activity and suppresses stale synth impulses", builder, ref failureCount);
+                AssertContains(musicStopInternal, "PublishProceduralMusicStopSignal();", "Procedural music stop pushes an immediate scalar instead of waiting for the next director tick", builder, ref failureCount);
+                AssertContains(musicOverrideStart, "bool emergencyBreathDominates = IsEmergencyBreathDominant();", "Forced override start evaluates emergency breath before publishing synth impulses", builder, ref failureCount);
+                AssertContains(musicOverrideStart, "float overrideSignal01 = emergencyBreathDominates ? 0f : _overrideVolume", "Forced override start publishes zero music activity while emergency breath dominates", builder, ref failureCount);
+                AssertContains(musicOverrideStart, "flags |= DynamicMusicScalarSignal.FlagSuppressReactiveImpulses", "Forced override start suppresses synth punches during emergency breath", builder, ref failureCount);
+                AssertContains(soundscapeSlowTick, "SyncMusicDirectorSoundscapeContext(newTier, depth)", "Soundscape runtime mirrors depth-tier context into the music director", builder, ref failureCount);
+                AssertContains(soundscapeDepthTier, "director.SetSoundscapeTierContext(CalculateTier(depthMeters, _currentTier), depthMeters)", "Biome depth-tier events refresh music soundscape context", builder, ref failureCount);
+                AssertContains(soundscapeSyncMusic, "director.SetSoundscapeTierContext(tier, depthMeters)", "Soundscape music sync is routed through one bounded helper", builder, ref failureCount);
                 AssertNotContains(musicDirector, "IAcoustic" + "ZoneEventListener", "Music director has no legacy acoustic-zone listener interface", builder, ref failureCount);
                 AssertNotContains(musicDirector, "IBiome" + "MatrixEventListener", "Music director has no legacy biome-matrix listener interface", builder, ref failureCount);
                 AssertNotContains(musicDirector, "IDepth" + "ZoneEventListener", "Music director has no legacy depth-zone listener interface", builder, ref failureCount);
@@ -514,6 +667,7 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(musicDepthResolver, "GlobalRegistry.DepthZone", "Music director depth resolver routes registry reads to the stale refresh helper", builder, ref failureCount);
                 AssertNotContains(musicSurfaceResolver, "GlobalRegistry.SurfaceWeather", "Music director surface-weather resolver routes registry reads to the stale refresh helper", builder, ref failureCount);
                 AssertNotContains(musicFirstHourResolver, "GlobalRegistry.FirstHour", "Music director first-hour resolver routes registry reads to the stale refresh helper", builder, ref failureCount);
+                AssertNotContains(musicVocalWarningResolver, "GlobalRegistry.VocalWarnings", "Music director vocal-warning resolver returns cached runtime only", builder, ref failureCount);
                 AssertNotContains(musicResolveDependencies, "GlobalRegistry.Player", "Music director dependency resolver does not poll player registry directly", builder, ref failureCount);
                 AssertNotContains(musicResolveDependencies, "GlobalRegistry.DepthZone", "Music director dependency resolver does not poll depth-zone registry directly", builder, ref failureCount);
                 AssertNotContains(musicResolveBaseContext, "GlobalRegistry.AcousticZone", "Music director base-context resolver does not poll acoustic-zone registry directly", builder, ref failureCount);
@@ -524,6 +678,28 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(musicShouldDepthDiscovery, "GlobalRegistry.FirstHour", "Music director depth discovery gate does not poll first-hour registry directly", builder, ref failureCount);
                 AssertNotContains(musicFirstHourBoost, "GlobalRegistry.FirstHour", "Music director first-hour pressure boost does not poll first-hour registry directly", builder, ref failureCount);
                 AssertContains(musicSynthRuntime, "lowTierFrameSignals: 64", "Music director keeps full minimum-quality dynamic music scalar lane capacity", builder, ref failureCount);
+            }
+
+            if (musicDirectorConfig.Length > 0)
+            {
+                const string masterMusicGroupReference = "{fileID: 1111111111, guid: 69195f25e7aad1b44a0d49cc645ff0f3, type: 2}";
+                AssertContains(musicDirectorConfig, "_musicMixerGroup: " + masterMusicGroupReference, "Music director config routes bed music to the MasterMixer Music group", builder, ref failureCount);
+                AssertContains(musicDirectorConfig, "_stingerMixerGroup: " + masterMusicGroupReference, "Music director config routes stingers through the music volume bus", builder, ref failureCount);
+            }
+
+            if (settingsManager.Length > 0 && masterMixer.Length > 0 && mainMenuScene.Length > 0)
+            {
+                string settingsMusicVolume = ExtractMethodBody(settingsManager, "public float MusicVolume");
+                string settingsApplyAudio = ExtractMethodBody(settingsManager, "private bool ApplyAudioMixerSettings()");
+                string settingsApplyMixer = ExtractMethodBody(settingsManager, "private bool ApplyMixerVolume(");
+                AssertContains(masterMixer, "name: MusicVolume", "MasterMixer exposes MusicVolume", builder, ref failureCount);
+                AssertContains(masterMixer, "m_Name: Music", "MasterMixer owns a Music mixer group", builder, ref failureCount);
+                AssertContains(masterMixer, "m_GroupID: aaaaaaaa1111111111111111aaaaaaaa", "MasterMixer Music group has a stable group id", builder, ref failureCount);
+                AssertContains(masterMixer, "m_Volume: 11111111111111111111111111111111", "MasterMixer Music group is bound to the MusicVolume parameter", builder, ref failureCount);
+                AssertContains(mainMenuScene, "audioMixer: {fileID: 24100000, guid: 69195f25e7aad1b44a0d49cc645ff0f3, type: 2}", "Main menu SettingsManager references MasterMixer", builder, ref failureCount);
+                AssertContains(settingsMusicVolume, "ApplyMixerVolume(\"MusicVolume\", clamped)", "SettingsManager MusicVolume setter writes the MusicVolume mixer parameter", builder, ref failureCount);
+                AssertContains(settingsApplyAudio, "ApplyMixerVolume(\"MusicVolume\", _cachedMusicVolume)", "SettingsManager applies cached MusicVolume during audio binding", builder, ref failureCount);
+                AssertContains(settingsApplyMixer, "audioMixer.SetFloat(parameterName, db)", "SettingsManager applies normalized volume as mixer dB", builder, ref failureCount);
             }
 
             if (prologueAcoustic.Length > 0)
@@ -740,6 +916,13 @@ namespace Hecton8.Audio.Editor
             {
                 string acousticPlayMadness = ExtractMethodBody(acousticZone, "public void PlayMadnessWhisperCue()");
                 string acousticEmitterOcclusion = ExtractMethodBody(acousticZone, "private void UpdateEmitterOcclusionState(AudioListener listener)");
+                string acousticHotSwap = ExtractMethodBody(acousticZone, "public void OnGlobalRegistryServiceReplaced(");
+                string acousticColdCache = ExtractMethodBody(acousticZone, "private void CacheRegistryServicesCold()");
+                string acousticTick = ExtractMethodBody(acousticZone, "public void Tick(");
+                string acousticAmbientMix = ExtractMethodBody(acousticZone, "private void UpdateAmbientLoopMix(");
+                string acousticMusicDuckUpdate = ExtractMethodBody(acousticZone, "private void UpdateMusicAmbientDucking(");
+                string acousticMusicDuckTarget = ExtractMethodBody(acousticZone, "private float ResolveMusicAmbientDuckTarget01(");
+                string acousticMusicDuckVolume = ExtractMethodBody(acousticZone, "private float ResolveMusicAmbientDuckVolumeScale()");
                 AssertContains(globalSignals, "[StructLayout(LayoutKind.Explicit, Size = 16)]", "Acoustic-zone typed signal has explicit ARM64 layout with manual offsets", builder, ref failureCount);
                 AssertContains(globalSignals, "public readonly struct AcousticZoneChangedEvent : ISignal", "Acoustic-zone transition payload is an immutable typed signal", builder, ref failureCount);
                 AssertContains(globalSignals, "[FieldOffset(0)] public readonly byte IsInterior", "Acoustic-zone payload avoids bool field layout ambiguity", builder, ref failureCount);
@@ -756,6 +939,17 @@ namespace Hecton8.Audio.Editor
                 AssertContains(acousticZone, "ResolveAudioService()", "Acoustic-zone cue playback uses cached audio-service resolution", builder, ref failureCount);
                 AssertContains(acousticZone, "ResolveSpatialAudioEmitterReadModel()", "Acoustic-zone emitter occlusion uses cached spatial-audio read-model resolution", builder, ref failureCount);
                 AssertContains(acousticZone, "ClearCachedRegistryServices()", "Acoustic-zone clears cached registry services on disable/destroy", builder, ref failureCount);
+                AssertContains(acousticHotSwap, "GlobalRegistryServiceSlot.MusicDirectorRuntime", "Acoustic-zone listens for music-director runtime hot swaps", builder, ref failureCount);
+                AssertContains(acousticColdCache, "CacheMusicDirector(GlobalRegistry.MusicDirector)", "Acoustic-zone cold-seeds music director for ambient ducking", builder, ref failureCount);
+                AssertContains(acousticTick, "UpdateMusicAmbientDucking(currentZone, deltaTime)", "Acoustic-zone refreshes music ambient ducking on the game-thread tick", builder, ref failureCount);
+                AssertContains(acousticAmbientMix, "targetVolume *= ResolveMusicAmbientDuckVolumeScale();", "Underwater ambient loop yields volume to active music foreground", builder, ref failureCount);
+                AssertContains(acousticMusicDuckUpdate, "ApproximateOneMinusExpNegPositive(math.max(0.01f, sharpness) * deltaTime)", "Music ambient ducking is smoothed with the existing cheap exponential helper", builder, ref failureCount);
+                AssertContains(acousticMusicDuckTarget, "HectonMusicDirector musicDirector = _cachedMusicDirector", "Acoustic-zone music duck reads the cached music director only", builder, ref failureCount);
+                AssertContains(acousticMusicDuckTarget, "HectonMusicDirector.MusicActivityReason.Emergency", "Emergency breath bypasses music ambient ducking", builder, ref failureCount);
+                AssertContains(acousticMusicDuckTarget, "musicDirector.CurrentMusicActivity01", "Music ambient ducking follows the director's published activity scalar", builder, ref failureCount);
+                AssertContains(acousticMusicDuckVolume, "math.max(0.1f, 1f - musicAmbientDuckMax)", "Music ambient ducking preserves a floor under the ocean bed", builder, ref failureCount);
+                AssertNotContains(acousticMusicDuckTarget, "GlobalRegistry.", "Music ambient duck target does not poll registries from tick routing", builder, ref failureCount);
+                AssertNotContains(acousticAmbientMix, "GlobalRegistry.", "Ambient loop mix does not poll registries while applying music duck", builder, ref failureCount);
                 AssertNotContains(acousticPlayMadness, "GlobalRegistry.Audio", "Acoustic-zone madness cue does not poll audio registry directly", builder, ref failureCount);
                 AssertNotContains(acousticEmitterOcclusion, "GlobalRegistry.Audio", "Acoustic-zone emitter occlusion does not poll audio registry directly", builder, ref failureCount);
             }

@@ -66,11 +66,13 @@ namespace MapMagic.Nodes.MatrixGenerators
 
             NativeArray<float> bufferA = default;
             NativeArray<float> bufferB = default;
+            int bufferARegistrationId = 0;
+            int bufferBRegistrationId = 0;
             try
             {
                 bufferA = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 bufferB = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                RegisterTempJobBuffers(bufferA, bufferB);
+                RegisterTempJobBuffers(bufferA, bufferB, out bufferARegistrationId, out bufferBRegistrationId);
 
                 for (int i = 0; i < cellCount; i++)
                     bufferA[i] = math.saturate(source[i]);
@@ -151,23 +153,28 @@ namespace MapMagic.Nodes.MatrixGenerators
             }
             finally
             {
-                DisposeTracked(ref bufferA);
-                DisposeTracked(ref bufferB);
+                DisposeTracked(ref bufferA, ref bufferARegistrationId);
+                DisposeTracked(ref bufferB, ref bufferBRegistrationId);
             }
         }
 
-        private static void RegisterTempJobBuffers(NativeArray<float> bufferA, NativeArray<float> bufferB)
+        private static void RegisterTempJobBuffers(
+            NativeArray<float> bufferA,
+            NativeArray<float> bufferB,
+            out int bufferARegistrationId,
+            out int bufferBRegistrationId)
         {
-            NativeMemorySentinel.RegisterNativeArray(bufferA, NativeMemoryOwner, BufferALabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(bufferB, NativeMemoryOwner, BufferBLabel, NativeAllocationLifetime.TempJob);
+            bufferARegistrationId = NativeMemorySentinel.RegisterNativeArray(bufferA, NativeMemoryOwner, BufferALabel, NativeAllocationLifetime.TempJob);
+            bufferBRegistrationId = NativeMemorySentinel.RegisterNativeArray(bufferB, NativeMemoryOwner, BufferBLabel, NativeAllocationLifetime.TempJob);
         }
 
-        private static void DisposeTracked(ref NativeArray<float> array)
+        private static void DisposeTracked(ref NativeArray<float> array, ref int registrationId)
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
+            NativeMemorySentinel.Unregister(registrationId);
+            registrationId = 0;
             array.Dispose();
             array = default;
         }

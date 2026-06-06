@@ -70,7 +70,7 @@ Rejected route: constant shelf/abyss/cave bed that masks player/system cues or r
 
 ### Direct Player Prefab Refs
 
-`Player.prefab` has 28 direct `AudioClip` refs in static YAML evidence, including `Underwater Ambient.wav`, `dive_splash.wav`, footstep sets, and UI feedback. Direct serialization is not Addressables ownership, release proof, playback-route proof, or audio-thread proof.
+Current `Player.prefab` static scan has 24 direct `AudioClip` refs: footstep sets and UI feedback. Prior `Underwater Ambient.wav` and `dive_splash.wav` direct refs are source-cleared in the working tree but pending Unity prefab readback. Direct serialization is not Addressables ownership, release proof, playback-route proof, or audio-thread proof.
 
 Required owner action: classify every direct ref by cue family, then write owner/load/release/playback route or a scoped exception with proof target.
 

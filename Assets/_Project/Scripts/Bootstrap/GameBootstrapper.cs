@@ -584,6 +584,7 @@ namespace Hecton8.Bootstrap
         private bool _isLoadingSave;
         private bool _slowTickableRegistered;
         private bool _hotSwapRegistered;
+        private bool _bootstrapStartWatchdogActive;
         private double _nextServiceHeartbeatPollTime;
         private WorldProceduralScatterDirector _worldProceduralScatterDirector;
         private int _backgroundDomainHandshakeState;
@@ -1477,6 +1478,7 @@ namespace Hecton8.Bootstrap
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
+            _bootstrapStartWatchdogActive = false;
             if (!_slowTickableRegistered)
                 return;
 
@@ -1487,12 +1489,6 @@ namespace Hecton8.Bootstrap
         private void Start()
         {
             EnsureBootstrapProgressAfterLifecycleResume();
-        }
-
-        private void Update()
-        {
-            if (!_isBootstrapComplete)
-                EnsureBootstrapProgressAfterLifecycleResume();
         }
 
         private void EnsureBootstrapProgressAfterLifecycleResume()
@@ -1766,6 +1762,64 @@ namespace Hecton8.Bootstrap
             _bootstrapRunInProgress = true;
             _bootstrapStartTimestamp = Stopwatch.GetTimestamp();
             _ = RunBootstrapStateMachineAsync(destroyCancellationToken);
+            StartBootstrapRunStartWatchdog();
+        }
+
+        private void StartBootstrapRunStartWatchdog()
+        {
+            if (_bootstrapStartWatchdogActive)
+                return;
+
+            _bootstrapStartWatchdogActive = true;
+            _ = RunBootstrapRunStartWatchdogAsync(destroyCancellationToken);
+        }
+
+        private async Awaitable RunBootstrapRunStartWatchdogAsync(CancellationToken ownerToken)
+        {
+            bool restartIssued = false;
+            try
+            {
+                while (Application.isPlaying &&
+                       _bootstrapRunInProgress &&
+                       !_isBootstrapComplete &&
+                       !BootstrapStatus.BootStarted)
+                {
+                    if (_bootstrapStartTimestamp > 0L)
+                    {
+                        double elapsedSeconds =
+                            (Stopwatch.GetTimestamp() - _bootstrapStartTimestamp) / (double)Stopwatch.Frequency;
+                        if (elapsedSeconds >= BootstrapRunStartGraceSeconds)
+                            break;
+                    }
+
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ownerToken);
+                }
+
+                if (!Application.isPlaying ||
+                    ownerToken.IsCancellationRequested ||
+                    _isBootstrapComplete ||
+                    BootstrapStatus.BootStarted)
+                {
+                    return;
+                }
+
+                RecoverReloadDisabledStaleBootstrapRun();
+                _bootstrapStartWatchdogActive = false;
+                restartIssued = true;
+                EnsureBootstrapProgressAfterLifecycleResume();
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception exception)
+            {
+                HandleFatalBootstrapException("BootstrapStartWatchdog", exception);
+            }
+            finally
+            {
+                if (!restartIssued)
+                    _bootstrapStartWatchdogActive = false;
+            }
         }
 
         private void EnsureBootstrapPresentationFallbackCold()
@@ -2013,6 +2067,7 @@ namespace Hecton8.Bootstrap
                 instance._sceneActivationRequested = false;
                 instance._sceneActivationStarted = false;
                 instance._slowTickableRegistered = false;
+                instance._bootstrapStartWatchdogActive = false;
                 instance.enabled = false;
                 return false;
             }
@@ -2048,6 +2103,7 @@ namespace Hecton8.Bootstrap
             _sceneActivationSceneHandle = ulong.MaxValue;
             _debugSceneActivationStep = "Not started";
             _debugSceneActivationCompleted = false;
+            _bootstrapStartWatchdogActive = false;
         }
 
         private void ResetTransientRuntimeStateForReloadDisabledPlayMode()
@@ -2060,6 +2116,7 @@ namespace Hecton8.Bootstrap
             _isLoadingSave = false;
             _slowTickableRegistered = false;
             _hotSwapRegistered = false;
+            _bootstrapStartWatchdogActive = false;
             _nextServiceHeartbeatPollTime = 0d;
             _backgroundDomainHandshakeState = 0;
             _backgroundDomainHandshakePath = null;
@@ -6252,20 +6309,28 @@ namespace Hecton8.Bootstrap
                 return FindUnityQualityIndex(HandheldUmaQualityName, HandheldUmaQualityIndex);
             }
 
-            switch (hardwareProfile.QualityTier)
+            float qualityWeight = ResolveBootQualityWeight01(in hardwareProfile);
+            if (hardwareProfile.GraphicsMemoryMegabytes < SuspiciousGraphicsMemoryFallbackThresholdMb ||
+                hardwareProfile.SystemMemoryMegabytes < 7000 ||
+                qualityWeight < 0.18f)
             {
-                case HectonQualityTier.Low:
-                    return FindUnityQualityIndex(AbyssLowQualityName, AbyssLowQualityIndex);
-                case HectonQualityTier.CompactPc:
-                    return FindUnityQualityIndex(CompactPcQualityName, CompactPcQualityIndex);
-                case HectonQualityTier.Ultra:
-                    return FindUnityQualityIndex(LeviathanUltraQualityName, LeviathanUltraQualityIndex);
-                case HectonQualityTier.High:
-                    return FindUnityQualityIndex(OrbitHighQualityName, OrbitHighQualityIndex);
-                case HectonQualityTier.Mid:
-                default:
-                    return FindUnityQualityIndex(SurfaceMediumQualityName, SurfaceMediumQualityIndex);
+                return FindUnityQualityIndex(AbyssLowQualityName, AbyssLowQualityIndex);
             }
+
+            if (qualityWeight < 0.38f)
+                return FindUnityQualityIndex(CompactPcQualityName, CompactPcQualityIndex);
+
+            if (qualityWeight < 0.62f)
+                return FindUnityQualityIndex(SurfaceMediumQualityName, SurfaceMediumQualityIndex);
+
+            if (qualityWeight >= 0.88f &&
+                hardwareProfile.ProcessorCount > UltraTierProcessorCount &&
+                hardwareProfile.SystemMemoryMegabytes >= 32000)
+            {
+                return FindUnityQualityIndex(LeviathanUltraQualityName, LeviathanUltraQualityIndex);
+            }
+
+            return FindUnityQualityIndex(OrbitHighQualityName, OrbitHighQualityIndex);
         }
 
         private static int FindUnityQualityIndex(string qualityName, int fallbackIndex)
@@ -6816,14 +6881,27 @@ namespace Hecton8.Bootstrap
 
         private void ResolveSceneActivationReferences(Scene scene)
         {
-            if (playerObject == null)
-                playerObject = BootstrapState.CurrentPlayerObject;
+            if (playerObject == null &&
+                TryAcceptProductionPlayerAuthority(BootstrapState.CurrentPlayerObject, out GameObject publishedPlayer))
+            {
+                playerObject = publishedPlayer;
+            }
+            else if (!TryAcceptProductionPlayerAuthority(playerObject, out _))
+            {
+                playerObject = null;
+            }
 
             if (playerObject == null)
             {
                 TryResolveSceneTaggedObject(scene, "Player", out GameObject taggedPlayer);
-                if (taggedPlayer != null && !IsTemporaryRuntimeShellObject(taggedPlayer))
-                    playerObject = taggedPlayer;
+                if (TryAcceptProductionPlayerAuthority(taggedPlayer, out GameObject productionTaggedPlayer))
+                {
+                    playerObject = productionTaggedPlayer;
+                }
+                else if (taggedPlayer != null)
+                {
+                    LogSceneActivation("[PlayerAuthority] Rejected tagged Player without production movement/interaction/physics authority.");
+                }
             }
 
             if (playerSpawner == null)
@@ -7182,9 +7260,22 @@ namespace Hecton8.Bootstrap
 
             if (playerObject != null)
             {
+                if (TryAcceptProductionPlayerAuthority(playerObject, out GameObject productionPlayerObject))
+                {
+                    playerObject = productionPlayerObject;
+                }
+                else
+                {
+                    playerObject = null;
+                    Debug.LogWarning("[GameBootstrapper] Existing player reference rejected: production movement/interaction/physics authority missing.");
+                }
+            }
+
+            PublishPlayerRuntimeReference();
+            if (playerObject != null)
+            {
                 if (!IsPlayerAuthoredInActiveScene(playerObject))
                     playerObject.transform.position = fallbackSpawnPosition;
-                PublishPlayerRuntimeReference();
                 return;
             }
 
@@ -7331,14 +7422,36 @@ namespace Hecton8.Bootstrap
 
         private void PublishPlayerRuntimeReference()
         {
-            if (IsTemporaryRuntimeShellObject(playerObject))
-                playerObject = null;
+            GameObject productionPlayerObject;
+            if (playerObject != null)
+            {
+                if (TryAcceptProductionPlayerAuthority(playerObject, out productionPlayerObject))
+                    playerObject = productionPlayerObject;
+                else
+                    playerObject = null;
+            }
 
-            if (playerObject == null && playerRigidbody != null && !IsTemporaryRuntimeShellObject(playerRigidbody.gameObject))
-                playerObject = playerRigidbody.gameObject;
+            if (playerObject == null &&
+                playerRigidbody != null &&
+                TryAcceptProductionPlayerAuthority(playerRigidbody.gameObject, out productionPlayerObject))
+            {
+                playerObject = productionPlayerObject;
+            }
+            else if (playerObject == null && playerRigidbody != null)
+            {
+                playerRigidbody = null;
+            }
 
-            if (playerObject == null && playerController != null && !IsTemporaryRuntimeShellObject(playerController.gameObject))
-                playerObject = playerController.gameObject;
+            if (playerObject == null &&
+                playerController != null &&
+                TryAcceptProductionPlayerAuthority(playerController.gameObject, out productionPlayerObject))
+            {
+                playerObject = productionPlayerObject;
+            }
+            else if (playerObject == null && playerController != null)
+            {
+                playerController = null;
+            }
 
             Hecton8.Meta.MetaRuntimeInstaller.EnsureRuntimeSystems();
             Hecton8.Economy.EconomyRuntimeInstaller.EnsureRuntimeSystems();
@@ -7439,6 +7552,20 @@ namespace Hecton8.Bootstrap
             }
 
             return false;
+        }
+
+        private static bool TryAcceptProductionPlayerAuthority(GameObject candidate, out GameObject productionPlayerObject)
+        {
+            productionPlayerObject = null;
+            if (candidate == null ||
+                IsTemporaryRuntimeShellObject(candidate) ||
+                !ProductionPlayerAuthorityUtility.IsProductionPlayerAuthorityObject(candidate))
+            {
+                return false;
+            }
+
+            productionPlayerObject = candidate;
+            return true;
         }
 
         private static bool IsTemporaryRuntimeShellName(string name)
@@ -8196,14 +8323,14 @@ namespace Hecton8.Bootstrap
         }
 
         /// <summary>
-        /// Compatibility stub for legacy callers that still name one-shot playback.
+        /// Silent fallback route for callers that still request one-shot playback while audio bootstrap is unavailable.
         /// </summary>
         public void PlayOneShot(AudioClip clip)
         {
         }
 
         /// <summary>
-        /// Compatibility stub for legacy callers that still name one-shot playback.
+        /// Silent fallback route for callers that still request one-shot playback while audio bootstrap is unavailable.
         /// </summary>
         public void PlayOneShot(AudioClip clip, float volume)
         {

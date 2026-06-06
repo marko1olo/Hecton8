@@ -214,6 +214,16 @@ namespace MapMagic.Nodes.MatrixGenerators
             NativeArray<int> floodHeap = default;
             NativeArray<int> visitedStamp = default;
             NativeArray<int> acceptedCells = default;
+            int heightmapRegistrationId = 0;
+            int basinMaskRegistrationId = 0;
+            int basinLipMaskRegistrationId = 0;
+            int candidateMaskRegistrationId = 0;
+            int basinRecordsRegistrationId = 0;
+            int featureRecordsRegistrationId = 0;
+            int fissureMaskRegistrationId = 0;
+            int floodHeapRegistrationId = 0;
+            int visitedStampRegistrationId = 0;
+            int acceptedCellsRegistrationId = 0;
 
             try
             {
@@ -238,7 +248,17 @@ namespace MapMagic.Nodes.MatrixGenerators
                     fissureMask,
                     floodHeap,
                     visitedStamp,
-                    acceptedCells);
+                    acceptedCells,
+                    out heightmapRegistrationId,
+                    out basinMaskRegistrationId,
+                    out basinLipMaskRegistrationId,
+                    out candidateMaskRegistrationId,
+                    out basinRecordsRegistrationId,
+                    out featureRecordsRegistrationId,
+                    out fissureMaskRegistrationId,
+                    out floodHeapRegistrationId,
+                    out visitedStampRegistrationId,
+                    out acceptedCellsRegistrationId);
 
                 float resolvedHeightScale = ResolveHeightScaleMeters(src, data, heightScaleMeters);
                 for (int i = 0; i < cellCount; i++)
@@ -336,16 +356,16 @@ namespace MapMagic.Nodes.MatrixGenerators
             }
             finally
             {
-                DisposeTracked(ref heightmap);
-                DisposeTracked(ref basinMask);
-                DisposeTracked(ref basinLipMask);
-                DisposeTracked(ref candidateMask);
-                DisposeTracked(ref basinRecords);
-                DisposeTracked(ref featureRecords);
-                DisposeTracked(ref fissureMask);
-                DisposeTracked(ref floodHeap);
-                DisposeTracked(ref visitedStamp);
-                DisposeTracked(ref acceptedCells);
+                DisposeTracked(ref heightmap, ref heightmapRegistrationId);
+                DisposeTracked(ref basinMask, ref basinMaskRegistrationId);
+                DisposeTracked(ref basinLipMask, ref basinLipMaskRegistrationId);
+                DisposeTracked(ref candidateMask, ref candidateMaskRegistrationId);
+                DisposeTracked(ref basinRecords, ref basinRecordsRegistrationId);
+                DisposeTracked(ref featureRecords, ref featureRecordsRegistrationId);
+                DisposeTracked(ref fissureMask, ref fissureMaskRegistrationId);
+                DisposeTracked(ref floodHeap, ref floodHeapRegistrationId);
+                DisposeTracked(ref visitedStamp, ref visitedStampRegistrationId);
+                DisposeTracked(ref acceptedCells, ref acceptedCellsRegistrationId);
             }
         }
 
@@ -484,26 +504,37 @@ namespace MapMagic.Nodes.MatrixGenerators
             NativeArray<byte> fissureMask,
             NativeArray<int> floodHeap,
             NativeArray<int> visitedStamp,
-            NativeArray<int> acceptedCells)
+            NativeArray<int> acceptedCells,
+            out int heightmapRegistrationId,
+            out int basinMaskRegistrationId,
+            out int basinLipMaskRegistrationId,
+            out int candidateMaskRegistrationId,
+            out int basinRecordsRegistrationId,
+            out int featureRecordsRegistrationId,
+            out int fissureMaskRegistrationId,
+            out int floodHeapRegistrationId,
+            out int visitedStampRegistrationId,
+            out int acceptedCellsRegistrationId)
         {
-            NativeMemorySentinel.RegisterNativeArray(heightmap, NativeMemoryOwner, HeightLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(basinMask, NativeMemoryOwner, BasinMaskLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(basinLipMask, NativeMemoryOwner, BasinLipMaskLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(candidateMask, NativeMemoryOwner, CandidateMaskLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(basinRecords, NativeMemoryOwner, BasinRecordsLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(featureRecords, NativeMemoryOwner, FeatureRecordsLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(fissureMask, NativeMemoryOwner, FissureMaskLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(floodHeap, NativeMemoryOwner, FloodHeapLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(visitedStamp, NativeMemoryOwner, VisitedStampLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(acceptedCells, NativeMemoryOwner, AcceptedCellsLabel, NativeAllocationLifetime.TempJob);
+            heightmapRegistrationId = NativeMemorySentinel.RegisterNativeArray(heightmap, NativeMemoryOwner, HeightLabel, NativeAllocationLifetime.TempJob);
+            basinMaskRegistrationId = NativeMemorySentinel.RegisterNativeArray(basinMask, NativeMemoryOwner, BasinMaskLabel, NativeAllocationLifetime.TempJob);
+            basinLipMaskRegistrationId = NativeMemorySentinel.RegisterNativeArray(basinLipMask, NativeMemoryOwner, BasinLipMaskLabel, NativeAllocationLifetime.TempJob);
+            candidateMaskRegistrationId = NativeMemorySentinel.RegisterNativeArray(candidateMask, NativeMemoryOwner, CandidateMaskLabel, NativeAllocationLifetime.TempJob);
+            basinRecordsRegistrationId = NativeMemorySentinel.RegisterNativeArray(basinRecords, NativeMemoryOwner, BasinRecordsLabel, NativeAllocationLifetime.TempJob);
+            featureRecordsRegistrationId = NativeMemorySentinel.RegisterNativeArray(featureRecords, NativeMemoryOwner, FeatureRecordsLabel, NativeAllocationLifetime.TempJob);
+            fissureMaskRegistrationId = NativeMemorySentinel.RegisterNativeArray(fissureMask, NativeMemoryOwner, FissureMaskLabel, NativeAllocationLifetime.TempJob);
+            floodHeapRegistrationId = NativeMemorySentinel.RegisterNativeArray(floodHeap, NativeMemoryOwner, FloodHeapLabel, NativeAllocationLifetime.TempJob);
+            visitedStampRegistrationId = NativeMemorySentinel.RegisterNativeArray(visitedStamp, NativeMemoryOwner, VisitedStampLabel, NativeAllocationLifetime.TempJob);
+            acceptedCellsRegistrationId = NativeMemorySentinel.RegisterNativeArray(acceptedCells, NativeMemoryOwner, AcceptedCellsLabel, NativeAllocationLifetime.TempJob);
         }
 
-        private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
+        private static void DisposeTracked<T>(ref NativeArray<T> array, ref int registrationId) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
+            NativeMemorySentinel.Unregister(registrationId);
+            registrationId = 0;
             array.Dispose();
             array = default;
         }

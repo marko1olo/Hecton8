@@ -171,7 +171,7 @@ Static only:
   - `AUDIO_PROFILE_ROUTE_MATRIX_20260605.csv`: 21 rows.
   - `TEXTURE_MATERIAL_FAMILY_ROUTE_MATRIX_20260605.csv`: 10 rows.
   - `ASSET_AUTHORING_TOOL_INVENTORY_20260605.csv`: 13 rows.
-  - `AUDIO_DIRECT_REF_DETAIL_20260605.csv`: 28 rows.
+  - `AUDIO_DIRECT_REF_DETAIL_20260605.csv`: 26 rows.
   - `TEXTURE_ACTIVE_ROUTE_BLOCKER_DETAIL_20260605.csv`: 109 rows.
   - `ASSET_NEXT_ACTION_BOARD_20260605.csv`: 12 rows.
   - `ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.csv`: 16 rows.
@@ -186,10 +186,10 @@ Static only:
   - `ASSET_GUID_REFERENCE_MATRIX_20260605.csv`: 7420 rows.
   - `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv`: 800 rows.
   - `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv`: 3488 rows.
-  - `ASSET_FRONT_FILE_MAP_20260605.csv`: 149 rows.
+  - `ASSET_FRONT_FILE_MAP_20260605.csv`: 177 rows.
 - `Docs/AssetAudit/README.md` now centralizes the asset-front evidence boundary, P0 blockers, hard rejections, process gate, owner map, and Low/Middle/High/Ultra consequences.
 - `ASSET_PROOF_ARTIFACT_INDEX_20260605.md` maps contact sheets, waveform sheets, generated source packs, diagnostic screenshot reviews, and taxonomy artifacts as proof-adjacent static material only.
-- `ASSET_PROOF_ARTIFACT_INDEX_20260605.csv` parses as 30 rows.
+- `ASSET_PROOF_ARTIFACT_INDEX_20260605.csv` parses as 35 rows.
 - `ASSET_NEXT_ACTION_BOARD_20260605.csv` parses as 12 rows after adding the P0 h8_1475 proof-tool integrity blocker.
 - UI sprite static route: `oxygen-tank.png` is mask/silhouette; `ui/OXYGEN.png` is detailed source candidate, not proven bound.
 - Mesh/prefab static route:
@@ -199,8 +199,9 @@ Static only:
 - Latest static validation summary added: `ASSET_STATIC_VALIDATION_SUMMARY_20260605.md`.
 - `ASSET_GUID_REFERENCE_MATRIX_20260605.csv` parses as 7420 rows, 21 columns, zero empty cells; static counts: 3932 referenced rows, 3488 unreferenced rows, 630 active-world reachable rows, 25 direct audio scene/prefab review rows, and 3090 non-first-party or legacy path rows.
 - `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` parses as 800 rows, 15 columns, zero empty cells; static counts: 655 P0 active-route rows, 145 P1 scene-route rows, and 8 owner lanes.
+- Known semantic stale slice: `ASSET_GUID_REFERENCE_MATRIX_20260605.csv`, `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv`, and `Docs/Audio/audio_profile_usage_20260605.csv` still contain older direct Player-prefab rows for `Underwater Ambient.wav` and `dive_splash.wav`. Current direct-ref truth is `AUDIO_DIRECT_REF_DETAIL_20260605.csv` plus `Tools/ValidateAudioDirectRefDetail.py`: 24 direct refs total, P0 direct refs 0.
 - `ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv` parses as 3488 rows, 15 columns, zero empty cells; static counts: 9 cleanup-review action buckets and 31 source rows >= 8 MB. It is not deletion authorization.
-- Current curated asset CSV set parses as 62 files, 14656 data rows, zero empty cells after generated source inventory, packets 01-28 and 34-37 mapping, four local static matrices, the GUID reference matrix, active-route GUID triage, unreferenced cleanup-review triage, the P0 target-table wave, P0 routing synthesis, owner packet index validation, visual reference critique checklist, current visual-reference path continuity, VREF-to-owner requirement matrix, visual source promotion execution queue validation, h8_1475 shotlist/proof dependency graph, h8_1475 proof-tool integrity blocker routing, visual proof capture guardrail validation, foam-contact decision queue validation, mesh-prefab review queue validation, visual reference-vs-current rejection matrix, premium approximation rename triage, audio P0 execution refinement, audio route owner matrix, audio mix-priority decision queue, audio critical cue coverage matrix, Batch31 channel-semantics decision queue, foam-contact source role decision queue, VFX DataVault source-context correction, VFX repair anchor map, DataVault execution-surface recheck, Biolum black-box route decision, visual hero source coverage matrix, large source owner review, product-face execution refinement, waveform stats, static audio ledger, and audio remediation matrix. Whole-folder `Docs/AssetAudit/*.csv` hygiene is not claimed; older/sidecar texture usage ledgers and the sparse Batch31 import-intent CSV remain outside the zero-empty set.
+- Current curated asset CSV set parses as 62 files, 14699 data rows, zero empty cells after generated source inventory, packets 01-28 and 34-37 mapping, aggregate static validator runner coverage, mass-deletion dirty-set guard validation, file-map validation, four local static matrices, the GUID reference matrix, active-route GUID triage, unreferenced cleanup-review triage, the P0 target-table wave, P0 routing synthesis, asset action queue validation, owner packet index validation, proof-adjacent artifact index validation, audio waveform proof-artifact validation, audio direct-ref detail validation, audio scene static-route guard, audio Addressables P0 synthesis validation, audio import meta policy drift rejection, critical cue source-coverage drift rejection, texture role technical-ledger validation, visual reference owner matrix validation, visual reference current rejection matrix validation, MapMagic erosion source-route validation, Batch31 local PBR import-intent artifact validation, Batch31 promotion-prep artifact validation, visual reference critique checklist, current visual-reference path continuity, VREF-to-owner requirement matrix, visual source promotion execution queue validation, h8_1475 shotlist/proof dependency graph, h8_1475 proof-tool integrity blocker routing, visual proof capture guardrail validation, visual asset review queue validation, foam-contact decision queue validation, mesh-prefab review queue validation, texture import-role and Batch31 channel-decision validation, visual reference-vs-current rejection matrix, premium approximation rename triage, audio P0 execution refinement, audio route owner matrix, audio mix-priority decision queue, audio critical cue coverage matrix, audio listening/import-policy queue validation, Batch31 channel-semantics decision queue, foam-contact source role decision queue, VFX DataVault source-context correction, VFX repair anchor map, DataVault execution-surface recheck, Biolum black-box route decision, visual hero source coverage matrix, large source owner review, product-face execution refinement, waveform stats, static audio ledger, and audio remediation matrix. Whole-folder `Docs/AssetAudit/*.csv` hygiene is not claimed; older/sidecar texture usage ledgers and the sparse Batch31 import-intent CSV remain outside the zero-empty set.
 - `PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` parses as 124 rows; target table only, no material acceptance.
 - `PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` parses as 39 rows; target table only, no prefab acceptance.
 - `AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` parses as 6 rows; target table only, no runtime mix acceptance.
@@ -209,14 +210,14 @@ Static only:
 - `VISUAL_REFERENCE_CAPTURE_GAP_TABLE_20260605.csv` parses as 7 rows; gap/rejection table only, no visual acceptance.
 - `ASSET_P0_TARGET_TABLE_ROUTING_SYNTHESIS_20260605.csv` parses as 5 rows; dispatch crosswalk only, no Unity or runtime acceptance.
 - `ASSET_OWNER_PACKET_INDEX_20260605.csv` parses as 37 rows; `python Tools/ValidateAssetOwnerPacketIndex.py` returns `ASSET_OWNER_PACKET_INDEX_OK rows=37 present=32 output_only=5`. Owner packet lookup only, no execution completion.
-- `python Tools/ValidateVisualProofCaptureGuardrails.py` returns `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=7 asset_refs=10`; `python -m unittest Tools/test_validate_visual_proof_capture_guardrails.py` runs 5 tests OK. This proves static risk-routing and capture-tool asset-path existence coverage only, not clean no-mutation proof tooling or Unity visual acceptance.
+- `python Tools/ValidateVisualProofCaptureGuardrails.py` returns `VISUAL_PROOF_CAPTURE_GUARDRAILS_OK risks=15 asset_refs=19`; `python -m unittest Tools/test_validate_visual_proof_capture_guardrails.py` runs 11 tests OK. This proves static risk-routing and capture-tool asset-path existence coverage only, not clean no-mutation proof tooling or Unity visual acceptance.
 - `VISUAL_REFERENCE_CRITIQUE_CHECKLIST_20260605.csv` parses as 7 rows; visual rejection checklist only, no visual acceptance.
 - `H8_1475_CANONICAL_SHOTLIST_20260605.csv` parses as 11 rows; canonical shotlist and rejection rubric only, no screenshot existence or visual acceptance.
 - `H8_1475_VISUAL_REFERENCE_COMPARISON_TEMPLATE_20260605.md` is a static comparison template only, no screenshot existence or visual acceptance.
 - `H8_1475_PROOF_DEPENDENCY_GRAPH_20260605.csv` parses as 14 rows; dependency order only, no Unity proof or visual acceptance.
 - `LARGE_SOURCE_OWNER_REVIEW_20260605.csv` parses as 5 rows; large texture/audio source owner buckets only, no deletion, import, or residency proof.
 - `VISUAL_REFERENCE_PATH_CONTINUITY_20260605.csv` parses as 15 rows; current mandatory visual-reference inventory only, no visual acceptance.
-- `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv` parses as 15 rows; VREF-to-owner visual requirement routing only, no visual acceptance.
+- `VISUAL_REFERENCE_OWNER_REQUIREMENT_MATRIX_20260605.csv` parses as 15 rows; `python Tools/ValidateVisualReferenceOwnerMatrix.py` returns `VISUAL_REFERENCE_OWNER_MATRIX_OK rows=15 images=15`. VREF-to-owner visual requirement routing only, no visual acceptance.
 - Mandatory visual-reference image-read digest is present at `Docs/Reports/Batch32/CONTROLLER_MANDATORY_VISUAL_REFERENCE_READ_20260605.md`; it is static image-review evidence only, no Unity or screenshot acceptance.
 - h8_1475 canonical shotlist markdown/CSV and future proof execution packet now point at the image-read digest and reject surface-darkened, empty, muddy, toy-like, or stale-reference proof.
 - `PRODUCT_FACE_STATIC_EXECUTION_REFINEMENT_20260605.csv` parses as 14 rows; product-face material/prefab execution refinement only, no Unity proof or visual acceptance.
@@ -235,14 +236,15 @@ Static only:
 - `BATCH31_CHANNEL_SEMANTICS_DECISION_QUEUE_20260605.csv` parses as 7 rows; owner decision queue only, no Unity import, material binding, residency, or visual acceptance.
 - `FOAM_CONTACT_SOURCE_ROLE_DECISION_QUEUE_20260605.csv` parses as 8 rows; foam/contact source role queue only, no Unity import, material binding, residency, or visual acceptance.
 - `python Tools/ValidateFoamContactDecisionQueue.py` returns `FOAM_CONTACT_DECISION_QUEUE_OK rows=8 p0=3 source_paths=8`; `python -m unittest Tools/test_validate_foam_contact_decision_queue.py` runs 4 tests OK. This proves queue source-path/status/proof-gate consistency only, not Unity material proof.
-- `python Tools/ValidateMeshPrefabReviewQueue.py` returns `MESH_PREFAB_REVIEW_QUEUE_OK baked=89 baked_proxy_refs=89 proxy=88 placeholders=30 construction=10`; `python -m unittest Tools/test_validate_mesh_prefab_review_queue.py` runs 4 tests OK. This proves static queue/source GUID consistency only, not Unity prefab, material, collider, or visual proof.
+- `python Tools/ValidateMeshPrefabReviewQueue.py` returns `MESH_PREFAB_REVIEW_QUEUE_OK baked=89 baked_proxy_refs=89 proxy=88 placeholders=30 construction=10 geology=49 bioforge=150 porous=50 ocean=2`; `python -m unittest Tools/test_validate_mesh_prefab_review_queue.py` runs 7 tests OK. This proves static queue/source GUID row-evidence consistency only, not Unity prefab, material, collider, or visual proof.
 - `python Tools/ValidateVisualSourcePromotionQueue.py` returns `VISUAL_SOURCE_PROMOTION_QUEUE_OK rows=10 p0=4 p1=5 p2=1 vhsc_links=6`; `python -m unittest Tools/test_validate_visual_source_promotion_queue.py` runs 5 tests OK. This proves static VREF/VHSC/source-gate consistency only, not Unity import, material binding, screenshot, Frame Debugger, memory, or visual acceptance.
 - `VFX_DATAVAULT_SOURCE_CONTEXT_REVIEW_20260605.csv` parses as 7 rows; source-context correction only, no runtime source repair, Unity proof, GC/profiler proof, or dump artifact acceptance.
 - `VFX_DATAVAULT_REPAIR_ANCHOR_MAP_20260605.csv` parses as 11 rows; repair anchor map only, no runtime source repair, Unity proof, GC/profiler proof, or dump artifact acceptance.
 - `BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv` parses as 4 rows; source decision/readback only, no compile proof, Unity proof, GC/profiler proof, or runtime dump artifact acceptance.
 - `VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv` parses as 10 rows; source coverage matrix only, no import, material binding, screenshot, Frame Debugger, memory, or visual acceptance.
 - `VISUAL_SOURCE_PROMOTION_EXECUTION_QUEUE_20260605.csv` parses as 10 rows; execution queue only, no import, material binding, screenshot, Frame Debugger, memory, or visual acceptance.
-- `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returns `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14656`; `python -m unittest Tools/test_validate_asset_static_summary.py` runs 4 tests OK. This proves static summary consistency only, not Unity/runtime readiness.
+- `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returns `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14701`; `python -m unittest Tools/test_validate_asset_static_summary.py` runs 4 tests OK. This proves static summary consistency only, not Unity/runtime readiness.
+- `python Tools/ValidateTextureRoleTechnicalLedger.py --no-fail` returns `TEXTURE_ROLE_TECHNICAL_LEDGER_REJECTED blockers=3 rows=13 exact_asset_rows=2 directory_rows=4 docs_source_only_rows=7 ledger_matches=136`; blocker scope is flora/coral streaming mip mismatch and `ui_oxygen_mask` sRGB mismatch. Static role-ledger guard only, not Unity import/material/visual proof.
 - `audio_preview_waveform_stats_20260605.csv` parses as 11 rows; waveform proof-adjacent stats only, no listening proof.
 - `audio_asset_ledger.csv` parses as 138 rows; static audio ledger only, no import/runtime/Addressables proof.
 - `audio_remediation_matrix_20260605.csv` parses as 58 rows; remediation queue only, no runtime mix proof.
@@ -279,8 +281,9 @@ Static only:
 |---|---|---|
 | water_visual | Rejected foam source is active-reachable through world/ocean users. | Unity material readback + texture authoring |
 | flora_materials | `WorldProceduralProxy` flora/coral/kelp materials are in active world scene. | Unity material readback + mesh/prefab owner |
-| audio_routing | MusicDirector music/stinger mixer refs are null in static config. | Audio/MusicDirector owner |
-| audio_lifecycle | `Player.prefab` direct AudioClip refs lack owner/release/Addressables proof. | Audio lifecycle owner |
+| audio_routing | Addressables settings/groups/entries are absent; MusicDirector prefab `OutputAudioMixerGroup` nulls remain fallback-required static notes, not runtime mixer proof. | Audio/MusicDirector + Addressables owner |
+| audio_lifecycle | `Player.prefab` direct AudioClip refs are currently `24` P1 footstep/UI refs and still lack owner/release/Addressables proof. | Audio lifecycle owner |
+| player_hud_route | Production Player/HUD/movement/interaction scene binding rejects statically with `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=17 notes=7`. | Unity readback/player route owner |
 
 ## Runtime Gate
 
