@@ -1,6 +1,8 @@
 using UnityEngine;
 using System;
 using Hecton8.Core;
+using Hecton8.AtlasSignal;
+using Unity.Mathematics;
 
 namespace Hecton8.Gameplay.Atlas6Liability
 {
@@ -19,6 +21,8 @@ namespace Hecton8.Gameplay.Atlas6Liability
     /// </summary>
     public sealed class Atlas6CorporateLiabilityManager : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
     {
+        public static Atlas6CorporateLiabilityManager ActiveRuntimeInstance { get; private set; }
+
         [Header("Corporate Directive Settings")]
         [SerializeField] private float sectorXenonOmegaYield = 0f;
         [SerializeField] private float playerDistanceToPrimaryDrillSite = 200f;
@@ -29,21 +33,35 @@ namespace Hecton8.Gameplay.Atlas6Liability
         public ThermalSheerManager ThermalSheer { get; private set; }
         public ActuarialLiabilitySystem ActuarialLiability { get; private set; }
         public ExtractionGatingSystem ExtractionGating { get; private set; }
+        public Atlas6LiabilityTelemetry Telemetry { get; private set; }
 
         [Header("System State")]
         [SerializeField] private Atlas6ThreatLevel currentThreatLevel = Atlas6ThreatLevel.Nominal;
 
         public event Action<Atlas6ThreatLevel> OnThreatLevelChanged;
+        public Atlas6ThreatLevel CurrentThreatLevel => currentThreatLevel;
 
         private bool _isRegistered;
         private bool _registeredHotSwapListener;
+        private bool _actuarialThreatPublished;
+        private bool _satoRenSeverancePublished;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeInstance()
+        {
+            ActiveRuntimeInstance = null;
+        }
 
         private void Awake()
         {
-            DirectiveWeighting = new DirectiveWeightingSystem();
+            if (!TryRegisterActiveRuntimeInstance())
+                return;
+
+            Telemetry = new Atlas6LiabilityTelemetry();
+            DirectiveWeighting = new DirectiveWeightingSystem(Telemetry);
             ThermalSheer = new ThermalSheerManager();
-            ActuarialLiability = new ActuarialLiabilitySystem();
-            ExtractionGating = new ExtractionGatingSystem();
+            ActuarialLiability = new ActuarialLiabilitySystem(Telemetry);
+            ExtractionGating = new ExtractionGatingSystem(Telemetry);
 
             // Initialize baseline states
             DirectiveWeighting.Initialize(1.0f);
@@ -52,6 +70,9 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void OnEnable()
         {
+            if (!TryRegisterActiveRuntimeInstance())
+                return;
+
             TryRegisterHotSwapListener();
             RegisterWithGlobalRegistry();
             
@@ -67,6 +88,8 @@ namespace Hecton8.Gameplay.Atlas6Liability
             
             if (ActuarialLiability != null) ActuarialLiability.OnPlayerFlaggedAsActuarialThreat -= HandleActuarialThreat;
             if (ExtractionGating != null) ExtractionGating.OnTetherSeveredSatoRen -= HandleSatoRenSeverance;
+
+            TryUnregisterActiveRuntimeInstance();
         }
 
         public void Tick(float deltaTime)
@@ -93,32 +116,93 @@ namespace Hecton8.Gameplay.Atlas6Liability
             if (newLevel != currentThreatLevel)
             {
                 currentThreatLevel = newLevel;
+                RecordTelemetry(
+                    Atlas6LiabilityEventCode.ThreatLevelChanged,
+                    currentThreatLevel >= Atlas6ThreatLevel.ActuarialLiability
+                        ? Atlas6LiabilityEventSeverity.Critical
+                        : Atlas6LiabilityEventSeverity.Warning,
+                    Atlas6LiabilityTelemetry.ManagerContextHash,
+                    value0: (float)currentThreatLevel,
+                    value1: sectorXenonOmegaYield);
                 OnThreatLevelChanged?.Invoke(currentThreatLevel);
             }
+        }
+
+        private void RecordTelemetry(
+            Atlas6LiabilityEventCode eventCode,
+            Atlas6LiabilityEventSeverity severity,
+            uint contextHash,
+            uint subjectHash = 0u,
+            float value0 = 0f,
+            float value1 = 0f,
+            Atlas6LiabilityFaultFlags faultFlags = Atlas6LiabilityFaultFlags.None)
+        {
+            Telemetry?.Record(
+                eventCode,
+                severity,
+                contextHash,
+                subjectHash,
+                value0,
+                value1,
+                ExtractionGating != null ? ExtractionGating.CarrierState : ExtractionCarrierState.Offline,
+                currentThreatLevel,
+                faultFlags);
         }
 
         // --- PUBLIC API EXPOSED TO OTHER HECTON-8 SYSTEMS ---
 
         public void ReportXenonOmegaExtracted(float amount)
         {
+            bool invalidAmount = !math.isfinite(amount) || amount <= 0f;
+            if (invalidAmount)
+            {
+                RecordTelemetry(
+                    Atlas6LiabilityEventCode.InvalidXenonOmegaYieldReported,
+                    Atlas6LiabilityEventSeverity.Warning,
+                    Atlas6LiabilityTelemetry.ManagerContextHash,
+                    value0: amount,
+                    faultFlags: math.isfinite(amount)
+                        ? Atlas6LiabilityFaultFlags.InvalidRangeInput
+                        : Atlas6LiabilityFaultFlags.NonFiniteInput);
+                return;
+            }
+
             sectorXenonOmegaYield += amount;
+            RecordTelemetry(
+                Atlas6LiabilityEventCode.XenonOmegaYieldReported,
+                Atlas6LiabilityEventSeverity.Info,
+                Atlas6LiabilityTelemetry.ManagerContextHash,
+                value0: sectorXenonOmegaYield,
+                value1: amount);
         }
 
         public void ReportWorkerTagScanned(string workerId)
         {
-            ActuarialLiability.RegisterWorkerTagRecovery(workerId);
+            string safeWorkerId = string.IsNullOrWhiteSpace(workerId) ? "UNREADABLE" : workerId;
+            ActuarialLiability.RegisterWorkerTagRecovery(safeWorkerId);
+        }
+
+        public void ReportGhostPDADataUploaded(float dataSizeInMegabytes)
+        {
+            ActuarialLiability.UploadGhostPDAData(dataSizeInMegabytes);
         }
 
         public void ReportDisasterEvidenceCollected()
         {
             hasDisasterEvidenceInInventory = true;
-            Debug.Log("[ATLAS-6] Covert scan complete. Contractor possesses unauthorized documentation.");
+            RecordTelemetry(
+                Atlas6LiabilityEventCode.DisasterEvidenceCollected,
+                Atlas6LiabilityEventSeverity.Warning,
+                Atlas6LiabilityTelemetry.ExtractionContextHash);
         }
 
         public void ReportDisasterEvidenceDiscarded()
         {
             hasDisasterEvidenceInInventory = false;
-            Debug.Log("[ATLAS-6] Contractor compliance noted. Unauthorized documentation purged from inventory.");
+            RecordTelemetry(
+                Atlas6LiabilityEventCode.DisasterEvidenceDiscarded,
+                Atlas6LiabilityEventSeverity.Info,
+                Atlas6LiabilityTelemetry.ExtractionContextHash);
         }
 
         public ThermalSheerManager.TelemetryReadout GetSubmarineOSReadout(float trueSheer)
@@ -134,6 +218,28 @@ namespace Hecton8.Gameplay.Atlas6Liability
         public bool BoardBlackKeel()
         {
             return ExtractionGating.AttemptBoardingSequence();
+        }
+
+        public bool TryCopyLatestTelemetry(out Atlas6LiabilityTelemetryRecord record)
+        {
+            if (Telemetry == null)
+            {
+                record = default;
+                return false;
+            }
+
+            return Telemetry.TryCopyLatest(out record);
+        }
+
+        public bool TryCopyTelemetryNewest(int newestOffset, out Atlas6LiabilityTelemetryRecord record)
+        {
+            if (Telemetry == null)
+            {
+                record = default;
+                return false;
+            }
+
+            return Telemetry.TryCopyNewest(newestOffset, out record);
         }
 
         // --- INTERNAL EVENT HANDLERS ---
@@ -155,9 +261,16 @@ namespace Hecton8.Gameplay.Atlas6Liability
                 // Haldane Quarantine: actively monitor exposure while tether is active
                 // If the player receives a lethal dose of Xenon-Omega biomatter while waiting,
                 // the system proactively severs the tether and locks the staging airlock.
-                if (ExtractionGating.BiomatterExposureLevel > 15f)
+                if (ExtractionGating.BiomatterExposureLevel > ExtractionGating.LockoutExposureThreshold)
                 {
-                    Debug.LogWarning("[ATLAS-6] Dynamic Haldane Quarantine check failed. Exposure exceeded limits during tether. Locking out.");
+                    if (ExtractionGating.IsHaldaneLockoutActive)
+                        return;
+
+                    RecordTelemetry(
+                        Atlas6LiabilityEventCode.DynamicHaldaneMonitorRejected,
+                        Atlas6LiabilityEventSeverity.Critical,
+                        Atlas6LiabilityTelemetry.ManagerContextHash,
+                        value0: ExtractionGating.BiomatterExposureLevel);
                     ExtractionGating.AttemptBoardingSequence(); // This will trigger the lockout event
                 }
             }
@@ -165,14 +278,33 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         private void HandleActuarialThreat()
         {
-            Debug.Log("[ATLAS-6 Master] Actuarial threat threshold reached. Coordinating defense protocols.");
-            // In a full game hook, this would signal drones, turrets, and nav meshes.
+            if (_actuarialThreatPublished)
+                return;
+
+            _actuarialThreatPublished = true;
+            RecordTelemetry(
+                Atlas6LiabilityEventCode.ActuarialThreatRaised,
+                Atlas6LiabilityEventSeverity.Critical,
+                Atlas6LiabilityTelemetry.ManagerContextHash,
+                value0: ActuarialLiability.CorporateHostilityIndex,
+                value1: ActuarialLiability.RecoveredWorkerTags);
+            Atlas6Events.TryRaisePlayerStatusChanged(Atlas6PlayerStatus.Threat);
+            Atlas6Events.TryRaiseDirectiveConflict(Atlas6Events.ActuarialLiabilityThreatConflictHash);
         }
 
         private void HandleSatoRenSeverance()
         {
-            Debug.Log("[ATLAS-6 Master] Sato-Ren protocol executed. Disavowing contractor.");
-            // In a full game hook, this would trigger lore events, audio logs, failing lights.
+            if (_satoRenSeverancePublished)
+                return;
+
+            _satoRenSeverancePublished = true;
+            RecordTelemetry(
+                Atlas6LiabilityEventCode.TetherSeveredSatoRen,
+                Atlas6LiabilityEventSeverity.Critical,
+                Atlas6LiabilityTelemetry.ManagerContextHash,
+                value0: sectorXenonOmegaYield);
+            Atlas6Events.TryRaisePlayerStatusChanged(Atlas6PlayerStatus.Threat);
+            Atlas6Events.TryRaiseDirectiveConflict(Atlas6Events.SatoRenSilenceSeveranceConflictHash);
         }
 
         // --- REGISTRY ---
@@ -196,7 +328,11 @@ namespace Hecton8.Gameplay.Atlas6Liability
                 _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
                 if (_isRegistered)
                 {
-                    Debug.Log("[ATLAS-6] Liability Manager Hooked into Global Registry.");
+                    RecordTelemetry(
+                        Atlas6LiabilityEventCode.RegistryRegistrationChanged,
+                        Atlas6LiabilityEventSeverity.Info,
+                        Atlas6LiabilityTelemetry.ManagerContextHash,
+                        value0: 1f);
                 }
             }
         }
@@ -225,6 +361,29 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
+        }
+
+        private bool TryRegisterActiveRuntimeInstance()
+        {
+            if (!Application.isPlaying)
+                return true;
+
+            Atlas6CorporateLiabilityManager activeRuntime = ActiveRuntimeInstance;
+            if (activeRuntime != null && !ReferenceEquals(activeRuntime, this))
+            {
+                enabled = false;
+                Destroy(this);
+                return false;
+            }
+
+            ActiveRuntimeInstance = this;
+            return true;
+        }
+
+        private void TryUnregisterActiveRuntimeInstance()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
     }
 }

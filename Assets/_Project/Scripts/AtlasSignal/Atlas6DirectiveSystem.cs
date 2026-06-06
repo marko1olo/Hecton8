@@ -84,10 +84,17 @@ namespace Hecton8.AtlasSignal
 
     public static class Atlas6Events
     {
+        public const string ActuarialLiabilityThreatConflictId = "atlas6_actuarial_liability_threat";
+        public const string SatoRenSilenceSeveranceConflictId = "atlas6_sato_ren_silence_severance";
+
         private const int ListenerCapacity = 4;
         private const int PendingEventCapacity = 4;
         private const int ConflictIdCapacity = 8;
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+        public static readonly uint ActuarialLiabilityThreatConflictHash =
+            ComputeDirectiveConflictHash(ActuarialLiabilityThreatConflictId);
+        public static readonly uint SatoRenSilenceSeveranceConflictHash =
+            ComputeDirectiveConflictHash(SatoRenSilenceSeveranceConflictId);
         private static readonly uint _ListenerRejectedWarningHash = unchecked((uint)LocHash.Compute("Atlas6Events.ListenerRejected"));
         private static readonly uint _ListenerExceptionWarningHash = unchecked((uint)LocHash.Compute("Atlas6Events.ListenerException"));
         private static readonly uint _ListenerContextHash = unchecked((uint)LocHash.Compute("Atlas6Events.Listeners"));
@@ -321,6 +328,18 @@ namespace Hecton8.AtlasSignal
 
         public static bool TryResolveDirectiveConflict(uint conflictHash, out string conflictId)
         {
+            if (conflictHash == ActuarialLiabilityThreatConflictHash)
+            {
+                conflictId = ActuarialLiabilityThreatConflictId;
+                return true;
+            }
+
+            if (conflictHash == SatoRenSilenceSeveranceConflictHash)
+            {
+                conflictId = SatoRenSilenceSeveranceConflictId;
+                return true;
+            }
+
             return TryResolveConflictId(conflictHash, out conflictId);
         }
 
@@ -1298,6 +1317,25 @@ namespace Hecton8.AtlasSignal
             LogPlayerStatusChanged();
         }
 
+        private void AdoptExternalStatus(Atlas6PlayerStatus newStatus)
+        {
+            if (newStatus == _playerStatus) return;
+            _playerStatus = newStatus;
+
+            QueueExternalStatusNotification(newStatus);
+            LogPlayerStatusChanged();
+        }
+
+        private void QueueExternalStatusNotification(Atlas6PlayerStatus status)
+        {
+            if (status == Atlas6PlayerStatus.Threat)
+            {
+                QueueNotification(
+                    "ATLAS-6: ACTUARIAL THREAT CLASSIFICATION ACTIVE.".AsSpan(),
+                    NotificationEventSeverity.Critical);
+            }
+        }
+
         public void OnNarrativeEvent(in NarrativeEventPayload payload)
         {
             if ((NarrativeEventType)payload.EventType != NarrativeEventType.DiscoveryMade)
@@ -1310,14 +1348,58 @@ namespace Hecton8.AtlasSignal
         public void OnAtlas6Event(in Atlas6EventPayload payload)
         {
             Atlas6EventType eventType = (Atlas6EventType)payload.EventType;
+            if (eventType == Atlas6EventType.PlayerStatusChanged)
+            {
+                HandleExternalPlayerStatusChanged((Atlas6PlayerStatus)payload.StatusValue);
+                return;
+            }
+
             if (eventType == Atlas6EventType.BarterAccepted)
             {
                 HandleBarterAccepted(payload.TransactionCount);
                 return;
             }
 
+            if (eventType == Atlas6EventType.DirectiveConflict)
+            {
+                HandleDirectiveConflict(payload.ConflictHash);
+                return;
+            }
+
             if (eventType == Atlas6EventType.ScarcityDirectiveIssued)
                 HandleScarcityDirective(payload.DirectiveQuestHash, payload.ResourceHash);
+        }
+
+        private void HandleExternalPlayerStatusChanged(Atlas6PlayerStatus status)
+        {
+            if (status < Atlas6PlayerStatus.Unknown || status > Atlas6PlayerStatus.Anomaly)
+                return;
+
+            if (_playerStatus == Atlas6PlayerStatus.Threat && status != Atlas6PlayerStatus.Threat)
+                return;
+
+            AdoptExternalStatus(status);
+        }
+
+        private void HandleDirectiveConflict(uint conflictHash)
+        {
+            if (conflictHash == 0u)
+                return;
+
+            if (conflictHash == Atlas6Events.ActuarialLiabilityThreatConflictHash)
+            {
+                QueueNotification(
+                    "ATLAS-6: ACTUARIAL LIABILITY CONFLICT. REPAIR ROUTES SUSPENDED.".AsSpan(),
+                    NotificationEventSeverity.Critical);
+                return;
+            }
+
+            if (conflictHash == Atlas6Events.SatoRenSilenceSeveranceConflictHash)
+            {
+                QueueNotification(
+                    "ATLAS-6: SATO-REN SILENCE. ACOUSTIC TETHER SEVERED.".AsSpan(),
+                    NotificationEventSeverity.Critical);
+            }
         }
 
         private void HandleBarterAccepted(int count)

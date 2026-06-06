@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using Unity.Mathematics;
 
 namespace Hecton8.Gameplay.Atlas6Liability
 {
@@ -14,6 +15,8 @@ namespace Hecton8.Gameplay.Atlas6Liability
         public int RecoveredWorkerTags { get; private set; }
         public float CorporateHostilityIndex { get; private set; }
         public float CorporateCreditBalance { get; private set; }
+        private bool _actuarialThreatRaised;
+        private readonly Atlas6LiabilityTelemetry _telemetry;
         
         // Thresholds
         private readonly int _actuarialThreatThreshold = 5; // 5 tags recovered makes you a threat
@@ -26,11 +29,17 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
         public bool IsPlayerActuarialThreat => RecoveredWorkerTags >= _actuarialThreatThreshold;
 
+        public ActuarialLiabilitySystem(Atlas6LiabilityTelemetry telemetry = null)
+        {
+            _telemetry = telemetry;
+        }
+
         public void Initialize(float startingCredit)
         {
             RecoveredWorkerTags = 0;
             CorporateHostilityIndex = 0f;
-            CorporateCreditBalance = startingCredit;
+            CorporateCreditBalance = math.isfinite(startingCredit) ? math.max(0f, startingCredit) : 0f;
+            _actuarialThreatRaised = false;
         }
 
         /// <summary>
@@ -39,11 +48,20 @@ namespace Hecton8.Gameplay.Atlas6Liability
         /// </summary>
         public void RegisterWorkerTagRecovery(string workerId)
         {
+            if (string.IsNullOrWhiteSpace(workerId))
+                workerId = "UNREADABLE";
+
             RecoveredWorkerTags++;
             
             // Base hostility increase
             CorporateHostilityIndex += 15.5f;
-            Debug.LogWarning($"[ATLAS-6] Unresolved System Load anomaly detected. ID {workerId} is legally non-recoverable. Hostility increased.");
+            _telemetry?.Record(
+                Atlas6LiabilityEventCode.WorkerTagRecovered,
+                Atlas6LiabilityEventSeverity.Warning,
+                Atlas6LiabilityTelemetry.ActuarialContextHash,
+                subjectHash: Atlas6LiabilityTelemetry.ComputeStableHash(workerId),
+                value0: RecoveredWorkerTags,
+                value1: CorporateHostilityIndex);
             
             OnCorporateHostilityIncreased?.Invoke(CorporateHostilityIndex);
 
@@ -55,24 +73,51 @@ namespace Hecton8.Gameplay.Atlas6Liability
         /// </summary>
         public void UploadGhostPDAData(float dataSizeInMegabytes)
         {
+            bool invalidDataSize = !math.isfinite(dataSizeInMegabytes) || dataSizeInMegabytes <= 0f;
+            if (invalidDataSize)
+            {
+                _telemetry?.Record(
+                    Atlas6LiabilityEventCode.InvalidGhostPDADataReported,
+                    Atlas6LiabilityEventSeverity.Warning,
+                    Atlas6LiabilityTelemetry.ActuarialContextHash,
+                    value0: dataSizeInMegabytes,
+                    value1: CorporateCreditBalance,
+                    faultFlags: math.isfinite(dataSizeInMegabytes)
+                        ? Atlas6LiabilityFaultFlags.InvalidRangeInput
+                        : Atlas6LiabilityFaultFlags.NonFiniteInput);
+                return;
+            }
+
             // Corporate penalty: 50 credits per MB of "corrupted" historical data
             float deduction = dataSizeInMegabytes * 50f;
             CorporateCreditBalance -= deduction;
             
-            Debug.LogError($"[ATLAS-6] Unauthorized historical payload uploaded. Corporate fine levied: -{deduction} Credits.");
+            _telemetry?.Record(
+                Atlas6LiabilityEventCode.CorporateCreditDeducted,
+                Atlas6LiabilityEventSeverity.Critical,
+                Atlas6LiabilityTelemetry.ActuarialContextHash,
+                value0: deduction,
+                value1: CorporateCreditBalance);
             OnCorporateCreditDeducted?.Invoke(deduction);
         }
 
         private void EvaluateActuarialThreatStatus()
         {
-            if (IsPlayerActuarialThreat)
-            {
-                // The player is now actively detrimental to the actuarial deferment strategy.
-                Debug.LogError("[ATLAS-6] Contractor classified as Actuarial Threat. Halting drone repair routes. Engaging defense flags.");
-                
-                OnPlayerFlaggedAsActuarialThreat?.Invoke();
-                OnDroneRepairCyclesHalted?.Invoke();
-            }
+            if (!IsPlayerActuarialThreat || _actuarialThreatRaised)
+                return;
+
+            _actuarialThreatRaised = true;
+
+            _telemetry?.Record(
+                Atlas6LiabilityEventCode.ActuarialThreatRaised,
+                Atlas6LiabilityEventSeverity.Critical,
+                Atlas6LiabilityTelemetry.ActuarialContextHash,
+                value0: RecoveredWorkerTags,
+                value1: CorporateHostilityIndex,
+                faultFlags: Atlas6LiabilityFaultFlags.EventConsumerNotified);
+
+            OnPlayerFlaggedAsActuarialThreat?.Invoke();
+            OnDroneRepairCyclesHalted?.Invoke();
         }
     }
 }

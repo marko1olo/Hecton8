@@ -344,8 +344,8 @@ namespace Hecton8.Gameplay
             if (ContainsAtlas6LiabilityPayload(dataPayload))
             {
                 TryBindAtlas6LiabilityManager();
-                if (liabilityManager != null && liabilityManager.ActuarialLiability != null)
-                    liabilityManager.ActuarialLiability.UploadGhostPDAData((dataPayload ?? string.Empty).Length * 0.01f);
+                if (liabilityManager != null)
+                    liabilityManager.ReportGhostPDADataUploaded((dataPayload ?? string.Empty).Length * 0.01f);
 
                 NotifyWarning("PDA EXCHANGE - ACTUARIAL LIABILITY FLAGGED");
                 return;
@@ -714,7 +714,7 @@ namespace Hecton8.Gameplay
         private void TryBindAtlas6LiabilityManager()
         {
             if (liabilityManager == null)
-                liabilityManager = UnityEngine.Object.FindAnyObjectByType<Atlas6CorporateLiabilityManager>();
+                liabilityManager = Atlas6CorporateLiabilityManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterLiabilityEvents()

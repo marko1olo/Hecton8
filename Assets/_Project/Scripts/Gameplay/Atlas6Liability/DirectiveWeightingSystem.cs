@@ -1,6 +1,6 @@
 using UnityEngine;
 using System;
-using System.Collections.Generic;
+using Unity.Mathematics;
 
 namespace Hecton8.Gameplay.Atlas6Liability
 {
@@ -18,6 +18,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
         // Settings
         private readonly float _drownTheCrewThreshold = 0.15f;
         private readonly float _criticalSubstrateThreshold = 1000f;
+        private readonly Atlas6LiabilityTelemetry _telemetry;
         
         // State
         public bool IsBulkheadLocked { get; private set; }
@@ -28,15 +29,43 @@ namespace Hecton8.Gameplay.Atlas6Liability
         public event Action<Vector3> OnHazardSpawned;
         public event Action OnDrownTheCrewExecuted;
 
+        public DirectiveWeightingSystem(Atlas6LiabilityTelemetry telemetry = null)
+        {
+            _telemetry = telemetry;
+        }
+
         public void Initialize(float startingIntegrity)
         {
-            _currentPressureSealIntegrity = startingIntegrity;
+            _currentPressureSealIntegrity = math.isfinite(startingIntegrity) ? math.saturate(startingIntegrity) : 1f;
             IsBulkheadLocked = false;
+            _powerDivertedToVaults = 0f;
         }
 
         public void Tick(float deltaTime, float currentXenonOmegaYield)
         {
             if (IsBulkheadLocked) return; // Already locked in, no further degradation calculated here
+
+            bool invalidTickInput =
+                !math.isfinite(deltaTime) ||
+                !math.isfinite(currentXenonOmegaYield) ||
+                deltaTime < 0f ||
+                currentXenonOmegaYield < 0f;
+            if (invalidTickInput)
+            {
+                _telemetry?.Record(
+                    Atlas6LiabilityEventCode.InvalidDirectiveWeightingInput,
+                    Atlas6LiabilityEventSeverity.Warning,
+                    Atlas6LiabilityTelemetry.DirectiveContextHash,
+                    value0: deltaTime,
+                    value1: currentXenonOmegaYield,
+                    faultFlags: math.isfinite(deltaTime) && math.isfinite(currentXenonOmegaYield)
+                        ? Atlas6LiabilityFaultFlags.InvalidRangeInput
+                        : Atlas6LiabilityFaultFlags.NonFiniteInput);
+                return;
+            }
+
+            if (deltaTime <= 0f)
+                return;
 
             // Determine if substrate is at risk
             if (currentXenonOmegaYield > _criticalSubstrateThreshold)
@@ -72,7 +101,13 @@ namespace Hecton8.Gameplay.Atlas6Liability
         private void ExecuteDrownTheCrew()
         {
             IsBulkheadLocked = true;
-            Debug.LogWarning("[ATLAS-6] Arendt Protocol Active. Structural safety threatens material claim. Locking bulkheads.");
+            _telemetry?.Record(
+                Atlas6LiabilityEventCode.ArendtBulkheadLockdown,
+                Atlas6LiabilityEventSeverity.Critical,
+                Atlas6LiabilityTelemetry.DirectiveContextHash,
+                value0: _currentPressureSealIntegrity,
+                value1: _powerDivertedToVaults,
+                faultFlags: Atlas6LiabilityFaultFlags.EventConsumerNotified);
             OnDrownTheCrewExecuted?.Invoke();
         }
 
@@ -81,7 +116,11 @@ namespace Hecton8.Gameplay.Atlas6Liability
             if (IsBulkheadLocked)
             {
                 IsBulkheadLocked = false;
-                Debug.Log("[ATLAS-6] Unauthorized manual override of bulkhead lock detected.");
+                _telemetry?.Record(
+                    Atlas6LiabilityEventCode.ArendtManualOverride,
+                    Atlas6LiabilityEventSeverity.Warning,
+                    Atlas6LiabilityTelemetry.DirectiveContextHash,
+                    value0: _currentPressureSealIntegrity);
             }
         }
     }
