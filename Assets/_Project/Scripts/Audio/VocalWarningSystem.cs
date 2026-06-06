@@ -754,7 +754,7 @@ namespace Hecton8.Audio
                 return;
 
             BindVaultStorage(vault);
-            if (!TryAcquireVocalWarningFrameGuard(out IDataVault guardVault))
+            if (!TryAcquireVocalWarningFrameGuard(vault, out IDataVault guardVault))
             {
                 ClearVaultDescriptors();
                 return;
@@ -1297,7 +1297,12 @@ namespace Hecton8.Audio
 
         private bool TryAcquireVocalWarningFrameGuard(out IDataVault guardVault)
         {
-            guardVault = _dataVault;
+            return TryAcquireVocalWarningFrameGuard(_dataVault, out guardVault);
+        }
+
+        private static bool TryAcquireVocalWarningFrameGuard(IDataVault vault, out IDataVault guardVault)
+        {
+            guardVault = vault;
             return guardVault != null &&
                    !guardVault.IsCompactionFenceActive &&
                    guardVault.TryAcquireMutationGuard(VocalWarningFrameMutationGuardMask);

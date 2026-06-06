@@ -223,9 +223,10 @@ namespace Hecton8.Tests.Editor
                 Application.dataPath,
                 "_Project/Scripts/Audio/VocalWarningSystem.cs");
             string source = File.ReadAllText(sourcePath);
-            string methodBody = ExtractMethodBody(source, "private bool TryResolveVwsOwnerViews");
+            string methodBody = ExtractMethodBody(source, "private bool TryResolveVwsOwnerViews(IDataVault vault,");
             string writeTuningBody = ExtractMethodBody(source, "public unsafe bool EditorTryWriteTuning");
             string acquireTuningBody = ExtractMethodBody(source, "private bool TryAcquireTuningMutationView");
+            string ensureNativeBody = ExtractMethodBody(source, "private void EnsureNativeStorage()");
 
             StringAssert.Contains("TryResolveHandle", methodBody);
             StringAssert.Contains("VocalWarningTuningMutationGuardMask", source);
@@ -233,6 +234,8 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("ReleaseVocalWarningMutationGuard", writeTuningBody);
             StringAssert.Contains("TryAcquireMutationGuard(VocalWarningTuningMutationGuardMask)", acquireTuningBody);
             StringAssert.Contains("TryResolveHandle(in _tuningHandle", acquireTuningBody);
+            StringAssert.Contains("TryAcquireVocalWarningFrameGuard(vault,", ensureNativeBody);
+            StringAssert.Contains("private static bool TryAcquireVocalWarningFrameGuard(IDataVault vault,", source);
             StringAssert.Contains("return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);", source);
             StringAssert.DoesNotContain("TryAcquireWriteLock", methodBody);
             StringAssert.DoesNotContain("ReleaseWriteLock", methodBody);
