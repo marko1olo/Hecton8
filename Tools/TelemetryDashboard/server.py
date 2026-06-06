@@ -40,6 +40,8 @@ LIVE_TELEMETRY_MAGIC = 0x4D4C4554
 
 GENERIC_BLACKBOX_HEADER = struct.Struct("<QII")
 GENERIC_BLACKBOX_ENTRY = struct.Struct("<IIfffffffIIIIIII")
+JOB_ADMISSION_BLACKBOX_HEADER = struct.Struct("<QIiiiII")
+JOB_ADMISSION_BLACKBOX_ENTRY_PREFIX = struct.Struct("<IIffiIBBHI")
 DEFRAG_ENTRY_PACK1 = struct.Struct("<IIiqqqqqfiBBBB")
 DEFRAG_ENTRY_ALIGNED = struct.Struct("<IIi4xqqqqqfiBBBB4x")
 THERMAL_HEADER = struct.Struct("<II")
@@ -249,6 +251,11 @@ def parse_hphi_report(path: Path = HPHI_REPORT) -> dict[str, Any]:
 
 
 def parse_generic_blackbox(path: Path, data: bytes) -> dict[str, Any]:
+    if is_job_admission_blackbox_path(path):
+        job_admission = try_parse_job_admission_blackbox(data)
+        if job_admission is not None:
+            return job_admission
+
     if len(data) < GENERIC_BLACKBOX_HEADER.size:
         return {"type": "generic_blackbox", "entries": [], "warnings": ["truncated_header"]}
     magic, entry_count, struct_size = GENERIC_BLACKBOX_HEADER.unpack_from(data, 0)
@@ -288,6 +295,95 @@ def parse_generic_blackbox(path: Path, data: bytes) -> dict[str, Any]:
         "entries": capped,
         "latest": latest,
         "warnings": ["payload_truncated"] if readable < entry_count else [],
+    }
+
+
+def is_job_admission_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return "JOBADMISSION" in normalized
+
+
+def try_parse_job_admission_blackbox(data: bytes) -> dict[str, Any] | None:
+    if len(data) < JOB_ADMISSION_BLACKBOX_HEADER.size:
+        return None
+
+    magic, version, entry_count, entry_size, cursor, frame_sequence, reserved = JOB_ADMISSION_BLACKBOX_HEADER.unpack_from(data, 0)
+    if (
+        magic != HECTON8_MAGIC
+        or version < 1
+        or version > 2
+        or entry_count < 0
+        or entry_size != 64
+        or cursor < 0
+        or cursor > max(entry_count, 1)
+        or reserved != 0
+    ):
+        return None
+
+    payload_bytes = len(data) - JOB_ADMISSION_BLACKBOX_HEADER.size
+    if payload_bytes < 0 or payload_bytes % entry_size != 0:
+        return None
+
+    if entry_count > 0 and len(data) < JOB_ADMISSION_BLACKBOX_HEADER.size + entry_size:
+        return None
+
+    readable = min(max(entry_count, 0), payload_bytes // entry_size)
+    entries = []
+    offset = JOB_ADMISSION_BLACKBOX_HEADER.size
+    for _ in range(readable):
+        fields = JOB_ADMISSION_BLACKBOX_ENTRY_PREFIX.unpack_from(data, offset)
+        offset += entry_size
+        if not any(fields):
+            continue
+
+        flags = fields[7]
+        entry = {
+            "frame": fields[0],
+            "jobHash": fields[1],
+            "estimatedCostMs": round(fields[2], 4),
+            "remainingBudgetMs": round(fields[3], 4),
+            "criticalDebtFrames": fields[4],
+            "killSwitchMask": fields[5],
+            "lane": fields[6],
+            "flags": flags,
+            "stateHash": fields[9],
+        }
+        if version >= 2:
+            entry.update(
+                {
+                    "admitted": bool(flags & 0x01),
+                    "denied": bool(flags & 0x02),
+                    "aupBarrier": bool(flags & 0x04),
+                    "killSwitch": bool(flags & 0x08),
+                    "insufficientBudget": bool(flags & 0x10),
+                    "nonFinite": bool(flags & 0x20),
+                }
+            )
+        else:
+            entry.update(
+                {
+                    "legacyStarved": bool(flags & 0x01),
+                    "legacyNonFinite": bool(flags & 0x02),
+                }
+            )
+        entries.append(entry)
+
+    latest = entries[-1] if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if readable < entry_count:
+        warnings.append("payload_truncated")
+    return {
+        "type": "job_admission_blackbox",
+        "version": version,
+        "entrySize": entry_size,
+        "declaredEntryCount": entry_count,
+        "cursor": cursor,
+        "frameSequence": frame_sequence,
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
     }
 
 
@@ -671,6 +767,73 @@ def parse_failed_dump_file(path: Path, exc: Exception) -> dict[str, Any]:
     }
 
 
+def empty_job_admission_data() -> dict[str, Any]:
+    return {
+        "sources": [],
+        "latest": None,
+        "admittedCount": 0,
+        "deniedCount": 0,
+        "aupBarrierCount": 0,
+        "killSwitchCount": 0,
+        "insufficientBudgetCount": 0,
+        "nonFiniteCount": 0,
+        "legacyStarvedCount": 0,
+        "legacyNonFiniteCount": 0,
+    }
+
+
+def safe_int(value: Any, fallback: int = -1) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return fallback
+
+
+def should_replace_job_admission_latest(current: dict[str, Any] | None, candidate: dict[str, Any]) -> bool:
+    if not current:
+        return True
+
+    current_frame = safe_int(current.get("frame"))
+    candidate_frame = safe_int(candidate.get("frame"))
+    return candidate_frame >= current_frame
+
+
+def add_job_admission_dump(summary: dict[str, Any], dump: dict[str, Any]) -> None:
+    if dump.get("type") != "job_admission_blackbox":
+        return
+
+    summary["sources"].append(
+        {
+            "name": dump.get("name"),
+            "version": dump.get("version"),
+            "entrySize": dump.get("entrySize"),
+            "declaredEntryCount": dump.get("declaredEntryCount"),
+            "returnedEntryCount": dump.get("returnedEntryCount"),
+        }
+    )
+    latest = dump.get("latest")
+    if latest and should_replace_job_admission_latest(summary.get("latest"), latest):
+        summary["latest"] = {**latest, "source": dump.get("name")}
+
+    for entry in dump.get("entries", []):
+        if entry.get("admitted"):
+            summary["admittedCount"] += 1
+        if entry.get("denied"):
+            summary["deniedCount"] += 1
+        if entry.get("aupBarrier"):
+            summary["aupBarrierCount"] += 1
+        if entry.get("killSwitch"):
+            summary["killSwitchCount"] += 1
+        if entry.get("insufficientBudget"):
+            summary["insufficientBudgetCount"] += 1
+        if entry.get("nonFinite"):
+            summary["nonFiniteCount"] += 1
+        if entry.get("legacyStarved"):
+            summary["legacyStarvedCount"] += 1
+        if entry.get("legacyNonFinite"):
+            summary["legacyNonFiniteCount"] += 1
+
+
 def collect_dumps() -> dict[str, Any]:
     candidate_paths = {path for path in AGENT_LOGS.glob("Dump_*")}
     candidate_paths.update(AGENT_LOGS.glob("*.h8dump"))
@@ -691,6 +854,7 @@ def collect_dumps() -> dict[str, Any]:
     thermal_latest = None
     ecology_series = []
     frame_series = []
+    job_admission = empty_job_admission_data()
     for dump in dumps:
         if dump.get("memoryMap"):
             blocks = dump["memoryMap"]
@@ -705,6 +869,7 @@ def collect_dumps() -> dict[str, Any]:
             )
         if dump.get("type") == "thermal" and dump.get("latest"):
             thermal_latest = {**dump["latest"], "source": dump["name"]}
+        add_job_admission_dump(job_admission, dump)
         if dump.get("type") in {"biomass", "headless_blackbox"}:
             for entry in dump.get("entries", []):
                 ecology_series.append(
@@ -753,6 +918,7 @@ def collect_dumps() -> dict[str, Any]:
         "files": dumps,
         "memoryMaps": memory_maps,
         "latestThermal": thermal_latest,
+        "jobAdmission": job_admission,
         "ecologySeries": ecology_series[-MAX_CSV_ROWS:],
         "frameSeries": frame_series[-MAX_CSV_ROWS:],
     }
@@ -807,6 +973,7 @@ def build_summary() -> dict[str, Any]:
         "dumps": dump_data,
         "hphi": hphi,
         "thermal": latest_thermal,
+        "jobAdmission": dump_data["jobAdmission"],
         "frameSeries": frame_series[-MAX_CSV_ROWS:],
         "ecologySeries": ecology_series[-MAX_CSV_ROWS:],
         "evidence": {
@@ -832,6 +999,7 @@ def empty_dump_data() -> dict[str, Any]:
         "files": [],
         "memoryMaps": [],
         "latestThermal": None,
+        "jobAdmission": empty_job_admission_data(),
         "ecologySeries": [],
         "frameSeries": [],
     }
@@ -853,6 +1021,7 @@ def build_degraded_summary(exc: Exception) -> dict[str, Any]:
             "evidenceClass": "ERROR",
         },
         "thermal": None,
+        "jobAdmission": empty_job_admission_data(),
         "frameSeries": [],
         "ecologySeries": [],
         "errors": [{"type": exc.__class__.__name__, "message": str(exc)[:240]}],

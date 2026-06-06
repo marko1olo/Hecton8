@@ -159,6 +159,11 @@
     </div>
 
     <div class="panel span-12">
+      <div class="label">Job Admission</div>
+      <div class="fine" id="jobAdmissionText">No job admission blackbox loaded.</div>
+    </div>
+
+    <div class="panel span-12">
       <div class="label">Source Files</div>
       <table>
         <thead><tr><th>Name</th><th>Type</th><th>Bytes</th><th>Modified UTC</th><th>Status</th></tr></thead>
@@ -210,6 +215,7 @@
       ecologySeries: objectArray(summary.ecologySeries),
       hphi: asObject(summary.hphi),
       thermal: asObject(summary.thermal),
+      jobAdmission: asObject(summary.jobAdmission),
       csv: {
         sources: objectArray(csv.sources),
         frameSeries: objectArray(csv.frameSeries),
@@ -378,6 +384,42 @@
     text("memoryMapStatus", `${selected.name || "memory map"} | ${evidence} | ${blocks.length} blocks | ${total} bytes visualized`);
   }
 
+  function admissionLabels(entry) {
+    const labels = [];
+    if (entry.denied) labels.push("denied");
+    if (entry.admitted) labels.push("admitted");
+    if (entry.aupBarrier) labels.push("aup");
+    if (entry.killSwitch) labels.push("kill");
+    if (entry.insufficientBudget) labels.push("budget");
+    if (entry.nonFinite) labels.push("non-finite");
+    if (entry.legacyStarved) labels.push("legacy-starved");
+    if (entry.legacyNonFinite) labels.push("legacy-non-finite");
+    return labels.length ? labels.join("+") : "flags 0";
+  }
+
+  function formatJobAdmissionStatus(file) {
+    const warnings = (file.warnings || []).join(", ");
+    if (file.type !== "job_admission_blackbox") return warnings || "loaded";
+    const latest = asObject(file.latest);
+    const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+    const latestText = latest.frame === undefined ? "no latest" : `latest ${admissionLabels(latest)} frame ${latest.frame}`;
+    return warnings ? `${count} | ${latestText} | ${warnings}` : `${count} | ${latestText}`;
+  }
+
+  function updateJobAdmission(jobAdmission) {
+    const sourceCount = objectArray(jobAdmission.sources).length;
+    if (!sourceCount) {
+      text("jobAdmissionText", "No job admission blackbox loaded.");
+      return;
+    }
+    const latest = asObject(jobAdmission.latest);
+    const latestText = latest.source ? `${admissionLabels(latest)} | ${latest.source} | frame ${latest.frame ?? "--"}` : "no latest";
+    text(
+      "jobAdmissionText",
+      `sources ${sourceCount} | denied ${jobAdmission.deniedCount || 0} | non-finite ${jobAdmission.nonFiniteCount || 0} | legacy-starved ${jobAdmission.legacyStarvedCount || 0} | ${latestText}`
+    );
+  }
+
   function updateFiles(summary) {
     const tbody = document.getElementById("filesTable");
     tbody.replaceChildren();
@@ -397,7 +439,7 @@
         type: file.type || "dump",
         bytes: file.bytes || 0,
         modifiedUtc: file.modifiedUtc || "--",
-        status: (file.warnings || []).join(", ") || "loaded"
+        status: formatJobAdmissionStatus(file)
       });
     });
     rows.forEach(row => {
@@ -435,6 +477,7 @@
     updateFrameChart(frames);
     updateEcologyChart(summary.ecologySeries || []);
     updateMemoryMap(summary.dumps.memoryMaps || []);
+    updateJobAdmission(summary.jobAdmission || {});
     updateFiles(summary);
   }
 

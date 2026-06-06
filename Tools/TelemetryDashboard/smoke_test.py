@@ -31,6 +31,51 @@ def main() -> int:
     h8dump_path.write_bytes(generic)
     assert server.parse_dump_file(h8dump_path)["type"] == "generic_blackbox"
 
+    false_positive_generic = server.GENERIC_BLACKBOX_HEADER.pack(server.HECTON8_MAGIC, 2, server.GENERIC_BLACKBOX_ENTRY.size)
+    false_positive_generic += server.GENERIC_BLACKBOX_ENTRY.pack(
+        64, 3, 0.010, 0.0, 7.25, 512.0, 1.0, 2.0, 3.0, 8, 0, 2, 4, 123, 456, 9
+    )
+    false_positive_generic += server.GENERIC_BLACKBOX_ENTRY.pack(
+        65, 3, 0.020, 0.0, 7.25, 513.0, 1.0, 2.0, 3.0, 8, 0, 2, 4, 123, 456, 9
+    )
+    false_positive_path = root / "Dump_FALSE_POSITIVE_GENERIC_BLACKBOX.bin"
+    false_positive_path.write_bytes(false_positive_generic)
+    assert server.parse_dump_file(false_positive_path)["type"] == "generic_blackbox"
+
+    job_admission = server.JOB_ADMISSION_BLACKBOX_HEADER.pack(server.HECTON8_MAGIC, 2, 2, 64, 0, 77, 0)
+    job_admission += server.JOB_ADMISSION_BLACKBOX_ENTRY_PREFIX.pack(
+        77, 0xA1100001, 0.25, 0.0, 3, 0, 1, 0x12, 0, 0xDEADBEEF
+    )
+    job_admission += bytes(64 - server.JOB_ADMISSION_BLACKBOX_ENTRY_PREFIX.size)
+    job_admission += bytes(64)
+    job_path = root / "Dump_SIMULATION_BUCKET_DISTRIBUTOR_JobAdmission.bin"
+    job_path.write_bytes(job_admission)
+    parsed_job = server.parse_dump_file(job_path)
+    assert parsed_job["type"] == "job_admission_blackbox"
+    assert parsed_job["version"] == 2
+    assert parsed_job["latest"]["denied"] is True
+    assert parsed_job["latest"]["insufficientBudget"] is True
+
+    legacy_job = server.JOB_ADMISSION_BLACKBOX_HEADER.pack(server.HECTON8_MAGIC, 1, 1, 64, 0, 78, 0)
+    legacy_job += server.JOB_ADMISSION_BLACKBOX_ENTRY_PREFIX.pack(
+        78, 0xA1100002, 0.5, 0.0, 1, 0, 1, 0x03, 0, 0xA11CE001
+    )
+    legacy_job += bytes(64 - server.JOB_ADMISSION_BLACKBOX_ENTRY_PREFIX.size)
+    legacy_path = root / "Dump_SIMULATION_BUCKET_DISTRIBUTOR_JobAdmission_LegacyV1.bin"
+    legacy_path.write_bytes(legacy_job)
+    parsed_legacy_job = server.parse_dump_file(legacy_path)
+    assert parsed_legacy_job["type"] == "job_admission_blackbox"
+    assert parsed_legacy_job["version"] == 1
+    assert parsed_legacy_job["latest"]["legacyStarved"] is True
+    assert "denied" not in parsed_legacy_job["latest"]
+
+    old_sorted_late_job = server.JOB_ADMISSION_BLACKBOX_HEADER.pack(server.HECTON8_MAGIC, 2, 1, 64, 0, 1, 0)
+    old_sorted_late_job += server.JOB_ADMISSION_BLACKBOX_ENTRY_PREFIX.pack(
+        1, 0xA1100003, 0.1, 0.0, 0, 0, 1, 0x01, 0, 0xA11CE002
+    )
+    old_sorted_late_job += bytes(64 - server.JOB_ADMISSION_BLACKBOX_ENTRY_PREFIX.size)
+    (root / "Dump_Z_SIMULATION_BUCKET_DISTRIBUTOR_JobAdmission_OldFrame.bin").write_bytes(old_sorted_late_job)
+
     defrag = server.DEFRAG_ENTRY_PACK1.pack(1, 2, 3, 100, 64, 16, 32, 0, 0.25, 1, 5, 1, 0, 0)
     (root / "Dump_A_MEMORY_DEFRAGMENTATION_OVERSEER.bin").write_bytes(defrag)
 
@@ -161,6 +206,11 @@ def main() -> int:
     assert any(point["jitterMs"] == 10.0 for point in dump_data["frameSeries"])
     assert any(point["source"] == "runtime_telemetry.bin" for point in dump_data["frameSeries"])
     assert dump_data["latestThermal"]["batteryPercent"] == 77
+    assert dump_data["jobAdmission"]["deniedCount"] == 1
+    assert dump_data["jobAdmission"]["insufficientBudgetCount"] == 1
+    assert dump_data["jobAdmission"]["legacyStarvedCount"] == 1
+    assert dump_data["jobAdmission"]["latest"]["source"] == "Dump_SIMULATION_BUCKET_DISTRIBUTOR_JobAdmission_LegacyV1.bin"
+    assert dump_data["jobAdmission"]["latest"]["frame"] == 78
     assert dump_data["ecologySeries"]
     assert dump_data["memoryMaps"]
     assert dump_data["memoryMaps"][0]["name"] == "Dump_CORE_DATA_VAULT_WARDEN.txt"
@@ -171,6 +221,8 @@ def main() -> int:
         "function normalizeSummary",
         "function normalizeMemoryMap",
         "function objectArray",
+        "function updateJobAdmission",
+        "jobAdmissionText",
         "if (!response.ok)",
     ):
         assert required in index_text
@@ -181,6 +233,7 @@ def main() -> int:
     assert degraded["status"] == "DASHBOARD DEGRADED"
     assert degraded["csv"]["sources"] == []
     assert degraded["dumps"]["files"] == []
+    assert degraded["jobAdmission"]["deniedCount"] == 0
     assert degraded["errors"][0]["type"] == "RuntimeError"
 
     original_build_summary = server.build_summary

@@ -51,6 +51,7 @@ CSV rows and dump entry arrays returned by `/api/summary` are capped to the late
 ## Parser Contracts
 
 - Generic crash blackbox: `HECTON8` little-endian header, `uint entryCount`, `uint structSize`, 64-byte entries. These entries are also used as a fallback frame-time source when QA CSV is absent.
+- Job-admission blackbox: `HECTON8` little-endian 32-byte header with version, entry count, 64-byte entry size, cursor, and frame sequence; v2 decodes admission reason flags, while v1 remains legacy starvation/non-finite flags.
 - Data Vault defrag: raw `MemoryDefragTelemetryEntry` ring from `GlobalDataVault`; supports 64-byte pack-1 and 72-byte aligned variants.
 - Thermal throttling: `uint sequence`, `uint cursor`, then manual little-endian thermal records from `HardwareThermalService`.
 - Ecology biomass: magic `HECSMB8`, entry count, entry size, oldest index, capacity, then 32-byte biomass entries.
