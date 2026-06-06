@@ -280,15 +280,20 @@ namespace Hecton8.Tests.Editor
                 Application.dataPath,
                 "_Project/Scripts/Audio/ProceduralAudioEvents.cs");
             string source = File.ReadAllText(sourcePath);
-            string ownerViewBody = ExtractMethodBody(source, "private static bool TryResolveAudioEventOwnerViews");
+            string ownerViewBody = ExtractMethodBody(source, "private static bool TryResolveAudioEventOwnerViews(IDataVault vault,");
             string flushBody = ExtractMethodBody(source, "private static bool FlushAudioEvents()");
             string promoteBody = ExtractMethodBody(source, "private static void PromoteNextFrameEvents()");
+            string ensureBody = ExtractMethodBody(source, "private static bool EnsureInitialized");
 
             StringAssert.DoesNotContain("TryAcquireAudioEventWriteViews", source);
             StringAssert.DoesNotContain("ReleaseAudioEventWriteViews", source);
             AssertOwnerViewUsesResolveHandleOnly(ownerViewBody);
             StringAssert.Contains("TryResolveAudioEventOwnerViews", flushBody);
             StringAssert.Contains("TryResolveAudioEventOwnerViews", promoteBody);
+            StringAssert.Contains("TryResolveAudioEventOwnerViews(vault,", ensureBody);
+            StringAssert.Contains("return AreAudioEventViewsCreated(vault);", ensureBody);
+            StringAssert.Contains("private static bool AreAudioEventViewsCreated(IDataVault vault)", source);
+            StringAssert.Contains("private static bool TryResolveAudioEventOwnerViews(IDataVault vault,", source);
         }
 
         [Test]

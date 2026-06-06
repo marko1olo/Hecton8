@@ -964,7 +964,7 @@ namespace Hecton8.Audio
 
             if (allowAllocate)
             {
-                if (!TryResolveAudioEventOwnerViews(out AudioEventVaultViews writeViews))
+                if (!TryResolveAudioEventOwnerViews(vault, out AudioEventVaultViews writeViews))
                     return false;
 
                 ClearAudioEventRing(writeViews.Pending);
@@ -975,7 +975,7 @@ namespace Hecton8.Audio
                 _nextFrameAudioEventWriteIndex = 0;
             }
 
-            return AreAudioEventViewsCreated();
+            return AreAudioEventViewsCreated(vault);
         }
 
         private static bool IsAudioEventVaultHandle<T>(
@@ -990,7 +990,11 @@ namespace Hecton8.Audio
 
         private static bool AreAudioEventViewsCreated()
         {
-            IDataVault vault = _dataVault;
+            return AreAudioEventViewsCreated(_dataVault);
+        }
+
+        private static bool AreAudioEventViewsCreated(IDataVault vault)
+        {
             if (vault == null ||
                 !IsAudioEventVaultHandle(in _pendingAudioEventsHandle, PendingAudioEventsBufferId) ||
                 !IsAudioEventVaultHandle(in _nextFrameAudioEventsHandle, NextFrameAudioEventsBufferId))
@@ -1013,8 +1017,12 @@ namespace Hecton8.Audio
 
         private static bool TryResolveAudioEventOwnerViews(out AudioEventVaultViews views)
         {
+            return TryResolveAudioEventOwnerViews(_dataVault, out views);
+        }
+
+        private static bool TryResolveAudioEventOwnerViews(IDataVault vault, out AudioEventVaultViews views)
+        {
             views = default;
-            IDataVault vault = _dataVault;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 !IsAudioEventVaultHandle(in _pendingAudioEventsHandle, PendingAudioEventsBufferId) ||
