@@ -106,9 +106,9 @@ No runtime code was edited by `DOC_ROOT_ARCH_AUDIT`. This section records static
 | Render pipeline | URP package `17.4.0` | `Packages/manifest.json` |
 | Core packages | Addressables `2.7.6`, Input System `1.19.0`, Memory Profiler `1.1.12` | `Packages/manifest.json` |
 | XR package presence | OpenXR `1.17.0`, Meta OpenXR `2.5.0`, XR Management `4.6.0` | `Packages/manifest.json`; package presence is not platform readiness |
-| Enabled scene spine | `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD` | `ProjectSettings/EditorBuildSettings.asset` |
-| First 20 route docs | New game uses `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`; load-game resume may enter `02_HECTON_WORLD` directly | `FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md`, `FIRST_20_MINUTES_ROUTE_BRIEF.md` |
-| Scene authority drift | `AGENTS.md` still carries older no-orbit scene-flow wording; static source/docs include `01_ORBIT`; owner/integrator decision required before changing route doctrine | `AGENTS.md`, `ProjectSettings/EditorBuildSettings.asset`, `PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md` |
+| Enabled scene list | `00_BOOTSTRAP`, `01_MAIN_MENU`, `01_ORBIT`, and `02_HECTON_WORLD` are enabled in BuildSettings; enabled list is not production handoff proof | `ProjectSettings/EditorBuildSettings.asset` |
+| First 20 route docs | Current first-20 proof uses `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`; `01_ORBIT` remains standalone/YELLOW prologue route, not mandatory first-20 acceptance | `FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md`, `FIRST_20_MINUTES_ROUTE_BRIEF.md`, `PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md` |
+| Scene authority status | Root `AGENTS.md` states normative production handoff is `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`; `01_ORBIT` can only become main handoff after explicit route-bible/GREEN proof and root authority update | `AGENTS.md`, `ProjectSettings/EditorBuildSettings.asset`, `PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md` |
 | First-party asmdefs | superseded by 2026-06-01 count: `171` under `Assets/_Project` | 2026-06-01 static filesystem count |
 | Data Monolith payload | superseded by 2026-06-01 payload: `1,804,864` bytes | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
 | Data Monolith scoped validator | `PASS`; `files=2`; `structs=32`; `mb=1.0495`; `seconds=0.491846`; Python schema/payload proof only | `../Reports/DOC_ROOT_ARCH_AUDIT_h8bin_validator_narrow_20260528.json` |
@@ -184,10 +184,10 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 | Area | Distilled fact | Proof |
 |---|---|---|
-| 1303 report bloat | `47` superseded SignalBus/tether report revisions were archived before V16 | `../_Archive/Reports_1334_2026-05-26/SignalBus1303Superseded/MANIFEST_1334.json` |
+| 1303 report bloat | `47` superseded SignalBus/tether report revisions were purged on 2026-06-06 after V16 became the only current evidence snapshot | `../Reports/SIGNALBUS_HOTPATH_AUDIT_1303_APEX_V16.md` |
 | SignalBus evidence | V16 SignalBus hot-path audit remains the current evidence snapshot | `../Reports/SIGNALBUS_HOTPATH_AUDIT_1303_APEX_V16.md` |
 | X_012 root docs | Root text anchors were reduced to stable authority files | `../Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json` |
-| X_012 historical reports | `160` top-level report text files were moved out of active corpus | `../_Archive/Reports_X_012_2026-05-23/MANIFEST.md` |
+| X_012 historical reports | obsolete bulk report payload was purged on 2026-06-06; only explicitly referenced historical schemas remain | `../_Archive/Reports_X_012_2026-05-23/` |
 | APEX architecture pass | Verbose architecture ledgers were compressed and full snapshots archived | `../_Archive/Architecture_X_012_APEX_2026-05-23/` |
 | Concision chain | Historical concision scans remain report evidence only | `../Reports/README.md` |
 

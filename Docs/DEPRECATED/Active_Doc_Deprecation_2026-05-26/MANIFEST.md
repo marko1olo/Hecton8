@@ -34,6 +34,7 @@ Active replacement rules:
 - Marketing raw-lead work must use current CRM/asset/route gates. Archived verification batches are examples only.
 - The archived Priority 250 pitch sheet, raw lead seed queue, adjacent survival leads, and regional creator leads are raw planning history only; future raw sprints require a fresh bounded file and current asset/source-ledger justification.
 - Art production outputs must live in asset/source-output paths or reports, not as active `Docs` root navigation.
+- 2026-06-06 cleanup: rejected `ArtDrop/SHINOBU_361/LayeredWallSystem` candidate PNGs were purged from this deprecated bundle. They were temporary evidence only, not final assets, not imported under `Assets`, and not active source-output.
 - Architecture route cards remain active when they are the strongest surviving contract. Unindexed process notes are historical unless promoted into stable architecture docs.
 - Superseded route cards move to deprecated only when the active replacement is named in the file and active references can be repaired.
 - Contract-bound Modding audit matrices were not moved in this pass because `Docs/Modding/Validate_Mod_API_Static.ps1` and `Docs/Modding/Signal_Schema.json` still validate their active paths.

@@ -1,11 +1,11 @@
 # Deprecated Documentation Bundles: 2026-05-21 Sanitized Set
 
-Status: HISTORICAL SNAPSHOT
+Status: PARTIAL HISTORICAL REFERENCE
 Owner: SHINOBU_ARCHIVARIUS_SURGEON
 Evidence class: STATIC_DOC
 
-This folder contains old active-surface documentation bundles moved out of normal agent read paths.
+This folder formerly contained old active-surface documentation bundles moved out of normal agent read paths.
 
-Archived sources include old forensic audits, old Archivarius report trees, old SpaceEngine research, legacy world references, legacy backlog notes, and compute-audit report directories.
+Cleanup note: obsolete forensic/audit/Archivarius/backlog/compute payload folders were purged on 2026-06-06. This folder intentionally retains this README, `ARCHIVED_BUNDLES_2026-05-21.csv`, and `SPACE_ENGINE_RESEARCH/` only. `SPACE_ENGINE_RESEARCH/` remains because no active replacement copy was found during cleanup.
 
 Do not load these files as active system contracts. The complete bundle manifest is `ARCHIVED_BUNDLES_2026-05-21.csv`.

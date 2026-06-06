@@ -4,7 +4,7 @@ Date: 2026-05-23
 Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
 Evidence class: STATIC_DOC
 
-Historical top-level markdown reports moved out of active `Docs/Reports`.
+Residual historical reference schemas retained after the obsolete bulk report payload was purged on 2026-06-06.
 
 Active replacements:
 
@@ -14,10 +14,10 @@ Active replacements:
 - `Docs/Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json`
 - `Docs/Reports/DOC_STRUCTURE_VALIDATION_X_012.json`
 
-Counts:
+Retained files:
 
-- archived report markdown/txt files: `160`
-- archived report words before X_012 archive headers: `349540`
-- active corpus after archive: tracked by `Tools/OOP_Doc_Scanner.py`
+- `CAVE_SDF_SELF_AUDIT_SHINOBU_244.md`
+- `SHINOBU_260_BufferIDSovereigntyAudit.md`
+- `README.md`
 
-Rule: do not cite these reports as active contracts. Promote a current technical fact into an active document and cite the archived source path.
+Rule: do not cite this folder as an active contract. Use the retained files only when an active architecture document explicitly names the historical schema.

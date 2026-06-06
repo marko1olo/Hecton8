@@ -24,10 +24,7 @@ Root reports, prompts, status files, work logs, generated evidence, task-progres
 
 `C:\hades` is not the repository root. Files in that parent directory are outside this policy unless the repo is explicitly moved.
 
-Pre-cleanup verbose root copies are historical only:
-
-- `Docs/DEPRECATED/Root_Bloat_X_012_2026-05-23/MASTER_RELEASE_WORK_PLAN.md`
-- `Docs/DEPRECATED/Root_Bloat_X_012_2026-05-23/BUILD_PLAYTEST_ISSUES.md`
+Pre-cleanup verbose root copies from `Docs/DEPRECATED/Root_Bloat_X_012_2026-05-23/` were purged on 2026-06-06 after current root anchors remained in place.
 
 ## Active Entry Points
 

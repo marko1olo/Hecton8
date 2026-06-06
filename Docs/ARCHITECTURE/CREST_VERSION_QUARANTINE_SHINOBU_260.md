@@ -37,8 +37,13 @@ Additional Loop 13 active-asset quarantine artifacts:
 - `Docs/Archive/Crest_Version_Quarantine/Assets/_Project/Data/CrestMigration/Crest5_WaveSpectrum.asset(.meta)`
 - `Docs/Archive/Crest_Version_Quarantine/Assets/_Project/Data/CrestMigration/Crest5_FoamSettings.asset(.meta)`
 - `Docs/Archive/Crest_Version_Quarantine/Assets/_Project/Scenes/03_HECTON_WORLD_CREST5.unity(.meta)`
-- `Docs/Archive/Crest_Version_Quarantine/Assets/_Recovery/`
-- `Docs/Archive/Crest_Version_Quarantine/Assets/_Recovery.meta`
+
+Removed by 2026-06-06 hygiene cleanup:
+
+- Former `Docs/Archive/Crest_Version_Quarantine/Assets/_Recovery/`
+- Former `Docs/Archive/Crest_Version_Quarantine/Assets/_Recovery.meta`
+
+Those Unity recovery payloads were non-authoritative containment evidence only; historical provenance remains in this document and archived SHINOBU_260 logs.
 
 ## Assembly Wall
 
@@ -196,9 +201,9 @@ Exact shader scan reports only bridge-owned Crest shader/HLSL references. Shared
 
 `Assets/_Recovery` no longer exists under active Unity visibility.
 
-It was moved with `.meta` to `Docs/Archive/Crest_Version_Quarantine/Assets/_Recovery` after static scan found binary recovery scenes with Crest strings.
+It was moved with `.meta` to `Docs/Archive/Crest_Version_Quarantine/Assets/_Recovery` after static scan found binary recovery scenes with Crest strings, then removed during 2026-06-06 hygiene cleanup.
 
-This is archival containment. The folder is Unity recovery payload, not an authoritative runtime source route.
+That payload was archival containment evidence only, not an authoritative runtime source route.
 
 Known serialized vocabulary debt outside this agent's safe write boundary:
 - `SargassumCrestDampingController`

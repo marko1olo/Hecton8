@@ -8,6 +8,10 @@ This file is not deletion authorization. It proves only that selected serialized
 
 CSV companion: `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv`.
 
+Post-cleanup note 2026-06-06: the three `02_HECTON_WORLD_BISECT_*_1428` debug scenes, the non-build sandbox scenes `GeminiSandbox`, `XXX_SANDBOX`, `X_GPUSANDBOX`, `XX_SANDBOX_MASUM`, `03_HECTON_SANDBOX_BIOMES`, and the sandbox-only `HECTON_SANDBOX_BIOMES_BAKED_PREVIEW` asset were removed after owner cleanup review. They were not in `ProjectSettings/EditorBuildSettings.asset`, active scene routing still targets production scenes, and this file remains a historical static snapshot rather than a live deletion queue.
+
+Post-cleanup note 2026-06-06B: `Assets/_Project/Diagnostics/auto_baseline_test.raw`, `Assets/_Project/Scenes/_Temp/FloraBeautyAudit_TMP.unity`, and `Assets/_Project/Art/Materials/RuntimeVisualProof/MAT_RuntimeVisualProof_OldAmberPaint.mat` were removed after a focused GUID-reference recheck found no live serialized references outside historical reports/audit rows. `Assets/_Project/Data/World/Sandbox/HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset`, `Assets/_Project/Art/Models/Sandbox/Coral_Albedo.png`, and `Assets/_Project/Art/Models/Sandbox/Coral_Normal.png` were intentionally retained because current static routing still marks them as active route or pending source-candidate material.
+
 ## Static Summary
 
 | Metric | Count |

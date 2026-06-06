@@ -71,8 +71,7 @@ Superseded dated documentation layers, old patch diffs, generated atlas copies, 
 - `Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/`
 - `Docs/_Archive/Architecture_X_012_APEX_2026-05-24_FILE_CAP/`
 - `Docs/_Archive/Architecture_X_012_APEX_2026-05-24_RESIDUAL_PROSE/`
-- `Docs/_Archive/TokenUsage_2026-05-25/`
-- `Docs/_Archive/Reports_1334_2026-05-26/SignalBus1303Superseded/`
+- Superseded `Docs/_Archive/Reports_1334_2026-05-26/SignalBus1303Superseded/` payload was purged on 2026-06-06; use `Docs/Reports/SIGNALBUS_HOTPATH_AUDIT_1303_APEX_V16.md`.
 
 Complete archived-file lists:
 
@@ -80,3 +79,7 @@ Complete archived-file lists:
 - `Docs/DEPRECATED/Documentation_Bundles_2026-05-21_SANITIZED/ARCHIVED_BUNDLES_2026-05-21.csv`
 - `Docs/DEPRECATED/Reports_2026-05-21_REVALIDATION_QUARANTINE/ARCHIVED_REPORTS_REVALIDATION_2026-05-21.csv`
 - `Docs/DEPRECATED/Reports_2026-05-21_LOOP11_STALE_HANDOFF/README.md`
+
+The obsolete payload files inside the three `Reports_2026-05-21_*` folders were purged on 2026-06-06. Only README/manifest provenance remains there; use current `Docs/Reports` artifacts for active evidence.
+
+`DOCUMENTATION_CORPUS_INVENTORY_X_012.json` was purged on 2026-06-06 after cleanup made it a stale generated inventory with references to removed deprecated payloads.

@@ -4,22 +4,17 @@ Date: 2026-05-26
 Status: HISTORICAL / NOT ACTIVE AUTHORITY
 Owner: DOCS_ACTUALIZATION
 
-Moved out of active `Docs/` root:
+Original root-noise payload was purged on 2026-06-06 except for the current token telemetry pair still referenced by the 2026-06-05 dashboard.
 
-- `TOKEN_USAGE_LEDGER.md` - local Codex usage telemetry; not project engineering authority.
-- `TECHNICAL_FAQ.md` - old FAQ prose; superseded by `Docs/README.md`, `AGENTS.md`, `.agents-skills`, and architecture contracts.
-- `H8_GLOSSARY.md` - glossary prose; superseded by source, mandates, and current contracts.
-- `Marketing.rar` - binary marketing archive; not an active documentation contract.
+Retained:
 
-Moved out of active `Docs/Reports/`:
-
-- `TOKEN_USAGE_AUDIT_2026-05-26.md` - local Codex usage telemetry report; not project engineering authority.
-- `TOKEN_USAGE_AUDIT_2026-05-26.json` - machine-readable local usage telemetry; not project engineering authority.
-- `TOKEN_USAGE_AUDIT_2026-05-27.md` - refreshed local Codex usage telemetry report; not project engineering authority.
-- `TOKEN_USAGE_AUDIT_2026-05-27.json` - refreshed machine-readable local usage telemetry; not project engineering authority.
+- `TOKEN_USAGE_AUDIT_2026-06-05.md` - current dashboard input, not project engineering authority.
+- `TOKEN_USAGE_AUDIT_2026-06-05.json` - current dashboard input, not project engineering authority.
 
 Active replacement:
 
-- `Docs/CURRENT_ENGINEERING_DISTILLATE.md`
+- `Docs/README.md`
+- `AGENTS.md`
+- `Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-06-05.md`
 
-Do not restore these files into active `Docs/` without a current owner and a real contract need.
+Do not restore purged root-noise files into active `Docs/` without a current owner and a real contract need.
