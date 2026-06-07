@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import subprocess
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -15,11 +14,11 @@ REPO_ROOT = SCRIPT_DIR.parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-TEST_TEMP_ROOT = Path("C:/tmp")
-TEST_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
-tempfile.tempdir = str(TEST_TEMP_ROOT)
+from test_local_temp import project_local_tempdir_factory  # noqa: E402
 
 import ValidateTerrainProbeEvidence as validator  # noqa: E402
+
+temporary_directory = project_local_tempdir_factory("terrain_probe_evidence_tests")
 
 
 PROBE_L_LOG = REPO_ROOT / "Docs" / "Logs" / "UnityCaptureSurfaceCrestActualTerrainProbeL_20260606_022301.log"
@@ -70,7 +69,7 @@ class TerrainProbeEvidenceTests(unittest.TestCase):
         self.assertEqual("TERRAIN_PROBE_EVIDENCE_ACCEPTED", evidence.status)
 
     def test_cli_require_production_accepts_clean_packet(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_probe_evidence_") as temp_dir:
+        with temporary_directory(prefix="h8_probe_evidence_") as temp_dir:
             root = Path(temp_dir)
             log = root / "probe.log"
             metadata = root / "probe.txt"
@@ -222,8 +221,6 @@ class TerrainProbeEvidenceTests(unittest.TestCase):
 
     def test_surface_crest_probe_source_wires_skycard_horizon_parameter(self) -> None:
         source = VISUAL_CAPTURE_SOURCE.read_text(encoding="utf-8-sig", errors="replace")
-        self.assertRegex(source, r"bool\s+disableSurfaceSkyCardsForHorizonProbe[\),]")
-        self.assertIn("DisableSurfaceSkyCardsForHorizonProbe();", source)
         self.assertIn("CaptureSurfaceCrestSkyCardHorizonProbeAndExit", source)
         skycard_route_disabled = 'WriteDisabledDiagnosticRouteAndExit("h8_1919_surface_crest_skycard_horizon_probe")' in source
         helper_present = "private static void CaptureSurfaceCrestProbeAndExit(" in source
@@ -231,6 +228,8 @@ class TerrainProbeEvidenceTests(unittest.TestCase):
             self.assertIn('WriteDisabledDiagnosticRouteAndExit("h8_1919_surface_crest_skycard_horizon_probe")', source)
             return
 
+        self.assertRegex(source, r"bool\s+disableSurfaceSkyCardsForHorizonProbe[\),]")
+        self.assertIn("DisableSurfaceSkyCardsForHorizonProbe();", source)
         if skycard_route_disabled:
             self.assertGreaterEqual(source.count("disableSurfaceSkyCardsForHorizonProbe:"), 5)
         else:
@@ -238,7 +237,7 @@ class TerrainProbeEvidenceTests(unittest.TestCase):
             self.assertGreaterEqual(source.count("disableSurfaceSkyCardsForHorizonProbe:"), 6)
 
     def test_cli_require_production_fails_on_rejected_evidence(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_probe_evidence_") as temp_dir:
+        with temporary_directory(prefix="h8_probe_evidence_") as temp_dir:
             root = Path(temp_dir)
             log = root / "probe.log"
             metadata = root / "probe.txt"
@@ -262,7 +261,7 @@ class TerrainProbeEvidenceTests(unittest.TestCase):
         self.assertIn("TERRAIN_PROBE_EVIDENCE_REJECTED", result.stdout)
 
     def test_cli_missing_log_is_rejected_evidence(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_probe_evidence_") as temp_dir:
+        with temporary_directory(prefix="h8_probe_evidence_") as temp_dir:
             root = Path(temp_dir)
             missing_log = root / "missing.log"
             metadata = root / "probe.txt"
@@ -286,7 +285,7 @@ class TerrainProbeEvidenceTests(unittest.TestCase):
         self.assertIn("missing-log", result.stdout)
 
     def test_cli_require_production_without_metadata_is_rejected(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_probe_evidence_") as temp_dir:
+        with temporary_directory(prefix="h8_probe_evidence_") as temp_dir:
             root = Path(temp_dir)
             log = root / "probe.log"
             log.write_text(
@@ -314,7 +313,7 @@ class TerrainProbeEvidenceTests(unittest.TestCase):
         self.assertIn("missing-metadata", result.stdout)
 
     def test_cli_require_production_without_capture_outputs_is_rejected(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_probe_evidence_") as temp_dir:
+        with temporary_directory(prefix="h8_probe_evidence_") as temp_dir:
             root = Path(temp_dir)
             log = root / "probe.log"
             metadata = root / "probe.txt"
@@ -349,7 +348,7 @@ class TerrainProbeEvidenceTests(unittest.TestCase):
         self.assertIn("capture-output-missing", result.stdout)
 
     def test_cli_require_production_without_capture_truth_is_rejected(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_probe_evidence_") as temp_dir:
+        with temporary_directory(prefix="h8_probe_evidence_") as temp_dir:
             root = Path(temp_dir)
             log = root / "probe.log"
             metadata = root / "probe.txt"
@@ -391,7 +390,7 @@ class TerrainProbeEvidenceTests(unittest.TestCase):
         self.assertIn("metadata-capture-truth-missing", result.stdout)
 
     def test_cli_require_production_missing_link_rows_are_rejected(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_probe_evidence_") as temp_dir:
+        with temporary_directory(prefix="h8_probe_evidence_") as temp_dir:
             root = Path(temp_dir)
             log = root / "probe.log"
             metadata = root / "probe.txt"
@@ -433,7 +432,7 @@ class TerrainProbeEvidenceTests(unittest.TestCase):
         self.assertIn("splat-sediment-not-eroded", result.stdout)
 
     def test_cli_require_production_missing_generator_enabled_rows_are_rejected(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_probe_evidence_") as temp_dir:
+        with temporary_directory(prefix="h8_probe_evidence_") as temp_dir:
             root = Path(temp_dir)
             log = root / "probe.log"
             metadata = root / "probe.txt"
@@ -477,7 +476,7 @@ class TerrainProbeEvidenceTests(unittest.TestCase):
         self.assertIn("anomaly-enabled-row-missing", result.stdout)
 
     def test_cli_require_production_generator_enabled_false_is_rejected(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_probe_evidence_") as temp_dir:
+        with temporary_directory(prefix="h8_probe_evidence_") as temp_dir:
             root = Path(temp_dir)
             log = root / "probe.log"
             metadata = root / "probe.txt"
@@ -523,7 +522,7 @@ class TerrainProbeEvidenceTests(unittest.TestCase):
         self.assertIn("anomaly-disabled", result.stdout)
 
     def test_cli_require_production_capture_truth_without_production_is_rejected(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_probe_evidence_") as temp_dir:
+        with temporary_directory(prefix="h8_probe_evidence_") as temp_dir:
             root = Path(temp_dir)
             log = root / "probe.log"
             metadata = root / "probe.txt"
@@ -568,7 +567,7 @@ class TerrainProbeEvidenceTests(unittest.TestCase):
         self.assertIn("capture-truth-not-production", result.stdout)
 
     def test_cli_require_production_empty_metadata_is_rejected(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_probe_evidence_") as temp_dir:
+        with temporary_directory(prefix="h8_probe_evidence_") as temp_dir:
             root = Path(temp_dir)
             log = root / "probe.log"
             metadata = root / "probe.txt"

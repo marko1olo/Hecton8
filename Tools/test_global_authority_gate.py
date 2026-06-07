@@ -1,6 +1,5 @@
 import json
 import sys
-import tempfile
 import unittest
 from contextlib import redirect_stdout
 from io import StringIO
@@ -11,7 +10,11 @@ TOOLS_ROOT = Path(__file__).resolve().parent
 if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
 
+from test_local_temp import project_local_tempdir_factory  # noqa: E402
+
 import GlobalAuthorityGate as gate  # noqa: E402
+
+temporary_directory = project_local_tempdir_factory("global_authority_gate_tests")
 
 
 class GlobalAuthorityGateTests(unittest.TestCase):
@@ -32,7 +35,7 @@ class GlobalAuthorityGateTests(unittest.TestCase):
         return h8memory
 
     def test_hard_failures_detect_registry_get_and_duplicate_buffer_id(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_global_gate_", dir=TOOLS_ROOT) as temp_dir:
+        with temporary_directory(prefix="h8_global_gate_") as temp_dir:
             source = Path(temp_dir) / "Assets" / "_Project" / "Scripts"
             h8memory = self._write_h8_memory(source, duplicate=True)
             gameplay = source / "Gameplay" / "Owner.cs"
@@ -58,7 +61,7 @@ class GlobalAuthorityGateTests(unittest.TestCase):
         self.assertEqual(len(failures), 2)
 
     def test_json_stdout_writes_no_files_and_reports_clean_hard_gate(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_global_gate_json_", dir=TOOLS_ROOT) as temp_dir:
+        with temporary_directory(prefix="h8_global_gate_json_") as temp_dir:
             source = Path(temp_dir) / "Assets" / "_Project" / "Scripts"
             h8memory = self._write_h8_memory(source, duplicate=False)
             gameplay = source / "Gameplay" / "Owner.cs"
@@ -82,7 +85,7 @@ class GlobalAuthorityGateTests(unittest.TestCase):
         self.assertEqual(parsed["failures"], [])
 
     def test_pack_one_does_not_match_pack_sixteen(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_global_gate_pack_", dir=TOOLS_ROOT) as temp_dir:
+        with temporary_directory(prefix="h8_global_gate_pack_") as temp_dir:
             source = Path(temp_dir) / "Assets" / "_Project" / "Scripts"
             h8memory = self._write_h8_memory(source, duplicate=False)
             owner = source / "Core" / "Owner.cs"

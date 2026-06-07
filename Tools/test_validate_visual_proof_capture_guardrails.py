@@ -1,5 +1,4 @@
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -8,11 +7,11 @@ TOOLS_ROOT = Path(__file__).resolve().parent
 if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
 
-TEST_TEMP_ROOT = Path("C:/tmp")
-TEST_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
-tempfile.tempdir = str(TEST_TEMP_ROOT)
+from test_local_temp import project_local_tempdir_factory  # noqa: E402
 
 import ValidateVisualProofCaptureGuardrails as validator  # noqa: E402
+
+temporary_directory = project_local_tempdir_factory("visual_proof_capture_guardrails_tests")
 
 
 class ValidateVisualProofCaptureGuardrailsTests(unittest.TestCase):
@@ -44,7 +43,7 @@ class ValidateVisualProofCaptureGuardrailsTests(unittest.TestCase):
         )
 
     def test_required_terms_reject_missing_guardrail_text(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with temporary_directory() as tmp:
             path = Path(tmp) / "guardrail.md"
             path.write_text("H8VisualProofCapture1912\n", encoding="utf-8")
 
@@ -52,7 +51,7 @@ class ValidateVisualProofCaptureGuardrailsTests(unittest.TestCase):
                 validator.validate_required_terms({path: ("H8VisualProofCapture1912", "editor_only_unsaved")})
 
     def test_asset_reference_scan_rejects_missing_paths(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with temporary_directory() as tmp:
             root = Path(tmp)
             source = 'private const string ShaderPath = "Assets/_Project/Art/Shaders/Missing.shader";'
 
@@ -64,7 +63,7 @@ class ValidateVisualProofCaptureGuardrailsTests(unittest.TestCase):
                 validator.validate_asset_references(references)
 
     def test_stale_source_term_rejects_docs_when_absent_from_source(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with temporary_directory() as tmp:
             path = Path(tmp) / "guardrail.md"
             path.write_text("SurfaceWaterReadabilityShaderPath\n", encoding="utf-8")
 
@@ -349,7 +348,7 @@ class ValidateVisualProofCaptureGuardrailsTests(unittest.TestCase):
         self.assertTrue(result.diagnostic_only)
 
     def test_live_visual_proof_request_markers_are_rejected(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with temporary_directory() as tmp:
             root = Path(tmp)
             marker_dir = root / "Docs" / "Screenshots" / "MCP"
             marker_dir.mkdir(parents=True)
