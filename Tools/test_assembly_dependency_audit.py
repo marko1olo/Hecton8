@@ -4,13 +4,19 @@
 from __future__ import annotations
 
 import json
-import tempfile
+import sys
 import unittest
 from pathlib import Path
 
-import AssemblyDependencyAudit as audit
-
 TOOLS_ROOT = Path(__file__).resolve().parent
+if str(TOOLS_ROOT) not in sys.path:
+    sys.path.insert(0, str(TOOLS_ROOT))
+
+from test_local_temp import project_local_tempdir_factory  # noqa: E402
+
+import AssemblyDependencyAudit as audit  # noqa: E402
+
+temporary_directory = project_local_tempdir_factory("assembly_dependency_audit_tests")
 
 
 def write_asmdef(path: Path, name: str, refs: list[str] | None = None, include: list[str] | None = None) -> None:
@@ -39,7 +45,7 @@ class AssemblyDependencyAuditTests(unittest.TestCase):
         self.assertNotEqual(audit.DEFAULT_BINARY_CACHE_PATH, audit.DEFAULT_BINARY_FILE_CACHE_PATH)
 
     def test_detects_core_concrete_sibling_refs(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_asm_audit_", dir=TOOLS_ROOT) as tmp:
+        with temporary_directory(prefix="h8_asm_audit_") as tmp:
             root = Path(tmp)
             write_asmdef(root / "Hecton8.Core.asmdef", "Hecton8.Core", ["Hecton8.AI.Cognition", "Hecton8.World.Contracts"])
             write_asmdef(root / "AI" / "Hecton8.AI.Cognition.asmdef", "Hecton8.AI.Cognition")
@@ -60,7 +66,7 @@ class AssemblyDependencyAuditTests(unittest.TestCase):
         self.assertEqual(len(failures), 1)
 
     def test_contract_and_editor_refs_are_not_concrete_runtime_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_asm_audit_contract_", dir=TOOLS_ROOT) as tmp:
+        with temporary_directory(prefix="h8_asm_audit_contract_") as tmp:
             root = Path(tmp)
             write_asmdef(root / "Core.asmdef", "Hecton8.Core", ["Hecton8.World.Contracts"])
             write_asmdef(root / "World.Contracts.asmdef", "Hecton8.World.Contracts")
@@ -78,7 +84,7 @@ class AssemblyDependencyAuditTests(unittest.TestCase):
         self.assertEqual(payload["runtimeConcreteSiblingReferenceCount"], 0)
 
     def test_detects_first_party_cycles(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_asm_audit_cycle_", dir=TOOLS_ROOT) as tmp:
+        with temporary_directory(prefix="h8_asm_audit_cycle_") as tmp:
             root = Path(tmp)
             write_asmdef(root / "A.asmdef", "Hecton8.A", ["Hecton8.B"])
             write_asmdef(root / "B.asmdef", "Hecton8.B", ["Hecton8.A"])
@@ -88,7 +94,7 @@ class AssemblyDependencyAuditTests(unittest.TestCase):
         self.assertEqual(payload["cycleCount"], 1)
 
     def test_detects_core_contract_boundary_violations(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_asm_audit_contract_gate_", dir=TOOLS_ROOT) as tmp:
+        with temporary_directory(prefix="h8_asm_audit_contract_gate_") as tmp:
             root = Path(tmp)
             write_asmdef(root / "Hecton8.Core.Contracts.asmdef", "Hecton8.Core.Contracts")
             write_asmdef(root / "AI" / "Hecton8.AI.Cognition.asmdef", "Hecton8.AI.Cognition")
@@ -105,7 +111,7 @@ class AssemblyDependencyAuditTests(unittest.TestCase):
         self.assertEqual(boundary["violations"][0]["reference"], "Hecton8.AI.Cognition")
 
     def test_mock_csharp_layout_parser_detects_alignment_property_and_aup(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_asm_audit_mock_cs_", dir=TOOLS_ROOT) as tmp:
+        with temporary_directory(prefix="h8_asm_audit_mock_cs_") as tmp:
             root = Path(tmp)
             audit.generate_mock_csharp_structs(root)
             payload = audit.build_binary_schema_payload(
@@ -125,7 +131,7 @@ class AssemblyDependencyAuditTests(unittest.TestCase):
         self.assertEqual(summary["schemaProfileParseErrorCount"], 0)
 
     def test_binary_schema_audit_reuses_aggregate_cache_when_inputs_match(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_asm_audit_binary_cache_", dir=TOOLS_ROOT) as tmp:
+        with temporary_directory(prefix="h8_asm_audit_binary_cache_") as tmp:
             root = Path(tmp)
             audit.generate_mock_csharp_structs(root)
             cache_path = root / "audit_cache.json"
@@ -155,7 +161,7 @@ class AssemblyDependencyAuditTests(unittest.TestCase):
         self.assertEqual(first_summary["schemaMismatchCount"], second_summary["schemaMismatchCount"])
 
     def test_binary_schema_file_cache_reuses_csharp_parse_after_schema_profile_change(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_asm_audit_binary_file_cache_", dir=TOOLS_ROOT) as tmp:
+        with temporary_directory(prefix="h8_asm_audit_binary_file_cache_") as tmp:
             root = Path(tmp)
             audit.generate_mock_csharp_structs(root)
             cache_path = root / "aggregate_cache.json"
@@ -195,7 +201,7 @@ class AssemblyDependencyAuditTests(unittest.TestCase):
         self.assertEqual(first_summary["structsParsed"], second_summary["structsParsed"])
 
     def test_schema_profile_csv_parser_uses_fnv_rows(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_asm_audit_csv_", dir=TOOLS_ROOT) as tmp:
+        with temporary_directory(prefix="h8_asm_audit_csv_") as tmp:
             root = Path(tmp)
             csv_path = root / "binary_schema_profiles.csv"
             csv_path.write_text(
@@ -210,7 +216,7 @@ class AssemblyDependencyAuditTests(unittest.TestCase):
         self.assertEqual(payload["profiles"][0]["fnv1a32"], "0xCF3215AF")
 
     def test_oop_test_audit_detects_world_physics_and_gameobject(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_asm_audit_oop_", dir=TOOLS_ROOT) as tmp:
+        with temporary_directory(prefix="h8_asm_audit_oop_") as tmp:
             root = Path(tmp)
             audit.generate_mock_csharp_structs(root)
             payload = audit.build_oop_test_audit_payload(root, root / "qa.json")
@@ -220,7 +226,7 @@ class AssemblyDependencyAuditTests(unittest.TestCase):
         self.assertGreaterEqual(payload["gameObjectInstantiationHits"], 1)
 
     def test_using_boundary_detects_cross_domain_import(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_asm_audit_using_", dir=TOOLS_ROOT) as tmp:
+        with temporary_directory(prefix="h8_asm_audit_using_") as tmp:
             root = Path(tmp)
             write_asmdef(root / "Core" / "Hecton8.Core.Contracts.asmdef", "Hecton8.Core.Contracts")
             write_asmdef(root / "AI" / "Hecton8.AI.Cognition.asmdef", "Hecton8.AI.Cognition")

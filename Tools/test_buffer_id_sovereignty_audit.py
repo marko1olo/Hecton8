@@ -1,6 +1,5 @@
 import json
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -9,12 +8,16 @@ TOOLS_ROOT = Path(__file__).resolve().parent
 if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
 
+from test_local_temp import project_local_tempdir_factory  # noqa: E402
+
 import BufferIDSovereigntyAudit as audit  # noqa: E402
+
+temporary_directory = project_local_tempdir_factory("buffer_id_sovereignty_audit_tests")
 
 
 class BufferIDSovereigntyAuditTests(unittest.TestCase):
     def test_detects_duplicate_enum_values_and_local_casts(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_bufferid_audit_", dir=TOOLS_ROOT) as temp_dir:
+        with temporary_directory(prefix="h8_bufferid_audit_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             h8memory = source / "Core" / "Memory" / "H8Memory.cs"
@@ -70,7 +73,7 @@ class BufferIDSovereigntyAuditTests(unittest.TestCase):
             "localNumericCasts": [],
         }
 
-        with tempfile.TemporaryDirectory(prefix="h8_bufferid_json_", dir=TOOLS_ROOT) as temp_dir:
+        with temporary_directory(prefix="h8_bufferid_json_") as temp_dir:
             path = Path(temp_dir) / "audit.json"
             audit.write_json(path, payload)
             loaded = json.loads(path.read_text(encoding="utf-8"))
