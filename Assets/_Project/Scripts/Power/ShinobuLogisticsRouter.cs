@@ -274,6 +274,7 @@ namespace Hecton8.Power
         private bool _csrRebuildPending;
         private bool _localShiftPending;
         private bool _routerJobMutationGuardHeld;
+        private IDataVault _routerJobMutationGuardVault;
         private bool _initialized;
         private bool _hasGraph;
         private bool _hasFatalLayoutFault;
@@ -361,7 +362,7 @@ namespace Hecton8.Power
             ConfigurePublicSignalLanes();
             SignalBus<FluidIncursionSignal>.EnsureInitialized();
 
-            if (!TryAcquireRouterMutationGuard())
+            if (!TryAcquireRouterMutationGuard(out IDataVault guardVault))
             {
                 _hasFatalLayoutFault = true;
                 return;
@@ -406,7 +407,7 @@ namespace Hecton8.Power
             }
             finally
             {
-                ReleaseRouterMutationGuard();
+                ReleaseRouterMutationGuard(guardVault);
             }
 
             _initialized = true;
@@ -427,7 +428,7 @@ namespace Hecton8.Power
             if (_solvePending)
                 return;
 
-            if (!TryAcquireRouterMutationGuard())
+            if (!TryAcquireRouterMutationGuard(out IDataVault routerGuardVault))
                 return;
 
             bool transferRouterGuardToJobs = false;
@@ -536,12 +537,15 @@ namespace Hecton8.Power
                 TryScheduleLocalShiftJob();
                 transferRouterGuardToJobs = _solvePending || _csrRebuildPending || _localShiftPending;
                 if (transferRouterGuardToJobs)
+                {
                     _routerJobMutationGuardHeld = true;
+                    _routerJobMutationGuardVault = routerGuardVault;
+                }
             }
             finally
             {
                 if (!transferRouterGuardToJobs)
-                    ReleaseRouterMutationGuard();
+                    ReleaseRouterMutationGuard(routerGuardVault);
             }
         }
 
@@ -551,9 +555,10 @@ namespace Hecton8.Power
                 return;
 
             bool releaseRouterGuardAfterTick = false;
+            IDataVault tickGuardVault = null;
             if (!_routerJobMutationGuardHeld)
             {
-                if (!TryAcquireRouterMutationGuard())
+                if (!TryAcquireRouterMutationGuard(out tickGuardVault))
                     return;
 
                 releaseRouterGuardAfterTick = true;
@@ -585,7 +590,7 @@ namespace Hecton8.Power
             finally
             {
                 if (releaseRouterGuardAfterTick)
-                    ReleaseRouterMutationGuard();
+                    ReleaseRouterMutationGuard(tickGuardVault);
 
                 ReleaseRouterJobMutationGuardIfIdle();
             }
@@ -603,7 +608,7 @@ namespace Hecton8.Power
             if (!_initialized || _hasFatalLayoutFault)
                 return;
 
-            if (!TryAcquireRouterMutationGuard())
+            if (!TryAcquireRouterMutationGuard(out IDataVault guardVault))
                 return;
 
             try
@@ -612,7 +617,7 @@ namespace Hecton8.Power
             }
             finally
             {
-                ReleaseRouterMutationGuard();
+                ReleaseRouterMutationGuard(guardVault);
             }
         }
 
@@ -917,17 +922,27 @@ namespace Hecton8.Power
 
         private bool TryAcquireRouterMutationGuard()
         {
-            IDataVault vault = _dataVault;
-            return vault != null &&
-                   !vault.IsCompactionFenceActive &&
-                   vault.TryAcquireMutationGuard(RouterMutationGuardMask);
+            return TryAcquireRouterMutationGuard(out _);
         }
 
-        private void ReleaseRouterMutationGuard()
+        private bool TryAcquireRouterMutationGuard(out IDataVault guardVault)
         {
-            IDataVault vault = _dataVault;
-            if (vault != null)
-                vault.ReleaseMutationGuard(RouterMutationGuardMask);
+            guardVault = _dataVault;
+            IDataVault vault = guardVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(RouterMutationGuardMask))
+            {
+                guardVault = null;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void ReleaseRouterMutationGuard(IDataVault guardVault)
+        {
+            guardVault?.ReleaseMutationGuard(RouterMutationGuardMask);
         }
 
         private void ReleaseRouterJobMutationGuardIfIdle()
@@ -940,8 +955,10 @@ namespace Hecton8.Power
                 return;
             }
 
+            IDataVault guardVault = _routerJobMutationGuardVault;
             _routerJobMutationGuardHeld = false;
-            ReleaseRouterMutationGuard();
+            _routerJobMutationGuardVault = null;
+            ReleaseRouterMutationGuard(guardVault);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1165,6 +1182,7 @@ namespace Hecton8.Power
             _stateFlagsHandle = default;
             _edgesHandle = default;
             _nodesHandle = default;
+            _routerJobMutationGuardVault = null;
             _dataVault = null;
         }
 
@@ -1862,7 +1880,7 @@ namespace Hecton8.Power
             if (!_initialized || _hasFatalLayoutFault)
                 return;
 
-            if (!TryAcquireRouterMutationGuard())
+            if (!TryAcquireRouterMutationGuard(out IDataVault guardVault))
                 return;
 
             try
@@ -1871,7 +1889,7 @@ namespace Hecton8.Power
             }
             finally
             {
-                ReleaseRouterMutationGuard();
+                ReleaseRouterMutationGuard(guardVault);
             }
         }
 

@@ -280,9 +280,15 @@ namespace Hecton8.Tests.Editor
             Assert.That(text, Does.Contain("RouterMutationGuardMask"));
             Assert.That(text, Does.Contain("RouterBufferGuardBit"));
             Assert.That(text, Does.Contain("_routerJobMutationGuardHeld"));
+            Assert.That(text, Does.Contain("_routerJobMutationGuardVault"));
+            Assert.That(acquire, Does.Contain("guardVault = _dataVault"));
+            Assert.That(acquire, Does.Contain("IDataVault vault = guardVault"));
             Assert.That(acquire, Does.Contain("TryAcquireMutationGuard(RouterMutationGuardMask)"));
-            Assert.That(release, Does.Contain("ReleaseMutationGuard(RouterMutationGuardMask)"));
-            Assert.That(releaseIdle, Does.Contain("ReleaseRouterMutationGuard()"));
+            Assert.That(release, Does.Contain("guardVault?.ReleaseMutationGuard(RouterMutationGuardMask)"));
+            Assert.That(releaseIdle, Does.Contain("IDataVault guardVault = _routerJobMutationGuardVault"));
+            Assert.That(releaseIdle, Does.Contain("_routerJobMutationGuardVault = null"));
+            Assert.That(releaseIdle, Does.Contain("ReleaseRouterMutationGuard(guardVault)"));
+            Assert.That(text, Does.Not.Contain("ReleaseRouterMutationGuard();"));
             Assert.That(forceComplete, Does.Contain("DispatcherJobFence.BeginPostSimulationSwapWindow()"));
             Assert.That(forceComplete, Does.Contain("DispatcherJobFence.EndPostSimulationSwapWindow()"));
             Assert.That(forceComplete, Does.Contain("ReleaseRouterJobMutationGuardIfIdle()"));
