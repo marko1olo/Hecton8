@@ -5,18 +5,23 @@ from __future__ import annotations
 
 import json
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+TOOLS_ROOT = Path(__file__).resolve().parent
+if str(TOOLS_ROOT) not in sys.path:
+    sys.path.insert(0, str(TOOLS_ROOT))
 
-import UpgradeCurveBaker
+from test_local_temp import project_local_tempdir_factory  # noqa: E402
+import UpgradeCurveBaker  # noqa: E402
+
+
+temporary_directory = project_local_tempdir_factory("upgrade_curve_baker_tests")
 
 
 class UpgradeCurveBakerTests(unittest.TestCase):
     def test_bake_outputs_required_shape_and_validation(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with temporary_directory() as temp_dir:
             output_dir = Path(temp_dir)
             summary = UpgradeCurveBaker.run(output_dir, monte_carlo_steps=4096)
             self.assertTrue(summary["verification_passed"], summary["failures"])
