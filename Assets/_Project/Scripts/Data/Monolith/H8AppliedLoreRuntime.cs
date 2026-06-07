@@ -473,6 +473,38 @@ namespace Hecton8.Data
                     impact.Flags = WorldImpactFlagAcoustic;
                     return true;
 
+                case H8AppliedLoreHashes.P246_BLACK_KEEL_APPROACH_AUDIO_PACKET:
+                    impact.AcousticIntensity01 = 0.36f;
+                    impact.AcousticPitchScale = 0.96f;
+                    impact.Flags = WorldImpactFlagAcoustic;
+                    return true;
+
+                case H8AppliedLoreHashes.P247_DROP_CAPSULE_DIAGNOSTIC_READOUT:
+                    impact.AcousticIntensity01 = 0.44f;
+                    impact.AcousticPitchScale = 0.9f;
+                    impact.Flags = WorldImpactFlagAcoustic;
+                    return true;
+
+                case H8AppliedLoreHashes.P248_P63_PUMP_ROOM_FIRST_REPAIR_TASK:
+                    impact.BiomeHash = H8Hashes.Biomes.BiomePlayFossilReefHash;
+                    impact.AcousticIntensity01 = 0.32f;
+                    impact.Flags = WorldImpactFlagBiome | WorldImpactFlagAcoustic;
+                    return true;
+
+                case H8AppliedLoreHashes.P249_SANITIZED_ACCIDENT_PACKET_BODY:
+                    impact.BiomeHash = H8Hashes.Biomes.BiomePlayFossilReefHash;
+                    impact.AcousticIntensity01 = 0.48f;
+                    impact.AcousticPitchScale = 0.88f;
+                    impact.Flags = WorldImpactFlagBiome | WorldImpactFlagAcoustic;
+                    return true;
+
+                case H8AppliedLoreHashes.P250_FIRST_ATLAS_REPAIR_TRACE_SCENE:
+                    impact.BiomeHash = H8Hashes.Biomes.BiomePlayFossilReefHash;
+                    impact.AcousticIntensity01 = 0.56f;
+                    impact.AcousticPitchScale = 0.82f;
+                    impact.Flags = WorldImpactFlagBiome | WorldImpactFlagAcoustic;
+                    return true;
+
                 default:
                     return false;
             }
