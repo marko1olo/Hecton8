@@ -42,6 +42,7 @@ namespace Hecton8.Dev
             string persistentWorldRegistry = ReadProjectFile("Assets/_Project/Scripts/World/PersistentWorldRegistry.cs");
             string unsafeMemoryCopyGuard = ReadProjectFile("Assets/_Project/Scripts/Core/UnsafeMemoryCopyGuard.cs");
             string saveEvents = ReadProjectFile("Assets/_Project/Scripts/SaveEvents.cs");
+            string hudNotification = ReadProjectFile("Assets/_Project/Scripts/HUDNotification.cs");
             string hudSaveNotificationLink = ReadProjectFile("Assets/_Project/Scripts/UI/HUDSaveNotificationLink.cs");
             string hectonEventBus = ReadProjectFile("Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs");
             string codexPlayModeLauncher = ReadProjectFile("Assets/_Project/Scripts/Editor/CodexPlayModeLauncher.cs");
@@ -178,6 +179,14 @@ namespace Hecton8.Dev
                 ContainsAll(mainMenuController, "private uint _pendingBackupRestoreSlotHash;", "case SaveEventType.EmergencyBackupRestoreRequested:", "OnEmergencyBackupRestoreRequested(in payload);") &&
                 ContainsAll(mainMenuController, "backupRestoreRaisedForSlot || (_saveManager != null && _saveManager.LastLoadUsedBackup)", "_pendingBackupRestoreSlotHash = payload.SlotHash;");
 
+            bool hudNotificationSignalBridgePass =
+                ContainsAll(hudNotification, "using Hecton8.Core.Contracts.Signals;", "DrainHudNotificationSignals();", "SignalBus<HUDNotificationSignal>.GetFrameSnapshot()", "CanResolveDisplayMessage(signal.MessageHash)", "ResolveSignalSeverity(signal.Severity)") &&
+                ContainsAll(hudNotification, "NotificationEvents.TryResolveMessageSpan(messageHash, out ReadOnlySpan<char> message)", "message.Length > 0", "HasFixedBufferMessage(messageHash)") &&
+                ContainsAll(hudNotification, "ReportUnresolvedHudNotificationSignal(in signal);", "UnresolvedSignalTelemetryCooldownSeconds", "GlobalTelemetryBus.PublishPerformanceWarning", "HudNotificationSignalUnresolvedWarningHash") &&
+                SourceIndex(hudNotification, "DrainHudNotificationSignals();") < SourceIndex(hudNotification, "if (_tickDormant) return;") &&
+                SourceIndex(hudNotification, "CanResolveDisplayMessage(signal.MessageHash)") < SourceIndex(hudNotification, "Enqueue(signal.MessageHash, ResolveSignalSeverity(signal.Severity));") &&
+                SourceIndex(hudNotification, "TryDequeueHUDNotification") == int.MaxValue;
+
             bool saveEventDispatchMutationPass =
                 ContainsAll(saveEvents, "ListenerCapacity = 16", "_deferredRegisterListeners", "_deferredUnregisterListeners") &&
                 ContainsAll(saveEvents, "QueueDeferredRegister(listener);", "QueueDeferredUnregister(listener);", "ApplyDeferredListenerMutations();") &&
@@ -258,6 +267,7 @@ namespace Hecton8.Dev
                         writeAllBytesPurgedPass &&
                         saveEventOverflowTelemetryPass &&
                         saveRecoveryHudBridgePass &&
+                        hudNotificationSignalBridgePass &&
                         saveEventDispatchMutationPass &&
                         eventBusThrowableAllocationTelemetryPass &&
                         sceneActivationContractPass &&
@@ -287,6 +297,7 @@ namespace Hecton8.Dev
                 writeAllBytesPurgedPass,
                 saveEventOverflowTelemetryPass,
                 saveRecoveryHudBridgePass,
+                hudNotificationSignalBridgePass,
                 saveEventDispatchMutationPass,
                 eventBusThrowableAllocationTelemetryPass,
                 sceneActivationContractPass,
@@ -475,6 +486,7 @@ namespace Hecton8.Dev
             bool writeAllBytesPurgedPass,
             bool saveEventOverflowTelemetryPass,
             bool saveRecoveryHudBridgePass,
+            bool hudNotificationSignalBridgePass,
             bool saveEventDispatchMutationPass,
             bool eventBusThrowableAllocationTelemetryPass,
             bool sceneActivationContractPass,
@@ -513,6 +525,7 @@ namespace Hecton8.Dev
                 .Append("\"writeAllBytesPurgedPass\":").Append(writeAllBytesPurgedPass ? "true" : "false").Append(',')
                 .Append("\"saveEventOverflowTelemetryPass\":").Append(saveEventOverflowTelemetryPass ? "true" : "false").Append(',')
                 .Append("\"saveRecoveryHudBridgePass\":").Append(saveRecoveryHudBridgePass ? "true" : "false").Append(',')
+                .Append("\"hudNotificationSignalBridgePass\":").Append(hudNotificationSignalBridgePass ? "true" : "false").Append(',')
                 .Append("\"saveEventDispatchMutationPass\":").Append(saveEventDispatchMutationPass ? "true" : "false").Append(',')
                 .Append("\"eventBusThrowableAllocationTelemetryPass\":").Append(eventBusThrowableAllocationTelemetryPass ? "true" : "false").Append(',')
                 .Append("\"sceneActivationContractPass\":").Append(sceneActivationContractPass ? "true" : "false").Append(',')
