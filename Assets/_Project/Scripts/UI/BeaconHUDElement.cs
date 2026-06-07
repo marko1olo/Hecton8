@@ -186,8 +186,12 @@ namespace Hecton8.UI
             beaconCount = math.min(beaconCount, math.min(BeaconRegistry.Count, beacons.Length));
             _idlePollTimer = 0f;
 
-            double maxDisplayDistanceSq = (double)maxDisplayDistance * maxDisplayDistance;
-            double fadeStartDistanceSq = (double)fadeStartDistance * fadeStartDistance;
+            float safeMaxDisplayDistance = SanitizeNonNegativeFinite(maxDisplayDistance, 0f);
+            float safeFadeStartDistance = math.min(
+                SanitizeNonNegativeFinite(fadeStartDistance, safeMaxDisplayDistance),
+                safeMaxDisplayDistance);
+            double maxDisplayDistanceSq = (double)safeMaxDisplayDistance * safeMaxDisplayDistance;
+            double fadeStartDistanceSq = (double)safeFadeStartDistance * safeFadeStartDistance;
             double fadeDistanceSqSpan = math.max(0.001d, maxDisplayDistanceSq - fadeStartDistanceSq);
             int displayCount = SelectNearestDisplayBeacons(beacons, beaconCount, in observerAup, maxDisplayDistanceSq);
             if (displayCount <= 0)
@@ -206,6 +210,7 @@ namespace Hecton8.UI
             _activeIconCount = displayCount;
             float screenWidth = _screenWidthSnapshot;
             float screenHeight = _screenHeightSnapshot;
+            float safeScreenMargin = ResolveSafeScreenMargin(screenMargin, screenWidth, screenHeight);
 
             // Update each beacon icon
             for (int i = 0; i < _activeIconCount; i++)
@@ -226,7 +231,8 @@ namespace Hecton8.UI
                     fadeStartDistanceSq,
                     fadeDistanceSqSpan,
                     screenWidth,
-                    screenHeight);
+                    screenHeight,
+                    safeScreenMargin);
             }
         }
 
@@ -255,7 +261,7 @@ namespace Hecton8.UI
 
                 AbsoluteUniversePosition beaconAup = beacon.PositionAup;
                 double distanceSq = AbsoluteUniversePosition.DistanceSq(in observerAup, in beaconAup);
-                if (distanceSq > maxDisplayDistanceSq)
+                if (!IsFiniteNonNegativeDistanceSq(distanceSq) || distanceSq > maxDisplayDistanceSq)
                     continue;
 
                 int insertIndex = selectedCount;
@@ -481,7 +487,8 @@ namespace Hecton8.UI
             double fadeStartDistanceSq,
             double fadeDistanceSqSpan,
             float screenWidth,
-            float screenHeight)
+            float screenHeight,
+            float safeScreenMargin)
         {
             BeaconIconDisplay display = _iconDisplays[index];
             if (display == null || display.gameObject == null)
@@ -491,7 +498,7 @@ namespace Hecton8.UI
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in observerAup, in beaconAup);
 
             // Check if too far
-            if (distanceSq > maxDisplayDistanceSq)
+            if (!IsFiniteNonNegativeDistanceSq(distanceSq) || distanceSq > maxDisplayDistanceSq)
             {
                 ApplyDisplayVisible(display, false, 0f);
                 return;
@@ -513,8 +520,8 @@ namespace Hecton8.UI
             }
 
             // Clamp to screen bounds
-            float clampedX = math.clamp(screenPos.x, screenMargin, screenWidth - screenMargin);
-            float clampedY = math.clamp(screenPos.y, screenMargin, screenHeight - screenMargin);
+            float clampedX = math.clamp(screenPos.x, safeScreenMargin, screenWidth - safeScreenMargin);
+            float clampedY = math.clamp(screenPos.y, safeScreenMargin, screenHeight - safeScreenMargin);
 
             ApplyDisplayPosition(display, clampedX, clampedY);
 
@@ -586,6 +593,27 @@ namespace Hecton8.UI
                     display.HasCachedDistance = false;
                 }
             }
+        }
+
+        private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)
+        {
+            return distanceSq >= 0d &&
+                   !double.IsNaN(distanceSq) &&
+                   !double.IsInfinity(distanceSq);
+        }
+
+        private static float SanitizeNonNegativeFinite(float value, float fallback)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : math.max(0f, fallback);
+        }
+
+        private static float ResolveSafeScreenMargin(float margin, float screenWidth, float screenHeight)
+        {
+            if (!math.isfinite(margin))
+                return 0f;
+
+            float maxMargin = math.max(0f, math.min(screenWidth, screenHeight) * 0.5f);
+            return math.clamp(margin, 0f, maxMargin);
         }
 
         private static float ApproximateDistanceMetersFromSq(double distanceSq)

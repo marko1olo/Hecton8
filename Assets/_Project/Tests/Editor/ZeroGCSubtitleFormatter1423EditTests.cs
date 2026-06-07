@@ -1126,6 +1126,26 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void BeaconHudNearestSelection_RejectsNonFiniteDistanceSq()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/BeaconHUDElement.cs"));
+            string sampleDisplay = ExtractMethodBody(source, "private void SampleBeaconDisplay(");
+            string selectNearest = ExtractMethodBody(source, "private int SelectNearestDisplayBeacons(");
+            string updateIcon = ExtractMethodBody(source, "private void UpdateBeaconIcon(");
+
+            StringAssert.Contains("private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)", source);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceSq(distanceSq) || distanceSq > maxDisplayDistanceSq", selectNearest);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceSq(distanceSq) || distanceSq > maxDisplayDistanceSq", updateIcon);
+            StringAssert.Contains("!double.IsNaN(distanceSq)", source);
+            StringAssert.Contains("!double.IsInfinity(distanceSq)", source);
+            StringAssert.Contains("SanitizeNonNegativeFinite(maxDisplayDistance, 0f)", sampleDisplay);
+            StringAssert.Contains("SanitizeNonNegativeFinite(fadeStartDistance, safeMaxDisplayDistance)", sampleDisplay);
+            StringAssert.Contains("ResolveSafeScreenMargin(screenMargin, screenWidth, screenHeight)", sampleDisplay);
+            StringAssert.Contains("math.clamp(screenPos.x, safeScreenMargin, screenWidth - safeScreenMargin)", updateIcon);
+            StringAssert.Contains("math.clamp(screenPos.y, safeScreenMargin, screenHeight - safeScreenMargin)", updateIcon);
+        }
+
+        [Test]
         public void InteractionPromptLocalizationPresentation_QueuesLateFrameRefresh()
         {
             string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/InteractionUI.cs"));
