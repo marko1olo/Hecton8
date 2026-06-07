@@ -2423,6 +2423,7 @@ namespace Hecton8.Core
 
         private void EnsureHapticDeviceBinding()
         {
+            SignalCorridorRuntime.EnsureHapticPulseSignalLaneInitialized();
             SubscribeToDeviceChanges();
             RefreshCachedGamepadBinding();
             if (HectonXRRuntimeState.IsXRActive)
@@ -3976,6 +3977,7 @@ namespace Hecton8.Core
             if (ToolHapticsRuntime.PowerSaveMuteActive)
             {
                 DrainSuppressedHapticRequests();
+                DrainSuppressedHapticPulses();
                 ClearVaultBuffer(ref _hapticCommandDtoHandle);
                 _lastHapticCommandsActive = 0;
                 _hapticDispatchAccumulator = 0f;
@@ -4006,6 +4008,14 @@ namespace Hecton8.Core
                     continue;
 
                 InsertHapticRequestCommand(in request);
+            }
+
+            while (SignalBus<HapticPulseSignal>.TryConsumeFrame(out HapticPulseSignal pulse))
+            {
+                if (schemeHash == InputSchemeHashKeyboardMouse)
+                    continue;
+
+                InsertHapticPulseCommand(in pulse);
             }
 
             if (schemeHash == InputSchemeHashKeyboardMouse)
@@ -4086,6 +4096,13 @@ namespace Hecton8.Core
         private static void DrainSuppressedHapticRequests()
         {
             while (SignalBus<HapticRequest>.TryConsumeFrame(out _))
+            {
+            }
+        }
+
+        private static void DrainSuppressedHapticPulses()
+        {
+            while (SignalBus<HapticPulseSignal>.TryConsumeFrame(out _))
             {
             }
         }
@@ -4176,6 +4193,26 @@ namespace Hecton8.Core
                 HapticLowMotorMask | HapticHighMotorMask,
                 ResolveHapticRequestPriority(in request),
                 ResolveHapticRequestBlendMode(in request));
+        }
+
+        private void InsertHapticPulseCommand(in HapticPulseSignal pulse)
+        {
+            float low = ClampFinite01(pulse.LowFrequencyMotor01);
+            float high = ClampFinite01(pulse.HighFrequencyMotor01);
+            if ((low <= HapticMotorWriteEpsilon && high <= HapticMotorWriteEpsilon) ||
+                pulse.DurationSeconds <= 0f)
+            {
+                return;
+            }
+
+            float decayRate = 1f / math.max(pulse.DurationSeconds, 0.02f);
+            InsertHapticCommandDto(
+                low,
+                high,
+                decayRate,
+                HapticLowMotorMask | HapticHighMotorMask,
+                ResolveHapticPulsePriority(pulse.PriorityFlags),
+                ResolveHapticPulseBlendMode(pulse.PriorityFlags));
         }
 
         private void InsertHapticCommandDto(float lowFreqIntensity, float highFreqIntensity, float decayRate, uint motorMask)

@@ -309,17 +309,6 @@ namespace Hecton8.Core
             }
 
             SignalBus<HapticPulseSignal>.TryPushTracked(in pulse, ref s_x001HectonInputRuntimeHapticSynthSignalPushDropCount);
-            float safeDeltaTime = math.isfinite(deltaTime) && deltaTime > 0f
-                ? math.min(deltaTime, 0.1f)
-                : (float)StandardInputTickIntervalSeconds;
-            float decayRate = 1f / math.max(pulse.DurationSeconds, math.max(safeDeltaTime, 0.02f));
-            InsertHapticCommandDto(
-                pulse.LowFrequencyMotor01,
-                pulse.HighFrequencyMotor01,
-                decayRate,
-                HapticLowMotorMask | HapticHighMotorMask,
-                ResolveHapticPulsePriority(pulse.PriorityFlags),
-                ResolveHapticPulseBlendMode(pulse.PriorityFlags));
         }
 
         private void QueueSynthesizedHapticCommand(float deltaTime, in InputProfileDTO profile, uint schemeHash)
@@ -335,17 +324,7 @@ namespace Hecton8.Core
             float safeDeltaTime = math.isfinite(deltaTime) && deltaTime > 0f
                 ? math.min(deltaTime, 0.1f)
                 : (float)StandardInputTickIntervalSeconds;
-            if (!TryRunHapticSynthesisTranslator(safeDeltaTime, in profile, out HapticPulseSignal synthesizedPulse))
-                return;
-
-            float decayRate = 1f / math.max(synthesizedPulse.DurationSeconds, 0.02f);
-            InsertHapticCommandDto(
-                synthesizedPulse.LowFrequencyMotor01,
-                synthesizedPulse.HighFrequencyMotor01,
-                decayRate,
-                HapticLowMotorMask | HapticHighMotorMask,
-                ResolveHapticPulsePriority(synthesizedPulse.PriorityFlags),
-                ResolveHapticPulseBlendMode(synthesizedPulse.PriorityFlags));
+            TryRunHapticSynthesisTranslator(safeDeltaTime, in profile, out _);
         }
 
         private bool TryRunHapticSynthesisTranslator(float deltaTime, in InputProfileDTO inputProfile, out HapticPulseSignal pulse)

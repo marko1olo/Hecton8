@@ -45,14 +45,20 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void SynthesizedHapticPulses_PreservePriorityFlagsWhenQueued()
+        public void HapticPulseLane_FeedsInputDispatcherWithoutSynthesisDtoBypass()
         {
-            string source = ReadProjectFile("Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs");
+            string dispatcher = Normalize(ReadProjectFile("Assets/_Project/Scripts/Core/InputDispatcher.cs"));
+            string synthesis = Normalize(ReadProjectFile("Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs"));
 
-            Assert.AreEqual(2, CountToken(source, "ResolveHapticPulsePriority("));
-            Assert.AreEqual(2, CountToken(source, "ResolveHapticPulseBlendMode("));
-            StringAssert.Contains("ResolveHapticPulsePriority(pulse.PriorityFlags)", source);
-            StringAssert.Contains("ResolveHapticPulsePriority(synthesizedPulse.PriorityFlags)", source);
+            StringAssert.Contains("SignalCorridorRuntime.EnsureHapticPulseSignalLaneInitialized();", dispatcher);
+            StringAssert.Contains("while (SignalBus<HapticPulseSignal>.TryConsumeFrame(out HapticPulseSignal pulse))", dispatcher);
+            StringAssert.Contains("InsertHapticPulseCommand(in pulse);", dispatcher);
+            StringAssert.Contains("private void InsertHapticPulseCommand(in HapticPulseSignal pulse)", dispatcher);
+            StringAssert.Contains("ResolveHapticPulsePriority(pulse.PriorityFlags)", dispatcher);
+            StringAssert.Contains("ResolveHapticPulseBlendMode(pulse.PriorityFlags)", dispatcher);
+            Assert.AreEqual(2, CountToken(synthesis, "SignalBus<HapticPulseSignal>.TryPushTracked(in pulse"));
+            StringAssert.DoesNotContain("ResolveHapticPulsePriority(pulse.PriorityFlags)", synthesis);
+            StringAssert.DoesNotContain("ResolveHapticPulsePriority(synthesizedPulse.PriorityFlags)", synthesis);
         }
 
         [Test]
