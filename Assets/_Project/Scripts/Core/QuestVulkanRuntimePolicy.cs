@@ -83,19 +83,4 @@ namespace Hecton8.Core
                    value.IndexOf("Meta", StringComparison.OrdinalIgnoreCase) >= 0;
         }
     }
-
-    /// <summary>
-    /// Deprecated compatibility shim. Hardware foveation is owned by Graphics/VR/FoveatedRenderCommander.
-    /// </summary>
-    [Obsolete("Use Hecton8.Graphics.VR.FoveatedRenderCommander. This shim exists only to keep old serialized components from becoming missing scripts.")]
-    [DisallowMultipleComponent]
-    [DefaultExecutionOrder(-9820)]
-    [AddComponentMenu("")]
-    public sealed class OculusFfrEnforcer : MonoBehaviour
-    {
-        private void OnEnable()
-        {
-            enabled = false;
-        }
-    }
 }
