@@ -165,7 +165,7 @@ namespace Hecton8.Visor
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredLateFrame = false;
+                TryUnregisterTickHandler();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegisterTickHandler();
                 return;
@@ -173,7 +173,7 @@ namespace Hecton8.Visor
 
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
             {
-                _cachedAudioService = currentService as IAudioService;
+                CacheAudioService(currentService as IAudioService);
                 return;
             }
 
@@ -398,9 +398,35 @@ namespace Hecton8.Visor
 
         private void CacheRegistryServicesCold()
         {
-            _cachedAudioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _cachedPlayerContext = GlobalRegistry.Player;
             ApplyCachedPlayerContext();
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _cachedAudioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void ApplyCachedPlayerContext()
@@ -515,7 +541,7 @@ namespace Hecton8.Visor
 
         private void PlayHeartbeat(float stress01)
         {
-            IAudioService audioManager = _cachedAudioService;
+            IAudioService audioManager = ResolveAudioService();
             if (heartbeatClip == null || audioManager == null)
                 return;
 

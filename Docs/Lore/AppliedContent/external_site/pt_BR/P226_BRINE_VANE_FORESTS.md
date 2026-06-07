@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Brine Vane Forests"
+title: "Florestas de lâminas de salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Brine Vane Forests
+# Florestas de lâminas de salmoura
 
-PT LOC HOLD: Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure.
+Florestas de lâminas de salmoura são onde HECTON-8 deixa de permitir que a água se comporte como espaço vazio. No cânion, a água vira arquitetura: camadas de densidade se empilham como paredes, o sonar dobra ao redor de prateleiras invisíveis e uma descida descuidada pode colocar um traje abaixo da flutuabilidade esperada antes que o medidor de profundidade pareça dramático. Lâminas de salmoura tornam essa matemática visível. Não são plantas da Terra nem um recife alienígena falante. São membranas de sal e mineral que crescem onde gradientes químicos continuam alimentando-as, planas o bastante para parecer botânicas e físicas o bastante para merecer confiança. Uma lâmina viva diz: não atravesse aqui. Uma borda rasgada diz: algo atravessou recentemente. Uma ponta enrolada diz: a fronteira está enfraquecendo. Uma costela pálida diz: a membrana soltou material, talvez útil para química de salmoura, grão de selante ou calibração de sensor de densidade. Um bom design de cânion deve fazer jogadores navegarem por esses sinais, não por setas: derivar ao longo de uma parede intacta, encontrar a boca rasgada, ver o sonar entortar, sentir o trim do traje mudar e entender que o oceano não bloqueia o caminho por maldade. Ele obedece à pressão. É por isso que florestas de lâminas de salmoura são belas de um jeito mais frio que a plataforma fótica. Elas não acolhem. Elas são legíveis.
 
 ## Scanner
 
-PT LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+FLORESTA DE LÂMINAS DE SALMOURA // Membranas de sal e mineral crescem ao longo do cisalhamento de densidade. Mostram onde a água engrossa em parede e onde o sonar vai dobrar.
 
 ## Terminal
 
-PT LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+BASE DE CÂNION: lâminas intactas marcam fronteiras duras de densidade. Bordas rasgadas e pontas enroladas indicam janelas de cisalhamento, bolsões menos salinos ou tráfego recente. Evite água opaca em camadas; ela pode cegar o sonar e puxar um traje abaixo da flutuabilidade esperada.
 
 ## Audio
 
-PT LOC HOLD: The canyon has leaves because it has pressure gradients.
+O cânion tem folhas porque tem gradientes de pressão.
 
 ## Field Note
 
-PT LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+Não são árvores. São folhas de pressão: membranas que se alimentam de gradientes químicos, rasgadas só onde uma rota forçou passagem recentemente.
 
 <!-- External Site; generated from P226_BRINE_VANE_FORESTS/pt_BR. -->

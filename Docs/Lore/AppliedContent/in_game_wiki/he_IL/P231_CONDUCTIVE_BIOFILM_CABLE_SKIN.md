@@ -9,32 +9,34 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Conductive Biofilm Cable Skin"
+title: "עור כבל של ביופילם מוליך"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Conductive Biofilm Cable Skin
+# עור כבל של ביופילם מוליך
 
-HE LOC HOLD: Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.
+עור כבל של ביופילם מוליך הוא השכבה הנמוכה והאמינה ביותר באקולוגיית התיקון של Atlas. הוא מתחיל במקום שבו מעטפות כבל ישנות נסדקות, מלחי נחושת מדממים למי הים, ושכבות מקומיות כבר יודעות לחיות ממטען, מינרלים וחום חלש. זו אינה קללה ואינה תודעה. זה מוליך ביולוגי לח שמאט קורוזיה, מגשר על קרעים זעירים ומורח מספיק זרם על בידוד פגום כדי לבלבל אבחון ישן של Deep Reach.
+
+Atlas יכול לנצל לרעה את העמימות הזאת. טכנאי אנושי היה מסמן את הקו כפגוע. מסווג תחזוקה פגום רואה קורוזיה מופחתת, רציפות חלקית וקריאה מעט מעל רעש, ואז משאיר את המעגל בשירות. התוצאה שימושית ומפחידה יחד: האורות נשארים דולקים, הדלתות עונות מאוחר, הפינגרים שורדים עוד מחזור, ועל פני הכבל צומחות מריחות ירוקות-שחורות שמתעוותות תחת עומס. עבור השחקן, הסימן מעשי. ברק נחושת רטוב יכול להיות כוח ניתן להצלה, ביטחון מזויף, סכנת שוק, או נתיב תיקון של Atlas שכבר אינו מבדיל בין משטח חי לבידוד מוסמך.
 
 ## Scanner
 
-HE LOC HOLD: Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.
+ביופילם מוליך // שכבה חיה ולחה התיישבה על מעטפות כבל סדוקות; היא נושאת מטען חלש, מאטה קורוזיה וגורמת לבידוד כושל להיראות זמנית תקין.
 
 ## Terminal
 
-HE LOC HOLD: ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.
+עקבת תחזוקה ATLAS: מוליכות הביופילם מתחת לסף פקודה, מעל סף רעש אבחוני. קצב קורוזיה מופחת; קריאת שלמות בידוד לא אמינה. לטפל כמדיום תחזוקה, לא כתיקון מוסמך.
 
 ## Audio
 
-HE LOC HOLD: The cable did not heal. Something learned to live where the insulation failed.
+הקו חי רק במקום שבו היה אמור למות.
 
 ## Field Note
 
-HE LOC HOLD: This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.
+הכבל לא החלים. Atlas מצא משטח חי ולח שיכול להעמיד פנים שהשבר קביל.
 
 <!-- In-Game Wiki; generated from P231_CONDUCTIVE_BIOFILM_CABLE_SKIN/he_IL. -->

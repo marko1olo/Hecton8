@@ -143,16 +143,11 @@ namespace Hecton8.World
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                    {
-                        _registeredToTickManager = false;
-                        break;
-                    }
-
+                    TryUnregister();
                     if (isActiveAndEnabled)
                     {
-                        TryUnregister();
-                        TryRegister();
+                        if (currentService != null)
+                            TryRegister();
                     }
                     break;
                 case GlobalRegistryServiceSlot.Player:

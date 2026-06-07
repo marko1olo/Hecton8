@@ -7,6 +7,9 @@ poi_tags: poi.orbit_dossier;poi.signal_mast
 biome_tags: biome.storm_shelf;biome.orbit_window
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Aegir 위성 사다리"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

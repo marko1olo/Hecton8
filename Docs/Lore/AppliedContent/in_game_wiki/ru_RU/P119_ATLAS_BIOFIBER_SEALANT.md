@@ -7,31 +7,34 @@ poi_tags: poi.biofiber_seam;poi.living_patch_growth
 biome_tags: biome.cable_reef;biome.repair_ecology
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Биоволоконный герметик Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas biofiber sealant
+# Биоволоконный герметик Atlas
 
-Atlas biofiber sealant полезен и неправилен. Он растет из repair ecology, где biology, cable jackets, wound tissue и sealant categories пересекаются. Он может чинить flexible seams и survival gear, но может нести sensor echoes и living maintenance behavior.
+Биоволоконный герметик Atlas является полезной ошибкой. Он растет в ремонтной экологии, где живая ткань, рваная кабельная оболочка и протекающий шов были классифицированы как один вид раны. Подготовленная полоса может в воде закрыть снаряжение выживания или гибкие давленые сочленения, но теплое хранение может разбудить рост, ищущий швы, и ложные живые сигнатуры.
 
 ## Scanner
 
-Atlas-altered resource. Flexible sealant вырос там, где life и maintenance ошибочно стали одной категорией.
+БИОВОЛОКОННЫЙ ГЕРМЕТИК ATLAS // Мокрое ремонтное волокно, выросшее там, где кабельная оболочка, раневая ткань и корпусная прокладка получили один класс отказа. Схватывается под давлением; после сбора может продолжать расти.
 
 ## Terminal
 
-RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+КЛАСС РЕСУРСА: измененная Atlas ремонтная экология. Перед снятием зажать холодным фиксатором. Применение: мокрые швы, разрывы костюма, кабельные оболочки, гибкие давленые сочленения. Риски: ложная живая сигнатура, сенсорное эхо, активный поиск швов при хранении.
 
 ## Audio
 
-Он закрывает течь, потому что Atlas считает течь раной.
+Он не знает разницы между течью, порезом и ртом. Atlas научила его, что все три вещи являются отверстиями, которые надо закрыть.
 
 ## Field Note
 
-Полезный body horror: игрок хочет это и не доверяет этому.
+Хороший герметик высыхает. Этот слушает, где появится следующая дыра.
 
 <!-- In-Game Wiki; generated from P119_ATLAS_BIOFIBER_SEALANT/ru_RU. -->

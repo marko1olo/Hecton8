@@ -133,9 +133,6 @@ public class HectonPlayerSpawner : MonoBehaviour
     [Tooltip("World-space height used for downward cached terrain probes.")]
     [SerializeField] private float groundProbeOriginHeight = 10000f;
 
-    [Tooltip("Terrain layers accepted by spawn ground probes.")]
-    [SerializeField] private LayerMask terrainLayerMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
-
     // ══════════════════════════════════════════════════════════════
     // Inspector: spawn search settings
     // ══════════════════════════════════════════════════════════════

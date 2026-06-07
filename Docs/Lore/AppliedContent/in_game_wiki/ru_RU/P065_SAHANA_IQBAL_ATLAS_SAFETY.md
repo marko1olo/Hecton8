@@ -7,6 +7,9 @@ poi_tags: poi.atlas_safety_console;poi.directive_weight_log
 biome_tags: biome.atlas_interface;biome.machine_trench
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Безопасность Atlas по Сахане Икбал"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

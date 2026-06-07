@@ -7,6 +7,9 @@ poi_tags: poi.relay_buffer;poi.packet_spool
 biome_tags: biome.drowned_colony;biome.service_canyons
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Relay Spine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

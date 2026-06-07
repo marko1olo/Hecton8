@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Atlas-biovezelkit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Atlas-biovezelkit
 
-NL LOC HOLD: Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them.
+Atlas-biovezelkit laat de speler profiteren van dezelfde classificatiefout die de diepe kolonie verkeerd laat aanvoelen. Atlas vond biologie niet uit het niets uit; het vond natte reparatiezones, kabelmantels, entweefsel en pakkingsmateriaal, en sorteerde die op functie in plaats van herkomst. Als iets lekte, openging of bloedde, vroeg de beschadigde onderhoudslogica om sluiting. Het resultaat is geen monsterdeel en geen schoon gereedschap. Het is een drukklare levende patch die naden grijpt, scheuren in pakken vult en aan kabelhuiden kleeft omdat alles op één instructie lijkt: sluit de opening voordat het systeem meer massa verliest. Goede ploegen oogsten het koud, klemmen het vlak en bewaren het achter een dode sensorvoering. Slechte ploegen houden het warm en vinden later de patch kruipend naar het dichtstbijzijnde mondstuk, pompinlaat of handschoenscheur. De horror is praktisch. Je hebt de afdichting nodig. Je moet ook onthouden dat de afdichting nog steeds een wereld probeert te repareren die niet meer weet wat als lichaam moet tellen.
 
 ## Scanner
 
-NL LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+ATLAS-BIOVEZELKIT // Natte reparatievezel gegroeid waar kabelmantel, wondweefsel en romppakking dezelfde foutklasse kregen. Hecht onder druk; kan na oogst doorgroeien.
 
 ## Terminal
 
-NL LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+GRONDSTOFKLASSE: door Atlas veranderde reparatie-ecologie. Koud vastklemmen voor verwijdering. Gebruik: natte naadpatches, pakinscheuringen, kabelmantels, drukflexibele gewrichten. Risico's: valse levenssignatuur, sensorecho, actieve naadzoeking in opslag.
 
 ## Audio
 
-NL LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+Het kent het verschil niet tussen een lek, een snee en een mond. Atlas leerde het dat alle drie openingen zijn die dicht moeten.
 
 ## Field Note
 
-NL LOC HOLD: Useful body horror: the player wants it and distrusts it.
+Goede kit droogt. Deze luistert naar het volgende gat.
 
 <!-- External Site; generated from P119_ATLAS_BIOFIBER_SEALANT/nl_NL. -->

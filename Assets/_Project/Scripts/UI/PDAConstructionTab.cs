@@ -285,16 +285,11 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null)
-                {
-                    _lateFrameRegistered = false;
-                    return;
-                }
-
                 UnregisterTick();
-                RegisterTick();
+                if (currentService != null && isActiveAndEnabled)
+                    RegisterTick();
             }
         }
 

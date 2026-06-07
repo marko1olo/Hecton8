@@ -7,6 +7,9 @@ poi_tags: poi.coordinate_sale_socket;poi.xo_proof_vault
 biome_tags: biome.atlas_basin;biome.factory_temple
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Payload Sell Coordinates Receiver Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

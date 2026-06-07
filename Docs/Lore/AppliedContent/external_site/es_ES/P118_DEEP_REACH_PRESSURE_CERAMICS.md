@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "Cerámica de presión Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# Cerámica de presión Deep Reach
 
-ES LOC HOLD: Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities.
+La cerámica de presión Deep Reach explica por qué la colonia pudo funcionar y por qué sus restos siguen siendo letales. Deep Reach no construyó una industria de fondo por incompetencia. La compañía aprendió a amplificar arcillas locales, fundentes sulfurados y calor de forja de respiradero hasta crear piezas cerámicas que sobrevivían a presiones que el metal común no toleraba. Los anillos de abrazadera sostenían juntas de hábitat. Los asientos de sello mantenían honestas a las bombas. Los contactos de cortador llevaban calor a través de la salmuera sin convertirse en chatarra blanda. El aislamiento de las cunas de ascenso compraba unos minutos críticos cuando el hardware de lanzamiento debería haberse cocinado solo. Esa competencia forma parte del horror, no lo contradice. El jugador que recupera cerámica de presión maneja una prueba de que Deep Reach entendía este mundo lo suficiente para mantener viva a la gente, y aun así eligió procedimientos y responsabilidades que hicieron rentable abandonarla. El material recuerda ambos hechos. Es precioso en una receta de escape y peligroso en un pecio. El choque térmico puede producir floración de fragmentos: una fractura blanca y silenciosa se abre en pétalos de cuchillo sobre la cara de un anillo. Una mala liberación de presión puede convertir un asiento perfecto en metralla. Usa este recurso para mostrar verdad industrial, no una textura genérica de villano. La colonia dependía de él porque funcionaba. El jugador depende de él por la misma razón.
 
 ## Scanner
 
-ES LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+CERAMICA DE PRESION DEEP REACH // Arcilla local, fundente sulfurado y calor de forja de respiradero convertidos en anillos de abrazadera y asientos de sello. Aguanta la presión con belleza; al recibir choque falla como cuchillos.
 
 ## Terminal
 
-ES LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+CLASE DE RECURSO: amplificado por Deep Reach. Usos: anillos de abrazadera, asientos de sello, contactos de cortador, aislamiento de cuna de ascenso. Modo de fallo: floración de fragmentos por choque térmico o mala liberación de presión.
 
 ## Audio
 
-ES LOC HOLD: The company was good at building things. That is part of the crime.
+Deep Reach sabía construir cosas. Por eso la mentira funcionó.
 
 ## Field Note
 
-ES LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+Golpéala en frío. Si canta alto, no la calientes.
 
 <!-- External Site; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/es_ES. -->

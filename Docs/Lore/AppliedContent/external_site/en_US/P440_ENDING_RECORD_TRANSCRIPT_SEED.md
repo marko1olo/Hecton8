@@ -7,6 +7,9 @@ poi_tags: poi.ending_record_transcript;poi.after_action_dossier
 biome_tags: biome.spoiler_gate;biome.codex
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Ending Record Transcript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

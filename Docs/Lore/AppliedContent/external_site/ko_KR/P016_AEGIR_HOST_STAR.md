@@ -7,6 +7,9 @@ poi_tags: poi.sky_window;poi.route_archive
 biome_tags: biome.storm_shelf;biome.surface_weather
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Aegir 모성"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.return_vector_marker;poi.black_keel_reentry_slot
 biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Partial Exit Same-Seed Return"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

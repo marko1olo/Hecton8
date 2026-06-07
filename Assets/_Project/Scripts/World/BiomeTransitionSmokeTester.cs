@@ -14,6 +14,8 @@ namespace Hecton8.World
     [AddComponentMenu("Hecton/World/Biome Transition Smoke Tester")]
     public sealed class BiomeTransitionSmokeTester : MonoBehaviour
     {
+        private const string NativeMemoryOwner = nameof(BiomeTransitionSmokeTester);
+
         [SerializeField] private bool runOnStart = false;
         [SerializeField] private bool logResult = true;
         [SerializeField] private bool _debugPassed;
@@ -91,15 +93,15 @@ namespace Hecton8.World
 
             try
             {
-                samples = new NativeArray<BiomeTransitionSample>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                sources = new NativeArray<BiomeTransitionFogSource>(
+                samples = AllocateTrackedTempJobArray<BiomeTransitionSample>(1, nameof(samples), NativeArrayOptions.ClearMemory);
+                sources = AllocateTrackedTempJobArray<BiomeTransitionFogSource>(
                     HectonBiomeVisualFamilyUtility.VisualFamilyCount,
-                    Allocator.TempJob,
+                    nameof(sources),
                     NativeArrayOptions.ClearMemory);
-                fromAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                toAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                playerAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                results = new NativeArray<BiomeTransitionFogResult>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                fromAup = AllocateTrackedTempJobArray<AbsoluteUniversePositionBlit128>(1, nameof(fromAup), NativeArrayOptions.ClearMemory);
+                toAup = AllocateTrackedTempJobArray<AbsoluteUniversePositionBlit128>(1, nameof(toAup), NativeArrayOptions.ClearMemory);
+                playerAup = AllocateTrackedTempJobArray<AbsoluteUniversePositionBlit128>(1, nameof(playerAup), NativeArrayOptions.ClearMemory);
+                results = AllocateTrackedTempJobArray<BiomeTransitionFogResult>(1, nameof(results), NativeArrayOptions.ClearMemory);
 
                 byte fromVisualFamilyId = HectonBiomeVisualFamilyUtility.MapToVisualFamily(42);
                 byte toVisualFamilyId = HectonBiomeVisualFamilyUtility.MapToVisualFamily(43);
@@ -154,12 +156,49 @@ namespace Hecton8.World
             }
             finally
             {
-                if (samples.IsCreated) samples.Dispose();
-                if (sources.IsCreated) sources.Dispose();
-                if (fromAup.IsCreated) fromAup.Dispose();
-                if (toAup.IsCreated) toAup.Dispose();
-                if (playerAup.IsCreated) playerAup.Dispose();
-                if (results.IsCreated) results.Dispose();
+                DisposeTrackedTempJobArray(ref samples);
+                DisposeTrackedTempJobArray(ref sources);
+                DisposeTrackedTempJobArray(ref fromAup);
+                DisposeTrackedTempJobArray(ref toAup);
+                DisposeTrackedTempJobArray(ref playerAup);
+                DisposeTrackedTempJobArray(ref results);
+            }
+        }
+
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, string label, NativeArrayOptions options) where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+
+            array.Dispose();
+            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void DisposeTrackedTempJobArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
             }
         }
 

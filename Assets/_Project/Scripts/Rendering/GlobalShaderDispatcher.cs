@@ -365,15 +365,9 @@ namespace Hecton8.Core
                     _resolutionScaler = currentService as IResolutionScalerService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService != null)
-                    {
+                    TryUnregisterLateFrameTickable();
+                    if (currentService != null && isActiveAndEnabled)
                         TryRegisterLateFrameTickable();
-                    }
-                    else if (_registeredLateFrame)
-                    {
-                        GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                        _registeredLateFrame = false;
-                    }
 
                     break;
             }
@@ -613,6 +607,15 @@ namespace Hecton8.Core
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
         }
 
         private void TryRegisterHotSwapListener()

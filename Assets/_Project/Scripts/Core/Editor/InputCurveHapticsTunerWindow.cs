@@ -18,6 +18,7 @@ namespace Hecton8.Core.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= Repaint;
             EditorApplication.update += Repaint;
         }
 

@@ -93,11 +93,9 @@ namespace Hecton8.Dev
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                TryUnregister();
                 if (currentService != null && isActiveAndEnabled)
-                {
-                    TryUnregister();
                     TryRegister();
-                }
 
                 return;
             }

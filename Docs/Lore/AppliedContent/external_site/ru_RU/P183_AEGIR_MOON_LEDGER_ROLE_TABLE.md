@@ -7,6 +7,9 @@ poi_tags: poi.moon_role_ledger;poi.relay_lane_card
 biome_tags: biome.claim_admin;biome.relay_archive
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Таблица ролей лун Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

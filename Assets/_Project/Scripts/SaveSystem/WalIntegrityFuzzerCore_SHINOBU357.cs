@@ -124,6 +124,13 @@ namespace Hecton8.SaveSystem
         private const string Shinobu357DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_357.bin";
         private const string Shinobu357QaReportRelativePath = "Docs/Reports/QA_OPTIMIZATION_REPORT.json";
         private const string Shinobu357ProfilesRelativePath = "Docs/Reports/wal_fuzz_profiles.csv";
+        private const string Shinobu357PayloadFallbackScratchLabel = "shinobu357PayloadFallback";
+        private const string Shinobu357CorruptWalFallbackScratchLabel = "shinobu357CorruptWalFallback";
+        private const string Shinobu357StateFallbackScratchLabel = "shinobu357StateFallback";
+        private const string Shinobu357TelemetryFallbackScratchLabel = "shinobu357TelemetryFallback";
+        private const string Shinobu357LegacyTelemetryScratchLabel = "shinobu357LegacyTelemetry";
+        private const string Shinobu357HashScratchFallbackLabel = "shinobu357HashScratchFallback";
+        private const string Shinobu357FileHandleStatusFallbackLabel = "shinobu357FileHandleStatusFallback";
         private const ulong Shinobu357AupXBits = 0x40F86A01F9ADD374UL;
         private const ulong Shinobu357AupYBits = 0xC0F869FFCD6E9E07UL;
         private const ulong Shinobu357AupZBits = 0x3FC0000000000E13UL;
@@ -201,7 +208,7 @@ namespace Hecton8.SaveSystem
                 }
                 else
                 {
-                    payloadOwner = new NativeArray<byte>(payloadBytes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    payloadOwner = AllocateTrackedTempJobArray<byte>(payloadBytes, Shinobu357PayloadFallbackScratchLabel, NativeArrayOptions.UninitializedMemory);
                     payload = payloadOwner;
                     disposePayload = true;
                 }
@@ -212,7 +219,7 @@ namespace Hecton8.SaveSystem
                 }
                 else
                 {
-                    corruptWalOwner = new NativeArray<byte>(payloadBytes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    corruptWalOwner = AllocateTrackedTempJobArray<byte>(payloadBytes, Shinobu357CorruptWalFallbackScratchLabel, NativeArrayOptions.UninitializedMemory);
                     corruptWal = corruptWalOwner;
                     disposeCorruptWal = true;
                 }
@@ -223,7 +230,7 @@ namespace Hecton8.SaveSystem
                 }
                 else
                 {
-                    stateOwner = new NativeArray<WalFuzzStateDTO>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    stateOwner = AllocateTrackedTempJobArray<WalFuzzStateDTO>(1, Shinobu357StateFallbackScratchLabel, NativeArrayOptions.UninitializedMemory);
                     stateBuffer = stateOwner;
                     disposeState = true;
                 }
@@ -234,12 +241,12 @@ namespace Hecton8.SaveSystem
                 }
                 else
                 {
-                    telemetryOwner = new NativeArray<WalFuzzTelemetryEntry>(Shinobu357TelemetryCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    telemetryOwner = AllocateTrackedTempJobArray<WalFuzzTelemetryEntry>(Shinobu357TelemetryCapacity, Shinobu357TelemetryFallbackScratchLabel, NativeArrayOptions.UninitializedMemory);
                     telemetry = telemetryOwner;
                     disposeTelemetry = true;
                 }
 
-                legacyTelemetry = new NativeArray<WalFuzzerTelemetryEntry>(TelemetryCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                legacyTelemetry = AllocateTrackedTempJobArray<WalFuzzerTelemetryEntry>(TelemetryCapacity, Shinobu357LegacyTelemetryScratchLabel, NativeArrayOptions.ClearMemory);
 
                 CompleteColdValidationBarrier(new GenerateSyntheticSaveDataJob
                 {
@@ -286,16 +293,15 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (legacyTelemetry.IsCreated)
-                    legacyTelemetry.Dispose();
-                if (disposeTelemetry && telemetryOwner.IsCreated)
-                    telemetryOwner.Dispose();
-                if (disposeState && stateOwner.IsCreated)
-                    stateOwner.Dispose();
-                if (disposeCorruptWal && corruptWalOwner.IsCreated)
-                    corruptWalOwner.Dispose();
-                if (disposePayload && payloadOwner.IsCreated)
-                    payloadOwner.Dispose();
+                DisposeTrackedTempJobArray(ref legacyTelemetry);
+                if (disposeTelemetry)
+                    DisposeTrackedTempJobArray(ref telemetryOwner);
+                if (disposeState)
+                    DisposeTrackedTempJobArray(ref stateOwner);
+                if (disposeCorruptWal)
+                    DisposeTrackedTempJobArray(ref corruptWalOwner);
+                if (disposePayload)
+                    DisposeTrackedTempJobArray(ref payloadOwner);
             }
         }
 
@@ -436,7 +442,7 @@ namespace Hecton8.SaveSystem
                 }
                 else
                 {
-                    hashScratchOwner = new NativeArray<byte>(backupByteCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    hashScratchOwner = AllocateTrackedTempJobArray<byte>(backupByteCount, Shinobu357HashScratchFallbackLabel, NativeArrayOptions.UninitializedMemory);
                     hashScratch = hashScratchOwner;
                     disposeHashScratch = true;
                 }
@@ -498,7 +504,7 @@ namespace Hecton8.SaveSystem
                 }
                 else
                 {
-                    fileHandleStatusOwner = new NativeArray<WalFuzzFileHandleStatusDTO>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    fileHandleStatusOwner = AllocateTrackedTempJobArray<WalFuzzFileHandleStatusDTO>(1, Shinobu357FileHandleStatusFallbackLabel, NativeArrayOptions.UninitializedMemory);
                     fileHandleStatus = fileHandleStatusOwner;
                     disposeFileHandleStatus = true;
                 }
@@ -525,10 +531,10 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (disposeFileHandleStatus && fileHandleStatusOwner.IsCreated)
-                    fileHandleStatusOwner.Dispose();
-                if (disposeHashScratch && hashScratchOwner.IsCreated)
-                    hashScratchOwner.Dispose();
+                if (disposeFileHandleStatus)
+                    DisposeTrackedTempJobArray(ref fileHandleStatusOwner);
+                if (disposeHashScratch)
+                    DisposeTrackedTempJobArray(ref hashScratchOwner);
             }
         }
 
@@ -580,18 +586,19 @@ namespace Hecton8.SaveSystem
                 Name = "H8_MERKLE_WAL_SHINOBU_357"
             };
 
-            worker.Start(state);
+            if (!TryStartPartialWalCopyWorkerNoThrow(worker, state))
+                return false;
+
             Stopwatch yieldTimer = Stopwatch.StartNew();
             while (Volatile.Read(ref state.Yielded) == 0 && Volatile.Read(ref state.ErrorCode) == 0 && yieldTimer.ElapsedMilliseconds < 5000L)
                 Thread.Yield();
 
             yieldTimer.Stop();
             yieldMicros = TicksToMicros(yieldTimer.ElapsedTicks);
-            bool joined = worker.Join(5000);
-            if (!joined)
+            if (!TryJoinPartialWalCopyWorkerNoThrow(worker, PartialWalCopyJoinMilliseconds))
             {
                 Volatile.Write(ref state.Cancel, 1);
-                worker.Join(100);
+                TryJoinPartialWalCopyWorkerNoThrow(worker, PartialWalCopyCancelJoinMilliseconds);
                 return false;
             }
 

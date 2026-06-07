@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Glass Grazer Schools"
+title: "Kawanan Glass Grazer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Glass Grazer Schools
+# Kawanan Glass Grazer
 
-ID LOC HOLD: Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.
+Glass grazer adalah hewan dangkal pertama yang membuat keindahan berguna tanpa membuat shelf aman. Cangkang transparan dan tonjolan mulut keras mereka mengikis film mineral dari pressure glass, mat fotik longgar, dan jaket kabel tua. Kawanan yang sedang makan meninggalkan jalur pucat yang menunjukkan arus terbaru, pertumbuhan baru, dan garis paling tenang di sekitar sambungan tercemar. Lihat tepi kawanan, bukan pusatnya: mereka menghindari sealant hangat, rembesan brine asam, dan permukaan yang membawa drift sinyal kompatibel Atlas. Jika ketukan berhenti sementara makanan masih ada, sesuatu yang lebih besar telah mengubah air. Jalur bersih itu bukti, bukan izin untuk sprint.
 
 ## Scanner
 
-ID LOC HOLD: Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.
+KAWANAN GLASS GRAZER // Pemakan bercangkang transparan mengikis film mineral dari pressure glass dan tepi mat fotik. Ketukan mereka membuka bekas rute terang; hening mendadak adalah data predator.
 
 ## Terminal
 
-ID LOC HOLD: FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.
+FAUNA DASAR: klaster grazer non-hostile. Lacak film pressure glass, bloom mineral segar, gangguan arus, dan pergeseran oleh predator. Absensi setelah makan aktif adalah peringatan rute, bukan titik spawn kosong.
 
 ## Audio
 
-ID LOC HOLD: Hear the ticking on the shell? That is lunch, map and warning in the same sound.
+Dengar ketukan di cangkang itu? Itu makan siang, peta, dan peringatan dalam satu suara.
 
 ## Field Note
 
-ID LOC HOLD: Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.
+Jangan mengejar kawanan. Baca apa yang mereka buka: film segar, kikisan lama, penghindaran sealant hangat, dan jalur kosong yang tidak mau mereka seberangi.
 
 <!-- In-Game Wiki; generated from P222_GLASS_GRAZER_SCHOOLS/id_ID. -->

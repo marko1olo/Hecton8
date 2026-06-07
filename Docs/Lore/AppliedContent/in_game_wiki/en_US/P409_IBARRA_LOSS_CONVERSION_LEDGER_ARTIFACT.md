@@ -7,6 +7,9 @@ poi_tags: poi.ibarra_loss_ledger;poi.claim_conversion_stamp
 biome_tags: biome.claim_archive;biome.deep_reach_office
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Ibarra Loss Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

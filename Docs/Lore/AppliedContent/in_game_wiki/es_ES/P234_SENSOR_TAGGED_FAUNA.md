@@ -9,32 +9,34 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Sensor-Tagged Fauna"
+title: "Fauna con etiquetas sensoras"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Sensor-Tagged Fauna
+# Fauna con etiquetas sensoras
 
-ES LOC HOLD: Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.
+La fauna con etiquetas sensoras mantiene en tierra la vida alterada por Atlas. Deep Reach etiquetó animales, colonias de concha y especies de ruta para vigilar movimiento, tolerancia a presión y contaminación. Años después, esas etiquetas biometálicas ya no son equipo limpio. Están en anillos de crecimiento, cuencas de concha, viejas cicatrices y tapas minerales, llevadas como parte del cuerpo que sobrevivió alrededor de ellas.
+
+La distinción importa. Una criatura etiquetada no es una marioneta. Atlas puede hacer ping a la etiqueta, leer mal el retorno o usarla como débil referencia diagnóstica, pero la respuesta de mando es poco fiable y a menudo ausente. El jugador debe leer la etiqueta como historia industrial: una señal tenue, una vieja herida, una cadena de responsabilidad y a veces una pista de dónde miraba Deep Reach antes de que fallara la colonia.
 
 ## Scanner
 
-ES LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+FAUNA ETIQUETADA CON SENSORES // Antiguas etiquetas biometálicas quedan en anillos de crecimiento, cicatrices y cuencas de concha; el animal lleva hardware de vigilancia como historia corporal, no como obediencia.
 
 ## Terminal
 
-ES LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+NOTA DE ETIQUETA: continuidad de señal débil, integración biológica alta, respuesta de mando no fiable. Tratar como cicatriz pasiva, baliza intermitente y posible fantasma diagnóstico de Atlas.
 
 ## Audio
 
-ES LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+El animal no es un dron. El dron es una vieja herida dentro del animal.
 
 ## Field Note
 
-ES LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+El animal no es un dron. El dron es una vieja herida alrededor de la que sobrevivió el animal.
 
 <!-- In-Game Wiki; generated from P234_SENSOR_TAGGED_FAUNA/es_ES. -->

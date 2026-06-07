@@ -7,6 +7,9 @@ poi_tags: poi.terminal_register_card;poi.message_style_sheet
 biome_tags: biome.localization;biome.terminal_os
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Terminal Voice Register Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

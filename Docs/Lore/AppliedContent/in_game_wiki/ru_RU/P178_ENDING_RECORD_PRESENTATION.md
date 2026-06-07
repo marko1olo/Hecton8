@@ -7,6 +7,9 @@ poi_tags: poi.ending_record_card;poi.public_ledger_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Подача записи концовки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

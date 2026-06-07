@@ -7,6 +7,9 @@ poi_tags: poi.ending_spoiler_nav_cluster;poi.payload_receiver_index
 biome_tags: biome.publication;biome.spoiler_gate
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 2
+title: "Endings and Payload Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "מערום מלחי גופרית טבעיים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# מערום מלחי גופרית טבעיים
 
-HE LOC HOLD: Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent.
+מערום מלחי הגופרית הטבעיים הוא ערך הבסיס לגיאולוגיה הטבועה של HECTON-8. זה אינו זיהום של Atlas, אינו פסולת של Deep Reach ואינו תחילתו של Xenon-Omega. זו השכבה העתיקה יותר: מלחי גופרית, יוני מתכת וקרומי תמלחת שנבנו בלחץ, בחום ובזמן. בשטח הם נראים צנועים ליד חומרי חוב זוהרים, אבל הם שמאפשרים את התיקונים הראשונים. מערום יכול לשטוף חמצון ממגעים, להזין כימיית תא חירום, להוריד נקודת התכה של קרמיקה או להפוך כפפה נקייה לבעיה חומצית בפחות מדקה. כך צריכה להרגיש התועלת של HECTON-8: מעשית, מסוכנת ואדישה. Deep Reach לא המציאה את תיאבון הירח למתכת. היא למדה להוציא עליו חשבונית. הצבת משאבים טובה צריכה ללמד זאת לפני שהאימה הגדולה מגיעה. הקירות כבר תגובתיים. התמלחת כבר זוכרת לחץ. ביזה מתחילה בזיהוי איזו חתיכת עולם תעזור לך לנשום ואיזו תאכל את הדבר שמחזיק אותך בחיים.
 
 ## Scanner
 
-HE LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+מלחי גופרית טבעיים // גבישים שנערמו בידי פתחים תרמיים וקרום תמלחת שחור, עתיקים מ-Deep Reach. רטובים הם מוליכים, חמימים הם מאכלים, ושימושיים עוד לפני שמשהו נעשה כחול.
 
 ## Terminal
 
-HE LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+סיווג משאב: גיאולוגיה טבעית. שימושים: שטיפת מוליכים, כימיית תאי חירום, שטף קרמי, זרז קורוזיה. לבודד מאוויר יניקה חמים; האבק פורח כסרט חומצי על מתכת החליפה.
 
 ## Audio
 
-HE LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+הירח לא נזקק לחברה כדי להיות מסוכן. הוא כבר הכיר כימיה.
 
 ## Field Note
 
-HE LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+אם הכפפות מגרדות, כבר איחרת. לשטוף, להאריק, לרשום את הקיר.
 
 <!-- External Site; generated from P116_NATIVE_SULFIDE_SALT_STACK/he_IL. -->

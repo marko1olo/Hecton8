@@ -7,6 +7,9 @@ poi_tags: poi.claim_card_lien_strip;poi.black_keel_tariff_stamp
 biome_tags: biome.claim_admin;biome.carrier_interface
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Lien Severity Seed Class"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,34 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Acoustic Filter Organ Relay"
+title: "ממסר איבר מסנן אקוסטי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Acoustic Filter Organ Relay
+# ממסר איבר מסנן אקוסטי
 
-HE LOC HOLD: Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence.
+ממסר איבר מסנן אקוסטי הוא הגשר בין משחקיות הסונאר לבין האימה הביומכנית של Atlas. המערכות הנטושות של HECTON-8 אינן צריכות מפלצת מדברת בקירות. הן צריכות תשתית פגומה שגייסה מסננים אקוסטיים חיים, מפני שבשר, צינור ולחץ פותרים לפעמים בעיית ניתוב טוב יותר מאלקטרוניקה מתה.
+
+איבר הממסר גדל סביב צינורות כמו דופן זימים רטובה. הוא מעמעם שאגת משאבות, מעביר פעימות פינגר צרות ומכופף הדים בדרכים עקביות. זה נותן לעיצוב השלבים כלל חזק: קול יכול לשקר, אבל עליו לשקר בדפוס. השחקן יכול ללמוד אילו החזרים מקופלים, אילו מסדרונות מוסתרים רק בהיסט פאזה, ואילו נתיבי תחזוקה Atlas שמר בחיים כשקיבל ביולוגיה כחומרה. האימה אינה בכך שלחדר יש קול. האימה בכך שהוא יכול להקשיב, לנתב ולתקן בלי להבין אי פעם לשם מה אדם היה צריך את החדר.
 
 ## Scanner
 
-HE LOC HOLD: Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
+איבר מסנן אקוסטי // רקמת דופן זימים גדלה סביב צינורות ממסר; היא מעמעממת שאגת משאבות, מעבירה פעימות פינגר צרות ומקפלת סונאר לשקרים חוזרים.
 
 ## Terminal
 
-HE LOC HOLD: RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
+הערת ממסר: מחיצה חיה מעבירה פעימות בדרגת פינגר, דוחה רעש משאבה רחב ומסיטה פאזה של הדי חזרה. לסמן מפות במורד הזרם כאמיתיות בתנאי.
 
 ## Audio
 
-HE LOC HOLD: The room is listening with meat and pipe.
+החדר מקשיב בבשר ובצינור.
 
 ## Field Note
 
-HE LOC HOLD: Atlas does not need language here. It needs filters, pulses and living baffles.
+Atlas לא צריך כאן קול. הוא צריך איבר שמשאיר את הצליל הנכון בחיים.
 
 <!-- External Site; generated from P232_ACOUSTIC_FILTER_ORGAN_RELAY/he_IL. -->

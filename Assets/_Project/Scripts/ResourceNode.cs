@@ -3,6 +3,7 @@ using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
+using Hecton8.Gameplay.Atlas6Liability;
 using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Tools;
@@ -187,11 +188,13 @@ namespace Hecton8.Scavenging
         private ulong _persistentTombstoneId;
         private AbsoluteUniversePosition _persistentAup;
         private bool _hasPersistentAup;
+        private bool _pendingFreshRuntimeTemplateHealthReset;
         private HectonVoxelEngine _cachedVoxelEngine;
         private float _pressureMetamorphismProgressSeconds;
         private long _fractionalYieldRemainderGrams;
         private int _yieldDropCount;
         private int _depletionLockState;
+        private int _resourceTemplateStableHashId;
 
         /// <summary>Legacy scene-facing ID retained for compatibility systems.</summary>
         public string UniqueId => uniqueId;
@@ -207,6 +210,9 @@ namespace Hecton8.Scavenging
 
         /// <summary>Applied authoring template when spawned by the distribution director.</summary>
         public ResourceNodeTemplate ResourceTemplate => resourceTemplate;
+
+        /// <summary>Cached stable hash of the applied resource template.</summary>
+        public int ResourceTemplateStableHashId => _resourceTemplateStableHashId;
 
         /// <summary>Tool capability mask required by the authored node template.</summary>
         public uint VulnerabilityMask => ResolveRequiredToolCapabilityMask(resourceTemplate);
@@ -298,6 +304,7 @@ namespace Hecton8.Scavenging
 
             _propertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-node melt shader overrides — owner: ResourceNode
             ResetState();
+            RefreshResourceTemplateStableHash();
             TryWarmLootOraclePayloadCache();
         }
 
@@ -330,6 +337,7 @@ namespace Hecton8.Scavenging
             _isKnownPooledInstance = true;
             EnsureRegistryCache();
             ResetState();
+            _pendingFreshRuntimeTemplateHealthReset = true;
             RegisterWorldStateRegistry();
             ActivateRuntimeState();
             InteractableRegistry.RegisterTree(this);
@@ -341,6 +349,7 @@ namespace Hecton8.Scavenging
             UnregisterSpatialHandle();
             UnregisterWorldStateRegistry();
             ResetState();
+            _pendingFreshRuntimeTemplateHealthReset = false;
             _persistentTombstoneId = 0UL;
             _persistentAup = default;
             _hasPersistentAup = false;
@@ -363,8 +372,12 @@ namespace Hecton8.Scavenging
         public void ApplyRuntimeTemplate(ResourceNodeTemplate template, Mesh fallbackMesh, Material fallbackMaterial)
         {
             resourceTemplate = template;
+            RefreshResourceTemplateStableHash();
             if (template == null)
+            {
+                _pendingFreshRuntimeTemplateHealthReset = false;
                 return;
+            }
 
             maxHealth = template.MaxIntegrity;
             lootPrefab = template.LootPickupPrefab;
@@ -374,7 +387,16 @@ namespace Hecton8.Scavenging
             lootCount = template.DefaultLootCount;
             TryCacheLootOraclePayloadFromTemplate(template);
             ApplyPresentation(template, fallbackMesh, fallbackMaterial);
-            _currentHealth = Mathf.Clamp(_currentHealth, 0f, maxHealth);
+            if (_pendingFreshRuntimeTemplateHealthReset)
+            {
+                _currentHealth = Mathf.Max(1f, maxHealth);
+                _pendingFreshRuntimeTemplateHealthReset = false;
+            }
+            else
+            {
+                _currentHealth = Mathf.Clamp(_currentHealth, 0f, maxHealth);
+            }
+
             if (isActiveAndEnabled)
                 InteractableRegistry.RegisterTree(this);
 
@@ -566,9 +588,9 @@ namespace Hecton8.Scavenging
 
         private static bool IsFiniteRuntimePosition(Vector3 position)
         {
-            return float.IsFinite(position.x) &&
-                   float.IsFinite(position.y) &&
-                   float.IsFinite(position.z);
+            return math.isfinite(position.x) &&
+                   math.isfinite(position.y) &&
+                   math.isfinite(position.z);
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(
@@ -643,7 +665,7 @@ namespace Hecton8.Scavenging
         private bool TrySpawnLoot()
         {
             if (resourceTemplate != null && resourceTemplate.ExtractorYieldItem != null)
-                return true;
+                return TrySpawnTemplateDepletionYield();
 
             if (lootPrefab == null || lootCount <= 0)
                 return true;
@@ -686,6 +708,58 @@ namespace Hecton8.Scavenging
             }
 
             return accepted;
+        }
+
+        private bool TrySpawnTemplateDepletionYield()
+        {
+            if (resourceTemplate == null)
+                return true;
+
+            int targetYieldCount = Mathf.Clamp(
+                resourceTemplate.DefaultLootCount,
+                0,
+                (int)ScavengingLootOracleConstants.ItemSignalMaxQuantity);
+            int missingYieldCount = targetYieldCount - _yieldDropCount;
+            if (missingYieldCount <= 0)
+                return true;
+
+            ItemData yieldItem = resourceTemplate.ExtractorYieldItem;
+            if (yieldItem == null || yieldItem.PersistentHashId == 0)
+                return false;
+
+            if (!_hasPersistentAup || !IsFiniteAup(in _persistentAup))
+                return false;
+
+            uint itemHash = unchecked((uint)yieldItem.PersistentHashId);
+            uint signalQuantity = ScavengingLootOracleRuntime.ClampItemSignalQuantity((uint)missingYieldCount);
+            int quantityForCapacity = (int)signalQuantity;
+            IPlayerInventoryService inventoryService = s_playerInventoryService;
+            var inventory = inventoryService != null ? inventoryService.Inventory : null;
+            bool capacityAvailable = inventory == null ||
+                                     inventory.CanAcceptItemQuantity(unchecked((int)itemHash), quantityForCapacity);
+            bool accepted = ScavengingLootOracleRuntime.TryQueueResourceNodeLoot(
+                in _persistentAup,
+                itemHash,
+                itemHash,
+                signalQuantity,
+                _lastLootOracleToolMask,
+                capacityAvailable);
+            if (!accepted)
+            {
+                if (capacityAvailable && !_lootSpawnBlockedLogged)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Hecton8.Core.H8Debug.LogError("[ResourceNode] Template depletion yield could not be queued. Depletion aborted to prevent loot loss.", this);
+#endif
+                    _lootSpawnBlockedLogged = true;
+                }
+
+                return false;
+            }
+
+            _yieldDropCount += quantityForCapacity;
+            Atlas6CorporateLiabilityManager.TryReportXenonOmegaExtracted(_resourceTemplateStableHashId, quantityForCapacity);
+            return true;
         }
 
         private void TryWarmLootOraclePayloadCache()
@@ -1096,6 +1170,7 @@ namespace Hecton8.Scavenging
 
             if (emittedCount > 0)
             {
+                Atlas6CorporateLiabilityManager.TryReportXenonOmegaExtracted(_resourceTemplateStableHashId, emittedCount);
                 long remainingGrams = availableGrams - (emittedCount * unitItemMassGrams);
                 _fractionalYieldRemainderGrams = remainingGrams > 0L ? remainingGrams : 0L;
             }
@@ -1169,6 +1244,13 @@ namespace Hecton8.Scavenging
             return resourceTemplate != null
                 ? resourceTemplate.ResolveDebrisPhysicalProfile()
                 : ResourceNodeTemplate.DebrisPhysicalProfile.Basalt;
+        }
+
+        private void RefreshResourceTemplateStableHash()
+        {
+            _resourceTemplateStableHashId = resourceTemplate != null
+                ? resourceTemplate.ResolveStableHashIdCold()
+                : 0;
         }
 
         private static float ResolveYieldSampleDeltaSeconds()
@@ -1309,7 +1391,9 @@ namespace Hecton8.Scavenging
 
             if (_meshFilter != null)
             {
-                Mesh authoredMesh = template.NodeMesh != null ? template.NodeMesh : fallbackMesh;
+                Mesh authoredMesh = template.NodeMesh != null
+                    ? template.NodeMesh
+                    : (fallbackMesh != null ? fallbackMesh : _meshFilter.sharedMesh);
                 _meshFilter.sharedMesh = qualityWeight <= QualityParticleEnableThreshold && lowQualityNodeMesh != null
                     ? lowQualityNodeMesh
                     : authoredMesh;
@@ -1317,7 +1401,9 @@ namespace Hecton8.Scavenging
 
             if (_meshRenderer != null)
             {
-                Material sharedMaterial = template.NodeMaterial != null ? template.NodeMaterial : fallbackMaterial;
+                Material sharedMaterial = template.NodeMaterial != null
+                    ? template.NodeMaterial
+                    : (fallbackMaterial != null ? fallbackMaterial : _meshRenderer.sharedMaterial);
                 if (sharedMaterial != null)
                     _meshRenderer.sharedMaterial = sharedMaterial;
 

@@ -7,6 +7,9 @@ poi_tags: poi.shallow_annex_p63;poi.p63_collar_leak
 biome_tags: biome.photic_shelf;resource.fiberkelp
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "PressureSeal First Repair"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

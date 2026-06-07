@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Shallow Predator Shadow Rule"
+title: "Règle de l'ombre du prédateur de hauts-fonds"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Shallow Predator Shadow Rule
+# Règle de l'ombre du prédateur de hauts-fonds
 
-FR LOC HOLD: Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact.
+La Règle de l'ombre du prédateur de hauts-fonds est une règle de lore et de rencontre, pas un profil d'espèce. Son rôle est de protéger le ton du plateau photique : beau, lisible, vivant, et toujours capable de te tuer. Le prédateur arrive par des témoins. Les brouteurs de verre laissent la nourriture et disparaissent. Le bloom de dérive-lanterne continue de briller mais perd son doux bruissement particulaire. Les récifs de pinces-coquilles se serrent sur les câbles comme si toute la route venait d'inspirer. Alors seulement une ombre se déplace dans la lumière. Cet ordre compte parce qu'il rend l'océan systémique plutôt que théâtral. Le joueur n'est pas puni par un monstre matérialisé de nulle part ; il subit la pression d'un ensemble de signes qu'il aurait pu apprendre à lire. Une bonne implémentation doit superposer indices audio, visuels et écologiques pour que l'avertissement survive aux écrans, langues et besoins d'accessibilité : tics manquants, bruit de bloom coupé, large silhouette, sillage déplacé, animaux de route hors phase. L'attaque directe est la partie la moins intéressante. Le moment le plus fort est celui où l'objectif de réparation reste atteignable, où l'eau est encore magnifique, et où chaque instrument vivant dit que la route est devenue coûteuse.
 
 ## Scanner
 
-FR LOC HOLD: A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.
+OMBRE DE PRÉDATEUR DE HAUTS-FONDS // Tics de brouteurs absents, bruit de bloom déchiré et large ombre mobile sont le premier contact. La pression de route précède le contact de combat.
 
 ## Terminal
 
-FR LOC HOLD: CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.
+RÈGLE DE CONTACT : la preuve de prédateur doit changer le choix de route avant de forcer les dégâts. Mettre en scène par absence, silence, silhouette et sillage ; attaque directe seulement après que le joueur ignore ou lise mal au moins deux indices.
 
 ## Audio
 
-FR LOC HOLD: When the little mouths stop ticking, stop moving.
+Quand les petites bouches cessent de tictaquer, arrête de bouger.
 
 ## Field Note
 
-FR LOC HOLD: Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.
+Ne donne pas d'abord un visage au prédateur. Laisse le plateau se dérégler : la nourriture reste, l'eau s'éclaircit, les petites vies partent, puis l'ombre traverse la tâche.
 
 <!-- External Site; generated from P225_SHALLOW_PREDATOR_SHADOW_RULE/fr_FR. -->

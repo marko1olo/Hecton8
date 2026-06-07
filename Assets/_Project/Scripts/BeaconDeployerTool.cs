@@ -107,7 +107,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float deployCooldown = 0.25f;
         [SerializeField] private float retractRange = 6f;
         [SerializeField] private int maxActiveBeacons = 24;
-        [SerializeField] private LayerMask deploymentMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask deploymentMask = Hecton8.Core.HectonLayerMasks.FieldToolSurfaceLayerMask;
         [SerializeField] private GameObject worldBeaconPrefab;
         [SerializeField] private float feedbackInterval = 0.45f;
 
@@ -405,7 +405,13 @@ namespace Hecton8.Gameplay
 
         private bool TryGetDeploymentHit(Vector3 origin, Vector3 direction, out InteractionSurfaceHit hit)
         {
-            return RequestPrimarySurfaceHit(origin, direction, deployRange, deploymentMask.value, QueryTriggerInteraction.Ignore, out hit);
+            return RequestPrimarySurfaceHit(
+                origin,
+                direction,
+                deployRange,
+                HectonLayerMasks.ResolveSurfaceInteractionLayerMask(deploymentMask.value),
+                QueryTriggerInteraction.Ignore,
+                out hit);
         }
 
         private bool TryWriteBeaconDeployedHud(string label, BeaconAssessment assessment, int activeCount)

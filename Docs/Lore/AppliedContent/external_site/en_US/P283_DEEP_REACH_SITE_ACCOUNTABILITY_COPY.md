@@ -7,6 +7,9 @@ poi_tags: poi.deep_reach_public_dossier_box;poi.liability_timeline_teaser
 biome_tags: biome.publication;biome.deep_reach
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Deep Reach Site Accountability Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

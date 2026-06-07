@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Hecton8.Core.Memory;
 using Unity.Collections;
 
 namespace Hecton8.Core
@@ -17,6 +18,7 @@ namespace Hecton8.Core
         private int _indexMask;
         private int _writeGate;
         private long _writeCursor;
+        private SystemID _ownerSystem;
 
         /// <summary>
         /// Initializes a fixed-capacity native ring buffer.
@@ -25,17 +27,42 @@ namespace Hecton8.Core
         /// <param name="allocator">Native allocator used for the backing block.</param>
         /// <param name="options">Native memory clear policy.</param>
         public NativeRingBuffer(int capacity, Allocator allocator, NativeArrayOptions options = NativeArrayOptions.ClearMemory)
+            : this(capacity, allocator, SystemID.CoreDiagnostics, options)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a fixed-capacity native ring buffer with an explicit native-memory owner.
+        /// </summary>
+        /// <param name="capacity">Maximum retained entries.</param>
+        /// <param name="allocator">Native allocator used for the backing block.</param>
+        /// <param name="ownerSystem">Recorded H8Memory owner.</param>
+        /// <param name="options">Native memory clear policy.</param>
+        public NativeRingBuffer(
+            int capacity,
+            Allocator allocator,
+            SystemID ownerSystem,
+            NativeArrayOptions options = NativeArrayOptions.ClearMemory)
         {
             if (capacity <= 0)
                 throw new ArgumentOutOfRangeException(nameof(capacity));
             if (!IsPowerOfTwo(capacity))
                 throw new ArgumentOutOfRangeException(nameof(capacity));
+            if (ownerSystem == SystemID.Unknown)
+                throw new ArgumentOutOfRangeException(nameof(ownerSystem));
 
-            _buffer = new NativeArray<T>(capacity, allocator, (NativeArrayOptions)options);
+            _ownerSystem = ownerSystem;
+            _buffer = H8Memory.Allocate<T>(capacity, _ownerSystem, allocator, options);
             _capacity = capacity;
             _indexMask = capacity - 1;
             _writeGate = 0;
             _writeCursor = 0L;
+
+            if (!_buffer.IsCreated)
+            {
+                _capacity = 0;
+                _indexMask = -1;
+            }
         }
 
         /// <summary>
@@ -210,7 +237,18 @@ namespace Hecton8.Core
             if (!_buffer.IsCreated)
                 return;
 
-            NativeMemorySentinel.RegisterNativeArray(_buffer, owner, label, lifetime);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(_buffer, owner, label, lifetime);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"NativeMemorySentinel rejected native ring backing registration for {owner}.{label}.");
+            }
+            catch
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_buffer);
+                Dispose();
+                throw;
+            }
         }
 
         public void UnregisterBackingArray()
@@ -233,9 +271,13 @@ namespace Hecton8.Core
             try
             {
                 if (_buffer.IsCreated)
-                    _buffer.Dispose();
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_buffer);
+                    H8Memory.Release(ref _buffer, _ownerSystem);
+                }
 
                 _buffer = default;
+                _ownerSystem = default;
                 _capacity = 0;
                 _indexMask = -1;
                 _writeCursor = 0L;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -25,6 +26,7 @@ namespace Hecton8.Modding
         private const float LowProjectionQualityFlagThreshold01 = 0.3f;
         private const int BlackboxCapacity = 300;
         private const Allocator SignalLaneAllocator = Allocator.Persistent;
+        private const SystemID NativeArrayOwnerSystem = SystemID.ModSandbox;
         private const long PerFrameManagedAllocationLimitBytes = 1L * 1024L * 1024L;
         private const string TimeoutCullMessage = "[MOD CULLED: TIMEOUT]";
         private const string GcCullMessage = "[MOD CULLED: GC]";
@@ -149,7 +151,18 @@ namespace Hecton8.Modding
                 return;
 
             _projectedEvents = new NativeQueue<ModEventDto>(SignalLaneAllocator); // COLD ALLOC: NativeQueue<ModEventDto>[50] - projected public signal metadata for managed mods - owner: ModEventProjectionBridge
-            NativeMemorySentinel.RegisterNativeQueue(_projectedEvents, HighTierProjectionCap, NativeMemoryOwner, nameof(_projectedEvents), NativeAllocationLifetime.Session);
+            try
+            {
+                int projectedEventsSentinelId = NativeMemorySentinel.RegisterNativeQueue(_projectedEvents, HighTierProjectionCap, NativeMemoryOwner, nameof(_projectedEvents), NativeAllocationLifetime.Session);
+                if (projectedEventsSentinelId <= 0)
+                    throw new InvalidOperationException("Native memory sentinel registration failed for projected mod events.");
+            }
+            catch
+            {
+                ReleaseNativeState();
+                throw;
+            }
+
             EnsureCullTelemetryStorage();
 
             _queuedProjectedEventCount = 0;
@@ -216,17 +229,14 @@ namespace Hecton8.Modding
             if (_cullTelemetry.IsCreated)
                 return;
 
-            _cullTelemetry = new NativeArray<ModCullTelemetryEntry>(BlackboxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ModCullTelemetryEntry>[300] - culled mod hash blackbox ring, local bridge-owned memory to avoid DataVault hot writes - owner: ModEventProjectionBridge
-            NativeMemorySentinel.RegisterNativeArray(_cullTelemetry, NativeMemoryOwner, nameof(_cullTelemetry), NativeAllocationLifetime.Session);
+            _cullTelemetry = H8Memory.Allocate<ModCullTelemetryEntry>(BlackboxCapacity, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ModCullTelemetryEntry>[300] - culled mod hash blackbox ring, local bridge-owned memory to avoid DataVault hot writes - owner: ModEventProjectionBridge
         }
 
         private void ReleaseCullTelemetryStorage()
         {
             if (_cullTelemetry.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_cullTelemetry);
-                _cullTelemetry.Dispose();
-                _cullTelemetry = default;
+                H8Memory.Release(ref _cullTelemetry, NativeArrayOwnerSystem);
             }
 
             _cullTelemetryCursor = 0;

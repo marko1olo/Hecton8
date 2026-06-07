@@ -502,7 +502,18 @@ namespace Hecton8.Debugging
             where T : struct
         {
             NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId <= 0)
+                    throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
             return array;
         }
 

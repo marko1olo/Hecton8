@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Noble Gas Brine Pockets"
+title: "Kantung Brine Gas Mulia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Noble Gas Brine Pockets
+# Kantung Brine Gas Mulia
 
-ID LOC HOLD: Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.
+Kantung brine gas mulia adalah catatan tekanan tersegel di dalam brine mineral HECTON-8. Kantung yang berguna bukan sekadar xenon dalam air; ia adalah rasio gas, kurva tekanan, luka temperatur, dan kisi cacat mineral yang tertahan cukup lama untuk membuktikan apa yang terjadi di bawah tanah. Membuang tekanannya menghancurkan nilai sekaligus bukti. Sampel ini penting karena proses Deep Reach, lalu Atlas, dapat mendorong bahan dengan riwayat tekanan yang tepat menuju Xenon-Omega, tetapi kantung mentah tetap geologi, bukan harta karun dengan sendirinya.
 
 ## Scanner
 
-ID LOC HOLD: Natural-to-process resource. Valuable only if pressure history survives extraction.
+KANTUNG BRINE GAS MULIA // Gelembung tekanan tersegel dalam brine mineral. Nilainya bertahan hanya jika riwayat tekanan tetap tertutup; lepaskan tekanannya dan kekayaan menjadi cuaca.
 
 ## Terminal
 
-ID LOC HOLD: RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+KELAS SUMBER DAYA: bahan alami/proses. Gunakan ekstraksi pressure bell. Jangan buang tekanan atau panaskan sampel. Bukti wajib: kurva tekanan, rasio gas, peta cacat mineral.
 
 ## Audio
 
-ID LOC HOLD: Open it wrong and the fortune becomes weather.
+Xenon-Omega dimulai di sini sebagai kimia yang terperangkap, bukan bijih ajaib.
 
 ## Field Note
 
-ID LOC HOLD: This is where Xenon-Omega begins as chemistry, not magic.
+Jangan buka kantung untuk melihat apakah isinya kaya. Begitulah kru miskin membuat gelembung.
 
 <!-- In-Game Wiki; generated from P117_NOBLE_GAS_BRINE_POCKETS/id_ID. -->

@@ -9,32 +9,34 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Sensor-Tagged Fauna"
+title: "Sensor-markierte Fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Sensor-Tagged Fauna
+# Sensor-markierte Fauna
 
-DE LOC HOLD: Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.
+Sensor-markierte Fauna hält Atlas-verändertes Leben geerdet. Deep Reach markierte einst Tiere, Schalenkolonien und Routenarten, um Bewegung, Drucktoleranz und Kontamination zu überwachen. Jahre später sind diese Biometall-Tags keine saubere Ausrüstung mehr. Sie sitzen in Wachstumsringen, Schalenfassungen, alten Narben und Mineralkappen, getragen als Teil des Körpers, der um sie herum überlebt hat.
+
+Diese Unterscheidung zählt. Eine markierte Kreatur ist keine Puppe. Atlas kann das Tag anpingen, die Rückgabe falsch lesen oder es als schwachen Diagnosepunkt benutzen, aber Befehlsantwort ist unzuverlässig und oft abwesend. Der Spieler soll das Tag als Industriegeschichte lesen: schwaches Signal, alte Wunde, Haftungsspur und manchmal Hinweis darauf, wo Deep Reach vor dem Scheitern der Kolonie zusah.
 
 ## Scanner
 
-DE LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+SENSOR-MARKIERTE FAUNA // Alte Biometall-Tags sitzen in Wachstumsringen, Narben und Schalenfassungen; das Tier trägt Überwachungshardware als Körpergeschichte, nicht als Gehorsam.
 
 ## Terminal
 
-DE LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+TAG-NOTIZ: Signalkontinuität schwach, biologische Integration hoch, Befehlsantwort unzuverlässig. Als passive Narbe, intermittierendes Beacon und möglicher Atlas-Diagnosegeist behandeln.
 
 ## Audio
 
-DE LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+Das Tier ist keine Drohne. Die Drohne ist eine alte Wunde im Tier.
 
 ## Field Note
 
-DE LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+Das Tier ist keine Drohne. Die Drohne ist eine alte Wunde, um die das Tier überlebt hat.
 
 <!-- In-Game Wiki; generated from P234_SENSOR_TAGGED_FAUNA/de_DE. -->

@@ -572,9 +572,9 @@ namespace Hecton8.World
                     InvalidatePlayerRuntimeCache();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregisterLateFrame();
+                    TryUnregister();
                     _dispatcher = currentService as ITickDispatcher;
-                    _registered = false;
-                    _registeredLateFrame = false;
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegister();

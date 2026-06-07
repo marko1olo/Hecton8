@@ -1131,8 +1131,10 @@ namespace Hecton8.Gameplay
             {
                 byte externalFlags = KccVelocitySignal.FlagMovementAuthorityExternal;
 
-                float3 rawAuthorityPosition = ToFloat3(ResolveBodyRuntimePosition());
-                float3 rawAuthorityVelocity = ReadVelocitySnapshot(float3.zero);
+                Vector3 bodyPosition = _body.position;
+                Vector3 bodyVelocity = _body.linearVelocity;
+                float3 rawAuthorityPosition = ToFloat3(bodyPosition);
+                float3 rawAuthorityVelocity = ToFloat3(bodyVelocity);
                 bool authorityInputInvalid =
                     !math.all(math.isfinite(rawAuthorityPosition)) ||
                     !math.all(math.isfinite(rawAuthorityVelocity));
@@ -1531,6 +1533,29 @@ namespace Hecton8.Gameplay
 
             if (_hasImpactBracePoint)
                 _impactBracePoint = SanitizeFloat3(_impactBracePoint - offset, float3.zero);
+
+            if (_handProbeHits.IsCreated)
+            {
+                for (int i = 0; i < _handProbeHits.Length; i++)
+                {
+                    PlayerKinematicsProbeHit hit = _handProbeHits[i];
+                    if ((hit.Flags & PlayerKinematicsProbeHit.FlagHit) == 0u)
+                        continue;
+
+                    float3 shiftedPoint = hit.Point - offset;
+                    if (math.all(math.isfinite(shiftedPoint)))
+                    {
+                        hit.Point = shiftedPoint;
+                    }
+                    else
+                    {
+                        hit.Flags &= ~PlayerKinematicsProbeHit.FlagHit;
+                    }
+
+                    _handProbeHits[i] = hit;
+                }
+            }
+
             _lastProbeSourcePosition = SanitizeFloat3(_lastProbeSourcePosition - offset, float3.zero);
         }
 
@@ -1545,6 +1570,14 @@ namespace Hecton8.Gameplay
                     AllocateNativeState();
                     WarmRuntimeStateOnEnable();
                 }
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                UnregisterDispatcherTicks();
+                if (currentService != null && isActiveAndEnabled)
+                    RegisterDispatcherTicks();
+                return;
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
@@ -1655,6 +1688,24 @@ namespace Hecton8.Gameplay
 
         private void RegisterRuntime()
         {
+            RegisterDispatcherTicks();
+
+            if (!_registeredOriginShift)
+            {
+                HectonFloatingOrigin.RegisterListener(this);
+                _registeredOriginShift = true;
+            }
+
+            if (!_registeredHotSwap)
+            {
+                GlobalRegistry.RegisterHotSwapListener(this);
+                _registeredHotSwap = true;
+            }
+
+        }
+
+        private void RegisterDispatcherTicks()
+        {
             if (!_registeredFixed)
             {
                 _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
@@ -1674,22 +1725,27 @@ namespace Hecton8.Gameplay
             {
                 _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
             }
+        }
 
-            if (!_registeredOriginShift)
+        private void UnregisterRuntime()
+        {
+            UnregisterDispatcherTicks();
+
+            if (_registeredOriginShift)
             {
-                HectonFloatingOrigin.RegisterListener(this);
-                _registeredOriginShift = true;
+                HectonFloatingOrigin.UnregisterListener(this);
+                _registeredOriginShift = false;
             }
 
-            if (!_registeredHotSwap)
+            if (_registeredHotSwap)
             {
-                GlobalRegistry.RegisterHotSwapListener(this);
-                _registeredHotSwap = true;
+                GlobalRegistry.UnregisterHotSwapListener(this);
+                _registeredHotSwap = false;
             }
 
         }
 
-        private void UnregisterRuntime()
+        private void UnregisterDispatcherTicks()
         {
             if (_registeredFixed)
             {
@@ -1714,19 +1770,6 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
                 _registeredLate = false;
             }
-
-            if (_registeredOriginShift)
-            {
-                HectonFloatingOrigin.UnregisterListener(this);
-                _registeredOriginShift = false;
-            }
-
-            if (_registeredHotSwap)
-            {
-                GlobalRegistry.UnregisterHotSwapListener(this);
-                _registeredHotSwap = false;
-            }
-
         }
 
         private void RebindServices(bool allowHierarchyLookup)

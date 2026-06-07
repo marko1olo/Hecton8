@@ -7,6 +7,9 @@ poi_tags: poi.locker_prop_variant_set;poi.tool_wear_strip
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Варианты предметов шкафчика"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -87,6 +87,7 @@ namespace Hecton8.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;
         }
 

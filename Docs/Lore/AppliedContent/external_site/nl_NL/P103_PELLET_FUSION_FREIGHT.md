@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "Pelletfusie-vracht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# Pelletfusie-vracht
 
-NL LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for.
+Pelletfusie-vracht is de industriële geschiedenis achter HECTON-8. Machines en zware vracht bereikten Aegir omdat infrastructuur decennialang massa kon duwen, voeden, beschermen en remmen; de route blijft wreed omdat boekhouding langer leeft dan de noodsituatie.
 
 ## Scanner
 
-NL LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Aandrijfplaat. Pelletgevoede fusievracht stak over als infrastructuur: boost, schild, drift, remmen en verlies afrekenen.
 
 ## Terminal
 
-NL LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+VRACHTDOCTRINE: Atlas-klasse seed-ladingen en kolonievracht gebruikten straalzeilboost, pelletgevoede fusie, magnetzeilremmen en lange driftintervallen. Levende vracht arriveerde nadat machines de route factureerbaar maakten.
 
 ## Audio
 
-NL LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+Een zwaar schip is geen wonder. Het is een hypotheek met motoren.
 
 ## Field Note
 
-NL LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+Zwaar transit is niet heroïsch. Het is een oud routecontract met hittesporen.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/nl_NL. -->

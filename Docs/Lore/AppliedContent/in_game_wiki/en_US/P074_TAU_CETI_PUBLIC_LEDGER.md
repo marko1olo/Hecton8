@@ -7,6 +7,9 @@ poi_tags: poi.public_ledger_node;poi.civic_law_cache
 biome_tags: biome.admin_spine;biome.relay_spine
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Tau Ceti Public Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

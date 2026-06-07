@@ -7,6 +7,9 @@ poi_tags: poi.glass_grazer_clearing;poi.scraped_mineral_path
 biome_tags: biome.photic_shelf;biome.grazer_meadow
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Glass Grazer Clearing Encounter Grammar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

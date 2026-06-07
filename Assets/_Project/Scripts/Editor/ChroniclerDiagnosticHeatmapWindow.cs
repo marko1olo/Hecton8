@@ -26,6 +26,9 @@ namespace Hecton8.Editor
         private const int EventRowCount = 8;
         private const float FrameBudgetMs = 16.6667f;
         private const float ContentionCommittedSignalScale = 4096f;
+        private const string NativeMemoryOwner = nameof(ChroniclerDiagnosticHeatmapWindow);
+        private const string SignalLanesLabel = "signalLanes";
+        private const string SignalFramesLabel = "signalFrames";
 
         private readonly float[] _phaseMs = new float[4];
         private readonly uint[] _bucketLoads = new uint[64];
@@ -44,6 +47,8 @@ namespace Hecton8.Editor
 
         private NativeArray<SignalLaneTelemetry> _signalLanes;
         private NativeArray<SignalTelemetryFrame> _signalFrames;
+        private int _signalLanesSentinelId;
+        private int _signalFramesSentinelId;
         private HeatmapStripElement _memoryStrip;
         private HeatmapStripElement _signalStrip;
         private HeatmapStripElement _fenceStrip;
@@ -76,9 +81,19 @@ namespace Hecton8.Editor
         {
             EditorApplication.update -= TickRefresh;
             if (_signalLanes.IsCreated)
+            {
+                NativeMemorySentinel.Unregister(_signalLanesSentinelId);
+                _signalLanesSentinelId = 0;
                 _signalLanes.Dispose();
+                _signalLanes = default;
+            }
             if (_signalFrames.IsCreated)
+            {
+                NativeMemorySentinel.Unregister(_signalFramesSentinelId);
+                _signalFramesSentinelId = 0;
                 _signalFrames.Dispose();
+                _signalFrames = default;
+            }
         }
 
         public void CreateGUI()
@@ -119,9 +134,47 @@ namespace Hecton8.Editor
         private void EnsureBuffers()
         {
             if (!_signalLanes.IsCreated)
+            {
                 _signalLanes = new NativeArray<SignalLaneTelemetry>(SignalLaneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                try
+                {
+                    _signalLanesSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                        _signalLanes,
+                        NativeMemoryOwner,
+                        SignalLanesLabel,
+                        NativeAllocationLifetime.Session);
+                    if (_signalLanesSentinelId <= 0)
+                        throw new System.InvalidOperationException($"Native memory sentinel registration failed for {SignalLanesLabel}.");
+                }
+                catch
+                {
+                    _signalLanes.Dispose();
+                    _signalLanes = default;
+                    _signalLanesSentinelId = 0;
+                    throw;
+                }
+            }
             if (!_signalFrames.IsCreated)
+            {
                 _signalFrames = new NativeArray<SignalTelemetryFrame>(SignalFrameCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                try
+                {
+                    _signalFramesSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                        _signalFrames,
+                        NativeMemoryOwner,
+                        SignalFramesLabel,
+                        NativeAllocationLifetime.Session);
+                    if (_signalFramesSentinelId <= 0)
+                        throw new System.InvalidOperationException($"Native memory sentinel registration failed for {SignalFramesLabel}.");
+                }
+                catch
+                {
+                    _signalFrames.Dispose();
+                    _signalFrames = default;
+                    _signalFramesSentinelId = 0;
+                    throw;
+                }
+            }
         }
 
         private void TickRefresh()

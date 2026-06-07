@@ -553,10 +553,10 @@ namespace Hecton8.Gameplay
                     CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext, forceAssign: true);
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _cachedAudioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredLateFrame = false;
+                    TryUnregisterLateFrame();
                     if (currentService != null && isActiveAndEnabled && _pendingChargerAudio.Dirty != 0)
                         TryRegisterLateFrame();
                     break;
@@ -578,6 +578,15 @@ namespace Hecton8.Gameplay
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
         }
 
         private void TryUnregister()
@@ -664,7 +673,7 @@ namespace Hecton8.Gameplay
             ChargerAudioRequest request = _pendingChargerAudio;
             _pendingChargerAudio = default;
 
-            IAudioService audio = _cachedAudioService;
+            IAudioService audio = ResolveAudioService();
             if (audio == null)
                 return;
 
@@ -683,8 +692,7 @@ namespace Hecton8.Gameplay
             if (!_registeredLateFrame || _pendingChargerAudio.Dirty != 0)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registeredLateFrame = false;
+            TryUnregisterLateFrame();
         }
 
         private AudioClip ResolveChargerAudioClip(byte clipKind)
@@ -933,7 +941,33 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             CachePlayerRuntimeContext(GlobalRegistry.Player, forceAssign: true);
-            _cachedAudioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _cachedAudioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext, bool forceAssign)

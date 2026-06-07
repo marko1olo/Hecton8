@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Photic Mat Baseline"
+title: "Базовий фотичний мат"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Photic Mat Baseline
+# Базовий фотичний мат
 
-UA LOC HOLD: Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.
+Фотичні мати - перше мілководне життя, яке може допомогти гравцю дихати й водночас покарати за грубий збір. Плівка росте там, де світло, мінеральний стік і повільна вода сходяться разом, покриваючи камінь кисневим кольором. Здоровий центр м'який і яскравий; соляний твердий край означає, що хімія тиску або стара інфраструктура напружує кишеню. Мат змінює й звук: добрий ріст гасить дрібні удари, а забруднені шви клацають і шиплять під шкребком. Якщо потрібні волокно або киснева хімія, зрізай лише вільну бахрому. Розірвати яскравий центр біля люка, труби або герметичної панелі - значить знизити місцевий кисень і відкрити те, що мат утримував унизу.
 
 ## Scanner
 
-UA LOC HOLD: Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.
+ФОТИЧНИЙ МАТ // Жива мінеральна плівка на мілководному камені. Яскраві смуги насичують воду киснем; соляні тверді краї позначають напружену хімію тиску й приховані течі швів.
 
 ## Terminal
 
-UA LOC HOLD: ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.
+ЕКОЛОГІЧНА БАЗА: карта кисневої шкіри, мінерального стоку, акустичного гасіння й стресу соляних країв. Збирати лише вільну бахрому. Розрив матів біля швів або герметичного обладнання може звалити кишеню в забруднення.
 
 ## Audio
 
-UA LOC HOLD: It looks clean because it is working hard. That is not the same as safe.
+Він виглядає чистим, бо працює. Це не те саме, що безпечний.
 
 ## Field Note
 
-UA LOC HOLD: Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.
+Не шкреби найяскравіше місце першим. Читай край, бульбашки й звук; мат - датчик раніше, ніж ресурс.
 
 <!-- In-Game Wiki; generated from P221_PHOTIC_MAT_BASELINE/uk_UA. -->

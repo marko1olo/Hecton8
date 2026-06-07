@@ -7,6 +7,9 @@ poi_tags: poi.no_power_carryover_notice;poi.route_warning_card
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Dossier: знание, а не сила"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

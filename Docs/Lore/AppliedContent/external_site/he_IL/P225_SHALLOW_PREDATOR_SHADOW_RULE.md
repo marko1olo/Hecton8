@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Shallow Predator Shadow Rule"
+title: "כלל צל טורף המים הרדודים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Shallow Predator Shadow Rule
+# כלל צל טורף המים הרדודים
 
-HE LOC HOLD: Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact.
+כלל צל טורף המים הרדודים הוא כלל לור ומפגש, לא פרופיל מין. תפקידו לשמור על הטון של המדף הפוטי: יפה, קריא, חי ועדיין מסוגל להרוג אותך. הטורף מגיע דרך עדים. רועי זכוכית משאירים מזון ונעלמים. bloom של סחף פנסים ממשיך לזהור אך מאבד את רחש החלקיקים הרך שלו. שוניות מהדקי קונכייה מתהדקות על כבלים כאילו כל הנתיב לקח נשימה. רק אז צל נע דרך האור. הסדר הזה חשוב כי הוא גורם לאוקיינוס להרגיש מערכתי ולא תיאטרלי. השחקן אינו נענש בידי מפלצת שמתממשת משום מקום; השחקן נלחץ בידי מערך סימנים שהיה יכול ללמוד לקרוא. יישום טוב צריך לשכב רמזים קוליים, חזותיים ואקולוגיים כך שהאזהרה תשרוד מסכים, שפות וצרכי נגישות שונים: נקישות חסרות, רעש bloom חתוך, צללית רחבה, שובל מוזז, חיות נתיב שאינן בקצב. ההתקפה הישירה היא החלק הכי פחות מעניין. הרגע החזק יותר הוא כשהיעד לתיקון עדיין נגיש, המים עדיין יפים, וכל מכשיר חי אומר שהנתיב נעשה יקר.
 
 ## Scanner
 
-HE LOC HOLD: A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.
+צל טורף מים רדודים // נקישות רועים שנעלמו, רעש bloom קרוע וצל רחב נע הם המגע הראשון. לחץ נתיב מגיע לפני מגע קרבי.
 
 ## Terminal
 
-HE LOC HOLD: CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.
+כלל מגע: ראיות לטורף צריכות לשנות בחירת נתיב לפני כפיית נזק. לביים כהיעדר, שקט, צללית ושובל; התקפה ישירה רק אחרי שהשחקן התעלם או קרא לא נכון לפחות שני רמזים.
 
 ## Audio
 
-HE LOC HOLD: When the little mouths stop ticking, stop moving.
+כשהפיות הקטנים מפסיקים לנקוש, הפסק לזוז.
 
 ## Field Note
 
-HE LOC HOLD: Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.
+אל תיתן לטורף פנים תחילה. תן למדף להשתבש: המזון נשאר, המים מתבהרים, החיים הקטנים עוזבים, ואז הצל חוצה את המשימה.
 
 <!-- External Site; generated from P225_SHALLOW_PREDATOR_SHADOW_RULE/he_IL. -->

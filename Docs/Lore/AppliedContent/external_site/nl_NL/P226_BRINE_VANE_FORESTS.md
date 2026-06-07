@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Brine Vane Forests"
+title: "Pekelvinbossen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Brine Vane Forests
+# Pekelvinbossen
 
-NL LOC HOLD: Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure.
+Pekelvinbossen zijn waar HECTON-8 water niet langer als lege ruimte laat gedragen. In de canyon wordt water architectuur: dichtheidslagen stapelen als muren, sonar buigt rond onzichtbare richels en een slordige afdaling kan een pak onder zijn verwachte drijfkracht brengen voordat de dieptemeter dramatisch voelt. Pekelvinnen maken die wiskunde zichtbaar. Het zijn geen aardse planten en geen sprekend buitenaards rif. Het zijn zout-mineraalmembranen die groeien waar chemische gradiënten ze blijven voeden, plat genoeg om botanisch te lijken en fysiek genoeg om te vertrouwen. Een levende vinplaat zegt: steek hier niet over. Een gescheurde rand zegt: iets is recent overgestoken. Een gekrulde punt zegt: de grens verzwakt. Een bleke rib zegt: het membraan heeft materiaal afgestoten, misschien bruikbaar voor pekelchemie, afdichtgrit of kalibratie van een dichtheidssensor. Goed canyonontwerp moet spelers laten navigeren op deze tekenen in plaats van pijlen: langs een intacte muur drijven, de gescheurde mond vinden, sonar zien vervormen, de trim van het pak voelen veranderen en begrijpen dat de oceaan het pad niet uit wrok blokkeert. Hij gehoorzaamt druk. Daarom zijn pekelvinbossen op een koudere manier mooi dan de fotische shelf. Ze verwelkomen niet. Ze zijn leesbaar.
 
 ## Scanner
 
-NL LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+PEKELVINBOS // Zout-mineraalmembranen groeien langs dichtheidsschering. Ze tonen waar water verdikt tot een muur en waar sonar zal buigen.
 
 ## Terminal
 
-NL LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+CANYON-BASIS: intacte vinplaten markeren harde dichtheidsgrenzen. Gescheurde randen en gekrulde punten wijzen op scheringsvensters, zoutarmere zakken of recent verkeer. Vermijd ondoorzichtig gelaagd water; het kan sonar blind maken en een pak onder verwachte drijfkracht trekken.
 
 ## Audio
 
-NL LOC HOLD: The canyon has leaves because it has pressure gradients.
+De canyon heeft bladeren omdat hij drukgradiënten heeft.
 
 ## Field Note
 
-NL LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+Het zijn geen bomen. Het zijn drukbladeren: membranen die leven van chemische gradiënten, alleen gescheurd waar recent een route doorheen is geforceerd.
 
 <!-- External Site; generated from P226_BRINE_VANE_FORESTS/nl_NL. -->

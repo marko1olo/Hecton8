@@ -7,6 +7,9 @@ poi_tags: poi.evacuation_queue_clock;poi.manual_witness_slot
 biome_tags: biome.colony;biome.safe_module
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Доказательство задержки эвакуационной очереди"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

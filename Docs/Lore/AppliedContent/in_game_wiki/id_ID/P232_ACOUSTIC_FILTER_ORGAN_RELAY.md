@@ -9,32 +9,34 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Acoustic Filter Organ Relay"
+title: "Relai Organ Filter Akustik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Acoustic Filter Organ Relay
+# Relai Organ Filter Akustik
 
-ID LOC HOLD: Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.
+Relai organ filter akustik mengubah bahasa sonar HECTON-8 menjadi horor tubuh tanpa merusak nada ilmiahnya. Di sekitar pipa relai lama, jaringan seperti dinding insang tumbuh menjadi sekat, lipatan, dan ruang basah. Jaringan itu tidak berbicara. Ia mengubah impedansi. Derau pompa lebar mati di dalamnya. Pulsa pinger sempit lewat. Gema balik kembali bergeser dengan cara yang cukup berulang untuk dipakai Atlas dan dipelajari Marauder yang teliti.
+
+Ini penting karena kebohongan yang berulang bukanlah acak. Lorong di hilir organ dapat tampak lebih pendek, lebih lebar, atau tertutup sampai pemain mempelajari frekuensi mana yang bertahan melewati filter hidup. Atlas memakai relai karena ia mempertahankan sinyal di bawah tekanan lebih baik daripada perangkat rusak saja. Pemain memakainya sebagai bukti: jika kesalahan sonar yang sama muncul pada lebar pulsa yang sama, ruangan itu bukan berhantu. Ia sedang menyaring. Itu membuat relai berguna, menjijikkan, dan adil.
 
 ## Scanner
 
-ID LOC HOLD: Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
+ORGAN FILTER AKUSTIK // Jaringan seperti dinding insang tumbuh di sekitar pipa relai; ia meredam raungan pompa, meloloskan pulsa pinger sempit, dan melipat sonar menjadi kebohongan yang berulang.
 
 ## Terminal
 
-ID LOC HOLD: RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
+CATATAN RELAI: sekat hidup meloloskan pulsa kelas pinger, menolak derau pompa lebar, dan menggeser fase gema balik. Tandai peta hilir sebagai benar bersyarat.
 
 ## Audio
 
-ID LOC HOLD: The room is listening with meat and pipe.
+Ruangan ini mendengar dengan daging dan pipa.
 
 ## Field Note
 
-ID LOC HOLD: Atlas does not need language here. It needs filters, pulses and living baffles.
+Atlas tidak membutuhkan suara di sini. Ia membutuhkan organ yang membiarkan suara yang benar bertahan.
 
 <!-- In-Game Wiki; generated from P232_ACOUSTIC_FILTER_ORGAN_RELAY/id_ID. -->

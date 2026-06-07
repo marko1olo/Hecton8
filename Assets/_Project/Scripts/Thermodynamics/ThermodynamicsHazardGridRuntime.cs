@@ -299,9 +299,7 @@ namespace Hecton8.Thermodynamics
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredTick = false;
-                _registeredSlowTick = false;
-                _registeredLateFrame = false;
+                TryUnregisterDispatcherTicks();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegister();
             }
@@ -861,6 +859,27 @@ namespace Hecton8.Thermodynamics
             {
                 HectonFloatingOrigin.UnregisterListener(this);
                 _registeredOriginShift = false;
+            }
+        }
+
+        private void TryUnregisterDispatcherTicks()
+        {
+            if (_registeredTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
             }
         }
 

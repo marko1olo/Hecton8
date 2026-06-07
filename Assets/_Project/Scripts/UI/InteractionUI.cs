@@ -822,17 +822,10 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null)
-                {
-                    _registeredLateFrame = false;
-                    return;
-                }
-
-                if (isActiveAndEnabled)
-                {
-                    UnregisterFromTick();
+                UnregisterFromTick();
+                if (currentService != null && isActiveAndEnabled)
                     RegisterToTick();
-                }
+
                 return;
             }
 

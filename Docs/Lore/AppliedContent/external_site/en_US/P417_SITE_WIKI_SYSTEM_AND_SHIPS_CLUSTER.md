@@ -7,6 +7,9 @@ poi_tags: poi.system_ship_nav_cluster;poi.no_ftl_route_index
 biome_tags: biome.publication;biome.human_space
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 1
+title: "Aegir Route and Ships"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.player_lien_start_card;poi.contract_risk_field
 biome_tags: biome.first_hour;biome.contract
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Player Lien Contract Start Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

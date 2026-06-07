@@ -120,7 +120,7 @@ namespace Hecton8.Physics
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            _registeredLateFrame = false;
+            TryUnregisterLateFrame();
             if (currentService != null && isActiveAndEnabled)
                 TryRegisterLateFrame();
         }
@@ -241,7 +241,7 @@ namespace Hecton8.Physics
 
         private void TryUnregisterLateFrame()
         {
-            if (!_registeredLateFrame || GlobalRegistry.Dispatcher == null)
+            if (!_registeredLateFrame)
                 return;
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);

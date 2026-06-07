@@ -7,6 +7,9 @@ poi_tags: poi.aegir_window_timer;poi.storm_clause_card
 biome_tags: biome.aegir_orbital_pressure;biome.surface_storm
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Карта риска штормового окна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

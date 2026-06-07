@@ -7,6 +7,9 @@ poi_tags: poi.public_hecton8_article;poi.site_primer_card
 biome_tags: biome.publication;biome.hecton8_atlas
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "HECTON-8 Public Primer Article"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

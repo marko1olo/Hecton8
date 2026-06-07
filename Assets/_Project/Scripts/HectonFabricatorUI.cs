@@ -641,19 +641,22 @@ namespace Hecton8.UI
 
         private void RegisterLateFrameTick()
         {
-            if (_lateFrameTickRegistered || !Application.isPlaying)
+            if (_lateFrameTickRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
-        private void UnregisterLateFrameTick()
+        private void UnregisterLateFrameTick(bool clearPendingWork = true)
         {
             if (_lateFrameTickRegistered)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _lateFrameTickRegistered = false;
             }
+
+            if (!clearPendingWork)
+                return;
 
             _pendingFabricatorVisualDeltaTime = 0f;
             _hasPendingFabricatorVisualTick = false;
@@ -759,6 +762,16 @@ namespace Hecton8.UI
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    bool needsLateFrameTick = _lateFrameTickRegistered ||
+                                             _isOpen ||
+                                             _isCrafting ||
+                                             _hasPendingFabricatorVisualTick ||
+                                             _hasPendingRecipeListVisibility;
+                    UnregisterLateFrameTick(clearPendingWork: false);
+                    if (needsLateFrameTick && currentService != null && isActiveAndEnabled)
+                        RegisterLateFrameTick();
+                    return;
                 case GlobalRegistryServiceSlot.Input:
                     _inputService = currentService as IInputService;
                     return;

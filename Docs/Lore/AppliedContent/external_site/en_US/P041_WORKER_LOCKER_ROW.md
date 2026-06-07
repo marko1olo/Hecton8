@@ -7,6 +7,9 @@ poi_tags: poi.worker_locker_row;poi.drowned_hab_module
 biome_tags: biome.drowned_colony;biome.shallow_wreck
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Worker Locker Row"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

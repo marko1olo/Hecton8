@@ -7,6 +7,9 @@ poi_tags: poi.recovery_compliance_packet;poi.vera_sato_ren_signature
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Recovery Compliance Chain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

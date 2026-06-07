@@ -7,6 +7,9 @@ poi_tags: poi.stack_limit_schema_card;poi.pressure_vessel_rack
 biome_tags: biome.inventory;biome.resource_custody
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Stack Limit Data Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

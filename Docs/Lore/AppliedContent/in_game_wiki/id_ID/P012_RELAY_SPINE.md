@@ -7,6 +7,9 @@ poi_tags: poi.relay_buffer;poi.packet_spool
 biome_tags: biome.drowned_colony;biome.service_canyons
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Tulang Punggung Relay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.geology_scanner;poi.brine_step
 biome_tags: biome.drowned_shelf;biome.brine_stairs
 locale: zh_CN
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "淹没地质"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -681,7 +681,7 @@ namespace Hecton8.Building
             _cachedHabitatDeconstructionSystem = null;
             _cachedInteractionSignalService = null;
             _cachedAutonomousExtractorSystem = null;
-            _cachedAudioService = null;
+            ClearCachedAudioService();
             _cachedQuestSystem = null;
             _shinobuSocketVault = null;
         }
@@ -696,12 +696,9 @@ namespace Hecton8.Building
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                        return;
-
                     bool needsLateFrame = _lateFrameRegistered || _pendingBuilderAudioCount > 0;
                     TryUnregisterLateFrameTick();
-                    if (needsLateFrame)
+                    if (currentService != null && isActiveAndEnabled && needsLateFrame)
                         TryRegisterLateFrameTick();
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
@@ -717,7 +714,7 @@ namespace Hecton8.Building
                     _cachedAutonomousExtractorSystem = currentService as AutonomousExtractorSystem;
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _cachedAudioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.QuestSystem:
                     _cachedQuestSystem = currentService as IQuestSystem;
@@ -727,6 +724,37 @@ namespace Hecton8.Building
                     RebindBuilderDataVault(currentService as IDataVault);
                     break;
             }
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            ClearCachedAudioService();
+            return null;
+        }
+
+        private void ClearCachedAudioService()
+        {
+            _cachedAudioService = null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void RebindBuilderDataVault(IDataVault vault)
@@ -1475,8 +1503,8 @@ namespace Hecton8.Building
                 _cachedInteractionSignalService = GlobalRegistry.InteractionSignals;
             if (_cachedAutonomousExtractorSystem == null)
                 _cachedAutonomousExtractorSystem = GlobalRegistry.AutonomousExtractors;
-            if (_cachedAudioService == null)
-                _cachedAudioService = GlobalRegistry.Audio;
+            if (!IsAudioServiceUsable(_cachedAudioService))
+                CacheAudioService(GlobalRegistry.Audio);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (builderDebugLogging)
                 LogBuilderDebug($"BindRuntimeReferences catalogCount={(_buildCatalog != null ? _buildCatalog.Count : -1)}");
@@ -4328,7 +4356,7 @@ namespace Hecton8.Building
             if (count <= 0)
                 return;
 
-            IAudioService audioService = _cachedAudioService;
+            IAudioService audioService = ResolveAudioService();
             if (audioService != null)
             {
                 if (count > 0 && _pendingBuilderAudio0 != null)
@@ -4355,7 +4383,7 @@ namespace Hecton8.Building
 
         private void TryRegisterLateFrameTick()
         {
-            if (_lateFrameRegistered || GlobalRegistry.Dispatcher == null)
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);

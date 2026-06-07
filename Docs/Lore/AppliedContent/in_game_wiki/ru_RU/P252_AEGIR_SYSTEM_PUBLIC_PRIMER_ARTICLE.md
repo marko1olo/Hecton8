@@ -7,6 +7,9 @@ poi_tags: poi.public_aegir_article;poi.moon_ladder_plate
 biome_tags: biome.publication;biome.aegir_orbital_pressure
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Публичный вводный материал системы Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

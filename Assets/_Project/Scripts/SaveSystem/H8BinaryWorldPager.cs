@@ -21,7 +21,6 @@ namespace Hecton8.Core.Persistence.Paging
 {
     public sealed class H8BinaryWorldPager : IDisposable, IGlobalRegistryHotSwapListener
     {
-        private const string NativeMemoryOwner = nameof(H8BinaryWorldPager);
         private const string DumpFileName = "Dump_1312_VoxelPaging.bin";
         private const string CrashDumpFileName = "Dump_CRASH.bin";
         private const string DumpH8FileName = "Dump_SAVE_SURGEON.h8dump";
@@ -194,7 +193,8 @@ namespace Hecton8.Core.Persistence.Paging
             ReplayWalIfPresent();
             Volatile.Write(ref _disposeRequested, 0);
             Volatile.Write(ref _initialized, 1);
-            StartWorker();
+            if (!StartWorker())
+                MarkInitializationFault(PagerInitializationFaultReason.WorkerStart);
         }
 
         public bool TryEnqueueWrite(
@@ -835,12 +835,16 @@ namespace Hecton8.Core.Persistence.Paging
             Thread workerThread = _workerThread;
             if (workerThread != null)
             {
+                if (ReferenceEquals(Thread.CurrentThread, workerThread))
+                    return false;
+
                 try
                 {
-                    if (workerThread.Join(WorkerShutdownWaitMilliseconds))
+                    workerThread.Join(WorkerShutdownWaitMilliseconds);
+                    if (!workerThread.IsAlive)
                         return true;
                 }
-                catch (ThreadStateException)
+                catch (Exception)
                 {
                 }
             }
@@ -1234,10 +1238,10 @@ namespace Hecton8.Core.Persistence.Paging
                 vault.ReleaseWriteLock(in handle, VaultOwner);
         }
 
-        private void StartWorker()
+        private bool StartWorker()
         {
             if (Interlocked.Exchange(ref _workerRunning, 1) != 0)
-                return;
+                return true;
 
             try
             {
@@ -1249,12 +1253,14 @@ namespace Hecton8.Core.Persistence.Paging
 
                 _workerThread = workerThread;
                 workerThread.Start();
+                return true;
             }
-            catch (ThreadStateException)
+            catch (Exception)
             {
                 _workerThread = null;
+                Volatile.Write(ref _workerThreadId, 0);
                 Volatile.Write(ref _workerRunning, 0);
-                MarkInitializationFault();
+                return false;
             }
         }
 
@@ -3228,8 +3234,9 @@ namespace Hecton8.Core.Persistence.Paging
                 NativeArrayOptions options,
                 string label) where T : struct
             {
-                array = new NativeArray<T>(length, Allocator.Persistent, options);
-                NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Session);
+                array = H8Memory.Allocate<T>(length, VaultOwner, Allocator.Persistent, options);
+                if (!array.IsCreated)
+                    throw new InvalidOperationException($"{nameof(H8BinaryWorldPager)} native allocation failed for {label}.");
             }
 
             private static void Dispose<T>(ref NativeArray<T> array) where T : struct
@@ -3237,9 +3244,7 @@ namespace Hecton8.Core.Persistence.Paging
                 if (!array.IsCreated)
                     return;
 
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                array.Dispose();
-                array = default;
+                H8Memory.Release(ref array, VaultOwner);
             }
         }
 
@@ -3256,7 +3261,8 @@ namespace Hecton8.Core.Persistence.Paging
             OpenWriteAheadLog = 2,
             DataVaultUnavailable = 3,
             NativeStateAllocation = 4,
-            VaultHandleUnavailable = 5
+            VaultHandleUnavailable = 5,
+            WorkerStart = 6
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]

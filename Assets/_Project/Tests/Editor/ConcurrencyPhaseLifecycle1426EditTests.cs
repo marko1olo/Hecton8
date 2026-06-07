@@ -145,6 +145,57 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void TetherMemoryStressWorker_UsesFailClosedNoThrowLifecycle()
+        {
+            string text = File.ReadAllText(TetherVerletJobsPath());
+            string runBody = ExtractMethodBody(text, "RunDefragRaceFuzzer");
+            string startBody = ExtractMethodBody(text, "TryStartStressWorkerNoThrow");
+            string joinBody = ExtractMethodBody(text, "TryJoinStressWorkerNoThrow");
+
+            Assert.That(text, Does.Contain("StressWorkerJoinMilliseconds = 3000"));
+            Assert.That(runBody, Does.Contain("if (!TryStartStressWorkerNoThrow(worker))"));
+            Assert.That(runBody, Does.Contain("if (!TryJoinStressWorkerNoThrow(worker, StressWorkerJoinMilliseconds))"));
+            Assert.AreEqual(0, Count(runBody, @"worker\.Start\(\);"), "direct worker start in stress body");
+            Assert.AreEqual(0, Count(runBody, @"worker\.Join\(3000\)"), "direct worker join in stress body");
+            Assert.That(startBody, Does.Contain("worker.Start();"));
+            Assert.That(startBody, Does.Contain("catch"));
+            Assert.That(joinBody, Does.Contain("System.Threading.Thread.CurrentThread.ManagedThreadId == worker.ManagedThreadId"));
+            Assert.That(joinBody, Does.Contain("worker.Join(timeoutMilliseconds);"));
+            Assert.That(joinBody, Does.Contain("return !worker.IsAlive;"));
+            Assert.That(joinBody, Does.Contain("catch"));
+        }
+
+        [Test]
+        public void MemorySovereigntyEditorDefragWorkers_UseFailClosedNoThrowLifecycle()
+        {
+            AssertDefragWorkerLifecycle(File.ReadAllText(AICognitionMemorySovereigntyValidatorPath()));
+            AssertDefragWorkerLifecycle(File.ReadAllText(VoxelMemorySovereigntyValidatorPath()));
+        }
+
+        [Test]
+        public void LegacyMemorySentryFuzzer_UsesFailClosedNoThrowWorkerLifecycle()
+        {
+            string text = File.ReadAllText(LegacyMemorySentryFuzzerPath());
+            string runBody = ExtractMethodBody(text, "Run");
+            string startBody = ExtractMethodBody(text, "TryStartWorkerNoThrow");
+            string joinBody = ExtractMethodBody(text, "TryJoinWorkerNoThrow");
+
+            Assert.That(text, Does.Contain("WorkerCompletionJoinMilliseconds = 30000"));
+            Assert.That(text, Does.Contain("WorkerStopJoinMilliseconds = 1000"));
+            Assert.That(runBody, Does.Contain("TryStartWorkerNoThrow(workers[i])"));
+            Assert.That(runBody, Does.Contain("TryJoinWorkerNoThrow(workers[i], WorkerCompletionJoinMilliseconds)"));
+            Assert.That(runBody, Does.Contain("TryJoinWorkerNoThrow(workers[i], WorkerStopJoinMilliseconds)"));
+            Assert.AreEqual(0, Count(runBody, @"workers\[i\]\.Start\(\)"), "direct worker start in legacy fuzzer body");
+            Assert.AreEqual(0, Count(runBody, @"workers\[i\]\.Join\("), "direct worker join in legacy fuzzer body");
+            StringAssert.Contains("worker.Start();", startBody);
+            StringAssert.Contains("catch", startBody);
+            StringAssert.Contains("Thread.CurrentThread.ManagedThreadId == worker.ManagedThreadId", joinBody);
+            StringAssert.Contains("worker.Join(timeoutMilliseconds);", joinBody);
+            StringAssert.Contains("return !worker.IsAlive;", joinBody);
+            StringAssert.Contains("catch", joinBody);
+        }
+
+        [Test]
         public void VisualPressureAgingFaultSnapshot_UsesTransientReadbackOnly()
         {
             string text = File.ReadAllText(VisualPressureAgingPath());
@@ -1466,6 +1517,26 @@ namespace Hecton8.Tests.Editor
             return Path.Combine(RuntimeScriptsRoot(), "Core", "Memory", "GlobalDataVault.cs");
         }
 
+        private static string TetherVerletJobsPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Physics", "TetherVerletJobs.cs");
+        }
+
+        private static string AICognitionMemorySovereigntyValidatorPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "AI", "Cognition", "Editor", "AICognitionMemorySovereigntyValidator1300.cs");
+        }
+
+        private static string VoxelMemorySovereigntyValidatorPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "World", "VoxelSurfaceNets", "Editor", "VoxelMemorySovereigntyValidator1304.cs");
+        }
+
+        private static string LegacyMemorySentryFuzzerPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Editor", "Memory", "OOP_MemorySentryConcurrentRelocationFuzzer.cs");
+        }
+
         private static string PathFunnelVoxelAStarPath()
         {
             return Path.Combine(RuntimeScriptsRoot(), "AI", "Pathfinding", "PathFunnelNavmeshRuntime_VoxelAStar.cs");
@@ -1766,6 +1837,25 @@ namespace Hecton8.Tests.Editor
         private static int Count(string text, string pattern)
         {
             return Regex.Matches(text, pattern).Count;
+        }
+
+        private static void AssertDefragWorkerLifecycle(string text)
+        {
+            string runBody = ExtractMethodBody(text, "RunDefragRaceFuzzer");
+            string startBody = ExtractMethodBody(text, "TryStartDefragWorkerNoThrow");
+            string joinBody = ExtractMethodBody(text, "TryJoinDefragWorkerNoThrow");
+
+            Assert.That(text, Does.Contain("DefragWorkerJoinMilliseconds = 1000"));
+            Assert.That(runBody, Does.Contain("if (!TryStartDefragWorkerNoThrow(worker))"));
+            Assert.That(runBody, Does.Contain("if (!TryJoinDefragWorkerNoThrow(worker, DefragWorkerJoinMilliseconds))"));
+            Assert.AreEqual(0, Count(runBody, @"worker\.Start\(\);"), "direct worker start in defrag validator body");
+            Assert.AreEqual(0, Count(runBody, @"worker\.Join\(1000\)"), "direct worker join in defrag validator body");
+            Assert.That(startBody, Does.Contain("worker.Start();"));
+            Assert.That(startBody, Does.Contain("catch"));
+            Assert.That(joinBody, Does.Contain("Thread.CurrentThread.ManagedThreadId == worker.ManagedThreadId"));
+            Assert.That(joinBody, Does.Contain("worker.Join(timeoutMilliseconds);"));
+            Assert.That(joinBody, Does.Contain("return !worker.IsAlive;"));
+            Assert.That(joinBody, Does.Contain("catch"));
         }
 
         private static string ExtractMethodBody(string text, string methodName)

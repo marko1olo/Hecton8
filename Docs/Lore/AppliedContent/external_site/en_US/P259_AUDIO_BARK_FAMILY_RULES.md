@@ -7,6 +7,9 @@ poi_tags: poi.audio_bark_style_card;poi.voice_family_board
 biome_tags: biome.localization;biome.audio
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Audio Bark Family Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

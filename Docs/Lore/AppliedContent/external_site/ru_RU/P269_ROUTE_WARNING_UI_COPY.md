@@ -7,6 +7,9 @@ poi_tags: poi.route_warning_card;poi.pinger_warning_strip
 biome_tags: biome.ui;biome.route
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "UI-копия маршрутных предупреждений"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

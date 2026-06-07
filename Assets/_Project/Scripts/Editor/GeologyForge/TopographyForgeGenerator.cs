@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -20,6 +21,7 @@ namespace Hecton8.Editor.GeologyForge
         private const int AsyncWriteChunkBytes = 1024 * 1024;
         private const string TempOutputSuffix = ".tmp";
         private const string BackupOutputSuffix = ".bak";
+        private const string NativeMemoryOwner = nameof(TopographyForgeGenerator);
         private static bool _isBaking;
         private static bool _cancelRequested;
 
@@ -82,7 +84,10 @@ namespace Hecton8.Editor.GeologyForge
             try
             {
                 state = NewRunState(Allocator.TempJob);
-                heights = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                heights = AllocateTopographyArray<float>(
+                    cellCount,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
                 TopographyBakeConfigDTO config = BuildSectorConfig(settings, 0, 0);
                 config.Width = settings.SectorResolution;
                 config.Height = settings.SectorResolution;
@@ -107,8 +112,7 @@ namespace Hecton8.Editor.GeologyForge
             finally
             {
                 ReleaseTopographyArray(ref state);
-                if (heights.IsCreated)
-                    heights.Dispose();
+                ReleaseTopographyArray(ref heights);
             }
         }
 
@@ -486,6 +490,22 @@ namespace Hecton8.Editor.GeologyForge
             if (!array.IsCreated)
                 throw new InvalidOperationException("Topography Forge native allocation failed.");
 
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    array,
+                    NativeMemoryOwner,
+                    typeof(T).Name,
+                    ResolveNativeAllocationLifetime(allocator));
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {typeof(T).Name}.");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
             return array;
         }
 
@@ -493,8 +513,24 @@ namespace Hecton8.Editor.GeologyForge
         {
             if (array.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(array);
                 array.Dispose();
                 array = default;
+            }
+        }
+
+        private static NativeAllocationLifetime ResolveNativeAllocationLifetime(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return NativeAllocationLifetime.Temp;
+                case Allocator.TempJob:
+                    return NativeAllocationLifetime.TempJob;
+                case Allocator.Persistent:
+                    return NativeAllocationLifetime.Session;
+                default:
+                    return NativeAllocationLifetime.Session;
             }
         }
 

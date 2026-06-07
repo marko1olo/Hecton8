@@ -37,12 +37,9 @@ namespace Hecton8.Dev
             try
             {
                 // COLD ALLOC: NativeArray biome smoke buffers - dev-only deterministic SDF probe - owner: BiomeBoundarySdfSmokeTester
-                map = new NativeArray<byte>(CellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                hashes = new NativeArray<uint>(CellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                result = new NativeArray<BiomeBoundarySdfResult>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                Register(map, nameof(map));
-                Register(hashes, nameof(hashes));
-                Register(result, nameof(result));
+                map = AllocateTrackedTempJobArray<byte>(CellCount, nameof(map), NativeArrayOptions.ClearMemory);
+                hashes = AllocateTrackedTempJobArray<uint>(CellCount, nameof(hashes), NativeArrayOptions.ClearMemory);
+                result = AllocateTrackedTempJobArray<BiomeBoundarySdfResult>(1, nameof(result), NativeArrayOptions.ClearMemory);
 
                 FillTwoBiomeMap(map, hashes, collideBytes: false);
                 boundaryPass = RunSample(map, hashes, result, new double2(20d, 20d), 2, BiomeBoundarySdfFlags.None, out BiomeBoundarySdfResult boundary) &&
@@ -143,9 +140,25 @@ namespace Hecton8.Dev
             }
         }
 
-        private static void Register<T>(NativeArray<T> array, string label) where T : struct
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, string label, NativeArrayOptions options) where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+
+            array.Dispose();
+            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
@@ -153,9 +166,15 @@ namespace Hecton8.Dev
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
         }
 
         private static string ToJsonBool(bool value)

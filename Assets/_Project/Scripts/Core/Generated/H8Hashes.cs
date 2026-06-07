@@ -4,11 +4,11 @@ namespace Hecton8.Core.Generated
 {
     public static class H8Hashes
     {
-        public const int TotalCount = 1243;
+        public const int TotalCount = 1248;
 
         public static class Items
         {
-            public const int Count = 209;
+            public const int Count = 212;
 
             public const string CookedFishId = "cooked_fish";
             public const uint CookedFishHash = 817470103u;
@@ -114,6 +114,8 @@ namespace Hecton8.Core.Generated
             public const uint RepairToolHash = 2492492888u;
             public const string SalvageSamplerId = "Salvage Sampler";
             public const uint SalvageSamplerHash = 448761850u;
+            public const string SeafloorDrillId = "Seafloor Drill";
+            public const uint SeafloorDrillHash = 1095427517u;
             public const string SealantPackId = "Sealant Pack";
             public const uint SealantPackHash = 324908980u;
             public const string SensorPackageId = "Sensor Package";
@@ -278,6 +280,8 @@ namespace Hecton8.Core.Generated
             public const uint ITEMTOOLSALVAGESAMPLERNAMEHash = 258471560u;
             public const string ITEMTOOLSCANNERNAMEId = "ITEM_TOOL_SCANNER_NAME";
             public const uint ITEMTOOLSCANNERNAMEHash = 741423526u;
+            public const string ITEMTOOLSEAFLOORDRILLNAMEId = "ITEM_TOOL_SEAFLOOR_DRILL_NAME";
+            public const uint ITEMTOOLSEAFLOORDRILLNAMEHash = 1333422943u;
             public const string ITEMTOOLSTUNPISTOLNAMEId = "ITEM_TOOL_STUN_PISTOL_NAME";
             public const uint ITEMTOOLSTUNPISTOLNAMEHash = 157295966u;
             public const string ITEMTUNGSTENCHUNKNAMEId = "ITEM_TUNGSTEN_CHUNK_NAME";
@@ -426,6 +430,8 @@ namespace Hecton8.Core.Generated
             public const uint ItemToolSalvageSamplerHash = 2737502431u;
             public const string ItemToolScannerId = "Item_Tool_Scanner";
             public const uint ItemToolScannerHash = 2534372966u;
+            public const string ItemToolSeafloorDrillId = "Item_Tool_SeafloorDrill";
+            public const uint ItemToolSeafloorDrillHash = 1570840224u;
             public const string ItemToolStunPistolId = "Item_Tool_StunPistol";
             public const uint ItemToolStunPistolHash = 1349085289u;
         }
@@ -1484,7 +1490,7 @@ namespace Hecton8.Core.Generated
 
         public static class Signals
         {
-            public const int Count = 511;
+            public const int Count = 513;
 
             public const string ATLASSIGNALREVEALSTAGE2Id = "ATLAS_SIGNAL_REVEAL_STAGE_2";
             public const uint ATLASSIGNALREVEALSTAGE2Hash = 2388679583u;
@@ -1690,6 +1696,10 @@ namespace Hecton8.Core.Generated
             public const uint STUNLOGNONBIOFORMMESSAGEHash = 1973638411u;
             public const string STUNLOGRECOVEREDMESSAGEId = "STUN_LOG_RECOVERED_MESSAGE";
             public const uint STUNLOGRECOVEREDMESSAGEHash = 908595890u;
+            public const string SignalFramesId = "signalFrames";
+            public const uint SignalFramesHash = 1336115101u;
+            public const string SignalLanesId = "signalLanes";
+            public const uint SignalLanesHash = 1987880630u;
             public const string WARNINGBACKUPUSEDMESSAGEId = "WARNING_BACKUP_USED_MESSAGE";
             public const uint WARNINGBACKUPUSEDMESSAGEHash = 2740367506u;
             public const string ZoneDeepAbyssId = "zone_deep_abyss";

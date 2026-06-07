@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Density Skater Fauna"
+title: "Fauna Density Skater"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Density Skater Fauna
+# Fauna Density Skater
 
-ID LOC HOLD: Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.
+Density skater adalah hewan kedalaman menengah yang membuat canyon brine terasa seperti mesin berlapis, bukan volume kosong. Kaki, sirip, atau bantalan kait mereka menekan antarmuka densitas yang cukup kuat untuk menahan tubuh kecil selama beberapa detik. Bagi mata mereka tampak meluncur melalui air terbuka; bagi scanner mereka meninggalkan riak di tempat air terbuka seharusnya tidak punya permukaan. Kontradiksi itulah petunjuknya. Jejak skater bisa menandai jendela shear, langkah brine, tepi buta sonar, atau jalur berburu makhluk lebih besar. Hewan itu bukan sihir dan bukan janji keselamatan. Suit lebih berat, lebih berisik, dan bentuknya buruk untuk trik yang sama. Gunakan wake skater untuk membaca lapisan. Jangan mengira kamu bisa mengikuti.
 
 ## Scanner
 
-ID LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+DENSITY SKATER // Fauna berkaki tipis menaiki antarmuka brine seperti permukaan, meninggalkan riak di tempat sonar mengira air terbuka.
 
 ## Terminal
 
-ID LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+FAUNA DASAR: kontak skater meningkat dekat brine vane robek, langkah brine hangat, dan tepi mati sonar. Wake mereka menandai shelf densitas, bukan pijakan aman. Jangan mengejar melintasi lapisan opak.
 
 ## Audio
 
-ID LOC HOLD: Something is walking on the water inside the water.
+Ada sesuatu berjalan di atas air di dalam air.
 
 ## Field Note
 
-ID LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+Mereka tidak melayang. Mereka berjalan di batas yang bisa membuat suit-mu jatuh menembusnya.
 
 <!-- In-Game Wiki; generated from P227_DENSITY_SKATER_FAUNA/id_ID. -->

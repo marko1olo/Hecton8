@@ -166,6 +166,7 @@ namespace Hecton8.Gameplay
         {
             TryRegisterHotSwapListener();
             CacheRegistryServicesCold();
+            ClearPendingLifecycleWork();
             _state = BubbleState.Floating;
             _lifetimeTimer = 0f;
             _driftPhase = ResolveDeterministicDriftPhase(_driftSequence);
@@ -176,6 +177,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             UnregisterFromTick();
+            ClearPendingLifecycleWork();
             TryUnregisterHotSwapListener();
         }
 
@@ -339,9 +341,10 @@ namespace Hecton8.Gameplay
         private void PlayCollectEffects(Vector3 pos)
         {
             // Play sound
-            if (collectSound != null && _audioService != null)
+            IAudioService audio = ResolveAudioService();
+            if (collectSound != null && audio != null)
             {
-                _audioService.PlayAtPoint(collectSound, pos, collectVolume);
+                audio.PlayAtPoint(collectSound, pos, collectVolume);
             }
 
             // Play particles
@@ -391,10 +394,19 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void ResetBubble()
         {
+            ClearPendingLifecycleWork();
             _state = BubbleState.Floating;
             _lifetimeTimer = 0f;
             _driftSequence++;
             _driftPhase = ResolveDeterministicDriftPhase(_driftSequence);
+        }
+
+        private void ClearPendingLifecycleWork()
+        {
+            _runtimePositionDirty = false;
+            _pendingRuntimePosition = Vector3.zero;
+            _pendingCollectEffects = false;
+            _pendingDespawn = false;
         }
 
         private float ResolveDeterministicDriftPhase(uint sequence)
@@ -449,9 +461,35 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _objectPool = GlobalRegistry.ObjectPoolService;
             _playerRuntime = GlobalRegistry.Player;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -479,7 +517,7 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _objectPool = currentService as IObjectPoolService;
@@ -488,9 +526,8 @@ namespace Hecton8.Gameplay
                     _playerRuntime = currentService as IPlayerRuntimeContext;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _isRegistered = false;
-                    _lateFrameRegistered = false;
-                    if (currentService != null)
+                    UnregisterFromTick();
+                    if (currentService != null && isActiveAndEnabled)
                         RegisterToTick();
                     break;
             }

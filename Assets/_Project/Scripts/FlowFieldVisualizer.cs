@@ -19,6 +19,7 @@
 
 using System.Text;
 using System.Collections.Generic;
+using System;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -27,6 +28,7 @@ using UnityEngine;
 using System.Globalization;
 using Unity.Mathematics;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.World;
 
 namespace Hecton8.Physics
@@ -55,7 +57,6 @@ namespace Hecton8.Physics
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        private const NativeAllocationLifetime NativeTempJobLifetime = NativeAllocationLifetime.TempJob;
         private const int SelectedVolumeCapacity = 32;
         private const int ParticlePreviewCapacity = 32;
         private const int ForceLabelBuilderCapacity = 32;
@@ -773,15 +774,21 @@ namespace Hecton8.Physics
                     IFluidSurfaceCurrentReadModel fluidCurrent = _subscribedFluidCurrent;
                     bool includeGlobalCurrent = showGlobalCurrent && fluidCurrent != null;
 
-                    var positions = new NativeArray<float3>(totalPoints, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                    var flowResults = new NativeArray<float3>(totalPoints, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                    var volumeData = BuildVolumeJobData(Allocator.TempJob);
-                    NativeMemorySentinel.RegisterNativeArray(positions, nameof(FlowFieldVisualizer), "syncPositions", NativeTempJobLifetime);
-                    NativeMemorySentinel.RegisterNativeArray(flowResults, nameof(FlowFieldVisualizer), "syncFlowResults", NativeTempJobLifetime);
-                    NativeMemorySentinel.RegisterNativeArray(volumeData, nameof(FlowFieldVisualizer), "syncVolumeData", NativeTempJobLifetime);
-
+                    NativeArray<float3> positions = default;
+                    NativeArray<float3> flowResults = default;
+                    NativeArray<CurrentVolumeJobData> volumeData = default;
                     try
                     {
+                        positions = AllocateSyncSamplingScratch<float3>(
+                            totalPoints,
+                            NativeArrayOptions.ClearMemory,
+                            "syncPositions");
+                        flowResults = AllocateSyncSamplingScratch<float3>(
+                            totalPoints,
+                            NativeArrayOptions.ClearMemory,
+                            "syncFlowResults");
+                        volumeData = BuildVolumeJobData();
+
                         for (int i = 0; i < totalPoints; i++)
                         {
                             Vector3 p = _samplePositions[i];
@@ -826,23 +833,9 @@ namespace Hecton8.Physics
                     }
                     finally
                     {
-                        if (volumeData.IsCreated)
-                        {
-                            NativeMemorySentinel.UnregisterNativeArray(volumeData);
-                            volumeData.Dispose();
-                        }
-
-                        if (flowResults.IsCreated)
-                        {
-                            NativeMemorySentinel.UnregisterNativeArray(flowResults);
-                            flowResults.Dispose();
-                        }
-
-                        if (positions.IsCreated)
-                        {
-                            NativeMemorySentinel.UnregisterNativeArray(positions);
-                            positions.Dispose();
-                        }
+                        ReleaseSyncSamplingScratch(ref volumeData);
+                        ReleaseSyncSamplingScratch(ref flowResults);
+                        ReleaseSyncSamplingScratch(ref positions);
                     }
 
                     return;
@@ -946,7 +939,7 @@ namespace Hecton8.Physics
             }
         }
 
-        private NativeArray<CurrentVolumeJobData> BuildVolumeJobData(Allocator allocator)
+        private NativeArray<CurrentVolumeJobData> BuildVolumeJobData()
         {
             if (!showLocalCurrents || HectonFloatingOrigin.IsShiftInProgress)
                 return default;
@@ -955,7 +948,10 @@ namespace Hecton8.Physics
             if (_volumeScratch.Count <= 0)
                 return default;
 
-            var volumeData = new NativeArray<CurrentVolumeJobData>(_volumeScratch.Count, allocator, NativeArrayOptions.ClearMemory);
+            NativeArray<CurrentVolumeJobData> volumeData = AllocateSyncSamplingScratch<CurrentVolumeJobData>(
+                _volumeScratch.Count,
+                NativeArrayOptions.ClearMemory,
+                "syncVolumeData");
 
             for (int i = 0; i < _volumeScratch.Count; i++)
             {
@@ -986,6 +982,28 @@ namespace Hecton8.Physics
             }
 
             return volumeData;
+        }
+
+        private static NativeArray<T> AllocateSyncSamplingScratch<T>(
+            int length,
+            NativeArrayOptions options,
+            string label)
+            where T : struct
+        {
+            NativeArray<T> array = H8Memory.Allocate<T>(length, SystemID.Physics, Allocator.TempJob, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException($"Native sampling scratch allocation failed for {label}.");
+
+            return array;
+        }
+
+        private static void ReleaseSyncSamplingScratch<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            H8Memory.Release(ref array, SystemID.Physics);
         }
 
         /// <summary>Validiruet nastroyki pered ispolzovaniem</summary>

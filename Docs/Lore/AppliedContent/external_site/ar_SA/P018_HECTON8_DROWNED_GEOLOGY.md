@@ -7,6 +7,9 @@ poi_tags: poi.geology_scanner;poi.brine_step
 biome_tags: biome.drowned_shelf;biome.brine_stairs
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "جيولوجيا غارقة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

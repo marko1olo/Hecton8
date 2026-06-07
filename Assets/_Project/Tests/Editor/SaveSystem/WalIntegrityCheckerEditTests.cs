@@ -135,6 +135,31 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void WalPartialCopyWorkers_UseFailClosedNoThrowLifecycle()
+        {
+            string scriptRoot = Path.Combine(Application.dataPath, "_Project/Scripts/SaveSystem");
+            string mainSource = File.ReadAllText(Path.Combine(scriptRoot, "WalIntegrityFuzzerCore.cs"));
+            string shinobu357Source = File.ReadAllText(Path.Combine(scriptRoot, "WalIntegrityFuzzerCore_SHINOBU357.cs"));
+            string combinedSource = string.Concat(mainSource, shinobu357Source);
+
+            Assert.AreEqual(0, CountToken(mainSource, "worker.Join(5000)"));
+            Assert.AreEqual(0, CountToken(mainSource, "worker.Join(100)"));
+            Assert.AreEqual(0, CountToken(shinobu357Source, "worker.Join(5000)"));
+            Assert.AreEqual(0, CountToken(shinobu357Source, "worker.Join(100)"));
+            Assert.AreEqual(2, CountToken(combinedSource, "TryStartPartialWalCopyWorkerNoThrow(worker, state)"));
+            Assert.AreEqual(2, CountToken(combinedSource, "TryJoinPartialWalCopyWorkerNoThrow(worker, PartialWalCopyJoinMilliseconds)"));
+            Assert.AreEqual(2, CountToken(combinedSource, "TryJoinPartialWalCopyWorkerNoThrow(worker, PartialWalCopyCancelJoinMilliseconds)"));
+
+            StringAssert.Contains("private const int PartialWalCopyJoinMilliseconds = 5000;", mainSource);
+            StringAssert.Contains("private const int PartialWalCopyCancelJoinMilliseconds = 100;", mainSource);
+            StringAssert.Contains("private static bool TryStartPartialWalCopyWorkerNoThrow", mainSource);
+            StringAssert.Contains("private static bool TryJoinPartialWalCopyWorkerNoThrow", mainSource);
+            StringAssert.Contains("Thread.CurrentThread.ManagedThreadId == worker.ManagedThreadId", mainSource);
+            StringAssert.Contains("worker.Join(timeoutMilliseconds);", mainSource);
+            StringAssert.Contains("return !worker.IsAlive;", mainSource);
+        }
+
+        [Test]
         public void OopWalFuzzScanner_RejectsManagedSerializerFindings()
         {
             bool passed = WalIntegrityFuzzerCore.RunOopWalFuzzScannerForProject(out OopWalFuzzScanResultDTO result);
@@ -229,6 +254,23 @@ namespace Hecton8.Tests.Editor
             for (int i = 0; i < value.Length; i++)
                 hash = (hash ^ (byte)value[i]) * 16777619u;
             return hash == 0u ? 1u : hash;
+        }
+
+        private static int CountToken(string source, string token)
+        {
+            int count = 0;
+            int offset = 0;
+            while (offset < source.Length)
+            {
+                int index = source.IndexOf(token, offset, StringComparison.Ordinal);
+                if (index < 0)
+                    return count;
+
+                count++;
+                offset = index + token.Length;
+            }
+
+            return count;
         }
 
         private static bool ContainsAsciiToken(FileStream stream, string token)

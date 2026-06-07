@@ -3446,9 +3446,7 @@ namespace Hecton8.Physics
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registered = false;
-                _registeredLateFrame = false;
-                _registeredSlowTick = false;
+                TryUnregister();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegister();
             }

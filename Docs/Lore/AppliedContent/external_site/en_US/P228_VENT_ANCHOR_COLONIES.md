@@ -7,6 +7,9 @@ poi_tags: poi.vent_anchor_colony;poi.hot_sulfide_rib
 biome_tags: biome.thermal_vent;biome.brine_canyon
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Vent Anchor Colonies"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -16,15 +19,15 @@ localization_flags: 0
 
 # Vent Anchor Colonies
 
-Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward.
+Vent Anchor Colonies are the resource answer to a narrative problem: why would a stranded Marauder go deeper instead of only repairing upward? Because the parts that survive HECTON-8's pressure are born where the ocean is most hostile. Vent anchors grow around thermal outlets like living clamps, trapping sulfides, heat-cycled minerals and ceramic precursors in ribbed shelves. They connect ecology to crafting in a grounded way. The colony is not a treasure node. It is a dangerous industrial process with a pulse. Small fauna shelter in the cooler ribs. Brine vanes curl away from the hot plume. Density skaters may cross the warm step but never the white throat. A good encounter should make the player see a repair route and a death zone in the same object. The anchor says: yes, the material you need exists; no, you do not get to take it safely. This is also where Deep Reach competence becomes credible. The corporation did not invent useful pressure chemistry from nowhere. It learned to harvest and standardize processes the ocean was already running, then built liability paperwork around the people sent to cut samples from boiling water.
 
 ## Scanner
 
-Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.
+VENT ANCHOR COLONY // Ribbed colonies lock around thermal vents, trap sulfides and grow the chemistry needed for deep-rated repairs.
 
 ## Terminal
 
-RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.
+RESOURCE BASELINE: colonies raise cold-sealant grit, pressure-ceramic precursor and sulfide salt probability. Thermal bloom remains lethal; sample from cooled ribs and shed plates only.
 
 ## Audio
 
@@ -32,6 +35,6 @@ Every good repair part is sitting in water that wants to cook you.
 
 ## Field Note
 
-Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.
+A vent anchor is a resource sign, heat warning, shelter edge and proof that forge chemistry has living hands around it.
 
 <!-- External Site; generated from P228_VENT_ANCHOR_COLONIES/en_US. -->

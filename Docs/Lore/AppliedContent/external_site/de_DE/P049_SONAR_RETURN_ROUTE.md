@@ -7,6 +7,9 @@ poi_tags: poi.sonar_pylon;poi.return_beacon
 biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: de_DE
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Sonar Return Route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.tide_model;poi.evacuated_shift_board
 biome_tags: biome.tide_gauge;biome.drowned_colony
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Great Tide Liability Chain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

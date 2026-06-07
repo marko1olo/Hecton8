@@ -7,6 +7,9 @@ poi_tags: poi.signal_mast;poi.service_buoy
 biome_tags: biome.storm_shelf;biome.shallow_reef
 locale: zh_CN
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Black Keel联系"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

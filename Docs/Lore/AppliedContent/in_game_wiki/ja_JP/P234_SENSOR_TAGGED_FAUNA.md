@@ -9,32 +9,34 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JP LOC HOLD: Sensor-Tagged Fauna"
+title: "センサータグ付き動物相"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JP LOC HOLD: Sensor-Tagged Fauna
+# センサータグ付き動物相
 
-JP LOC HOLD: Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.
+センサータグ付き動物相は、Atlas に変えられた生命を地に足のついたものにする。Deep Reach はかつて移動、耐圧、汚染を監視するために、動物、殻の群体、経路種へタグを付けた。何年も後、そのバイオメタルタグは清潔な装置ではなくなった。成長輪、殻の窪み、古い傷跡、鉱物のかさぶたに収まり、それを取り込んで生き延びた体の一部になっている。
+
+この区別が重要だ。タグ付きの生物は操り人形ではない。Atlas はタグを鳴らし、返答を誤読し、弱い診断用目印として使うことがあるが、指令応答は不安定で、しばしば存在しない。プレイヤーはタグを産業の履歴として読むべきだ。微かな信号、古い傷、責任の痕跡、そして時にはコロニー崩壊前に Deep Reach がどこを見張っていたかを示す手がかりである。
 
 ## Scanner
 
-JP LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+センサータグ付き動物相 // 古いバイオメタルタグが成長輪、傷跡、殻の窪みに残っている。動物は監視装置を服従ではなく身体の履歴として運ぶ。
 
 ## Terminal
 
-JP LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+タグノート: 信号連続性は弱い。生物統合は高い。指令応答は不安定。受動的な傷跡、断続ビーコン、Atlas 診断ゴーストとして扱う。
 
 ## Audio
 
-JP LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+動物はドローンではない。ドローンは動物の中の古い傷だ。
 
 ## Field Note
 
-JP LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+動物はドローンではない。ドローンは、その動物が生き延びた古い傷だ。
 
 <!-- In-Game Wiki; generated from P234_SENSOR_TAGGED_FAUNA/ja_JP. -->

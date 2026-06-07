@@ -48,18 +48,12 @@ namespace Hecton8.Debugging
                 ExpectedStorageNode = storageNodeIndex
             };
 
-            NativeArray<int> edgeOffsets = new NativeArray<int>(nodeCount + 1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[65] - omega smoke CSR offsets - owner: AutomationOmegaSmokeTester
-            NativeArray<int> edgeDestinations = new NativeArray<int>(edgeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[63] - omega smoke CSR destinations - owner: AutomationOmegaSmokeTester
-            NativeArray<byte> storageCapacityByNode = new NativeArray<byte>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[64] - omega smoke storage flags - owner: AutomationOmegaSmokeTester
-            NativeArray<byte> visited = new NativeArray<byte>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[64] - omega smoke BFS visited set - owner: AutomationOmegaSmokeTester
-            NativeArray<int> queue = new NativeArray<int>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[64] - omega smoke BFS queue - owner: AutomationOmegaSmokeTester
-            NativeArray<int> routeResult = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - omega smoke BFS result cell - owner: AutomationOmegaSmokeTester
-            RegisterTempJobArray(edgeOffsets, nameof(edgeOffsets));
-            RegisterTempJobArray(edgeDestinations, nameof(edgeDestinations));
-            RegisterTempJobArray(storageCapacityByNode, nameof(storageCapacityByNode));
-            RegisterTempJobArray(visited, nameof(visited));
-            RegisterTempJobArray(queue, nameof(queue));
-            RegisterTempJobArray(routeResult, nameof(routeResult));
+            NativeArray<int> edgeOffsets = AllocateTrackedTempJobArray<int>(nodeCount + 1, nameof(edgeOffsets), NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[65] - omega smoke CSR offsets - owner: AutomationOmegaSmokeTester
+            NativeArray<int> edgeDestinations = AllocateTrackedTempJobArray<int>(edgeCount, nameof(edgeDestinations), NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[63] - omega smoke CSR destinations - owner: AutomationOmegaSmokeTester
+            NativeArray<byte> storageCapacityByNode = AllocateTrackedTempJobArray<byte>(nodeCount, nameof(storageCapacityByNode), NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[64] - omega smoke storage flags - owner: AutomationOmegaSmokeTester
+            NativeArray<byte> visited = AllocateTrackedTempJobArray<byte>(nodeCount, nameof(visited), NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[64] - omega smoke BFS visited set - owner: AutomationOmegaSmokeTester
+            NativeArray<int> queue = AllocateTrackedTempJobArray<int>(nodeCount, nameof(queue), NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[64] - omega smoke BFS queue - owner: AutomationOmegaSmokeTester
+            NativeArray<int> routeResult = AllocateTrackedTempJobArray<int>(1, nameof(routeResult), NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - omega smoke BFS result cell - owner: AutomationOmegaSmokeTester
 
             try
             {
@@ -130,9 +124,25 @@ namespace Hecton8.Debugging
             }
         }
 
-        private static void RegisterTempJobArray<T>(NativeArray<T> array, string label) where T : struct
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, string label, NativeArrayOptions options) where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+
+            array.Dispose();
+            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void DisposeTempJobArray<T>(ref NativeArray<T> array) where T : struct
@@ -140,9 +150,15 @@ namespace Hecton8.Debugging
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
         }
     }
 }

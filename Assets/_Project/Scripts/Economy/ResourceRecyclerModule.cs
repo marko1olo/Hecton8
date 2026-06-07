@@ -307,17 +307,9 @@ namespace Hecton8.Economy
                     _scarcityReadModel = currentService as IResourceScarcityReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                    {
-                        _registered = false;
-                        return;
-                    }
-
-                    if (isActiveAndEnabled)
-                    {
-                        TryUnregister();
+                    TryUnregister();
+                    if (currentService != null && isActiveAndEnabled)
                         TryRegister();
-                    }
                     break;
             }
         }

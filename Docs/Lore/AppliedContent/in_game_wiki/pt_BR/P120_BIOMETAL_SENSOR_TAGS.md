@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "Etiquetas sensoras de biometal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# Etiquetas sensoras de biometal
 
-PT LOC HOLD: Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.
+Etiquetas sensoras de biometal são pequenas escamas de telemetria encontradas em fauna, crescimento de cabos e ecologia de reparo. Elas podem afiar pingers e rotas de scanner, mas toda etiqueta útil também é prova: a Atlas usou portadores vivos para estender uma rede de manutenção danificada.
 
 ## Scanner
 
-PT LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+ETIQUETAS SENSORAS DE BIOMETAL // Escamas metálicas finas crescidas em peixes, kelp de cabo e tecido de reparo. Melhoram ajuste de pinger; colhidas quentes, a Atlas pode ouvir o portador perdido.
 
 ## Terminal
 
-PT LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+CLASSE DE RECURSO: alterado pela Atlas / sensível como prova. Usos: foco de pinger, malha de scanner, confiança de rota, pacotes de prova. Coleta fria recomendada. Riscos: aumento de atenção, retornos falsos de portador, fauna ferida.
 
 ## Audio
 
-PT LOC HOLD: The fish is not a drone. The tag does not know the difference.
+O peixe não é drone. A etiqueta continua reportando mesmo assim.
 
 ## Field Note
 
-PT LOC HOLD: Make resource extraction feel like evidence handling.
+Se piscar sob a faca, registre antes de cortar.
 
 <!-- In-Game Wiki; generated from P120_BIOMETAL_SENSOR_TAGS/pt_BR. -->

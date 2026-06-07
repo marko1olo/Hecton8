@@ -7,6 +7,9 @@ poi_tags: poi.crash_shelf;poi.service_buoy
 biome_tags: biome.shallow_reef;biome.storm_shelf
 locale: pt_BR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Plataforma do impacto"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

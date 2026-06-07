@@ -170,6 +170,7 @@ namespace Hecton8.Interaction
         private IPhysicsService _physicsService;
         private IOrganicToolHitService _organicToolHits;
         private InteractionState _state;
+        private bool _hasExplicitInteractionAnchor;
         private bool _registeredTick;
         private bool _registeredFixedTick;
         private bool _registeredLateFrameTick;
@@ -207,7 +208,6 @@ namespace Hecton8.Interaction
         private bool _activeColliderWasEnabled;
         private float _activeHeavyCarryMass;
         private int _resolvedPanelButtonLayerMask;
-        private int _panelSampleFrameIndex;
 
         /// <summary>
         /// True while the player is actively dragging a heavy rigidbody object.
@@ -241,23 +241,8 @@ namespace Hecton8.Interaction
         private void Awake()
         {
             _cachedTransform = transform;
-
-            if (survivalSystem == null)
-                TryGetComponent(out survivalSystem);
-
-            if (interactionAnchor == null)
-            {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                _playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
-                if (_playerCamera == null)
-                    TryGetComponent(out _playerCamera);
-                if (_playerCamera == null)
-                    TryResolveParentComponent(transform, out _playerCamera);
-
-                if (_playerCamera != null)
-                    interactionAnchor = _playerCamera.transform;
-            }
-
+            _hasExplicitInteractionAnchor = interactionAnchor != null;
+            ResolveColdReferences();
             TryGetComponent(out _physicalHandController);
             RefreshPanelButtonLayerMask();
             if (enablePhysicalPanelButtons && HectonXRRuntimeState.IsXRActive)
@@ -272,6 +257,7 @@ namespace Hecton8.Interaction
             _physicsService = GlobalRegistry.Physics;
             _organicToolHits = GlobalRegistry.OrganicToolHits;
             _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
+            ResolveColdReferences();
             TryRegisterHotSwapListener();
             RefreshPanelButtonLayerMask();
             if (enablePhysicalPanelButtons && HectonXRRuntimeState.IsXRActive)
@@ -309,6 +295,12 @@ namespace Hecton8.Interaction
             if (!isActiveAndEnabled)
                 return;
 
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                ResolveColdReferences(currentService as IPlayerRuntimeContext, forcePlayerCameraRefresh: true);
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.InteractionSignals)
             {
                 _interactionSignals = currentService as IInteractionSignalService;
@@ -330,9 +322,7 @@ namespace Hecton8.Interaction
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            _registeredTick = false;
-            _registeredFixedTick = false;
-            _registeredLateFrameTick = false;
+            UnregisterFromTickSystems();
             _dispatcherAvailable = currentService != null;
             if (_dispatcherAvailable)
                 RefreshTickRegistration();
@@ -518,9 +508,13 @@ namespace Hecton8.Interaction
             {
                 Vector3 controllerPosition = GetAnchorTargetPosition();
                 Quaternion controllerRotation = interactionAnchor != null ? interactionAnchor.rotation : _cachedTransform.rotation;
+                bool handControllerRequiredFixedTick = _physicalHandController.RequiresFixedTick;
                 _physicalHandController.StepFixed(safeFixedDeltaTime, controllerPosition, controllerRotation);
-                if (_registeredLateFrameTick != _physicalHandController.RequiresLateFrameTick)
+                if (handControllerRequiredFixedTick != _physicalHandController.RequiresFixedTick ||
+                    _registeredLateFrameTick != _physicalHandController.RequiresLateFrameTick)
+                {
                     RefreshTickRegistration();
+                }
             }
 
             if (_state == InteractionState.Idle)
@@ -626,7 +620,7 @@ namespace Hecton8.Interaction
 
             if (bestButton != null)
             {
-                int sampleFrame = unchecked(++_panelSampleFrameIndex & 0x3fffffff);
+                int sampleFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
                 bestButton.TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, handSide, sampleFrame);
             }
         }
@@ -762,6 +756,31 @@ namespace Hecton8.Interaction
             return false;
         }
 
+        private void ResolveColdReferences(IPlayerRuntimeContext playerContext = null, bool forcePlayerCameraRefresh = false)
+        {
+            if (survivalSystem == null)
+                TryGetComponent(out survivalSystem);
+
+            if (forcePlayerCameraRefresh || _playerCamera == null)
+            {
+                if (playerContext == null)
+                    playerContext = GlobalRegistry.Player;
+
+                _playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+                if (_playerCamera == null)
+                    TryGetComponent(out _playerCamera);
+                if (_playerCamera == null)
+                    TryResolveParentComponent(transform, out _playerCamera);
+            }
+
+            if (!_hasExplicitInteractionAnchor &&
+                _playerCamera != null &&
+                (interactionAnchor == null || forcePlayerCameraRefresh))
+            {
+                interactionAnchor = _playerCamera.transform;
+            }
+        }
+
         private bool TryBeginHeavyCarry(
             IInteractable interactable,
             MonoBehaviour behaviour,
@@ -831,9 +850,7 @@ namespace Hecton8.Interaction
             if (TryGetComponent(out _physicalHandController))
                 return true;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            _physicalHandController = gameObject.AddComponent<PhysicalHandController>(); // COLD ALLOC: PhysicalHandController[1] — heavy-object articulation grab proxy — owner: PhysicalInteractionHandler
-#endif
+            _physicalHandController = gameObject.AddComponent<PhysicalHandController>(); // COLD ALLOC: PhysicalHandController[1] - heavy-object articulation grab proxy - owner: PhysicalInteractionHandler
             return _physicalHandController != null;
         }
 
@@ -1247,7 +1264,9 @@ namespace Hecton8.Interaction
                 panelButtonTickReady;
             bool handControllerNeedsFixedTick =
                 _physicalHandController != null &&
-                (panelButtonTickReady || _state == InteractionState.DraggingHeavyObject);
+                (panelButtonTickReady ||
+                 _state == InteractionState.DraggingHeavyObject ||
+                 _physicalHandController.RequiresFixedTick);
             bool needsFixedTick =
                 handControllerNeedsFixedTick ||
                 _state == InteractionState.DraggingHeavyObject;

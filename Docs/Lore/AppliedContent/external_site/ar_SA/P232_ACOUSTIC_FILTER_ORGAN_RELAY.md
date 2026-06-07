@@ -9,32 +9,34 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Acoustic Filter Organ Relay"
+title: "مرحل عضو الترشيح الصوتي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Acoustic Filter Organ Relay
+# مرحل عضو الترشيح الصوتي
 
-AR LOC HOLD: Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence.
+مرحل عضو الترشيح الصوتي هو الجسر بين لعب السونار ورعب Atlas البيوميكانيكي. أنظمة HECTON-8 المهجورة لا تحتاج إلى وحش يتكلم في الجدران. تحتاج إلى بنية تحتية متضررة جندت مرشحات صوتية حية، لأن اللحم والأنبوب والضغط قد تحل أحيانا مشكلة توجيه أفضل من إلكترونيات ميتة.
+
+ينمو عضو المرحل حول الأنابيب مثل جدار خياشيم رطب. يخمد زئير المضخات، يمرر نبضات الإشارة الضيقة، ويثني الأصداء بطرق ثابتة. هذا يعطي تصميم المراحل قاعدة قوية: يمكن للصوت أن يكذب، لكن يجب أن يكذب بنمط. يستطيع اللاعب تعلم أي عوائد مطوية، وأي ممرات مخفية فقط بإزاحة طور، وأي طرق صيانة أبقاها Atlas حية بقبول البيولوجيا كعتاد. الرعب ليس أن للغرفة صوتا. الرعب أنها تستطيع أن تصغي وتوجه وتصلح من دون أن تفهم قط لماذا احتاج إنسان إلى تلك الغرفة.
 
 ## Scanner
 
-AR LOC HOLD: Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
+عضو ترشيح صوتي // نسيج يشبه جدار الخياشيم نما حول أنابيب المرحل؛ يخمد زئير المضخات، يمرر نبضات الإشارة الضيقة، ويطوي السونار إلى أكاذيب قابلة للتكرار.
 
 ## Terminal
 
-AR LOC HOLD: RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
+ملاحظة المرحل: الحاجز الحي يمرر نبضات فئة الإشارة، يرفض ضجيج المضخات العريض، ويزيح طور أصداء العودة. علم الخرائط اللاحقة كحقيقية بشروط.
 
 ## Audio
 
-AR LOC HOLD: The room is listening with meat and pipe.
+الغرفة تصغي باللحم والأنبوب.
 
 ## Field Note
 
-AR LOC HOLD: Atlas does not need language here. It needs filters, pulses and living baffles.
+Atlas لا يحتاج إلى صوت هنا. يحتاج إلى عضو يجعل الصوت الصحيح ينجو.
 
 <!-- External Site; generated from P232_ACOUSTIC_FILTER_ORGAN_RELAY/ar_SA. -->

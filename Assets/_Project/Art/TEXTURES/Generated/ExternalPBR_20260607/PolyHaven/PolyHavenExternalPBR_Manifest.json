@@ -1,0 +1,239 @@
+{
+  "schema": "hecton8.external_pbr_pack.v1",
+  "sourceProvider": "Poly Haven",
+  "providerLicensePage": "https://polyhaven.com/license",
+  "license": "CC0",
+  "resolution": "2k",
+  "unityImportStatus": "PENDING UNITY IMPORT",
+  "mapPacking": {
+    "sourceARM": "RGB = Ambient Occlusion, Roughness, Metal",
+    "unityMaskMap": "RGBA = Metal, Ambient Occlusion, unused zero, Smoothness"
+  },
+  "assets": [
+    {
+      "id": "metal_plate_02",
+      "title": "Metal Plate 02",
+      "source": "https://polyhaven.com/a/metal_plate_02",
+      "license": "CC0",
+      "role": "worn corroded steel plate for prop body panels and industrial trim",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_plate_02/TX_PH_metal_plate_02_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_plate_02/TX_PH_metal_plate_02_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_plate_02/TX_PH_metal_plate_02_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_plate_02/TX_PH_metal_plate_02_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_plate_02/TX_PH_metal_plate_02_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "blue_metal_plate",
+      "title": "Blue Metal Plate",
+      "source": "https://polyhaven.com/a/blue_metal_plate",
+      "license": "CC0",
+      "role": "scuffed painted steel for pressure-rated tool housings",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/blue_metal_plate/TX_PH_blue_metal_plate_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/blue_metal_plate/TX_PH_blue_metal_plate_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/blue_metal_plate/TX_PH_blue_metal_plate_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/blue_metal_plate/TX_PH_blue_metal_plate_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/blue_metal_plate/TX_PH_blue_metal_plate_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "worn_shutter",
+      "title": "Worn Shutter",
+      "source": "https://polyhaven.com/a/worn_shutter",
+      "license": "CC0",
+      "role": "dark corrugated worn metal for ribs, grips, cartridge shells",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/worn_shutter/TX_PH_worn_shutter_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/worn_shutter/TX_PH_worn_shutter_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/worn_shutter/TX_PH_worn_shutter_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/worn_shutter/TX_PH_worn_shutter_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/worn_shutter/TX_PH_worn_shutter_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "factory_wall",
+      "title": "Factory Wall",
+      "source": "https://polyhaven.com/a/factory_wall",
+      "license": "CC0",
+      "role": "green corrugated factory metal for diegetic equipment panels",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/factory_wall/TX_PH_factory_wall_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/factory_wall/TX_PH_factory_wall_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/factory_wall/TX_PH_factory_wall_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/factory_wall/TX_PH_factory_wall_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/factory_wall/TX_PH_factory_wall_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "rubber_tiles",
+      "title": "Rubber Tiles",
+      "source": "https://polyhaven.com/a/rubber_tiles",
+      "license": "CC0",
+      "role": "smooth dark waterproof rubber with seams for gaskets, grips, and equipment feet",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rubber_tiles/TX_PH_rubber_tiles_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rubber_tiles/TX_PH_rubber_tiles_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rubber_tiles/TX_PH_rubber_tiles_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rubber_tiles/TX_PH_rubber_tiles_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rubber_tiles/TX_PH_rubber_tiles_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "corrugated_iron_02",
+      "title": "Corrugated Iron 02",
+      "source": "https://polyhaven.com/a/corrugated_iron_02",
+      "license": "CC0",
+      "role": "weathered corrugated iron for industrial pressure hull skins and ribbed panels",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron_02/TX_PH_corrugated_iron_02_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron_02/TX_PH_corrugated_iron_02_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron_02/TX_PH_corrugated_iron_02_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron_02/TX_PH_corrugated_iron_02_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron_02/TX_PH_corrugated_iron_02_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "rusty_metal_03",
+      "title": "Rusty Metal 03",
+      "source": "https://polyhaven.com/a/rusty_metal_03",
+      "license": "CC0",
+      "role": "rich rusted steel for damaged salvage, wreckage, and repair props",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rusty_metal_03/TX_PH_rusty_metal_03_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rusty_metal_03/TX_PH_rusty_metal_03_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rusty_metal_03/TX_PH_rusty_metal_03_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rusty_metal_03/TX_PH_rusty_metal_03_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rusty_metal_03/TX_PH_rusty_metal_03_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "box_profile_metal_sheet",
+      "title": "Box Profile Metal Sheet",
+      "source": "https://polyhaven.com/a/box_profile_metal_sheet",
+      "license": "CC0",
+      "role": "profiled metal sheet for modular equipment casings and trim strips",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/box_profile_metal_sheet/TX_PH_box_profile_metal_sheet_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/box_profile_metal_sheet/TX_PH_box_profile_metal_sheet_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/box_profile_metal_sheet/TX_PH_box_profile_metal_sheet_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/box_profile_metal_sheet/TX_PH_box_profile_metal_sheet_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/box_profile_metal_sheet/TX_PH_box_profile_metal_sheet_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "metal_plate",
+      "title": "Metal Plate",
+      "source": "https://polyhaven.com/a/metal_plate",
+      "license": "CC0",
+      "role": "painted diamond-plate steel for deck plates, tool insets, and worn industrial trims",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_plate/TX_PH_metal_plate_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_plate/TX_PH_metal_plate_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_plate/TX_PH_metal_plate_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_plate/TX_PH_metal_plate_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_plate/TX_PH_metal_plate_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "corrugated_iron",
+      "title": "Corrugated Iron",
+      "source": "https://polyhaven.com/a/corrugated_iron",
+      "license": "CC0",
+      "role": "broad weathered galvanized steel ridges for hull panels and station service cladding",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron/TX_PH_corrugated_iron_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron/TX_PH_corrugated_iron_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron/TX_PH_corrugated_iron_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron/TX_PH_corrugated_iron_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron/TX_PH_corrugated_iron_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "rusty_corrugated_iron",
+      "title": "Rusty Corrugated Iron",
+      "source": "https://polyhaven.com/a/rusty_corrugated_iron",
+      "license": "CC0",
+      "role": "oxidized corrugated sheet for wreckage, salvage scrap, and damaged external casings",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rusty_corrugated_iron/TX_PH_rusty_corrugated_iron_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rusty_corrugated_iron/TX_PH_rusty_corrugated_iron_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rusty_corrugated_iron/TX_PH_rusty_corrugated_iron_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rusty_corrugated_iron/TX_PH_rusty_corrugated_iron_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/rusty_corrugated_iron/TX_PH_rusty_corrugated_iron_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "corrugated_iron_03",
+      "title": "Corrugated Iron 03",
+      "source": "https://polyhaven.com/a/corrugated_iron_03",
+      "license": "CC0",
+      "role": "narrow galvanized corrugation for compact equipment ribs and small panel strips",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron_03/TX_PH_corrugated_iron_03_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron_03/TX_PH_corrugated_iron_03_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron_03/TX_PH_corrugated_iron_03_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron_03/TX_PH_corrugated_iron_03_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/corrugated_iron_03/TX_PH_corrugated_iron_03_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "green_metal_rust",
+      "title": "Green Metal Rust",
+      "source": "https://polyhaven.com/a/green_metal_rust",
+      "license": "CC0",
+      "role": "old painted green industrial metal for aged bulkheads and repaired service modules",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/green_metal_rust/TX_PH_green_metal_rust_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/green_metal_rust/TX_PH_green_metal_rust_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/green_metal_rust/TX_PH_green_metal_rust_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/green_metal_rust/TX_PH_green_metal_rust_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/green_metal_rust/TX_PH_green_metal_rust_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "painted_metal_shutter",
+      "title": "Painted Metal Shutter",
+      "source": "https://polyhaven.com/a/painted_metal_shutter",
+      "license": "CC0",
+      "role": "painted shutter slats for tool ribs, locker fronts, and modular equipment housings",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/painted_metal_shutter/TX_PH_painted_metal_shutter_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/painted_metal_shutter/TX_PH_painted_metal_shutter_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/painted_metal_shutter/TX_PH_painted_metal_shutter_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/painted_metal_shutter/TX_PH_painted_metal_shutter_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/painted_metal_shutter/TX_PH_painted_metal_shutter_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "container_side",
+      "title": "Container Side",
+      "source": "https://polyhaven.com/a/container_side",
+      "license": "CC0",
+      "role": "shipping-container steel side for larger equipment casings and service bay props",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/container_side/TX_PH_container_side_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/container_side/TX_PH_container_side_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/container_side/TX_PH_container_side_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/container_side/TX_PH_container_side_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/container_side/TX_PH_container_side_MaskMap_UnityURP_2k.png"
+      }
+    },
+    {
+      "id": "metal_grate_rusty",
+      "title": "Metal Grate Rusty",
+      "source": "https://polyhaven.com/a/metal_grate_rusty",
+      "license": "CC0",
+      "role": "rusted open grate surface for drains, vents, and salvage deck details",
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_grate_rusty/TX_PH_metal_grate_rusty_BaseColor_2k.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_grate_rusty/TX_PH_metal_grate_rusty_NormalGL_2k.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_grate_rusty/TX_PH_metal_grate_rusty_ARM_AO_Rough_Metal_2k.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_grate_rusty/TX_PH_metal_grate_rusty_Height_2k.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/metal_grate_rusty/TX_PH_metal_grate_rusty_MaskMap_UnityURP_2k.png"
+      }
+    }
+  ],
+  "preview": "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/PREVIEW_PolyHavenExternalPBR_2k.png"
+}

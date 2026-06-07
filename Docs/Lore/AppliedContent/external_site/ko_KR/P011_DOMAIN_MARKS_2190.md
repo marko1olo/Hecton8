@@ -7,6 +7,9 @@ poi_tags: poi.domain_tool_stamp;poi.route_cargo_tag
 biome_tags: biome.crash_shelf;biome.drowned_colony
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "2190 도메인 표식"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

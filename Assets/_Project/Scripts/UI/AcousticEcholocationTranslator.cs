@@ -346,16 +346,11 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null)
-                {
-                    _tickRegistered = false;
-                    return;
-                }
-
+                UnregisterFromTickManager();
                 if (isActiveAndEnabled)
                 {
-                    UnregisterFromTickManager();
-                    RegisterToTickManager();
+                    if (currentService != null)
+                        RegisterToTickManager();
                 }
             }
         }
@@ -1178,16 +1173,11 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null)
-                {
-                    _tickRegistered = false;
-                    return;
-                }
-
+                UnregisterFromTickManager();
                 if (isActiveAndEnabled)
                 {
-                    UnregisterFromTickManager();
-                    RegisterToTickManager();
+                    if (currentService != null)
+                        RegisterToTickManager();
                 }
             }
         }
@@ -1625,19 +1615,15 @@ namespace Hecton8.UI
             {
                 if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
                 {
-                    if (currentService == null)
-                    {
-                        TryUnregisterCaptionConsumer();
-                        _tickRegistered = false;
-                        return;
-                    }
-
+                    TryUnregisterCaptionConsumer();
+                    UnregisterFromTickManager();
                     if (isActiveAndEnabled)
                     {
-                        TryUnregisterCaptionConsumer();
-                        UnregisterFromTickManager();
-                        RegisterToTickManager();
-                        TryRegisterCaptionConsumer();
+                        if (currentService != null)
+                        {
+                            RegisterToTickManager();
+                            TryRegisterCaptionConsumer();
+                        }
                     }
                 }
                 return;

@@ -7,6 +7,9 @@ poi_tags: poi.evidence_first_charter;poi.packet_notary_cache
 biome_tags: biome.contract_layer;biome.evidence_route
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Evidence First Charter Contract Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

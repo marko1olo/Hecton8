@@ -116,7 +116,7 @@ namespace Hecton8.UI
             if (serviceSlot != GlobalRegistryServiceSlot.SubtitleRuntime)
                 return;
 
-            _cachedSubtitleManager = currentService as SubtitleManager;
+            CacheSubtitleManager(currentService as SubtitleManager);
             if (_cachedSubtitleManager == null)
             {
                 ClearSubtitleManagerBinding();
@@ -186,8 +186,11 @@ namespace Hecton8.UI
         private void ConsumeCueSnapshot()
         {
             SubtitleManager manager = _subtitleManager;
-            if (manager == null)
+            if (!IsBoundSubtitleManagerUsable(manager))
+            {
+                ClearSubtitleManagerBinding();
                 return;
+            }
 
             if (!manager.TryGetAudioLogCueSnapshot(
                     _lastCueChangeVersion,
@@ -346,7 +349,7 @@ namespace Hecton8.UI
 
         private void TryBindSubtitleManager()
         {
-            SubtitleManager manager = _cachedSubtitleManager;
+            SubtitleManager manager = ResolveSubtitleManagerForBinding();
             if (manager == null)
                 return;
 
@@ -361,7 +364,37 @@ namespace Hecton8.UI
 
         private void CacheSubtitleManagerCold()
         {
-            _cachedSubtitleManager = GlobalRegistry.Subtitles;
+            CacheSubtitleManager(GlobalRegistry.Subtitles);
+        }
+
+        private SubtitleManager ResolveSubtitleManagerForBinding()
+        {
+            SubtitleManager manager = _cachedSubtitleManager;
+            if (IsSubtitleManagerRuntimeUsable(manager))
+                return manager;
+
+            if (manager != null)
+                ClearSubtitleManagerBinding();
+
+            CacheSubtitleManagerCold();
+            return _cachedSubtitleManager;
+        }
+
+        private void CacheSubtitleManager(SubtitleManager manager)
+        {
+            _cachedSubtitleManager = IsSubtitleManagerRuntimeUsable(manager) ? manager : null;
+        }
+
+        private static bool IsSubtitleManagerRuntimeUsable(SubtitleManager manager)
+        {
+            return manager != null &&
+                   manager.isActiveAndEnabled &&
+                   ReferenceEquals(GlobalRegistry.Subtitles, manager);
+        }
+
+        private static bool IsBoundSubtitleManagerUsable(SubtitleManager manager)
+        {
+            return manager != null && manager.isActiveAndEnabled;
         }
 
         private void TryRegisterHotSwapListener()

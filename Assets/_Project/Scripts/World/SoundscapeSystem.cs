@@ -606,6 +606,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             CacheAudioService(GlobalRegistry.Audio);
+            CacheMusicDirector(GlobalRegistry.MusicDirector);
             TryRegisterService();
             TryRegister();
             TryRegisterLateFrame();
@@ -626,6 +627,7 @@ namespace Hecton8.World
             TryUnregister();
             TryUnregisterService();
             _audioService = null;
+            _musicDirector = null;
         }
 
         private void OnDestroy()
@@ -636,6 +638,7 @@ namespace Hecton8.World
             TryUnregister();
             TryUnregisterService();
             _audioService = null;
+            _musicDirector = null;
         }
 
         private void TryRegister()
@@ -787,7 +790,7 @@ namespace Hecton8.World
 
         private void DrainSignals()
         {
-            IAudioService audio = _audioService;
+            IAudioService audio = ResolveAudioService();
             float qualityWeight01 = ResolveSoundscapeQualityWeight01();
             int signalDrainBudget = ResolveSignalDrainBudget(qualityWeight01);
             ReadOnlySpan<ImpactSignal> signals = SignalBus<ImpactSignal>.GetFrameSnapshot();
@@ -833,7 +836,7 @@ namespace Hecton8.World
             if (safeIntensity < impactClangMinimumIntensity)
                 return;
 
-            if (audio == null || !audio.IsInitialized)
+            if (!IsAudioServiceUsable(audio))
                 return;
 
             float3 runtimePosition = signal.PointAup.ToRuntimeFloat3();
@@ -966,10 +969,17 @@ namespace Hecton8.World
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
                 CacheAudioService(currentService as IAudioService);
 
+            if (serviceSlot == GlobalRegistryServiceSlot.MusicDirectorRuntime)
+            {
+                CacheMusicDirector(currentService as HectonMusicDirector);
+                SyncCachedMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f);
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
                 IPlayerRuntimeContext playerContext = currentService as IPlayerRuntimeContext;
                 survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
+                SyncMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f);
             }
         }
 
@@ -984,17 +994,25 @@ namespace Hecton8.World
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.MusicDirectorRuntime)
+            {
+                CacheMusicDirector(currentService as HectonMusicDirector);
+                SyncCachedMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f);
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
                 IPlayerRuntimeContext playerContext = currentService as IPlayerRuntimeContext;
                 survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
+                SyncMusicDirectorSoundscapeContext(_currentTier, survivalSystem != null ? survivalSystem.Depth : 0f);
                 return;
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registered = false;
-                _registeredLateFrame = false;
+                TryUnregister();
+                TryUnregisterLateFrame();
                 if (currentService != null && isActiveAndEnabled)
                 {
                     TryRegister();
@@ -1005,15 +1023,15 @@ namespace Hecton8.World
 
         private bool TryResolveMusicDirector(out HectonMusicDirector director)
         {
-            if (_musicDirector != null)
+            if (_musicDirector != null && _musicDirector.isActiveAndEnabled)
             {
                 director = _musicDirector;
                 return true;
             }
 
-            director = GlobalRegistry.MusicDirector;
-            _musicDirector = director;
-            return _musicDirector != null;
+            CacheMusicDirector(GlobalRegistry.MusicDirector);
+            director = _musicDirector;
+            return director != null;
         }
 
         private void SyncMusicDirectorSoundscapeContext(SoundscapeTier tier, float depthMeters)
@@ -1024,9 +1042,44 @@ namespace Hecton8.World
             director.SetSoundscapeTierContext(tier, depthMeters);
         }
 
+        private void SyncCachedMusicDirectorSoundscapeContext(SoundscapeTier tier, float depthMeters)
+        {
+            HectonMusicDirector director = _musicDirector;
+            if (director == null || !director.isActiveAndEnabled)
+                return;
+
+            director.SetSoundscapeTierContext(tier, depthMeters);
+        }
+
         private void CacheAudioService(IAudioService audioService)
         {
-            _audioService = audioService;
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private void CacheMusicDirector(HectonMusicDirector musicDirector)
+        {
+            _musicDirector = musicDirector != null && musicDirector.isActiveAndEnabled ? musicDirector : null;
         }
 
     }

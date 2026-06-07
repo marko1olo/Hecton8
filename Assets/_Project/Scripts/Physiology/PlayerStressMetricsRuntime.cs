@@ -168,7 +168,7 @@ namespace Hecton8.Physiology
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             if (_registeredSlowTick)
@@ -177,7 +177,8 @@ namespace Hecton8.Physiology
                 _registeredSlowTick = false;
             }
 
-            TryRegister();
+            if (currentService != null && isActiveAndEnabled)
+                TryRegister();
         }
 
         private void RebindColdServices()

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "バイオメタル・センサータグ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# バイオメタル・センサータグ
 
-JP LOC HOLD: Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.
+バイオメタル・センサータグは、動物相、ケーブル成長、修理生態に見つかる小さな遠隔測定鱗である。ピングやスキャナー経路を鋭くできるが、有用なタグはすべて証拠でもある。Atlasは損傷した保守ネットワークを伸ばすため、生きた担体を使っていた。
 
 ## Scanner
 
-JP LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+バイオメタル・センサータグ // 魚、ケーブルケルプ、修理組織に生え込んだ薄い金属鱗。ピング調整を改善するが、熱いまま採ればAtlasが失われた担体を聞くことがある。
 
 ## Terminal
 
-JP LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+資源分類: Atlas改変 / 証拠感応。用途: ピンガー焦点、スキャナー格子、経路信頼度、証拠パケット。冷却採取推奨。リスク: 注意上昇、偽の担体応答、損傷した動物相。
 
 ## Audio
 
-JP LOC HOLD: The fish is not a drone. The tag does not know the difference.
+魚はドローンではない。それでもタグは報告を続ける。
 
 ## Field Note
 
-JP LOC HOLD: Make resource extraction feel like evidence handling.
+刃の下で瞬くなら、切る前に記録しろ。
 
 <!-- In-Game Wiki; generated from P120_BIOMETAL_SENSOR_TAGS/ja_JP. -->

@@ -7,6 +7,9 @@ poi_tags: poi.atlas_argument_core;poi.factory_temple_choice
 biome_tags: biome.factory_temple;biome.atlas_core
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Фінальний аргумент Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

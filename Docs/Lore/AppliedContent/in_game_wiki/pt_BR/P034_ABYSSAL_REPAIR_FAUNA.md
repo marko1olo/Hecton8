@@ -7,6 +7,9 @@ poi_tags: poi.repair_fauna_scan;poi.drone_den
 biome_tags: biome.abyssal_slope;biome.repair_ecology
 locale: pt_BR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Fauna abissal de reparo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

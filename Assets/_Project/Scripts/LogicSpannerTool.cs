@@ -29,7 +29,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float wiringRange = 8f;
 
         [Tooltip("Collision mask used to find habitat modules for bypass routing.")]
-        [SerializeField] private LayerMask wiringMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask wiringMask = Hecton8.Core.HectonLayerMasks.FieldToolSurfaceLayerMask;
 
         [Tooltip("Fallback heat-generation rate authored into the modular runtime.")]
         [SerializeField] private float authoredHeatGenerationRate = 0.12f;
@@ -246,7 +246,7 @@ namespace Hecton8.Gameplay
                     origin,
                     direction,
                     GetRuntimeMaxRange(wiringRange),
-                    wiringMask.value,
+                    HectonLayerMasks.ResolveSurfaceInteractionLayerMask(wiringMask.value),
                     QueryTriggerInteraction.Ignore,
                     out InteractionSurfaceHit hit))
             {

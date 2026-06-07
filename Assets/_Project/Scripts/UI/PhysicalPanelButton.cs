@@ -543,7 +543,7 @@ namespace Hecton8.UI
 
         private void PlayDiegeticClick(Vector3 runtimeHitPoint)
         {
-            IAudioService audio = _cachedAudioService;
+            IAudioService audio = ResolveAudioService();
             if (audio == null)
                 return;
 
@@ -627,18 +627,57 @@ namespace Hecton8.UI
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
-                    _cachedAudioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    bool shouldRestoreDispatcherRegistration =
+                        _registered ||
+                        _registeredLateFrame ||
+                        ShouldRestoreDispatcherRegistration();
+                    Unregister(forceLateFrame: true);
+                    if (currentService != null &&
+                        isActiveAndEnabled &&
+                        shouldRestoreDispatcherRegistration)
+                    {
+                        TryRegister();
+                    }
                     break;
             }
         }
 
         private void CacheRegistryServicesCold()
         {
-            _cachedAudioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _cachedAudioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -803,6 +842,16 @@ namespace Hecton8.UI
             _signalCooldownRemaining = 0f;
             _holdEventRemaining = 0f;
             Unregister();
+        }
+
+        private bool ShouldRestoreDispatcherRegistration()
+        {
+            return _buttonVisualDirty ||
+                   _pendingPressHaptic ||
+                   _pendingClickAudio ||
+                   _pressDispatched ||
+                   _pressed01 > VisualSettleEpsilon ||
+                   _lastHandInsideFrame == Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
         }
 
         private void Unregister(bool forceLateFrame = false)

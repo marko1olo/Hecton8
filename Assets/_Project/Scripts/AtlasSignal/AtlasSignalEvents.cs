@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.AtlasSignal
@@ -173,19 +174,7 @@ namespace Hecton8.AtlasSignal
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(AtlasSignalEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(AtlasSignalEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseNativeQueues();
 
             _listeners.Clear();
             ClearDecodedMessages();
@@ -329,10 +318,13 @@ namespace Hecton8.AtlasSignal
 
         public static bool TryRaisePulse(float intensity)
         {
+            if (!math.isfinite(intensity))
+                return false;
+
             return Enqueue(new AtlasSignalEventPayload
             {
                 SourcePosition = default,
-                SignalStrength = intensity,
+                SignalStrength = math.saturate(intensity),
                 MessageHash = 0u,
                 EventType = (ushort)AtlasSignalEventType.Pulse,
                 Reserved = 0
@@ -347,6 +339,9 @@ namespace Hecton8.AtlasSignal
 
         public static bool TryRaiseDetected(Vector3 sourcePos)
         {
+            if (!IsFinite(sourcePos))
+                return false;
+
             return Enqueue(new AtlasSignalEventPayload
             {
                 SourcePosition = sourcePos,
@@ -365,10 +360,13 @@ namespace Hecton8.AtlasSignal
 
         public static bool TryRaiseStrengthChanged(float strength)
         {
+            if (!math.isfinite(strength))
+                return false;
+
             return Enqueue(new AtlasSignalEventPayload
             {
                 SourcePosition = default,
-                SignalStrength = strength,
+                SignalStrength = math.saturate(strength),
                 MessageHash = 0u,
                 EventType = (ushort)AtlasSignalEventType.StrengthChanged,
                 Reserved = 0
@@ -490,29 +488,66 @@ namespace Hecton8.AtlasSignal
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
+            try
             {
-                _pendingEvents = new NativeQueue<AtlasSignalEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<AtlasSignalEventPayload>[16] - deferred Atlas signal lane flushed by SystemDispatcher LateUpdate - owner: AtlasSignalEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(AtlasSignalEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<AtlasSignalEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<AtlasSignalEventPayload>[16] - deferred Atlas signal lane flushed by SystemDispatcher LateUpdate - owner: AtlasSignalEvents
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                }
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<AtlasSignalEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<AtlasSignalEventPayload>[16] - next-frame Atlas signal lane prevents same-frame reentrant dispatch - owner: AtlasSignalEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(AtlasSignalEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<AtlasSignalEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<AtlasSignalEventPayload>[16] - next-frame Atlas signal lane prevents same-frame reentrant dispatch - owner: AtlasSignalEvents
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                }
             }
+            catch
+            {
+                ReleaseNativeQueues();
+                ClearDecodedMessages();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(AtlasSignalEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeQueue(ref queue, label);
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
+            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(AtlasSignalEvents), label);
+            queue.Dispose();
+            queue = default;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -531,23 +566,76 @@ namespace Hecton8.AtlasSignal
 
         private static bool Enqueue(in AtlasSignalEventPayload payload)
         {
+            if (!TrySanitizePayload(in payload, out AtlasSignalEventPayload safePayload))
+                return false;
+
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
-                ReportQueueOverflow(payload.EventType);
+                ReportQueueOverflow(safePayload.EventType);
                 return false;
             }
 
             if (_isDispatching)
             {
-                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEvents.Enqueue(safePayload);
                 _nextFrameEventCount++;
                 return true;
             }
 
-            _pendingEvents.Enqueue(payload);
+            _pendingEvents.Enqueue(safePayload);
             _pendingEventCount++;
             return true;
+        }
+
+        private static bool TrySanitizePayload(
+            in AtlasSignalEventPayload payload,
+            out AtlasSignalEventPayload safePayload)
+        {
+            safePayload = default;
+            if (!IsKnownEventType(payload.EventType))
+                return false;
+
+            safePayload.EventType = payload.EventType;
+            switch ((AtlasSignalEventType)payload.EventType)
+            {
+                case AtlasSignalEventType.Pulse:
+                case AtlasSignalEventType.StrengthChanged:
+                    if (!math.isfinite(payload.SignalStrength))
+                        return false;
+
+                    safePayload.SignalStrength = math.saturate(payload.SignalStrength);
+                    return true;
+
+                case AtlasSignalEventType.Detected:
+                    if (!IsFinite(payload.SourcePosition))
+                        return false;
+
+                    safePayload.SourcePosition = payload.SourcePosition;
+                    return true;
+
+                case AtlasSignalEventType.Decoded:
+                    if (payload.MessageHash == 0u)
+                        return false;
+
+                    safePayload.MessageHash = payload.MessageHash;
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsKnownEventType(ushort eventType)
+        {
+            return eventType <= (ushort)AtlasSignalEventType.Decoded;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
         }
 
         private static void DrainWithoutDispatch()

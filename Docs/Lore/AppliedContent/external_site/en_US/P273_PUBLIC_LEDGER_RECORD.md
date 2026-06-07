@@ -7,6 +7,9 @@ poi_tags: poi.public_ledger_record;poi.tau_packet_witness
 biome_tags: biome.ending;biome.truth
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Public Ledger Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

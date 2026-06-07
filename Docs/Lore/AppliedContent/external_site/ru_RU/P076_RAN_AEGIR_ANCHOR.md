@@ -7,6 +7,9 @@ poi_tags: poi.starfield_nav_plate;poi.ran_spectrum_card
 biome_tags: biome.surface_relay;biome.orbital_window
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Якорь Ran / Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

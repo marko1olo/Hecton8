@@ -7,6 +7,9 @@ poi_tags: poi.guidance_timing_core;poi.orbit_window_chart
 biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Сборка ядра наведения и тайминга"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

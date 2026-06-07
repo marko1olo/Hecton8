@@ -685,6 +685,10 @@ namespace Hecton8.Audio.Editor
         private const int DefaultBlockFrames = AudioFrameSpscRingBuffer.AudioBufferCapacity >> 1;
         private const int DefaultChannels = 2;
         private const int JobBatchCount = 64;
+        private const int FuzzerThreadJoinTimeoutMilliseconds = 5000;
+        private const int FuzzerThreadStopJoinTimeoutMilliseconds = 250;
+        private const string NativeMemoryOwner = nameof(AudioBridgeConcurrencyFuzzer1314);
+        private const string SamplesLabel = "samples";
 
         public static bool Run(out AudioBridgeConcurrencyFuzzerResult result)
         {
@@ -710,10 +714,21 @@ namespace Hecton8.Audio.Editor
 
             int sampleCount = result.BlockFrames * result.Channels;
             NativeArray<float> samples = default;
+            int samplesSentinelId = 0;
             AudioFrameSpscRingBuffer ring = new AudioFrameSpscRingBuffer();
+            int running = 1;
+            Thread consumerThread = null;
+            Thread producerThread = null;
             try
             {
                 samples = new NativeArray<float>(sampleCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                samplesSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    samples,
+                    NativeMemoryOwner,
+                    SamplesLabel,
+                    NativeAllocationLifetime.Session);
+                if (samplesSentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {SamplesLabel}.");
                 GenerateMockAudioSamplesJob job = default;
                 job.Samples = samples;
                 job.Seed = 0xA1314D5u;
@@ -735,14 +750,13 @@ namespace Hecton8.Audio.Editor
                 int fuzzIterations = result.Iterations;
                 int fuzzBlockFrames = result.BlockFrames;
                 int fuzzChannels = result.Channels;
-                int running = 1;
                 int successfulWrites = 0;
                 int failedWrites = 0;
                 IntPtr readIndexAddress = descriptor.ReadIndex;
                 IntPtr writeIndexAddress = descriptor.WriteIndex;
                 long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
 
-                Thread consumer = new Thread(() =>
+                consumerThread = new Thread(() =>
                 {
                     int* readIndex = (int*)readIndexAddress;
                     int* writeIndex = (int*)writeIndexAddress;
@@ -764,14 +778,22 @@ namespace Hecton8.Audio.Editor
                     Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.BackgroundIo)
                 };
 
-                Thread producer = new Thread(() =>
+                producerThread = new Thread(() =>
                 {
                     SpinWait wait = default;
                     for (int i = 0; i < fuzzIterations; i++)
                     {
+                        if (Volatile.Read(ref running) == 0)
+                            break;
+
                         int admissionGuard = 100000;
-                        while (ring.WritableFrames < fuzzBlockFrames && admissionGuard-- > 0)
+                        while (ring.WritableFrames < fuzzBlockFrames &&
+                               admissionGuard-- > 0 &&
+                               Volatile.Read(ref running) != 0)
                             wait.SpinOnce();
+
+                        if (Volatile.Read(ref running) == 0)
+                            break;
 
                         if (ring.TryWriteInterleaved(samples, fuzzBlockFrames, fuzzChannels))
                             Interlocked.Increment(ref successfulWrites);
@@ -785,11 +807,17 @@ namespace Hecton8.Audio.Editor
                     Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.BackgroundIo)
                 };
 
-                consumer.Start();
-                producer.Start();
-                producer.Join();
+                consumerThread.Start();
+                producerThread.Start();
+                bool producerStopped = TryJoinFuzzerThreadNoThrow(producerThread, FuzzerThreadJoinTimeoutMilliseconds);
+                if (!producerStopped)
+                {
+                    Volatile.Write(ref running, 0);
+                    producerStopped = TryJoinFuzzerThreadNoThrow(producerThread, FuzzerThreadStopJoinTimeoutMilliseconds);
+                }
+
                 Volatile.Write(ref running, 0);
-                consumer.Join();
+                bool consumerStopped = TryJoinFuzzerThreadNoThrow(consumerThread, FuzzerThreadStopJoinTimeoutMilliseconds);
 
                 ring.GetState(out int bufferedFrames, out int writableFrames);
                 result.SuccessfulWrites = Volatile.Read(ref successfulWrites);
@@ -798,7 +826,9 @@ namespace Hecton8.Audio.Editor
                 result.FinalWritableFrames = writableFrames;
                 result.OverflowDropCount = ring.OverflowDropCount;
                 result.ElapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTicks;
-                result.Passed = result.DescriptorValid &&
+                result.Passed = producerStopped &&
+                                consumerStopped &&
+                                result.DescriptorValid &&
                                 result.DescriptorAligned &&
                                 result.SuccessfulWrites > 0 &&
                                 result.FailedWrites == 0 &&
@@ -807,11 +837,50 @@ namespace Hecton8.Audio.Editor
             }
             finally
             {
-                if (samples.IsCreated)
-                    samples.Dispose();
+                Volatile.Write(ref running, 0);
+                TryJoinFuzzerThreadNoThrow(producerThread, FuzzerThreadStopJoinTimeoutMilliseconds);
+                TryJoinFuzzerThreadNoThrow(consumerThread, FuzzerThreadStopJoinTimeoutMilliseconds);
 
-                ring.Dispose();
+                bool canReleaseThreadSharedState =
+                    !IsFuzzerThreadAlive(producerThread) &&
+                    !IsFuzzerThreadAlive(consumerThread);
+                if (canReleaseThreadSharedState && samples.IsCreated)
+                {
+                    if (samplesSentinelId > 0)
+                        NativeMemorySentinel.Unregister(samplesSentinelId);
+                    else
+                        NativeMemorySentinel.UnregisterNativeArray(samples);
+                    samples.Dispose();
+                    samples = default;
+                }
+
+                if (canReleaseThreadSharedState)
+                    ring.Dispose();
             }
+        }
+
+        private static bool TryJoinFuzzerThreadNoThrow(Thread thread, int timeoutMilliseconds)
+        {
+            if (thread == null || !thread.IsAlive)
+                return true;
+
+            if (ReferenceEquals(Thread.CurrentThread, thread))
+                return false;
+
+            try
+            {
+                thread.Join(math.max(1, timeoutMilliseconds));
+                return !thread.IsAlive;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static bool IsFuzzerThreadAlive(Thread thread)
+        {
+            return thread != null && thread.IsAlive;
         }
 
         private static bool IsAligned(IntPtr pointer)

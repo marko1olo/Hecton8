@@ -7,6 +7,9 @@ poi_tags: poi.geology_scanner;poi.brine_step
 biome_tags: biome.drowned_shelf;biome.brine_stairs
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Verdronken geologie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

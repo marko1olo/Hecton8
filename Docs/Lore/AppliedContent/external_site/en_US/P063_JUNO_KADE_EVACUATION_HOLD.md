@@ -7,6 +7,9 @@ poi_tags: poi.evacuation_console;poi.route_hold_board
 biome_tags: biome.evacuated_station;biome.drowned_colony
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Juno Kade Evacuation Hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

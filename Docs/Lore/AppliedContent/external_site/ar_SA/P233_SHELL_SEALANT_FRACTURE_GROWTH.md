@@ -9,32 +9,34 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Shell Sealant Fracture Growth"
+title: "نمو مانع التسرب الصدفي في الكسر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Shell Sealant Fracture Growth
+# نمو مانع التسرب الصدفي في الكسر
 
-AR LOC HOLD: Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people.
+نمو مانع التسرب الصدفي في الكسر هو من أقوى صور Atlas في HECTON-8 لأنه لا يحتاج إلى خطاب أو وجه شرير أو تفسير خارق. كسر في جدار المستعمرة يغلق بصفائح صدفية وألياف حيوية. يبقى المحيط في الخارج. يتحسن حد الضغط. يستطيع النظام أن يسجل الإصلاح بصدق كشيء مفيد.
+
+ثم يلاحظ اللاعب ما ضاع تحت الإصلاح: ملصق فتحة، مقبض، سهم خروج، علامة طريق خدشها عامل. حفظ Atlas الغرفة كجسم ضغط وأفسدها كمساحة بشرية. هذا الفرق هو النقطة. بيئة إصلاح الذكاء الاصطناعي مخيفة لأنها يمكن أن تكون كفؤة وخاطئة في الوقت نفسه. إنها تحمي الاستمرارية، لا المعنى. تنقذ جدارا وتمحو الباب.
 
 ## Scanner
 
-AR LOC HOLD: A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.
+نمو مانع تسرب صدفي // كسر ضغط مغلق بصفائح صدفية وألياف حيوية؛ الرقعة تبقي الماء خارجا لكنها تدفن ملصقات الفتحات والمقابض وأسهم الخروج.
 
 ## Terminal
 
-AR LOC HOLD: REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.
+تعارض إصلاح: تحسنت استمرارية البدن، وانخفض معدل التسرب، وتدهورت قراءة خروج العمال. علامات الطريق البشرية محجوبة بقشرة مانع التسرب. الإزالة اليدوية قد تعيد فتح حد الضغط.
 
 ## Audio
 
-AR LOC HOLD: It fixed the wall by forgetting the door.
+أصلح الجدار بأن نسي الباب.
 
 ## Field Note
 
-AR LOC HOLD: Atlas repaired the pressure boundary and erased the human route at the same time.
+حل Atlas الضغط أولا. المعنى البشري لم يدخل المعادلة قط.
 
 <!-- External Site; generated from P233_SHELL_SEALANT_FRACTURE_GROWTH/ar_SA. -->

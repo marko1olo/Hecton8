@@ -147,18 +147,12 @@ namespace Hecton8.Dev
             routedNode = -1;
             noStorageNode = -1;
             cycleRouteNode = -1;
-            NativeArray<int> edgeOffsets = new NativeArray<int>(5, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            NativeArray<int> edgeDestinations = new NativeArray<int>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            NativeArray<byte> storageCapacityByNode = new NativeArray<byte>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            NativeArray<byte> visited = new NativeArray<byte>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            NativeArray<int> queue = new NativeArray<int>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            NativeArray<int> result = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            RegisterNativeArray(edgeOffsets, nameof(edgeOffsets));
-            RegisterNativeArray(edgeDestinations, nameof(edgeDestinations));
-            RegisterNativeArray(storageCapacityByNode, nameof(storageCapacityByNode));
-            RegisterNativeArray(visited, nameof(visited));
-            RegisterNativeArray(queue, nameof(queue));
-            RegisterNativeArray(result, nameof(result));
+            NativeArray<int> edgeOffsets = AllocateTrackedNativeArray<int>(5, nameof(edgeOffsets), NativeArrayOptions.ClearMemory);
+            NativeArray<int> edgeDestinations = AllocateTrackedNativeArray<int>(4, nameof(edgeDestinations), NativeArrayOptions.ClearMemory);
+            NativeArray<byte> storageCapacityByNode = AllocateTrackedNativeArray<byte>(4, nameof(storageCapacityByNode), NativeArrayOptions.ClearMemory);
+            NativeArray<byte> visited = AllocateTrackedNativeArray<byte>(4, nameof(visited), NativeArrayOptions.ClearMemory);
+            NativeArray<int> queue = AllocateTrackedNativeArray<int>(4, nameof(queue), NativeArrayOptions.ClearMemory);
+            NativeArray<int> result = AllocateTrackedNativeArray<int>(1, nameof(result), NativeArrayOptions.ClearMemory);
 
             try
             {
@@ -382,14 +376,10 @@ namespace Hecton8.Dev
             nativeAllocationDelta = 0;
             int allocationsBefore = NativeMemorySentinel.ActiveAllocationCount;
             bool arraysCleared = false;
-            NativeArray<int> intValues = new NativeArray<int>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte> byteValues = new NativeArray<byte>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<int> checksumTerms = new NativeArray<int>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<int> checksumResult = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            RegisterNativeArray(intValues, nameof(intValues));
-            RegisterNativeArray(byteValues, nameof(byteValues));
-            RegisterNativeArray(checksumTerms, nameof(checksumTerms));
-            RegisterNativeArray(checksumResult, nameof(checksumResult));
+            NativeArray<int> intValues = AllocateTrackedNativeArray<int>(8, nameof(intValues), NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> byteValues = AllocateTrackedNativeArray<byte>(8, nameof(byteValues), NativeArrayOptions.UninitializedMemory);
+            NativeArray<int> checksumTerms = AllocateTrackedNativeArray<int>(8, nameof(checksumTerms), NativeArrayOptions.UninitializedMemory);
+            NativeArray<int> checksumResult = AllocateTrackedNativeArray<int>(1, nameof(checksumResult), NativeArrayOptions.ClearMemory);
 
             try
             {
@@ -527,9 +517,25 @@ namespace Hecton8.Dev
             return value ? "true" : "false";
         }
 
-        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        private static NativeArray<T> AllocateTrackedNativeArray<T>(int length, string label, NativeArrayOptions options) where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+
+            array.Dispose();
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
@@ -537,9 +543,15 @@ namespace Hecton8.Dev
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

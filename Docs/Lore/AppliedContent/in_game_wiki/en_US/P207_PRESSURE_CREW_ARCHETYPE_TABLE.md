@@ -7,6 +7,9 @@ poi_tags: poi.pressure_crew_board;poi.crew_color_strips
 biome_tags: biome.worker_locker;biome.industrial_shelf
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Pressure Crew Archetype Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

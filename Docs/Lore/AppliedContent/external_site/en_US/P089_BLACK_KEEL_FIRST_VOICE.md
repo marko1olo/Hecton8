@@ -7,6 +7,9 @@ poi_tags: poi.first_carrier_voice_cache;poi.drop_capsule_speaker
 biome_tags: biome.arrival_shelf;biome.shallow_annex
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Black Keel First Voice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

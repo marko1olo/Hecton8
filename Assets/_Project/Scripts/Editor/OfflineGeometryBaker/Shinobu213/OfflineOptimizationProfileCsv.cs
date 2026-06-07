@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -11,6 +12,8 @@ namespace Hecton8.Editor.OfflineGeometry
 {
     internal static class OfflineOptimizationProfileCsv
     {
+        private const string NativeMemoryOwner = nameof(OfflineOptimizationProfileCsv);
+        private const string CsvBytesLabel = "OptimizationProfileCsvBytes";
         private const int MaximumProfileCsvBytes = 1048576;
         private const string ExpectedHeader = "profile_name,lod1_ratio,lod2_ratio,primitive_tolerance,convex_hull_vertex_limit,lod0_hard_budget,global_quality_weight,depth_meters";
 
@@ -40,7 +43,7 @@ namespace Hecton8.Editor.OfflineGeometry
                     int expectedLength = (int)stream.Length;
                     length = expectedLength;
                     // COLD ALLOC: NativeArray<byte>[csvLength] - editor CSV staging for LOD optimization profiles - owner: OfflineOptimizationProfileCsv
-                    bytes = new NativeArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    bytes = AllocateTrackedArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory, CsvBytesLabel, NativeAllocationLifetime.Temp);
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(bytes);
                     Span<byte> span = new Span<byte>(ptr, length);
                     int totalRead = 0;
@@ -85,8 +88,7 @@ namespace Hecton8.Editor.OfflineGeometry
             }
             finally
             {
-                if (bytes.IsCreated)
-                    bytes.Dispose();
+                DisposeTrackedArray(ref bytes);
             }
 
             if (profiles.Count == 0)
@@ -343,6 +345,48 @@ namespace Hecton8.Editor.OfflineGeometry
                 start++;
             while (end > start && (bytes[end - 1] == ' ' || bytes[end - 1] == '\t'))
                 end--;
+        }
+
+        private static NativeArray<T> AllocateTrackedArray<T>(
+            int length,
+            Allocator allocator,
+            NativeArrayOptions options,
+            string label,
+            NativeAllocationLifetime lifetime) where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[OfflineOptimizationProfileCsv] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("[OfflineOptimizationProfileCsv] NativeMemorySentinel rejected NativeArray registration for " + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private static void DisposeTrackedArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
         }
 
         private static void SkipBlank(NativeArray<byte> bytes, int length, ref int cursor)

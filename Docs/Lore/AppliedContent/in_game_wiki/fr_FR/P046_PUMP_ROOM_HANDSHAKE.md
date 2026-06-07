@@ -7,6 +7,9 @@ poi_tags: poi.pump_room;poi.sump_control
 biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Accord de salle des pompes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

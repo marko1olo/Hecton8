@@ -104,11 +104,12 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             UnregisterFromTickManager();
-            RegisterToTickManager();
+            if (currentService != null && isActiveAndEnabled)
+                RegisterToTickManager();
         }
 
         private void TryRegisterHotSwapListener()

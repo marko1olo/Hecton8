@@ -7,6 +7,9 @@ poi_tags: poi.relay_queue;poi.timestamp_panel
 biome_tags: biome.surface_relay;biome.service_corridor
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Relay Queue Drift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

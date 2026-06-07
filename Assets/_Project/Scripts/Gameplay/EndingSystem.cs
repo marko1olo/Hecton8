@@ -200,19 +200,7 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(EndingEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(EndingEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseNativeQueues();
 
             _listeners.Clear();
             Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
@@ -281,6 +269,9 @@ namespace Hecton8.Gameplay
 
         public static bool TryRaiseChosen(EndingChoice choice)
         {
+            if (!IsActionChoice(choice))
+                return false;
+
             return Enqueue(EndingEventType.Chosen, choice);
         }
 
@@ -289,6 +280,9 @@ namespace Hecton8.Gameplay
 
         public static bool TryRaiseSequenceComplete(EndingChoice choice)
         {
+            if (!IsActionChoice(choice))
+                return false;
+
             return Enqueue(EndingEventType.SequenceComplete, choice);
         }
 
@@ -352,6 +346,9 @@ namespace Hecton8.Gameplay
 
         private static bool Enqueue(EndingEventType type, EndingChoice choice)
         {
+            if (!TryBuildPayload(type, choice, out EndingEventPayload payload))
+                return false;
+
             if (_listeners.Count <= 0)
                 return false;
 
@@ -361,13 +358,6 @@ namespace Hecton8.Gameplay
                 ReportEventOverflow();
                 return false;
             }
-
-            EndingEventPayload payload = new EndingEventPayload
-            {
-                EventType = (byte)type,
-                Choice = (byte)choice,
-                Reserved = 0
-            };
 
             if (_isDispatching)
             {
@@ -381,31 +371,107 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private static void EnsureInitialized()
+        private static bool TryBuildPayload(
+            EndingEventType type,
+            EndingChoice choice,
+            out EndingEventPayload payload)
         {
-            if (!_pendingEvents.IsCreated)
+            payload = default;
+            if (!IsKnownEventType(type))
+                return false;
+
+            EndingChoice safeChoice = choice;
+            if (type == EndingEventType.ConditionMet)
             {
-                _pendingEvents = new NativeQueue<EndingEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] — deferred ending lane flushed by SystemDispatcher LateUpdate — owner: EndingEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(EndingEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                safeChoice = EndingChoice.None;
+            }
+            else if (!IsActionChoice(choice))
+            {
+                return false;
             }
 
-            if (!_nextFrameEvents.IsCreated)
+            payload = new EndingEventPayload
             {
-                _nextFrameEvents = new NativeQueue<EndingEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] — next-frame ending lane prevents same-frame reentrant dispatch — owner: EndingEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(EndingEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                EventType = (byte)type,
+                Choice = (byte)safeChoice,
+                Reserved = 0
+            };
+            return true;
+        }
+
+        private static bool IsKnownEventType(EndingEventType type)
+        {
+            return type >= EndingEventType.ConditionMet &&
+                   type <= EndingEventType.SequenceComplete;
+        }
+
+        private static bool IsActionChoice(EndingChoice choice)
+        {
+            return choice >= EndingChoice.ShutDown &&
+                   choice <= EndingChoice.Amplify;
+        }
+
+        private static void EnsureInitialized()
+        {
+            try
+            {
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<EndingEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] — deferred ending lane flushed by SystemDispatcher LateUpdate — owner: EndingEvents
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                }
+
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<EndingEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] — next-frame ending lane prevents same-frame reentrant dispatch — owner: EndingEvents
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                }
             }
+            catch
+            {
+                ReleaseNativeQueues();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(EndingEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeQueue(ref queue, label);
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
+            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(EndingEvents), label);
+            queue.Dispose();
+            queue = default;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -747,6 +813,7 @@ namespace Hecton8.Gameplay
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
+        private bool _saveRegistered;
         private HectonSurvivalSystem _survivalSystem;
         private IAtlasSignalReadModel _atlasSignal;
         private IAtlasSignalDecodeSink _atlasSignalDecodeSink;
@@ -832,6 +899,7 @@ namespace Hecton8.Gameplay
             TryUnregisterLateFrameTick();
             TryUnregister();
             TryUnregisterService();
+            TryUnregisterSaveParticipant();
         }
 
         // ----------------------------------------------------------
@@ -1084,8 +1152,8 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registered = false;
-                    _lateFrameRegistered = false;
+                    TryUnregister();
+                    TryUnregisterLateFrameTick();
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegister();
@@ -1105,9 +1173,7 @@ namespace Hecton8.Gameplay
                     _questRuntime = currentService as IQuestSystem;
                     break;
                 case GlobalRegistryServiceSlot.Save:
-                    if (previousService is ISaveService previousSave)
-                        previousSave.Unregister(this);
-
+                    TryUnregisterSaveParticipant();
                     _saveService = currentService as ISaveService;
                     TryRegisterSaveParticipant();
                     break;
@@ -1119,16 +1185,30 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterSaveParticipant()
         {
-            ISaveService saveService = _saveService;
-            if (saveService != null)
-                saveService.Register(this);
+            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            if (_saveService == null)
+                _saveService = Hecton8.Core.GlobalRegistry.Save;
+
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
         }
 
         private void TryUnregisterSaveParticipant()
         {
+            if (!_saveRegistered)
+                return;
+
             ISaveService saveService = _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
+
+            _saveService = null;
+            _saveRegistered = false;
         }
 
         private void TryUnregisterService()
@@ -1165,7 +1245,11 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (choice == EndingChoice.None) return;
+            if (!IsActionEndingChoice(choice))
+            {
+                LogInvalidEndingChoice(_conditionMet, _endingComplete);
+                return;
+            }
 
             _chosenEnding = choice;
             EndingEvents.TryRaiseChosen(choice);
@@ -1175,15 +1259,7 @@ namespace Hecton8.Gameplay
 
         public void ChooseEnding(byte endingChoiceCode)
         {
-            EndingChoice choice = endingChoiceCode switch
-            {
-                (byte)EndingChoice.ShutDown => EndingChoice.ShutDown,
-                (byte)EndingChoice.Leave => EndingChoice.Leave,
-                (byte)EndingChoice.Amplify => EndingChoice.Amplify,
-                _ => EndingChoice.None
-            };
-
-            ChooseEnding(choice);
+            ChooseEnding(SanitizeEndingChoice(endingChoiceCode));
         }
 
         // ----------------------------------------------------------
@@ -1192,6 +1268,9 @@ namespace Hecton8.Gameplay
 
         private void ExecuteEnding(EndingChoice choice)
         {
+            if (!IsActionEndingChoice(choice))
+                return;
+
             switch (choice)
             {
                 case EndingChoice.ShutDown:
@@ -1338,17 +1417,37 @@ namespace Hecton8.Gameplay
         public void PopulateSaveData(SaveData data)
         {
             if (data == null) return;
-            data.endingChoice   = (int)_chosenEnding;
-            data.endingComplete = _endingComplete;
-            data.endingConditionMet = _conditionMet;
+            EndingChoice safeChoice = SanitizeEndingChoice((int)_chosenEnding);
+            bool safeComplete = _endingComplete && safeChoice != EndingChoice.None;
+            if (!safeComplete)
+                safeChoice = EndingChoice.None;
+            data.endingChoice = (int)safeChoice;
+            data.endingComplete = safeComplete;
+            data.endingConditionMet = _conditionMet || safeComplete;
         }
 
         public void LoadFromSaveData(SaveData data)
         {
             if (data == null) return;
-            _chosenEnding   = (EndingChoice)data.endingChoice;
-            _endingComplete = data.endingComplete;
-            _conditionMet   = data.endingConditionMet;
+            _chosenEnding = SanitizeEndingChoice(data.endingChoice);
+            _endingComplete = data.endingComplete && _chosenEnding != EndingChoice.None;
+            _conditionMet = data.endingConditionMet || _endingComplete;
+            if (!_endingComplete)
+                _chosenEnding = EndingChoice.None;
+        }
+
+        private static EndingChoice SanitizeEndingChoice(int endingChoice)
+        {
+            return endingChoice >= (int)EndingChoice.None &&
+                   endingChoice <= (int)EndingChoice.Amplify
+                ? (EndingChoice)endingChoice
+                : EndingChoice.None;
+        }
+
+        private static bool IsActionEndingChoice(EndingChoice choice)
+        {
+            return choice >= EndingChoice.ShutDown &&
+                   choice <= EndingChoice.Amplify;
         }
     }
 }

@@ -7,6 +7,9 @@ poi_tags: poi.terminal_slot_proof_card;poi.baked_string_pool_label
 biome_tags: biome.terminal;biome.localization
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Terminal Slot Chain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

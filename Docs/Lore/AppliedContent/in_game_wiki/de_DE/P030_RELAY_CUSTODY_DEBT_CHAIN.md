@@ -7,6 +7,9 @@ poi_tags: poi.claim_pool_ledger;poi.relay_packet
 biome_tags: biome.crash_shelf;biome.service_canyon
 locale: de_DE
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Relais-Gewahrsam-Schuldkette"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

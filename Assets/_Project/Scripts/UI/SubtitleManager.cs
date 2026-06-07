@@ -346,11 +346,8 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            if (s_activeInstance != null && s_activeInstance != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             s_activeInstance = this;
             EnsureBuilt();
@@ -410,10 +407,59 @@ namespace Hecton8.UI
             if (_serviceRegistered || !Application.isPlaying || s_activeInstance != this)
                 return;
 
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             GlobalRegistry.RegisterSubtitleRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Subtitles, this);
             if (_serviceRegistered)
                 RegisterToTickManager();
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            SubtitleManager active = s_activeInstance;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsSubtitleRuntimeInstanceUsable(active))
+                {
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeInstance, active))
+                    s_activeInstance = null;
+                if (ReferenceEquals(GlobalRegistry.Subtitles, active))
+                    GlobalRegistry.UnregisterSubtitleRuntime(active);
+            }
+
+            SubtitleManager registered = GlobalRegistry.Subtitles;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsSubtitleRegisteredRuntimeUsable(registered))
+            {
+                s_activeInstance = registered;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterSubtitleRuntime(registered);
+            if (ReferenceEquals(s_activeInstance, registered))
+                s_activeInstance = null;
+            return false;
+        }
+
+        private static bool IsSubtitleRuntimeInstanceUsable(SubtitleManager manager)
+        {
+            return manager != null && manager.isActiveAndEnabled;
+        }
+
+        private static bool IsSubtitleRegisteredRuntimeUsable(SubtitleManager manager)
+        {
+            return manager != null &&
+                   manager._serviceRegistered &&
+                   manager.isActiveAndEnabled;
         }
 
         private void TryUnregisterFromGlobalRegistry()
@@ -439,19 +485,15 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null)
-                {
-                    _registeredToTickManager = false;
-                    _registeredLateFrameSwap = false;
-                    return;
-                }
-
                 UnregisterFromTickManager();
                 UnregisterLateFrameSwap();
-                RegisterToTickManager();
-                RegisterLateFrameSwap();
+                if (currentService != null && isActiveAndEnabled)
+                {
+                    RegisterToTickManager();
+                    RegisterLateFrameSwap();
+                }
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
@@ -2281,6 +2323,7 @@ namespace Hecton8.UI
             if (!_registeredToTickManager)
                 return;
 
+            UnregisterLateFrameSwap();
             _registeredToTickManager = false;
         }
 

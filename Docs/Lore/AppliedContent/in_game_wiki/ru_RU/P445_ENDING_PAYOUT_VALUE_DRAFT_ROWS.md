@@ -7,6 +7,9 @@ poi_tags: poi.ending_payout_table_draft;poi.after_action_value_card
 biome_tags: biome.spoiler_gate;biome.ending_records
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Черновые строки выплат концовок"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

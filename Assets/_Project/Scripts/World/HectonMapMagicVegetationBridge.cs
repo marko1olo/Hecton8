@@ -5634,18 +5634,26 @@ namespace Hecton8.World
             int capacity,
             string label)
         {
-            records = new NativeArray<JobInstanceRecord>(
-                capacity,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            if (!records.IsCreated || records.Length < capacity)
+            try
+            {
+                records = new NativeArray<JobInstanceRecord>(
+                    capacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory);
+                if (!records.IsCreated || records.Length < capacity)
+                {
+                    DisposeNativeArray(ref records);
+                    return false;
+                }
+
+                RegisterTrackedNativeArray(records, label);
+                return true;
+            }
+            catch
             {
                 DisposeNativeArray(ref records);
-                return false;
+                throw;
             }
-
-            RegisterTrackedNativeArray(records, label);
-            return true;
         }
 
         private bool TryAcquireChunkBuildRecordArrays(
@@ -5910,13 +5918,17 @@ namespace Hecton8.World
         private static void RegisterTrackedNativeList<T>(NativeList<T> list, string label)
             where T : unmanaged
         {
-            NativeMemorySentinel.RegisterNativeList(list, NativeMemoryOwner, label, NativeMemoryLifetime);
+            int sentinelId = NativeMemorySentinel.RegisterNativeList(list, NativeMemoryOwner, label, NativeMemoryLifetime);
+            if (sentinelId <= 0)
+                throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label)
             where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            if (sentinelId <= 0)
+                throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(
@@ -5954,7 +5966,9 @@ namespace Hecton8.World
             , IEquatable<TKey>
             where TValue : unmanaged
         {
-            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(map, NativeMemoryOwner, label, NativeMemoryLifetime);
+            int sentinelId = NativeMemorySentinel.RegisterNativeParallelMultiHashMap(map, NativeMemoryOwner, label, NativeMemoryLifetime);
+            if (sentinelId <= 0)
+                throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static JobHandle CombineOptionalHandles(JobHandle current, JobHandle next)
@@ -8372,7 +8386,7 @@ namespace Hecton8.World
                     CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _isRegistered = false;
+                    TryUnregister();
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;
@@ -8751,10 +8765,18 @@ namespace Hecton8.World
             }
 
             DisposeTileHeightReadbackData(state);
-            state.HeightReadbackData = new NativeArray<ushort>(
+            state.HeightReadbackData = H8Memory.Allocate<ushort>(
                 requiredCount,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
                 Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<ushort>[tile height samples] - async vegetation tile height readback target - owner: HectonMapMagicVegetationBridge
+            if (!state.HeightReadbackData.IsCreated)
+            {
+                state.HeightReadbackRepairRequested = true;
+                state.HeightReadbackRepairSampleCount = requiredCount;
+                return;
+            }
+
             state.HeightReadbackRepairRequested = false;
             state.HeightReadbackRepairSampleCount = 0;
         }
@@ -8831,7 +8853,9 @@ namespace Hecton8.World
             state.HeightReadbackDisposalDeferred = false;
             if (state.HeightReadbackData.IsCreated)
             {
-                state.HeightReadbackData.Dispose();
+                H8Memory.Release(
+                    ref state.HeightReadbackData,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
                 state.HeightReadbackData = default;
             }
         }

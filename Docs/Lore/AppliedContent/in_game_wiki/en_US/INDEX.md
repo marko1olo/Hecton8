@@ -4,7 +4,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localized_pages: 439
+localized_pages: 444
 draft_machine_or_llm_pages: 0
 draft_marker_pages: 0
 ---
@@ -119,6 +119,7 @@ draft_marker_pages: 0
 - [Iliya Varnek Tide Margin](P106_ILIYA_VARNEK_TIDE_MARGIN.md) `P106_ILIYA_VARNEK_TIDE_MARGIN`
 - [Selene Arendt Atlas Weighting](P107_SELENE_ARENDT_ATLAS_WEIGHTING.md) `P107_SELENE_ARENDT_ATLAS_WEIGHTING`
 - [Noor Haldane Evac Cert](P108_NOOR_HALDANE_EVAC_CERT.md) `P108_NOOR_HALDANE_EVAC_CERT`
+- [Silent Orbit Receipt Ledger](P1090_SILENT_ORBIT_RECEIPT_LEDGER.md) `P1090_SILENT_ORBIT_RECEIPT_LEDGER`
 - [Marek Ibarra Loss Conversion](P109_MAREK_IBARRA_LOSS_CONVERSION.md) `P109_MAREK_IBARRA_LOSS_CONVERSION`
 - [Vera Sato-Ren Return Action](P110_VERA_SATO_REN_RETURN_ACTION.md) `P110_VERA_SATO_REN_RETURN_ACTION`
 - [Manual Bilge Pump Kit](P111_MANUAL_BILGE_PUMP_KIT.md) `P111_MANUAL_BILGE_PUMP_KIT`
@@ -450,5 +451,9 @@ draft_marker_pages: 0
 - [PressureSeal First Repair](P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE.md) `P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE`
 - [Spoiler Gate](P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE.md) `P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE`
 - [Black Keel Claim Window](P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE.md) `P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE`
+- [Aegir Recovery Window Geometry](P621_AEGIR_RECOVERY_WINDOW_GEOMETRY.md) `P621_AEGIR_RECOVERY_WINDOW_GEOMETRY`
+- [Kestrel Relay Shadow Chart](P622_KESTREL_RELAY_SHADOW_CHART.md) `P622_KESTREL_RELAY_SHADOW_CHART`
+- [Pellet Lane Wake Ledger](P623_PELLET_LANE_WAKE_LEDGER.md) `P623_PELLET_LANE_WAKE_LEDGER`
+- [Cable Forest Conductive Biota](P624_CABLE_FOREST_CONDUCTIVE_BIOTA.md) `P624_CABLE_FOREST_CONDUCTIVE_BIOTA`
 
 <!-- Generated localized index for in_game_wiki/en_US. -->

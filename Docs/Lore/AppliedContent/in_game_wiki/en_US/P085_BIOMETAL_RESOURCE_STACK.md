@@ -7,6 +7,9 @@ poi_tags: poi.resource_stack_manifest;poi.biometal_cut_sample
 biome_tags: biome.factory_temple;biome.deep_abyss
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Biometal Resource Stack"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

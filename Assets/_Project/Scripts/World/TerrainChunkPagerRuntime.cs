@@ -578,14 +578,18 @@ namespace Hecton8.World
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
-                currentService == null ||
-                (_initialized == 0 && Volatile.Read(ref _deferredShutdown) == 0))
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
             {
                 return;
             }
 
             UnregisterDispatcher(keepVisualSyncForDeferredShutdown: false);
+            if (currentService == null ||
+                (_initialized == 0 && Volatile.Read(ref _deferredShutdown) == 0))
+            {
+                return;
+            }
+
             RegisterDispatcher();
         }
 

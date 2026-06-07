@@ -7,6 +7,9 @@ poi_tags: poi.repair_scar;poi.drone_nest
 biome_tags: biome.cable_forest;biome.deep_abyss
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "צלקת תיקון"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

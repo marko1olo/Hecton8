@@ -403,13 +403,9 @@ namespace Hecton8.QA.Headless
                 return;
             }
 
+            UnregisterRuntimeLanes();
             if (currentService == null)
             {
-                _registeredFast = false;
-                _registeredFrost = false;
-                _registeredCold = false;
-                _registeredLate = false;
-                _started = false;
                 return;
             }
 

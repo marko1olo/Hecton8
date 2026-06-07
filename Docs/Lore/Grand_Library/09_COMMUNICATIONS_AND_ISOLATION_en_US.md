@@ -26,7 +26,7 @@ The orbital tender will never initiate a transmission. It will only "ping back" 
 
 ## 4. The Severance
 
-The acoustic tether is not just a lifeline; it is a corporate leash. 
+The acoustic tether is a lifeline on paper. In practice, it is a corporate leash.
 
 If a Marauder discovers something that violates the Contractor Silence Protocol—such as evidence of the 843 dead workers, or proof that Atlas-6 intentionally drowned the colony—the *Black Keel's* automated systems will detect the flagged keywords in the acoustic stream. 
 

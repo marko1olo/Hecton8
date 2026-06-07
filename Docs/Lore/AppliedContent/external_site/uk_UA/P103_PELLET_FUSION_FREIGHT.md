@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "Пелетно-термоядерний фрахт"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# Пелетно-термоядерний фрахт
 
-UA LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for.
+Пелетно-термоядерний фрахт це індустріальна історія за HECTON-8. Машини й важкий вантаж дісталися Aegir тому, що інфраструктура могла десятиліттями штовхати, живити, захищати й гальмувати масу; маршрут лишається жорстоким, бо облік живе довше за аварію.
 
 ## Scanner
 
-UA LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Пластина двигуна. Пелетно-термоядерний фрахт ішов як інфраструктура: розгін, щит, дрейф, гальмування і рахунок за втрати.
 
 ## Terminal
 
-UA LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+ВАНТАЖНА ДОКТРИНА: seed-вантажі класу Atlas і колоніальний фрахт використовували розгін променевим вітрилом, пелетне термоядерне живлення, магнітопарусне гальмування і довгі інтервали дрейфу. Живий вантаж прибув після того, як машини зробили маршрут оплачуваним.
 
 ## Audio
 
-UA LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+Важкий корабель не диво. Це іпотека з двигунами.
 
 ## Field Note
 
-UA LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+Важкий транзит не героїчний. Це старий маршрутний контракт із тепловими шрамами.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/uk_UA. -->

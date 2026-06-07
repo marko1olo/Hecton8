@@ -17,11 +17,16 @@ namespace Hecton8.SaveSystem
     public static class SaveDataMigration
     {
         private const float LegacyModuleIntegrityDefault = 100f;
-        private const float LegacyBeaconLightRangeDefault = 4f;
         private const string DefaultBeaconLabelPrefix = "BEACON";
         private const int InvalidBiomeId = BiomeDiscoveryBitMask.InvalidBiomeId;
         private const int MaxAtlasRevealStage = 4;
+        private const int FirstHourKnownMilestoneMask = (1 << 6) - 1;
+        private const int FirstHourKnownGuidanceMask = (1 << 11) - 1;
         private const int PreV73RepairVersion = 73;
+        private const ushort MaxDataArchaeologyPartialProgressPermille = 999;
+        private const byte MaxDataArchaeologyScanStateValue = 2;
+        private const int MaxVoxelDeltaChunks = 65536;
+        private const int MaxVoxelDeltaCarvingOperations = 65536;
 
         private static bool TrimListToMax<T>(List<T> values, int maxCount, string step, List<string> steps)
         {
@@ -33,6 +38,215 @@ namespace Hecton8.SaveSystem
                 return false;
 
             values.RemoveRange(safeMax, values.Count - safeMax);
+            steps.Add(step);
+            return true;
+        }
+
+        private static bool CompactNonBlankStringListEntries(List<string> values, string step, List<string> steps)
+        {
+            if (values == null)
+                return false;
+
+            bool changed = false;
+            int writeIndex = 0;
+            for (int i = 0; i < values.Count; i++)
+            {
+                string value = values[i];
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    changed = true;
+                    continue;
+                }
+
+                if (writeIndex != i)
+                {
+                    values[writeIndex] = value;
+                    changed = true;
+                }
+
+                writeIndex++;
+            }
+
+            if (values.Count > writeIndex)
+            {
+                values.RemoveRange(writeIndex, values.Count - writeIndex);
+                changed = true;
+            }
+
+            if (changed)
+                steps.Add(step);
+
+            return changed;
+        }
+
+        private static bool CompactNonBlankStringFloatPairs(
+            List<string> ids,
+            List<float> values,
+            string step,
+            List<string> steps)
+        {
+            if (ids == null || values == null)
+                return false;
+
+            int bound = Math.Min(ids.Count, values.Count);
+            bool changed = ids.Count != values.Count;
+            int writeIndex = 0;
+            for (int i = 0; i < bound; i++)
+            {
+                string id = ids[i];
+                if (string.IsNullOrWhiteSpace(id))
+                {
+                    changed = true;
+                    continue;
+                }
+
+                if (writeIndex != i)
+                {
+                    ids[writeIndex] = id;
+                    values[writeIndex] = values[i];
+                    changed = true;
+                }
+
+                writeIndex++;
+            }
+
+            if (ids.Count > writeIndex)
+            {
+                ids.RemoveRange(writeIndex, ids.Count - writeIndex);
+                changed = true;
+            }
+
+            if (values.Count > writeIndex)
+            {
+                values.RemoveRange(writeIndex, values.Count - writeIndex);
+                changed = true;
+            }
+
+            if (changed)
+                steps.Add(step);
+
+            return changed;
+        }
+
+        private static bool CompactNonBlankStringArrayEntries(
+            string[] values,
+            ref int count,
+            int maxCount,
+            string step,
+            List<string> steps)
+        {
+            if (values == null)
+                return false;
+
+            int safeCount = math.clamp(count, 0, math.min(values.Length, Math.Max(maxCount, 0)));
+            bool changed = safeCount != count;
+            int writeIndex = 0;
+            for (int i = 0; i < safeCount; i++)
+            {
+                string value = values[i];
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    if (value != string.Empty)
+                    {
+                        values[i] = string.Empty;
+                        changed = true;
+                    }
+
+                    continue;
+                }
+
+                if (writeIndex != i)
+                {
+                    values[writeIndex] = value;
+                    changed = true;
+                }
+
+                writeIndex++;
+            }
+
+            for (int i = writeIndex; i < safeCount; i++)
+            {
+                if (values[i] == string.Empty)
+                    continue;
+
+                values[i] = string.Empty;
+                changed = true;
+            }
+
+            if (count != writeIndex)
+            {
+                count = writeIndex;
+                changed = true;
+            }
+
+            if (changed)
+                steps.Add(step);
+
+            return changed;
+        }
+
+        private static bool EnsureNonNullStringDictionaryValues(
+            Dictionary<string, string> values,
+            string step,
+            List<string> steps)
+        {
+            if (values == null)
+                return false;
+
+            List<string> keysToRepair = null;
+            Dictionary<string, string>.Enumerator enumerator = values.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<string, string> pair = enumerator.Current;
+                if (pair.Value != null)
+                    continue;
+
+                keysToRepair ??= new List<string>();
+                keysToRepair.Add(pair.Key);
+            }
+
+            enumerator.Dispose();
+            if (keysToRepair == null)
+                return false;
+
+            for (int i = 0; i < keysToRepair.Count; i++)
+                values[keysToRepair[i]] = string.Empty;
+
+            steps.Add(step);
+            return true;
+        }
+
+        private static bool EnsureNonEmptyStringDictionaryKeys<TValue>(
+            Dictionary<string, TValue> values,
+            string step,
+            List<string> steps)
+        {
+            if (values == null)
+                return false;
+
+            List<string> keysToRemove = null;
+            Dictionary<string, TValue>.Enumerator enumerator = values.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                string key = enumerator.Current.Key;
+                if (!string.IsNullOrEmpty(key))
+                    continue;
+
+                keysToRemove ??= new List<string>(1);
+                keysToRemove.Add(key);
+            }
+
+            enumerator.Dispose();
+            if (keysToRemove == null)
+                return false;
+
+            for (int i = 0; i < keysToRemove.Count; i++)
+            {
+                string key = keysToRemove[i];
+                if (key != null)
+                    values.Remove(key);
+            }
+
             steps.Add(step);
             return true;
         }
@@ -177,6 +391,46 @@ namespace Hecton8.SaveSystem
                 steps.Add("first hour session time repaired");
             }
 
+            int safeFirstHourMilestones = SanitizeFirstHourMilestones(data.firstHourMilestones);
+            if (safeFirstHourMilestones != data.firstHourMilestones)
+            {
+                data.firstHourMilestones = safeFirstHourMilestones;
+                changed = true;
+                steps.Add("first hour milestones repaired");
+            }
+
+            int safeFirstHourGuidanceFlags = SanitizeFirstHourGuidanceFlags(data.firstHourGuidanceFlags);
+            if (safeFirstHourGuidanceFlags != data.firstHourGuidanceFlags)
+            {
+                data.firstHourGuidanceFlags = safeFirstHourGuidanceFlags;
+                changed = true;
+                steps.Add("first hour guidance flags repaired");
+            }
+
+            int safeEndingChoice = SanitizeEndingChoice(data.endingChoice);
+            bool safeEndingComplete = data.endingComplete && safeEndingChoice != 0;
+            if (!safeEndingComplete)
+                safeEndingChoice = 0;
+            bool safeEndingConditionMet = data.endingConditionMet || safeEndingComplete;
+            if (safeEndingChoice != data.endingChoice)
+            {
+                data.endingChoice = safeEndingChoice;
+                changed = true;
+                steps.Add("ending choice repaired");
+            }
+            if (safeEndingComplete != data.endingComplete)
+            {
+                data.endingComplete = safeEndingComplete;
+                changed = true;
+                steps.Add("ending completion repaired");
+            }
+            if (safeEndingConditionMet != data.endingConditionMet)
+            {
+                data.endingConditionMet = safeEndingConditionMet;
+                changed = true;
+                steps.Add("ending condition repaired");
+            }
+
             if (data.toolDurabilityMap == null)
             {
                 data.toolDurabilityMap = new Dictionary<string, float>(SaveData.MaxToolDurabilityRecords);
@@ -187,6 +441,10 @@ namespace Hecton8.SaveSystem
                 data.toolDurabilityMap,
                 SaveData.MaxToolDurabilityRecords,
                 "tool durability map capped",
+                steps);
+            changed |= EnsureNonEmptyStringDictionaryKeys(
+                data.toolDurabilityMap,
+                "tool durability keys repaired",
                 steps);
             changed |= EnsureNonNegativeFiniteFloatDictionary(
                 data.toolDurabilityMap,
@@ -204,6 +462,10 @@ namespace Hecton8.SaveSystem
                 SaveData.MaxToolDurabilityRecords,
                 "tool broken map capped",
                 steps);
+            changed |= EnsureNonEmptyStringDictionaryKeys(
+                data.toolBrokenMap,
+                "tool broken keys repaired",
+                steps);
 
             if (data.CustomModData == null)
             {
@@ -215,6 +477,14 @@ namespace Hecton8.SaveSystem
                 data.CustomModData,
                 SaveData.MaxCustomModDataEntries,
                 "custom mod data capped",
+                steps);
+            changed |= EnsureNonEmptyStringDictionaryKeys(
+                data.CustomModData,
+                "custom mod data keys repaired",
+                steps);
+            changed |= EnsureNonNullStringDictionaryValues(
+                data.CustomModData,
+                "custom mod data values repaired",
                 steps);
 
             if (data.suitBrokenUpgradeIds == null)
@@ -228,6 +498,18 @@ namespace Hecton8.SaveSystem
                 SaveData.MaxSuitUpgradeIds,
                 "suit broken upgrades capped",
                 steps);
+            changed |= CompactNonBlankStringListEntries(
+                data.suitBrokenUpgradeIds,
+                "suit broken upgrade ids repaired",
+                steps);
+
+            ulong safeSuitUpgradeMask = SanitizeSuitUpgradeMask(data.suitUpgradeMask);
+            if (safeSuitUpgradeMask != data.suitUpgradeMask)
+            {
+                data.suitUpgradeMask = safeSuitUpgradeMask;
+                changed = true;
+                steps.Add("suit upgrade mask repaired");
+            }
 
             bool hadPackedBiomeCapacity = BiomeDiscoveryBitMask.HasExpectedCapacity(data.discoveredBiomeBitWords);
             if (!hadPackedBiomeCapacity)
@@ -237,11 +519,17 @@ namespace Hecton8.SaveSystem
                 steps.Add("discovered biome bit words created");
             }
 
+            changed |= EnsureValidDiscoveredBiomeIds(data.discoveredBiomeIds, steps);
             changed |= TrimHashSetToMax(
                 data.discoveredBiomeIds,
                 SaveData.MaxLegacyDiscoveredBiomeIds,
                 "discovered biome set capped",
                 steps);
+            if (BiomeDiscoveryBitMask.SanitizeWords(data.discoveredBiomeBitWords))
+            {
+                changed = true;
+                steps.Add("discovered biome bit words repaired");
+            }
 
             if (!BiomeDiscoveryBitMask.HasAnySet(data.discoveredBiomeBitWords) &&
                 data.discoveredBiomeIds != null &&
@@ -267,6 +555,7 @@ namespace Hecton8.SaveSystem
 
             changed |= EnsureHazardZoneRuntime(ref data.hazardZones, sourceVersion, steps);
             changed |= EnsureRadiationGrid(data, sourceVersion, steps);
+            changed |= EnsureRtgDecay(data, steps);
             changed |= EnsurePlayerStatsAndKinematics(data, sourceVersion, steps);
             bool inventoryChanged = EnsureInventory(ref data.inventory, steps);
             changed |= inventoryChanged;
@@ -289,8 +578,11 @@ namespace Hecton8.SaveSystem
             changed |= EnsureResourceScarcity(ref data.resourceScarcity, steps);
             changed |= EnsureEnvironmentalStrain(ref data.environmentalStrain, steps);
             changed |= EnsureEcosystemState(ref data.ecosystemState, steps);
+            changed |= EnsureExternalScavengerSites(ref data.externalScavengerSites, steps);
             changed |= EnsureVoxelDeltaPersistence(ref data.voxelDeltaPersistence, steps);
             changed |= EnsureLoreSystems(ref data, sourceVersion, steps);
+            changed |= EnsureAtlas6DirectiveState(data, steps);
+            changed |= EnsureAtlas6Liability(data, sourceVersion, steps);
             changed |= EnsurePlayerExpression(ref data, steps);
             changed |= EnsurePerformanceSettings(ref data, sourceVersion, steps);
 
@@ -381,6 +673,77 @@ namespace Hecton8.SaveSystem
             return changed;
         }
 
+        private static bool EnsureRtgDecay(SaveData data, List<string> steps)
+        {
+            if (data == null)
+                return false;
+
+            bool changed = false;
+            int sourceLength = data.rtgDecaySourceIds != null ? data.rtgDecaySourceIds.Length : 0;
+            int startLength = data.rtgStartTimesSeconds != null ? data.rtgStartTimesSeconds.Length : 0;
+            int flagLength = data.rtgDecayFlags != null ? data.rtgDecayFlags.Length : 0;
+            int safeCount = math.clamp(
+                data.rtgDecayCount,
+                0,
+                math.min(SaveData.MaxRtgDecayRecords, sourceLength));
+
+            if (data.rtgDecayCount != safeCount)
+            {
+                data.rtgDecayCount = safeCount;
+                changed = true;
+                steps.Add("rtg decay count clamped");
+            }
+
+            bool hadExactCapacity =
+                data.rtgDecaySourceIds != null &&
+                data.rtgDecaySourceIds.Length == SaveData.MaxRtgDecayRecords &&
+                data.rtgStartTimesSeconds != null &&
+                data.rtgStartTimesSeconds.Length == SaveData.MaxRtgDecayRecords &&
+                data.rtgDecayFlags != null &&
+                data.rtgDecayFlags.Length == SaveData.MaxRtgDecayRecords;
+
+            if (!hadExactCapacity)
+            {
+                data.EnsureRtgDecayCapacity();
+                changed = true;
+                steps.Add("rtg decay arrays repaired");
+            }
+
+            if (startLength < safeCount || flagLength < safeCount)
+            {
+                changed = true;
+                steps.Add("rtg decay partial records defaulted");
+            }
+
+            bool repairedRecords = false;
+            for (int i = 0; i < safeCount; i++)
+            {
+                int safeSourceId = Math.Max(0, data.rtgDecaySourceIds[i]);
+                double safeStartTime = SanitizeNonNegativeFinite(data.rtgStartTimesSeconds[i]);
+                byte safeFlags = (byte)(data.rtgDecayFlags[i] & SaveData.RtgDecayPersistedFlagMask);
+
+                if (data.rtgDecaySourceIds[i] == safeSourceId &&
+                    Approximately(data.rtgStartTimesSeconds[i], safeStartTime) &&
+                    data.rtgDecayFlags[i] == safeFlags)
+                {
+                    continue;
+                }
+
+                data.rtgDecaySourceIds[i] = safeSourceId;
+                data.rtgStartTimesSeconds[i] = safeStartTime;
+                data.rtgDecayFlags[i] = safeFlags;
+                repairedRecords = true;
+            }
+
+            if (repairedRecords)
+            {
+                changed = true;
+                steps.Add("rtg decay records repaired");
+            }
+
+            return changed;
+        }
+
         private static bool EnsurePlayerStatsAndKinematics(SaveData data, int sourceVersion, List<string> steps)
         {
             PlayerStatsDTO safeStats = data.playerStats;
@@ -434,6 +797,26 @@ namespace Hecton8.SaveSystem
         private static bool Approximately(double a, double b)
         {
             return math.abs(a - b) <= 0.000001d;
+        }
+
+        private static int SanitizeFirstHourMilestones(int milestones)
+        {
+            return milestones >= 0 ? milestones & FirstHourKnownMilestoneMask : 0;
+        }
+
+        private static int SanitizeFirstHourGuidanceFlags(int guidanceFlags)
+        {
+            return guidanceFlags >= 0 ? guidanceFlags & FirstHourKnownGuidanceMask : 0;
+        }
+
+        private static int SanitizeEndingChoice(int endingChoice)
+        {
+            return endingChoice >= 0 && endingChoice <= 3 ? endingChoice : 0;
+        }
+
+        private static ulong SanitizeSuitUpgradeMask(ulong upgradeMask)
+        {
+            return upgradeMask & SaveData.SuitUpgradeSupportedMask;
         }
 
         private static float SanitizeNonNegativeFinite(float value)
@@ -521,8 +904,12 @@ namespace Hecton8.SaveSystem
             if (data == null)
                 return false;
 
+            bool payloadChanged = false;
             if (discardTransientPayload)
             {
+                payloadChanged = data.inventoryShadowPayloadLength != 0 ||
+                                 data.inventoryShadowPayloadHash != 0u ||
+                                 data.hasInventoryShadowPayload;
                 data.inventoryShadowPayloadLength = 0;
                 data.inventoryShadowPayloadHash = 0u;
                 data.hasInventoryShadowPayload = false;
@@ -531,12 +918,36 @@ namespace Hecton8.SaveSystem
             int inventoryShadowPayloadLength = discardTransientPayload
                 ? 0
                 : SaveDataInventorySanitizer.ResolveInventoryShadowPayloadLength(data);
+            uint inventoryShadowPayloadHash = inventoryShadowPayloadLength > 0
+                ? data.inventoryShadowPayloadHash
+                : 0u;
+            if (!discardTransientPayload &&
+                inventoryShadowPayloadLength == 0 &&
+                (data.inventoryShadowPayloadLength != 0 ||
+                 data.inventoryShadowPayloadHash != 0u ||
+                 data.hasInventoryShadowPayload))
+            {
+                payloadChanged = true;
+                data.inventoryShadowPayloadLength = 0;
+                data.inventoryShadowPayloadHash = 0u;
+                data.hasInventoryShadowPayload = false;
+            }
+
+            if (!discardTransientPayload && inventoryShadowPayloadLength == 0)
+            {
+                inventoryShadowPayloadLength = SaveDataInventorySanitizer.ResolveInventoryShadowPayloadLength(
+                    in data.inventoryShadow,
+                    in data.inventory);
+                inventoryShadowPayloadHash = inventoryShadowPayloadLength > 0 ? data.inventoryShadow.payloadHash : 0u;
+            }
+
             bool changed = SaveDataInventorySanitizer.SanitizeInventoryShadow(
                 ref data.inventoryShadow,
                 in data.inventory,
                 inventoryShadowPayloadLength,
-                data.inventoryShadowPayloadHash,
+                inventoryShadowPayloadHash,
                 inventoryShadowPayloadLength > 0);
+            changed |= payloadChanged;
             if (changed)
                 steps.Add("inventory shadow repaired");
 
@@ -568,6 +979,34 @@ namespace Hecton8.SaveSystem
             }
 
             return InvalidBiomeId;
+        }
+
+        private static bool EnsureValidDiscoveredBiomeIds(HashSet<int> discoveredBiomeIds, List<string> steps)
+        {
+            if (discoveredBiomeIds == null || discoveredBiomeIds.Count == 0)
+                return false;
+
+            List<int> idsToRemove = null;
+            HashSet<int>.Enumerator enumerator = discoveredBiomeIds.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                int biomeId = enumerator.Current;
+                if (IsValidBiomeId(biomeId))
+                    continue;
+
+                idsToRemove ??= new List<int>();
+                idsToRemove.Add(biomeId);
+            }
+
+            enumerator.Dispose();
+            if (idsToRemove == null)
+                return false;
+
+            for (int i = 0; i < idsToRemove.Count; i++)
+                discoveredBiomeIds.Remove(idsToRemove[i]);
+
+            steps.Add("discovered biome set repaired");
+            return true;
         }
 
         private static bool IsValidBiomeId(int biomeId)
@@ -606,6 +1045,13 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("world state count clamped");
             }
+
+            changed |= CompactNonBlankStringArrayEntries(
+                dto.depletedNodeIds,
+                ref dto.depletedCount,
+                WorldStateDTO.MaxNodes,
+                "world state depleted ids repaired",
+                steps);
 
             int clampedPickupChunks = math.clamp(
                 dto.depletedPickupChunkCount,
@@ -686,17 +1132,67 @@ namespace Hecton8.SaveSystem
                 steps.Add("ecosystem infected-zone count clamped");
             }
 
+            bool repairedInfectedSeverity = false;
             for (int i = 0; i < clampedCount; i++)
             {
-                float clampedSeverity = math.saturate(dto.infectedSeverities[i]);
-                if (math.abs(clampedSeverity - dto.infectedSeverities[i]) > 0.0001f)
+                float currentSeverity = dto.infectedSeverities[i];
+                float clampedSeverity = math.isfinite(currentSeverity) ? math.saturate(currentSeverity) : 0f;
+                if (!math.isfinite(currentSeverity) || math.abs(clampedSeverity - currentSeverity) > 0.0001f)
                 {
                     dto.infectedSeverities[i] = clampedSeverity;
+                    repairedInfectedSeverity = true;
                     changed = true;
                 }
             }
 
+            if (repairedInfectedSeverity)
+                steps.Add("ecosystem infected severity repaired");
+
             return changed;
+        }
+
+        private static bool EnsureExternalScavengerSites(
+            ref ExternalScavengerSiteDTO[] sites,
+            List<string> steps)
+        {
+            if (sites == null)
+                return false;
+
+            bool changed = sites.Length > SaveData.MaxExternalScavengerSites;
+            int sourceCount = math.min(sites.Length, SaveData.MaxExternalScavengerSites);
+            int writeIndex = 0;
+            for (int i = 0; i < sourceCount; i++)
+            {
+                ExternalScavengerSiteDTO site = sites[i];
+                if (!ExternalScavengerSiteDTO.TrySanitizeForPersistence(
+                        in site,
+                        out ExternalScavengerSiteDTO safeSite))
+                {
+                    changed = true;
+                    continue;
+                }
+
+                if (!ExternalScavengerSiteDTO.PersistenceEquals(in site, in safeSite) || writeIndex != i)
+                    changed = true;
+
+                sites[writeIndex] = safeSite;
+                writeIndex++;
+            }
+
+            if (!changed && writeIndex == sites.Length)
+                return false;
+
+            if (writeIndex == 0)
+            {
+                sites = Array.Empty<ExternalScavengerSiteDTO>();
+            }
+            else
+            {
+                Array.Resize(ref sites, writeIndex);
+            }
+
+            steps.Add("external scavenger sites repaired");
+            return true;
         }
 
         private static bool EnsureVoxelDeltaPersistence(ref VoxelDeltaPersistenceDTO dto, List<string> steps)
@@ -705,12 +1201,14 @@ namespace Hecton8.SaveSystem
 
             if (dto.chunks == null)
             {
-                dto = VoxelDeltaPersistenceDTO.CreateDefault();
+                dto.chunks = Array.Empty<VoxelDeltaChunkDTO>();
+                dto.chunkCount = 0;
+                dto.totalCellCount = 0;
                 changed = true;
-                steps.Add("voxel delta persistence created");
+                steps.Add("voxel delta chunks created");
             }
 
-            int chunkCapacity = dto.chunks != null ? dto.chunks.Length : 0;
+            int chunkCapacity = math.min(dto.chunks != null ? dto.chunks.Length : 0, MaxVoxelDeltaChunks);
             int clampedChunkCount = math.clamp(dto.chunkCount, 0, chunkCapacity);
             if (clampedChunkCount != dto.chunkCount)
             {
@@ -720,10 +1218,28 @@ namespace Hecton8.SaveSystem
             }
 
             int totalCellCount = 0;
+            bool repairedVoxelDeltaStorageFlags = false;
+            bool repairedVoxelDeltaCellFlags = false;
             for (int i = 0; i < dto.chunkCount; i++)
             {
                 VoxelDeltaChunkDTO chunk = dto.chunks[i];
                 bool hasUniformSdfRleStorage = (chunk.storageFlags & VoxelDeltaChunkDTO.StorageUniformSdfRle) != 0;
+                byte canonicalStorageFlags = hasUniformSdfRleStorage
+                    ? VoxelDeltaChunkDTO.StorageUniformSdfRle
+                    : VoxelDeltaChunkDTO.StorageDense;
+                if (chunk.storageFlags != canonicalStorageFlags)
+                {
+                    chunk.storageFlags = canonicalStorageFlags;
+                    changed = true;
+                    repairedVoxelDeltaStorageFlags = true;
+                }
+
+                if (chunk.reservedStorage != 0)
+                {
+                    chunk.reservedStorage = 0;
+                    changed = true;
+                    repairedVoxelDeltaStorageFlags = true;
+                }
 
                 bool hasDenseStorage =
                     !hasUniformSdfRleStorage &&
@@ -764,6 +1280,12 @@ namespace Hecton8.SaveSystem
                     changed = true;
                 }
 
+                if (hasDenseStorage && SanitizeVoxelDeltaCellFlags(chunk.cellFlags))
+                {
+                    changed = true;
+                    repairedVoxelDeltaCellFlags = true;
+                }
+
                 if (hasUniformSdfRleStorage)
                 {
                     if (chunk.dirtyMaskWords.Length != 0)
@@ -791,13 +1313,13 @@ namespace Hecton8.SaveSystem
                     }
                 }
 
-                int cellCapacity = chunk.cells != null ? chunk.cells.Length : 0;
+                int cellCapacity = chunk.cells != null ? math.min(chunk.cells.Length, VoxelDeltaChunkDTO.CellCount) : 0;
                 int legacyCellCount = hasUniformSdfRleStorage ? 0 : math.clamp(chunk.cellCount, 0, cellCapacity);
                 int denseCellCount = hasDenseStorage ? CountDirtyMaskBits(chunk.dirtyMaskWords) : 0;
                 int clampedCellCount = hasUniformSdfRleStorage
                     ? VoxelDeltaChunkDTO.CellCount
                     : hasDenseStorage
-                        ? math.max(denseCellCount, legacyCellCount)
+                        ? denseCellCount
                         : legacyCellCount;
                 if (clampedCellCount != chunk.cellCount)
                 {
@@ -810,15 +1332,26 @@ namespace Hecton8.SaveSystem
                     chunk.cells = Array.Empty<VoxelDeltaCellDTO>();
                     changed = true;
                 }
-                else if (hasUniformSdfRleStorage && chunk.cells.Length != 0)
+                else if ((hasUniformSdfRleStorage || hasDenseStorage) && chunk.cells.Length != 0)
                 {
                     chunk.cells = Array.Empty<VoxelDeltaCellDTO>();
                     changed = true;
                 }
+                else if (!hasUniformSdfRleStorage && !hasDenseStorage && SanitizeVoxelDeltaCells(chunk.cells, legacyCellCount))
+                {
+                    changed = true;
+                    repairedVoxelDeltaCellFlags = true;
+                }
 
                 dto.chunks[i] = chunk;
-                totalCellCount += chunk.cellCount;
+                totalCellCount = AddVoxelDeltaCellCountClamped(totalCellCount, chunk.cellCount);
             }
+
+            if (repairedVoxelDeltaStorageFlags)
+                steps.Add("voxel delta storage flags repaired");
+
+            if (repairedVoxelDeltaCellFlags)
+                steps.Add("voxel delta cell flags repaired");
 
             if (dto.totalCellCount != totalCellCount)
             {
@@ -827,7 +1360,122 @@ namespace Hecton8.SaveSystem
                 steps.Add("voxel delta total count repaired");
             }
 
+            changed |= EnsureVoxelDeltaCarvingOperations(ref dto, steps);
             return changed;
+        }
+
+        private static int AddVoxelDeltaCellCountClamped(int current, int add)
+        {
+            if (add <= 0)
+                return math.max(0, current);
+
+            return current > int.MaxValue - add ? int.MaxValue : current + add;
+        }
+
+        private static bool EnsureVoxelDeltaCarvingOperations(ref VoxelDeltaPersistenceDTO dto, List<string> steps)
+        {
+            bool changed = false;
+
+            if (dto.carvingOperations == null)
+            {
+                dto.carvingOperations = Array.Empty<VoxelCarvingOperationDTO>();
+                changed = true;
+                steps.Add("voxel carving operations created");
+            }
+
+            int operationCapacity = math.min(dto.carvingOperations.Length, MaxVoxelDeltaCarvingOperations);
+            int clampedOperationCount = math.clamp(dto.carvingOperationCount, 0, operationCapacity);
+            if (clampedOperationCount != dto.carvingOperationCount)
+            {
+                dto.carvingOperationCount = clampedOperationCount;
+                changed = true;
+                steps.Add("voxel carving operation count clamped");
+            }
+
+            bool repairedOperations = false;
+            for (int i = 0; i < dto.carvingOperationCount; i++)
+            {
+                VoxelCarvingOperationDTO operation = dto.carvingOperations[i];
+                bool repairedOperation = false;
+
+                if (!math.all(math.isfinite(operation.localPosition)))
+                {
+                    operation.localPosition = new float3(
+                        math.isfinite(operation.localPosition.x) ? operation.localPosition.x : 0f,
+                        math.isfinite(operation.localPosition.y) ? operation.localPosition.y : 0f,
+                        math.isfinite(operation.localPosition.z) ? operation.localPosition.z : 0f);
+                    repairedOperation = true;
+                }
+
+                if (!math.isfinite(operation.radius) || operation.radius < 0f)
+                {
+                    operation.radius = 0f;
+                    repairedOperation = true;
+                }
+
+                if (operation.operation != VoxelCarvingOperationKind.Subtract &&
+                    operation.operation != VoxelCarvingOperationKind.Add)
+                {
+                    operation.operation = VoxelCarvingOperationKind.Subtract;
+                    repairedOperation = true;
+                }
+
+                if (!repairedOperation)
+                    continue;
+
+                dto.carvingOperations[i] = operation;
+                changed = true;
+                repairedOperations = true;
+            }
+
+            if (repairedOperations)
+                steps.Add("voxel carving operations repaired");
+
+            return changed;
+        }
+
+        private static bool SanitizeVoxelDeltaCellFlags(byte[] cellFlags)
+        {
+            if (cellFlags == null)
+                return false;
+
+            bool changed = false;
+            for (int i = 0; i < cellFlags.Length; i++)
+            {
+                byte safeFlags = SanitizeVoxelDeltaCellFlags(cellFlags[i]);
+                if (safeFlags == cellFlags[i])
+                    continue;
+
+                cellFlags[i] = safeFlags;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static bool SanitizeVoxelDeltaCells(VoxelDeltaCellDTO[] cells, int count)
+        {
+            if (cells == null || count <= 0)
+                return false;
+
+            bool changed = false;
+            int safeCount = math.clamp(count, 0, cells.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                byte safeFlags = SanitizeVoxelDeltaCellFlags(cells[i].flags);
+                if (safeFlags == cells[i].flags)
+                    continue;
+
+                cells[i].flags = safeFlags;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static byte SanitizeVoxelDeltaCellFlags(byte cellFlags)
+        {
+            return (byte)(cellFlags & VoxelDeltaChunkDTO.SupportedCellFlags);
         }
 
         private static int CountDirtyMaskBits(uint[] dirtyMaskWords)
@@ -869,6 +1517,12 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("narrative discovery count clamped");
             }
+            changed |= CompactNonBlankStringArrayEntries(
+                data.narrativeDiscoveryIds,
+                ref data.narrativeDiscoveryCount,
+                SaveData.MaxNarrativeDiscoveries,
+                "narrative discovery ids repaired",
+                steps);
 
             if (data.narrativeDepthTier < 0)
             {
@@ -1025,12 +1679,34 @@ namespace Hecton8.SaveSystem
                 steps.Add("pda logbook sequence repaired");
             }
 
+            bool repairedEntries = false;
+            for (int i = 0; i < dto.entryCount; i++)
+            {
+                PDALogbookEntryDTO entry = dto.entries[i];
+                PDALogbookEntryDTO safeEntry = PDALogbookEntryDTO.SanitizeForPersistence(in entry);
+                if (PDALogbookEntryDTO.PersistenceEquals(in entry, in safeEntry))
+                    continue;
+
+                dto.entries[i] = safeEntry;
+                repairedEntries = true;
+                changed = true;
+            }
+
+            if (repairedEntries)
+                steps.Add("pda logbook entries repaired");
+
             int clampedSeenOriginCount = math.clamp(dto.seenOriginCount, 0, seenOriginBound);
             if (clampedSeenOriginCount != dto.seenOriginCount)
             {
                 dto.seenOriginCount = clampedSeenOriginCount;
                 changed = true;
                 steps.Add("pda logbook seen-origin count clamped");
+            }
+
+            if (dto.SanitizeSeenOriginsForPersistence())
+            {
+                changed = true;
+                steps.Add("pda logbook seen origins repaired");
             }
 
             return changed;
@@ -1063,82 +1739,64 @@ namespace Hecton8.SaveSystem
                 steps.Add("pda marker sequence repaired");
             }
 
+            bool repairedMarkers = false;
+            for (int i = 0; i < dto.markerCount; i++)
+            {
+                PDAMarkerEntryDTO marker = dto.entries[i];
+                PDAMarkerEntryDTO safeMarker = PDAMarkerEntryDTO.SanitizeForPersistence(in marker);
+                if (PDAMarkerEntryDTO.PersistenceEquals(in marker, in safeMarker))
+                    continue;
+
+                dto.entries[i] = safeMarker;
+                repairedMarkers = true;
+                changed = true;
+            }
+
+            if (repairedMarkers)
+                steps.Add("pda marker entries repaired");
+
             return changed;
         }
 
         private static bool EnsurePdaAdvisories(ref PDAContextualAdvisoryDTO dto, List<string> steps)
         {
-            bool changed = false;
+            int stepCountBefore = steps.Count;
+            PDAContextualAdvisoryDTO safeDto = PDAContextualAdvisoryDTO.SanitizeForPersistence(in dto);
+            bool changed = !PDAContextualAdvisoryDTO.PersistenceEquals(in dto, in safeDto);
 
-            if (dto.oxygenDeathCount < 0)
-            {
-                dto.oxygenDeathCount = 0;
-                changed = true;
+            if (dto.oxygenDeathCount != safeDto.oxygenDeathCount)
                 steps.Add("pda advisory oxygen-death count repaired");
-            }
 
-            if (dto.inventoryFullAttemptCount < 0)
-            {
-                dto.inventoryFullAttemptCount = 0;
-                changed = true;
+            if (dto.inventoryFullAttemptCount != safeDto.inventoryFullAttemptCount)
                 steps.Add("pda advisory inventory-full count repaired");
-            }
 
-            if (dto.pressureDeathCount < 0)
-            {
-                dto.pressureDeathCount = 0;
-                changed = true;
+            if (dto.pressureDeathCount != safeDto.pressureDeathCount)
                 steps.Add("pda advisory pressure-death count repaired");
-            }
 
-            if (dto.baseEmergencyCount < 0)
-            {
-                dto.baseEmergencyCount = 0;
-                changed = true;
+            if (dto.baseEmergencyCount != safeDto.baseEmergencyCount)
                 steps.Add("pda advisory base-emergency count repaired");
-            }
 
-            if (dto.staleAirIncidentCount < 0)
-            {
-                dto.staleAirIncidentCount = 0;
-                changed = true;
+            if (dto.staleAirIncidentCount != safeDto.staleAirIncidentCount)
                 steps.Add("pda advisory stale-air count repaired");
-            }
 
-            if (dto.coldStressIncidentCount < 0)
-            {
-                dto.coldStressIncidentCount = 0;
-                changed = true;
+            if (dto.coldStressIncidentCount != safeDto.coldStressIncidentCount)
                 steps.Add("pda advisory cold-stress count repaired");
-            }
 
-            if (dto.heatStressIncidentCount < 0)
-            {
-                dto.heatStressIncidentCount = 0;
-                changed = true;
+            if (dto.heatStressIncidentCount != safeDto.heatStressIncidentCount)
                 steps.Add("pda advisory heat-stress count repaired");
-            }
 
-            if (dto.deepExposureSeconds < 0f || float.IsNaN(dto.deepExposureSeconds))
-            {
-                dto.deepExposureSeconds = 0f;
-                changed = true;
+            if (!Approximately(dto.deepExposureSeconds, safeDto.deepExposureSeconds))
                 steps.Add("pda advisory deep-exposure time repaired");
-            }
 
-            if (dto.coldStressExposureSeconds < 0f || float.IsNaN(dto.coldStressExposureSeconds))
-            {
-                dto.coldStressExposureSeconds = 0f;
-                changed = true;
+            if (!Approximately(dto.coldStressExposureSeconds, safeDto.coldStressExposureSeconds))
                 steps.Add("pda advisory cold-stress exposure repaired");
-            }
 
-            if (dto.heatStressExposureSeconds < 0f || float.IsNaN(dto.heatStressExposureSeconds))
-            {
-                dto.heatStressExposureSeconds = 0f;
-                changed = true;
+            if (!Approximately(dto.heatStressExposureSeconds, safeDto.heatStressExposureSeconds))
                 steps.Add("pda advisory heat-stress exposure repaired");
-            }
+
+            dto = safeDto;
+            if (changed && steps.Count == stepCountBefore)
+                steps.Add("pda advisory values repaired");
 
             return changed;
         }
@@ -1170,6 +1828,22 @@ namespace Hecton8.SaveSystem
                 steps.Add("procedural lore source index repaired");
             }
 
+            bool repairedPlacements = false;
+            for (int i = 0; i < dto.activeCount; i++)
+            {
+                ProceduralLorePlacementDTO placement = dto.activePlacements[i];
+                ProceduralLorePlacementDTO safePlacement = ProceduralLorePlacementDTO.SanitizeForPersistence(in placement);
+                if (ProceduralLorePlacementDTO.PersistenceEquals(in placement, in safePlacement))
+                    continue;
+
+                dto.activePlacements[i] = safePlacement;
+                repairedPlacements = true;
+                changed = true;
+            }
+
+            if (repairedPlacements)
+                steps.Add("procedural lore placements repaired");
+
             return changed;
         }
 
@@ -1193,9 +1867,10 @@ namespace Hecton8.SaveSystem
                 steps.Add("achievement registry count clamped");
             }
 
-            if (dto.swamDistanceMeters < 0f || float.IsNaN(dto.swamDistanceMeters))
+            float safeSwamDistanceMeters = SanitizeNonNegativeFinite(dto.swamDistanceMeters);
+            if (!Approximately(dto.swamDistanceMeters, safeSwamDistanceMeters))
             {
-                dto.swamDistanceMeters = 0f;
+                dto.swamDistanceMeters = safeSwamDistanceMeters;
                 changed = true;
                 steps.Add("achievement swim distance repaired");
             }
@@ -1213,6 +1888,13 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("achievement biome count repaired");
             }
+
+            changed |= CompactNonBlankStringArrayEntries(
+                dto.unlockedIds,
+                ref dto.unlockedCount,
+                AchievementRegistryDTO.MaxUnlockedAchievements,
+                "achievement unlocked ids repaired",
+                steps);
 
             return changed;
         }
@@ -1290,9 +1972,10 @@ namespace Hecton8.SaveSystem
             int previousHashCapacity = dto.itemHashIds != null ? dto.itemHashIds.Length : 0;
             int previousItemCapacity = dto.itemIds != null ? dto.itemIds.Length : 0;
             int previousCountCapacity = dto.collectedCounts != null ? dto.collectedCounts.Length : 0;
+            int previousIdentityCapacity = math.max(previousHashCapacity, previousItemCapacity);
             int entryBound = math.min(
                 ResourceScarcityDTO.MaxTrackedResources,
-                math.min(previousHashCapacity, math.min(previousItemCapacity, previousCountCapacity)));
+                math.min(previousIdentityCapacity, previousCountCapacity));
 
             dto.EnsureCapacity();
             if (dto.itemHashIds.Length != previousHashCapacity ||
@@ -1315,52 +1998,195 @@ namespace Hecton8.SaveSystem
                 steps.Add("resource scarcity entry count clamped");
             }
 
+            bool repairedHashes = false;
+            bool repairedCounts = false;
             for (int i = 0; i < dto.entryCount; i++)
             {
                 if (dto.itemHashIds[i] == 0 && !string.IsNullOrWhiteSpace(dto.itemIds[i]))
                 {
                     dto.itemHashIds[i] = LocHash.Compute(dto.itemIds[i]);
                     changed = true;
-                    steps.Add("resource scarcity hash repaired");
+                    repairedHashes = true;
                 }
 
                 if (dto.collectedCounts[i] < 0)
                 {
                     dto.collectedCounts[i] = 0;
                     changed = true;
+                    repairedCounts = true;
                 }
+            }
+
+            if (repairedHashes)
+                steps.Add("resource scarcity hash repaired");
+            if (repairedCounts)
+                steps.Add("resource scarcity collected counts repaired");
+
+            return changed;
+        }
+
+        private static bool EnsureAtlas6DirectiveState(SaveData data, List<string> steps)
+        {
+            if (data == null)
+                return false;
+
+            bool changed = false;
+            int safePlayerStatus = IsKnownAtlas6PlayerStatus(data.atlas6PlayerStatus)
+                ? data.atlas6PlayerStatus
+                : 0;
+            int safeBarterCount = math.max(0, data.atlas6BarterCount);
+
+            if (data.atlas6PlayerStatus != safePlayerStatus ||
+                data.atlas6BarterCount != safeBarterCount)
+            {
+                data.atlas6PlayerStatus = safePlayerStatus;
+                data.atlas6BarterCount = safeBarterCount;
+                changed = true;
+                steps.Add("atlas6 directive state repaired");
             }
 
             return changed;
         }
 
+        private static bool EnsureAtlas6Liability(SaveData data, int sourceVersion, List<string> steps)
+        {
+            if (data == null)
+                return false;
+
+            bool changed = false;
+            int previousWorkerTagCapacity = data.atlas6LiabilityRecoveredWorkerTagHashes != null
+                ? data.atlas6LiabilityRecoveredWorkerTagHashes.Length
+                : 0;
+            SaveData.EnsureExactArrayCapacity(
+                ref data.atlas6LiabilityRecoveredWorkerTagHashes,
+                SaveData.MaxAtlas6LiabilityWorkerTags);
+            if (data.atlas6LiabilityRecoveredWorkerTagHashes.Length != previousWorkerTagCapacity)
+            {
+                changed = true;
+                steps.Add("atlas6 liability worker-tag capacity repaired");
+            }
+
+            if (sourceVersion < SaveData.Atlas6LiabilityPersistenceVersion)
+            {
+                bool hadUnpersistedState =
+                    !Approximately(data.atlas6LiabilitySectorXenonOmegaYield, 0f) ||
+                    data.atlas6LiabilityHasDisasterEvidence ||
+                    data.atlas6LiabilityRecoveredWorkerTagCount != 0 ||
+                    !Approximately(data.atlas6LiabilityCorporateHostilityIndex, 0f) ||
+                    !Approximately(data.atlas6LiabilityCorporateCreditBalance, 5000f) ||
+                    data.atlas6LiabilityExtractionCarrierState != 0 ||
+                    !Approximately(data.atlas6LiabilityBiomatterExposureLevel, 0f) ||
+                    data.atlas6LiabilityHaldaneLockoutActive ||
+                    !Approximately(data.atlas6LiabilityPressureSealIntegrity, 1f) ||
+                    data.atlas6LiabilityBulkheadLocked;
+
+                for (int i = 0; i < data.atlas6LiabilityRecoveredWorkerTagHashes.Length; i++)
+                {
+                    if (data.atlas6LiabilityRecoveredWorkerTagHashes[i] != 0u)
+                    {
+                        hadUnpersistedState = true;
+                        break;
+                    }
+                }
+
+                data.atlas6LiabilitySectorXenonOmegaYield = 0f;
+                data.atlas6LiabilityHasDisasterEvidence = false;
+                data.atlas6LiabilityRecoveredWorkerTagCount = 0;
+                Array.Clear(
+                    data.atlas6LiabilityRecoveredWorkerTagHashes,
+                    0,
+                    data.atlas6LiabilityRecoveredWorkerTagHashes.Length);
+                data.atlas6LiabilityCorporateHostilityIndex = 0f;
+                data.atlas6LiabilityCorporateCreditBalance = 5000f;
+                data.atlas6LiabilityExtractionCarrierState = 0;
+                data.atlas6LiabilityBiomatterExposureLevel = 0f;
+                data.atlas6LiabilityHaldaneLockoutActive = false;
+                data.atlas6LiabilityPressureSealIntegrity = 1f;
+                data.atlas6LiabilityBulkheadLocked = false;
+
+                if (hadUnpersistedState)
+                {
+                    changed = true;
+                    steps.Add("atlas6 liability state defaulted");
+                }
+
+                return changed;
+            }
+
+            float safeYield = ClampFinite(
+                data.atlas6LiabilitySectorXenonOmegaYield,
+                0f,
+                SaveData.Atlas6LiabilityMaxTrackedSectorYield);
+            float safeHostility = SanitizeNonNegativeFinite(data.atlas6LiabilityCorporateHostilityIndex);
+            float safeCredit = SanitizeNonNegativeFinite(data.atlas6LiabilityCorporateCreditBalance);
+            int safeCarrierState = IsKnownAtlas6CarrierState(data.atlas6LiabilityExtractionCarrierState)
+                ? data.atlas6LiabilityExtractionCarrierState
+                : 0;
+            float safeBiomatterExposure = ClampFinite(
+                data.atlas6LiabilityBiomatterExposureLevel,
+                0f,
+                SaveData.Atlas6LiabilityMaxBiomatterExposure);
+            float safeSealIntegrity = ClampFinite(data.atlas6LiabilityPressureSealIntegrity, 1f, 0f, 1f);
+            int safeWorkerTagCount = math.clamp(
+                data.atlas6LiabilityRecoveredWorkerTagCount,
+                0,
+                data.atlas6LiabilityRecoveredWorkerTagHashes.Length);
+
+            if (!Approximately(data.atlas6LiabilitySectorXenonOmegaYield, safeYield) ||
+                !Approximately(data.atlas6LiabilityCorporateHostilityIndex, safeHostility) ||
+                !Approximately(data.atlas6LiabilityCorporateCreditBalance, safeCredit) ||
+                data.atlas6LiabilityExtractionCarrierState != safeCarrierState ||
+                !Approximately(data.atlas6LiabilityBiomatterExposureLevel, safeBiomatterExposure) ||
+                !Approximately(data.atlas6LiabilityPressureSealIntegrity, safeSealIntegrity) ||
+                data.atlas6LiabilityRecoveredWorkerTagCount != safeWorkerTagCount)
+            {
+                data.atlas6LiabilitySectorXenonOmegaYield = safeYield;
+                data.atlas6LiabilityCorporateHostilityIndex = safeHostility;
+                data.atlas6LiabilityCorporateCreditBalance = safeCredit;
+                data.atlas6LiabilityExtractionCarrierState = safeCarrierState;
+                data.atlas6LiabilityBiomatterExposureLevel = safeBiomatterExposure;
+                data.atlas6LiabilityPressureSealIntegrity = safeSealIntegrity;
+                data.atlas6LiabilityRecoveredWorkerTagCount = safeWorkerTagCount;
+                changed = true;
+                steps.Add("atlas6 liability values repaired");
+            }
+
+            bool clearedTail = false;
+            for (int i = data.atlas6LiabilityRecoveredWorkerTagCount;
+                 i < data.atlas6LiabilityRecoveredWorkerTagHashes.Length;
+                 i++)
+            {
+                if (data.atlas6LiabilityRecoveredWorkerTagHashes[i] == 0u)
+                    continue;
+
+                data.atlas6LiabilityRecoveredWorkerTagHashes[i] = 0u;
+                clearedTail = true;
+            }
+
+            if (clearedTail)
+            {
+                changed = true;
+                steps.Add("atlas6 liability worker-tag tail cleared");
+            }
+
+            return changed;
+        }
+
+        private static bool IsKnownAtlas6CarrierState(int carrierState)
+        {
+            return carrierState >= 0 && carrierState <= 4;
+        }
+
+        private static bool IsKnownAtlas6PlayerStatus(int playerStatus)
+        {
+            return playerStatus >= 0 && playerStatus <= 5;
+        }
+
         private static bool EnsureEnvironmentalStrain(ref EnvironmentalStrainDTO dto, List<string> steps)
         {
-            bool changed = false;
-
-            if (dto.microplasticStrain < 0f)
-            {
-                dto.microplasticStrain = 0f;
-                changed = true;
-            }
-
-            if (dto.generalPollution < 0f)
-            {
-                dto.generalPollution = 0f;
-                changed = true;
-            }
-
-            if (dto.recycledPlasticItemCount < 0)
-            {
-                dto.recycledPlasticItemCount = 0;
-                changed = true;
-            }
-
-            if (dto.discardedItemCount < 0)
-            {
-                dto.discardedItemCount = 0;
-                changed = true;
-            }
+            EnvironmentalStrainDTO safeDto = EnvironmentalStrainDTO.SanitizeForPersistence(in dto);
+            bool changed = !EnvironmentalStrainDTO.PersistenceEquals(in dto, in safeDto);
+            dto = safeDto;
 
             if (changed)
                 steps.Add("environmental strain values clamped");
@@ -1427,7 +2253,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("construction count clamped");
             }
 
-            int clampedGraphNodeCount = math.clamp(dto.graphNodeCount, 0, graphNodeBound);
+            int clampedGraphNodeCount = math.clamp(dto.graphNodeCount, 0, Math.Min(graphNodeBound, dto.moduleCount));
             if (clampedGraphNodeCount != dto.graphNodeCount)
             {
                 dto.graphNodeCount = clampedGraphNodeCount;
@@ -1443,7 +2269,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("construction graph edge count clamped");
             }
 
-            int clampedBlitCount = math.clamp(dto.moduleBlitCount, 0, moduleBlitBound);
+            int clampedBlitCount = math.clamp(dto.moduleBlitCount, 0, Math.Min(moduleBlitBound, dto.moduleCount));
             if (clampedBlitCount != dto.moduleBlitCount)
             {
                 dto.moduleBlitCount = clampedBlitCount;
@@ -1451,7 +2277,10 @@ namespace Hecton8.SaveSystem
                 steps.Add("construction blit count clamped");
             }
 
-            int clampedFloodCount = math.clamp(dto.habitatFloodStateCount, 0, habitatFloodBound);
+            int clampedFloodCount = math.clamp(
+                dto.habitatFloodStateCount,
+                0,
+                Math.Min(habitatFloodBound, dto.moduleCount));
             if (clampedFloodCount != dto.habitatFloodStateCount)
             {
                 dto.habitatFloodStateCount = clampedFloodCount;
@@ -1459,8 +2288,123 @@ namespace Hecton8.SaveSystem
                 steps.Add("construction flood count clamped");
             }
 
+            bool repairedFloodStates = false;
+            for (int i = 0; i < dto.habitatFloodStateCount; i++)
+            {
+                HabitatFloodStateDTO floodState = dto.habitatFloodStates[i];
+                HabitatFloodStateDTO safeFloodState = HabitatFloodStateDTO.Sanitize(in floodState);
+                if (HabitatFloodStateDTO.PersistenceEquals(in floodState, in safeFloodState))
+                    continue;
+
+                dto.habitatFloodStates[i] = safeFloodState;
+                repairedFloodStates = true;
+                changed = true;
+            }
+
+            if (repairedFloodStates)
+                steps.Add("construction flood states repaired");
+
+            bool repairedModules = false;
+            for (int i = 0; i < dto.moduleCount; i++)
+            {
+                ModuleDTO module = dto.modules[i];
+                bool moduleChanged = ModuleDTO.SanitizeForPersistenceInPlace(ref module);
+                bool capacityChanged = !HasExactModuleNestedArrayCapacity(in module);
+                if (capacityChanged)
+                {
+                    module.EnsureNestedArrayCapacity();
+                    moduleChanged |= ModuleDTO.SanitizeForPersistenceInPlace(ref module);
+                }
+
+                if (!moduleChanged && !capacityChanged)
+                    continue;
+
+                dto.modules[i] = module;
+                repairedModules = true;
+                changed = true;
+            }
+
+            if (repairedModules)
+                steps.Add("construction module state repaired");
+
+            bool repairedGraphNodes = false;
+            for (int i = 0; i < dto.graphNodeCount; i++)
+            {
+                ModuleGraphNodeDTO graphNode = dto.graphNodes[i];
+                ModuleGraphNodeDTO safeGraphNode = ModuleGraphNodeDTO.SanitizeForPersistence(in graphNode);
+                if (ModuleGraphNodeDTO.PersistenceEquals(in graphNode, in safeGraphNode))
+                    continue;
+
+                dto.graphNodes[i] = safeGraphNode;
+                repairedGraphNodes = true;
+                changed = true;
+            }
+
+            if (repairedGraphNodes)
+                steps.Add("construction graph nodes repaired");
+
+            bool repairedGraphEdges = false;
+            int graphEdgeWriteIndex = 0;
+            for (int i = 0; i < dto.graphEdgeCount; i++)
+            {
+                ModuleGraphEdgeDTO graphEdge = dto.graphEdges[i];
+                if (!ModuleGraphEdgeDTO.TrySanitizeForPersistence(
+                        in graphEdge,
+                        dto.graphNodeCount,
+                        out ModuleGraphEdgeDTO safeGraphEdge))
+                {
+                    repairedGraphEdges = true;
+                    changed = true;
+                    continue;
+                }
+
+                if (ModuleGraphEdgeDTO.ContainsPersistenceEdge(dto.graphEdges, graphEdgeWriteIndex, in safeGraphEdge))
+                {
+                    repairedGraphEdges = true;
+                    changed = true;
+                    continue;
+                }
+
+                if (graphEdgeWriteIndex != i ||
+                    !ModuleGraphEdgeDTO.PersistenceEquals(in graphEdge, in safeGraphEdge))
+                {
+                    repairedGraphEdges = true;
+                    changed = true;
+                }
+
+                dto.graphEdges[graphEdgeWriteIndex] = safeGraphEdge;
+                graphEdgeWriteIndex++;
+            }
+
+            if (graphEdgeWriteIndex != dto.graphEdgeCount)
+            {
+                dto.graphEdgeCount = graphEdgeWriteIndex;
+                repairedGraphEdges = true;
+                changed = true;
+            }
+
+            if (repairedGraphEdges)
+                steps.Add("construction graph edges repaired");
+
+            bool repairedBlitRecords = false;
+            for (int i = 0; i < dto.moduleBlitCount; i++)
+            {
+                ModuleBlitDTO blitRecord = dto.moduleBlitRecords[i];
+                ModuleBlitDTO safeBlitRecord = ModuleBlitDTO.SanitizeForPersistence(in blitRecord);
+                if (ModuleBlitDTO.PersistenceEquals(in blitRecord, in safeBlitRecord))
+                    continue;
+
+                dto.moduleBlitRecords[i] = safeBlitRecord;
+                repairedBlitRecords = true;
+                changed = true;
+            }
+
+            if (repairedBlitRecords)
+                steps.Add("construction blit records repaired");
+
             if (sourceVersion < 2 && dto.modules != null)
             {
+                bool repairedLegacyIntegrity = false;
                 for (int i = 0; i < dto.moduleCount; i++)
                 {
                     ModuleDTO module = dto.modules[i];
@@ -1468,11 +2412,12 @@ namespace Hecton8.SaveSystem
                     {
                         module.integrity = LegacyModuleIntegrityDefault;
                         dto.modules[i] = module;
+                        repairedLegacyIntegrity = true;
                         changed = true;
                     }
                 }
 
-                if (changed)
+                if (repairedLegacyIntegrity)
                     steps.Add("legacy construction integrity restored");
             }
 
@@ -1495,6 +2440,60 @@ namespace Hecton8.SaveSystem
                 if (repairedHealth)
                     steps.Add("construction health mirror repaired");
             }
+
+            changed |= EnsureHabitatFloodStateMirrors(ref dto, steps);
+            return changed;
+        }
+
+        private static bool HasExactModuleNestedArrayCapacity(in ModuleDTO module)
+        {
+            return module.sorterBufferedItemIds != null &&
+                   module.sorterBufferedItemIds.Length == ModuleDTO.MaxSorterBufferedSlots &&
+                   module.sorterBufferedQuantities != null &&
+                   module.sorterBufferedQuantities.Length == ModuleDTO.MaxSorterBufferedSlots &&
+                   module.cultivationSeedItemIds != null &&
+                   module.cultivationSeedItemIds.Length == ModuleDTO.MaxCultivationSlots &&
+                   module.cultivationGeneticsMasks != null &&
+                   module.cultivationGeneticsMasks.Length == ModuleDTO.MaxCultivationSlots &&
+                   module.cultivationGrowth01 != null &&
+                   module.cultivationGrowth01.Length == ModuleDTO.MaxCultivationSlots &&
+                   module.cultivationQuality01 != null &&
+                   module.cultivationQuality01.Length == ModuleDTO.MaxCultivationSlots;
+        }
+
+        private static bool EnsureHabitatFloodStateMirrors(ref ConstructionDTO dto, List<string> steps)
+        {
+            if (dto.moduleCount <= 0 || dto.modules == null || dto.habitatFloodStates == null)
+                return false;
+
+            int moduleCount = math.clamp(
+                dto.moduleCount,
+                0,
+                Math.Min(ConstructionDTO.MaxModules, dto.modules.Length));
+            if (moduleCount <= 0)
+                return false;
+
+            bool changed = false;
+            if (dto.habitatFloodStateCount != moduleCount)
+            {
+                dto.habitatFloodStateCount = moduleCount;
+                changed = true;
+            }
+
+            for (int i = 0; i < moduleCount; i++)
+            {
+                int moduleHashId = dto.ResolveHabitatFloodStateModuleHashId(i);
+                HabitatFloodStateDTO expected = HabitatFloodStateDTO.FromModule(in dto.modules[i], moduleHashId);
+                HabitatFloodStateDTO current = dto.habitatFloodStates[i];
+                if (HabitatFloodStateDTO.PersistenceEquals(in current, in expected))
+                    continue;
+
+                dto.habitatFloodStates[i] = expected;
+                changed = true;
+            }
+
+            if (changed)
+                steps.Add("construction flood mirrors refreshed");
 
             return changed;
         }
@@ -1551,6 +2550,38 @@ namespace Hecton8.SaveSystem
                 steps.Add("hibernated fauna state count clamped");
             }
 
+            bool repairedFaunaStates = false;
+            for (int i = 0; i < dto.faunaStateCount; i++)
+            {
+                ProceduralFaunaStateDTO state = dto.faunaStates[i];
+                ProceduralFaunaStateDTO safeState = ProceduralFaunaStateDTO.SanitizeForPersistence(in state);
+                if (ProceduralFaunaStateDTO.PersistenceEquals(in state, in safeState))
+                    continue;
+
+                dto.faunaStates[i] = safeState;
+                repairedFaunaStates = true;
+                changed = true;
+            }
+
+            if (repairedFaunaStates)
+                steps.Add("procedural fauna states repaired");
+
+            bool repairedHibernatedFaunaStates = false;
+            for (int i = 0; i < dto.hibernatedFaunaCount; i++)
+            {
+                HibernatedFaunaStateDTO state = dto.hibernatedFaunaStates[i];
+                HibernatedFaunaStateDTO safeState = HibernatedFaunaStateDTO.SanitizeForPersistence(in state);
+                if (HibernatedFaunaStateDTO.PersistenceEquals(in state, in safeState))
+                    continue;
+
+                dto.hibernatedFaunaStates[i] = safeState;
+                repairedHibernatedFaunaStates = true;
+                changed = true;
+            }
+
+            if (repairedHibernatedFaunaStates)
+                steps.Add("hibernated fauna states repaired");
+
             int clampedSeamStates = math.clamp(dto.geologySeamStateCount, 0, geologySeamBound);
             if (clampedSeamStates != dto.geologySeamStateCount)
             {
@@ -1566,6 +2597,38 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("procedural geology cave entrance count clamped");
             }
+
+            bool repairedGeologySeamStates = false;
+            for (int i = 0; i < dto.geologySeamStateCount; i++)
+            {
+                ProceduralGeologySeamStateDTO state = dto.geologySeamStates[i];
+                ProceduralGeologySeamStateDTO safeState = ProceduralGeologySeamStateDTO.SanitizeForPersistence(in state);
+                if (ProceduralGeologySeamStateDTO.PersistenceEquals(in state, in safeState))
+                    continue;
+
+                dto.geologySeamStates[i] = safeState;
+                repairedGeologySeamStates = true;
+                changed = true;
+            }
+
+            if (repairedGeologySeamStates)
+                steps.Add("procedural geology seam states repaired");
+
+            bool repairedGeologyCaveEntrances = false;
+            for (int i = 0; i < dto.geologyCaveEntranceCount; i++)
+            {
+                ProceduralGeologyCaveEntranceDTO entrance = dto.geologyCaveEntrances[i];
+                ProceduralGeologyCaveEntranceDTO safeEntrance = ProceduralGeologyCaveEntranceDTO.SanitizeForPersistence(in entrance);
+                if (ProceduralGeologyCaveEntranceDTO.PersistenceEquals(in entrance, in safeEntrance))
+                    continue;
+
+                dto.geologyCaveEntrances[i] = safeEntrance;
+                repairedGeologyCaveEntrances = true;
+                changed = true;
+            }
+
+            if (repairedGeologyCaveEntrances)
+                steps.Add("procedural geology cave entrances repaired");
 
             return changed;
         }
@@ -1608,6 +2671,29 @@ namespace Hecton8.SaveSystem
                 steps.Add("scan log recent count clamped");
             }
 
+            bool repairedEntries = false;
+            for (int i = 0; i < dto.entryCount; i++)
+            {
+                ScanEntryDTO entry = dto.entries[i];
+                ScanEntryDTO safeEntry = ScanEntryDTO.SanitizeForPersistence(in entry);
+                if (ScanEntryDTO.PersistenceEquals(in entry, in safeEntry))
+                    continue;
+
+                dto.entries[i] = safeEntry;
+                repairedEntries = true;
+                changed = true;
+            }
+
+            if (repairedEntries)
+                steps.Add("scan log entries repaired");
+
+            changed |= CompactNonBlankStringArrayEntries(
+                dto.recentEntryIds,
+                ref dto.recentCount,
+                ScanLogDTO.MaxRecentEntries,
+                "scan log recent ids repaired",
+                steps);
+
             return changed;
         }
 
@@ -1641,6 +2727,38 @@ namespace Hecton8.SaveSystem
                 steps.Add("barter transaction count clamped");
             }
 
+            bool repairedOfferStates = false;
+            for (int i = 0; i < dto.stateCount; i++)
+            {
+                BarterOfferStateDTO offerState = dto.offerStates[i];
+                BarterOfferStateDTO safeOfferState = BarterOfferStateDTO.SanitizeForPersistence(in offerState);
+                if (BarterOfferStateDTO.PersistenceEquals(in offerState, in safeOfferState))
+                    continue;
+
+                dto.offerStates[i] = safeOfferState;
+                repairedOfferStates = true;
+                changed = true;
+            }
+
+            if (repairedOfferStates)
+                steps.Add("barter offer states repaired");
+
+            bool repairedTransactions = false;
+            for (int i = 0; i < dto.recentTransactionCount; i++)
+            {
+                BarterTransactionDTO transaction = dto.recentTransactions[i];
+                BarterTransactionDTO safeTransaction = BarterTransactionDTO.SanitizeForPersistence(in transaction);
+                if (BarterTransactionDTO.PersistenceEquals(in transaction, in safeTransaction))
+                    continue;
+
+                dto.recentTransactions[i] = safeTransaction;
+                repairedTransactions = true;
+                changed = true;
+            }
+
+            if (repairedTransactions)
+                steps.Add("barter transactions repaired");
+
             return changed;
         }
 
@@ -1663,6 +2781,22 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("field log count clamped");
             }
+
+            bool repairedEntries = false;
+            for (int i = 0; i < dto.recentCount; i++)
+            {
+                FieldOperationEntryDTO entry = dto.recentEntries[i];
+                FieldOperationEntryDTO safeEntry = FieldOperationEntryDTO.SanitizeForPersistence(in entry);
+                if (FieldOperationEntryDTO.PersistenceEquals(in entry, in safeEntry))
+                    continue;
+
+                dto.recentEntries[i] = safeEntry;
+                repairedEntries = true;
+                changed = true;
+            }
+
+            if (repairedEntries)
+                steps.Add("field log entries repaired");
 
             return changed;
         }
@@ -1687,6 +2821,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("beacon count clamped");
             }
 
+            bool repairedBeaconEntries = false;
             for (int i = 0; i < dto.activeCount; i++)
             {
                 BeaconEntryDTO entry = dto.entries[i];
@@ -1703,14 +2838,19 @@ namespace Hecton8.SaveSystem
                     changed = true;
                 }
 
-                if (entry.lightRange <= 0f)
+                BeaconEntryDTO safeEntry = BeaconEntryDTO.SanitizeForPersistence(in entry);
+                if (!BeaconEntryDTO.PersistenceEquals(in entry, in safeEntry))
                 {
-                    entry.lightRange = LegacyBeaconLightRangeDefault;
+                    entry = safeEntry;
+                    repairedBeaconEntries = true;
                     changed = true;
                 }
 
                 dto.entries[i] = entry;
             }
+
+            if (repairedBeaconEntries)
+                steps.Add("beacon entries repaired");
 
             if (dto.nextSequence <= 0)
             {
@@ -1738,6 +2878,10 @@ namespace Hecton8.SaveSystem
                 data.audioLogDiscoveredIds,
                 SaveData.MaxLegacyAudioLogDiscoveredIds,
                 "audioLog list capped",
+                steps);
+            changed |= CompactNonBlankStringListEntries(
+                data.audioLogDiscoveredIds,
+                "audioLog ids repaired",
                 steps);
 
             if (!AudioLogDiscoveryBitMask.HasExpectedCapacity(data.audioLogDiscoveryBitWords))
@@ -1784,12 +2928,21 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("encrypted audio-log fragment count clamped");
             }
+            changed |= ClearEncryptedAudioLogFragmentTail(data, steps);
 
-            if (!IndustrialLoreBitMask.HasExpectedCapacity(data.industrialLoreUnlockWords))
+            if (data.industrialLoreUnlockWords == null ||
+                data.industrialLoreUnlockWords.Length != IndustrialLoreBitMask.WordCount)
             {
-                IndustrialLoreBitMask.EnsureCapacity(ref data.industrialLoreUnlockWords);
+                SaveData.EnsureExactArrayCapacity(
+                    ref data.industrialLoreUnlockWords,
+                    IndustrialLoreBitMask.WordCount);
                 changed = true;
                 steps.Add("industrial lore bit words created");
+            }
+            if (IndustrialLoreBitMask.SanitizeWords(data.industrialLoreUnlockWords))
+            {
+                changed = true;
+                steps.Add("industrial lore bit words repaired");
             }
 
             if (data.dataArchaeologyDiscoveryBitWords == null ||
@@ -1842,6 +2995,23 @@ namespace Hecton8.SaveSystem
                 steps.Add("data archaeology partial count clamped");
             }
 
+            bool repairedArchaeologyPartialProgress = false;
+            for (int i = 0; i < data.dataArchaeologyPartialScanCount; i++)
+            {
+                ushort safeProgress = (ushort)Math.Min(
+                    data.dataArchaeologyPartialScanProgressPermille[i],
+                    MaxDataArchaeologyPartialProgressPermille);
+                if (safeProgress == data.dataArchaeologyPartialScanProgressPermille[i])
+                    continue;
+
+                data.dataArchaeologyPartialScanProgressPermille[i] = safeProgress;
+                repairedArchaeologyPartialProgress = true;
+                changed = true;
+            }
+
+            if (repairedArchaeologyPartialProgress)
+                steps.Add("data archaeology partial progress repaired");
+
             int archaeologyScanStateBound = ClampArrayLength(
                 data.dataArchaeologyScanStateKeys,
                 SaveData.MaxDataArchaeologyScanStates);
@@ -1880,6 +3050,23 @@ namespace Hecton8.SaveSystem
                 steps.Add("data archaeology scan-state count clamped");
             }
 
+            bool repairedArchaeologyScanStateValues = false;
+            for (int i = 0; i < data.dataArchaeologyScanStateCount; i++)
+            {
+                byte safeValue = data.dataArchaeologyScanStateValues[i] <= MaxDataArchaeologyScanStateValue
+                    ? data.dataArchaeologyScanStateValues[i]
+                    : (byte)0;
+                if (safeValue == data.dataArchaeologyScanStateValues[i])
+                    continue;
+
+                data.dataArchaeologyScanStateValues[i] = safeValue;
+                repairedArchaeologyScanStateValues = true;
+                changed = true;
+            }
+
+            if (repairedArchaeologyScanStateValues)
+                steps.Add("data archaeology scan-state values repaired");
+
             if (data.questActiveIds == null)
             {
                 data.questActiveIds = new System.Collections.Generic.List<string>();
@@ -1890,6 +3077,10 @@ namespace Hecton8.SaveSystem
                 data.questActiveIds,
                 SaveData.MaxLegacyQuestIds,
                 "quest active list capped",
+                steps);
+            changed |= CompactNonBlankStringListEntries(
+                data.questActiveIds,
+                "quest active ids repaired",
                 steps);
 
             if (data.questCompletedIds == null)
@@ -1903,6 +3094,10 @@ namespace Hecton8.SaveSystem
                 SaveData.MaxLegacyQuestIds,
                 "quest completed list capped",
                 steps);
+            changed |= CompactNonBlankStringListEntries(
+                data.questCompletedIds,
+                "quest completed ids repaired",
+                steps);
 
             if (data.suitInstalledUpgradeIds == null)
             {
@@ -1914,6 +3109,10 @@ namespace Hecton8.SaveSystem
                 data.suitInstalledUpgradeIds,
                 SaveData.MaxSuitUpgradeIds,
                 "suit upgrades list capped",
+                steps);
+            changed |= CompactNonBlankStringListEntries(
+                data.suitInstalledUpgradeIds,
+                "suit upgrade ids repaired",
                 steps);
 
             if (data.suitUnlockedBlueprintIds == null)
@@ -1927,6 +3126,10 @@ namespace Hecton8.SaveSystem
                 SaveData.MaxSuitUpgradeIds,
                 "suit blueprints list capped",
                 steps);
+            changed |= CompactNonBlankStringListEntries(
+                data.suitUnlockedBlueprintIds,
+                "suit blueprint ids repaired",
+                steps);
 
             if (data.corporateReceivedOrderIds == null)
             {
@@ -1938,6 +3141,10 @@ namespace Hecton8.SaveSystem
                 data.corporateReceivedOrderIds,
                 SaveData.MaxCorporateOrderIds,
                 "corporate orders list capped",
+                steps);
+            changed |= CompactNonBlankStringListEntries(
+                data.corporateReceivedOrderIds,
+                "corporate order ids repaired",
                 steps);
 
             if (data.corporatePendingOrderIds == null)
@@ -1959,6 +3166,11 @@ namespace Hecton8.SaveSystem
                 SaveData.MaxCorporateOrderIds,
                 "corporate pending orders capped",
                 steps);
+            changed |= CompactNonBlankStringFloatPairs(
+                data.corporatePendingOrderIds,
+                data.corporatePendingOrderTimers,
+                "corporate pending order ids repaired",
+                steps);
             changed |= EnsureNonNegativeFiniteFloatList(
                 data.corporatePendingOrderTimers,
                 "corporate order timers repaired",
@@ -1975,6 +3187,10 @@ namespace Hecton8.SaveSystem
                 SaveData.MaxMissionIds,
                 "mission active list capped",
                 steps);
+            changed |= CompactNonBlankStringListEntries(
+                data.missionActiveIds,
+                "mission active ids repaired",
+                steps);
 
             if (data.missionCompletedIds == null)
             {
@@ -1987,6 +3203,18 @@ namespace Hecton8.SaveSystem
                 SaveData.MaxMissionIds,
                 "mission completed list capped",
                 steps);
+            changed |= CompactNonBlankStringListEntries(
+                data.missionCompletedIds,
+                "mission completed ids repaired",
+                steps);
+
+            float safeAtlasSignalPulseTimer = SanitizeNonNegativeFinite(data.atlasSignalPulseTimer);
+            if (!Approximately(data.atlasSignalPulseTimer, safeAtlasSignalPulseTimer))
+            {
+                data.atlasSignalPulseTimer = safeAtlasSignalPulseTimer;
+                changed = true;
+                steps.Add("atlas signal pulse timer repaired");
+            }
 
             int inferredRevealStage = data.endingConditionMet
                 ? MaxAtlasRevealStage
@@ -2007,6 +3235,47 @@ namespace Hecton8.SaveSystem
                 data.atlasSignalRevealStage = clampedRevealStage;
                 changed = true;
                 steps.Add("atlas reveal stage repaired");
+            }
+
+            return changed;
+        }
+
+        private static bool ClearEncryptedAudioLogFragmentTail(SaveData data, List<string> steps)
+        {
+            if (data == null)
+                return false;
+
+            int safeCount = math.clamp(
+                data.audioLogEncryptedFragmentCount,
+                0,
+                SaveData.MaxEncryptedAudioLogFragments);
+            bool changed = false;
+
+            if (ClearUIntTail(data.audioLogEncryptedFragmentHashes, safeCount))
+                changed = true;
+            if (ClearUIntTail(data.audioLogEncryptedFragmentBits, safeCount))
+                changed = true;
+
+            if (changed)
+                steps.Add("encrypted audio-log fragment tail cleared");
+
+            return changed;
+        }
+
+        private static bool ClearUIntTail(uint[] values, int startIndex)
+        {
+            if (values == null || startIndex >= values.Length)
+                return false;
+
+            int safeStartIndex = math.clamp(startIndex, 0, values.Length);
+            bool changed = false;
+            for (int i = safeStartIndex; i < values.Length; i++)
+            {
+                if (values[i] == 0u)
+                    continue;
+
+                values[i] = 0u;
+                changed = true;
             }
 
             return changed;

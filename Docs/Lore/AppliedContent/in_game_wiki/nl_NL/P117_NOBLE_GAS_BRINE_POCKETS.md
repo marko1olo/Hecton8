@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Noble Gas Brine Pockets"
+title: "Edelgas-pekelzakken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Noble Gas Brine Pockets
+# Edelgas-pekelzakken
 
-NL LOC HOLD: Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.
+Edelgas-pekelzakken zijn verzegelde drukregistraties in de minerale pekels van HECTON-8. Een bruikbare zak is niet alleen xenon in water; het is gasverhouding, drukcurve, temperatuurlitteken en mineraaldefectrooster die lang genoeg samenblijven om te bewijzen wat ondergronds gebeurde. Ontluchten vernietigt zowel waarde als bewijs. Deze monsters zijn belangrijk omdat Deep Reach-processen, en later Atlas-processen, het juiste drukgeschiedenis-voeder richting Xenon-Omega kunnen duwen, maar de ruwe zak blijft geologie, geen schat op zichzelf.
 
 ## Scanner
 
-NL LOC HOLD: Natural-to-process resource. Valuable only if pressure history survives extraction.
+EDELGAS-PEKELZAK // Afgesloten drukbel in minerale pekel. Waarde blijft alleen bestaan zolang de drukgeschiedenis verzegeld blijft; ontlucht haar en het fortuin wordt weer.
 
 ## Terminal
 
-NL LOC HOLD: RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+GRONDSTOFKLASSE: natuurlijk/procesvoeder. Gebruik drukklokextractie. Monster niet ontluchten of verwarmen. Vereist bewijs: drukcurve, gasverhouding, mineraaldefectkaart.
 
 ## Audio
 
-NL LOC HOLD: Open it wrong and the fortune becomes weather.
+Xenon-Omega begint hier als opgesloten chemie, niet als wondererts.
 
 ## Field Note
 
-NL LOC HOLD: This is where Xenon-Omega begins as chemistry, not magic.
+Open de zak niet om te zien of hij rijk is. Zo maken arme ploegen bellen.
 
 <!-- In-Game Wiki; generated from P117_NOBLE_GAS_BRINE_POCKETS/nl_NL. -->

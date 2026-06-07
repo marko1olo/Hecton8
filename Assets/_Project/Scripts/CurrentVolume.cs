@@ -280,7 +280,11 @@ namespace Hecton8.Physics
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            TryUnregisterDispatchers();
+            if (currentService != null && isActiveAndEnabled)
                 TryRegisterDispatchers();
         }
 

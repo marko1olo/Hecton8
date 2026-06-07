@@ -7,6 +7,9 @@ poi_tags: poi.pressure_glass_certificate;poi.sealant_feedstock_tag
 biome_tags: biome.drowned_crust;biome.vent_forge
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Pressure Glass Field Certificate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

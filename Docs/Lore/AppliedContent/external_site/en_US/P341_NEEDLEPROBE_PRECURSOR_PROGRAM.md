@@ -7,6 +7,9 @@ poi_tags: poi.ran_probe_archive;poi.pellet_lane_log
 biome_tags: biome.orbit;biome.archive
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Needleprobe Precursor Program"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -54,13 +54,13 @@ namespace Hecton8.UI
         private void Awake()
         {
             TryGetComponent(out _button);
-            _audioManager = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _cachedClickAction = OnButtonClicked; // COLD ALLOC: UnityAction[1] — cached UI click audio listener — owner: UIButtonAudioTrigger
         }
 
         private void OnEnable()
         {
-            _audioManager = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             TryRegisterHotSwapListener();
             if (_button != null)
                 _button.onClick.AddListener(_cachedClickAction);
@@ -84,7 +84,7 @@ namespace Hecton8.UI
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
-                _audioManager = currentService as IAudioService;
+                CacheAudioService(currentService as IAudioService);
         }
 
         // ----------------------------------------------------------
@@ -93,10 +93,37 @@ namespace Hecton8.UI
 
         private void OnButtonClicked()
         {
-            if (_audioManager == null || clickSound == null)
+            IAudioService audioManager = ResolveAudioService();
+            if (audioManager == null || clickSound == null)
                 return;
 
-            _audioManager.PlayStatic2D(clickSound, volume, _audioManager.InterfaceGroup);
+            audioManager.PlayStatic2D(clickSound, volume, audioManager.InterfaceGroup);
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioManager = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioManager;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioManager = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()

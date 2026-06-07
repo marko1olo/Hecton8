@@ -263,18 +263,11 @@ namespace Hecton8.World
             private static NativeArray<T> AllocateArray<T>(int length, NativeArrayOptions options, string label)
                 where T : struct
             {
-                NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);
-                try
-                {
-                    NativeMemorySentinel.RegisterNativeArray(array, OwnerName, label, NativeAllocationLifetime.Session);
-                    return array;
-                }
-                catch
-                {
-                    if (array.IsCreated)
-                        array.Dispose();
-                    throw;
-                }
+                NativeArray<T> array = H8Memory.Allocate<T>(length, OwnerSystemId, Allocator.Persistent, options);
+                if (!array.IsCreated)
+                    throw new InvalidOperationException($"{OwnerName} native allocation failed for {label}.");
+
+                return array;
             }
 
             private static void DisposeArray<T>(ref NativeArray<T> array)
@@ -286,9 +279,7 @@ namespace Hecton8.World
                     return;
                 }
 
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                array.Dispose();
-                array = default;
+                H8Memory.Release(ref array, OwnerSystemId);
             }
         }
 

@@ -1286,6 +1286,10 @@ namespace Hecton8.Core.Data
         static H8StaticDataEditorHotReloadBootstrap()
         {
             EditorApplication.update += Tick;
+            AssemblyReloadEvents.beforeAssemblyReload -= DisposeWatcher;
+            AssemblyReloadEvents.beforeAssemblyReload += DisposeWatcher;
+            EditorApplication.quitting -= DisposeWatcher;
+            EditorApplication.quitting += DisposeWatcher;
         }
 
         private static void Tick()
@@ -1294,6 +1298,15 @@ namespace Hecton8.Core.Data
                 _watcher = new H8StaticDataHotReloadWatcher();
 
             _watcher.TickEditor();
+        }
+
+        private static void DisposeWatcher()
+        {
+            EditorApplication.update -= Tick;
+            H8StaticDataHotReloadWatcher watcher = _watcher;
+            _watcher = null;
+            if (watcher != null)
+                watcher.Dispose();
         }
     }
 
@@ -1311,12 +1324,7 @@ namespace Hecton8.Core.Data
             if (!Directory.Exists(root))
                 return;
 
-            _watcher = new FileSystemWatcher(root, "*.csv");
-            _watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size;
-            _watcher.Changed += OnChanged;
-            _watcher.Created += OnChanged;
-            _watcher.Renamed += OnRenamed;
-            _watcher.EnableRaisingEvents = true;
+            _watcher = TryCreateHotReloadWatcher(root);
         }
 
         public void TickEditor()
@@ -1346,12 +1354,78 @@ namespace Hecton8.Core.Data
             if (_watcher == null)
                 return;
 
-            _watcher.EnableRaisingEvents = false;
-            _watcher.Changed -= OnChanged;
-            _watcher.Created -= OnChanged;
-            _watcher.Renamed -= OnRenamed;
-            _watcher.Dispose();
+            FileSystemWatcher watcher = _watcher;
             _watcher = null;
+            StopWatcherNoThrow(watcher);
+        }
+
+        private FileSystemWatcher TryCreateHotReloadWatcher(string root)
+        {
+            try
+            {
+                FileSystemWatcher watcher = new FileSystemWatcher(root, "*.csv");
+                watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size;
+                watcher.Changed += OnChanged;
+                watcher.Created += OnChanged;
+                watcher.Renamed += OnRenamed;
+                watcher.EnableRaisingEvents = true;
+                return watcher;
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return null;
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+            catch (NotSupportedException)
+            {
+                return null;
+            }
+            catch (System.Security.SecurityException)
+            {
+                return null;
+            }
+        }
+
+        private void StopWatcherNoThrow(FileSystemWatcher watcher)
+        {
+            try
+            {
+                watcher.EnableRaisingEvents = false;
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (IOException)
+            {
+            }
+
+            watcher.Changed -= OnChanged;
+            watcher.Created -= OnChanged;
+            watcher.Renamed -= OnRenamed;
+
+            try
+            {
+                watcher.Dispose();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (IOException)
+            {
+            }
         }
 
         private void OnChanged(object sender, FileSystemEventArgs args)

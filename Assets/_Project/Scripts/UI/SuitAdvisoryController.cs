@@ -79,13 +79,13 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _cachedAudioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             ResolveReferences();
         }
 
         private void OnEnable()
         {
-            _cachedAudioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             TryRegisterHotSwapListener();
             ResolveReferences();
             RefreshSurvivalSignalBinding();
@@ -115,7 +115,7 @@ namespace Hecton8.UI
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
-                _cachedAudioService = currentService as IAudioService;
+                CacheAudioService(currentService as IAudioService);
         }
 
         private void ResolveReferences()
@@ -515,9 +515,35 @@ namespace Hecton8.UI
             if (clip == null)
                 return;
 
-            IAudioService audio = _cachedAudioService;
+            IAudioService audio = ResolveAudioService();
             if (audio != null)
                 audio.PlayStatic2D(clip, uiVolume);
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _cachedAudioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()

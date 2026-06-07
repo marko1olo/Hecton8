@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "Nativer Sulfidsalz-Stapel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# Nativer Sulfidsalz-Stapel
 
-DE LOC HOLD: Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.
+Native Sulfidsalz-Stapel sind einer der ersten Beweise, dass HECTON-8 nicht nur ein Tatort von Konzernen ist. Sie wachsen dort, wo Schlothitze, Solesickerung und metallreiche Kruste unter Druck aneinander mahlen und schwarzgrüne Salze auf Simsen, Rippen und brüchigen Kaminen hinterlassen. Sie reinigen Leiter, wecken Notzellen, stimmen Keramikfluss ab und töten Werkzeuge, wenn eine Crew sie wie gewöhnliches Erz behandelt. Sie sollten vor blauer Schuld erscheinen: Der Spieler muss lernen, dass der Mond eigene Chemie, eigenen Wert und eigene Gefahren hatte, bevor Deep Reach ihn abstempelte.
 
 ## Scanner
 
-DE LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+NATIVE SULFIDSALZE // Von Schloten aufgereihte Kristalle und schwarze Solekruste, älter als Deep Reach. Nass leitfähig, warm korrosiv, nützlich bevor irgendetwas blau wird.
 
 ## Terminal
 
-DE LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+RESSOURCENKLASSE: native Geologie. Nutzungen: Leiterwäsche, Notzellenchemie, Keramikfluss, Korrosionskatalysator. Von warmer Ansaugluft fernhalten; Staub blüht als Säurefilm auf Anzugmetall auf.
 
 ## Audio
 
-DE LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+Der Mond brauchte keine Firma, um gefährlich zu sein. Er kannte Chemie bereits.
 
 ## Field Note
 
-DE LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+Wenn die Handschuhe jucken, bist du schon spät dran. Spülen, erden, Wand protokollieren.
 
 <!-- In-Game Wiki; generated from P116_NATIVE_SULFIDE_SALT_STACK/de_DE. -->

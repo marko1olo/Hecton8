@@ -383,8 +383,8 @@ namespace Hecton8.World
                     InvalidateCameraBinding();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registered = false;
-                    _registeredLateFrame = false;
+                    TryUnregisterLateFrame();
+                    TryUnregister();
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegister();

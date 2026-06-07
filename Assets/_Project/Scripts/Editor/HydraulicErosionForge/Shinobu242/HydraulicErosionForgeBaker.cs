@@ -774,7 +774,18 @@ namespace Hecton8.Editor.HydraulicErosionForge
             NativeAllocationLifetime lifetime) where T : struct
         {
             NativeArray<T> array = new NativeArray<T>(math.max(0, length), allocator, options);
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
             return array;
         }
 
@@ -785,8 +796,20 @@ namespace Hecton8.Editor.HydraulicErosionForge
         {
             NativeQueue<T> queue = new NativeQueue<T>(Allocator.TempJob);
             int capacity = math.max(1, expectedCapacity);
-            PrewarmQueue(ref queue, capacity);
-            NativeMemorySentinel.RegisterNativeQueue(queue, capacity, NativeMemoryOwner, label, lifetime);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeQueue(queue, capacity, NativeMemoryOwner, label, lifetime);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+
+                PrewarmQueue(ref queue, capacity);
+            }
+            catch
+            {
+                queue.Dispose();
+                throw;
+            }
+
             return queue;
         }
 

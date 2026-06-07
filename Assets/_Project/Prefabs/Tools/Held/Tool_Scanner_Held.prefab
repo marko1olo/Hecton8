@@ -56,7 +56,7 @@ MonoBehaviour:
   scanCooldown: 3
   scanLayerMask:
     serializedVersion: 2
-    m_Bits: 524287
+    m_Bits: 3178377
   pulseDuration: 1.5
   pingVolume: 0.7
   cooldownFeedbackInterval: 0.75

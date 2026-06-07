@@ -9,32 +9,34 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JP LOC HOLD: Silt Ambusher Telegraph"
+title: "シルト伏撃者の予兆"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JP LOC HOLD: Silt Ambusher Telegraph
+# シルト伏撃者の予兆
 
-JP LOC HOLD: Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.
+シルト伏撃者は、視界の悪い深度を恣意的にせず恐ろしくする。落下する有機塵が通常なら微小生物を養う場所で、細かい堆積物の平板の下に横たわる。本物の伏撃床は清潔すぎる。採食する小生物は避ける。細い濾過糸は縁で止まる。スキャナーパルスは低く遅れて戻る。動物の上部膜が音を吸収し、その後で埋もれた筋肉が答えるからだ。
+
+規則は単純だ。プレイヤーは接触前に危険を学べなければならない。清潔な板だけでは足りない。消えた生命、三日月形の継ぎ目、異常なパルス、シルトの遅い呼吸、ランプの下の圧力の震えと組み合わせる。兆候がないなら、遭遇は攻撃ではなく痕跡に留めるべきだ。恐怖は、海底が目の前で嘘をついていたと気づく瞬間から生まれる。
 
 ## Scanner
 
-JP LOC HOLD: A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.
+シルト伏撃床 // 清潔すぎるシルト、消えた採食生物、低いパルス反応が、板が開く前に生きた罠を示す。
 
 ## Terminal
 
-JP LOC HOLD: CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.
+接触規則: 伏撃床には接触前の兆候が最低二つ必要。清潔な板、消えた微小生物、三日月形の縁、低いパルス反応、遅れて呼吸するシルト。兆候予算を満たさない場合、痕跡のみの遭遇へ下げること。
 
 ## Audio
 
-JP LOC HOLD: Flat ground is a lie down here.
+ここで平らな地面は嘘をつく。その上を這っていないものを見ろ。
 
 ## Field Note
 
-JP LOC HOLD: Deep danger must telegraph. The player should learn the wrongness before paying for it.
+深淵はキャラクターに不公平でもよい。ゲームはプレイヤーに不公平であってはならない。すべての伏撃は読める違和感を残せ。
 
 <!-- In-Game Wiki; generated from P230_SILT_AMBUSHER_TELEGRAPH/ja_JP. -->

@@ -1610,6 +1610,9 @@ namespace Hecton8.Bootstrap
                 _slowTickableRegistered = false;
             }
 
+            if (currentService == null || !isActiveAndEnabled)
+                return;
+
             TryRegisterBootstrapSlowTickable();
         }
 
@@ -5153,6 +5156,9 @@ namespace Hecton8.Bootstrap
         private static bool IsBootstrapDependencyHeartbeatReady(BootstrapDependencyNode node)
         {
             object service = ResolveBootstrapDependencyService(node);
+            if (node == BootstrapDependencyNode.SpatialAudioManager)
+                return _headlessBootMode || IsBootstrapAudioServiceUsable(service as IAudioService);
+
             if (service is IServiceHeartbeat heartbeat)
                 return heartbeat.IsServiceReady && heartbeat.HeartbeatState != ServiceHeartbeatState.Failed;
 
@@ -5179,7 +5185,7 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.FaunaSimulation:
                     return service is IFaunaSim faunaSimulation && faunaSimulation.IsReady;
                 case BootstrapDependencyNode.SpatialAudioManager:
-                    return _headlessBootMode || service != null;
+                    return _headlessBootMode || IsBootstrapAudioServiceUsable(service as IAudioService);
                 case BootstrapDependencyNode.ConstructionManager:
                     return service != null || GlobalRegistry.Logistics == null;
                 default:
@@ -6076,7 +6082,7 @@ namespace Hecton8.Bootstrap
                 if (elapsedMilliseconds > OptionalServiceTimeoutMilliseconds)
                     LogOptionalBootstrapWarning("SpatialAudioManager exceeded the optional-service bootstrap budget.");
 
-                if (GlobalRegistry.Audio != null)
+                if (IsBootstrapAudioServiceUsable(GlobalRegistry.Audio))
                     return true;
 
                 return TryRegisterNoOpAudioFallback("SpatialAudioManager did not register IAudioService");
@@ -6102,7 +6108,18 @@ namespace Hecton8.Bootstrap
             LogOptionalBootstrapWarning("Injected NoOp audio service.");
 #endif
             audioService = GlobalRegistry.Audio;
-            return audioService != null;
+            return IsBootstrapAudioServiceUsable(audioService);
+        }
+
+        private static bool IsBootstrapAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]

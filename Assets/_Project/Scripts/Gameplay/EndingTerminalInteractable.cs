@@ -197,23 +197,26 @@ namespace Hecton8.Gameplay
 
         public void OnEndingEvent(in EndingEventPayload payload)
         {
-            switch ((EndingEventType)payload.EventType)
+            if (!TrySanitizeEndingEvent(in payload, out EndingEventType eventType, out EndingChoice choice))
+                return;
+
+            switch (eventType)
             {
                 case EndingEventType.ConditionMet:
                     HandleConditionMet();
                     break;
                 case EndingEventType.Chosen:
-                    HandleEndingChosen((EndingChoice)payload.Choice);
+                    HandleEndingChosen(choice);
                     break;
                 case EndingEventType.SequenceComplete:
-                    HandleEndingChosen((EndingChoice)payload.Choice);
+                    HandleEndingChosen(choice);
                     break;
             }
         }
 
         private void SubmitTerminalChoice(EndingChoice choice)
         {
-            if (!_choiceOpen || choice == EndingChoice.None)
+            if (!_choiceOpen || !IsActionEndingChoice(choice))
                 return;
 
             EndingSystem ending = _cachedEnding;
@@ -238,6 +241,35 @@ namespace Hecton8.Gameplay
         {
             _choiceOpen = false;
             UpdateActiveIndicator();
+        }
+
+        private static bool TrySanitizeEndingEvent(
+            in EndingEventPayload payload,
+            out EndingEventType eventType,
+            out EndingChoice choice)
+        {
+            eventType = (EndingEventType)payload.EventType;
+            choice = (EndingChoice)payload.Choice;
+
+            switch (eventType)
+            {
+                case EndingEventType.ConditionMet:
+                    choice = EndingChoice.None;
+                    return true;
+                case EndingEventType.Chosen:
+                case EndingEventType.SequenceComplete:
+                    return IsActionEndingChoice(choice);
+                default:
+                    eventType = default;
+                    choice = EndingChoice.None;
+                    return false;
+            }
+        }
+
+        private static bool IsActionEndingChoice(EndingChoice choice)
+        {
+            return choice >= EndingChoice.ShutDown &&
+                   choice <= EndingChoice.Amplify;
         }
 
         private void UpdateActiveIndicator()

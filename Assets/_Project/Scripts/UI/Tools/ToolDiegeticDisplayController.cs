@@ -209,8 +209,8 @@ namespace Hecton8.UI.Tools
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredSlowTick = false;
-                _registeredLateFrame = false;
+                TryUnregisterSlowTickable();
+                TryUnregisterLateFrameTickable(clearPendingWork: false);
                 if (currentService != null && isActiveAndEnabled)
                 {
                     TryRegisterSlowTickable();
@@ -1070,13 +1070,16 @@ namespace Hecton8.UI.Tools
             _registeredSlowTick = false;
         }
 
-        private void TryUnregisterLateFrameTickable()
+        private void TryUnregisterLateFrameTickable(bool clearPendingWork = true)
         {
             if (!_registeredLateFrame)
                 return;
 
             SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registeredLateFrame = false;
+            if (!clearPendingWork)
+                return;
+
             _pendingPresentationCommit = false;
             _pendingEnsureRenderTexture = false;
             _pendingReleaseRenderTexture = false;

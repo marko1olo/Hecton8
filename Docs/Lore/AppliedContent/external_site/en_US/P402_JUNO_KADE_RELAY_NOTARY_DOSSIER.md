@@ -7,6 +7,9 @@ poi_tags: poi.juno_kade_notary_seal;poi.relay_witness_tray
 biome_tags: biome.cable_reef;biome.relay_yard
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Juno Kade/Relay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

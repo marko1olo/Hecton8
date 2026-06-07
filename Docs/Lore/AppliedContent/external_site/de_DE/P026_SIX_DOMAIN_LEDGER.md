@@ -7,6 +7,9 @@ poi_tags: poi.domain_plate;poi.route_archive
 biome_tags: biome.drowned_colony;biome.deep_archive
 locale: de_DE
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Sechs-Domänen-Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

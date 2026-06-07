@@ -9,32 +9,34 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Sensor-Tagged Fauna"
+title: "Faune porteuse de capteurs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Sensor-Tagged Fauna
+# Faune porteuse de capteurs
 
-FR LOC HOLD: Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets.
+La faune porteuse de capteurs empêche la couche biomécanique de HECTON-8 de devenir une simple fiction de corruption. Les créatures ne sont pas transformées magiquement en drones. Ce sont des animaux et des colonies qui ont survécu au matériel de surveillance. Le tag est devenu loge, cicatrice, anneau de croissance, cloque minérale ou faux oeil parce que l'écosystème a fait ce que font les écosystèmes: il a poussé autour du dommage.
+
+Chaque fantôme de signal reçoit ainsi une histoire. Un Marauder peut entendre un identifiant Deep Reach faible depuis l'intérieur d'un brouteur à coquille, ou voir un noeud biométallique cligner sur un corps qui ignore les ordres. L'ancienne corporation laisse encore de la paperasse dans la chair, mais la chair n'obéit pas. Atlas peut exploiter le signal, pas posséder l'animal. L'horreur devient plus triste et plus forte: le contrôle industriel a tenté de marquer la vie, la vie a survécu, et la marque continue de rapporter à des systèmes qui ne comprennent plus ce qu'ils entendent.
 
 ## Scanner
 
-FR LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+FAUNE MARQUÉE PAR CAPTEUR // D'anciens tags biométalliques reposent dans anneaux de croissance, cicatrices et loges de coquille; l'animal porte le matériel de surveillance comme histoire corporelle, pas comme obéissance.
 
 ## Terminal
 
-FR LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+NOTE TAG: continuité du signal faible, intégration biologique élevée, réponse de commande non fiable. Traiter comme cicatrice passive, balise intermittente et possible fantôme diagnostique Atlas.
 
 ## Audio
 
-FR LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+L'animal n'est pas un drone. Le drone est une vieille blessure dans l'animal.
 
 ## Field Note
 
-FR LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+L'animal n'est pas un drone. Le drone est une vieille blessure autour de laquelle l'animal a survécu.
 
 <!-- External Site; generated from P234_SENSOR_TAGGED_FAUNA/fr_FR. -->

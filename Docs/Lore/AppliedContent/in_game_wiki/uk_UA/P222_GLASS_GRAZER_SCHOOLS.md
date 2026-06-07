@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Glass Grazer Schools"
+title: "Зграї скляних скребців"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Glass Grazer Schools
+# Зграї скляних скребців
 
-UA LOC HOLD: Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.
+Скляні скребці - перші мілководні тварини, які роблять красу корисною, але не роблять шельф безпечним. Їхні прозорі панцирі й тверді ротові гребені зішкрібають мінеральну плівку з pressure glass, пухких фотичних матів і старих кабельних оболонок. Зграя, що живиться, залишає бліді смуги: вони показують недавню течію, свіжий ріст і найспокійнішу лінію навколо забрудненого шва. Дивись на край зграї, не в центр: вони уникають теплого герметика, кислих розсольних протікань і поверхонь з Atlas-сумісним дрейфом сигналу. Якщо цокання стихає, а їжа лишається, щось більше змінило воду. Очищена смуга - доказ, а не дозвіл мчати вперед.
 
 ## Scanner
 
-UA LOC HOLD: Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.
+ЗГРАЯ СКЛЯНИХ СКРЕБЦІВ // Прозорі панцирні живильники зішкрібають мінеральну плівку з pressure glass і країв фотичних матів. Їхнє цокання відкриває світлі маршрутні шрами; раптова тиша - дані про хижака.
 
 ## Terminal
 
-UA LOC HOLD: FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.
+БАЗОВА ФАУНА: неворожий кластер скребців. Відстежувати плівку pressure glass, свіжий мінеральний наліт, порушення течії та витіснення хижаком. Зникнення після активного живлення - попередження маршруту, а не порожня точка появи.
 
 ## Audio
 
-UA LOC HOLD: Hear the ticking on the shell? That is lunch, map and warning in the same sound.
+Чуєш цокання по панциру? Це їжа, карта і попередження в одному звуці.
 
 ## Field Note
 
-UA LOC HOLD: Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.
+Не женися за зграєю. Читай те, що вона відкриває: свіжу плівку, старий зішкріб, обхід теплого герметика і порожню смугу, яку тварини відмовляються перетинати.
 
 <!-- In-Game Wiki; generated from P222_GLASS_GRAZER_SCHOOLS/uk_UA. -->

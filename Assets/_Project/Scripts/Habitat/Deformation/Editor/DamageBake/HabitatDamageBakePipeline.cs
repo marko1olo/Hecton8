@@ -679,6 +679,9 @@ namespace Hecton8.Habitat.Deformation.Editor
 
     internal sealed class HabitatDamageBakeReport : IDisposable
     {
+        private const string NativeMemoryOwner = nameof(HabitatDamageBakeReport);
+        private const string TelemetryRingLabel = "telemetryRing";
+
         public int MeshesProcessed;
         public int PristineTriangles;
         public int CollapsedTriangles;
@@ -686,6 +689,7 @@ namespace Hecton8.Habitat.Deformation.Editor
         public long BurstTicks;
         public readonly List<string> CriticalWarnings = new List<string>(16);
         private NativeArray<HabitatDamageBakeTelemetryEntry> _telemetryRing;
+        private int _telemetryRingSentinelId;
         private int _telemetryCursor;
 
         public HabitatDamageBakeReport()
@@ -694,6 +698,31 @@ namespace Hecton8.Habitat.Deformation.Editor
                 HabitatDamageBakeVaultContract.TelemetryFrameCount,
                 Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
+            try
+            {
+                _telemetryRingSentinelId = HabitatDamageNativeMemorySentinelBridge.RegisterNativeArray(
+                    _telemetryRing,
+                    NativeMemoryOwner,
+                    TelemetryRingLabel,
+                    "Session");
+            }
+            catch
+            {
+                try
+                {
+                    if (_telemetryRingSentinelId > 0)
+                        HabitatDamageNativeMemorySentinelBridge.Unregister(_telemetryRingSentinelId);
+                    else
+                        HabitatDamageNativeMemorySentinelBridge.UnregisterNativeArray(_telemetryRing);
+                }
+                finally
+                {
+                    _telemetryRing.Dispose();
+                    _telemetryRing = default;
+                    _telemetryRingSentinelId = 0;
+                }
+                throw;
+            }
         }
 
         public void Merge(in HabitatDamageStateBakeResult result)
@@ -752,7 +781,21 @@ namespace Hecton8.Habitat.Deformation.Editor
         public void Dispose()
         {
             if (_telemetryRing.IsCreated)
-                _telemetryRing.Dispose();
+            {
+                try
+                {
+                    if (_telemetryRingSentinelId > 0)
+                        HabitatDamageNativeMemorySentinelBridge.Unregister(_telemetryRingSentinelId);
+                    else
+                        HabitatDamageNativeMemorySentinelBridge.UnregisterNativeArray(_telemetryRing);
+                    _telemetryRingSentinelId = 0;
+                }
+                finally
+                {
+                    _telemetryRing.Dispose();
+                    _telemetryRing = default;
+                }
+            }
         }
 
         private void PushTelemetry(in HabitatDamageStateBakeResult result, uint faultFlags)
@@ -865,6 +908,80 @@ namespace Hecton8.Habitat.Deformation.Editor
         }
     }
 
+    internal static class HabitatDamageNativeMemorySentinelBridge
+    {
+        internal static int RegisterNativeArray<T>(
+            NativeArray<T> array,
+            string owner,
+            string label,
+            string lifetimeName)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return 0;
+
+            Type sentinelType = FindType("Hecton8.Core.NativeMemorySentinel");
+            Type lifetimeType = FindType("Hecton8.Core.NativeAllocationLifetime");
+            if (sentinelType == null || lifetimeType == null)
+                throw new InvalidOperationException("NativeMemorySentinel bridge unavailable for habitat damage bake telemetry.");
+
+            MethodInfo method = sentinelType.GetMethod("RegisterNativeArray", BindingFlags.Public | BindingFlags.Static);
+            if (method == null)
+                throw new InvalidOperationException("NativeMemorySentinel.RegisterNativeArray unavailable for habitat damage bake telemetry.");
+
+            object lifetime = Enum.Parse(lifetimeType, lifetimeName);
+            object id = method.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { array, owner, label, lifetime });
+            if (id is int value && value != 0)
+                return value;
+
+            throw new InvalidOperationException("NativeMemorySentinel rejected habitat damage bake telemetry registration.");
+        }
+
+        internal static void Unregister(int sentinelId)
+        {
+            if (sentinelId <= 0)
+                return;
+
+            Type sentinelType = FindType("Hecton8.Core.NativeMemorySentinel");
+            MethodInfo method = sentinelType != null
+                ? sentinelType.GetMethod("Unregister", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(int) }, null)
+                : null;
+            if (method == null)
+                throw new InvalidOperationException("NativeMemorySentinel.Unregister unavailable for habitat damage bake telemetry.");
+
+            method.Invoke(null, new object[] { sentinelId });
+        }
+
+        internal static void UnregisterNativeArray<T>(NativeArray<T> array)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            Type sentinelType = FindType("Hecton8.Core.NativeMemorySentinel");
+            MethodInfo method = sentinelType != null
+                ? sentinelType.GetMethod("UnregisterNativeArray", BindingFlags.Public | BindingFlags.Static)
+                : null;
+            if (method == null)
+                throw new InvalidOperationException("NativeMemorySentinel.UnregisterNativeArray unavailable for habitat damage bake telemetry.");
+
+            method.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { array });
+        }
+
+        private static Type FindType(string fullName)
+        {
+            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (int i = 0; i < assemblies.Length; i++)
+            {
+                Type type = assemblies[i].GetType(fullName, false);
+                if (type != null)
+                    return type;
+            }
+
+            return null;
+        }
+    }
+
     internal struct HabitatDamageStateBakeResult
     {
         public string MeshName;
@@ -910,6 +1027,8 @@ namespace Hecton8.Habitat.Deformation.Editor
 
     internal static class HabitatDamageBakePipeline
     {
+        private const string NativeMemoryOwner = nameof(HabitatDamageBakePipeline);
+
         private static readonly VertexAttributeDescriptor[] _bakedVertexLayout =
         {
             new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
@@ -918,6 +1037,57 @@ namespace Hecton8.Habitat.Deformation.Editor
             new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float16, 2),
             new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4)
         };
+
+        private static NativeArray<T> AllocateTrackedNativeArray<T>(
+            int length,
+            Allocator allocator,
+            NativeArrayOptions options,
+            string label)
+            where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(math.max(1, length), allocator, options);
+            try
+            {
+                HabitatDamageNativeMemorySentinelBridge.RegisterNativeArray(
+                    array,
+                    NativeMemoryOwner,
+                    label,
+                    NativeLifetimeName(allocator));
+                return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+                throw;
+            }
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                HabitatDamageNativeMemorySentinelBridge.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
+        }
+
+        private static string NativeLifetimeName(Allocator allocator)
+        {
+            if (allocator == Allocator.Temp)
+                return "Temp";
+            if (allocator == Allocator.TempJob)
+                return "TempJob";
+            return "Session";
+        }
 
         public static HabitatCrushProfileDTO DefaultProfile()
         {
@@ -952,7 +1122,11 @@ namespace Hecton8.Habitat.Deformation.Editor
                 return false;
             }
 
-            NativeArray<byte> bytes = new NativeArray<byte>((int)info.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> bytes = AllocateTrackedNativeArray<byte>(
+                (int)info.Length,
+                Allocator.Temp,
+                NativeArrayOptions.UninitializedMemory,
+                "profileCsvBytes");
             try
             {
                 byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(bytes);
@@ -1003,8 +1177,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             }
             finally
             {
-                if (bytes.IsCreated)
-                    bytes.Dispose();
+                DisposeTrackedNativeArray(ref bytes);
             }
 
             if (profiles.Count == 0)
@@ -1055,13 +1228,12 @@ namespace Hecton8.Habitat.Deformation.Editor
                 out int indexRangeCount);
             if (sourceVertexCount <= 0 || indexCount <= 0 || indexRangeCount <= 0)
             {
-                if (indexRanges.IsCreated)
-                    indexRanges.Dispose();
+                DisposeTrackedNativeArray(ref indexRanges);
                 return null;
             }
             if (state != HabitatDamageMeshState.Stressed && sourceVertexCount > int.MaxValue / 2)
             {
-                indexRanges.Dispose();
+                DisposeTrackedNativeArray(ref indexRanges);
                 return null;
             }
 
@@ -1073,14 +1245,44 @@ namespace Hecton8.Habitat.Deformation.Editor
             double depth = ResolveDepthMeters(settings.ModuleAup, settings.SeaLevelAup);
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            NativeArray<HabitatDamageSourceVertex> sourceVertices = new NativeArray<HabitatDamageSourceVertex>(sourceVertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<HabitatDamageWorkingVertex> workingVertices = new NativeArray<HabitatDamageWorkingVertex>(outputVertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<uint> sourceIndices = new NativeArray<uint>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<uint> outputIndices = new NativeArray<uint>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<HabitatDamageHullDTO> hulls = new NativeArray<HabitatDamageHullDTO>(HabitatDamageBakeConstants.MaxHullCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<HabitatDamageBakedVertex> packedVertices = new NativeArray<HabitatDamageBakedVertex>(outputVertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<HabitatDamageSourceVertex> sourceVertices = default;
+            NativeArray<HabitatDamageWorkingVertex> workingVertices = default;
+            NativeArray<uint> sourceIndices = default;
+            NativeArray<uint> outputIndices = default;
+            NativeArray<HabitatDamageHullDTO> hulls = default;
+            NativeArray<HabitatDamageBakedVertex> packedVertices = default;
             try
             {
+                sourceVertices = AllocateTrackedNativeArray<HabitatDamageSourceVertex>(
+                    sourceVertexCount,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(sourceVertices));
+                workingVertices = AllocateTrackedNativeArray<HabitatDamageWorkingVertex>(
+                    outputVertexCount,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(workingVertices));
+                sourceIndices = AllocateTrackedNativeArray<uint>(
+                    indexCount,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(sourceIndices));
+                outputIndices = AllocateTrackedNativeArray<uint>(
+                    indexCount,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(outputIndices));
+                hulls = AllocateTrackedNativeArray<HabitatDamageHullDTO>(
+                    HabitatDamageBakeConstants.MaxHullCount,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(hulls));
+                packedVertices = AllocateTrackedNativeArray<HabitatDamageBakedVertex>(
+                    outputVertexCount,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(packedVertices));
                 JobHandle handle = ScheduleExtract(sourceData, sourceVertices);
                 handle = ScheduleIndexCopy(sourceData, sourceIndices, indexCount, indexRanges, indexRangeCount, handle);
                 handle = new InitializeDamageWorkingVerticesJob
@@ -1182,20 +1384,13 @@ namespace Hecton8.Habitat.Deformation.Editor
             }
             finally
             {
-                if (sourceVertices.IsCreated)
-                    sourceVertices.Dispose();
-                if (workingVertices.IsCreated)
-                    workingVertices.Dispose();
-                if (sourceIndices.IsCreated)
-                    sourceIndices.Dispose();
-                if (outputIndices.IsCreated)
-                    outputIndices.Dispose();
-                if (hulls.IsCreated)
-                    hulls.Dispose();
-                if (packedVertices.IsCreated)
-                    packedVertices.Dispose();
-                if (indexRanges.IsCreated)
-                    indexRanges.Dispose();
+                DisposeTrackedNativeArray(ref sourceVertices);
+                DisposeTrackedNativeArray(ref workingVertices);
+                DisposeTrackedNativeArray(ref sourceIndices);
+                DisposeTrackedNativeArray(ref outputIndices);
+                DisposeTrackedNativeArray(ref hulls);
+                DisposeTrackedNativeArray(ref packedVertices);
+                DisposeTrackedNativeArray(ref indexRanges);
             }
         }
 
@@ -1231,10 +1426,11 @@ namespace Hecton8.Habitat.Deformation.Editor
             int radial = math.clamp(radialSegments, 8, 512);
             int length = math.clamp(lengthSegments, 8, 512);
             vertexCount = radial * length;
-            NativeArray<HabitatDamageWorkingVertex> vertices = new NativeArray<HabitatDamageWorkingVertex>(
+            NativeArray<HabitatDamageWorkingVertex> vertices = AllocateTrackedNativeArray<HabitatDamageWorkingVertex>(
                 vertexCount,
                 Allocator.TempJob,
-                NativeArrayOptions.UninitializedMemory);
+                NativeArrayOptions.UninitializedMemory,
+                nameof(vertices));
             try
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
@@ -1263,8 +1459,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             }
             finally
             {
-                if (vertices.IsCreated)
-                    vertices.Dispose();
+                DisposeTrackedNativeArray(ref vertices);
             }
         }
 
@@ -1415,61 +1610,70 @@ namespace Hecton8.Habitat.Deformation.Editor
             out int rangeCount)
         {
             int capacity = math.max(1, sourceData.subMeshCount);
-            NativeArray<HabitatDamageIndexRangeDTO> ranges = new NativeArray<HabitatDamageIndexRangeDTO>(
+            NativeArray<HabitatDamageIndexRangeDTO> ranges = AllocateTrackedNativeArray<HabitatDamageIndexRangeDTO>(
                 capacity,
                 allocator,
-                NativeArrayOptions.UninitializedMemory);
+                NativeArrayOptions.UninitializedMemory,
+                "indexRanges");
 
-            indexCount = 0;
-            rangeCount = 0;
-            for (int i = 0; i < sourceData.subMeshCount; i++)
+            try
             {
-                SubMeshDescriptor subMesh = sourceData.GetSubMesh(i);
-                int count = subMesh.indexCount - (subMesh.indexCount % 3);
-                if (subMesh.topology != MeshTopology.Triangles || count <= 0)
-                    continue;
-                if (count > int.MaxValue - indexCount)
+                indexCount = 0;
+                rangeCount = 0;
+                for (int i = 0; i < sourceData.subMeshCount; i++)
                 {
-                    count = int.MaxValue - indexCount;
-                    count -= count % 3;
-                    if (count <= 0)
-                        break;
-                }
-
-                ranges[rangeCount] = new HabitatDamageIndexRangeDTO
-                {
-                    SourceStart = subMesh.indexStart,
-                    DestinationStart = indexCount,
-                    Count = count,
-                    BaseVertex = subMesh.baseVertex
-                };
-                indexCount += count;
-                rangeCount++;
-            }
-
-            if (indexCount <= 0)
-            {
-                int fallbackCount = sourceData.indexFormat == IndexFormat.UInt16
-                    ? sourceData.GetIndexData<ushort>().Length
-                    : sourceData.GetIndexData<uint>().Length;
-                fallbackCount -= fallbackCount % 3;
-                if (fallbackCount > 0)
-                {
-                    ranges[0] = new HabitatDamageIndexRangeDTO
+                    SubMeshDescriptor subMesh = sourceData.GetSubMesh(i);
+                    int count = subMesh.indexCount - (subMesh.indexCount % 3);
+                    if (subMesh.topology != MeshTopology.Triangles || count <= 0)
+                        continue;
+                    if (count > int.MaxValue - indexCount)
                     {
-                        SourceStart = 0,
-                        DestinationStart = 0,
-                        Count = fallbackCount,
-                        BaseVertex = 0
-                    };
-                    indexCount = fallbackCount;
-                    rangeCount = 1;
-                }
-            }
+                        count = int.MaxValue - indexCount;
+                        count -= count % 3;
+                        if (count <= 0)
+                            break;
+                    }
 
-            for (int i = rangeCount; i < ranges.Length; i++)
-                ranges[i] = default;
-            return ranges;
+                    ranges[rangeCount] = new HabitatDamageIndexRangeDTO
+                    {
+                        SourceStart = subMesh.indexStart,
+                        DestinationStart = indexCount,
+                        Count = count,
+                        BaseVertex = subMesh.baseVertex
+                    };
+                    indexCount += count;
+                    rangeCount++;
+                }
+
+                if (indexCount <= 0)
+                {
+                    int fallbackCount = sourceData.indexFormat == IndexFormat.UInt16
+                        ? sourceData.GetIndexData<ushort>().Length
+                        : sourceData.GetIndexData<uint>().Length;
+                    fallbackCount -= fallbackCount % 3;
+                    if (fallbackCount > 0)
+                    {
+                        ranges[0] = new HabitatDamageIndexRangeDTO
+                        {
+                            SourceStart = 0,
+                            DestinationStart = 0,
+                            Count = fallbackCount,
+                            BaseVertex = 0
+                        };
+                        indexCount = fallbackCount;
+                        rangeCount = 1;
+                    }
+                }
+
+                for (int i = rangeCount; i < ranges.Length; i++)
+                    ranges[i] = default;
+                return ranges;
+            }
+            catch
+            {
+                DisposeTrackedNativeArray(ref ranges);
+                throw;
+            }
         }
 
         private static Bounds CalculateBounds(NativeArray<HabitatDamageWorkingVertex> vertices)
@@ -2221,7 +2425,11 @@ namespace Hecton8.Habitat.Deformation.Editor
                 return;
             }
 
-            NativeArray<byte> bytes = new NativeArray<byte>((int)fileLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> bytes = AllocateTrackedNativeArray<byte>(
+                (int)fileLength,
+                Allocator.Temp,
+                NativeArrayOptions.UninitializedMemory,
+                "scannerFileBytes");
             try
             {
                 byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(bytes);
@@ -2375,8 +2583,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             }
             finally
             {
-                if (bytes.IsCreated)
-                    bytes.Dispose();
+                DisposeTrackedNativeArray(ref bytes);
             }
         }
 

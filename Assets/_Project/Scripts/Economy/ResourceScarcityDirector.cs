@@ -220,17 +220,9 @@ namespace Hecton8.Economy
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                    {
-                        _registeredSlowTickable = false;
-                        break;
-                    }
-
-                    if (isActiveAndEnabled)
-                    {
-                        TryUnregisterSlowTickable();
+                    TryUnregisterSlowTickable();
+                    if (currentService != null && isActiveAndEnabled)
                         TryRegisterSlowTickable();
-                    }
                     break;
             }
         }

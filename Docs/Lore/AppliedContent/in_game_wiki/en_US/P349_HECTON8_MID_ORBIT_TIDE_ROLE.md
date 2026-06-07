@@ -7,6 +7,9 @@ poi_tags: poi.hecton8_tide_record;poi.mid_orbit_marker
 biome_tags: biome.orbit;biome.ocean
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "HECTON-8 Mid-Orbit Tide Role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -20,6 +21,7 @@ namespace Hecton8.Editor
         private const string DefaultProfilePath = "Assets/_Project/Data/impostor_generation_profiles.csv";
         private const int MaxProfiles = 32;
         private const int MaxPreviewViews = 64;
+        private const string NativeMemoryOwner = nameof(HlodImpostorForgeWindow);
 
         private ObjectField _folderField;
         private ObjectField _singlePrefabField;
@@ -132,16 +134,19 @@ namespace Hecton8.Editor
                 using (FileStream stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096))
                 {
                     int length = (int)math.min(stream.Length, 64 * 1024);
-                    NativeArray<byte> bytes = new NativeArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                    try
+                    if (length > 0)
                     {
-                        byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(bytes);
-                        int read = stream.Read(new Span<byte>(ptr, length));
-                        _profileCount = HlodImpostorProfileCsvParser.Parse(new ReadOnlySpan<byte>(ptr, read), _profiles);
-                    }
-                    finally
-                    {
-                        bytes.Dispose();
+                        NativeArray<byte> bytes = AllocateTrackedNativeArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory, nameof(bytes));
+                        try
+                        {
+                            byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(bytes);
+                            int read = stream.Read(new Span<byte>(ptr, length));
+                            _profileCount = HlodImpostorProfileCsvParser.Parse(new ReadOnlySpan<byte>(ptr, read), _profiles);
+                        }
+                        finally
+                        {
+                            DisposeTrackedNativeArray(ref bytes);
+                        }
                     }
                 }
             }
@@ -188,7 +193,7 @@ namespace Hecton8.Editor
 
             int viewCount = math.min(_viewSlider != null ? _viewSlider.value : HectonOctahedralImpostorData.ViewCount, _previewRecords.Length);
             NativeArray<HlodImpostorCaptureAngleRecord> records =
-                new NativeArray<HlodImpostorCaptureAngleRecord>(viewCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                AllocateTrackedNativeArray<HlodImpostorCaptureAngleRecord>(viewCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(records));
             try
             {
                 if (HectonOctahedralImpostorBaker.TryBuildPreviewAngles(
@@ -205,7 +210,62 @@ namespace Hecton8.Editor
             }
             finally
             {
-                records.Dispose();
+                DisposeTrackedNativeArray(ref records);
+            }
+        }
+
+        private static NativeArray<T> AllocateTrackedNativeArray<T>(int length, Allocator allocator, NativeArrayOptions options, string label) where T : struct
+        {
+            if (length <= 0)
+                return default;
+
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[HlodImpostorForgeWindow] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, ResolveNativeAllocationLifetime(allocator));
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("[HlodImpostorForgeWindow] NativeMemorySentinel rejected NativeArray registration for " + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
+        }
+
+        private static NativeAllocationLifetime ResolveNativeAllocationLifetime(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return NativeAllocationLifetime.Temp;
+                case Allocator.TempJob:
+                    return NativeAllocationLifetime.TempJob;
+                case Allocator.Persistent:
+                    return NativeAllocationLifetime.Session;
+                default:
+                    return NativeAllocationLifetime.Session;
             }
         }
 

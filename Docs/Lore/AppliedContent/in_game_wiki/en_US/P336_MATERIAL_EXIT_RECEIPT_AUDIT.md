@@ -7,6 +7,9 @@ poi_tags: poi.material_exit_receipt;poi.unreconciled_name_list
 biome_tags: biome.ending;biome.contract
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Material Exit Receipt Audit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

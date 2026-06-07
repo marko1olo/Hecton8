@@ -7,6 +7,9 @@ poi_tags: poi.tide_model_terminal;poi.glacier_warning
 biome_tags: biome.tide_gauge;biome.glacier_break
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Mara Venn Tide Model"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

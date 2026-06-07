@@ -167,15 +167,15 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.54, g: 0.66, b: 0.44, a: 1}
-    - _BiolumColor: {r: 0.22, g: 0.88, b: 0.82, a: 1}
-    - _Color: {r: 0.23999995, g: 0.72, b: 0.33999997, a: 1}
+    - _BaseColor: {r: 0.38, g: 0.42, b: 0.28, a: 1}
+    - _BiolumColor: {r: 0.14, g: 0.56, b: 0.62, a: 1}
+    - _Color: {r: 0.18, g: 0.36, b: 0.24, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _RimColor: {r: 0.6, g: 0.7, b: 0.5, a: 1}
-    - _SSSColor: {r: 0.45, g: 0.82, b: 0.37999994, a: 1}
+    - _SSSColor: {r: 0.62, g: 0.64, b: 0.42, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
-    - _TipColor: {r: 0.68, g: 0.78, b: 0.54, a: 1}
-    - _TransmissionColor: {r: 0.4, g: 0.58, b: 0.3, a: 1}
+    - _TipColor: {r: 0.58, g: 0.56, b: 0.36, a: 1}
+    - _TransmissionColor: {r: 0.36, g: 0.42, b: 0.28, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &7884413033411805665

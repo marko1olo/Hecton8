@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "Самородна сульфідно-соляна гряда"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# Самородна сульфідно-соляна гряда
 
-UA LOC HOLD: Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.
+Самородні сульфідно-соляні гряди - один із перших доказів, що HECTON-8 не зводиться до корпоративного місця злочину. Вони ростуть там, де тепло джерел, просочування розсолу й багата на метали кора труться під тиском, лишаючи чорно-зелені солі на полицях, ребрах і ламких трубах. Ними промивають провідники, будять аварійні комірки, налаштовують керамічний флюс - і вбивають інструменти, якщо екіпаж ставиться до них як до звичайної руди. Вони мають з'являтися до синього боргу: гравець повинен зрозуміти, що місяць мав власну хімію, цінність і загрози задовго до печатки Deep Reach.
 
 ## Scanner
 
-UA LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+САМОРОДНІ СУЛЬФІДНІ СОЛІ // Кристали, зібрані вентиляційними джерелами, і чорна розсільна кірка, старші за Deep Reach. Вологі проводять струм, теплі роз'їдають метал, корисні ще до того, як щось стане синім.
 
 ## Terminal
 
-UA LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+КЛАС РЕСУРСУ: природна геологія. Використання: промивання провідників, аварійна хімія комірок, керамічний флюс, корозійний каталізатор. Тримати подалі від теплого впускного повітря; пил розквітає кислотною плівкою на металі костюма.
 
 ## Audio
 
-UA LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+Місяцю не потрібна була компанія, щоб бути небезпечним. Він уже знав хімію.
 
 ## Field Note
 
-UA LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+Якщо рукавички сверблять, ти вже запізнився. Промий, заземли, занеси стіну в журнал.
 
 <!-- In-Game Wiki; generated from P116_NATIVE_SULFIDE_SALT_STACK/uk_UA. -->

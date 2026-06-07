@@ -250,6 +250,8 @@ namespace Hecton8.QA.Headless
         private const int FileWriteQueueMask = FileWriteQueueCapacity - 1;
         private const int FileWritePayloadBytes = 16384;
         private const int FileWritePayloadTotalBytes = FileWriteQueueCapacity * FileWritePayloadBytes;
+        private const int FileWriterJoinMilliseconds = 2000;
+        private const int FileWriterInterruptJoinMilliseconds = 500;
         private const int TelemetryCapacity = 300;
         private const int InputBufferCapacity = 1;
         private const int RecorderCapacity = 1;
@@ -968,10 +970,7 @@ namespace Hecton8.QA.Headless
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            _registeredFast = false;
-            _registeredCold = false;
-            _registeredLate = false;
-            _started = false;
+            UnregisterRuntimeLanes();
 
             if (currentService == null ||
                 _finished ||
@@ -1592,14 +1591,22 @@ namespace Hecton8.QA.Headless
             command.Flags = 0u;
             commands[head] = command;
             Volatile.Write(ref cursor.Head, next);
-            _fileWriterEvent?.Set();
+            SignalFileWriterNoThrow(_fileWriterEvent);
             return true;
         }
 
         private void StartFileWriter()
         {
-            if (_fileWriterThread != null)
-                return;
+            Thread existingWriter = _fileWriterThread;
+            if (existingWriter != null)
+            {
+                if (existingWriter.IsAlive)
+                    return;
+
+                _fileWriterThread = null;
+                DisposeFileWriterEventNoThrow(_fileWriterEvent);
+                _fileWriterEvent = null;
+            }
 
             if (!TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriterCursorHandle, FileWriterCursorBufferId, 1, out NativeArray<Shinobu38FileWriterCursorDTO> cursorBuffer))
                 return;
@@ -1614,13 +1621,26 @@ namespace Hecton8.QA.Headless
             Volatile.Write(ref _writerCompletedWrites, 0);
             Volatile.Write(ref _writerFaultFlags, 0);
             Volatile.Write(ref _fileWriterStopRequested, 0);
-            _fileWriterEvent = new ManualResetEventSlim(false); // COLD ALLOC: SPSC writer wake gate - owner: Shinobu38QaWatchdogRuntime
-            _fileWriterThread = new Thread(FileWriterLoop) // COLD ALLOC: background QA file writer - owner: Shinobu38QaWatchdogRuntime
+            try
             {
-                IsBackground = true,
-                Name = "SHINOBU_79_QA_FILE_WRITER"
-            };
-            _fileWriterThread.Start();
+                _fileWriterEvent = new ManualResetEventSlim(false); // COLD ALLOC: SPSC writer wake gate - owner: Shinobu38QaWatchdogRuntime
+                Thread writer = new Thread(FileWriterLoop) // COLD ALLOC: background QA file writer - owner: Shinobu38QaWatchdogRuntime
+                {
+                    IsBackground = true,
+                    Name = "SHINOBU_79_QA_FILE_WRITER"
+                };
+                _fileWriterThread = writer;
+                writer.Start();
+            }
+            catch (Exception)
+            {
+                Volatile.Write(ref _fileWriterStopRequested, 1);
+                Volatile.Write(ref cursor.Running, 0);
+                Volatile.Write(ref _writerFaultFlags, Volatile.Read(ref _writerFaultFlags) | unchecked((int)FileWriterFlagException));
+                _fileWriterThread = null;
+                DisposeFileWriterEventNoThrow(_fileWriterEvent);
+                _fileWriterEvent = null;
+            }
         }
 
         private void StopFileWriter(bool flushPending)
@@ -1639,7 +1659,7 @@ namespace Hecton8.QA.Headless
                     long start = Stopwatch.GetTimestamp();
                     while (Volatile.Read(ref cursor.Tail) != Volatile.Read(ref cursor.Head))
                     {
-                        _fileWriterEvent?.Set();
+                        SignalFileWriterNoThrow(_fileWriterEvent);
                         Thread.Sleep(1);
                         long elapsed = Stopwatch.GetTimestamp() - start;
                         if (elapsed > Stopwatch.Frequency * 5L)
@@ -1654,24 +1674,86 @@ namespace Hecton8.QA.Headless
                 Volatile.Write(ref _writerFaultFlags, Volatile.Read(ref _writerFaultFlags) | unchecked((int)FileWriterFlagException));
             }
 
-            _fileWriterEvent?.Set();
-            if (!writer.Join(2000))
+            SignalFileWriterNoThrow(_fileWriterEvent);
+            bool writerStopped = TryJoinFileWriterNoThrow(writer, FileWriterJoinMilliseconds);
+            if (!writerStopped)
             {
                 Volatile.Write(ref _writerFaultFlags, Volatile.Read(ref _writerFaultFlags) | unchecked((int)FileWriterFlagException));
-                try
-                {
-                    writer.Interrupt();
-                }
-                catch (Exception)
-                {
-                }
+                InterruptFileWriterNoThrow(writer);
+                writerStopped = TryJoinFileWriterNoThrow(writer, FileWriterInterruptJoinMilliseconds);
+            }
 
-                writer.Join(500);
+            if (!writerStopped)
+            {
+                Volatile.Write(ref _writerFaultFlags, Volatile.Read(ref _writerFaultFlags) | unchecked((int)FileWriterFlagException));
+                return;
             }
 
             _fileWriterThread = null;
-            _fileWriterEvent?.Dispose();
+            DisposeFileWriterEventNoThrow(_fileWriterEvent);
             _fileWriterEvent = null;
+        }
+
+        private static bool SignalFileWriterNoThrow(ManualResetEventSlim writerEvent)
+        {
+            if (writerEvent == null)
+                return false;
+
+            try
+            {
+                writerEvent.Set();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static bool TryJoinFileWriterNoThrow(Thread writer, int timeoutMilliseconds)
+        {
+            if (writer == null || !writer.IsAlive)
+                return true;
+            if (ReferenceEquals(Thread.CurrentThread, writer))
+                return false;
+
+            try
+            {
+                writer.Join(timeoutMilliseconds);
+                return !writer.IsAlive;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static void InterruptFileWriterNoThrow(Thread writer)
+        {
+            if (writer == null || !writer.IsAlive)
+                return;
+
+            try
+            {
+                writer.Interrupt();
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private static void DisposeFileWriterEventNoThrow(ManualResetEventSlim writerEvent)
+        {
+            if (writerEvent == null)
+                return;
+
+            try
+            {
+                writerEvent.Dispose();
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private void FileWriterLoop()

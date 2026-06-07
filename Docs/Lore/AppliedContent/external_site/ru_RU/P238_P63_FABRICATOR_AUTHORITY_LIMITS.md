@@ -7,6 +7,9 @@ poi_tags: poi.p63_fabricator_lockout;poi.low_grade_recipe_plate
 biome_tags: biome.p63_shallows;biome.industrial_shelf
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Ограничения допуска фабрикатора P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

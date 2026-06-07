@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "תגי חיישן ביומטליים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# תגי חיישן ביומטליים
 
-HE LOC HOLD: Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.
+תגי חיישן ביומטליים הם קשקשי טלמטריה קטנים שנמצאים בפאונה, בצמיחת כבלים ובאקולוגיית תיקון. הם יכולים לחדד פינגרים ונתיבי סורק, אבל כל תג שימושי הוא גם ראיה: Atlas השתמשה בנשאים חיים כדי להאריך רשת תחזוקה פגומה.
 
 ## Scanner
 
-HE LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+תגי חיישן ביומטליים // קשקשי מתכת דקים שגדלו בתוך דגים, קלפ כבלים ורקמת תיקון. משפרים כוונון פינגר; קציר חם עלול לגרום ל-Atlas לשמוע את הנשא החסר.
 
 ## Terminal
 
-HE LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+מחלקת משאב: שונה בידי Atlas / רגיש כראיה. שימושים: מיקוד פינגר, סריג סורק, ביטחון נתיב, חבילות ראיה. מומלץ קציר קר. סיכונים: עליית תשומת לב, חזרות נשא כוזבות, פאונה פגועה.
 
 ## Audio
 
-HE LOC HOLD: The fish is not a drone. The tag does not know the difference.
+הדג אינו רחפן. התג ממשיך לדווח בכל זאת.
 
 ## Field Note
 
-HE LOC HOLD: Make resource extraction feel like evidence handling.
+אם הוא מהבהב מתחת לסכין, תעד לפני שאתה חותך.
 
 <!-- In-Game Wiki; generated from P120_BIOMETAL_SENSOR_TAGS/he_IL. -->

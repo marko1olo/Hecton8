@@ -7,6 +7,9 @@ poi_tags: poi.factory_threshold;poi.atlas_gate
 biome_tags: biome.bottom_factory;biome.atlas_zone
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Próg fabryki-świątyni"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

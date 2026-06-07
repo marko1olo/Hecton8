@@ -7,6 +7,9 @@ poi_tags: poi.deep_reach_proxy_order;poi.redacted_liability_node
 biome_tags: biome.dead_claim;biome.industrial_descent
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Orden de limpieza Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

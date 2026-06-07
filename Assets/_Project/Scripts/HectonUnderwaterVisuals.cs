@@ -799,7 +799,7 @@ namespace Hecton8.Environment
         private const float SurfaceReadableSunIntensityFloor = 1.05f;
         private const float SurfaceReadableAmbientIntensityFloor = 1.34f;
         private const float SurfaceReadableFogDensityCeiling = 0.001f;
-        private const float SurfaceReadableOceanDepthFogCeiling = 0.008f;
+        private const float SurfaceReadableOceanDepthFogCeiling = 0.05f;
         private const float SurfaceFogReadableLuminanceFloor = 0.58f;
         private const float SurfaceHorizonReadableLuminanceFloor = 0.62f;
         private const float SurfaceSkyReadableLuminanceFloor = 0.56f;
@@ -2373,7 +2373,7 @@ namespace Hecton8.Environment
                 return;
 
             CacheGraphicsCapabilitiesCold();
-            _audioRuntime = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _dynamicResolutionRuntime = GlobalRegistry.DynamicResolution;
             _weatherRuntime = GlobalRegistry.Weather;
             _surfaceWeatherRuntime = GlobalRegistry.SurfaceWeatherReadModel;
@@ -2439,7 +2439,7 @@ namespace Hecton8.Environment
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioRuntime = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
 
                 case GlobalRegistryServiceSlot.DynamicResolutionRuntime:
@@ -2508,6 +2508,32 @@ namespace Hecton8.Environment
 #endif
                     break;
             }
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioRuntime = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioRuntime;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioRuntime = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private float SmoothSunState(float targetIntensity, float targetLightFactor, float deltaTime)
@@ -5348,7 +5374,7 @@ namespace Hecton8.Environment
                     thermoclineVisorDistortionRecoverySpeed);
             }
 
-            IAudioService audioRuntime = _audioRuntime;
+            IAudioService audioRuntime = ResolveAudioService();
             if (thermoclineTransitionClip != null && audioRuntime != null)
                 audioRuntime.PlayStatic2D(thermoclineTransitionClip, thermoclineAudioVolume * intensity);
 
@@ -6075,11 +6101,14 @@ namespace Hecton8.Environment
                 return;
 
             DisposeHudFogLuminanceReadbackData();
-            _hudFogLuminanceReadback.Data = new NativeArray<float>(
+            _hudFogLuminanceReadback.Data = H8Memory.Allocate<float>(
                 1,
+                SystemID.Vfx,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - async HUD fog luminance readback target - owner: HectonUnderwaterVisuals
-            NativeMemorySentinel.RegisterNativeArray(_hudFogLuminanceReadback.Data, nameof(HectonUnderwaterVisuals), "_hudFogLuminanceReadbackData", NativeAllocationLifetime.Scene);
+            if (!_hudFogLuminanceReadback.Data.IsCreated)
+                throw new InvalidOperationException($"{nameof(HectonUnderwaterVisuals)} native allocation failed for _hudFogLuminanceReadbackData.");
+
             _hudFogLuminanceReadbackRepairRequested = false;
         }
 
@@ -6087,9 +6116,7 @@ namespace Hecton8.Environment
         {
             if (_hudFogLuminanceReadback.Data.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_hudFogLuminanceReadback.Data);
-                _hudFogLuminanceReadback.Data.Dispose();
-                _hudFogLuminanceReadback.Data = default;
+                H8Memory.Release(ref _hudFogLuminanceReadback.Data, SystemID.Vfx);
             }
         }
 

@@ -1078,7 +1078,15 @@ namespace Hecton8.Prologue.VFX
                 const int headerBytes = 24;
                 int length = math.min(TelemetryCapacity, telemetry.Length);
                 int byteCount = headerBytes + length * TelemetryEntrySizeBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = H8Memory.Allocate<byte>(
+                    byteCount,
+                    VaultOwnerSystemId,
+                    Allocator.Temp,
+                    NativeArrayOptions.UninitializedMemory);
+                if (!payload.IsCreated)
+                {
+                    return;
+                }
 
                 unsafe
                 {
@@ -1112,7 +1120,7 @@ namespace Hecton8.Prologue.VFX
             finally
             {
                 if (payload.IsCreated)
-                    payload.Dispose();
+                    H8Memory.Release(ref payload, VaultOwnerSystemId);
             }
         }
 

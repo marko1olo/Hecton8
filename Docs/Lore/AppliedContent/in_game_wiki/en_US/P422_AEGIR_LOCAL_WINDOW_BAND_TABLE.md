@@ -7,6 +7,9 @@ poi_tags: poi.local_window_band_table;poi.carrier_phase_clock
 biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Aegir Window Bands"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

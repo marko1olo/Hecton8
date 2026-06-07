@@ -7,6 +7,9 @@ poi_tags: poi.manual_pump_crate;poi.flooded_capsule_bilge
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Manual Bilge Pump Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

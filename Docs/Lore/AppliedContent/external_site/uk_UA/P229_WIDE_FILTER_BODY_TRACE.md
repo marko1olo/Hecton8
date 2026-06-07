@@ -9,32 +9,34 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Wide Filter Body Trace"
+title: "Слід широкого фільтрувального тіла"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Wide Filter Body Trace
+# Слід широкого фільтрувального тіла
 
-UA LOC HOLD: Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep.
+Слід широкого фільтрувального тіла показує, як HECTON-8 працює з гігантською фауною, не перетворюючи її на постановочну появу боса. Широке фільтрувальне тіло - це рухома екологія: живий погодний фронт у безодні, що пасеться на хмарах планктону, очищає смуги видимості, викривляє сонар і ненадовго відкриває геометрію покинутого обладнання колонії. Гравець має відчувати масштаб тому, що змінюються правила навігації, а не тому, що камера зупиняється милуватися чудовиськом.
+
+Під тілом звук втрачає тверді краї. На ободі луна складається. Позаду океан стає неприродно чистим, і старі рейки, ребра труб чи сервісні вежі можуть з'явитися там, де карта була порожня. Ця користь і є пасткою. Той самий слід, що відкриває маршрут, може витягнути навантаженого Marauder у відкриту глибину без стіни, без дна і без надійної лінії повернення. Тварина лишається байдужою. Вона не зла, не приручена і не чекає на гравця. Це океан доводить, що знання виживання включає терпіння: дочекатися проходу, прочитати планктонний просвіт, позначити руїну, піти до повернення мулу.
 
 ## Scanner
 
-UA LOC HOLD: A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.
+ШИРОКЕ ФІЛЬТРУВАЛЬНЕ ТІЛО // Велика фільтрувальна істота перетинає жолоб; за нею рідшає планктон, на краю розмазується сонар, а руїни можуть з'являтися або зникати під її тінню.
 
 ## Terminal
 
-UA LOC HOLD: CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.
+БАЗА КОНТАКТУ: прохід широкого фільтрувального тіла дає низьку щільність планктону, розмазаний край луни, тихий за тиском слід і тимчасові коридори видимості. Не йти під черевну тінь. Використовувати акустичний просвіт лише після осідання хвостового мулу.
 
 ## Audio
 
-UA LOC HOLD: That is not a roar. That is the sound of the map being wiped clean.
+Це не рев. Це звук карти, яку витирають начисто.
 
 ## Field Note
 
-UA LOC HOLD: Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.
+Не називай це босом. Називай це погодою зі шлунком: повільною, величезною, корисною й байдужою.
 
 <!-- External Site; generated from P229_WIDE_FILTER_BODY_TRACE/uk_UA. -->

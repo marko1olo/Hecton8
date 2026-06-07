@@ -113,6 +113,7 @@ namespace Hecton8.EditorTools
 
         private void OnEnable()
         {
+            EditorApplication.update -= RefreshSnapshot;
             EditorApplication.update += RefreshSnapshot;
         }
 

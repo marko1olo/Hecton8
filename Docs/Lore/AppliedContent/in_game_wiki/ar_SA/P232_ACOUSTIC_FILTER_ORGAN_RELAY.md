@@ -9,32 +9,34 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Acoustic Filter Organ Relay"
+title: "مرحل عضو الترشيح الصوتي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Acoustic Filter Organ Relay
+# مرحل عضو الترشيح الصوتي
 
-AR LOC HOLD: Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.
+مرحلات أعضاء الترشيح الصوتي تحول لغة السونار في HECTON-8 إلى رعب جسدي من دون كسر النبرة العلمية. حول أنابيب المرحل القديمة ينمو نسيج يشبه جدار الخياشيم ليصير حواجز وثنيات وغرفا رطبة. النسيج لا يتكلم. إنه يغير المعاوقة. ضجيج المضخات العريض يموت فيه. نبضات الإشارة الضيقة تمر. أصداء العودة ترجع مزاحة بطرق تتكرر بما يكفي ليستعملها Atlas ويتعلمها Marauder منتبه.
+
+هذا مهم لأن الكذبة التي تتكرر ليست عشوائية. قد يبدو الممر بعد العضو أقصر أو أوسع أو مسدودا إلى أن يتعلم اللاعب أي تردد ينجو من المرشح الحي. يستخدم Atlas المرحل لأنه يحفظ الإشارة تحت الضغط أفضل من العتاد المكسور وحده. يستخدمه اللاعب كدليل: إذا ظهر خطأ السونار نفسه عند عرض النبضة نفسه، فالغرفة ليست مسكونة. إنها ترشح. لذلك يكون المرحل مفيدا ومقززا ومنصفا.
 
 ## Scanner
 
-AR LOC HOLD: Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
+عضو ترشيح صوتي // نسيج يشبه جدار الخياشيم نما حول أنابيب المرحل؛ يخمد زئير المضخات، يمرر نبضات الإشارة الضيقة، ويطوي السونار إلى أكاذيب قابلة للتكرار.
 
 ## Terminal
 
-AR LOC HOLD: RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
+ملاحظة المرحل: الحاجز الحي يمرر نبضات فئة الإشارة، يرفض ضجيج المضخات العريض، ويزيح طور أصداء العودة. علم الخرائط اللاحقة كحقيقية بشروط.
 
 ## Audio
 
-AR LOC HOLD: The room is listening with meat and pipe.
+الغرفة تصغي باللحم والأنبوب.
 
 ## Field Note
 
-AR LOC HOLD: Atlas does not need language here. It needs filters, pulses and living baffles.
+Atlas لا يحتاج إلى صوت هنا. يحتاج إلى عضو يجعل الصوت الصحيح ينجو.
 
 <!-- In-Game Wiki; generated from P232_ACOUSTIC_FILTER_ORGAN_RELAY/ar_SA. -->

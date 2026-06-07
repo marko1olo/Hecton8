@@ -7,6 +7,9 @@ poi_tags: poi.public_premise_card;poi.starting_contract_excerpt
 biome_tags: biome.publication;biome.shallows
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Marauder Starting Claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

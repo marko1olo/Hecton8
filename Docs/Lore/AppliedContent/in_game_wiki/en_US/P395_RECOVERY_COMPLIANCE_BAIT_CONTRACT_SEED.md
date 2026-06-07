@@ -7,6 +7,9 @@ poi_tags: poi.recovery_compliance_bait_contract;poi.masked_receiver_clause
 biome_tags: biome.contract_layer;biome.atlas_basin
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Recovery Compliance Bait Contract Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

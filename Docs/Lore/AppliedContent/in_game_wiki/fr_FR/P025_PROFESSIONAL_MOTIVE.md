@@ -7,6 +7,9 @@ poi_tags: poi.barnard_mark;poi.personal_object
 biome_tags: biome.crash_shelf;biome.drowned_colony
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Motif professionnel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

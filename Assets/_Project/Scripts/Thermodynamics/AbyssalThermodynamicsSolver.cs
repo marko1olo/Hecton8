@@ -176,11 +176,9 @@ namespace Hecton8.Thermodynamics
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null || !isActiveAndEnabled)
-                    return;
-
                 TryUnregisterRuntimeLanes();
-                TryRegisterRuntimeLanes();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterRuntimeLanes();
                 return;
             }
 

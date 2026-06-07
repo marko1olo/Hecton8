@@ -7,6 +7,9 @@ poi_tags: poi.crash_shelf;poi.service_buoy
 biome_tags: biome.shallow_reef;biome.storm_shelf
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Paparan Jatuh"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

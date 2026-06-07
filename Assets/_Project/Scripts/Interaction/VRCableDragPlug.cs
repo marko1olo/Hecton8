@@ -734,7 +734,7 @@ namespace Hecton8.Interaction
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredLateFrame = false;
+                TryUnregisterLateFrameTickable();
                 if (currentService != null && isActiveAndEnabled)
                     RefreshLateFrameRegistration();
             }

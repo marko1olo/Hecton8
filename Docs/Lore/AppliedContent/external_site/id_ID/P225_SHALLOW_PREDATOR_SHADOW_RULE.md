@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Shallow Predator Shadow Rule"
+title: "Aturan Bayangan Predator Dangkal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Shallow Predator Shadow Rule
+# Aturan Bayangan Predator Dangkal
 
-ID LOC HOLD: Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact.
+Aturan Bayangan Predator Dangkal adalah aturan lore dan encounter, bukan profil spesies. Tugasnya menjaga nada shelf fotik: indah, terbaca, hidup, dan tetap bisa membunuhmu. Predator datang melalui saksi. Glass grazer meninggalkan makanan dan menghilang. Bloom lantern drift tetap bersinar tetapi kehilangan chatter partikulatnya yang lembut. Reef shell clamp mengencang pada kabel seolah seluruh rute menarik napas. Baru kemudian bayangan bergerak melalui cahaya. Urutan ini penting karena membuat laut terasa sistemik, bukan teatrikal. Pemain tidak dihukum oleh monster yang muncul dari kehampaan; pemain ditekan oleh serangkaian tanda yang seharusnya bisa ia pelajari. Implementasi yang baik harus melapisi petunjuk audio, visual, dan ekologis agar peringatan bertahan di berbagai display, bahasa, dan kebutuhan aksesibilitas: ketukan hilang, suara bloom terpotong, siluet lebar, wake tergeser, hewan rute bergerak di luar fase. Serangan langsung adalah bagian paling tidak menarik. Momen yang lebih kuat adalah saat objektif perbaikan masih bisa dicapai, air masih indah, dan setiap instrumen hidup mengatakan bahwa rute itu menjadi mahal.
 
 ## Scanner
 
-ID LOC HOLD: A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.
+BAYANGAN PREDATOR DANGKAL // Ketukan grazer yang hilang, suara bloom yang robek, dan bayangan lebar bergerak adalah kontak pertama. Tekanan rute datang sebelum kontak tempur.
 
 ## Terminal
 
-ID LOC HOLD: CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.
+ATURAN KONTAK: bukti predator harus mengubah pilihan rute sebelum memaksa damage. Panggungnya sebagai absensi, hening, siluet, dan wake; serangan langsung hanya setelah pemain mengabaikan atau salah membaca sedikitnya dua petunjuk.
 
 ## Audio
 
-ID LOC HOLD: When the little mouths stop ticking, stop moving.
+Saat mulut-mulut kecil berhenti mengetuk, berhenti bergerak.
 
 ## Field Note
 
-ID LOC HOLD: Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.
+Jangan memberi predator wajah terlebih dahulu. Biarkan shelf terasa salah: makanan tetap ada, air makin terang, kehidupan kecil pergi, lalu bayangan melintasi tugas.
 
 <!-- External Site; generated from P225_SHALLOW_PREDATOR_SHADOW_RULE/id_ID. -->

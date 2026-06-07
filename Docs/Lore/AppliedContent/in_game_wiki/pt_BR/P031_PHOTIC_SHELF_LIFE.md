@@ -14,27 +14,27 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Vida da plataforma fótica
 
-A plataforma fótica é a camada de contraste. Ela prova ecologia nativa antes dos recifes de cabo e cicatrizes de reparo.
+A plataforma fótica é a primeira linha de base viva após a queda danificada. A luz de Ran-Aegir alcança a água superior, e a plataforma responde com tapetes alimentados por minerais, pastadores transparentes, pressureweed e algas de rota. Os tapetes iluminam a rocha e mantêm pequenos bolsões de oxigênio; os pastadores de vidro raspam algas em faixas legíveis; o pressureweed se dobra antes que a ressaca ou o movimento de um predador chegue ao jogador; as algas de rota marcam corrente que pode levar um nadador de volta à linha ou para longe dela. Essa zona precisa ser bonita porque HECTON-8 valia ser desejada. Também precisa continuar perigosa: tempestades, visibilidade ruim, predadores rasos e uma linha de retorno rompida podem transformar água clara em armadilha antes dos recifes de cabo profundos ou do tecido de reparo Atlas.
 
 ## Scanner
 
-A biologia rasa é brilhante, sonora e quase intacta. A lua não está morta na superfície.
+BIOTA DA PLATAFORMA FOTICA // Tapetes vivos, pastadores de vidro, pressureweed e algas de rota confirmados. Água clara dá oxigênio e pistas de caminho; não perdoa mau tempo, predadores nem linha de retorno perdida.
 
 ## Terminal
 
-PT LOC HOLD: SHELF SURVEY: native photic biota outside Atlas repair dominance. Baseline sample set logged before cable-reef or repair-scar comparison.
+LEVANTAMENTO DA PLATAFORMA: ecologia fótica nativa fora da dominância de reparo Atlas. Amostras de base: tapete de oxigênio, rastro de pastador transparente, linha de flexão de pressureweed, esteira de alga de rota. Comparar com crescimento de recife de cabo e tecido de cicatriz de reparo antes de colher.
 
 ## Audio
 
-A primeira água viva não é misericórdia. É linha de base.
+A primeira água viva não é misericórdia. É uma linha de base pela qual você pode nadar.
 
 ## Field Note
 
-A beleza é a amostra de controle.
+A primeira cor não é misericórdia. É a lua mostrando como era o normal antes de as máquinas aprenderem.
 
 <!-- In-Game Wiki; generated from P031_PHOTIC_SHELF_LIFE/pt_BR. -->

@@ -5338,21 +5338,13 @@ namespace Hecton8.World
             try
             {
                 desiredSectorHashView = new NativeArray<long>(PagedSectorHashCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    desiredSectorHashView,
-                    MemoryBudgetOwnerName,
-                    IndexedSectorPagingDesiredHashesLabel,
-                    NativeAllocationLifetime.TempJob);
+                RegisterTrackedTransientArray(desiredSectorHashView, IndexedSectorPagingDesiredHashesLabel, NativeAllocationLifetime.TempJob);
 
                 for (int i = 0; i < PagedSectorHashCount; i++)
                     desiredSectorHashView[i] = desiredSectorHashes[i];
 
                 loadedSectorRecords = new NativeList<PersistentWorldDeltaRecord>(math.max(16, loadedRecordCapacity), Allocator.TempJob);
-                NativeMemorySentinel.RegisterNativeList(
-                    loadedSectorRecords,
-                    MemoryBudgetOwnerName,
-                    IndexedSectorPagingLoadedRecordsLabel,
-                    NativeAllocationLifetime.TempJob);
+                RegisterTrackedTransientNativeList(loadedSectorRecords, IndexedSectorPagingLoadedRecordsLabel, NativeAllocationLifetime.TempJob);
 
                 if (!SaveBinaryStorage.TryLoadIndexedPersistentWorldSectors(
                         indexedSectorSavePath,
@@ -5588,15 +5580,19 @@ namespace Hecton8.World
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
-                currentService == null ||
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+            {
+                return;
+            }
+
+            TryUnregisterRuntimeLoops();
+            if (currentService == null ||
                 !_serviceRegistered ||
                 !isActiveAndEnabled)
             {
                 return;
             }
 
-            TryUnregisterRuntimeLoops();
             TryRegisterRuntimeLoops();
         }
 
@@ -6546,10 +6542,10 @@ namespace Hecton8.World
                         return false;
 
                     int bucketCount = bucket.Count;
-                    NativeArray<PersistentWorldDeltaRecord> sectorRecords = new NativeArray<PersistentWorldDeltaRecord>(bucketCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    NativeMemorySentinel.RegisterNativeArray(
-                        sectorRecords,
-                        MemoryBudgetOwnerName,
+                    NativeArray<PersistentWorldDeltaRecord> sectorRecords = CreateTrackedTransientArray<PersistentWorldDeltaRecord>(
+                        bucketCount,
+                        Allocator.TempJob,
+                        NativeArrayOptions.UninitializedMemory,
                         SectorOverrideSnapshotRecordsLabel,
                         NativeAllocationLifetime.TempJob);
                     try
@@ -6624,10 +6620,10 @@ namespace Hecton8.World
             if (!TryValidateResidentSectorEntityStateBucket(sectorHash, entityStateBucket, out failureMessage))
                 return false;
 
-            NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(stateCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                sectorStates,
-                MemoryBudgetOwnerName,
+            NativeArray<EntityDataRecord> sectorStates = CreateTrackedTransientArray<EntityDataRecord>(
+                stateCount,
+                Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory,
                 SectorOverrideEntityStatesLabel,
                 NativeAllocationLifetime.TempJob);
             try
@@ -8102,10 +8098,10 @@ namespace Hecton8.World
                 return false;
             }
 
-            NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(entityStates.Count, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                sectorStates,
-                MemoryBudgetOwnerName,
+            NativeArray<EntityDataRecord> sectorStates = CreateTrackedTransientArray<EntityDataRecord>(
+                entityStates.Count,
+                Allocator.Temp,
+                NativeArrayOptions.UninitializedMemory,
                 SectorEntityStateAsyncWriteStatesLabel,
                 NativeAllocationLifetime.Temp);
             try
@@ -8136,6 +8132,47 @@ namespace Hecton8.World
                     sectorStates.Dispose();
                 }
             }
+        }
+
+        private static NativeArray<T> CreateTrackedTransientArray<T>(
+            int length,
+            Allocator allocator,
+            NativeArrayOptions options,
+            string label,
+            NativeAllocationLifetime lifetime) where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            try
+            {
+                RegisterTrackedTransientArray(array, label, lifetime);
+                return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+                throw;
+            }
+        }
+
+        private static void RegisterTrackedTransientArray<T>(
+            NativeArray<T> array,
+            string label,
+            NativeAllocationLifetime lifetime) where T : struct
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, MemoryBudgetOwnerName, label, lifetime);
+            if (sentinelId <= 0)
+                throw new InvalidOperationException($"NativeMemorySentinel rejected persistent world transient array registration for {label}.");
+        }
+
+        private static void RegisterTrackedTransientNativeList<T>(
+            NativeList<T> list,
+            string label,
+            NativeAllocationLifetime lifetime) where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeList(list, MemoryBudgetOwnerName, label, lifetime);
+            if (sentinelId <= 0)
+                throw new InvalidOperationException($"NativeMemorySentinel rejected persistent world transient list registration for {label}.");
         }
 
         private static void PublishSectorCompressionPerformanceWarning(

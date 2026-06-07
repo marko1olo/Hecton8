@@ -7,6 +7,9 @@ poi_tags: poi.resource_stack_manifest;poi.biometal_cut_sample
 biome_tags: biome.factory_temple;biome.deep_abyss
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Ресурсный стек biometal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

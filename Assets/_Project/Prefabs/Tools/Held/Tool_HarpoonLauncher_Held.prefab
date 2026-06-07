@@ -150,7 +150,7 @@ MonoBehaviour:
   shotCooldown: 0.85
   targetMask:
     serializedVersion: 2
-    m_Bits: 524287
+    m_Bits: 2121609
   feedbackInterval: 0.35
   tetherDuration: 5
   tetherPullBonus: 1.35

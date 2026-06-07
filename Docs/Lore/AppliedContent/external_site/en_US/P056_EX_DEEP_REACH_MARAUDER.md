@@ -7,6 +7,9 @@ poi_tags: poi.old_credential_lock;poi.drop_capsule_console
 biome_tags: biome.crash_shelf;biome.shallow_wreck
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Ex-Deep-Reach Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

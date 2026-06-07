@@ -7,6 +7,9 @@ poi_tags: poi.preserve_quarantine_record;poi.ecology_hold_order
 biome_tags: biome.ending;biome.quarantine
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Запись сохранения и карантина"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

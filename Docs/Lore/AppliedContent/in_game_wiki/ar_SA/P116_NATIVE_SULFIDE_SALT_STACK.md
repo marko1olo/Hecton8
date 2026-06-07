@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "رصيف أملاح كبريتيدية أصلية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# رصيف أملاح كبريتيدية أصلية
 
-AR LOC HOLD: Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.
+أرصفة الأملاح الكبريتيدية الأصلية هي من أوائل الأدلة على أن HECTON-8 ليس مجرد مسرح جريمة لشركة. تنمو حيث تطحن حرارة الفوهات وتسرب المحلول الملحي والقشرة الغنية بالمعادن بعضها بعضا تحت الضغط، تاركة أملاحا سوداء مخضرة على الرفوف والضلوع والمداخن الهشة. تنظف الموصلات، وتوقظ الخلايا الطارئة، وتضبط الصاهر الخزفي، وتقتل الأدوات إذا عاملها الطاقم كخام عادي. يجب أن تظهر قبل الدين الأزرق، كي يفهم اللاعب أن للقمر كيمياء وقيمة ومخاطر خاصة قبل أن تضع Deep Reach ختمها عليه.
 
 ## Scanner
 
-AR LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+أملاح كبريتيدية أصلية // بلورات رتبتها الفوهات وقشرة محلول ملحي سوداء أقدم من Deep Reach. توصل الكهرباء وهي رطبة، وتأكل المعدن وهي دافئة، وتنفع قبل أن يتحول أي شيء إلى الأزرق.
 
 ## Terminal
 
-AR LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+فئة المورد: جيولوجيا أصلية. الاستخدامات: غسل الموصلات، كيمياء الخلايا الطارئة، صاهر خزفي، محفز تآكل. يعزل عن هواء السحب الدافئ؛ فالغبار يزهر كغشاء حمضي على معدن البدلة.
 
 ## Audio
 
-AR LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+لم تكن هذه القمر بحاجة إلى شركة كي يصبح خطرا. كان يعرف الكيمياء من قبل.
 
 ## Field Note
 
-AR LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+إذا بدأت القفازات بالحكة فقد تأخرت. اغسل، أرض الشحنة، وسجل الجدار.
 
 <!-- In-Game Wiki; generated from P116_NATIVE_SULFIDE_SALT_STACK/ar_SA. -->

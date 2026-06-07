@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Vent Anchor Colonies"
+title: "مستعمرات مراسي الفوهات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Vent Anchor Colonies
+# مستعمرات مراسي الفوهات
 
-AR LOC HOLD: Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.
+تشرح مستعمرات مراسي الفوهات لماذا لا يستطيع Marauder حل كل مشكلة إصلاح بالبقاء في الضحل. تنمو المستعمرات حيث تدفع الفوهات الحرارية الحرارة وكيمياء الكبريتيدات إلى طبقات المحلول الملحي. أجسامها المضلعة تحبس المعادن، وتبرد في صفائح، وتأوي فاونا فوهية صغيرة على حافة الماء القاتل. هذا يجعلها قيمة من دون تحويلها إلى خام سحري. يمكن للأضلاع المتساقطة أن تغذي pressure-ceramic filler وcold-sealant grit والمرشحات الكيميائية. الأضلاع الحية الحارة قد تقتل البدلة بسرعة أو تشق رأس أداة بصدمة حرارية. القراءة الصحيحة هي الصبر: امسح bloom الحراري، انتظر الحافة المبردة، اقطع الصفائح المتساقطة فقط، واترك الحلق النشط وشأنه ما لم يكن الهدف يستحق الخطر.
 
 ## Scanner
 
-AR LOC HOLD: Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.
+مستعمرة مراسي الفوهات // مستعمرات مضلعة تقفل حول الفوهات الحرارية، وتحبس الكبريتيدات، وتنمي الكيمياء اللازمة لإصلاحات الأعماق.
 
 ## Terminal
 
-AR LOC HOLD: RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.
+خط أساس الموارد: تزيد المستعمرات احتمال cold-sealant grit وpressure-ceramic precursor وsulfide salt. يبقى bloom الحراري قاتلا؛ خذ العينات من الأضلاع المبردة والصفائح المتساقطة فقط.
 
 ## Audio
 
-AR LOC HOLD: Every good repair part is sitting in water that wants to cook you.
+كل قطعة إصلاح جيدة جالسة في ماء يريد أن يطبخك.
 
 ## Field Note
 
-AR LOC HOLD: Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.
+مرساة الفوهة علامة مورد وتحذير حرارة وحافة مأوى ودليل على أن forge chemistry لها أيد حية حولها.
 
 <!-- In-Game Wiki; generated from P228_VENT_ANCHOR_COLONIES/ar_SA. -->

@@ -152,9 +152,11 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0, CountToken(inputDispatcher, "signal?.Set();"));
             Assert.AreEqual(1, CountToken(inputDispatcher, "signal.Set();"));
             Assert.AreEqual(1, CountToken(inputDispatcher, "thread.Join(2000);"));
+            StringAssert.Contains("return !thread.IsAlive;", joinBody);
 
             StringAssert.Contains("catch (Exception)", signalBody);
             StringAssert.Contains("CrashTelemetryBuffer.ReportBlackBoxExportFailure();", signalBody);
+            StringAssert.Contains("ReferenceEquals(Thread.CurrentThread, thread)", joinBody);
             StringAssert.Contains("catch (Exception)", joinBody);
             StringAssert.Contains("CrashTelemetryBuffer.ReportBlackBoxExportFailure();", joinBody);
             StringAssert.Contains("_inputReplaySignal.Dispose();", disposeSignalBody);
@@ -349,6 +351,7 @@ namespace Hecton8.Tests.Editor
             string registerHotSwapBody = ExtractMethodBody(recorder, "TryRegisterHotSwapListener");
             string registerLateFrameBody = ExtractMethodBody(recorder, "TryRegisterLateFrameTickable");
             string initializeBody = ExtractMethodBody(recorder, "Initialize");
+            string shutdownBody = ExtractMethodBody(recorder, "ShutdownForLifecycle");
             string captureBody = ExtractMethodBody(recorder, "CaptureSnapshot");
             string startBody = ExtractMethodBody(recorder, "StartWriterThread");
             string loopBody = ExtractMethodBody(recorder, "WriterLoop");
@@ -390,16 +393,27 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("Volatile.Write(ref _writerShouldStop, 1);", loopBody);
             StringAssert.Contains("signal.WaitOne();", loopBody);
 
+            StringAssert.Contains("if (!StopWriterThread())", shutdownBody);
+            StringAssert.Contains("_activeRecorder = null;", shutdownBody);
+            StringAssert.Contains("_initialized = 0;", shutdownBody);
+            Assert.Greater(shutdownBody.IndexOf("if (!StopWriterThread())", StringComparison.Ordinal), -1);
+            Assert.Greater(shutdownBody.IndexOf("DisposeReplayFile();", StringComparison.Ordinal), shutdownBody.IndexOf("if (!StopWriterThread())", StringComparison.Ordinal));
+
             StringAssert.Contains("SignalWriterNoThrow();", stopBody);
-            StringAssert.Contains("TryJoinWriterNoThrow(_writerThread);", stopBody);
+            StringAssert.Contains("if (!TryJoinWriterNoThrow(_writerThread))", stopBody);
+            StringAssert.Contains("return false;", stopBody);
             StringAssert.Contains("DisposeWriterSignalNoThrow();", stopBody);
+            StringAssert.Contains("return true;", stopBody);
             Assert.AreEqual(0, CountToken(recorder, "_writerSignal.Set();"));
             Assert.AreEqual(1, CountToken(recorder, "_writerSignal.Dispose();"));
-            Assert.AreEqual(1, CountToken(recorder, "thread.Join(250);"));
+            Assert.AreEqual(0, CountToken(recorder, "thread.Join(250);"));
+            Assert.AreEqual(1, CountToken(recorder, "thread.Join(WriterJoinMilliseconds);"));
 
             StringAssert.Contains("signal.Set();", signalBody);
             StringAssert.Contains("catch (Exception)", signalBody);
-            StringAssert.Contains("thread.Join(250);", joinBody);
+            StringAssert.Contains("ReferenceEquals(Thread.CurrentThread, thread)", joinBody);
+            StringAssert.Contains("thread.Join(WriterJoinMilliseconds);", joinBody);
+            StringAssert.Contains("return !thread.IsAlive;", joinBody);
             StringAssert.Contains("catch (Exception)", joinBody);
             StringAssert.Contains("_writerSignal.Dispose();", disposeSignalBody);
             StringAssert.Contains("catch (Exception)", disposeSignalBody);
@@ -407,7 +421,8 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("_replayStream?.Dispose();", disposeReplayBody);
             StringAssert.Contains("catch (Exception)", disposeReplayBody);
             StringAssert.Contains("_replayStream = null;", disposeReplayBody);
-            StringAssert.Contains("StopWriterThread();", initializeFailureBody);
+            StringAssert.Contains("if (!StopWriterThread())", initializeFailureBody);
+            StringAssert.Contains("return;", initializeFailureBody);
             StringAssert.Contains("DisposeReplayFile();", initializeFailureBody);
             StringAssert.Contains("DisposeNativeBuffers();", initializeFailureBody);
             StringAssert.Contains("ReferenceEquals(_activeRecorder, this)", initializeFailureBody);

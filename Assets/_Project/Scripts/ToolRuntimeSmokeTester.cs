@@ -37,7 +37,7 @@ namespace Hecton8.Dev
         [SerializeField] private bool verboseLogging = false;
 
         [Header("Tool Set")]
-        [SerializeField] private GameObject[] heldToolPrefabs = new GameObject[12];
+        [SerializeField] private GameObject[] heldToolPrefabs = new GameObject[13];
 
         [Header("Diagnostics")]
         [SerializeField] private int _debugPassCount;
@@ -414,7 +414,11 @@ namespace Hecton8.Dev
                 "Assets/_Project/Prefabs/Tools/Held/Tool_Knife_Held.prefab",
                 "Assets/_Project/Prefabs/Tools/Held/Tool_StunPistol_Held.prefab",
                 "Assets/_Project/Prefabs/Tools/Held/Tool_HarpoonLauncher_Held.prefab",
+                "Assets/_Project/Prefabs/Tools/Held/Tool_SeafloorDrill_Held.prefab",
             };
+
+            if (heldToolPrefabs == null || heldToolPrefabs.Length != paths.Length)
+                Array.Resize(ref heldToolPrefabs, paths.Length);
 
             for (int i = 0; i < heldToolPrefabs.Length && i < paths.Length; i++)
             {

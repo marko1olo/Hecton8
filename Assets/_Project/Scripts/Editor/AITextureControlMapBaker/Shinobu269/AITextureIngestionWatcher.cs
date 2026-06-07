@@ -35,18 +35,14 @@ namespace Hecton8.Editor.AITextureControlMaps
         {
             StopWatcher();
             string absoluteInbox = Path.Combine(Directory.GetCurrentDirectory(), AITextureControlMapConstants.InboxFolder.Replace('/', Path.DirectorySeparatorChar));
-            if (!Directory.Exists(absoluteInbox))
-                Directory.CreateDirectory(absoluteInbox);
+            if (!TryEnsureInboxDirectoryNoThrow(absoluteInbox))
+                return;
 
-            _watcher = new FileSystemWatcher(absoluteInbox, "*.png")
-            {
-                IncludeSubdirectories = true,
-                NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime
-            };
-            _watcher.Created += OnFileChanged;
-            _watcher.Changed += OnFileChanged;
-            _watcher.Renamed += OnFileRenamed;
-            _watcher.EnableRaisingEvents = true;
+            FileSystemWatcher watcher = TryStartInboxWatcherNoThrow(absoluteInbox);
+            if (watcher == null)
+                return;
+
+            _watcher = watcher;
             EnsureDrainRegistered();
         }
 
@@ -56,12 +52,9 @@ namespace Hecton8.Editor.AITextureControlMaps
             if (_watcher == null)
                 return;
 
-            _watcher.EnableRaisingEvents = false;
-            _watcher.Created -= OnFileChanged;
-            _watcher.Changed -= OnFileChanged;
-            _watcher.Renamed -= OnFileRenamed;
-            _watcher.Dispose();
+            FileSystemWatcher watcher = _watcher;
             _watcher = null;
+            StopInboxWatcherNoThrow(watcher);
         }
 
         [MenuItem("HECTON-8/AI Texture Control Maps/Process AI Texture Inbox Now", false, 2682)]
@@ -169,6 +162,108 @@ namespace Hecton8.Editor.AITextureControlMaps
             {
                 EditorApplication.update -= DrainPendingImports;
                 _drainRegistered = false;
+            }
+        }
+
+        private static bool TryEnsureInboxDirectoryNoThrow(string absoluteInbox)
+        {
+            try
+            {
+                if (!Directory.Exists(absoluteInbox))
+                    Directory.CreateDirectory(absoluteInbox);
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (System.Security.SecurityException)
+            {
+                return false;
+            }
+        }
+
+        private static FileSystemWatcher TryStartInboxWatcherNoThrow(string absoluteInbox)
+        {
+            try
+            {
+                FileSystemWatcher watcher = new FileSystemWatcher(absoluteInbox, "*.png")
+                {
+                    IncludeSubdirectories = true,
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime
+                };
+                watcher.Created += OnFileChanged;
+                watcher.Changed += OnFileChanged;
+                watcher.Renamed += OnFileRenamed;
+                watcher.EnableRaisingEvents = true;
+                return watcher;
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return null;
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+            catch (NotSupportedException)
+            {
+                return null;
+            }
+            catch (System.Security.SecurityException)
+            {
+                return null;
+            }
+        }
+
+        private static void StopInboxWatcherNoThrow(FileSystemWatcher watcher)
+        {
+            try
+            {
+                watcher.EnableRaisingEvents = false;
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (IOException)
+            {
+            }
+
+            watcher.Created -= OnFileChanged;
+            watcher.Changed -= OnFileChanged;
+            watcher.Renamed -= OnFileRenamed;
+
+            try
+            {
+                watcher.Dispose();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (IOException)
+            {
             }
         }
 

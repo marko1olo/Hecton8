@@ -7,6 +7,9 @@ poi_tags: poi.canteen_water_ledger;poi.meal_token_board
 biome_tags: biome.colony;biome.safe_module
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Canteen Water Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

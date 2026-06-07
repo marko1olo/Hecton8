@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "Deep Reach-drukkeramiek"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# Deep Reach-drukkeramiek
 
-NL LOC HOLD: Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities.
+Deep Reach-drukkeramiek verklaart waarom de kolonie überhaupt kon werken en waarom haar resten nog steeds dodelijk zijn. Deep Reach bouwde geen bodemindustrie uit incompetentie. Het bedrijf leerde lokale klei, sulfidefluxen en vent-smederijhitte te versterken tot keramische onderdelen die druk overleefden die gewoon metaal niet verdraagt. Klemringen hielden habitatnaden vast. Zittingafdichtingen hielden pompen eerlijk. Snijcontacten droegen hitte door pekel zonder zachte schroot te worden. Isolatie van opstijgwiegen kocht een paar kritieke minuten wanneer lanceerhardware zichzelf had moeten gaar koken. Die bekwaamheid is deel van de horror, geen tegenspraak ermee. Een speler die drukkeramiek bergt, hanteert bewijs dat Deep Reach deze wereld diep genoeg begreep om mensen in leven te houden, en daarna procedures en aansprakelijkheden koos die verlaten winstgevend maakten. Het materiaal herinnert zich beide feiten. Het is kostbaar in een ontsnappingsrecept en gevaarlijk in een wrak. Thermische schok kan scherfbloei veroorzaken: een stille witte breuk opent zich in mesvormige bloemblaadjes over het vlak van een ring. Slechte drukontlasting kan een perfecte zittingafdichting tot schrapnel maken. Gebruik deze grondstof om industriële waarheid te tonen, geen generieke schurkentextuur. De kolonie hing ervan af omdat het werkte. De speler hangt er om dezelfde reden van af.
 
 ## Scanner
 
-NL LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+DEEP REACH-DRUKKERAMIEK // Lokale klei, sulfideflux en vent-smederijhitte omgezet in klemringen en zittingafdichtingen. Houdt druk prachtig vast; faalt bij schok tot messen.
 
 ## Terminal
 
-NL LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+GRONDSTOFKLASSE: Deep-Reach-versterkt. Gebruik: klemringen, zittingafdichtingen, snijcontacten, isolatie van opstijgwieg. Faalmodus: scherfbloei bij thermische schok of verkeerde drukontlasting.
 
 ## Audio
 
-NL LOC HOLD: The company was good at building things. That is part of the crime.
+Deep Reach was goed in dingen bouwen. Daarom werkte de leugen.
 
 ## Field Note
 
-NL LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+Tik het koud aan. Als het hoog zingt, niet verhitten.
 
 <!-- External Site; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/nl_NL. -->

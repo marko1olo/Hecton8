@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using System;
 using System.Runtime.InteropServices;
 using Unity.Collections;
 using UnityEngine;
@@ -63,17 +64,27 @@ namespace Hecton8.Optimization
                 return;
             }
 
-            _guidRecords = new NativeArray<AssetGuidIdRecord>(
-                recordCount,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<AssetGuidIdRecord>[generated asset count] - sorted GUID hash to uint asset ids - owner: PreInitAssetIdMap
-            NativeMemorySentinel.RegisterNativeArray(
-                _guidRecords,
-                nameof(PreInitAssetIdMap),
-                nameof(_guidRecords),
-                NativeAllocationLifetime.Session);
+            try
+            {
+                _guidRecords = new NativeArray<AssetGuidIdRecord>(
+                    recordCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<AssetGuidIdRecord>[generated asset count] - sorted GUID hash to uint asset ids - owner: PreInitAssetIdMap
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    _guidRecords,
+                    nameof(PreInitAssetIdMap),
+                    nameof(_guidRecords),
+                    NativeAllocationLifetime.Session);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("Native memory sentinel registration failed for pre-init asset id records.");
 
-            GeneratedAssetGuidIdTable.CopyTo(_guidRecords);
+                GeneratedAssetGuidIdTable.CopyTo(_guidRecords);
+            }
+            catch
+            {
+                Shutdown();
+                throw;
+            }
 
             _hasRecords = true;
             _initialized = true;

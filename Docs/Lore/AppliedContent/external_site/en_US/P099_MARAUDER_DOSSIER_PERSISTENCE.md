@@ -7,6 +7,9 @@ poi_tags: poi.marauder_dossier_terminal;poi.ending_record_spool
 biome_tags: biome.carrier_link;biome.drowned_admin
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Marauder Dossier Persistence"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

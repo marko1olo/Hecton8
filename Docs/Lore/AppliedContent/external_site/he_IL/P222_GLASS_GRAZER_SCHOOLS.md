@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Glass Grazer Schools"
+title: "להקות רועי זכוכית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Glass Grazer Schools
+# להקות רועי זכוכית
 
-HE LOC HOLD: Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf.
+להקות רועי הזכוכית הן השיעור הראשון של HECTON-8 בהתנהגות בעלי חיים כמכשור. הרועים אינם חיות מחמד, שקי שלל או קישוט לא מזיק. הם אוכלי-מעטפת קטנים ושקופים שהופכים את המדף הרדוד לקריא כשהם מגרדים שכבת מינרלים לנתיבים בהירים. להקה חיה אומרת ל-Marauder היכן pressure glass גדל, איזה תפר חם מדי, היכן זרם פנה זה עתה והיכן טורפים לא עברו לאחרונה. הרגע החשוב הוא בדרך כלל ההיעדרות: השכבה נשארת, הפיות הקטנים במעטפת מפסיקים לנקוש, ונתיב נקי מרגיש פתאום שגוי. השקט הזה מתחבר ישירות לדקדוק הטורף הרדוד, שבו הסכנה מגיעה קודם כפאונה חסרה, רעש bloom שנשבר וצל מעל שונית שעדיין יפה. מיקום טוב צריך לאפשר לשחקן ללמוד בגוף: לשחות אל קו הגירוד החיוור, לשמוע את הנקישות מתחדדות על המעטפת, להבחין באזור הנקי סביב כתם חם של חומר איטום, ואז לראות את הלהקה מתקפלת הצדה לפני שהסונאר יודע למה. רועי הזכוכית גורמים ל-HECTON-8 להרגיש חי מפני שהם שימושיים, שבריריים וכנים. הם לא מסבירים את האוקיינוס. הם חושפים מה האוקיינוס עשה עכשיו.
 
 ## Scanner
 
-HE LOC HOLD: Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.
+להקת רועי זכוכית // אוכלי-מעטפת שקופים מגרדים שכבת מינרלים מ-pressure glass ומשולי מרבדים פוטיים. הנקישות שלהם פותחות צלקות נתיב בהירות; שקט פתאומי הוא נתון על טורף.
 
 ## Terminal
 
-HE LOC HOLD: FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.
+קו בסיס פאונה: אשכול רועים לא עוין. לעקוב אחר שכבת pressure glass, bloom מינרלי טרי, הפרעת זרם והזחה בידי טורף. היעדרות אחרי הזנה פעילה היא אזהרת נתיב, לא נקודת הופעה ריקה.
 
 ## Audio
 
-HE LOC HOLD: Hear the ticking on the shell? That is lunch, map and warning in the same sound.
+אתה שומע את הנקישות על המעטפת? זו ארוחה, מפה ואזהרה באותו צליל.
 
 ## Field Note
 
-HE LOC HOLD: Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.
+אל תרדוף אחרי הלהקה. קרא את מה שהיא חושפת: שכבה חדשה, גירוד ישן, הימנעות מחומר איטום חם, והמסלול הריק שהחיות מסרבות לחצות.
 
 <!-- External Site; generated from P222_GLASS_GRAZER_SCHOOLS/he_IL. -->

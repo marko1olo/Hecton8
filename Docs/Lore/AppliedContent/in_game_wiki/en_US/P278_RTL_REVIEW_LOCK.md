@@ -7,6 +7,9 @@ poi_tags: poi.rtl_review_card;poi.arabic_hebrew_sample
 biome_tags: biome.localization;biome.rtl
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Right-to-Left Reading Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

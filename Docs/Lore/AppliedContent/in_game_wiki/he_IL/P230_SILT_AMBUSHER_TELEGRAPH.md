@@ -9,32 +9,34 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Silt Ambusher Telegraph"
+title: "איתות אורב הסחף"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Silt Ambusher Telegraph
+# איתות אורב הסחף
 
-HE LOC HOLD: Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.
+אורבי סחף הופכים עומק דל ראות למפחיד בלי להפוך אותו לשרירותי. הם שוכבים מתחת ללוחות שטוחים של משקע דק, במקום שבו אבק אורגני נופל אמור בדרך כלל להזין מיקרופאונה. מצע מארב אמיתי נקי מדי. מלחכים קטנים נמנעים ממנו. חוטי סינון דקים נעצרים בקצה. פעימת סורק חוזרת נמוכה ומאוחרת מפני שהממברנה העליונה של החיה בולעת את הקול לפני שהשריר הקבור עונה.
+
+הכלל פשוט: השחקן חייב להיות מסוגל ללמוד את הסכנה לפני המגע. לוח נקי לבדו אינו מספיק. יש לצרף אליו חיים חסרים, תפר סהר, פעימה שגויה, נשימת סחף איטית או רטיטת לחץ מתחת למנורה. אם הסימנים האלה חסרים, המפגש צריך להישאר עקבה, לא התקפה. הפחד מגיע כאשר מבינים שקרקעית הים שיקרה בגלוי.
 
 ## Scanner
 
-HE LOC HOLD: A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.
+מצע אורב סחף // סחף נקי, היעדר מלחכים והחזר פעימה נמוך מסמנים מלכודת חיה לפני שהלוח נפתח.
 
 ## Terminal
 
-HE LOC HOLD: CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.
+כלל מגע: מצעי אורב דורשים לפחות שני סימנים לפני מגע: לוח נקי, מיקרופאונה חסרה, שפה בצורת סהר, החזר פעימה נמוך או נשימת סחף מאוחרת. אם תקציב הסימנים נכשל, להוריד למפגש עקבה בלבד.
 
 ## Audio
 
-HE LOC HOLD: Flat ground is a lie down here.
+קרקע שטוחה משקרת כאן למטה. חפש את מה שלא זוחל עליה.
 
 ## Field Note
 
-HE LOC HOLD: Deep danger must telegraph. The player should learn the wrongness before paying for it.
+התהום יכולה להיות לא הוגנת כלפי הדמות; המשחק לא יכול להיות לא הוגן כלפי השחקן. כל מארב חייב להשאיר חריגה קריאה.
 
 <!-- In-Game Wiki; generated from P230_SILT_AMBUSHER_TELEGRAPH/he_IL. -->

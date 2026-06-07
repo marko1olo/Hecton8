@@ -7,6 +7,9 @@ poi_tags: poi.ending_family_board;poi.partial_result_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Лестница ложных концовок"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

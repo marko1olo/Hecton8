@@ -7,6 +7,9 @@ poi_tags: poi.dossier_ending_record_card;poi.receiver_authority_badge
 biome_tags: biome.dossier;biome.ending
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Dossier Ending Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

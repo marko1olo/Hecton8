@@ -7,6 +7,9 @@ poi_tags: poi.vent_forge_sample;poi.cooling_path_tag
 biome_tags: biome.vent;biome.resource
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Vent forge field process guide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

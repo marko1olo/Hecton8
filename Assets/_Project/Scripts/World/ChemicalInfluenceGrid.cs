@@ -463,7 +463,9 @@ namespace Hecton8.World
 
         internal static void QueueBloodScent(Vector3 worldPosition, float intensity = 1f)
         {
-            float clampedIntensity = math.max(0f, intensity);
+            if (!TryResolveChemicalQueueInput(worldPosition, intensity, out float clampedIntensity))
+                return;
+
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
             if (instance == null)
                 return;
@@ -475,7 +477,9 @@ namespace Hecton8.World
 
         internal static void QueueExhaustScent(Vector3 worldPosition, float intensity = 1f)
         {
-            float clampedIntensity = math.max(0f, intensity);
+            if (!TryResolveChemicalQueueInput(worldPosition, intensity, out float clampedIntensity))
+                return;
+
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
             if (instance == null)
                 return;
@@ -487,7 +491,9 @@ namespace Hecton8.World
 
         internal static void QueueFearPheromone(Vector3 worldPosition, float intensity)
         {
-            float clampedIntensity = math.max(0f, intensity);
+            if (!TryResolveChemicalQueueInput(worldPosition, intensity, out float clampedIntensity))
+                return;
+
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
             if (instance == null)
                 return;
@@ -499,7 +505,9 @@ namespace Hecton8.World
 
         internal static void QueueToxicityBurst(Vector3 worldPosition, float intensity)
         {
-            float clampedIntensity = math.max(0f, intensity);
+            if (!TryResolveChemicalQueueInput(worldPosition, intensity, out float clampedIntensity))
+                return;
+
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
             if (instance == null)
                 return;
@@ -511,7 +519,9 @@ namespace Hecton8.World
 
         internal static void QueueDefoliantBurst(Vector3 worldPosition, float intensity)
         {
-            float clampedIntensity = math.max(0f, intensity);
+            if (!TryResolveChemicalQueueInput(worldPosition, intensity, out float clampedIntensity))
+                return;
+
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
             if (instance == null)
                 return;
@@ -523,6 +533,15 @@ namespace Hecton8.World
 
         internal static void QueueDefoliantDeadZone(Vector3 worldPosition, float radiusMeters = DefaultDefoliantDeadZoneRadiusMeters, float intensity = DefaultMaximumChannelIntensity)
         {
+            if (!IsFiniteRuntimePosition(worldPosition) ||
+                !math.isfinite(radiusMeters) ||
+                radiusMeters <= 0f ||
+                !math.isfinite(intensity) ||
+                intensity <= 0f)
+            {
+                return;
+            }
+
             float safeRadius = math.max(MinimumRadiusMeters, radiusMeters);
             float clampedIntensity = math.max(0f, intensity);
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
@@ -537,6 +556,20 @@ namespace Hecton8.World
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
             if (organicManager != null)
                 organicManager.ApplyDefoliantDeadZone(worldPosition, safeRadius);
+        }
+
+        private static bool TryResolveChemicalQueueInput(Vector3 worldPosition, float intensity, out float clampedIntensity)
+        {
+            clampedIntensity = 0f;
+            if (!IsFiniteRuntimePosition(worldPosition) ||
+                !math.isfinite(intensity) ||
+                intensity <= 0f)
+            {
+                return false;
+            }
+
+            clampedIntensity = math.max(0f, intensity);
+            return true;
         }
 
         internal static bool IsInsidePermanentDefoliantDeadZone(Vector3 worldPosition)
@@ -589,9 +622,9 @@ namespace Hecton8.World
                 return false;
 
             ChemicalTuningDTO tuning = tuningBuffer[0];
-            tuning.BaseDiffusionRate = math.max(0.001f, baseDiffusion);
-            tuning.AdvectionStrength = math.max(0f, advection);
-            tuning.DissipationRate = math.max(0f, dissipation);
+            tuning.BaseDiffusionRate = FiniteAtLeast(baseDiffusion, 0.18f, 0.001f);
+            tuning.AdvectionStrength = FiniteAtLeast(advection, 0.72f, 0f);
+            tuning.DissipationRate = FiniteAtLeast(dissipation, 0.028f, 0f);
             tuning.GlobalQualityWeight = math.saturate(math.select(1f, qualityWeight, math.isfinite(qualityWeight)));
             tuning.Revision++;
             tuningBuffer[0] = tuning;
@@ -636,8 +669,12 @@ namespace Hecton8.World
 
         private static void RegisterChemicalTransient(Vector3 worldPosition, float intensity)
         {
-            if (intensity <= 0f)
+            if (!IsFiniteRuntimePosition(worldPosition) ||
+                !math.isfinite(intensity) ||
+                intensity <= 0f)
+            {
                 return;
+            }
 
             WorldSpatialHashGrid.RegisterTransientEvent(
                 worldPosition,
@@ -875,13 +912,13 @@ namespace Hecton8.World
                 GameBootstrapper.PersistRuntimeService(this);
 
             breadcrumbCapacity = Mathf.Clamp(breadcrumbCapacity, 8, DefaultBreadcrumbCapacity);
-            breadcrumbDropIntervalSeconds = Mathf.Max(0.25f, breadcrumbDropIntervalSeconds);
-            breadcrumbLifetimeSeconds = Mathf.Max(1f, breadcrumbLifetimeSeconds);
-            breadcrumbRadiusMeters = Mathf.Max(1f, breadcrumbRadiusMeters);
-            maximumChannelIntensity = Mathf.Max(0.1f, maximumChannelIntensity);
-            baseDiffusionRate = Mathf.Max(0.001f, baseDiffusionRate);
-            advectionStrength = Mathf.Max(0f, advectionStrength);
-            dissipationRate = Mathf.Max(0f, dissipationRate);
+            breadcrumbDropIntervalSeconds = FiniteAtLeast(breadcrumbDropIntervalSeconds, 5f, 0.25f);
+            breadcrumbLifetimeSeconds = FiniteAtLeast(breadcrumbLifetimeSeconds, 90f, 1f);
+            breadcrumbRadiusMeters = FiniteAtLeast(breadcrumbRadiusMeters, 28f, 1f);
+            maximumChannelIntensity = FiniteAtLeast(maximumChannelIntensity, DefaultMaximumChannelIntensity, 0.1f);
+            baseDiffusionRate = FiniteAtLeast(baseDiffusionRate, 0.18f, 0.001f);
+            advectionStrength = FiniteAtLeast(advectionStrength, 0.72f, 0f);
+            dissipationRate = FiniteAtLeast(dissipationRate, 0.028f, 0f);
 
             _runtimeInitialized = true;
             ValidateStructLayouts();
@@ -1117,12 +1154,12 @@ namespace Hecton8.World
         {
             ChemicalTuningDTO tuning = default;
             tuning.SimulationTickDelta = DefaultSimulationTickDelta;
-            tuning.BaseDiffusionRate = math.max(0.001f, baseDiffusionRate);
-            tuning.AdvectionStrength = math.max(0f, advectionStrength);
-            tuning.DissipationRate = math.max(0f, dissipationRate);
+            tuning.BaseDiffusionRate = FiniteAtLeast(baseDiffusionRate, 0.18f, 0.001f);
+            tuning.AdvectionStrength = FiniteAtLeast(advectionStrength, 0.72f, 0f);
+            tuning.DissipationRate = FiniteAtLeast(dissipationRate, 0.028f, 0f);
             tuning.EmitterRadiusScale = 1f;
             tuning.GlobalQualityWeight = ResolveGlobalQualityWeight();
-            tuning.MaxChannelIntensity = math.max(0.1f, maximumChannelIntensity);
+            tuning.MaxChannelIntensity = FiniteAtLeast(maximumChannelIntensity, DefaultMaximumChannelIntensity, 0.1f);
             tuning.Revision = 1u;
             tuning.Flags = 0u;
             tuning.Iterations = ResolveJacobiIterations(tuning.GlobalQualityWeight);
@@ -1502,7 +1539,7 @@ namespace Hecton8.World
             tuning.GlobalQualityWeight = quality;
             tuning.Iterations = ResolveJacobiIterations(quality);
             tuning.CellSizeMeters = ResolveCellSizeMeters();
-            tuning.MaxChannelIntensity = math.max(0.1f, maximumChannelIntensity);
+            tuning.MaxChannelIntensity = FiniteAtLeast(maximumChannelIntensity, DefaultMaximumChannelIntensity, 0.1f);
             tuningBuffer[0] = tuning;
             float cellSize = math.max(GridSampleEpsilon, tuning.CellSizeMeters);
             int3 targetCenterCell = AupToCell(focusAup, cellSize);
@@ -1630,7 +1667,7 @@ namespace Hecton8.World
                 GridOriginAup = _scheduledOriginAup,
                 Dimensions = GridDimensions,
                 CellSizeMeters = cellSize,
-                MaxChannelIntensity = math.max(0.1f, tuning.MaxChannelIntensity),
+                MaxChannelIntensity = FiniteAtLeast(tuning.MaxChannelIntensity, DefaultMaximumChannelIntensity, 0.1f),
                 EmitterRadiusScale = math.lerp(0.55f, math.max(0.001f, tuning.EmitterRadiusScale), Smooth01(quality)),
                 ActiveCapacity = MaxActiveEmitters,
                 MockCapacity = MaxMockEmitters
@@ -1683,7 +1720,7 @@ namespace Hecton8.World
                 DefoliantZoneCount = _defoliantDeadZoneCount,
                 GridOriginAup = _scheduledOriginAup,
                 CellSizeMeters = cellSize,
-                MaxChannelIntensity = math.max(0.1f, tuning.MaxChannelIntensity)
+                MaxChannelIntensity = FiniteAtLeast(tuning.MaxChannelIntensity, DefaultMaximumChannelIntensity, 0.1f)
             };
             dependency = publishJob.Schedule(ChemicalCellCount, 128, dependency);
 
@@ -1948,7 +1985,8 @@ namespace Hecton8.World
                     continue;
 
                 float distanceSq01 = math.saturate((float)(distanceSq / math.max(radiusSq, 0.0001d)));
-                bestIntensity = math.saturate(channelSignal * SmoothStep01(1f - distanceSq01) / math.max(0.1f, maximumChannelIntensity));
+                float safeMaximumChannelIntensity = FiniteAtLeast(maximumChannelIntensity, DefaultMaximumChannelIntensity, 0.1f);
+                bestIntensity = math.saturate(channelSignal * SmoothStep01(1f - distanceSq01) / safeMaximumChannelIntensity);
                 bestDistanceSq = distanceSq;
                 nearestWaypoint = waypoint;
                 found = true;
@@ -2506,9 +2544,7 @@ namespace Hecton8.World
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out double3 aup)
         {
             aup = default;
-            if (!math.isfinite(runtimePosition.x) ||
-                !math.isfinite(runtimePosition.y) ||
-                !math.isfinite(runtimePosition.z))
+            if (!IsFiniteRuntimePosition(runtimePosition))
             {
                 return false;
             }
@@ -2522,6 +2558,13 @@ namespace Hecton8.World
 
             aup = resolvedAup.ToAbsoluteDouble3();
             return math.all(math.isfinite(aup));
+        }
+
+        private static bool IsFiniteRuntimePosition(Vector3 runtimePosition)
+        {
+            return math.isfinite(runtimePosition.x) &&
+                   math.isfinite(runtimePosition.y) &&
+                   math.isfinite(runtimePosition.z);
         }
 
         private int ResolveDeterministicFrameId(bool advanceFallback)
@@ -2686,12 +2729,19 @@ namespace Hecton8.World
 
         private static float4 ClampChemicalChannels(float4 value, float maxChannelIntensity)
         {
-            float safeMax = math.max(0.1f, maxChannelIntensity);
+            float safeMax = FiniteAtLeast(maxChannelIntensity, DefaultMaximumChannelIntensity, 0.1f);
             return new float4(
                 math.clamp(value.x, 0f, safeMax),
                 math.clamp(value.y, 0f, safeMax),
                 math.clamp(value.z, 0f, safeMax),
                 math.clamp(value.w, -safeMax, safeMax));
+        }
+
+        private static float FiniteAtLeast(float value, float fallback, float minimum)
+        {
+            float safeFallback = math.select(minimum, fallback, math.isfinite(fallback));
+            float safeValue = math.select(safeFallback, value, math.isfinite(value));
+            return math.max(minimum, safeValue);
         }
 
         private static float GetChannel(float4 value, int channelIndex)
@@ -3151,7 +3201,7 @@ namespace Hecton8.World
                 int3 minCell = math.max(new int3(0), (int3)math.floor(centerGrid) - new int3(radiusCells));
                 int3 maxCell = math.min(Dimensions - new int3(1), (int3)math.ceil(centerGrid) + new int3(radiusCells));
                 float radiusSq = math.max(0.0001f, radius * radius);
-                float safeMax = math.max(0.1f, MaxChannelIntensity);
+                float safeMax = FiniteAtLeast(MaxChannelIntensity, DefaultMaximumChannelIntensity, 0.1f);
 
                 for (int y = minCell.y; y <= maxCell.y; y++)
                 {
@@ -3338,7 +3388,7 @@ namespace Hecton8.World
                     return;
 
                 ChemicalCellDTO cell = Source[index];
-                float safeMax = math.max(0.1f, MaxChannelIntensity);
+                float safeMax = FiniteAtLeast(MaxChannelIntensity, DefaultMaximumChannelIntensity, 0.1f);
                 float4 normalized = new float4(
                     math.saturate(cell.BloodConcentration * math.rcp(safeMax)),
                     math.saturate(cell.PheromoneConcentration * math.rcp(safeMax)),
@@ -3376,7 +3426,8 @@ namespace Hecton8.World
                         continue;
 
                     float falloff = Smooth01(1f - math.saturate((float)(distanceSq / math.max(radiusSq, 0.0001d))));
-                    strongest = math.max(strongest, falloff * math.saturate(zone.Intensity * math.rcp(math.max(0.1f, MaxChannelIntensity))));
+                    float safeMax = FiniteAtLeast(MaxChannelIntensity, DefaultMaximumChannelIntensity, 0.1f);
+                    strongest = math.max(strongest, falloff * math.saturate(zone.Intensity * math.rcp(safeMax)));
                 }
 
                 return -strongest;

@@ -7,6 +7,9 @@ poi_tags: poi.freight_stage_mass_board;poi.seed_ship_burn_schedule
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Сроки тяжелого freight staging"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

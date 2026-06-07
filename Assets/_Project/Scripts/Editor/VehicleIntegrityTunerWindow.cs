@@ -75,6 +75,7 @@ namespace Hecton8.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= Refresh;
             EditorApplication.update += Refresh;
         }
 

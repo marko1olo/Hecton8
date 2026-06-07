@@ -78,12 +78,8 @@ namespace Hecton8.Input
 
         private void Awake()
         {
-            BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.UserOptionsRuntime, out UserOptionsPersistence registered);
-            if (registered != null && registered != this)
-            {
-                DestroyDuplicateInstance();
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             EnsureOptionsStoragePaths();
             LoadFromDisk();
@@ -122,19 +118,40 @@ namespace Hecton8.Input
             if (_serviceShuttingDown || !Application.isPlaying)
                 return;
 
-            BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.UserOptionsRuntime, out UserOptionsPersistence registered);
-            if (registered != null && registered != this)
-            {
-                DestroyDuplicateInstance();
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
+            BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.UserOptionsRuntime, out UserOptionsPersistence registered);
             if (!ReferenceEquals(registered, this))
                 BootstrapRegistryBridge.Register(BootstrapRegistryBridgeSlot.UserOptionsRuntime, this);
 
             _serviceRegistered =
                 BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.UserOptionsRuntime, out registered) &&
                 ReferenceEquals(registered, this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.UserOptionsRuntime, out UserOptionsPersistence registered);
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsUserOptionsRuntimeUsable(registered))
+            {
+                DestroyDuplicateInstance();
+                return true;
+            }
+
+            BootstrapRegistryBridge.Unregister(BootstrapRegistryBridgeSlot.UserOptionsRuntime, registered);
+            return false;
+        }
+
+        private static bool IsUserOptionsRuntimeUsable(UserOptionsPersistence persistence)
+        {
+            return persistence != null &&
+                   persistence._serviceRegistered &&
+                   persistence.isActiveAndEnabled &&
+                   !persistence._serviceShuttingDown;
         }
 
         private void DestroyDuplicateInstance()

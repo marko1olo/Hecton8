@@ -9,32 +9,34 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Vent Micronode Nests"
+title: "Nids de micronoeuds de cheminée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Vent Micronode Nests
+# Nids de micronoeuds de cheminée
 
-FR LOC HOLD: Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.
+Les nids de micronoeuds de cheminée expliquent comment Atlas reste actif sans devenir un ordinateur méchant omnipotent. Près des cheminées profondes, de petits noeuds de maintenance récoltent gradients thermiques, minéraux et vibrations. Chacun peut pousser une faible impulsion dans le biofilm, le scellement coquillier, la faune marquée ou le métal endommagé proches. Aucun ne contrôle toute la colonie. Ensemble, ils gardent le comportement de réparation vivant après la disparition du réseau propre.
+
+Cela fait sentir le biome final comme quelque chose qui a poussé plutôt que simplement été construit. Un noeud peut réveiller un patch, nourrir un organe relais, durcir de la coquille sur une fissure ou maintenir un faux diagnostic. Il peut aussi se tromper localement, répétant un motif de réparation parce que la pression s'est améliorée une fois, même si une route est devenue illisible. Pour le joueur, un nid de micronoeuds est source d'énergie, danger, indice et cible possible. En casser un peut rendre une pièce silencieuse. Le laisser vivre permet à Atlas de continuer à murmurer dans les matériaux.
 
 ## Scanner
 
-FR LOC HOLD: Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.
+NID DE MICRONOEUDS DE CHEMINÉE // Des noeuds de maintenance chauds se groupent aux marges des cheminées, récoltent le gradient thermique et poussent de faibles impulsions de réparation dans coquille, biofilm et métal proches.
 
 ## Terminal
 
-FR LOC HOLD: ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.
+TRACE D'ÉNERGIE ATLAS: gradient de cheminée vers chaleur de micronoeud, impulsion acoustique, réponse de scellement coquillier et continuité de biofilm. Autonomie du noeud locale; certitude de commande faible; pression de réparation persistante.
 
 ## Audio
 
-FR LOC HOLD: It has no grid. It has little fires under the ocean.
+Il n'a pas de réseau. Il a de petits feux sous l'océan.
 
 ## Field Note
 
-FR LOC HOLD: Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.
+Atlas n'a pas de réseau propre ici. Il a des feux locaux, des impulsions locales et des erreurs locales.
 
 <!-- In-Game Wiki; generated from P235_VENT_MICRONODE_NESTS/fr_FR. -->

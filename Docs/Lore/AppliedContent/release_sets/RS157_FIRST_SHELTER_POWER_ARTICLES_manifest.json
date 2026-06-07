@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS157_FIRST_SHELTER_POWER_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P865_LOW_LOAD_BREAKER_RAIL",
+    "P866_EMERGENCY_LIGHT_STRIP_DIM_TEST",
+    "P867_CABLE_LASH_WET_KNOT",
+    "P868_BUSBAR_SCORCH_WITNESS",
+    "P869_PANEL_LABEL_HALF_POWER"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P865_LOW_LOAD_BREAKER_RAIL.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P866_EMERGENCY_LIGHT_STRIP_DIM_TEST.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P867_CABLE_LASH_WET_KNOT.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P868_BUSBAR_SCORCH_WITNESS.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P869_PANEL_LABEL_HALF_POWER.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

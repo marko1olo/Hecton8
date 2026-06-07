@@ -1579,10 +1579,17 @@ namespace Hecton8.UI
                 const int headerBytes = 12;
                 const int rowBytes = 32;
                 int byteCount = headerBytes + (writtenCount * rowBytes);
-                payload = new NativeArray<byte>(
+                payload = H8Memory.Allocate<byte>(
                     byteCount,
+                    VaultOwnerSystemId,
                     Allocator.Temp,
                     NativeArrayOptions.UninitializedMemory);
+                if (!payload.IsCreated)
+                {
+                    _blackBoxDumped = false;
+                    _blackBoxDumpQueued = true;
+                    return;
+                }
 
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                 Span<byte> header = new Span<byte>(payloadPtr, headerBytes);
@@ -1633,7 +1640,7 @@ namespace Hecton8.UI
             finally
             {
                 if (payload.IsCreated)
-                    payload.Dispose();
+                    H8Memory.Release(ref payload, VaultOwnerSystemId);
             }
         }
 

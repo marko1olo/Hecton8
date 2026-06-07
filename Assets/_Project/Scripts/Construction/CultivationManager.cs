@@ -20,7 +20,7 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     public sealed class CultivationManager : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
-        private const int MaxCultivationSlots = 4;
+        private const int MaxCultivationSlots = ModuleDTO.MaxCultivationSlots;
         private const float SlowTickDt = 0.5f;
         private const float GrowthDurationSeconds = 20f * 60f;
         private const float MatureThreshold = 0.999f;
@@ -29,7 +29,7 @@ namespace Hecton8.Construction
         private const ulong GeneOxygenProducing = (ulong)GeneticTraitProfile.GeneticTraitMask.OxygenProducing;
         private const ulong GeneToxic = (ulong)GeneticTraitProfile.GeneticTraitMask.Toxic;
         private const ulong GeneRapidGrowth = (ulong)GeneticTraitProfile.GeneticTraitMask.FastGrowing;
-        private const ulong DefinedCultivationGeneMask = 0x000000000000000FUL;
+        private const ulong DefinedCultivationGeneMask = ModuleDTO.CultivationGeneticsSupportedMask;
         private const ulong SpliceMutationGeneMask = (GeneBioluminescent | GeneOxygenProducing | GeneToxic | GeneRapidGrowth) & DefinedCultivationGeneMask;
         /// <summary>
         /// Fixed cultivation slot payload shared with atmosphere jobs without managed allocation.

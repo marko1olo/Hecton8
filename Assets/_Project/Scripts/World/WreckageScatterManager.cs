@@ -62,15 +62,13 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
-                currentService == null ||
-                _presentationPending == 0 ||
-                !isActiveAndEnabled)
-            {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
-            }
 
-            _registeredLateFrameTick = 0;
+            TryUnregisterLateFrameTickable();
+            if (currentService == null || _presentationPending == 0 || !isActiveAndEnabled)
+                return;
+
             TryRegisterLateFrameTickable();
         }
 

@@ -7,6 +7,9 @@ poi_tags: poi.blue_debt_sample;poi.claim_accounting_terminal
 biome_tags: biome.resource_cache;biome.dead_claim
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Реєстр матеріальної виплати"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -253,47 +253,7 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingStarted.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), nameof(_pendingStarted));
-                _pendingStarted.Dispose();
-                _pendingStarted = default;
-            }
-
-            if (_nextFrameStarted.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), nameof(_nextFrameStarted));
-                _nextFrameStarted.Dispose();
-                _nextFrameStarted = default;
-            }
-
-            if (_pendingEnded.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), nameof(_pendingEnded));
-                _pendingEnded.Dispose();
-                _pendingEnded = default;
-            }
-
-            if (_nextFrameEnded.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), nameof(_nextFrameEnded));
-                _nextFrameEnded.Dispose();
-                _nextFrameEnded = default;
-            }
-
-            if (_pendingSeismicShockwaves.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), nameof(_pendingSeismicShockwaves));
-                _pendingSeismicShockwaves.Dispose();
-                _pendingSeismicShockwaves = default;
-            }
-
-            if (_nextFrameSeismicShockwaves.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), nameof(_nextFrameSeismicShockwaves));
-                _nextFrameSeismicShockwaves.Dispose();
-                _nextFrameSeismicShockwaves = default;
-            }
+            ReleaseNativeQueues();
 
             _pendingStartedCount = 0;
             _nextFrameStartedCount = 0;
@@ -490,72 +450,96 @@ namespace Hecton8.Gameplay
 
         private static void EnsureInitialized()
         {
-            if (!_pendingStarted.IsCreated)
+            try
             {
-                _pendingStarted = new NativeQueue<RandomEventStartedPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventStartedPayload>[16] - deferred random-event starts - owner: RandomEventEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingStarted,
-                    PendingStartedCapacity,
-                    nameof(RandomEventEvents),
-                    nameof(_pendingStarted),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingStarted, PendingStartedCapacity);
+                if (!_pendingStarted.IsCreated)
+                {
+                    _pendingStarted = new NativeQueue<RandomEventStartedPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventStartedPayload>[16] - deferred random-event starts - owner: RandomEventEvents
+                    RegisterNativeQueue(ref _pendingStarted, PendingStartedCapacity, nameof(_pendingStarted));
+                    PrewarmQueue(ref _pendingStarted, PendingStartedCapacity);
+                }
+                if (!_nextFrameStarted.IsCreated)
+                {
+                    _nextFrameStarted = new NativeQueue<RandomEventStartedPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventStartedPayload>[16] - next-frame random-event starts - owner: RandomEventEvents
+                    RegisterNativeQueue(ref _nextFrameStarted, PendingStartedCapacity, nameof(_nextFrameStarted));
+                    PrewarmQueue(ref _nextFrameStarted, PendingStartedCapacity);
+                }
+                if (!_pendingEnded.IsCreated)
+                {
+                    _pendingEnded = new NativeQueue<RandomEventType>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventType>[16] - deferred random-event ends - owner: RandomEventEvents
+                    RegisterNativeQueue(ref _pendingEnded, PendingEndedCapacity, nameof(_pendingEnded));
+                    PrewarmQueue(ref _pendingEnded, PendingEndedCapacity);
+                }
+                if (!_nextFrameEnded.IsCreated)
+                {
+                    _nextFrameEnded = new NativeQueue<RandomEventType>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventType>[16] - next-frame random-event ends - owner: RandomEventEvents
+                    RegisterNativeQueue(ref _nextFrameEnded, PendingEndedCapacity, nameof(_nextFrameEnded));
+                    PrewarmQueue(ref _nextFrameEnded, PendingEndedCapacity);
+                }
+                if (!_pendingSeismicShockwaves.IsCreated)
+                {
+                    _pendingSeismicShockwaves = new NativeQueue<SeismicShockwaveEvent>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SeismicShockwaveEvent>[8] - deferred seismic shockwaves - owner: RandomEventEvents
+                    RegisterNativeQueue(ref _pendingSeismicShockwaves, PendingSeismicShockwaveCapacity, nameof(_pendingSeismicShockwaves));
+                    PrewarmQueue(ref _pendingSeismicShockwaves, PendingSeismicShockwaveCapacity);
+                }
+                if (!_nextFrameSeismicShockwaves.IsCreated)
+                {
+                    _nextFrameSeismicShockwaves = new NativeQueue<SeismicShockwaveEvent>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SeismicShockwaveEvent>[8] - next-frame seismic shockwaves - owner: RandomEventEvents
+                    RegisterNativeQueue(ref _nextFrameSeismicShockwaves, PendingSeismicShockwaveCapacity, nameof(_nextFrameSeismicShockwaves));
+                    PrewarmQueue(ref _nextFrameSeismicShockwaves, PendingSeismicShockwaveCapacity);
+                }
             }
-            if (!_nextFrameStarted.IsCreated)
+            catch
             {
-                _nextFrameStarted = new NativeQueue<RandomEventStartedPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventStartedPayload>[16] - next-frame random-event starts - owner: RandomEventEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameStarted,
-                    PendingStartedCapacity,
-                    nameof(RandomEventEvents),
-                    nameof(_nextFrameStarted),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameStarted, PendingStartedCapacity);
+                ReleaseNativeQueues();
+                _pendingStartedCount = 0;
+                _nextFrameStartedCount = 0;
+                _pendingEndedCount = 0;
+                _nextFrameEndedCount = 0;
+                _pendingSeismicShockwaveCount = 0;
+                _nextFrameSeismicShockwaveCount = 0;
+                throw;
             }
-            if (!_pendingEnded.IsCreated)
-            {
-                _pendingEnded = new NativeQueue<RandomEventType>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventType>[16] - deferred random-event ends - owner: RandomEventEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEnded,
-                    PendingEndedCapacity,
-                    nameof(RandomEventEvents),
-                    nameof(_pendingEnded),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEnded, PendingEndedCapacity);
-            }
-            if (!_nextFrameEnded.IsCreated)
-            {
-                _nextFrameEnded = new NativeQueue<RandomEventType>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventType>[16] - next-frame random-event ends - owner: RandomEventEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEnded,
-                    PendingEndedCapacity,
-                    nameof(RandomEventEvents),
-                    nameof(_nextFrameEnded),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEnded, PendingEndedCapacity);
-            }
-            if (!_pendingSeismicShockwaves.IsCreated)
-            {
-                _pendingSeismicShockwaves = new NativeQueue<SeismicShockwaveEvent>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SeismicShockwaveEvent>[8] - deferred seismic shockwaves - owner: RandomEventEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingSeismicShockwaves,
-                    PendingSeismicShockwaveCapacity,
-                    nameof(RandomEventEvents),
-                    nameof(_pendingSeismicShockwaves),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingSeismicShockwaves, PendingSeismicShockwaveCapacity);
-            }
-            if (!_nextFrameSeismicShockwaves.IsCreated)
-            {
-                _nextFrameSeismicShockwaves = new NativeQueue<SeismicShockwaveEvent>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SeismicShockwaveEvent>[8] - next-frame seismic shockwaves - owner: RandomEventEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameSeismicShockwaves,
-                    PendingSeismicShockwaveCapacity,
-                    nameof(RandomEventEvents),
-                    nameof(_nextFrameSeismicShockwaves),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameSeismicShockwaves, PendingSeismicShockwaveCapacity);
-            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(RandomEventEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeQueue(ref queue, label);
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            ReleaseNativeQueue(ref _pendingStarted, nameof(_pendingStarted));
+            ReleaseNativeQueue(ref _nextFrameStarted, nameof(_nextFrameStarted));
+            ReleaseNativeQueue(ref _pendingEnded, nameof(_pendingEnded));
+            ReleaseNativeQueue(ref _nextFrameEnded, nameof(_nextFrameEnded));
+            ReleaseNativeQueue(ref _pendingSeismicShockwaves, nameof(_pendingSeismicShockwaves));
+            ReleaseNativeQueue(ref _nextFrameSeismicShockwaves, nameof(_nextFrameSeismicShockwaves));
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), label);
+            queue.Dispose();
+            queue = default;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -1361,8 +1345,8 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registered = false;
-                    _registeredLateFrame = false;
+                    TryUnregister();
+                    TryUnregisterLateFrame();
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegister();
@@ -1373,7 +1357,7 @@ namespace Hecton8.Gameplay
                     _cachedLocalization = currentService as ILocalizationTextReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _cachedSpatialAudioManager = currentService as IMeteorShowerAudioSink;
+                    CacheMeteorShowerAudioSink(currentService);
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _cachedObjectPool = currentService as IObjectPoolService;
@@ -1419,7 +1403,7 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             _cachedLocalization = GlobalRegistry.LocalizationText;
-            _cachedSpatialAudioManager = GlobalRegistry.Audio as IMeteorShowerAudioSink;
+            CacheMeteorShowerAudioSink(GlobalRegistry.Audio);
             _cachedObjectPool = GlobalRegistry.ObjectPoolService;
             _cachedPlayerContext = GlobalRegistry.Player;
             _cachedVoxelEngine = GlobalRegistry.VoxelEngine;
@@ -1430,6 +1414,37 @@ namespace Hecton8.Gameplay
                 voxelEngine = _cachedVoxelEngine;
             if (survivalSystem == null && _cachedPlayerContext != null)
                 survivalSystem = _cachedPlayerContext.SurvivalSystem;
+        }
+
+        private void CacheMeteorShowerAudioSink(object audioRuntime)
+        {
+            _cachedSpatialAudioManager = IsAudioRuntimeObjectUsable(audioRuntime)
+                ? audioRuntime as IMeteorShowerAudioSink
+                : null;
+        }
+
+        private IMeteorShowerAudioSink ResolveMeteorShowerAudioSink()
+        {
+            IMeteorShowerAudioSink spatialAudioManager = _cachedSpatialAudioManager;
+            if (IsAudioRuntimeObjectUsable(spatialAudioManager))
+                return spatialAudioManager;
+
+            _cachedSpatialAudioManager = null;
+            return null;
+        }
+
+        private static bool IsAudioRuntimeObjectUsable(object runtime)
+        {
+            if (runtime == null)
+                return false;
+
+            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+                return false;
+
+            if (runtime is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
@@ -1566,7 +1581,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _meteorLastBoomIndex = boomIndex;
-            IMeteorShowerAudioSink spatialAudioManager = _cachedSpatialAudioManager;
+            IMeteorShowerAudioSink spatialAudioManager = ResolveMeteorShowerAudioSink();
             if (spatialAudioManager == null)
                 return;
 
@@ -1841,7 +1856,7 @@ namespace Hecton8.Gameplay
             Vector3 boomPosition = _pendingMeteorWaterBoomPosition;
             float boomIntensity = _pendingMeteorWaterBoomIntensity;
             ClearPendingMeteorWaterBoom();
-            IMeteorShowerAudioSink spatialAudioManager = _cachedSpatialAudioManager;
+            IMeteorShowerAudioSink spatialAudioManager = ResolveMeteorShowerAudioSink();
             if (spatialAudioManager == null)
                 return;
 

@@ -7,6 +7,9 @@ poi_tags: poi.cable_splice;poi.atlas_repair_scar
 biome_tags: biome.service_corridor;biome.cable_reef
 locale: pt_BR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Cicatriz de emenda de cabo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

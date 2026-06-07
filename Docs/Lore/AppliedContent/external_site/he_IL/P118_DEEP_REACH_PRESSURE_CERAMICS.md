@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "קרמיקת לחץ Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# קרמיקת לחץ Deep Reach
 
-HE LOC HOLD: Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities.
+קרמיקת לחץ Deep Reach מסבירה כיצד המושבה הצליחה לעבוד בכלל, ולמה שרידיה עדיין קטלניים. Deep Reach לא בנתה תעשיית עומק מתוך חוסר יכולת. החברה למדה להגביר חרסיות מקומיות, שטפים גופריתיים וחום כבשני פתחים לחלקים קרמיים ששרדו לחצים שמתכת רגילה לא הייתה סובלת. טבעות הידוק החזיקו תפרי מגורים. מושבי אטם שמרו על המשאבות ישרות. מגעי חותך נשאו חום דרך תמלחת בלי להפוך לגרוטאה רכה. בידוד עריסות העלייה קנה כמה דקות קריטיות כאשר חומרת השיגור הייתה אמורה לבשל את עצמה. הכשירות הזאת היא חלק מהאימה, לא סתירה לה. שחקן שמחלץ קרמיקת לחץ מחזיק הוכחה ש-Deep Reach הבינה את העולם הזה מספיק כדי להשאיר אנשים בחיים, ואז בחרה נהלים וחבויות שהפכו נטישה לרווחית. החומר זוכר את שני הדברים. הוא יקר במתכון בריחה ומסוכן בהריסות. הלם תרמי יכול ליצור פריחת רסיסים: סדק לבן ושקט נפתח לעלי סכין על פני טבעת. שחרור לחץ שגוי יכול להפוך מושב אטם מושלם לרסיסים. יש להשתמש במשאב הזה כדי להראות אמת תעשייתית, לא מרקם נבל גנרי. המושבה הייתה תלויה בו כי הוא עבד. השחקן תלוי בו מאותה סיבה.
 
 ## Scanner
 
-HE LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+קרמיקת לחץ DEEP REACH // חרסית מקומית, שטף גופריתי וחום כבשן פתח שהפכו לטבעות הידוק ומושבי אטם. מחזיקה לחץ יפה; בהלם היא נכשלת לסכינים.
 
 ## Terminal
 
-HE LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+סיווג משאב: מוגבר בידי Deep Reach. שימושים: טבעות הידוק, מושבי אטם, מגעי חותך, בידוד עריסת עלייה. מצב כשל: פריחת רסיסים בהלם תרמי או בשחרור לחץ שגוי.
 
 ## Audio
 
-HE LOC HOLD: The company was good at building things. That is part of the crime.
+Deep Reach ידעה לבנות דברים. לכן השקר עבד.
 
 ## Field Note
 
-HE LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+הקש עליה קרה. אם היא שרה גבוה, אל תחמם.
 
 <!-- External Site; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/he_IL. -->

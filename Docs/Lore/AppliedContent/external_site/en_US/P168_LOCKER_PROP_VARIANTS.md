@@ -7,6 +7,9 @@ poi_tags: poi.locker_prop_variant_set;poi.tool_wear_strip
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Locker Prop Variants"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

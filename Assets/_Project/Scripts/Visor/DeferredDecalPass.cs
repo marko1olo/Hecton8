@@ -539,7 +539,7 @@ namespace Hecton8.Visor
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredLateFrame = false;
+                TryUnregisterLateFrame();
                 if (currentService != null && isActive)
                     TryRegisterLateFrame();
             }

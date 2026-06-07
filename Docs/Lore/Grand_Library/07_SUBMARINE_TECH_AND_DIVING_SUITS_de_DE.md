@@ -33,4 +33,4 @@ Auftragnehmer sind mit pneumatisch angetriebenen Speerkanonen und Thermallanzen 
 
 Marauder tragen umfunktionierte schwere Industrietauchanzüge der Klasse IV. Sie sind nicht für den Kampf gebaut; sie sind gebaut, um der erdrückenden Dunkelheit standzuhalten. Die Anzüge bestehen aus einem artikulierten Titan-Karbid-Exoskelett, das mit synthetischen Neoprenblasen überzogen ist.
 
-Die Haupttodesursache von Auftragnehmern sind keine Raubtiere. Es ist die Punktierung des Anzugs. Auf Einsatztiefe leckt Wasser, das ein beschädigtes Anzugsiegel durchbricht, nicht nur. Es dringt als Überschall-Wasserstrahl ein, der Knochen und Gewebe wie ein Laserschneider durchschneidet. Keelmark-Aktuare haben festgestellt, dass der Tod durch Hochdruckinjektion fast sofort eintritt.
+Die Haupttodesursache von Auftragnehmern sind keine Raubtiere. Es ist die Punktierung des Anzugs. Auf Einsatztiefe sickert Wasser, das eine beschädigte Dichtung durchbricht, nicht bloß langsam ein – es schießt als hyperschallgetriebener Strahl herein, der Knochen und Gewebe wie ein Laserschneider durchtrennt. Keelmark-Aktuare haben festgestellt, dass der Tod durch Hochdruckinjektion fast sofort eintritt.

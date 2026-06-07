@@ -73,6 +73,12 @@ public static class CaveGraphGenerator
 
     /// <summary>Maximum structures kept in stack scratch. Authored presets are far below this; custom presets fail closed by truncation.</summary>
     const int MAX_STRUCTURES = 128;
+    const float DEFAULT_ENTRANCE_RADIUS = 3f;
+    const float MIN_ENTRANCE_RADIUS = 0.5f;
+    const float MAX_ENTRANCE_RADIUS = 15f;
+    const float DEFAULT_ENTRANCE_FUNNEL_LENGTH = 12f;
+    const float MIN_ENTRANCE_FUNNEL_LENGTH = 3f;
+    const float MAX_ENTRANCE_FUNNEL_LENGTH = 40f;
 
     /// <summary>Minimum distance between room centers as fraction of combined radii.
     /// Prevents rooms from overlapping so much they merge into a blob.</summary>
@@ -680,12 +686,32 @@ public static class CaveGraphGenerator
         if (rooms.Length == 0)
             return 0;
 
-        int entranceCount = rng.NextInt(preset.minEntrances, preset.maxEntrances + 1);
+        if (!IsFinite(worldCenter) ||
+            !math.isfinite(terrainHeight) ||
+            !math.isfinite(volumeHalfExtent) ||
+            volumeHalfExtent <= 0f)
+        {
+            return 0;
+        }
+
+        int minEntrances = math.clamp(preset.minEntrances, 1, MAX_ENTRANCES);
+        int maxEntrances = math.clamp(preset.maxEntrances, minEntrances, MAX_ENTRANCES);
+        int entranceCount = rng.NextInt(minEntrances, maxEntrances + 1);
         entranceCount = math.min(entranceCount, rooms.Length);
         entranceCount = math.min(entranceCount, entrances.Length);
 
         // v4.1: Check that terrain surface is reachable from volume
-        float volumeTopY = worldCenter.y + volumeHalfExtent;
+        float safeHalfExtent = ClampFinite(volumeHalfExtent, 1f, 1f, 8192f);
+        float maxRadiusForVolume = math.max(MIN_ENTRANCE_RADIUS, math.min(MAX_ENTRANCE_RADIUS, safeHalfExtent * 0.25f));
+        float maxFunnelForVolume = math.max(MIN_ENTRANCE_FUNNEL_LENGTH, math.min(MAX_ENTRANCE_FUNNEL_LENGTH, safeHalfExtent * 1.5f));
+        float safeEntranceRadius = ClampFinite(preset.entranceRadius, DEFAULT_ENTRANCE_RADIUS, MIN_ENTRANCE_RADIUS, maxRadiusForVolume);
+        float safeEntranceFunnelLength = ClampFinite(
+            preset.entranceFunnelLength,
+            DEFAULT_ENTRANCE_FUNNEL_LENGTH,
+            MIN_ENTRANCE_FUNNEL_LENGTH,
+            maxFunnelForVolume);
+        float safeEdgeMargin = ClampFinite(edgeMargin, BASE_EDGE_MARGIN, 0f, math.max(0f, safeHalfExtent * 0.4f));
+        float volumeTopY = worldCenter.y + safeHalfExtent;
 
         for (int r = 0; r < rooms.Length; r++)
             usedRooms[r] = 0;
@@ -701,6 +727,9 @@ public static class CaveGraphGenerator
                 if (usedRooms[r] != 0) continue;
 
                 float3 roomPos = rooms[r].position;
+                if (!IsFinite(roomPos) || !IsFinite(rooms[r].radii))
+                    continue;
+
                 float distToSurface = terrainHeight - roomPos.y;
                 if (distToSurface < 0) continue;
 
@@ -721,7 +750,11 @@ public static class CaveGraphGenerator
             usedRooms[bestRoom] = 1;
 
             float3 targetRoomPos = rooms[bestRoom].position;
-            float targetRoomMaxRadius = math.cmax(rooms[bestRoom].radii);
+            float targetRoomMaxRadius = ClampFinite(
+                math.cmax(rooms[bestRoom].radii),
+                safeEntranceRadius,
+                safeEntranceRadius,
+                safeHalfExtent);
 
             float2 horizontalOffset = rng.NextFloat2Direction() *
                                        rng.NextFloat(0f, targetRoomMaxRadius * 0.3f);
@@ -736,22 +769,29 @@ public static class CaveGraphGenerator
                 targetRoomPos.z + horizontalOffset.y);
 
             // Clamp XZ to volume bounds
-            float xzMargin = edgeMargin + preset.entranceRadius;
-            surfacePos.x = math.clamp(surfacePos.x,
-                worldCenter.x - volumeHalfExtent + xzMargin,
-                worldCenter.x + volumeHalfExtent - xzMargin);
-            surfacePos.z = math.clamp(surfacePos.z,
-                worldCenter.z - volumeHalfExtent + xzMargin,
-                worldCenter.z + volumeHalfExtent - xzMargin);
+            float xzMargin = math.min(safeEdgeMargin + safeEntranceRadius, math.max(0f, safeHalfExtent - 0.5f));
+            float minX = worldCenter.x - safeHalfExtent + xzMargin;
+            float maxX = worldCenter.x + safeHalfExtent - xzMargin;
+            float minZ = worldCenter.z - safeHalfExtent + xzMargin;
+            float maxZ = worldCenter.z + safeHalfExtent - xzMargin;
+            if (maxX < minX)
+                minX = maxX = worldCenter.x;
+            if (maxZ < minZ)
+                minZ = maxZ = worldCenter.z;
+            surfacePos.x = math.clamp(surfacePos.x, minX, maxX);
+            surfacePos.z = math.clamp(surfacePos.z, minZ, maxZ);
 
             float3 inward = math.normalizesafe(
                 targetRoomPos - surfacePos,
                 new float3(0, -1, 0));
 
-            float radius = preset.entranceRadius * rng.NextFloat(0.8f, 1.2f);
-            float funnelLen = preset.entranceFunnelLength * rng.NextFloat(0.8f, 1.2f);
+            float radius = safeEntranceRadius * rng.NextFloat(0.8f, 1.2f);
+            float funnelLen = safeEntranceFunnelLength * rng.NextFloat(0.8f, 1.2f);
 
             float distToRoom = math.length(targetRoomPos - surfacePos);
+            if (!math.isfinite(distToRoom))
+                continue;
+
             funnelLen = math.min(funnelLen, distToRoom * 0.8f);
             funnelLen = math.max(funnelLen, radius * 2f);
 
@@ -781,6 +821,18 @@ public static class CaveGraphGenerator
     static float3 ClampToVolume(float3 pos, float3 volumeMin, float3 volumeMax, float margin)
     {
         return math.clamp(pos, volumeMin + margin, volumeMax - margin);
+    }
+
+    static float ClampFinite(float value, float fallback, float minimum, float maximum)
+    {
+        float safeFallback = math.select(minimum, fallback, math.isfinite(fallback));
+        float safeValue = math.select(safeFallback, value, math.isfinite(value));
+        return math.clamp(safeValue, minimum, maximum);
+    }
+
+    static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
     }
 
     /// <summary>

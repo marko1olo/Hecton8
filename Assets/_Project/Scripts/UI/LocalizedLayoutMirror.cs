@@ -193,16 +193,11 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (currentService == null)
-            {
-                _registeredForTick = false;
-                return;
-            }
-
+            TryUnregisterFromTick();
             if (isActiveAndEnabled)
             {
-                TryUnregisterFromTick();
-                TryRegisterForTick();
+                if (currentService != null)
+                    TryRegisterForTick();
             }
         }
 

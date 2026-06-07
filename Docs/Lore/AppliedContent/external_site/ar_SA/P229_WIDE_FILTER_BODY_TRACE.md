@@ -9,32 +9,34 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Wide Filter Body Trace"
+title: "أثر جسم الترشيح الواسع"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Wide Filter Body Trace
+# أثر جسم الترشيح الواسع
 
-AR LOC HOLD: Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep.
+أثر جسم الترشيح الواسع يوضح كيف تتعامل HECTON-8 مع الحيوانات العملاقة من دون تحويلها إلى كشف مسرحي لزعيم. جسم الترشيح الواسع هو بيئة متحركة: جبهة طقس حية في الهاوية ترعى سحب البلانكتون، تفتح ممرات رؤية، تشوه السونار، وتكشف للحظات هندسة معدات المستعمرة المهجورة. يجب أن يشعر اللاعب بالحجم لأن قواعد الملاحة تتغير، لا لأن الكاميرا تتوقف لتتأمل وحشا.
+
+تحت الجسم يفقد الصوت حوافه الصلبة. حول الحافة تنطوي الأصداء. خلفه يصبح المحيط نظيفا على نحو غير طبيعي، وقد تظهر سكك قديمة أو أضلاع أنابيب أو أبراج خدمة حيث كانت الخريطة فارغة. هذه الفائدة هي الفخ. الأثر نفسه الذي يكشف مسارا يمكن أن يسحب Marauder محملا إلى ماء عميق مفتوح بلا جدار وبلا قاع وبلا خط عودة موثوق. الحيوان يبقى غير مبال. ليس شريرا، ولا مروضا، ولا ينتظر اللاعب. إنه المحيط يثبت أن معرفة النجاة تشمل الصبر: انتظر المرور، اقرأ فجوة البلانكتون، علم الخراب، وغادر قبل أن يعود الطمي.
 
 ## Scanner
 
-AR LOC HOLD: A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.
+جسم ترشيح واسع // حيوان ترشيح عريض يعبر الخندق؛ يصفو البلانكتون خلفه، ويتلطخ السونار عند حافته، وقد تظهر الأطلال أو تختفي تحت ظله.
 
 ## Terminal
 
-AR LOC HOLD: CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.
+خط أساس الاتصال: مرور جسم الترشيح الواسع ينتج كثافة بلانكتون منخفضة، وتلطخا في حافة الصدى، وأثرا صامتا بالضغط، وممرات رؤية مؤقتة. لا تطارده تحت الظل البطني. استخدم الفجوة الصوتية فقط بعد سقوط الطمي اللاحق.
 
 ## Audio
 
-AR LOC HOLD: That is not a roar. That is the sound of the map being wiped clean.
+هذا ليس زئيرا. هذا صوت خريطة تمسح حتى تصير نظيفة.
 
 ## Field Note
 
-AR LOC HOLD: Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.
+لا تسمه زعيما. سمه طقسا له معدة: بطيئا، هائلا، مفيدا وغير مبال.
 
 <!-- External Site; generated from P229_WIDE_FILTER_BODY_TRACE/ar_SA. -->

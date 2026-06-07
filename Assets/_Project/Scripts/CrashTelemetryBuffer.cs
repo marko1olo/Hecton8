@@ -2561,7 +2561,9 @@ namespace Hecton8.Core
                     InitializeBuffers();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    TryRegister();
+                    TryUnregister();
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
                     break;
             }
         }

@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.IO;
+using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -15,9 +16,14 @@ namespace Hecton8.Editor
         private const int FrameCapacity = 300;
         private const int StressWarningCount = 1000;
         private const float HistogramWidth = 180f;
+        private const string NativeMemoryOwner = nameof(SignalTrafficMonitorWindow);
+        private const string TelemetryLabel = "telemetry";
+        private const string FramesLabel = "frames";
 
         private NativeArray<SignalLaneTelemetry> _telemetry;
         private NativeArray<SignalTelemetryFrame> _frames;
+        private int _telemetrySentinelId;
+        private int _framesSentinelId;
         private VisualElement _frameRows;
         private VisualElement _laneRows;
         private EnumField _injectKindField;
@@ -53,9 +59,19 @@ namespace Hecton8.Editor
         {
             EditorApplication.update -= RefreshUi;
             if (_telemetry.IsCreated)
+            {
+                NativeMemorySentinel.Unregister(_telemetrySentinelId);
+                _telemetrySentinelId = 0;
                 _telemetry.Dispose();
+                _telemetry = default;
+            }
             if (_frames.IsCreated)
+            {
+                NativeMemorySentinel.Unregister(_framesSentinelId);
+                _framesSentinelId = 0;
                 _frames.Dispose();
+                _frames = default;
+            }
         }
 
         public void CreateGUI()
@@ -80,9 +96,47 @@ namespace Hecton8.Editor
         private void EnsureBuffers()
         {
             if (!_telemetry.IsCreated)
+            {
                 _telemetry = new NativeArray<SignalLaneTelemetry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                try
+                {
+                    _telemetrySentinelId = NativeMemorySentinel.RegisterNativeArray(
+                        _telemetry,
+                        NativeMemoryOwner,
+                        TelemetryLabel,
+                        NativeAllocationLifetime.Session);
+                    if (_telemetrySentinelId <= 0)
+                        throw new System.InvalidOperationException($"Native memory sentinel registration failed for {TelemetryLabel}.");
+                }
+                catch
+                {
+                    _telemetry.Dispose();
+                    _telemetry = default;
+                    _telemetrySentinelId = 0;
+                    throw;
+                }
+            }
             if (!_frames.IsCreated)
+            {
                 _frames = new NativeArray<SignalTelemetryFrame>(FrameCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                try
+                {
+                    _framesSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                        _frames,
+                        NativeMemoryOwner,
+                        FramesLabel,
+                        NativeAllocationLifetime.Session);
+                    if (_framesSentinelId <= 0)
+                        throw new System.InvalidOperationException($"Native memory sentinel registration failed for {FramesLabel}.");
+                }
+                catch
+                {
+                    _frames.Dispose();
+                    _frames = default;
+                    _framesSentinelId = 0;
+                    throw;
+                }
+            }
         }
 
         private void BuildInjectionPanel(VisualElement root)

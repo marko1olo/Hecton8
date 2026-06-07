@@ -1,7 +1,9 @@
 using System.Runtime.InteropServices;
 using Hecton8.Building;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Gameplay.Atlas6Liability;
 using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.Scavenging;
@@ -33,6 +35,7 @@ namespace Hecton8.Construction
         private const uint DuplicateRuntimeContextHash = 0xAD50966Cu;
         private const uint ExtractorPendingJobStallWarningHash = 0x41D71703u;
         private const uint ExtractorPendingJobStallContextHash = 0x1B26C087u;
+        private const SystemID NativeArrayOwnerSystem = SystemID.Construction;
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct ExtractorJobInput
@@ -139,26 +142,24 @@ namespace Hecton8.Construction
                     return;
 
                 Dispose();
+
                 try
                 {
-                    JobInputs = new NativeArray<ExtractorJobInput>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(JobInputs, nameof(AutonomousExtractorSystem), nameof(JobInputs), NativeAllocationLifetime.Scene);
-                    JobResults = new NativeArray<ExtractorJobResult>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(JobResults, nameof(AutonomousExtractorSystem), nameof(JobResults), NativeAllocationLifetime.Scene);
-                    CycleTimers = new NativeArray<float>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(CycleTimers, nameof(AutonomousExtractorSystem), nameof(CycleTimers), NativeAllocationLifetime.Scene);
-                    BufferedItemHashIds = new NativeArray<int>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(BufferedItemHashIds, nameof(AutonomousExtractorSystem), nameof(BufferedItemHashIds), NativeAllocationLifetime.Scene);
-                    BufferedUnitCounts = new NativeArray<int>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(BufferedUnitCounts, nameof(AutonomousExtractorSystem), nameof(BufferedUnitCounts), NativeAllocationLifetime.Scene);
-                    CompletedCycleCounts = new NativeArray<int>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(CompletedCycleCounts, nameof(AutonomousExtractorSystem), nameof(CompletedCycleCounts), NativeAllocationLifetime.Scene);
+                    JobInputs = H8Memory.Allocate<ExtractorJobInput>(capacity, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                    JobResults = H8Memory.Allocate<ExtractorJobResult>(capacity, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                    CycleTimers = H8Memory.Allocate<float>(capacity, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                    BufferedItemHashIds = H8Memory.Allocate<int>(capacity, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                    BufferedUnitCounts = H8Memory.Allocate<int>(capacity, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                    CompletedCycleCounts = H8Memory.Allocate<int>(capacity, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 }
                 catch
                 {
                     Dispose();
                     throw;
                 }
+
+                if (!IsReady(capacity))
+                    Dispose();
             }
 
             public void Dispose()
@@ -176,9 +177,7 @@ namespace Hecton8.Construction
                 if (!array.IsCreated)
                     return;
 
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                array.Dispose();
-                array = default;
+                H8Memory.Release(ref array, NativeArrayOwnerSystem);
             }
         }
 
@@ -287,11 +286,13 @@ namespace Hecton8.Construction
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
+            bool hadRuntimeLoops = _slowTickRegistered || _postFixedRegistered;
             TryUnregisterRuntimeLoops();
-            TryRegisterRuntimeLoops();
+            if (hadRuntimeLoops && currentService != null && isActiveAndEnabled)
+                TryRegisterRuntimeLoops();
         }
 
         private void TryRegisterRuntimeLoops()
@@ -308,13 +309,6 @@ namespace Hecton8.Construction
 
         private void TryUnregisterRuntimeLoops()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
-            {
-                _slowTickRegistered = false;
-                _postFixedRegistered = false;
-                return;
-            }
-
             if (_slowTickRegistered)
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
@@ -500,7 +494,12 @@ namespace Hecton8.Construction
                 ResourceNodeTemplate template = hostNode != null ? hostNode.ResourceTemplate : null;
                 ItemData routedItem = template != null ? template.ExtractorYieldItem : null;
                 if (result.CompletedCycleDelta > 0)
+                {
                     module.ConsumeExtractionPower(result.CompletedCycleDelta, SlowTickDeltaSeconds);
+                    Atlas6CorporateLiabilityManager.TryReportXenonOmegaExtracted(
+                        hostNode != null ? hostNode.ResourceTemplateStableHashId : 0,
+                        result.CompletedCycleDelta);
+                }
 
                 if (bufferedUnitCount > 0 &&
                     routedItem != null &&

@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS153_SHALLOW_SIGNAL_REPAIR_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P815_RECEIVER_GROUND_LUG_SALT_BRIDGE",
+    "P816_SERVICE_MAST_ALIGNMENT_MARK",
+    "P817_SIGNAL_MIRROR_SCRATCH_GRID",
+    "P818_TIDE_WINDOW_WEATHER_NOTE",
+    "P819_RELAY_NOISE_LOG_STRIP"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P815_RECEIVER_GROUND_LUG_SALT_BRIDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P816_SERVICE_MAST_ALIGNMENT_MARK.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P817_SIGNAL_MIRROR_SCRATCH_GRID.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P818_TIDE_WINDOW_WEATHER_NOTE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P819_RELAY_NOISE_LOG_STRIP.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

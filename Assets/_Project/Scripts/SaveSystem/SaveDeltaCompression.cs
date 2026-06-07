@@ -215,7 +215,7 @@ namespace Hecton8.SaveSystem
         internal const ulong StrictHeaderMagic = 0x0038544345485F48UL; // "H_HECT8\0" little-endian marker.
         internal const byte DeletedEntityMask = 0xFF;
         internal const int MinimumLz4PayloadBytes = 1024;
-        internal const ulong SupportedSuitUpgradeMask = 0x00000000000007FFUL;
+        internal const ulong SupportedSuitUpgradeMask = SaveData.SuitUpgradeSupportedMask;
         private const uint EntityHealthMask = 0x000003FFu;
         private const uint EntityHungerMask = 0x000FFC00u;
         private const uint EntityStatusMask = 0xFFF00000u;

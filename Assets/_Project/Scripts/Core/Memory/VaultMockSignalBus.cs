@@ -52,6 +52,13 @@ namespace Hecton8.Core.Memory
                 NativeMemoryOwner,
                 QueueLabel,
                 ToNativeAllocationLifetime(allocator));
+            if (_sentinelRegistrationId <= 0)
+            {
+                _queue.Dispose();
+                _queue = default;
+                throw new InvalidOperationException($"Native memory sentinel registration failed for {QueueLabel}.");
+            }
+
             PrewarmQueue(ref _queue, capacity);
         }
 

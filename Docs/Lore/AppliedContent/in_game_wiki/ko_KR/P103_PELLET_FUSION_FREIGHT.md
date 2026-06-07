@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "펠릿 핵융합 화물"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# 펠릿 핵융합 화물
 
-KO LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.
+FTL 없이도 중량 항성간 이동은 가능하지만 가혹하다. 빔 세일 가속, 펠릿 공급 핵융합, 차폐 질량, 긴 순항, 제동 구조가 seed 적재물과 이후 식민지 화물을 Aegir까지 운반했다. 같은 물류가 구조를 늦춘다. 모든 킬로그램, 침상, 제동 슬롯, 생존자 좌석은 일정표에 속한다.
 
 ## Scanner
 
-KO LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+추진판. 펠릿 공급 핵융합 화물은 인프라로 건넜다. 가속, 차폐, 순항, 제동, 손실 청구.
 
 ## Terminal
 
-KO LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+화물 교리: Atlas급 seed 적재물과 식민지 화물은 빔 세일 가속, 펠릿 공급 핵융합, 자기돛 제동, 긴 순항 간격을 사용했다. 살아 있는 화물은 기계가 항로를 청구 가능하게 만든 뒤 도착했다.
 
 ## Audio
 
-KO LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+무거운 배는 기적이 아니다. 엔진 달린 저당권이다.
 
 ## Field Note
 
-KO LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+중량 수송은 영웅적이지 않다. 열 흉터가 난 오래된 항로 계약이다.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/ko_KR. -->

@@ -318,7 +318,7 @@ namespace Hecton8.World
                     _vegetationBridge = currentService as HectonMapMagicVegetationBridge;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredLateFrame = false;
+                    TryUnregister();
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;

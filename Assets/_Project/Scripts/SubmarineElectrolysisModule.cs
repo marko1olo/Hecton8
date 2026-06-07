@@ -96,19 +96,7 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ElectrolysisAcousticEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ElectrolysisAcousticEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseNativeQueues();
 
             for (int i = 0; i < ListenerCapacity; i++)
                 _listeners[i].Clear();
@@ -251,28 +239,65 @@ namespace Hecton8.Gameplay
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
+            try
             {
-                _pendingEvents = new NativeQueue<ElectrolysisAcousticPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ElectrolysisAcousticPayload>[32] - deferred electrolysis acoustic lane flushed by SystemDispatcher LateUpdate - owner: ElectrolysisAcousticEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(ElectrolysisAcousticEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<ElectrolysisAcousticPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ElectrolysisAcousticPayload>[32] - deferred electrolysis acoustic lane flushed by SystemDispatcher LateUpdate - owner: ElectrolysisAcousticEvents
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                }
+
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<ElectrolysisAcousticPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ElectrolysisAcousticPayload>[32] - next-frame electrolysis acoustic lane prevents same-frame reentrant dispatch - owner: ElectrolysisAcousticEvents
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                }
+            }
+            catch
+            {
+                ReleaseNativeQueues();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(ElectrolysisAcousticEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            queue.Dispose();
+            queue = default;
+            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ElectrolysisAcousticEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
             }
 
-            if (!_nextFrameEvents.IsCreated)
+            if (_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<ElectrolysisAcousticPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ElectrolysisAcousticPayload>[32] - next-frame electrolysis acoustic lane prevents same-frame reentrant dispatch - owner: ElectrolysisAcousticEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(ElectrolysisAcousticEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ElectrolysisAcousticEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
             }
         }
 
@@ -979,8 +1004,8 @@ namespace Hecton8.Gameplay
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                TryUnregister();
                 _cachedDispatcher = currentService as SystemDispatcher;
-                _registered = false;
                 if (currentService != null && isActiveAndEnabled)
                     TryStartRuntimeLifecycle();
             }

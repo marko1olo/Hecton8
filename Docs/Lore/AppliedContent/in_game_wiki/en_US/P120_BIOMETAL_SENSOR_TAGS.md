@@ -7,6 +7,9 @@ poi_tags: poi.sensor_tag_fauna;poi.biometal_scale_cluster
 biome_tags: biome.repair_ecology;biome.abyssal_machine_field
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Biometal Sensor Tags"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -16,22 +19,22 @@ localization_flags: 0
 
 # Biometal Sensor Tags
 
-Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.
+Biometal sensor tags are small telemetry scales found in fauna, cable growth and repair ecology. They can sharpen pingers and scanner routes, but every useful tag is also evidence: Atlas has been using living carriers to extend a damaged maintenance network.
 
 ## Scanner
 
-Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+BIOMETAL SENSOR TAGS // Thin metal scales grown into fish, cable kelp and repair tissue. Improve pinger tuning; harvest hot and Atlas may hear the missing carrier.
 
 ## Terminal
 
-RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger focus, scanner lattice, route confidence, proof packets. Cold harvest recommended. Risks: attention rise, false carrier returns, damaged fauna.
 
 ## Audio
 
-The fish is not a drone. The tag does not know the difference.
+The fish is not a drone. The tag keeps reporting anyway.
 
 ## Field Note
 
-Make resource extraction feel like evidence handling.
+If it blinks under the knife, record before you cut.
 
 <!-- In-Game Wiki; generated from P120_BIOMETAL_SENSOR_TAGS/en_US. -->

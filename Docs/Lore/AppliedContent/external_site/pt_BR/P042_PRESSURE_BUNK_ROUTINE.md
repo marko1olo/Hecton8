@@ -7,6 +7,9 @@ poi_tags: poi.pressure_bunk;poi.hab_sleep_bay
 biome_tags: biome.drowned_colony;biome.pressure_hab
 locale: pt_BR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Rotina dos Beliches Pressurizados"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

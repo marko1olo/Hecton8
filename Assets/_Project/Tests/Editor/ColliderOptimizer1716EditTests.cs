@@ -198,6 +198,21 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void WorldProceduralGeologyFinalAuthoringPreservesUpdatedMeshAssetShape()
+        {
+            string source = ReadProjectFile(WorldProceduralGeologyFinalPath);
+            string saveMesh = ExtractMethodBody(source, "private static Mesh SaveMesh(");
+            string copyMeshData = ExtractMethodBody(source, "private static void CopyMeshData(");
+
+            StringAssert.Contains("CopyMeshData(mesh, existing)", saveMesh);
+            StringAssert.Contains("ReleaseTemporaryMesh(mesh)", saveMesh);
+            StringAssert.Contains("target.indexFormat = source.indexFormat", copyMeshData);
+            StringAssert.Contains("target.subMeshCount = subMeshCount", copyMeshData);
+            StringAssert.Contains("source.GetTriangles(triangles, subMeshIndex)", copyMeshData);
+            StringAssert.Contains("target.SetTriangles(triangles, subMeshIndex, false)", copyMeshData);
+        }
+
+        [Test]
         public void ModuleArchitectCutsVerticalSocketVisualsAndColliderSlabs()
         {
             string source = ReadProjectFile(ModuleArchitectPath);

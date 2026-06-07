@@ -419,8 +419,7 @@ namespace Hecton8.Equipment.Auxiliary
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredUpdate = false;
-                _registeredLateFrame = false;
+                TryUnregisterDispatcherTicks();
 
                 if (currentService != null)
                     TryRegisterDispatcherTicks();

@@ -7,6 +7,9 @@ poi_tags: poi.sky_window;poi.route_archive
 biome_tags: biome.storm_shelf;biome.surface_weather
 locale: fr_FR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Étoile hôte d’Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

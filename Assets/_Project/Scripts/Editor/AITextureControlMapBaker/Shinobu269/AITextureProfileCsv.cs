@@ -29,6 +29,7 @@ namespace Hecton8.Editor.AITextureControlMaps
         private const uint HashBc7 = 0x37434248u;
         private const uint HashBc5 = 0x35434248u;
         private const uint HashAstc6 = 0x36415354u;
+        private const string NativeMemoryOwner = nameof(AITextureProfileCsv);
 
         internal static AITextureBakeSettings LoadFirstSettingsOrDefault()
         {
@@ -60,7 +61,12 @@ namespace Hecton8.Editor.AITextureControlMaps
                         return false;
 
                     int length = (int)length64;
-                    bytes = new NativeArray<byte>(length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    bytes = AITextureNativeMemory.AllocateArray<byte>(
+                        length,
+                        Allocator.TempJob,
+                        NativeArrayOptions.UninitializedMemory,
+                        NativeMemoryOwner,
+                        nameof(bytes));
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(bytes);
                     Span<byte> target = new Span<byte>(ptr, length);
                     int read = 0;
@@ -91,8 +97,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             }
             finally
             {
-                if (bytes.IsCreated)
-                    bytes.Dispose();
+                AITextureNativeMemory.DisposeArray(ref bytes);
             }
 
             return false;
@@ -119,7 +124,12 @@ namespace Hecton8.Editor.AITextureControlMaps
                         return false;
 
                     int length = (int)length64;
-                    bytes = new NativeArray<byte>(length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    bytes = AITextureNativeMemory.AllocateArray<byte>(
+                        length,
+                        Allocator.TempJob,
+                        NativeArrayOptions.UninitializedMemory,
+                        NativeMemoryOwner,
+                        nameof(bytes));
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(bytes);
                     Span<byte> target = new Span<byte>(ptr, length);
                     int read = 0;
@@ -157,8 +167,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             }
             finally
             {
-                if (bytes.IsCreated)
-                    bytes.Dispose();
+                AITextureNativeMemory.DisposeArray(ref bytes);
             }
 
             return false;

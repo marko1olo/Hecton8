@@ -900,7 +900,13 @@ namespace Hecton8.Core.Memory
                     }
 
                     freeBlock.H8BlockIndex = h8BlockIndex;
-                    _blocks.AddNoResize(freeBlock);
+                    if (!TryAppendBlockNoResize(in freeBlock))
+                    {
+                        ReleaseCommittedH8Descriptor(h8BlockIndex);
+                        DumpPhiVodBlackBox();
+                        AbortInitialize();
+                        return;
+                    }
                 }
 
                 _initialized = true;
@@ -3635,7 +3641,7 @@ namespace Hecton8.Core.Memory
 
             if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(payloadPointer, byteLength, sourcePointer, byteLength))
             {
-                H8Memory.FreeRaw(payloadPointer, Allocator.Persistent, SystemID.CoreDataVault);
+                FreeMacroDatabasePayloadRollbackOrThrow(payloadPointer, null);
                 return false;
             }
 
@@ -3657,17 +3663,26 @@ namespace Hecton8.Core.Memory
 
             if (hasExisting)
             {
-                if (existing.Pointer != IntPtr.Zero)
-                    H8Memory.FreeRaw(existing.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault);
-                SubtractMacroDatabasePayloadBytes(existing.Handle.ByteLength);
-                _macroDatabasePayloadCache[sectorHash] = entry;
-                TouchMacroDatabasePayload(sectorHash);
+                try
+                {
+                    if (existing.Pointer != IntPtr.Zero)
+                        H8Memory.FreeRaw(existing.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault);
+                    SubtractMacroDatabasePayloadBytes(existing.Handle.ByteLength);
+                    _macroDatabasePayloadCache[sectorHash] = entry;
+                    TouchMacroDatabasePayload(sectorHash);
+                }
+                catch (Exception replaceException)
+                {
+                    FreeMacroDatabasePayloadRollbackOrThrow(payloadPointer, replaceException);
+                    handle = default;
+                    throw;
+                }
             }
             else
             {
                 if (!_macroDatabasePayloadCache.TryAdd(sectorHash, entry))
                 {
-                    H8Memory.FreeRaw(payloadPointer, Allocator.Persistent, SystemID.CoreDataVault);
+                    FreeMacroDatabasePayloadRollbackOrThrow(payloadPointer, null);
                     handle = default;
                     return false;
                 }
@@ -3675,7 +3690,7 @@ namespace Hecton8.Core.Memory
                 if (!EnsureMacroDatabaseKeyRegistered(sectorHash))
                 {
                     _macroDatabasePayloadCache.Remove(sectorHash);
-                    H8Memory.FreeRaw(payloadPointer, Allocator.Persistent, SystemID.CoreDataVault);
+                    FreeMacroDatabasePayloadRollbackOrThrow(payloadPointer, null);
                     handle = default;
                     return false;
                 }
@@ -3686,6 +3701,24 @@ namespace Hecton8.Core.Memory
             _macroDatabasePayloadBytes += byteLength;
             BumpVaultGeneration();
             return true;
+        }
+
+        private static void FreeMacroDatabasePayloadRollbackOrThrow(void* payloadPointer, Exception rootException)
+        {
+            if (payloadPointer == null)
+                return;
+
+            try
+            {
+                H8Memory.FreeRaw(payloadPointer, Allocator.Persistent, SystemID.CoreDataVault);
+            }
+            catch (Exception rollbackException)
+            {
+                if (rootException != null)
+                    throw new AggregateException("GlobalDataVault macro database payload replacement rollback failed.", rootException, rollbackException);
+
+                throw;
+            }
         }
 
         /// <inheritdoc />
@@ -4034,86 +4067,118 @@ namespace Hecton8.Core.Memory
 
         private void RegisterNativeSidecarStorage()
         {
-            RegisterCoreSidecarSentinels();
-            RegisterMacroDatabasePayloadCacheSentinels();
+            try
+            {
+                RegisterCoreSidecarSentinels();
+                RegisterMacroDatabasePayloadCacheSentinels();
+            }
+            catch
+            {
+                UnregisterNativeSidecarStorage();
+                throw;
+            }
         }
 
         private void RegisterCoreSidecarSentinels()
         {
-            if (_buffersSentinelId == 0)
+            if (_buffersSentinelId <= 0)
             {
-                _buffersSentinelId = NativeMemorySentinel.RegisterUnsafeHashMapInstance(
-                    _buffers,
-                    NativeMemoryOwner,
-                    nameof(_buffers),
-                    NativeAllocationLifetime.Session);
+                _buffersSentinelId = RequireSentinelRegistration(
+                    NativeMemorySentinel.RegisterUnsafeHashMapInstance(
+                        _buffers,
+                        NativeMemoryOwner,
+                        nameof(_buffers),
+                        NativeAllocationLifetime.Session),
+                    nameof(_buffers));
             }
 
-            if (_metadataSentinelId == 0)
+            if (_metadataSentinelId <= 0)
             {
-                _metadataSentinelId = NativeMemorySentinel.RegisterUnsafeHashMapInstance(
-                    _metadata,
-                    NativeMemoryOwner,
-                    nameof(_metadata),
-                    NativeAllocationLifetime.Session);
+                _metadataSentinelId = RequireSentinelRegistration(
+                    NativeMemorySentinel.RegisterUnsafeHashMapInstance(
+                        _metadata,
+                        NativeMemoryOwner,
+                        nameof(_metadata),
+                        NativeAllocationLifetime.Session),
+                    nameof(_metadata));
             }
 
-            if (_metadataGenerationByBufferIdSentinelId == 0)
+            if (_metadataGenerationByBufferIdSentinelId <= 0)
             {
-                _metadataGenerationByBufferIdSentinelId = NativeMemorySentinel.RegisterUnsafeHashMapInstance(
-                    _metadataGenerationByBufferId,
-                    NativeMemoryOwner,
-                    nameof(_metadataGenerationByBufferId),
-                    NativeAllocationLifetime.Session);
+                _metadataGenerationByBufferIdSentinelId = RequireSentinelRegistration(
+                    NativeMemorySentinel.RegisterUnsafeHashMapInstance(
+                        _metadataGenerationByBufferId,
+                        NativeMemoryOwner,
+                        nameof(_metadataGenerationByBufferId),
+                        NativeAllocationLifetime.Session),
+                    nameof(_metadataGenerationByBufferId));
             }
 
-            if (_keysSentinelId == 0)
+            if (_keysSentinelId <= 0)
             {
-                _keysSentinelId = NativeMemorySentinel.RegisterNativeListInstance(
-                    _keys,
-                    NativeMemoryOwner,
-                    nameof(_keys),
-                    NativeAllocationLifetime.Session);
+                _keysSentinelId = RequireSentinelRegistration(
+                    NativeMemorySentinel.RegisterNativeListInstance(
+                        _keys,
+                        NativeMemoryOwner,
+                        nameof(_keys),
+                        NativeAllocationLifetime.Session),
+                    nameof(_keys));
             }
 
-            if (_blocksSentinelId == 0)
+            if (_blocksSentinelId <= 0)
             {
-                _blocksSentinelId = NativeMemorySentinel.RegisterNativeListInstance(
-                    _blocks,
-                    NativeMemoryOwner,
-                    nameof(_blocks),
-                    NativeAllocationLifetime.Session);
+                _blocksSentinelId = RequireSentinelRegistration(
+                    NativeMemorySentinel.RegisterNativeListInstance(
+                        _blocks,
+                        NativeMemoryOwner,
+                        nameof(_blocks),
+                        NativeAllocationLifetime.Session),
+                    nameof(_blocks));
             }
         }
 
         private void RegisterMacroDatabasePayloadCacheSentinels()
         {
-            if (_macroDatabasePayloadCacheSentinelId == 0)
+            if (_macroDatabasePayloadCacheSentinelId <= 0)
             {
-                _macroDatabasePayloadCacheSentinelId = NativeMemorySentinel.RegisterNativeParallelHashMapInstance(
-                    _macroDatabasePayloadCache,
-                    NativeMemoryOwner,
-                    nameof(_macroDatabasePayloadCache),
-                    NativeAllocationLifetime.Session);
+                _macroDatabasePayloadCacheSentinelId = RequireSentinelRegistration(
+                    NativeMemorySentinel.RegisterNativeParallelHashMapInstance(
+                        _macroDatabasePayloadCache,
+                        NativeMemoryOwner,
+                        nameof(_macroDatabasePayloadCache),
+                        NativeAllocationLifetime.Session),
+                    nameof(_macroDatabasePayloadCache));
             }
 
-            if (_macroDatabasePayloadAccessTicksSentinelId == 0)
+            if (_macroDatabasePayloadAccessTicksSentinelId <= 0)
             {
-                _macroDatabasePayloadAccessTicksSentinelId = NativeMemorySentinel.RegisterNativeParallelHashMapInstance(
-                    _macroDatabasePayloadAccessTicks,
-                    NativeMemoryOwner,
-                    nameof(_macroDatabasePayloadAccessTicks),
-                    NativeAllocationLifetime.Session);
+                _macroDatabasePayloadAccessTicksSentinelId = RequireSentinelRegistration(
+                    NativeMemorySentinel.RegisterNativeParallelHashMapInstance(
+                        _macroDatabasePayloadAccessTicks,
+                        NativeMemoryOwner,
+                        nameof(_macroDatabasePayloadAccessTicks),
+                        NativeAllocationLifetime.Session),
+                    nameof(_macroDatabasePayloadAccessTicks));
             }
 
-            if (_macroDatabasePayloadKeysSentinelId == 0)
+            if (_macroDatabasePayloadKeysSentinelId <= 0)
             {
-                _macroDatabasePayloadKeysSentinelId = NativeMemorySentinel.RegisterNativeListInstance(
-                    _macroDatabasePayloadKeys,
-                    NativeMemoryOwner,
-                    nameof(_macroDatabasePayloadKeys),
-                    NativeAllocationLifetime.Session);
+                _macroDatabasePayloadKeysSentinelId = RequireSentinelRegistration(
+                    NativeMemorySentinel.RegisterNativeListInstance(
+                        _macroDatabasePayloadKeys,
+                        NativeMemoryOwner,
+                        nameof(_macroDatabasePayloadKeys),
+                        NativeAllocationLifetime.Session),
+                    nameof(_macroDatabasePayloadKeys));
             }
+        }
+
+        private static int RequireSentinelRegistration(int sentinelId, string label)
+        {
+            if (sentinelId > 0)
+                return sentinelId;
+
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private void RefreshMacroDatabasePayloadCacheSentinels()
@@ -4180,8 +4245,15 @@ namespace Hecton8.Core.Memory
             if (_macroDatabasePayloadKeys.Length >= _macroDatabasePayloadKeys.Capacity)
                 return false;
 
-            _macroDatabasePayloadKeys.AddNoResize(sectorHash);
-            return true;
+            try
+            {
+                _macroDatabasePayloadKeys.AddNoResize(sectorHash);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -4333,8 +4405,15 @@ namespace Hecton8.Core.Memory
             if (_keys.Length >= _keys.Capacity)
                 return false;
 
-            _keys.AddNoResize(key);
-            return true;
+            try
+            {
+                _keys.AddNoResize(key);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private int ReleaseBuffersByOwner(SystemID owner, bool sceneOwnedOnly, out long releasedBytes)
@@ -5610,7 +5689,12 @@ namespace Hecton8.Core.Memory
             }
 
             freeTail.H8BlockIndex = descriptorIndex;
-            _blocks.AddNoResize(freeTail);
+            if (!TryAppendBlockNoResize(in freeTail))
+            {
+                ReleaseCommittedH8Descriptor(descriptorIndex);
+                return false;
+            }
+
             return true;
         }
 
@@ -5924,7 +6008,14 @@ namespace Hecton8.Core.Memory
 
                 freeRemainder.H8BlockIndex = remainderH8BlockIndex;
 
-                InsertBlockAfter(i, in freeRemainder);
+                if (!TryInsertBlockAfter(i, in freeRemainder))
+                {
+                    ReleaseCommittedH8Descriptor(remainderH8BlockIndex);
+                    blockIndex = -1;
+                    pointer = default;
+                    return false;
+                }
+
                 _blocks[i] = occupiedBlock;
                 UpdateH8Descriptor(in occupiedBlock);
                 return true;
@@ -6054,13 +6145,51 @@ namespace Hecton8.Core.Memory
             RebuildMetadataBlockIndices();
         }
 
-        private void InsertBlockAfter(int index, in VaultArenaBlock block)
+        private bool TryAppendBlockNoResize(in VaultArenaBlock block)
         {
-            _blocks.AddNoResize(default);
+            if (!_blocks.IsCreated || _blocks.Length >= _blocks.Capacity)
+                return false;
+
+            try
+            {
+                _blocks.AddNoResize(block);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool TryInsertBlockAfter(int index, in VaultArenaBlock block)
+        {
+            if (!_blocks.IsCreated || (uint)index >= (uint)_blocks.Length || _blocks.Length >= _blocks.Capacity)
+                return false;
+
+            try
+            {
+                _blocks.AddNoResize(default);
+            }
+            catch
+            {
+                return false;
+            }
+
             for (int i = _blocks.Length - 1; i > index + 1; i--)
                 _blocks[i] = _blocks[i - 1];
             _blocks[index + 1] = block;
             RebuildMetadataBlockIndices();
+            return true;
+        }
+
+        private void ReleaseCommittedH8Descriptor(int descriptorIndex)
+        {
+            if (descriptorIndex < 0)
+                return;
+
+            BlockDescriptor descriptor = default;
+            descriptor.State = (byte)H8BlockState.Free;
+            H8Memory.TryUpdateBlockDescriptor(descriptorIndex, in descriptor);
         }
 
         private void RemoveBlockAt(int index)

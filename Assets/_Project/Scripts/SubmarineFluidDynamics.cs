@@ -1492,7 +1492,7 @@ namespace Hecton8.Physics
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registered = false;
+                TryUnregisterDispatcherTicks();
                 if (currentService != null &&
                     isActiveAndEnabled &&
                     HasActiveHydrodynamicsConfiguration())
@@ -2560,6 +2560,22 @@ namespace Hecton8.Physics
             GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
             TryUnregisterLateFrameTickable();
             _registered = false;
+        }
+
+        private void TryUnregisterDispatcherTicks()
+        {
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
         }
 
         private void TryUnregisterLateFrameTickable()

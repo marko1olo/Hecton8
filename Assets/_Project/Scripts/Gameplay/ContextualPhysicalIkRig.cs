@@ -1749,8 +1749,8 @@ namespace Hecton8.Gameplay
             entityState.HandContactOffset = SanitizeNonNegativeScalar(handContactOffset) * wallTouchQualityWeight01;
             entityState.FootProbeDistanceScale = SanitizeNonNegativeScalar(footProbeDistanceScale) * footQualityWeight01;
             entityState.HandProbeDistanceScale = SanitizeNonNegativeScalar(handProbeDistanceScale) * wallTouchQualityWeight01;
-            entityState.GroundLayerMask = groundMask.value;
-            entityState.WallLayerMask = wallMask.value;
+            entityState.GroundLayerMask = ResolveIkSurfaceProbeMask(groundMask);
+            entityState.WallLayerMask = ResolveIkSurfaceProbeMask(wallMask);
             entityState.TunnelClearanceDistance = SanitizeNonNegativeScalar(tunnelClearanceDistance);
             entityState.HandBraceFadeDistance = SanitizeNonNegativeScalar(handBraceFadeDistance) * math.lerp(0.35f, 1.0f, wallTouchQualityWeight01);
             entityState.TargetPositionSharpness = SanitizeNonNegativeScalar(targetPositionSharpness);
@@ -3657,6 +3657,12 @@ namespace Hecton8.Gameplay
         private static float SanitizeNonNegativeScalar(float value)
         {
             return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
+        }
+
+        private static int ResolveIkSurfaceProbeMask(LayerMask layerMask)
+        {
+            int mask = layerMask.value;
+            return mask == 0 ? 0 : HectonLayerMasks.ResolveTerrainSdfProbeLayerMask(mask);
         }
 
         private static float WrapPositivePhase(float phase, float wrap)

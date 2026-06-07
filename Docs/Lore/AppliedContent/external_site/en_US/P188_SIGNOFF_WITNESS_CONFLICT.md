@@ -7,6 +7,9 @@ poi_tags: poi.signoff_conflict_board;poi.worker_witness_hash
 biome_tags: biome.worker_archive;biome.claim_admin
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Signoff Witness Conflict"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,31 +7,34 @@ poi_tags: poi.sulfide_wall_sample;poi.salt_crust_shelf
 biome_tags: biome.brine_canyon;biome.vent_forge
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Самородная сульфидно-соляная гряда"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native sulfide salt stack
+# Самородная сульфидно-соляная гряда
 
-Native sulfide salts - базовая геология HECTON-8. Они поддерживают batteries, ceramics, conductor cleaning и corrosive hazards. Они должны появляться до blue debt, чтобы игрок понял: у луны есть реальная химия, а не только corporate horror material.
+Самородные сульфидно-соляные гряды - одно из первых доказательств, что HECTON-8 не сводится к корпоративному месту преступления. Они растут там, где тепло вент-источников, просачивание рассола и богатая металлами кора годами трутся друг о друга под давлением, оставляя черно-зеленые соли на полках, ребрах и ломких трубах. Ими промывают проводники, оживляют аварийные ячейки, настраивают керамический флюс - и убивают инструменты, если экипаж обращается с ними как с обычной рудой. Для игрока они должны появляться раньше синего долга: у луны есть собственная химия, собственная ценность и собственные угрозы задолго до того, как Deep Reach поставила на нее печать.
 
 ## Scanner
 
-Natural resource. Полезный, corrosive, старше Deep Reach.
+САМОРОДНЫЕ СУЛЬФИДНЫЕ СОЛИ // Вентиляционные кристаллы и черная рассольная корка старше Deep Reach. Во влажном виде проводят ток, в тепле разъедают металл, полезны еще до того, как что-либо становится синим.
 
 ## Terminal
 
-RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+КЛАСС РЕСУРСА: природная геология. Применение: промывка проводников, аварийная химия ячеек, керамический флюс, коррозионный катализатор. Держать вдали от теплого впускного воздуха; пыль распускается кислотной пленкой на металле костюма.
 
 ## Audio
 
-Луна была ценной до того, как кто-то научил ее быть чудовищной.
+Луне не нужна была компания, чтобы стать опасной. Она уже знала химию.
 
 ## Field Note
 
-Не каждый ресурс должен быть страшным. Иногда это просто геология, которая все равно может убить.
+Если перчатки начали чесаться, ты уже опоздал. Промыть, заземлить, занести стену в журнал.
 
 <!-- In-Game Wiki; generated from P116_NATIVE_SULFIDE_SALT_STACK/ru_RU. -->

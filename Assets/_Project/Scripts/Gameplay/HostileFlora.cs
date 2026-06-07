@@ -384,8 +384,8 @@ namespace Hecton8.Gameplay
                 return;
 
             _pendingShootAudio = false;
-            IAudioService audio = _audioService;
-            if (shootSound != null && audio != null && audio.IsInitialized)
+            IAudioService audio = ResolveAudioService();
+            if (shootSound != null && audio != null)
                 audio.PlayAtPoint(shootSound, _pendingShootAudioPosition, shootVolume);
         }
 
@@ -453,7 +453,33 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             CachePlayerRuntimeContext(GlobalRegistry.Player);
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
@@ -495,7 +521,7 @@ namespace Hecton8.Gameplay
                     _playerFound = _playerTarget != null;
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _isRegistered = false;

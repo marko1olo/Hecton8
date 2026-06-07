@@ -167,9 +167,8 @@ namespace Hecton8.UI
                     _slotVisualsDirty = true;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredToTickManager = false;
-                    _registeredToLateFrame = false;
-                    if (currentService != null)
+                    UnregisterFromTickManager();
+                    if (currentService != null && isActiveAndEnabled)
                         RegisterToTickManager();
                     break;
             }
@@ -216,7 +215,7 @@ namespace Hecton8.UI
 
         private void RegisterToTickManager()
         {
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registeredToTickManager)

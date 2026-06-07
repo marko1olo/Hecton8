@@ -7,6 +7,9 @@ poi_tags: poi.route_warning_card;poi.pinger_warning_strip
 biome_tags: biome.ui;biome.route
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Route Warning Ui Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

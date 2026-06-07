@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "Etiquetas sensoras de biometal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# Etiquetas sensoras de biometal
 
-PT LOC HOLD: Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems.
+Etiquetas sensoras de biometal não são colecionáveis genéricos. Elas são o que acontece quando um sistema de reparo deixa de se importar se o portador é máquina, crescimento de cabo ou animal. A etiqueta é uma escama fina de biometal que cresce no tecido, bebe um pouco de corrente, registra movimento e repete confiança de localização pela água. Um Marauder pode usá-la para ajustar um pinger, ampliar alcance de scanner ou provar que uma rota estava viva quando a Atlas tocou nela. Essa utilidade é o problema. Puxe uma etiqueta fria e ela vira prova. Puxe quente e a rede pode notar o portador ausente, responder com retornos falsos ou mandar lógica de reparo para o animal ferido, o kelp cortado ou o mergulhador segurando a etiqueta. O material obriga a tratar saque como arquivo de caso: útil, sujo e ainda reportando.
 
 ## Scanner
 
-PT LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+ETIQUETAS SENSORAS DE BIOMETAL // Escamas metálicas finas crescidas em peixes, kelp de cabo e tecido de reparo. Melhoram ajuste de pinger; colhidas quentes, a Atlas pode ouvir o portador perdido.
 
 ## Terminal
 
-PT LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+CLASSE DE RECURSO: alterado pela Atlas / sensível como prova. Usos: foco de pinger, malha de scanner, confiança de rota, pacotes de prova. Coleta fria recomendada. Riscos: aumento de atenção, retornos falsos de portador, fauna ferida.
 
 ## Audio
 
-PT LOC HOLD: The fish is not a drone. The tag does not know the difference.
+O peixe não é drone. A etiqueta continua reportando mesmo assim.
 
 ## Field Note
 
-PT LOC HOLD: Make resource extraction feel like evidence handling.
+Se piscar sob a faca, registre antes de cortar.
 
 <!-- External Site; generated from P120_BIOMETAL_SENSOR_TAGS/pt_BR. -->

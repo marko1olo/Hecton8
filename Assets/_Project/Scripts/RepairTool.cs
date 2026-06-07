@@ -211,7 +211,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float repairSpeed = 20f;
 
         [Tooltip("Sloi, po kotorym rabotaet remontnyy luch.")]
-        [SerializeField] private LayerMask repairMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask repairMask = Hecton8.Core.HectonLayerMasks.FieldToolSurfaceLayerMask;
 
         [Header("── Visuals ───────────────────────────────────")]
         [SerializeField] private LineRenderer repairLine;
@@ -543,25 +543,20 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                        return;
-
                     bool needsLateFrame = _lateFrameRegistered ||
                                           _powerIndicatorDirty ||
                                           _repairVisualStateDirty ||
                                           _beamVisualDirty ||
                                           _pendingSparkEmit;
                     TryUnregisterLateFrameTick();
-                    if (needsLateFrame)
+                    if (currentService != null && isActiveAndEnabled && needsLateFrame)
                         TryRegisterLateFrameTick();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     RebindRepairVault(currentService as IDataVault);
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _cachedRepairAudioMixerGroup = currentService is IAudioService audioService
-                        ? audioService.AmbientGroup
-                        : null;
+                    CacheRepairAudioMixerGroup(currentService as IAudioService);
                     if (repairLoopAudio != null)
                         repairLoopAudio.outputAudioMixerGroup = null;
                     TryAssignRepairAudioMixerRoute();
@@ -604,8 +599,25 @@ namespace Hecton8.Gameplay
 
         private void CacheRepairAudioCold()
         {
-            IAudioService audioService = GlobalRegistry.Audio;
-            _cachedRepairAudioMixerGroup = audioService != null ? audioService.AmbientGroup : null;
+            CacheRepairAudioMixerGroup(GlobalRegistry.Audio);
+        }
+
+        private void CacheRepairAudioMixerGroup(IAudioService audioService)
+        {
+            _cachedRepairAudioMixerGroup = IsAudioServiceUsable(audioService)
+                ? audioService.AmbientGroup
+                : null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private static void CacheRepairLocalizationCold()
@@ -2090,68 +2102,58 @@ namespace Hecton8.Gameplay
             string path = Path.Combine(Application.dataPath, "..", RepairBlackBoxDumpPath);
             const int HeaderBytes = 12;
             const int RowBytes = 64;
-            NativeArray<byte> payload = new NativeArray<byte>(
-                HeaderBytes + RepairBlackBoxFrameCount * RowBytes,
-                Allocator.Temp,
-                NativeArrayOptions.UninitializedMemory);
-            try
+            Span<byte> payload = stackalloc byte[HeaderBytes + RepairBlackBoxFrameCount * RowBytes];
+            WriteInt32LittleEndian(payload, 0, RepairBlackBoxFrameCount);
+            WriteInt32LittleEndian(payload, 4, entrySize);
+            WriteUInt32LittleEndian(payload, 8, frame);
+            int offset = HeaderBytes;
+            for (int i = 0; i < RepairBlackBoxFrameCount; i++)
             {
-                WriteInt32LittleEndian(payload, 0, RepairBlackBoxFrameCount);
-                WriteInt32LittleEndian(payload, 4, entrySize);
-                WriteUInt32LittleEndian(payload, 8, frame);
-                int offset = HeaderBytes;
-                for (int i = 0; i < RepairBlackBoxFrameCount; i++)
-                {
-                    RepairToolBlackBoxEntry entry = snapshot[i];
-                    WriteInt64LittleEndian(payload, offset, entry.HitAup.GridX);
-                    WriteInt64LittleEndian(payload, offset + 8, entry.HitAup.GridY);
-                    WriteInt64LittleEndian(payload, offset + 16, entry.HitAup.GridZ);
-                    WriteFloat32LittleEndian(payload, offset + 24, entry.HitAup.LocalX);
-                    WriteFloat32LittleEndian(payload, offset + 28, entry.HitAup.LocalY);
-                    WriteFloat32LittleEndian(payload, offset + 32, entry.HitAup.LocalZ);
-                    WriteFloat32LittleEndian(payload, offset + 36, 0f);
-                    WriteUInt64LittleEndian(payload, offset + 40, 0UL);
-                    WriteUInt32LittleEndian(payload, offset + 48, entry.Frame);
-                    WriteUInt32LittleEndian(payload, offset + 52, entry.StateHash);
-                    WriteUInt16LittleEndian(payload, offset + 56, entry.ActiveDentCount);
-                    WriteUInt16LittleEndian(payload, offset + 58, entry.TouchedDentCount);
-                    payload[offset + 60] = entry.RepairedDentCount;
-                    payload[offset + 61] = entry.Battery255;
-                    payload[offset + 62] = entry.Flags;
-                    payload[offset + 63] = entry.Reserved0;
-                    offset += RowBytes;
-                }
+                RepairToolBlackBoxEntry entry = snapshot[i];
+                WriteInt64LittleEndian(payload, offset, entry.HitAup.GridX);
+                WriteInt64LittleEndian(payload, offset + 8, entry.HitAup.GridY);
+                WriteInt64LittleEndian(payload, offset + 16, entry.HitAup.GridZ);
+                WriteFloat32LittleEndian(payload, offset + 24, entry.HitAup.LocalX);
+                WriteFloat32LittleEndian(payload, offset + 28, entry.HitAup.LocalY);
+                WriteFloat32LittleEndian(payload, offset + 32, entry.HitAup.LocalZ);
+                WriteFloat32LittleEndian(payload, offset + 36, 0f);
+                WriteUInt64LittleEndian(payload, offset + 40, 0UL);
+                WriteUInt32LittleEndian(payload, offset + 48, entry.Frame);
+                WriteUInt32LittleEndian(payload, offset + 52, entry.StateHash);
+                WriteUInt16LittleEndian(payload, offset + 56, entry.ActiveDentCount);
+                WriteUInt16LittleEndian(payload, offset + 58, entry.TouchedDentCount);
+                payload[offset + 60] = entry.RepairedDentCount;
+                payload[offset + 61] = entry.Battery255;
+                payload[offset + 62] = entry.Flags;
+                payload[offset + 63] = entry.Reserved0;
+                offset += RowBytes;
+            }
 
-                NativeFaultDumpWriter.TryWriteAll(path, payload, payload.Length);
-            }
-            finally
-            {
-                payload.Dispose();
-            }
+            NativeFaultDumpWriter.TryWriteAll(path, payload, payload.Length);
         }
 
-        private static void WriteFloat32LittleEndian(NativeArray<byte> destination, int offset, float value)
+        private static void WriteFloat32LittleEndian(Span<byte> destination, int offset, float value)
         {
             WriteUInt32LittleEndian(destination, offset, math.asuint(value));
         }
 
-        private static void WriteInt32LittleEndian(NativeArray<byte> destination, int offset, int value)
+        private static void WriteInt32LittleEndian(Span<byte> destination, int offset, int value)
         {
             WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
         }
 
-        private static void WriteInt64LittleEndian(NativeArray<byte> destination, int offset, long value)
+        private static void WriteInt64LittleEndian(Span<byte> destination, int offset, long value)
         {
             WriteUInt64LittleEndian(destination, offset, unchecked((ulong)value));
         }
 
-        private static void WriteUInt64LittleEndian(NativeArray<byte> destination, int offset, ulong value)
+        private static void WriteUInt64LittleEndian(Span<byte> destination, int offset, ulong value)
         {
             WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
             WriteUInt32LittleEndian(destination, offset + 4, unchecked((uint)(value >> 32)));
         }
 
-        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, int offset, uint value)
+        private static void WriteUInt32LittleEndian(Span<byte> destination, int offset, uint value)
         {
             destination[offset] = (byte)value;
             destination[offset + 1] = (byte)(value >> 8);
@@ -2159,7 +2161,7 @@ namespace Hecton8.Gameplay
             destination[offset + 3] = (byte)(value >> 24);
         }
 
-        private static void WriteUInt16LittleEndian(NativeArray<byte> destination, int offset, ushort value)
+        private static void WriteUInt16LittleEndian(Span<byte> destination, int offset, ushort value)
         {
             destination[offset] = (byte)value;
             destination[offset + 1] = (byte)(value >> 8);
@@ -2467,7 +2469,12 @@ namespace Hecton8.Gameplay
         {
             hit = default;
             return TryResolveRepairRay(out Vector3 origin, out Vector3 direction) &&
-                   RequestPrimarySurfaceHit(origin, direction, ResolveRuntimeRepairRange(), repairMask.value, QueryTriggerInteraction.Ignore, out hit);
+                   RequestPrimarySurfaceHit(origin, direction, ResolveRuntimeRepairRange(), ResolveRepairSurfaceMask(), QueryTriggerInteraction.Ignore, out hit);
+        }
+
+        private int ResolveRepairSurfaceMask()
+        {
+            return HectonLayerMasks.ResolveSurfaceInteractionLayerMask(repairMask.value);
         }
 
         private bool TryResolveRepairRay(out Vector3 origin, out Vector3 direction)

@@ -7,6 +7,9 @@ poi_tags: poi.hatch_seal;poi.airlock_frame
 biome_tags: biome.drowned_colony;biome.service_corridor
 locale: de_DE
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Luken-Dichtungsregister"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.relay_packet_delay_meter;poi.legal_reply_timestamp
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Задержка relay-сообщений"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

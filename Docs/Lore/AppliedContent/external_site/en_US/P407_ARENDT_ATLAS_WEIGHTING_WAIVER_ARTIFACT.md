@@ -7,6 +7,9 @@ poi_tags: poi.arendt_weighting_waiver;poi.atlas_priority_stamp
 biome_tags: biome.atlas_service;biome.audit_cache
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Arendt Atlas Waiver"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

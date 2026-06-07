@@ -7,6 +7,9 @@ poi_tags: poi.blue_debt_quality_meter;poi.pressure_glass_casket
 biome_tags: biome.brine_canyon;biome.atlas_basin
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Blue Debt Sample Quality"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

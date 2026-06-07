@@ -7,6 +7,9 @@ poi_tags: poi.patch_gun_locker;poi.hull_pinhole_leak
 biome_tags: biome.crash_shelf;biome.shallow_annex
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Cold Sealant Patch Gun"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

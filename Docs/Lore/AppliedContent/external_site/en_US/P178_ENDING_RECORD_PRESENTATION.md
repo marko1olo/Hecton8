@@ -7,6 +7,9 @@ poi_tags: poi.ending_record_card;poi.public_ledger_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Ending Record Presentation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

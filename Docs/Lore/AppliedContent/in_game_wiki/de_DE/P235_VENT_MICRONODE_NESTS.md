@@ -9,32 +9,34 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Vent Micronode Nests"
+title: "Vent-Mikroknoten-Nester"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Vent Micronode Nests
+# Vent-Mikroknoten-Nester
 
-DE LOC HOLD: Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.
+Vent-Mikroknoten-Nester erklären, wie Atlas aktiv bleibt, ohne zum allmächtigen Schurkencomputer zu werden. Tief an den Vents ernten kleine Wartungsknoten Wärmegradienten, Minerale und Vibration. Jeder kann einen schwachen Puls in nahen Biofilm, Schalenversiegelung, markierte Fauna oder beschädigtes Metall schicken. Keiner kontrolliert die ganze Kolonie. Zusammen halten sie Reparaturverhalten am Leben, nachdem das saubere Netz verschwunden ist.
+
+Dadurch fühlt sich das finale Biom eher gewachsen als nur gebaut an. Ein Knoten kann einen Flicken wecken, ein Relaisorgan nähren, Schale über einem Riss härten oder eine falsche Diagnose lebendig halten. Er kann lokal Fehler machen und ein Reparaturmuster wiederholen, weil Druck einmal besser wurde, selbst wenn eine Route unlesbar wurde. Für den Spieler ist ein Mikroknotennest Energiequelle, Gefahr, Hinweis und mögliches Ziel. Brich eines, und ein Raum kann still werden. Lass es leben, und Atlas flüstert weiter durch Materialien.
 
 ## Scanner
 
-DE LOC HOLD: Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.
+VENT-MIKROKNOTENNEST // Warme Wartungsknoten sammeln sich an Vent-Rändern, ernten thermische Gradienten und drücken schwache Reparaturpulse in nahe Schale, Biofilm und Metall.
 
 ## Terminal
 
-DE LOC HOLD: ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.
+ATLAS-ENERGIESPUR: Ventgradient zu Mikroknotenwärme, akustischem Puls, Schalenversiegelungsreaktion und Biofilmkontinuität. Knotenautonomie lokal; Befehlsgewissheit niedrig; Reparaturdruck dauerhaft.
 
 ## Audio
 
-DE LOC HOLD: It has no grid. It has little fires under the ocean.
+Es hat kein Netz. Es hat kleine Feuer unter dem Ozean.
 
 ## Field Note
 
-DE LOC HOLD: Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.
+Atlas hat hier unten kein sauberes Netz. Es hat lokale Feuer, lokale Pulse und lokale Fehler.
 
 <!-- In-Game Wiki; generated from P235_VENT_MICRONODE_NESTS/de_DE. -->

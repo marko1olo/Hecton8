@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Vent Anchor Colonies"
+title: "Colonias de anclas de respiradero"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Vent Anchor Colonies
+# Colonias de anclas de respiradero
 
-ES LOC HOLD: Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.
+Las colonias de anclas de respiradero explican por qué el Marauder no puede resolver todos los problemas de reparación quedándose en lo somero. Crecen donde los respiraderos térmicos empujan calor y química de sulfuros hacia capas de salmuera. Sus cuerpos acanalados atrapan minerales, se enfrían en placas y refugian pequeña fauna de respiradero al borde de agua letal. Eso las vuelve valiosas sin convertirlas en mineral mágico. Las costillas desprendidas sirven para pressure-ceramic filler, cold-sealant grit y filtros químicos. Las costillas vivas y calientes pueden matar un traje rápido o agrietar una cabeza de herramienta por choque térmico. La lectura correcta es paciencia: escanear el bloom térmico, esperar el borde enfriado, cortar solo placas desprendidas y dejar tranquila la garganta activa salvo que el objetivo valga el riesgo.
 
 ## Scanner
 
-ES LOC HOLD: Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.
+COLONIA DE ANCLAS DE RESPIRADERO // Colonias acanaladas se fijan alrededor de respiraderos térmicos, atrapan sulfuros y cultivan la química necesaria para reparaciones de profundidad.
 
 ## Terminal
 
-ES LOC HOLD: RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.
+BASE DE RECURSO: las colonias elevan la probabilidad de cold-sealant grit, pressure-ceramic precursor y sulfide salt. El bloom térmico sigue siendo letal; tomar muestras solo de costillas enfriadas y placas desprendidas.
 
 ## Audio
 
-ES LOC HOLD: Every good repair part is sitting in water that wants to cook you.
+Cada buena pieza de reparación está en agua que quiere cocinarte.
 
 ## Field Note
 
-ES LOC HOLD: Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.
+Un ancla de respiradero es señal de recurso, advertencia de calor, borde de refugio y prueba de que la forge chemistry tiene manos vivas alrededor.
 
 <!-- In-Game Wiki; generated from P228_VENT_ANCHOR_COLONIES/es_ES. -->

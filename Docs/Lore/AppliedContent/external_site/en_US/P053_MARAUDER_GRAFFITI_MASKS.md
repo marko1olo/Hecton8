@@ -7,6 +7,9 @@ poi_tags: poi.graffiti_mask;poi.pressure_arrow
 biome_tags: biome.scrap_canyon;biome.marauder_route
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Marauder Graffiti Masks"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

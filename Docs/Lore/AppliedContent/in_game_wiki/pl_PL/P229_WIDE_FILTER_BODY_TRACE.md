@@ -9,32 +9,34 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Wide Filter Body Trace"
+title: "Ślad szerokiego ciała filtrującego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Wide Filter Body Trace
+# Ślad szerokiego ciała filtrującego
 
-PL LOC HOLD: Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.
+Szerokie ciała filtrujące są pierwszym dowodem, że otchłań między punktami orientacyjnymi nie jest pusta. Przemieszczają się przez głęboką wodę jak powolne żniwiarki obłoków planktonu, szersze od małych ram aneksów. Zwierzę nie poluje na Maraudera; zmienia mapę wokół Maraudera. Po jego przejściu życie zawieszone w wodzie rzednie, zwroty sonaru rozmazują się przy krawędzi ciała, a zakopane przemysłowe kontury mogą ukazać się na kilka minut, zanim muł znów się zamknie.
+
+Dlatego organizm jest jednocześnie zagrożeniem i narzędziem. Jego cień może ukryć ramę serwisową albo sprawić, że trasa wygląda na otwartą tam, gdzie woda jest pełna poruszającej się tkanki. Właściwa gra polega na czytaniu śladu: czysta woda za paszczą, brudny opad przy krawędzi, akustyczna cisza w zawietrznej ciała. Nigdy nie płyń pod cień tylko po to, by zobaczyć stworzenie. Idź za luką, którą zostawia, tylko jeśli masz energię, linę i drogę powrotu.
 
 ## Scanner
 
-PL LOC HOLD: A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.
+SZEROKIE CIAŁO FILTRUJĄCE // Szerokie zwierzę filtrujące przecina rów; za nim plankton się przerzedza, sonar rozmazuje się na krawędzi, a ruiny mogą pojawić się albo zniknąć pod jego cieniem.
 
 ## Terminal
 
-PL LOC HOLD: CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.
+BAZA KONTAKTU: przejście szerokiego ciała filtrującego daje niską gęstość planktonu, rozmazany brzeg echa, ciśnieniowo cichy ślad i tymczasowe korytarze widoczności. Nie ścigać pod cieniem brzusznym. Używać luki akustycznej dopiero po opadnięciu tylnego mułu.
 
 ## Audio
 
-PL LOC HOLD: That is not a roar. That is the sound of the map being wiped clean.
+To nie ryk. To dźwięk mapy wycieranej do czysta.
 
 ## Field Note
 
-PL LOC HOLD: Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.
+Nie nazywaj tego bossem. Nazywaj to pogodą z żołądkiem: powolną, ogromną, użyteczną i obojętną.
 
 <!-- In-Game Wiki; generated from P229_WIDE_FILTER_BODY_TRACE/pl_PL. -->

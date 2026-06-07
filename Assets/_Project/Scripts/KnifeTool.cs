@@ -135,7 +135,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float swingCooldown = 0.35f;
         [SerializeField] private float precisionStrikeMultiplier = 1.65f;
         [SerializeField] private float criticalHealthThreshold = 0.35f;
-        [SerializeField] private LayerMask hitMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask hitMask = Hecton8.Core.HectonLayerMasks.FieldToolSurfaceLayerMask;
         [SerializeField] private float feedbackInterval = 0.35f;
 
         private float _cooldown;
@@ -341,7 +341,7 @@ namespace Hecton8.Gameplay
             if (queryRange <= 0f)
                 return false;
 
-            if (!RequestPrimarySurfaceHit(origin, direction, queryRange, hitMask, QueryTriggerInteraction.Ignore, out InteractionSurfaceHit hit))
+            if (!RequestPrimarySurfaceHit(origin, direction, queryRange, ResolveHitSurfaceMask(), QueryTriggerInteraction.Ignore, out InteractionSurfaceHit hit))
                 return false;
 
             Collider candidate = hit.collider;
@@ -355,6 +355,11 @@ namespace Hecton8.Gameplay
             bestDistance = hit.distance;
 
             return bestCollider != null;
+        }
+
+        private int ResolveHitSurfaceMask()
+        {
+            return HectonLayerMasks.ResolveSurfaceInteractionLayerMask(hitMask.value);
         }
 
         private bool TryGetBestHitCached(out Collider bestCollider, out Vector3 bestPoint, out float bestDistance)

@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -98,6 +99,7 @@ namespace Hecton8.Core
         public const int MaxPdaLogEvents = 256;
         public const int UIStateHistoryFrames = 10;
 
+        private const SystemID OwnerSystemId = SystemID.UI;
         private const int StateCount = (int)UIStateSlot.Count;
         private const int ValueSlotCount = (int)UIValueSlotId.Count;
         public const uint ValueSlotInvalidInputSnappedFlag = 1u << 0;
@@ -152,17 +154,19 @@ namespace Hecton8.Core
             if (IsInitialized)
                 return;
 
+            H8Memory.RegisterBeforeShutdownOwnerRelease(Shutdown);
             Shutdown();
-            _states = new NativeArray<UIStateData>(StateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIStateData>[StateCount] - headless UI simulation state - owner: UIStateStore
-            _valueSlots = new NativeArray<UIValueSlot>(ValueSlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIValueSlot>[ValueSlotCount] - headless numeric UI value bridge - owner: UIStateStore
-            _historyStates = new NativeArray<UIStateData>(UIStateHistoryFrames, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIStateData>[UIStateHistoryFrames] - PDA UI rollback snapshot ring - owner: UIStateStore
-            _pdaLogEventHashes = new NativeArray<uint>(MaxPdaLogEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[MaxPdaLogEvents] - PDA event-sourced log history - owner: UIStateStore
-            _pdaLogEventTimestamps = new NativeArray<float>(MaxPdaLogEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[MaxPdaLogEvents] - PDA event-sourced log timestamps - owner: UIStateStore
-            NativeMemorySentinel.RegisterNativeArray(_states, nameof(UIStateStore), nameof(_states), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_valueSlots, nameof(UIStateStore), nameof(_valueSlots), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_historyStates, nameof(UIStateStore), nameof(_historyStates), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_pdaLogEventHashes, nameof(UIStateStore), nameof(_pdaLogEventHashes), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_pdaLogEventTimestamps, nameof(UIStateStore), nameof(_pdaLogEventTimestamps), NativeAllocationLifetime.Session);
+            _states = H8Memory.Allocate<UIStateData>(StateCount, OwnerSystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _valueSlots = H8Memory.Allocate<UIValueSlot>(ValueSlotCount, OwnerSystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _historyStates = H8Memory.Allocate<UIStateData>(UIStateHistoryFrames, OwnerSystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _pdaLogEventHashes = H8Memory.Allocate<uint>(MaxPdaLogEvents, OwnerSystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _pdaLogEventTimestamps = H8Memory.Allocate<float>(MaxPdaLogEvents, OwnerSystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            if (!IsInitialized)
+            {
+                Shutdown();
+                return;
+            }
+
             _pdaLogWriteIndex = 0;
             _pdaLogCount = 0;
             _historyWriteIndex = 0;
@@ -517,12 +521,7 @@ namespace Hecton8.Core
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array, ref JobHandle dependency) where T : struct
         {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            dependency = array.Dispose(dependency);
-            array = default;
+            dependency = H8Memory.Release(ref array, dependency, OwnerSystemId);
         }
 
         private static void CapturePDAStateSnapshot(in UIStateData state)

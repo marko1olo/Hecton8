@@ -487,9 +487,8 @@ namespace Hecton8.World
                     vegetationBridge = currentService as HectonMapMagicVegetationBridge;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
                     _dispatcher = currentService as ITickDispatcher;
-                    _registered = false;
-                    _registeredSlowTick = false;
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;
@@ -2269,11 +2268,36 @@ namespace Hecton8.World
                 return false;
 
             DisposeVisibleCountReadbackData();
-            _visibleCountReadback.Data = new NativeArray<uint>(
-                IndirectArgsElementCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_visibleCountReadback.Data, nameof(GPUScatterDirector), "_visibleCountReadbackData", NativeAllocationLifetime.Scene);
+            NativeArray<uint> replacement = default;
+            try
+            {
+                replacement = new NativeArray<uint>(
+                    IndirectArgsElementCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(replacement, nameof(GPUScatterDirector), "_visibleCountReadbackData", NativeAllocationLifetime.Scene);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("Native memory sentinel registration failed for visible count readback data.");
+
+                _visibleCountReadback.Data = replacement;
+            }
+            catch
+            {
+                if (replacement.IsCreated)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.UnregisterNativeArray(replacement);
+                    }
+                    finally
+                    {
+                        replacement.Dispose();
+                    }
+                }
+
+                throw;
+            }
+
             _visibleCountReadbackRepairRequested = false;
             return true;
         }

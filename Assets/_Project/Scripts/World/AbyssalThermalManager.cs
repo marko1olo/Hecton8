@@ -237,8 +237,6 @@ namespace Hecton8.World
         private const BufferID ThermalMapInsulationBufferId = (BufferID)70059;
         private static readonly ulong ThermalMapReadbackMutationGuardMask =
             ThermalVaultMutationGuardBit(ThermalMapReadCelsiusBufferId);
-        private const string NativeMemoryOwner = nameof(AbyssalThermalManager);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const uint ThermalHashSeed = 0xC6BC2796u;
         private const float ThermalSpatialEventLifetimeSeconds = 1.25f;
         private const float DryAirDensityKilogramsPerCubicMeter = 1.225f;
@@ -814,21 +812,19 @@ namespace Hecton8.World
                 Dispose();
 
                 // COLD ALLOC: NativeArray<float>[32768] - thermal Jacobi write scratch; prevents cross-frame DataVault write locks - owner: AbyssalThermalManager
-                NativeArray<float> scratch = new NativeArray<float>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                NativeArray<float> scratch = H8Memory.Allocate<float>(requiredLength, ThermalVaultOwnerSystem, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 try
                 {
-                    NativeMemorySentinel.RegisterNativeArray(
-                        scratch,
-                        nameof(AbyssalThermalManager),
-                        nameof(WriteScratch),
-                        NativeAllocationLifetime.Session);
+                    if (!scratch.IsCreated)
+                        throw new InvalidOperationException("AbyssalThermalManager thermal map scratch allocation failed.");
+
                     FillThermalMap(scratch, defaultValue);
                     WriteScratch = scratch;
                 }
                 catch
                 {
                     if (scratch.IsCreated)
-                        scratch.Dispose();
+                        H8Memory.Release(ref scratch, ThermalVaultOwnerSystem);
                     throw;
                 }
             }
@@ -846,9 +842,7 @@ namespace Hecton8.World
                     return;
                 }
 
-                NativeMemorySentinel.UnregisterNativeArray(WriteScratch);
-                WriteScratch.Dispose();
-                WriteScratch = default;
+                H8Memory.Release(ref WriteScratch, ThermalVaultOwnerSystem);
             }
         }
 
@@ -3520,15 +3514,11 @@ namespace Hecton8.World
 
             DisposeThermalTelemetryDumpPayload();
 
-            _thermalTelemetryDumpPayload = new NativeArray<byte>(
+            _thermalTelemetryDumpPayload = H8Memory.Allocate<byte>(
                 ThermalTelemetryDumpPayloadBytes,
+                ThermalVaultOwnerSystem,
                 Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _thermalTelemetryDumpPayload,
-                NativeMemoryOwner,
-                nameof(_thermalTelemetryDumpPayload),
-                NativeMemoryLifetime);
             return IsThermalTelemetryDumpPayloadReady();
         }
 
@@ -3543,9 +3533,7 @@ namespace Hecton8.World
             if (!_thermalTelemetryDumpPayload.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(_thermalTelemetryDumpPayload);
-            _thermalTelemetryDumpPayload.Dispose();
-            _thermalTelemetryDumpPayload = default;
+            H8Memory.Release(ref _thermalTelemetryDumpPayload, ThermalVaultOwnerSystem);
         }
 
         private void ReleaseThermalTelemetry(IDataVault vault)
@@ -3833,10 +3821,7 @@ namespace Hecton8.World
                     EnsureThermalTelemetry();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredTick = false;
-                    _registeredSlowTick = false;
-                    _registeredFixedTick = false;
-                    _registeredLateFrameTick = false;
+                    TryUnregisterDispatcherTicks();
                     if (currentService != null)
                         TryRegister();
                     break;
@@ -6011,6 +5996,33 @@ namespace Hecton8.World
             if (ReferenceEquals(s_activeRuntimeInstance, this))
                 s_activeRuntimeInstance = null;
 
+            if (_registeredTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+
+            if (_registeredFixedTick)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                _registeredFixedTick = false;
+            }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
+            }
+        }
+
+        private void TryUnregisterDispatcherTicks()
+        {
             if (_registeredTick)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);

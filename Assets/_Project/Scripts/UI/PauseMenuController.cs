@@ -415,7 +415,10 @@ namespace Hecton8.UI
                     _cachedInputService = currentService as IInputService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
                     _cachedTickDispatcher = currentService as ITickDispatcher;
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
                     break;
                 case GlobalRegistryServiceSlot.NativeInputManagerRuntime:
                     BindInputActions(currentService as INativeInputManagerRuntime);
@@ -1721,9 +1724,10 @@ namespace Hecton8.UI
 
             // TASK 33: Ensure all settings are saved before Application.Quit()
             // Save UserOptions (input overrides, etc.)
-            if (Hecton8.Core.GlobalRegistry.UserOptions != null)
+            Hecton8.Input.UserOptionsPersistence userOptions = Hecton8.Core.GlobalRegistry.UserOptions;
+            if (userOptions != null && userOptions.IsServiceReady && userOptions.isActiveAndEnabled)
             {
-                Hecton8.Core.GlobalRegistry.UserOptions.Save();
+                userOptions.Save();
             }
 
             // SettingsManager saves settings individually via PlayerPrefs

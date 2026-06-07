@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.World.OfflineHadalTrenchBaker;
 using Unity.Collections;
@@ -236,6 +237,8 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
         private ref struct AsyncTrenchBakeSession
         {
             private const SystemID BakeSessionMemoryOwner = SystemID.ContentAuthority;
+            private const string NativeMemoryOwner = nameof(AsyncTrenchBakeSession);
+            private const string RleRunsLabel = "_rleRuns";
 
             private readonly Action<HadalTrenchBakeResult> _onCompleted;
             private readonly Action<Exception> _onFailed;
@@ -251,6 +254,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             private NativeArray<ThermalVentSpawnDTO> _vents;
             private NativeArray<HadalTrenchAdaptiveBlockDTO> _adaptiveBlocks;
             private NativeList<HadalTrenchRleRunDTO> _rleRuns;
+            private int _rleRunsSentinelId;
             private NativeArray<HadalTrenchBakeTelemetryEntry> _telemetry;
             private JobHandle _activeHandle;
             private AsyncPhase _phase;
@@ -329,7 +333,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
                         return false;
                     }
 
-                    _rleRuns = new NativeList<HadalTrenchRleRunDTO>(_voxelCount, Allocator.Persistent);
+                    CreateRleRuns();
                     InitializeTelemetryRing();
 
                     _totalStopwatch.Restart();
@@ -433,7 +437,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
                 ReleaseTracked(ref _faults);
                 ReleaseTracked(ref _vents);
                 ReleaseTracked(ref _adaptiveBlocks);
-                if (_rleRuns.IsCreated) _rleRuns.Dispose();
+                ReleaseRleRuns();
                 ReleaseTracked(ref _telemetry);
             }
 
@@ -453,6 +457,46 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             {
                 if (array.IsCreated)
                     H8Memory.Release(ref array, BakeSessionMemoryOwner);
+            }
+
+            private void CreateRleRuns()
+            {
+                _rleRuns = new NativeList<HadalTrenchRleRunDTO>(_voxelCount, Allocator.Persistent);
+                try
+                {
+                    _rleRunsSentinelId = NativeMemorySentinel.RegisterNativeList(
+                        _rleRuns,
+                        NativeMemoryOwner,
+                        RleRunsLabel,
+                        NativeAllocationLifetime.Session);
+                    if (_rleRunsSentinelId <= 0)
+                        throw new InvalidOperationException("NativeMemorySentinel rejected Hadal trench RLE run list registration.");
+                }
+                catch
+                {
+                    if (_rleRuns.IsCreated)
+                        _rleRuns.Dispose();
+                    _rleRuns = default;
+                    _rleRunsSentinelId = 0;
+                    throw;
+                }
+            }
+
+            private void ReleaseRleRuns()
+            {
+                if (!_rleRuns.IsCreated)
+                {
+                    _rleRunsSentinelId = 0;
+                    return;
+                }
+
+                if (_rleRunsSentinelId > 0)
+                {
+                    NativeMemorySentinel.Unregister(_rleRunsSentinelId);
+                    _rleRunsSentinelId = 0;
+                }
+                _rleRuns.Dispose();
+                _rleRuns = default;
             }
 
             private void BeginSerialization()

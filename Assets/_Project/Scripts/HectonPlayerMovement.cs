@@ -158,6 +158,9 @@ namespace Hecton8.Gameplay
         private const float HydrostaticExitDownwardVelocityKick = 1.35f;
         private const int SpeculativeHoverFixedTicksAfterAupShift = 1;
         private const float SpeculativeHoverBaseHeightMeters = 0.025f;
+        private const int LegacyCollisionContactCapacity = 16;
+        private const int KinematicContactMaxAgeFrames = 2;
+        private const int KinematicContactColliderInstanceId = -2147483647;
         private float _runtimeSwimSpeedMultiplier = 1f;
         private float _runtimeVoxelBackpressureSwimSpeedMultiplier = 1f;
         private float _runtimeInjurySwimSpeedMultiplier = 1f;
@@ -1595,6 +1598,12 @@ namespace Hecton8.Gameplay
         private Vector3 _smoothedGroundNormal;
         private float _minGroundNormalY;
         private readonly PlayerMovementSurfaceHit[] _groundProbeHitBuffer = new PlayerMovementSurfaceHit[32]; // COLD ALLOC: PlayerMovementSurfaceHit[32] — ground-contact query buffer dedicated to grounding resolution — owner: HectonPlayerMovement
+        private readonly PlayerMovementSurfaceHit[] _legacyCollisionProbeHitBuffer = new PlayerMovementSurfaceHit[LegacyCollisionContactCapacity]; // COLD ALLOC: PlayerMovementSurfaceHit[16] — Unity collision callback contact cache for legacy Rigidbody locomotion — owner: HectonPlayerMovement
+        private readonly int[] _legacyCollisionProbeFrameBuffer = new int[LegacyCollisionContactCapacity]; // COLD ALLOC: int[16] — per-contact sample frames for legacy collision cache pruning — owner: HectonPlayerMovement
+        private readonly ContactPoint[] _collisionContactBuffer = new ContactPoint[LegacyCollisionContactCapacity]; // COLD ALLOC: ContactPoint[16] — nonalloc Collision.GetContacts scratch for legacy contact capture — owner: HectonPlayerMovement
+        private int _legacyCollisionProbeHitCount;
+        private int _legacyCollisionProbeFrame = -1;
+        private uint _legacyCollisionProbeShiftSequence;
         private int _movementProbeCacheFixedSequence;
         private int _movementProbeCacheSequence = -1;
         private int _movementProbeCacheLayerMask;
@@ -3530,7 +3539,7 @@ namespace Hecton8.Gameplay
             _groundCheckOrigin.z = _fixedFrameBodyPosition.z;
             _fixedGroundSweepHitCount = 0;
             _fixedGroundSweepMaxDistance = 0f;
-            if (groundLayers == 0 || HectonFloatingOrigin.IsShiftInProgress)
+            if (ResolveMovementGroundLayerMask() == 0 || HectonFloatingOrigin.IsShiftInProgress)
                 return;
 
             float maxGroundDistance = math.max(
@@ -3540,6 +3549,79 @@ namespace Hecton8.Gameplay
                 return;
 
             _fixedGroundSweepMaxDistance = maxGroundDistance + GroundCheckSkin;
+            AppendRecentLegacyCollisionProbeHits();
+            AppendRecentKinematicCollisionProbeHit();
+        }
+
+        private void AppendRecentLegacyCollisionProbeHits()
+        {
+            if (_legacyCollisionProbeHitCount <= 0 ||
+                _legacyCollisionProbeShiftSequence != HectonFloatingOrigin.CurrentShiftSequence)
+            {
+                return;
+            }
+
+            int age = SystemDispatcher.CurrentFrameIndex - _legacyCollisionProbeFrame;
+            if (age < 0 || age > KinematicContactMaxAgeFrames)
+                return;
+
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
+            int count = math.min(_legacyCollisionProbeHitCount, _legacyCollisionProbeHitBuffer.Length);
+            for (int i = 0; i < count; i++)
+            {
+                int slotAge = currentFrame - _legacyCollisionProbeFrameBuffer[i];
+                if (slotAge < 0 || slotAge > KinematicContactMaxAgeFrames)
+                    continue;
+
+                TryAppendSharedMovementProbeHit(_legacyCollisionProbeHitBuffer[i]);
+            }
+        }
+
+        private void AppendRecentKinematicCollisionProbeHit()
+        {
+            HectonPlayerMotor playerMotor = _playerMotor;
+            if (playerMotor == null ||
+                !playerMotor.TryGetRecentKinematicCollisionContact(
+                    KinematicContactMaxAgeFrames,
+                    out Vector3 normal,
+                    out Vector3 point,
+                    out float distance,
+                    out _,
+                    out _))
+            {
+                return;
+            }
+
+            if (!IsFiniteVector(point) || !IsFiniteVector(normal))
+                return;
+
+            Vector3 safeNormal = NormalizeVectorRsqrt(normal, Vector3.up);
+            PlayerMovementSurfaceHit hit = new PlayerMovementSurfaceHit
+            {
+                point = HectonPlayerMotor.SafeVelocity(point, _fixedFrameBodyPosition),
+                normal = safeNormal,
+                distance = math.max(0f, math.isfinite(distance) ? distance : _groundCheckOrigin.y - point.y),
+                collider = null,
+                ColliderInstanceId = KinematicContactColliderInstanceId
+            };
+            TryAppendSharedMovementProbeHit(hit);
+        }
+
+        private bool TryAppendSharedMovementProbeHit(PlayerMovementSurfaceHit hit)
+        {
+            if (_fixedGroundSweepHitCount >= _groundProbeHitBuffer.Length)
+                return false;
+
+            int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+            if (hitColliderInstanceId == 0 || hitColliderInstanceId == _playerColliderInstanceId)
+                return false;
+
+            if (!IsFiniteReusableMovementProbeHit(in hit, _fixedGroundSweepMaxDistance))
+                return false;
+
+            _groundProbeHitBuffer[_fixedGroundSweepHitCount] = hit;
+            _fixedGroundSweepHitCount++;
+            return true;
         }
 
         private bool TryBuildMovementSweepStepDirection(out Vector3 stepDirection)
@@ -3627,7 +3709,8 @@ namespace Hecton8.Gameplay
             out PlayerMovementSurfaceHit hit)
         {
             hit = default;
-            if (distance <= 0f || groundLayers == 0 || HectonFloatingOrigin.IsShiftInProgress)
+            int groundLayerMask = ResolveMovementGroundLayerMask();
+            if (distance <= 0f || groundLayerMask == 0 || HectonFloatingOrigin.IsShiftInProgress)
                 return false;
 
             Vector3 safeDirection = NormalizeVectorRsqrt(direction, Vector3.down);
@@ -3645,6 +3728,12 @@ namespace Hecton8.Gameplay
             return false;
         }
 
+        private int ResolveMovementGroundLayerMask()
+        {
+            int layerMask = groundLayers.value;
+            return layerMask == 0 ? 0 : HectonLayerMasks.ResolveTerrainSdfProbeLayerMask(layerMask);
+        }
+
         private bool TryUseSharedGroundSweepAsMovementProbe(
             Vector3 origin,
             float radius,
@@ -3655,14 +3744,15 @@ namespace Hecton8.Gameplay
             hit = default;
             if (_fixedGroundSweepHitCount <= 0 ||
                 _fixedGroundSweepMaxDistance <= 0f ||
-                distance > _fixedGroundSweepMaxDistance ||
-                math.dot(new float3(direction.x, direction.y, direction.z), new float3(0f, -1f, 0f)) < BatchedGroundProbeDownDot)
+                distance > _fixedGroundSweepMaxDistance)
             {
                 return false;
             }
 
             float nearestDistance = float.MaxValue;
             int nearestIndex = -1;
+            float resolvedProbeDistance = 0f;
+            bool downwardProbe = math.dot(new float3(direction.x, direction.y, direction.z), new float3(0f, -1f, 0f)) >= BatchedGroundProbeDownDot;
             float horizontalSlack = math.max(0.01f, radius) + math.max(0.01f, groundCheckRadius) + BatchedGroundProbeHorizontalSlack;
             float horizontalSlackSq = horizontalSlack * horizontalSlack;
             int hitCount = math.min(_fixedGroundSweepHitCount, _groundProbeHitBuffer.Length);
@@ -3673,17 +3763,46 @@ namespace Hecton8.Gameplay
                 if (hitColliderInstanceId == 0 || hitColliderInstanceId == _playerColliderInstanceId)
                     continue;
 
-                if (!IsFiniteReusableGroundProbeHit(in candidate, distance))
+                if (!IsFiniteReusableMovementProbeHit(in candidate, distance))
                     continue;
 
-                Vector3 planarDelta = candidate.point - origin;
-                float planarDistanceSq = planarDelta.x * planarDelta.x + planarDelta.z * planarDelta.z;
-                if (planarDistanceSq > horizontalSlackSq)
-                    continue;
-
-                if (candidate.distance < nearestDistance)
+                float probeDistance;
+                if (downwardProbe)
                 {
-                    nearestDistance = candidate.distance;
+                    if (candidate.normal.y < ReusableGroundProbeMinNormalY)
+                        continue;
+
+                    Vector3 planarDelta = candidate.point - origin;
+                    float planarDistanceSq = planarDelta.x * planarDelta.x + planarDelta.z * planarDelta.z;
+                    if (planarDistanceSq > horizontalSlackSq)
+                        continue;
+
+                    probeDistance = candidate.distance;
+                }
+                else
+                {
+                    Vector3 delta = candidate.point - origin;
+                    float along = delta.x * direction.x + delta.y * direction.y + delta.z * direction.z;
+                    if (along < -GroundCheckSkin || along > distance + GroundCheckSkin + radius)
+                        continue;
+
+                    Vector3 lateral = delta - direction * along;
+                    if (lateral.sqrMagnitude > horizontalSlackSq)
+                        continue;
+
+                    float normalFacing = candidate.normal.x * direction.x +
+                                         candidate.normal.y * direction.y +
+                                         candidate.normal.z * direction.z;
+                    if (normalFacing > 0.25f)
+                        continue;
+
+                    probeDistance = math.max(0f, along);
+                }
+
+                if (probeDistance < nearestDistance)
+                {
+                    nearestDistance = probeDistance;
+                    resolvedProbeDistance = probeDistance;
                     nearestIndex = i;
                 }
             }
@@ -3692,6 +3811,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             hit = _groundProbeHitBuffer[nearestIndex];
+            hit.distance = resolvedProbeDistance;
             return true;
         }
 
@@ -3726,6 +3846,15 @@ namespace Hecton8.Gameplay
 
         private static bool IsFiniteReusableGroundProbeHit(in PlayerMovementSurfaceHit hit, float distance)
         {
+            if (!IsFiniteReusableMovementProbeHit(in hit, distance))
+                return false;
+
+            Vector3 normal = hit.normal;
+            return normal.y >= ReusableGroundProbeMinNormalY;
+        }
+
+        private static bool IsFiniteReusableMovementProbeHit(in PlayerMovementSurfaceHit hit, float distance)
+        {
             if (!math.isfinite(hit.distance) ||
                 hit.distance < 0f ||
                 hit.distance > distance + GroundCheckSkin)
@@ -3735,9 +3864,6 @@ namespace Hecton8.Gameplay
 
             Vector3 normal = hit.normal;
             if (!math.isfinite(normal.x) || !math.isfinite(normal.y) || !math.isfinite(normal.z))
-                return false;
-
-            if (normal.y < ReusableGroundProbeMinNormalY)
                 return false;
 
             Vector3 point = hit.point;
@@ -3760,6 +3886,7 @@ namespace Hecton8.Gameplay
         {
             _fixedGroundSweepHitCount = 0;
             _fixedGroundSweepMaxDistance = 0f;
+            ResetLegacyCollisionProbeHits();
             _movementProbeCacheSequence = -1;
             _movementProbeCacheLayerMask = 0;
             _movementProbeCacheHasHit = false;
@@ -3778,7 +3905,7 @@ namespace Hecton8.Gameplay
             hitResolved = false;
             hit = default;
             if (_movementProbeCacheSequence != _movementProbeCacheFixedSequence ||
-                _movementProbeCacheLayerMask != groundLayers ||
+                _movementProbeCacheLayerMask != ResolveMovementGroundLayerMask() ||
                 _movementProbeCacheShiftSequence != HectonFloatingOrigin.CurrentShiftSequence)
             {
                 return false;
@@ -3806,7 +3933,7 @@ namespace Hecton8.Gameplay
             PlayerMovementSurfaceHit hit)
         {
             _movementProbeCacheSequence = _movementProbeCacheFixedSequence;
-            _movementProbeCacheLayerMask = groundLayers;
+            _movementProbeCacheLayerMask = ResolveMovementGroundLayerMask();
             _movementProbeCacheShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             _movementProbeCacheOrigin = origin;
             _movementProbeCacheDirection = direction;
@@ -3954,7 +4081,7 @@ namespace Hecton8.Gameplay
         public void OnDependencyInject()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _settingsRuntime = GlobalRegistry.Settings;
             _localizationRuntime = GlobalRegistry.LocalizationStressPresentation;
             _localizationStressHudRefreshSink = GlobalRegistry.LocalizationStressHudRefreshSink;
@@ -4009,8 +4136,13 @@ namespace Hecton8.Gameplay
                     EnsurePlayerKinematicsNativeState();
                     EnsureCinematicFocusBlackBox();
                     break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    UnregisterDispatcherTicks();
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegisterToDispatchers();
+                    break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.SettingsRuntime:
                     _settingsRuntime = currentService as SettingsManager;
@@ -4074,6 +4206,32 @@ namespace Hecton8.Gameplay
             }
 
             RefreshRuntimeDependencyBindings();
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterDependencyRebinds()
@@ -4168,7 +4326,10 @@ namespace Hecton8.Gameplay
             TryGetComponent(out _buoyancy);
             _buoyancyAirState = _buoyancy as IBuoyancyAirStateReadModel;
             TryGetComponent(out _swimPresentationController);
-            TryGetComponent(out _physicalInteractionHandler);
+            if (!TryGetComponent(out _physicalInteractionHandler))
+            {
+                _physicalInteractionHandler = gameObject.AddComponent<PhysicalInteractionHandler>(); // COLD ALLOC: PhysicalInteractionHandler[1] - player-owned heavy-carry movement modifier bridge - owner: HectonPlayerMovement
+            }
             if (!TryGetComponent(out _heavyTowWinch))
             {
                 _heavyTowWinch = gameObject.AddComponent<HeavyTowWinch>(); // COLD ALLOC: HeavyTowWinch[1] â€” player-owned salvage tow runtime for harpoon/winch towing â€” owner: HectonPlayerMovement
@@ -4407,7 +4568,6 @@ namespace Hecton8.Gameplay
         private void PrepareRenderTickDependencies()
         {
             ResolveInputManagerBinding();
-            EnsureJuiceProcessor();
             ResolveSwimPresentationController();
             _debugHasSwimPresentationController = _swimPresentationController != null;
             PlayerTransportPreset activeTransportPreset = ResolveActiveTransportPreset();
@@ -4416,7 +4576,6 @@ namespace Hecton8.Gameplay
 
         private PlayerTransportPreset PrepareFixedTickDependencies()
         {
-            EnsureJuiceProcessor();
             return ResolveActiveTransportPreset();
         }
 
@@ -4620,6 +4779,7 @@ namespace Hecton8.Gameplay
             _transportPlatformAupFrameValid = false;
             _useFixedFrameSpatialCache = false;
             InvalidateMovementProbeCaches();
+            ResetLegacyCollisionProbeHits();
             _renderInterpolatedLinearVelocity = Vector3.zero;
             _renderInterpolatedCameraYaw = _cameraYaw;
             _renderInterpolatedBodyYaw = _bodyYaw;
@@ -4673,6 +4833,183 @@ namespace Hecton8.Gameplay
             _lastValidAupWriteIndex = 0;
             _lastValidAupCount = 0;
             ClearInjectedDependencies();
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            CaptureLegacyCollisionContacts(collision);
+        }
+
+        private void OnCollisionStay(Collision collision)
+        {
+            CaptureLegacyCollisionContacts(collision);
+        }
+
+        private void OnCollisionExit(Collision collision)
+        {
+            if (collision == null)
+                return;
+
+            Collider collider = collision.collider;
+            if (collider == null)
+                return;
+
+            int colliderId = unchecked((int)EntityId.ToULong(collider.GetEntityId()));
+            if (colliderId == 0)
+                return;
+
+            for (int i = _legacyCollisionProbeHitCount - 1; i >= 0; i--)
+            {
+                if (GetHitColliderInstanceId(in _legacyCollisionProbeHitBuffer[i]) != colliderId)
+                    continue;
+
+                int last = _legacyCollisionProbeHitCount - 1;
+                _legacyCollisionProbeHitBuffer[i] = _legacyCollisionProbeHitBuffer[last];
+                _legacyCollisionProbeFrameBuffer[i] = _legacyCollisionProbeFrameBuffer[last];
+                _legacyCollisionProbeHitBuffer[last] = default;
+                _legacyCollisionProbeFrameBuffer[last] = -1;
+                _legacyCollisionProbeHitCount = last;
+            }
+        }
+
+        private void CaptureLegacyCollisionContacts(Collision collision)
+        {
+            if (collision == null ||
+                HectonFloatingOrigin.IsShiftInProgress)
+            {
+                return;
+            }
+
+            int layerMask = ResolveMovementGroundLayerMask();
+            if (layerMask == 0)
+                return;
+
+            int contactCount = collision.GetContacts(_collisionContactBuffer);
+            if (contactCount <= 0)
+                return;
+
+            if (_legacyCollisionProbeShiftSequence != HectonFloatingOrigin.CurrentShiftSequence)
+                ResetLegacyCollisionProbeHits();
+
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
+            int safeContactCount = math.min(contactCount, _collisionContactBuffer.Length);
+            for (int i = 0; i < safeContactCount; i++)
+            {
+                ContactPoint contact = _collisionContactBuffer[i];
+                Collider hitCollider = ResolveOtherCollisionCollider(in contact, collision.collider);
+                if (hitCollider == null)
+                    continue;
+
+                int hitColliderId = unchecked((int)EntityId.ToULong(hitCollider.GetEntityId()));
+                if (hitColliderId == 0 || hitColliderId == _playerColliderInstanceId)
+                    continue;
+
+                int layerBit = 1 << hitCollider.gameObject.layer;
+                if ((layerMask & layerBit) == 0)
+                    continue;
+
+                Vector3 point = contact.point;
+                Vector3 normal = ResolveCollisionContactNormal(point, contact.normal);
+                if (!IsFiniteVector(point) || !IsFiniteVector(normal))
+                    continue;
+
+                int writeIndex = ResolveLegacyCollisionProbeWriteIndex(hitColliderId, currentFrame);
+                if (writeIndex < 0)
+                    continue;
+
+                float downwardDistance = math.max(0f, _groundCheckOrigin.y - point.y);
+                _legacyCollisionProbeHitBuffer[writeIndex] = new PlayerMovementSurfaceHit
+                {
+                    point = HectonPlayerMotor.SafeVelocity(point, _fixedFrameBodyPosition),
+                    normal = NormalizeVectorRsqrt(normal, Vector3.up),
+                    distance = downwardDistance,
+                    collider = hitCollider,
+                    ColliderInstanceId = hitColliderId
+                };
+                _legacyCollisionProbeFrameBuffer[writeIndex] = currentFrame;
+                _legacyCollisionProbeFrame = currentFrame;
+                _legacyCollisionProbeShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            }
+        }
+
+        private int ResolveLegacyCollisionProbeWriteIndex(int colliderInstanceId, int currentFrame)
+        {
+            if (colliderInstanceId == 0)
+                return -1;
+
+            int count = math.min(_legacyCollisionProbeHitCount, _legacyCollisionProbeHitBuffer.Length);
+            int staleIndex = -1;
+            int oldestIndex = count > 0 ? 0 : -1;
+            int oldestFrame = count > 0 ? _legacyCollisionProbeFrameBuffer[0] : int.MaxValue;
+
+            for (int i = 0; i < count; i++)
+            {
+                if (GetHitColliderInstanceId(in _legacyCollisionProbeHitBuffer[i]) == colliderInstanceId)
+                    return i;
+
+                int sampleFrame = _legacyCollisionProbeFrameBuffer[i];
+                int age = currentFrame - sampleFrame;
+                if ((age < 0 || age > KinematicContactMaxAgeFrames) && staleIndex < 0)
+                    staleIndex = i;
+
+                if (sampleFrame < oldestFrame)
+                {
+                    oldestFrame = sampleFrame;
+                    oldestIndex = i;
+                }
+            }
+
+            if (staleIndex >= 0)
+                return staleIndex;
+
+            if (count < _legacyCollisionProbeHitBuffer.Length)
+            {
+                _legacyCollisionProbeHitCount = count + 1;
+                return count;
+            }
+
+            return oldestIndex;
+        }
+
+        private Collider ResolveOtherCollisionCollider(in ContactPoint contact, Collider fallback)
+        {
+            Collider candidate = contact.otherCollider;
+            if (candidate == null || candidate == _capsuleCollider)
+                candidate = contact.thisCollider;
+            if (candidate == null || candidate == _capsuleCollider)
+                candidate = fallback;
+            if (candidate == _capsuleCollider)
+                return null;
+            return candidate;
+        }
+
+        private Vector3 ResolveCollisionContactNormal(Vector3 point, Vector3 rawNormal)
+        {
+            Vector3 normal = NormalizeVectorRsqrt(rawNormal, Vector3.up);
+            Vector3 bodyCenter = _useFixedFrameSpatialCache ? _fixedFrameCapsuleCenterWS : ResolveBodyRuntimePosition();
+            Vector3 toBody = bodyCenter - point;
+            if (IsFiniteVector(toBody) && toBody.sqrMagnitude > 0.000001f)
+            {
+                float facing = normal.x * toBody.x + normal.y * toBody.y + normal.z * toBody.z;
+                if (facing < 0f)
+                    normal = -normal;
+            }
+
+            return normal;
+        }
+
+        private void ResetLegacyCollisionProbeHits()
+        {
+            int count = math.min(_legacyCollisionProbeHitCount, _legacyCollisionProbeHitBuffer.Length);
+            for (int i = 0; i < count; i++)
+            {
+                _legacyCollisionProbeHitBuffer[i] = default;
+                _legacyCollisionProbeFrameBuffer[i] = -1;
+            }
+
+            _legacyCollisionProbeHitCount = 0;
+            _legacyCollisionProbeFrame = -1;
+            _legacyCollisionProbeShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
         }
 
         private void BindInventoryLoadSource()
@@ -4942,6 +5279,33 @@ namespace Hecton8.Gameplay
             if (!_registeredHotSwapListener)
                 _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
 
+        }
+
+        private void UnregisterDispatcherTicks()
+        {
+            if (_registeredTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                _registeredTick = false;
+            }
+
+            if (_registeredFixedTick)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+                _registeredFixedTick = false;
+            }
+
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+                _registeredColdTick = false;
+            }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrameTick = false;
+            }
         }
 
         private void TryRegisterLateFrameTickable()
@@ -7104,6 +7468,7 @@ namespace Hecton8.Gameplay
         {
             SuitData suit = currentSuitData;
             if (suit == null) return;
+            if (_juiceProcessor == null) return;
 
             using (_tickProfilerMarker.Auto())
             {
@@ -7349,7 +7714,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _pendingPresentationAudioEventCount = 0;
-            IAudioService audioManager = _audioService;
+            IAudioService audioManager = ResolveAudioService();
             for (int i = 0; i < count; i++)
             {
                 PresentationAudioEvent audioEvent = _pendingPresentationAudioEvents[i];
@@ -8861,6 +9226,7 @@ namespace Hecton8.Gameplay
         {
             SuitData suit = currentSuitData;
             if (suit == null) return;
+            if (_juiceProcessor == null) return;
 
             using (_fixedTickProfilerMarker.Auto())
             {
@@ -11753,9 +12119,7 @@ namespace Hecton8.Gameplay
             _playerMotor.SetLinearVelocity(new Vector3(deltaVelocity.x, deltaVelocity.y, deltaVelocity.z));
 
             Vector3 outwardVelocityChange = wallNormal * (wallKickVelocityChange + inwardNormalSpeed);
-            IPhysicsService physicsService = _physicsService;
-            if (physicsService != null)
-                physicsService.QueueForce(_rb, outwardVelocityChange, ForceMode.VelocityChange);
+            ApplyMotorVelocityChange(outwardVelocityChange);
             DrainWallKickResources();
             _isGrounded = false;
             _isAirborne = true;
@@ -12432,6 +12796,22 @@ namespace Hecton8.Gameplay
             {
                 return false;
             }
+
+            if (HasForwardBlockAtHeight(stepDirection, probeRadius, forwardDistance))
+                return false;
+
+            if (!TryFindStepLanding(stepDirection, probeRadius, forwardDistance, out PlayerMovementSurfaceHit landingHit))
+                return false;
+
+            float stepDeltaY = landingHit.point.y - currentBottomY;
+            if (stepDeltaY <= GroundCheckSkin ||
+                stepDeltaY > stepAssistHeight + GroundCheckSkin)
+            {
+                return false;
+            }
+
+            if (!HasStepAssistHeadroom(currentBodyPosition, stepDirection, forwardDistance, stepDeltaY))
+                return false;
 
             Vector3 currentVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
             float verticalPulse = math.max(0f, stepAssistVerticalVelocityPulse - currentVelocity.y);

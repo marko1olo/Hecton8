@@ -1,6 +1,7 @@
 using Hecton8.AI;
 using Hecton8.Building;
 using Hecton8.Construction;
+using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Scavenging;
@@ -164,7 +165,7 @@ namespace Hecton8.Gameplay
                     summary = "Service, power, or build target ahead. Construction kit is a strong fit if you want builder, repair, and support coverage.";
                     return true;
                 case PresetIdFieldRecovery:
-                    summary = "Recovery lane ahead. Recovery tools are a strong fit if you want salvage or cargo control.";
+                    summary = "Recovery lane ahead. Field Recovery covers salvage, cargo control, and drillable resource nodes.";
                     return true;
                 case PresetIdDefense:
                     summary = "Combat contact ahead. Defense kit is the safer option before closing distance.";
@@ -252,7 +253,7 @@ namespace Hecton8.Gameplay
                     PresetFieldRecovery,
                     node.IsDepleted
                         ? "Spent resource node ahead. Recovery tools still fit this route if you want to clear the area."
-                        : "Live resource node ahead. Recovery kit is a strong option here.");
+                        : "Live resource node ahead. Field Recovery includes drill coverage for extraction.");
                 return true;
             }
 
@@ -322,7 +323,7 @@ namespace Hecton8.Gameplay
                     PresetFieldRecovery,
                     node.IsDepleted
                         ? "Spent resource node ahead. Recovery tools still fit this route if you want to clear the area."
-                        : "Live resource node ahead. Recovery kit is a strong option here.");
+                        : "Live resource node ahead. Field Recovery includes drill coverage for extraction.");
                 return true;
             }
 
@@ -340,7 +341,7 @@ namespace Hecton8.Gameplay
             {
                 advice = new LoadoutAdvice(
                     PresetFieldRecovery,
-                    "Recoverable field asset ahead. Recovery kit is an efficient option.");
+                    "Recoverable field asset ahead. Field Recovery covers salvage, cargo control, and drill extraction.");
                 return true;
             }
 
@@ -477,7 +478,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.ResourceNodeDepleted:
                     advice = new LoadoutAdvice(
                         PresetFieldRecovery,
-                        "Recovery lane ahead. Recovery tools are a strong fit if you want salvage or cargo control.");
+                        "Recovery lane ahead. Field Recovery covers salvage, cargo control, and drillable resource nodes.");
                     return true;
 
                 case FieldTargetRole.RouteAnchor:
@@ -551,6 +552,10 @@ namespace Hecton8.Gameplay
             if (origin == null || range <= 0f)
                 return false;
 
+            LayerMask resolvedMask = ResolveForwardQueryMask(mask);
+            if (resolvedMask.value == 0)
+                return false;
+
             Vector3 originPosition = origin.position;
             Vector3 forward = origin.forward;
             int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
@@ -570,7 +575,7 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < count; i++)
             {
                 SpatialQueryHit candidate = _forwardCandidates[i];
-                if (!MatchesLayer(candidate.Layer, mask))
+                if (!MatchesLayer(candidate.Layer, resolvedMask))
                     continue;
 
                 Vector3 offset = candidate.Position - originPosition;
@@ -609,6 +614,10 @@ namespace Hecton8.Gameplay
             if (origin == null || range <= 0f)
                 return false;
 
+            LayerMask resolvedMask = ResolveForwardQueryMask(mask);
+            if (resolvedMask.value == 0)
+                return false;
+
             Vector3 originPosition = origin.position;
             Vector3 forward = origin.forward;
             int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
@@ -628,7 +637,7 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < count; i++)
             {
                 SpatialQueryHit candidate = _forwardCandidates[i];
-                if (!MatchesLayer(candidate.Layer, mask))
+                if (!MatchesLayer(candidate.Layer, resolvedMask))
                     continue;
 
                 Vector3 offset = candidate.Position - originPosition;
@@ -659,6 +668,13 @@ namespace Hecton8.Gameplay
         private static bool MatchesLayer(int layer, LayerMask mask)
         {
             return layer >= 0 && ((mask.value & (1 << layer)) != 0);
+        }
+
+        private static LayerMask ResolveForwardQueryMask(LayerMask mask)
+        {
+            LayerMask resolved = default;
+            resolved.value = HectonLayerMasks.ResolveFieldToolScanLayerMask(mask.value);
+            return resolved;
         }
 
         private static bool TryBuildDescriptorPresetName(FieldTargetDescriptor descriptor, out string presetName)

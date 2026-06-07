@@ -7,6 +7,9 @@ poi_tags: poi.quiet_salvage_contract;poi.low_storm_window_note
 biome_tags: biome.contract_layer;biome.shallows
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Quiet Salvage Contract Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

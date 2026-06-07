@@ -9,32 +9,34 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Silt Ambusher Telegraph"
+title: "Sygnały mułowego zasadzkarza"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Silt Ambusher Telegraph
+# Sygnały mułowego zasadzkarza
 
-PL LOC HOLD: Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact.
+Sygnały mułowego zasadzkarza to jednocześnie artykuł o stworzeniu i reguła uczciwości dla HECTON-8. Najgłębsze strefy mogą być wrogie, ciemne i trudne do odczytania, ale nie powinny karać gracza niewidzialnymi rzutami. Mułowy zasadzkarz jest przerażający, bo jest prawie terenem: żywą pułapką zakopaną pod osadem, czekającą na wibrację, ciepło i nieostrożny ciężar. Należy do otchłani, bo otchłań już opowiada o zaufaniu do sensorów.
+
+Dobre rozmieszczenie daje dowody przed niebezpieczeństwem. Płyta jest zbyt gładka. Brakuje małych pełzaczy. Brzeg tworzy sierp, którego naturalne osiadanie nie tworzy. Impuls wraca późno, nisko i miękko. Lampa łapie jeden oddech mułu tam, gdzie nie powinien poruszać się prąd. Gdy gracz zna te znaki, każda płaska plama staje się pytaniem, nie losową karą. To kontrakt HECTON-8: ocean może być okrutny, ale musi być czytelny dla tego, kto uważa.
 
 ## Scanner
 
-PL LOC HOLD: A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.
+ŁOŻE MUŁOWEGO ZASADZKARZA // Czysty muł, brak żerujących drobin i niski powrót impulsu oznaczają żywą pułapkę, zanim płyta się otworzy.
 
 ## Terminal
 
-PL LOC HOLD: CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.
+REGUŁA KONTAKTU: łoża zasadzkarzy wymagają co najmniej dwóch sygnałów przed kontaktem: czystej płyty, braku mikrofauny, sierpowatej krawędzi, niskiego powrotu impulsu albo opóźnionego oddechu mułu. Jeśli budżet sygnałów zawodzi, obniżyć do spotkania śladowego.
 
 ## Audio
 
-PL LOC HOLD: Flat ground is a lie down here.
+Płaski grunt tutaj kłamie. Szukaj tego, co po nim nie pełza.
 
 ## Field Note
 
-PL LOC HOLD: Deep danger must telegraph. The player should learn the wrongness before paying for it.
+Otchłań może być niesprawiedliwa wobec postaci; gra nie może być niesprawiedliwa wobec gracza. Każda zasadzka musi zostawić czytelną nieprawidłowość.
 
 <!-- External Site; generated from P230_SILT_AMBUSHER_TELEGRAPH/pl_PL. -->

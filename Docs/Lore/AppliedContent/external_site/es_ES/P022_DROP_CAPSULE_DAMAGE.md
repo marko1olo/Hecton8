@@ -7,6 +7,9 @@ poi_tags: poi.drop_capsule;poi.crash_shelter
 biome_tags: biome.crash_shelf;biome.shallow_repair
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Daño de cápsula"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.payload_gantry;poi.carrier_bargain
 biome_tags: biome.deep_launch_route;biome.orbit_window
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "物資離脱"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

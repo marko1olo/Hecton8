@@ -14,6 +14,7 @@ except ModuleNotFoundError:
 
 TARGET_LOCALES = tuple(IMPORTED_TARGET_LOCALES)
 INDEX_PAGE_NAMES = {"INDEX.md"}
+IGNORED_PUBLICATION_DIR_NAMES = {"_draft_backlog"}
 
 REQUIRED_KEYS = [
     "packet_id", "release_set_id", "article_id", "unlock_id",
@@ -54,14 +55,14 @@ def extract_frontmatter(content: str) -> tuple[dict, str]:
     content = content.lstrip()
     if not content.startswith("---"):
         return {}, content
-    
+
     parts = content.split("---", 2)
     if len(parts) < 3:
         return {}, content
-        
+
     frontmatter_text = parts[1]
     body = parts[2].strip()
-    
+
     fm = {}
     for line in frontmatter_text.split("\n"):
         line = line.strip()
@@ -87,34 +88,40 @@ def matches_packet_glob(path: Path, packet_id: str, patterns: tuple[str, ...]) -
 def strip_generated_comments(text: str) -> str:
     return re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL).strip()
 
+def is_ignored_publication_path(path: Path) -> bool:
+    return any(part in IGNORED_PUBLICATION_DIR_NAMES for part in path.parts)
+
 def run_guard(root: Path, packet_glob: str, json_output: bool):
     counters = Counters()
     messages = []
     packet_globs = parse_packet_globs(packet_glob)
-    
+
     def log_fail(msg, counter_attr=None):
         if counter_attr:
             setattr(counters, counter_attr, getattr(counters, counter_attr) + 1)
         counters.failures += 1
         messages.append(f"FAIL: {msg}")
-        
+
     def log_warn(msg):
         counters.warnings += 1
         messages.append(f"WARN: {msg}")
 
     wiki_path = root / "Docs" / "Lore" / "AppliedContent" / "in_game_wiki"
     site_path = root / "Docs" / "Lore" / "AppliedContent" / "external_site"
-    
+
     files = []
     if wiki_path.exists():
         files.extend(list(wiki_path.rglob("*.md")))
     if site_path.exists():
         files.extend(list(site_path.rglob("*.md")))
-        
+
     packets = {}
     packet_surface_locales = {}
-    
+
     for f in files:
+        if is_ignored_publication_path(f):
+            continue
+
         if f.name in INDEX_PAGE_NAMES:
             continue
 
@@ -124,30 +131,30 @@ def run_guard(root: Path, packet_glob: str, json_output: bool):
         except UnicodeDecodeError:
             log_fail(f"{rel}: Unicode decoding error")
             continue
-            
+
         fm, body = extract_frontmatter(content)
         packet_id = fm.get("packet_id", "")
-        
+
         if not matches_packet_glob(f, packet_id, packet_globs):
             continue
-            
+
         counters.files += 1
-        
+
         missing_keys = [k for k in REQUIRED_KEYS if not fm.get(k)]
         if missing_keys:
             log_fail(f"{rel}: Missing or empty required keys: {missing_keys}")
-            
+
         body_lower = body.lower()
         found_prose = [p for p in ANTI_AI_PHRASES if p in body_lower]
         if found_prose:
             log_fail(f"{rel}: Anti-AI prose detected: {found_prose}", "prose_failures")
-            
+
         locale = f.parent.name
         status = fm.get("localization_status", "").lower()
         if locale != "en_US":
             if status in READY_STATES and not fm.get("proof_marker"):
                 log_fail(f"{rel}: Non-English page claims ready status '{status}' without proof_marker")
-        
+
         if "external_site" in str(rel):
             tier = fm.get("spoiler_tier", "0")
             if str(tier).isdigit() and int(tier) >= 3:
@@ -158,7 +165,7 @@ def run_guard(root: Path, packet_glob: str, json_output: bool):
                         break
                 if not has_marker:
                     log_fail(f"{rel}: external_site with spoiler tier {tier} missing spoiler marker", "spoiler_failures")
-                    
+
         surface = "external_site" if "external_site" in str(rel) else "in_game_wiki"
         if packet_id:
             packets.setdefault(packet_id, {}).setdefault(locale, {})[surface] = (fm, body, rel)
@@ -176,11 +183,11 @@ def run_guard(root: Path, packet_glob: str, json_output: bool):
             if "external_site" in surfaces and "in_game_wiki" in surfaces:
                 site_fm, site_body, site_rel = surfaces["external_site"]
                 wiki_fm, wiki_body, wiki_rel = surfaces["in_game_wiki"]
-                
+
                 site_body_norm = strip_generated_comments(site_body)
                 wiki_body_norm = strip_generated_comments(wiki_body)
                 if site_body_norm and site_body_norm == wiki_body_norm:
-                    is_draft = ("draft" in site_fm.get("localization_status", "").lower() or 
+                    is_draft = ("draft" in site_fm.get("localization_status", "").lower() or
                                 "draft" in wiki_fm.get("localization_status", "").lower())
                     if is_draft:
                         log_warn(f"Packet {packet_id} ({locale}): external_site and in_game_wiki bodies are exact clones (draft warning)")
@@ -208,7 +215,7 @@ def main():
     parser.add_argument("--packet-glob", default="", help="Glob to match packet_ids")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
-    
+
     sys.exit(run_guard(Path(args.root), args.packet_glob, args.json))
 
 if __name__ == "__main__":

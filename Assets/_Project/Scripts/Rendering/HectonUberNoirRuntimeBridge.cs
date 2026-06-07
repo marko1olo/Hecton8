@@ -204,7 +204,7 @@ namespace Hecton8.Core
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredLateFrame = false;
+                TryUnregisterLateFrameTickable();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegisterLateFrameTickable();
                 return;
@@ -260,6 +260,15 @@ namespace Hecton8.Core
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
         }
 
         private void TryRegisterHotSwapListener()

@@ -14,6 +14,9 @@ namespace Hecton8.EditorTools
 {
     public sealed class EconomyRecipeTunerWindow : EditorWindow
     {
+        private const string NativeMemoryOwner = nameof(EconomyRecipeTunerWindow);
+        private const string BinaryScratchLabel = "binaryScratch";
+        private const string CsvConstantsLabel = "csvConstants";
         private const string RecipeRoot = "Assets/_Project/Data/Crafting/Recipes";
         private const string CsvDefaultPath = "Assets/_Project/Data/item_encyclopedia.csv";
         private const string H8CrDefaultPath = "Data/Economy/Crafting_Costs.h8bin";
@@ -221,11 +224,10 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            using (NativeArray<byte> binary = new NativeArray<byte>(
-                       managedBytes.Length,
-                       Allocator.Temp,
-                       NativeArrayOptions.UninitializedMemory))
+            NativeArray<byte> binary = default;
+            try
             {
+                binary = AllocateTrackedArray<byte>(managedBytes.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory, BinaryScratchLabel, NativeAllocationLifetime.Temp);
                 binary.CopyFrom(managedBytes);
                 ShinobuTransactionStatus status = Shinobu19EconomyLedger.HydrateCraftingRecipesFromH8Cr(
                     binary,
@@ -235,6 +237,10 @@ namespace Hecton8.EditorTools
                     out int recipeCount,
                     out int ingredientCount);
                 Debug.Log("[SHINOBU_19] H8CR import status=" + status + " recipes=" + recipeCount + " ingredients=" + ingredientCount);
+            }
+            finally
+            {
+                DisposeTrackedArray(ref binary);
             }
         }
 
@@ -260,13 +266,53 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            using (NativeArray<ItemPhysicalConstantsDTO> constants = new NativeArray<ItemPhysicalConstantsDTO>(
-                       capacity,
-                       Allocator.Temp,
-                       NativeArrayOptions.ClearMemory))
+            NativeArray<ItemPhysicalConstantsDTO> constants = default;
+            try
             {
+                constants = AllocateTrackedArray<ItemPhysicalConstantsDTO>(capacity, Allocator.Temp, NativeArrayOptions.ClearMemory, CsvConstantsLabel, NativeAllocationLifetime.Temp);
                 ApplyCsvLines(lines, constants, out int accepted, out int rejected);
                 Debug.Log("[SHINOBU_19] CSV applied to temp fallback accepted=" + accepted + " rejected=" + rejected);
+            }
+            finally
+            {
+                DisposeTrackedArray(ref constants);
+            }
+        }
+
+        private static NativeArray<T> AllocateTrackedArray<T>(int length, Allocator allocator, NativeArrayOptions options, string label, NativeAllocationLifetime lifetime) where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[EconomyRecipeTunerWindow] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("[EconomyRecipeTunerWindow] NativeMemorySentinel rejected NativeArray registration for " + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private static void DisposeTrackedArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
             }
         }
 

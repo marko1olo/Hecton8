@@ -7,6 +7,9 @@ poi_tags: poi.first_carrier_voice_cache;poi.drop_capsule_speaker
 biome_tags: biome.arrival_shelf;biome.shallow_annex
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Первый голос Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

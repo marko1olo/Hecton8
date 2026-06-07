@@ -7,6 +7,9 @@ poi_tags: poi.cable_reef;poi.service_trench
 biome_tags: biome.service_canyon;biome.cable_reef
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "케이블 암초 공생"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

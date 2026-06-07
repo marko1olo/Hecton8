@@ -7,6 +7,9 @@ poi_tags: poi.route_archive;poi.relay_packet
 biome_tags: biome.deep_archive;biome.service_canyon
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "FTL 없는 항행 수학"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

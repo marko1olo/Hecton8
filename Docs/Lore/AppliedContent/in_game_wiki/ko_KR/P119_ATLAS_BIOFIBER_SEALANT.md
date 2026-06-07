@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Atlas 바이오섬유 실런트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Atlas 바이오섬유 실런트
 
-KO LOC HOLD: Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.
+Atlas 바이오섬유 실런트는 유용한 실수다. 살아 있는 조직, 찢어진 케이블 재킷, 새는 이음새가 같은 종류의 상처로 분류된 수리 생태에서 자란다. 준비된 띠는 물속에서 생존 장비나 압력 유연 관절을 밀봉할 수 있지만, 따뜻하게 보관하면 이음새를 찾는 성장과 가짜 생명 신호가 깨어날 수 있다.
 
 ## Scanner
 
-KO LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+ATLAS 바이오섬유 실런트 // 케이블 재킷, 상처 조직, 선체 개스킷이 같은 고장 등급으로 배정된 곳에서 자란 젖은 수리 섬유. 압력 아래 접착하며 채취 뒤에도 계속 자랄 수 있다.
 
 ## Terminal
 
-KO LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+자원 등급: Atlas 변형 수리 생태. 제거 전 냉각 클램프 사용. 용도: 젖은 이음새 패치, 수트 찢김, 케이블 재킷, 압력 유연 관절. 위험: 가짜 생명 신호, 센서 에코, 보관 중 능동적 이음새 탐색.
 
 ## Audio
 
-KO LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+그것은 누수, 상처, 입의 차이를 모른다. Atlas가 셋 모두 닫아야 할 열린 곳이라고 가르쳤다.
 
 ## Field Note
 
-KO LOC HOLD: Useful body horror: the player wants it and distrusts it.
+좋은 실런트는 마른다. 이것은 다음 구멍을 듣는다.
 
 <!-- In-Game Wiki; generated from P119_ATLAS_BIOFIBER_SEALANT/ko_KR. -->

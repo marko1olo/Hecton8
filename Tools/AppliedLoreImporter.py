@@ -141,6 +141,8 @@ def collect_packets(root: Path) -> list[dict[str, Any]]:
 
     for manifest_path in iter_manifest_paths(root):
         manifest = load_json(manifest_path)
+        if manifest.get("canonical_importer_ready") is False:
+            continue
         release_set_id = str(manifest.get("release_set_id", ""))
         packet_sources = manifest.get("packet_sources", [])
         if not packet_sources:

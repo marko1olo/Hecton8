@@ -7,6 +7,9 @@ poi_tags: poi.drop_capsule;poi.crash_shelter
 biome_tags: biome.crash_shelf;biome.shallow_repair
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "ضرر كبسولة الهبوط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

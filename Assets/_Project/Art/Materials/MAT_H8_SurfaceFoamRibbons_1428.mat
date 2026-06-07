@@ -21,16 +21,15 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MAT_H8_SurfaceFoamRibbons_1428
-  m_Shader: {fileID: 4800000, guid: 650dd9526735d5b46b79224bc6e94025, type: 3}
+  m_Shader: {fileID: 4800000, guid: 293b5e809b0a2ff44a3044c7de1e5636, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _SURFACE_TYPE_TRANSPARENT
+  m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3000
+  m_CustomRenderQueue: 3012
   stringTagMap:
     RenderType: Transparent
   disabledShaderPasses:
@@ -42,33 +41,40 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Texture: {fileID: 2800000, guid: 2c0e5db3ffc243999f2d027ed3f0084c, type: 3}
+        m_Scale: {x: 1.15, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Texture: {fileID: 2800000, guid: 2c0e5db3ffc243999f2d027ed3f0084c, type: 3}
+        m_Scale: {x: 1.15, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _AddPrecomputedVelocity: 0
+    - _Alpha: 0.86
     - _AlphaClip: 0
     - _AlphaToMask: 0
     - _Blend: 0
     - _BlendOp: 0
-    - _Cull: 2
+    - _Cull: 0
     - _Cutoff: 0.5
     - _DstBlend: 10
     - _DstBlendAlpha: 10
+    - _EdgeFade: 0.14
     - _QueueOffset: 0
     - _SampleGI: 0
+    - _Softness: 0.56
     - _SrcBlend: 5
     - _SrcBlendAlpha: 1
     - _Surface: 1
+    - _Threshold: 0.16
     - _XRMotionVectorsPass: 1
     - _ZWrite: 0
     m_Colors:
-    - _BaseColor: {r: 0.64, g: 0.92, b: 0.96, a: 0.52}
-    - _Color: {r: 0.6399999, g: 0.92, b: 0.96, a: 0.52}
+    - _BaseColor: {r: 0.88, g: 0.965, b: 1, a: 0.56}
+    - _Color: {r: 0.88, g: 0.965, b: 1, a: 0.56}
+    - _FoamColor: {r: 0.93, g: 0.985, b: 1, a: 0.72}
+    - _TilingA: {r: 3.1, g: 0.74, b: 0.013, a: 0.003}
+    - _TilingB: {r: 6.4, g: 1.46, b: -0.011, a: 0.005}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

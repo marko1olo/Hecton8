@@ -7,6 +7,9 @@ poi_tags: poi.cable_reef_relay_yard;poi.biofilm_cable_skin
 biome_tags: biome.cable_reef;biome.industrial_shelf
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Cable Reef Relay Yard POI Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -42,6 +42,7 @@ namespace NASAPunk.Visor
         private const float RadiationFatigueScalePerSecond = 0.005f;
         private const float RadiationFatigueCriticalExposureSeconds = (1f - RadiationFatigueMinimumScale) / RadiationFatigueScalePerSecond;
         private const int ActiveControllerCapacity = 8;
+        private const RenderTextureFormat RuntimeHudRenderTextureFormat = RenderTextureFormat.ARGB32;
         private static VisorHUDController s_activeController0;
         private static VisorHUDController s_activeController1;
         private static VisorHUDController s_activeController2;
@@ -285,6 +286,7 @@ namespace NASAPunk.Visor
         private IModularEquipmentService _cachedModularEquipment;
         private IVramBudgetReadModel _cachedVramMonitor;
         private IRenderTexturePoolService _cachedRenderTexturePool;
+        private IRenderTexturePoolService _runtimeTextureOwnerPool;
         private IRenderTextureLifecycleService _cachedRenderTextureLifecycle;
         private HectonSurvivalSystem _subscribedSurvivalSystem;
         private uint _survivalVitalsSourceId;
@@ -684,6 +686,14 @@ namespace NASAPunk.Visor
             if (serviceSlot == GlobalRegistryServiceSlot.RenderTexturePoolRuntime)
             {
                 _cachedRenderTexturePool = currentService as IRenderTexturePoolService;
+                if (_ownsRuntimeTexture &&
+                    _projectionMode == ProjectionMode.RuntimeRenderTexture &&
+                    isActiveAndEnabled &&
+                    !ReferenceEquals(_runtimeTextureOwnerPool, _cachedRenderTexturePool))
+                {
+                    RebuildProjection();
+                }
+
                 return;
             }
 
@@ -2219,7 +2229,10 @@ namespace NASAPunk.Visor
             CalculateTargetRTDimensions(effectiveRenderScale, out targetWidth, out targetHeight);
 
             // Reuse RT if size matches
-            if (_hudRT != null && _hudRT.width == targetWidth && _hudRT.height == targetHeight && _hudRT.format == RenderTextureFormat.ARGB32)
+            if (_hudRT != null &&
+                _hudRT.width == targetWidth &&
+                _hudRT.height == targetHeight &&
+                _hudRT.format == RuntimeHudRenderTextureFormat)
             {
                 _hudRT.filterMode = _filterMode;
                 if (!_hudRT.IsCreated())
@@ -2234,8 +2247,16 @@ namespace NASAPunk.Visor
             // Release old RT if size changed
             ReleaseOwnedRuntimeTexture();
 
-            // Rent RT from pool (zero-GC, O(1) lookup)
-            _hudRT = _cachedRenderTexturePool.Rent(targetWidth, targetHeight, RenderTextureFormat.ARGB32, this);
+            _hudRT = RentRuntimeHudRenderTexture(targetWidth, targetHeight, RuntimeHudRenderTextureFormat);
+            if (_hudRT == null)
+            {
+                _ownsRuntimeTexture = false;
+                _cachedRTWidth = -1;
+                _cachedRTHeight = -1;
+                _cachedEffectiveRenderScale = -1f;
+                return;
+            }
+
             _hudRT.filterMode = _filterMode;
             _hudRT.useMipMap = false;
             _hudRT.name = "VisorHUD_RT_Scaled";
@@ -2245,6 +2266,39 @@ namespace NASAPunk.Visor
             _cachedRTWidth = targetWidth;
             _cachedRTHeight = targetHeight;
             _cachedEffectiveRenderScale = effectiveRenderScale;
+        }
+
+        private RenderTexture RentRuntimeHudRenderTexture(
+            int targetWidth,
+            int targetHeight,
+            RenderTextureFormat format)
+        {
+            IRenderTexturePoolService pool = _cachedRenderTexturePool;
+            RenderTexture rt = pool != null
+                ? pool.Rent(targetWidth, targetHeight, format, this)
+                : CreateUnpooledRuntimeHudRenderTexture(targetWidth, targetHeight, format);
+
+            _runtimeTextureOwnerPool = rt != null ? pool : null;
+            return rt;
+        }
+
+        private RenderTexture CreateUnpooledRuntimeHudRenderTexture(
+            int targetWidth,
+            int targetHeight,
+            RenderTextureFormat format)
+        {
+            RenderTexture rt = new RenderTexture(
+                Mathf.Max(1, targetWidth),
+                Mathf.Max(1, targetHeight),
+                0,
+                format);
+            rt.name = "VisorHUD_RT_Unpooled";
+
+            IRenderTextureLifecycleService lifecycle = _cachedRenderTextureLifecycle;
+            if (lifecycle != null)
+                lifecycle.RegisterAllocation(rt, this);
+
+            return rt;
         }
 
         private void RefreshAdaptiveRuntimeProjection()
@@ -2470,23 +2524,28 @@ namespace NASAPunk.Visor
             if (!_ownsRuntimeTexture || _hudRT == null)
                 return;
 
+            RenderTexture released = _hudRT;
+            _hudRT = null;
+            _ownsRuntimeTexture = false;
+
             // Register disposal with lifecycle tracker
             IRenderTextureLifecycleService lifecycle = _cachedRenderTextureLifecycle;
             if (lifecycle != null)
-                lifecycle.RegisterDisposal(_hudRT);
+                lifecycle.RegisterDisposal(released);
 
             // Return to pool for reuse (zero-GC)
-            IRenderTexturePoolService pool = _cachedRenderTexturePool;
+            IRenderTexturePoolService pool = _runtimeTextureOwnerPool;
+            _runtimeTextureOwnerPool = null;
             if (pool != null)
-                pool.Return(_hudRT);
+                pool.Return(released);
             else
             {
                 // Fallback if pool not available (Editor mode or shutdown)
-                _hudRT.Release();
+                released.Release();
                 if (Application.isPlaying)
-                    Destroy(_hudRT);
+                    Destroy(released);
                 else
-                    DestroyImmediate(_hudRT);
+                    DestroyImmediate(released);
             }
         }
 

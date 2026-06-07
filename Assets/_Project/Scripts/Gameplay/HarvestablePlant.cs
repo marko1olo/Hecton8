@@ -619,7 +619,7 @@ namespace Hecton8.Gameplay
                     segment.meshRenderer.enabled = segment.pendingRendererEnabled;
             }
 
-            IAudioService audio = _audioService;
+            IAudioService audio = ResolveAudioService();
             for (int i = 0; i < segments.Length; i++)
             {
                 PlantSegment segment = segments[i];
@@ -699,9 +699,35 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _objectPool = GlobalRegistry.ObjectPoolService;
             _physicsService = GlobalRegistry.Physics;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -712,7 +738,7 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _objectPool = currentService as IObjectPoolService;

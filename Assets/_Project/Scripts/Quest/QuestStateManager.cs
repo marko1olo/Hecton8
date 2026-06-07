@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -44,6 +45,7 @@ namespace Hecton8.Quest
         private const string NativeMemoryOwner = nameof(QuestStateManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const Allocator DataVaultExemptQuestStateAllocator = Allocator.Persistent;
+        private const SystemID NativeArrayOwnerSystem = SystemID.QuestDag;
         private static readonly uint _abyssalPhaseFlagHash = QuestFlagHashKernel.ComputeStableHash("phase.abyssal");
         private static readonly uint _thermalPhaseFlagHash = QuestFlagHashKernel.ComputeStableHash("phase.thermal");
 
@@ -52,6 +54,7 @@ namespace Hecton8.Quest
         private readonly QuestTransitionAuditEntry[] _transitionAuditRing = new QuestTransitionAuditEntry[QuestTransitionAuditCapacity]; // COLD ALLOC: QuestTransitionAuditEntry[300] - fixed dev transition ring, no file I/O in signal drain - owner: QuestStateManager
 
         private NativeArray<uint> _globalPrerequisites;
+        private NativeArray<uint> _validPackedWordMasks;
         private NativeArray<QuestNodeDescriptor> _nodes;
         private NativeArray<QuestPrerequisiteDescriptor> _prerequisites;
         private NativeList<int> _activatedQuestIndices;
@@ -111,18 +114,6 @@ namespace Hecton8.Quest
 
         public uint StateChecksum => _stateChecksum;
 
-        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.RegisterNativeArray(
-                array,
-                NativeMemoryOwner,
-                label,
-                NativeMemoryLifetime);
-        }
-
         public void Dispose()
         {
             if (_activatedQuestIndices.IsCreated)
@@ -138,22 +129,16 @@ namespace Hecton8.Quest
             }
 
             if (_nodes.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_nodes);
-                _nodes.Dispose();
-            }
+                H8Memory.Release(ref _nodes, NativeArrayOwnerSystem);
+
+            if (_validPackedWordMasks.IsCreated)
+                H8Memory.Release(ref _validPackedWordMasks, NativeArrayOwnerSystem);
 
             if (_prerequisites.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_prerequisites);
-                _prerequisites.Dispose();
-            }
+                H8Memory.Release(ref _prerequisites, NativeArrayOwnerSystem);
 
             if (_globalPrerequisites.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_globalPrerequisites);
-                _globalPrerequisites.Dispose();
-            }
+                H8Memory.Release(ref _globalPrerequisites, NativeArrayOwnerSystem);
 
             _runtimeResults.Clear();
             _bitAddressByHash = null;
@@ -190,10 +175,37 @@ namespace Hecton8.Quest
             _localizationManager = localizationManager;
 
             _authoredQuestCount = allQuests != null ? allQuests.Length : 0;
-            int questArrayLength = _authoredQuestCount + ProceduralQuestCapacity;
-            _globalPrerequisites = new NativeArray<uint>(WordCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            RegisterTrackedNativeArray(_globalPrerequisites, nameof(_globalPrerequisites));
-            _bitAddressByHash = new Dictionary<uint, QuestBitAddress>(Math.Max(questArrayLength * 6, 16)); // COLD ALLOC: Dictionary<uint,QuestBitAddress>[questArrayLength*6] - compiled flag lookup - owner: QuestStateManager
+            long questArrayLengthLong = (long)_authoredQuestCount + ProceduralQuestCapacity;
+            if (questArrayLengthLong > int.MaxValue)
+            {
+                Dispose();
+                return false;
+            }
+
+            int questArrayLength = (int)questArrayLengthLong;
+            if (!TryResolveQuestStateManagedCapacity(questArrayLength, 6, 16, out int bitAddressCapacity) ||
+                !TryResolveQuestStateManagedCapacity(questArrayLength, 2, 8, out int nodeBuilderCapacity) ||
+                !TryResolveQuestStateManagedCapacity(questArrayLength, 3, 8, out int prerequisiteBuilderCapacity) ||
+                !TryResolveQuestStateManagedCapacity(questArrayLength, 6, 16, out int hashLabelCapacity))
+            {
+                Dispose();
+                return false;
+            }
+
+            _globalPrerequisites = H8Memory.Allocate<uint>(WordCapacity, NativeArrayOwnerSystem, DataVaultExemptQuestStateAllocator, NativeArrayOptions.ClearMemory);
+            if (!_globalPrerequisites.IsCreated)
+            {
+                Dispose();
+                return false;
+            }
+            _validPackedWordMasks = H8Memory.Allocate<uint>(WordCapacity, NativeArrayOwnerSystem, DataVaultExemptQuestStateAllocator, NativeArrayOptions.ClearMemory);
+            if (!_validPackedWordMasks.IsCreated)
+            {
+                Dispose();
+                return false;
+            }
+
+            _bitAddressByHash = new Dictionary<uint, QuestBitAddress>(bitAddressCapacity); // COLD ALLOC: Dictionary<uint,QuestBitAddress>[questArrayLength*6] - compiled flag lookup - owner: QuestStateManager
             _questIndexByHash = new Dictionary<uint, int>(Math.Max(questArrayLength, 16)); // COLD ALLOC: Dictionary<uint,int>[questArrayLength] - quest hash to source index mapping - owner: QuestStateManager
             _revertDescriptorIndexByItemHash = new Dictionary<uint, int>(Math.Max(questArrayLength, 8)); // COLD ALLOC: Dictionary<uint,int>[questArrayLength] - critical item revert lookup - owner: QuestStateManager
             _activeAddressesByQuestIndex = new QuestBitAddress[questArrayLength]; // COLD ALLOC: QuestBitAddress[questArrayLength] - quest active bit cache - owner: QuestStateManager
@@ -210,15 +222,15 @@ namespace Hecton8.Quest
             _proceduralNodeIndexByQuestIndex = new int[questArrayLength]; // COLD ALLOC: int[questArrayLength] - procedural completion-node slot mapping - owner: QuestStateManager
 
             // COLD ALLOC: List<QuestNodeDescriptor>[questArrayLength*2] - compiled quest DAG nodes - owner: QuestStateManager
-            List<QuestNodeDescriptor> nodeBuilder = new List<QuestNodeDescriptor>(Math.Max(questArrayLength * 2, 8));
+            List<QuestNodeDescriptor> nodeBuilder = new List<QuestNodeDescriptor>(nodeBuilderCapacity);
             // COLD ALLOC: List<QuestPrerequisiteDescriptor>[questArrayLength*3] - flattened prerequisite masks - owner: QuestStateManager
-            List<QuestPrerequisiteDescriptor> prerequisiteBuilder = new List<QuestPrerequisiteDescriptor>(Math.Max(questArrayLength * 3, 8));
+            List<QuestPrerequisiteDescriptor> prerequisiteBuilder = new List<QuestPrerequisiteDescriptor>(prerequisiteBuilderCapacity);
             // COLD ALLOC: List<ThresholdFlag>[32] - unique depth threshold addresses - owner: QuestStateManager
             List<ThresholdFlag> depthFlags = new List<ThresholdFlag>(32);
             // COLD ALLOC: List<QuestRevertDescriptor>[questArrayLength] - critical item revert descriptors - owner: QuestStateManager
             List<QuestRevertDescriptor> revertBuilder = new List<QuestRevertDescriptor>(Math.Max(questArrayLength, 4));
             // COLD ALLOC: Dictionary<uint,string>[questArrayLength*6] - collision diagnostics for stable hashes - owner: QuestStateManager
-            Dictionary<uint, string> hashLabels = new Dictionary<uint, string>(Math.Max(questArrayLength * 6, 16));
+            Dictionary<uint, string> hashLabels = new Dictionary<uint, string>(hashLabelCapacity);
             Span<int> bandBitUsage = stackalloc int[7];
 
             EnsurePhaseGateAddressesRegistered(hashLabels, bandBitUsage);
@@ -406,29 +418,79 @@ namespace Hecton8.Quest
                 _proceduralNodeIndexByQuestIndex[questIndex] = nodeBuilder.Count + proceduralOffset;
             }
 
-            int nodeCapacity = nodeBuilder.Count + ProceduralQuestCapacity;
-            _nodes = new NativeArray<QuestNodeDescriptor>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            RegisterTrackedNativeArray(_nodes, nameof(_nodes));
+            long nodeCapacityLong = (long)nodeBuilder.Count + ProceduralQuestCapacity;
+            if (nodeCapacityLong > int.MaxValue)
+            {
+                Dispose();
+                return false;
+            }
+
+            int nodeCapacity = (int)nodeCapacityLong;
+            _nodes = H8Memory.Allocate<QuestNodeDescriptor>(nodeCapacity, NativeArrayOwnerSystem, DataVaultExemptQuestStateAllocator, NativeArrayOptions.ClearMemory);
+            if (!_nodes.IsCreated)
+            {
+                Dispose();
+                return false;
+            }
+
             for (int i = 0; i < nodeBuilder.Count; i++)
                 _nodes[i] = nodeBuilder[i];
 
-            _prerequisites = new NativeArray<QuestPrerequisiteDescriptor>(prerequisiteBuilder.Count, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            RegisterTrackedNativeArray(_prerequisites, nameof(_prerequisites));
+            _prerequisites = default;
+            if (prerequisiteBuilder.Count > 0)
+            {
+                _prerequisites = H8Memory.Allocate<QuestPrerequisiteDescriptor>(
+                    prerequisiteBuilder.Count,
+                    NativeArrayOwnerSystem,
+                    DataVaultExemptQuestStateAllocator,
+                    NativeArrayOptions.UninitializedMemory);
+                if (!_prerequisites.IsCreated)
+                {
+                    Dispose();
+                    return false;
+                }
+            }
+
             for (int i = 0; i < prerequisiteBuilder.Count; i++)
                 _prerequisites[i] = prerequisiteBuilder[i];
 
-            if (_runtimeResults.Capacity < nodeCapacity + revertBuilder.Count)
-                _runtimeResults.Capacity = nodeCapacity + revertBuilder.Count;
+            long runtimeResultCapacityLong = (long)nodeCapacity + revertBuilder.Count;
+            if (runtimeResultCapacityLong > int.MaxValue)
+            {
+                Dispose();
+                return false;
+            }
+
+            int runtimeResultCapacity = (int)runtimeResultCapacityLong;
+            if (_runtimeResults.Capacity < runtimeResultCapacity)
+                _runtimeResults.Capacity = runtimeResultCapacity;
 
             _activatedQuestIndices = new NativeList<int>(Math.Max(nodeCapacity, 1), DataVaultExemptQuestStateAllocator);
             _completedQuestIndices = new NativeList<int>(Math.Max(nodeCapacity, 1), DataVaultExemptQuestStateAllocator);
-            NativeMemorySentinel.RegisterNativeList(_activatedQuestIndices, NativeMemoryOwner, nameof(_activatedQuestIndices), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeList(_completedQuestIndices, NativeMemoryOwner, nameof(_completedQuestIndices), NativeMemoryLifetime);
+            try
+            {
+                RegisterNativeList(_activatedQuestIndices, nameof(_activatedQuestIndices));
+                RegisterNativeList(_completedQuestIndices, nameof(_completedQuestIndices));
+            }
+            catch
+            {
+                Dispose();
+                return false;
+            }
+
             _revertDescriptors = CopyListToArray(revertBuilder);
             _depthThresholdFlags = CopyListToArray(depthFlags);
             _isInitialized = true;
             RefreshStateMetadata(resetVersion: true);
             return !HasCompileErrors;
+        }
+
+        private static void RegisterNativeList<T>(NativeList<T> list, string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeList(list, NativeMemoryOwner, label, NativeMemoryLifetime);
+            if (sentinelId <= 0)
+                throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         public void RebindLocalization(ILocalizationTextReadModel localizationManager, QuestData[] allQuests)
@@ -816,10 +878,12 @@ namespace Hecton8.Quest
         public bool TryRevertCriticalItem(uint itemHash, double timestamp, out QuestRevertRequest request)
         {
             request = default;
-            _runtimeResults.Clear();
+            double safeTimestamp = ResolveAuditTimestamp(timestamp);
 
             if (!_isInitialized ||
                 itemHash == 0u ||
+                _bitAddressByHash == null ||
+                _questHashesByQuestIndex == null ||
                 _revertDescriptorIndexByItemHash == null ||
                 !_revertDescriptorIndexByItemHash.TryGetValue(itemHash, out int descriptorIndex) ||
                 _revertDescriptors == null ||
@@ -830,6 +894,12 @@ namespace Hecton8.Quest
             }
 
             QuestRevertDescriptor descriptor = _revertDescriptors[descriptorIndex];
+            if (descriptor.QuestIndex < 0 ||
+                descriptor.QuestIndex >= _questHashesByQuestIndex.Length)
+            {
+                return false;
+            }
+
             if (!_bitAddressByHash.TryGetValue(descriptor.EntityDestroyFlagId, out QuestBitAddress entityDestroyAddress) ||
                 !_bitAddressByHash.TryGetValue(descriptor.DeadlockFlagId, out QuestBitAddress deadlockAddress) ||
                 !_bitAddressByHash.TryGetValue(descriptor.CompletedFlagId, out QuestBitAddress completedAddress) ||
@@ -852,12 +922,13 @@ namespace Hecton8.Quest
                 return false;
             }
 
+            _runtimeResults.Clear();
             QuestSignalPayload payload = new QuestSignalPayload
             {
                 EntityHash = itemHash,
                 EventType = (ushort)QuestSignalKind.ItemLost,
                 ItemId = itemHash,
-                Timestamp = timestamp
+                Timestamp = safeTimestamp
             };
 
             _runtimeResults.Add(new QuestRuntimeResult(descriptor.QuestIndex, completed: false, QuestTransitionType.Revert));
@@ -873,6 +944,27 @@ namespace Hecton8.Quest
         }
 
         public QuestRuntimeResult GetResult(int index) => _runtimeResults[index];
+
+        private static bool TryResolveQuestStateManagedCapacity(
+            int baseCount,
+            int multiplier,
+            int minimum,
+            out int capacity)
+        {
+            capacity = 0;
+            if (baseCount < 0 || multiplier < 0 || minimum < 0)
+                return false;
+
+            long capacityLong = (long)baseCount * multiplier;
+            if (capacityLong < minimum)
+                capacityLong = minimum;
+
+            if (capacityLong > int.MaxValue)
+                return false;
+
+            capacity = (int)capacityLong;
+            return true;
+        }
 
         public int CopyActiveQuestHashes(uint[] destination)
         {
@@ -947,12 +1039,15 @@ namespace Hecton8.Quest
                 return false;
 
             if (!_globalPrerequisites.IsCreated)
-                return true;
+                return false;
 
             int copyBytes = WordCapacity * UnsafeUtility.SizeOf<uint>();
             void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites);
             if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, copyBytes, sourcePtr, copyBytes))
+            {
                 UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(QuestStateManager));
+                return false;
+            }
 
             return true;
         }
@@ -964,7 +1059,7 @@ namespace Hecton8.Quest
             header.Version = _stateVersion;
             header.FlagCount = WordCapacity;
             header.Checksum = _stateChecksum;
-            header.Timestamp = timestamp;
+            header.Timestamp = SanitizeNonNegativeFiniteTimestamp(timestamp);
             header.WriteSchemaVersion();
             return header;
         }
@@ -986,6 +1081,7 @@ namespace Hecton8.Quest
                     WordCapacity * UnsafeUtility.SizeOf<uint>());
             }
 
+            bool copiedPackedState = false;
             if (packedWords != null && packedWords.Length > 0)
             {
                 int copyWordCount = Math.Min(packedWords.Length, WordCapacity);
@@ -997,20 +1093,41 @@ namespace Hecton8.Quest
                         int destinationBytes = WordCapacity * UnsafeUtility.SizeOf<uint>();
                         void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites);
                         if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                        {
                             UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(QuestStateManager));
+                            UnsafeUtility.MemClear(destinationPtr, destinationBytes);
+                            copiedPackedState = false;
+                        }
+                        else
+                        {
+                            copiedPackedState = true;
+                        }
                     }
                 }
             }
+
+            ApplyValidPackedWordMasks();
 
             uint schemaVersion = header.ReadSchemaVersion();
             bool headerMatchesPackedLayout =
                 header.Magic == QuestSaveHeader.HeaderMagic &&
                 header.FlagCount == WordCapacity;
             bool schemaRecognized = schemaVersion == 0u || schemaVersion == QuestSaveHeader.CurrentSchemaVersion;
+            uint restoredChecksum = ComputePackedStateChecksum(_globalPrerequisites);
+            bool trustedHeader =
+                headerMatchesPackedLayout &&
+                schemaRecognized &&
+                copiedPackedState &&
+                header.Version != 0u &&
+                header.Checksum == restoredChecksum;
 
-            _stateVersion = headerMatchesPackedLayout ? header.Version : 0u;
-            _stateChecksum = headerMatchesPackedLayout && schemaRecognized ? header.Checksum : 0u;
-            if (_stateVersion == 0u || _stateChecksum == 0u)
+            _stateVersion = trustedHeader
+                ? header.Version
+                : 0u;
+            _stateChecksum = trustedHeader
+                ? header.Checksum
+                : 0u;
+            if (!trustedHeader)
                 RefreshStateMetadata(resetVersion: false);
         }
 
@@ -1313,6 +1430,7 @@ namespace Hecton8.Quest
             bandBitUsage[bandIndex] = bandBitIndex + 1;
             _bitAddressByHash.Add(bitHash, address);
             hashLabels[bitHash] = debugLabel;
+            RegisterValidPackedWordMask(address);
             return address;
         }
 
@@ -1553,10 +1671,11 @@ namespace Hecton8.Quest
                 return;
             }
 
+            double auditTimestamp = ResolveAuditTimestamp(signal.Timestamp);
             int writeIndex = _transitionAuditWriteIndex;
             _transitionAuditRing[writeIndex] = new QuestTransitionAuditEntry
             {
-                Timestamp = signal.Timestamp > 0d ? signal.Timestamp : Time.timeAsDouble,
+                Timestamp = auditTimestamp,
                 QuestHash = _questHashesByQuestIndex[questIndex],
                 EntityHash = signal.EntityHash,
                 ItemId = signal.ItemId,
@@ -1578,6 +1697,21 @@ namespace Hecton8.Quest
                    _bitAddressByHash != null &&
                    _bitAddressByHash.TryGetValue(bitHash, out QuestBitAddress address) &&
                    SetBit(address);
+        }
+
+        private static double SanitizeNonNegativeFiniteTimestamp(double timestamp)
+        {
+            return math.isfinite(timestamp) && timestamp >= 0d
+                ? timestamp
+                : 0d;
+        }
+
+        private static double ResolveAuditTimestamp(double timestamp)
+        {
+            if (math.isfinite(timestamp) && timestamp > 0d)
+                return timestamp;
+
+            return SanitizeNonNegativeFiniteTimestamp(Time.timeAsDouble);
         }
 
         private bool TryGetQuestIndex(uint questHash, out int questIndex)
@@ -1649,6 +1783,38 @@ namespace Hecton8.Quest
 
             _globalPrerequisites[address.WordIndex] = updatedValue;
             return true;
+        }
+
+        private void RegisterValidPackedWordMask(QuestBitAddress address)
+        {
+            if (!_validPackedWordMasks.IsCreated ||
+                address.WordIndex < 0 ||
+                address.WordIndex >= _validPackedWordMasks.Length)
+            {
+                return;
+            }
+
+            _validPackedWordMasks[address.WordIndex] |= address.BitMask;
+        }
+
+        private void ApplyValidPackedWordMasks()
+        {
+            if (!_globalPrerequisites.IsCreated)
+                return;
+
+            if (!_validPackedWordMasks.IsCreated)
+            {
+                for (int i = 0; i < _globalPrerequisites.Length; i++)
+                    _globalPrerequisites[i] = 0u;
+                return;
+            }
+
+            int count = math.min(_globalPrerequisites.Length, _validPackedWordMasks.Length);
+            for (int i = 0; i < count; i++)
+                _globalPrerequisites[i] &= _validPackedWordMasks[i];
+
+            for (int i = count; i < _globalPrerequisites.Length; i++)
+                _globalPrerequisites[i] = 0u;
         }
 
         private bool SetBitByFlagId(uint flagId)

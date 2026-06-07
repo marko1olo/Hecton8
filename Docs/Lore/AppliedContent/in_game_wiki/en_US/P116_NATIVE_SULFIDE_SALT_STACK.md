@@ -7,6 +7,9 @@ poi_tags: poi.sulfide_wall_sample;poi.salt_crust_shelf
 biome_tags: biome.brine_canyon;biome.vent_forge
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Native Sulfide Salt Stack"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -16,22 +19,22 @@ localization_flags: 0
 
 # Native Sulfide Salt Stack
 
-Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.
+Native sulfide salt stacks are one of the first proofs that HECTON-8 is not just a corporate crime scene. They grow where vent heat, brine seepage and metal-rich crust keep grinding against each other under pressure, leaving black-green salts in shelves, ribs and brittle chimneys. They clean conductors, wake emergency cells, tune ceramic flux and ruin tools when a crew treats them like ordinary ore. For the player, they should appear before blue debt: the moon has native chemistry, native value and native hazards before Deep Reach ever stamped a claim on it.
 
 ## Scanner
 
-Natural resource. Useful, corrosive, older than Deep Reach.
+NATIVE SULFIDE SALTS // Vent-racked crystals and black brine crust older than Deep Reach. Conductive when wet, corrosive when warm, useful before anything turns blue.
 
 ## Terminal
 
-RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+RESOURCE CLASS: native geology. Uses: conductor wash, emergency cell chemistry, ceramic flux, corrosion catalyst. Seal away from warm intake air; dust blooms into acid film on suit metal.
 
 ## Audio
 
-The moon was valuable before anyone taught it to be monstrous.
+The moon did not need a company to be dangerous. It already knew chemistry.
 
 ## Field Note
 
-Not every resource should be spooky. Some are just geology that can still kill you.
+If your gloves itch, you are already late. Rinse, ground, log the wall.
 
 <!-- In-Game Wiki; generated from P116_NATIVE_SULFIDE_SALT_STACK/en_US. -->

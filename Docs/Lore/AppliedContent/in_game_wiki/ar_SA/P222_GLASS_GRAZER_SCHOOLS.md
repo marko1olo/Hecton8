@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Glass Grazer Schools"
+title: "أسراب الرعاة الزجاجيين"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Glass Grazer Schools
+# أسراب الرعاة الزجاجيين
 
-AR LOC HOLD: Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.
+الرعاة الزجاجيون هم أول حيوانات المياه الضحلة التي تجعل الجمال مفيدا من دون أن تجعل الرف آمنا. أصدافهم الشفافة وحواف أفواههم الصلبة تكشط الغشاء المعدني من pressure glass، ومن الحصائر الضوئية الرخوة، ومن أغلفة الكابلات القديمة. يترك السرب المتغذي ممرات شاحبة تكشف التيار الأخير، والنمو الجديد، وأهدأ خط حول درزة ملوثة. راقب حافة السرب لا مركزه: فهم يتجنبون مادة الإحكام الدافئة، وتسربات المحلول الملحي الحامضة، والأسطح التي تحمل انجراف إشارة متوافقا مع Atlas. إذا توقف النقر وبقي الطعام، فقد غيّر شيء أكبر الماء. الممر المنظف دليل، لا إذن للاندفاع.
 
 ## Scanner
 
-AR LOC HOLD: Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.
+سرب رعاة زجاجيين // كائنات تغذية شفافة الصدفة تكشط الغشاء المعدني من pressure glass وحواف الحصائر الضوئية. نقرها يفتح ندوبا مضيئة للمسار؛ والصمت المفاجئ بيانات عن مفترس.
 
 ## Terminal
 
-AR LOC HOLD: FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.
+خط أساس الفاونا: عنقود رعاة غير عدائي. تتبع غشاء pressure glass، وbloom معدني جديد، واضطراب التيار، والإزاحة بفعل مفترس. الغياب بعد تغذية نشطة تحذير مسار، لا نقطة ظهور فارغة.
 
 ## Audio
 
-AR LOC HOLD: Hear the ticking on the shell? That is lunch, map and warning in the same sound.
+أتسمع النقر على الصدفة؟ إنه طعام وخريطة وتحذير في الصوت نفسه.
 
 ## Field Note
 
-AR LOC HOLD: Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.
+لا تطارد السرب. اقرأ ما يكشفه: غشاء جديد، كشط قديم، تجنب مادة إحكام دافئة، والممر الفارغ الذي ترفض الحيوانات عبوره.
 
 <!-- In-Game Wiki; generated from P222_GLASS_GRAZER_SCHOOLS/ar_SA. -->

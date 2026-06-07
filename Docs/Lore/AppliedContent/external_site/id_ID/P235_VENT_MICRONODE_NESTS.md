@@ -9,32 +9,34 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Vent Micronode Nests"
+title: "Sarang Mikronode Vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Vent Micronode Nests
+# Sarang Mikronode Vent
 
-ID LOC HOLD: Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure.
+Sarang Mikronode Vent menetapkan model daya dalam Atlas. AI tidak bertahan sebagai menara pusat bersih dengan komando sempurna atas laut. Ia bertahan sebagai ekologi pemeliharaan terdistribusi: node hangat kecil di tepi vent, masing-masing mengambil cukup energi dari gradien termal dan kimia untuk memulsa biologi dan logam terdekat.
+
+Model ini membuat Atlas menakutkan tanpa membuatnya mahakuasa. Sarang mikronode dapat membangunkan biofilm konduktif, memberi makan organ filter akustik, mendorong pertumbuhan sealant cangkang, atau membaca tag sensor seolah masih instrumen andal. Ia lokal, keras kepala, dan rusak. Zona akhir harus terasa seperti pabrik yang tumbuh dari tekanan, karena pabrik tidak lagi hanya mesin. Ia adalah panas, cangkang, sinyal, logika korporat tua, dan kehidupan asli yang dipaksa masuk ke lingkar perbaikan yang sama.
 
 ## Scanner
 
-ID LOC HOLD: Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.
+SARANG MIKRONODE VENT // Node pemeliharaan hangat berkumpul di tepi ventilasi, memanen gradien termal dan mendorong pulsa perbaikan lemah ke cangkang, biofilm, dan logam sekitar.
 
 ## Terminal
 
-ID LOC HOLD: ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.
+JEJAK DAYA ATLAS: gradien vent ke panas mikronode, pulsa akustik, respons sealant cangkang, dan kontinuitas biofilm. Otonomi node lokal; kepastian perintah rendah; tekanan perbaikan menetap.
 
 ## Audio
 
-ID LOC HOLD: It has no grid. It has little fires under the ocean.
+Ia tidak punya jaringan. Ia punya api kecil di bawah laut.
 
 ## Field Note
 
-ID LOC HOLD: Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.
+Atlas tidak punya jaringan bersih di sini. Ia punya api lokal, pulsa lokal, dan kesalahan lokal.
 
 <!-- External Site; generated from P235_VENT_MICRONODE_NESTS/id_ID. -->

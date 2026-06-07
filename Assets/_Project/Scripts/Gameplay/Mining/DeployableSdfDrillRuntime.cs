@@ -831,17 +831,7 @@ namespace Hecton8.Gameplay.Mining
 
         private int ResolveSnapProbeMask()
         {
-            int mask = seabedLayerMask.value;
-            int terrainSdfMask = HectonLayerMasks.TerrainLayerMask |
-                                 HectonLayerMasks.VoxelCaveLayerMask |
-                                 HectonLayerMasks.VoxelProxyLayerMask;
-            if (mask == 0 || mask == HectonLayerMasks.EverythingLayerMaskValue)
-                return terrainSdfMask;
-
-            if (mask == HectonLayerMasks.StrictInteractionLayerMask)
-                return mask | terrainSdfMask;
-
-            return mask;
+            return HectonLayerMasks.ResolveTerrainSdfProbeLayerMask(seabedLayerMask.value);
         }
 
         private bool TryResolveCachedTerrainSnap(

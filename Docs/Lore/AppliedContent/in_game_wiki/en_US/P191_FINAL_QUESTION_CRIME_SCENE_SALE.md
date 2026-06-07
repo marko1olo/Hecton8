@@ -7,6 +7,9 @@ poi_tags: poi.final_payload_sale_clause;poi.xo_coordinate_receipt
 biome_tags: biome.atlas_basin;biome.black_keel_orbit
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Final Question Crime Scene Sale"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

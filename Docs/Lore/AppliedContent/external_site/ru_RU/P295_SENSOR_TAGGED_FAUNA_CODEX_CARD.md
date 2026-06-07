@@ -7,6 +7,9 @@ poi_tags: poi.sensor_tagged_fauna_scan;poi.biometal_tag_growth
 biome_tags: biome.atlas_repair;biome.fauna
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Codex card: sensor-tagged fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

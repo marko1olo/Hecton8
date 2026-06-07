@@ -378,26 +378,7 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PDAEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PDAEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
-
-            if (_queuedEventKeys.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashSet(nameof(PDAEvents), nameof(_queuedEventKeys));
-                _queuedEventKeys.Dispose();
-                _queuedEventKeys = default;
-            }
+            ReleaseNativeState();
 
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
@@ -472,46 +453,105 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            if (!_pendingEvents.IsCreated)
+            try
             {
-                _pendingEvents = new NativeQueue<PDAEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] — deferred PDA event lane flushed by SystemDispatcher LateUpdate — owner: PDAEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<PDAEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] — deferred PDA event lane flushed by SystemDispatcher LateUpdate — owner: PDAEvents
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                }
+
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<PDAEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] — next-frame PDA events raised by listeners — owner: PDAEvents
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                }
+
+                if (!_queuedEventKeys.IsCreated)
+                {
+                    _queuedEventKeys = new NativeParallelHashSet<ulong>(EventDedupCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeParallelHashSet<ulong>[128] - per-frame PDA duplicate suppression keys - owner: PDAEvents
+                    RegisterNativeHashSet(ref _queuedEventKeys, nameof(_queuedEventKeys));
+                }
+
+                SignalBus<PDAEventPayload>.Configure(
                     PendingEventCapacity,
-                    nameof(PDAEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                    maxFrameSignals: PendingEventCapacity,
+                    lowTierFrameSignals: LowTierPdaSignalFrameCapacity,
+                    laneHash: PdaEventPayloadLaneHash);
+                SignalBus<PDAEventPayload>.EnsureInitialized();
             }
-
-            if (!_nextFrameEvents.IsCreated)
+            catch
             {
-                _nextFrameEvents = new NativeQueue<PDAEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] — next-frame PDA events raised by listeners — owner: PDAEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(PDAEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                ReleaseNativeState();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                _dedupFrame = -1;
+                throw;
             }
+        }
 
-            if (!_queuedEventKeys.IsCreated)
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(PDAEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            queue.Dispose();
+            queue = default;
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void RegisterNativeHashSet<T>(
+            ref NativeParallelHashSet<T> hashSet,
+            string label)
+            where T : unmanaged, IEquatable<T>
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeParallelHashSet(
+                hashSet,
+                nameof(PDAEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            hashSet.Dispose();
+            hashSet = default;
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeState()
+        {
+            if (_pendingEvents.IsCreated)
             {
-                _queuedEventKeys = new NativeParallelHashSet<ulong>(EventDedupCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeParallelHashSet<ulong>[128] - per-frame PDA duplicate suppression keys - owner: PDAEvents
-                NativeMemorySentinel.RegisterNativeParallelHashSet(
-                    _queuedEventKeys,
-                    nameof(PDAEvents),
-                    nameof(_queuedEventKeys),
-                    NativeAllocationLifetime.Session);
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PDAEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
             }
 
-            SignalBus<PDAEventPayload>.Configure(
-                PendingEventCapacity,
-                maxFrameSignals: PendingEventCapacity,
-                lowTierFrameSignals: LowTierPdaSignalFrameCapacity,
-                laneHash: PdaEventPayloadLaneHash);
-            SignalBus<PDAEventPayload>.EnsureInitialized();
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PDAEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
+            if (_queuedEventKeys.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeParallelHashSet(nameof(PDAEvents), nameof(_queuedEventKeys));
+                _queuedEventKeys.Dispose();
+                _queuedEventKeys = default;
+            }
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -1169,7 +1209,7 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registered)
@@ -1208,7 +1248,7 @@ namespace Hecton8.UI
                         _inputService = currentService as IInputService;
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.RenderTexturePoolRuntime:
                     _renderTexturePool = currentService as IRenderTexturePoolService;
@@ -1217,8 +1257,7 @@ namespace Hecton8.UI
                     CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registered = false;
-                    _registeredLateFrame = false;
+                    TryUnregister();
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;
@@ -1228,9 +1267,35 @@ namespace Hecton8.UI
         private void RefreshColdRegistryReferences()
         {
             _inputService = GlobalRegistry.Input;
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _renderTexturePool = GlobalRegistry.RenderTexturePoolService;
             CachePlayerRuntimeContext(GlobalRegistry.Player);
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerRuntimeContext)
@@ -1819,7 +1884,7 @@ namespace Hecton8.UI
             if (_pendingSoundCount <= 0)
                 return;
 
-            IAudioService audioManager = _audioService;
+            IAudioService audioManager = ResolveAudioService();
             if (audioManager == null)
             {
                 _pendingSoundCount = 0;
@@ -2264,7 +2329,7 @@ namespace Hecton8.UI
 
         private void RegisterToTickManager()
         {
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registered)
@@ -2301,9 +2366,9 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registered = false;
-                _registeredLateFrame = false;
-                EvaluateTickRegistration();
+                UnregisterFromTickManager();
+                if (currentService != null)
+                    EvaluateTickRegistration();
             }
         }
 

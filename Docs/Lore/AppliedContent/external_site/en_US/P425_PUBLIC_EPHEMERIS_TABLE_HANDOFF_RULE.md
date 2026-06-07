@@ -7,6 +7,9 @@ poi_tags: poi.ephemeris_handoff_rule;poi.celestial_table_boundary
 biome_tags: biome.authoring;biome.aegir_system
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Ephemeris Data Boundary Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

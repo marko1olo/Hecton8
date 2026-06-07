@@ -7,6 +7,9 @@ poi_tags: poi.pda_evidence_tier_rule;poi.codex_filter_label
 biome_tags: biome.codex;biome.ui_rules
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "PDA Evidence Tier Label Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

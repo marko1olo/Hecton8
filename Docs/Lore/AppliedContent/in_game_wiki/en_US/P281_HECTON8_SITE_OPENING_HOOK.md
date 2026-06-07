@@ -7,6 +7,9 @@ poi_tags: poi.site_hecton8_hero_copy;poi.public_depth_band_strip
 biome_tags: biome.publication;biome.hecton8
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "HECTON-8 Public Opening Hook"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -1,0 +1,188 @@
+{
+  "schema": "hecton8.inventory_icon_gap_batch_spec.v1",
+  "source": "Tools/InventoryIconGapAudit.py",
+  "count": 12,
+  "bakerNamesArgument": "SalvageSampler,ElectrolyteAmpoule,TitaniumScrap,SeafloorDrill,BeaconDeployer,Builder,LaserCutter,Scanner,CopperWire,PressureSeal,SealantPack,SensorPackage",
+  "items": [
+    {
+      "index": 1,
+      "priority": 123,
+      "persistentId": "Item_Tool_SalvageSampler",
+      "displayName": "Salvage Sampler",
+      "safeName": "SalvageSampler",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_SalvageSampler.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        2,
+        1
+      ],
+      "promptPhrase": "dedicated salvage sampler tool with short cutting jaw, sample corer tip, bio-growth scraping edge, sealed grip, pressure-rated hinge"
+    },
+    {
+      "index": 2,
+      "priority": 133,
+      "persistentId": "Data_ElectrolyteAmpoule",
+      "displayName": "Electrolyte Ampoule",
+      "safeName": "ElectrolyteAmpoule",
+      "asset": "Assets/_Project/Data/Items/Resources/Processed/Data_ElectrolyteAmpoule.asset",
+      "category": "Consumable",
+      "progressionTier": "Tier1",
+      "grid": [
+        1,
+        1
+      ],
+      "promptPhrase": "single rugged electrolyte ampoule held alone in a protective pressure sleeve, translucent fluid window, capped injection neck"
+    },
+    {
+      "index": 3,
+      "priority": 93,
+      "persistentId": "Data_TitaniumScrap",
+      "displayName": "Titanium Scrap",
+      "safeName": "TitaniumScrap",
+      "asset": "Assets/_Project/Data/Items/Resources/Raw/Data_TitaniumScrap.asset",
+      "category": "Material",
+      "progressionTier": "Tier0",
+      "grid": [
+        1,
+        1
+      ],
+      "promptPhrase": "irregular titanium salvage plate fragment with torn pressure-hull edge, bolt holes, scraped oxide, cut brace rib, clearly scrap not a clean ingot"
+    },
+    {
+      "index": 4,
+      "priority": 125,
+      "persistentId": "Item_Tool_SeafloorDrill",
+      "displayName": "Seafloor Drill",
+      "safeName": "SeafloorDrill",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_SeafloorDrill.asset",
+      "category": "Tool",
+      "progressionTier": "Tier0",
+      "grid": [
+        2,
+        1
+      ],
+      "promptPhrase": "compact seafloor drill with short hardened bit, pressure-sealed motor housing, mineral dust scuffs, two-hand industrial grip"
+    },
+    {
+      "index": 5,
+      "priority": 123,
+      "persistentId": "Item_Tool_BeaconDeployer",
+      "displayName": "Beacon Deployer",
+      "safeName": "BeaconDeployer",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_BeaconDeployer.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        1,
+        2
+      ],
+      "promptPhrase": "compact beacon deployment tool with folded handle, antenna socket, pressure-rated clasp"
+    },
+    {
+      "index": 6,
+      "priority": 123,
+      "persistentId": "Item_Tool_Builder",
+      "displayName": "Fabrication Tool",
+      "safeName": "Builder",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_Builder.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        2,
+        2
+      ],
+      "promptPhrase": "rugged fabrication builder tool with industrial grip, modular nozzle, material feed port"
+    },
+    {
+      "index": 7,
+      "priority": 123,
+      "persistentId": "Item_Tool_LaserCutter",
+      "displayName": "Laser Cutter",
+      "safeName": "LaserCutter",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_LaserCutter.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        2,
+        1
+      ],
+      "promptPhrase": "laser cutter tool with ceramic heat shield, lens shroud, gasket seams, scorched nozzle edge"
+    },
+    {
+      "index": 8,
+      "priority": 123,
+      "persistentId": "Item_Tool_Scanner",
+      "displayName": "Hydroacoustic Scanner",
+      "safeName": "Scanner",
+      "asset": "Assets/_Project/Data/Items/Tools/Item_Tool_Scanner.asset",
+      "category": "Tool",
+      "progressionTier": "None",
+      "grid": [
+        2,
+        1
+      ],
+      "promptPhrase": "hydroacoustic scanner wand with sensor face, hydrophone ribs, blank sealed glass"
+    },
+    {
+      "index": 9,
+      "priority": 118,
+      "persistentId": "Comp_CopperWire",
+      "displayName": "Copper Wire",
+      "safeName": "CopperWire",
+      "asset": "Assets/_Project/Data/Items/Resources/Components/Comp_CopperWire.asset",
+      "category": "Component",
+      "progressionTier": "Tier0",
+      "grid": [
+        1,
+        1
+      ],
+      "promptPhrase": "bundled copper wire spool with real copper strands, black insulating ties, pressure-safe spool core"
+    },
+    {
+      "index": 10,
+      "priority": 118,
+      "persistentId": "Comp_PressureSeal",
+      "displayName": "Pressure Seal",
+      "safeName": "PressureSeal",
+      "asset": "Assets/_Project/Data/Items/Resources/Components/Comp_PressureSeal.asset",
+      "category": "Component",
+      "progressionTier": "Tier1",
+      "grid": [
+        1,
+        1
+      ],
+      "promptPhrase": "pressure seal component with thick gasket ring, clamp segments, worn rubber and titanium bite marks"
+    },
+    {
+      "index": 11,
+      "priority": 118,
+      "persistentId": "Comp_SealantPack",
+      "displayName": "Sealant Pack",
+      "safeName": "SealantPack",
+      "asset": "Assets/_Project/Data/Items/Resources/Components/Comp_SealantPack.asset",
+      "category": "Component",
+      "progressionTier": "Tier1",
+      "grid": [
+        1,
+        1
+      ],
+      "promptPhrase": "sealant pack with rugged squeeze cartridge, capped nozzle, plain industrial polymer pouch"
+    },
+    {
+      "index": 12,
+      "priority": 118,
+      "persistentId": "Comp_SensorPackage",
+      "displayName": "Sensor Package",
+      "safeName": "SensorPackage",
+      "asset": "Assets/_Project/Data/Items/Resources/Components/Comp_SensorPackage.asset",
+      "category": "Component",
+      "progressionTier": "Tier1",
+      "grid": [
+        1,
+        1
+      ],
+      "promptPhrase": "sealed sensor module cluster with glass sensor eye, ceramic sockets, cable ports"
+    }
+  ]
+}

@@ -7,6 +7,9 @@ poi_tags: poi.brine_vane_current_fan;poi.density_turn_marker
 biome_tags: biome.brine_canyon;biome.vane_forest
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Грамматика навигации по рассольным веерам"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

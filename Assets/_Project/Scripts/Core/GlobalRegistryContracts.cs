@@ -3234,7 +3234,7 @@ namespace Hecton8.Core
     public interface IHazardZoneReadModel
     {
         /// <summary>
-        /// Returns the summed hazard intensity at the supplied absolute-universe point.
+        /// Returns the bounded summed hazard intensity at the supplied absolute-universe point.
         /// </summary>
         float GetHazardIntensity(in AbsoluteUniversePosition pointAup, HazardType type);
 

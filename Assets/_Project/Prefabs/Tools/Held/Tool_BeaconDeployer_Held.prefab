@@ -58,8 +58,8 @@ MonoBehaviour:
   maxActiveBeacons: 24
   deploymentMask:
     serializedVersion: 2
-    m_Bits: 4294967295
-  worldBeaconPrefab: {fileID: 0}
+    m_Bits: 2121609
+  worldBeaconPrefab: {fileID: 3775601001000000000, guid: 0b5f5167bb6d4f0499244bf73fbe8031, type: 3}
   feedbackInterval: 0.45
   beaconColor: {r: 0.25, g: 1, b: 0.95, a: 1}
   beaconScale: {x: 0.22, y: 0.45, z: 0.22}

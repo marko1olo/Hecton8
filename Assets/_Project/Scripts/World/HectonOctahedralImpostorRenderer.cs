@@ -570,11 +570,12 @@ namespace Hecton8.World
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-            {
-                _registeredTick = false;
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            UnregisterTick();
+            if (currentService != null && isActiveAndEnabled)
                 RegisterTick();
-            }
         }
 
         private void TryRegisterHotSwapListener()

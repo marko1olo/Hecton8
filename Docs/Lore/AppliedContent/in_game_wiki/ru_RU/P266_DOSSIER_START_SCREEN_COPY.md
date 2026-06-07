@@ -7,6 +7,9 @@ poi_tags: poi.dossier_start_copy_card;poi.marauder_profile_slate
 biome_tags: biome.ui;biome.dossier
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Копия стартового экрана досье"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

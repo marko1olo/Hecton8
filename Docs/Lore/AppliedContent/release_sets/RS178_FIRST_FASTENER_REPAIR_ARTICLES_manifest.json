@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS178_FIRST_FASTENER_REPAIR_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1165_RIVET_HEAD_WHITE_RING",
+    "P1166_PANEL_SCREW_CAM_OUT",
+    "P1167_CLIP_TAB_STRESS_WHITE",
+    "P1168_WASHER_SHADOW_OFFSET",
+    "P1169_BRACKET_SLOT_ELONGATION"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1165_RIVET_HEAD_WHITE_RING.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1166_PANEL_SCREW_CAM_OUT.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1167_CLIP_TAB_STRESS_WHITE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1168_WASHER_SHADOW_OFFSET.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1169_BRACKET_SLOT_ELONGATION.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

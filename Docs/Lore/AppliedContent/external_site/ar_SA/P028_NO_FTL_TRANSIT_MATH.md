@@ -7,6 +7,9 @@ poi_tags: poi.route_archive;poi.relay_packet
 biome_tags: biome.deep_archive;biome.service_canyon
 locale: ar_SA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "حساب العبور بلا FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

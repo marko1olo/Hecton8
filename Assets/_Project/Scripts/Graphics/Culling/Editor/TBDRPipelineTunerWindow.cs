@@ -33,6 +33,7 @@ namespace Hecton8.Graphics.Culling.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;
         }
 

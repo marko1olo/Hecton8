@@ -7,6 +7,9 @@ poi_tags: poi.p63_manual_pump;poi.cold_sealant_patch
 biome_tags: biome.shallow_annex_p63;biome.first_hour_tool_chain
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "P-63 Pump Room First Repair Task"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

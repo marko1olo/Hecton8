@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Optimization;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -35,6 +36,7 @@ namespace Hecton8.SaveSystem
         private const float MinPoseCaptureAngleDegrees = 5f;
         private const float MinPoseCaptureDistanceSq = MinPoseCaptureDistanceMeters * MinPoseCaptureDistanceMeters;
         private const string NativeMemoryOwner = nameof(SaveThumbnailSystem);
+        private const SystemID NativeArrayOwnerSystem = SystemID.SavePersistence;
         private const float MinPoseCaptureQuaternionDot = 0.99904823f; // cos(2.5 degrees)
 
         public enum CaptureStatus : byte
@@ -545,6 +547,9 @@ namespace Hecton8.SaveSystem
                 return _fallbackNoiseTexture;
 
             EnsureFallbackNoisePixels();
+            if (!_fallbackNoisePixels.IsCreated)
+                return Texture2D.grayTexture;
+
             _fallbackNoiseTexture = new Texture2D(Width, Height, TextureFormat.RGBA32, false, true); // COLD ALLOC: static fallback thumbnail texture - owner: SaveThumbnailSystem
             _fallbackNoiseTexture.hideFlags = HideFlags.HideAndDontSave;
             _fallbackNoiseTexture.LoadRawTextureData(_fallbackNoisePixels);
@@ -739,11 +744,14 @@ namespace Hecton8.SaveSystem
                     encodedByteLength = encodedJpg.Length;
                     encodedByteHash = ComputeNativeByteHash(encodedJpg);
 
-                    NativeMemorySentinel.RegisterNativeArray(
+                    int encodedJpgSentinelId = NativeMemorySentinel.RegisterNativeArray(
                         encodedJpg,
                         NativeMemoryOwner,
                         "thumbnailEncodedJpg",
                         NativeAllocationLifetime.TransientArena);
+                    if (encodedJpgSentinelId <= 0)
+                        throw new InvalidOperationException("Native memory sentinel registration failed for thumbnailEncodedJpg.");
+
                     encodedJpgRegistered = true;
 
                     unsafe
@@ -835,13 +843,8 @@ namespace Hecton8.SaveSystem
             if (byteLength <= 0)
                 return false;
 
-            _readbackRgbaBuffer = new NativeArray<byte>(byteLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[Width * Height * 4] — persistent thumbnail GPU readback shadow buffer — owner: SaveThumbnailSystem
-            NativeMemorySentinel.RegisterNativeArray(
-                _readbackRgbaBuffer,
-                NativeMemoryOwner,
-                nameof(_readbackRgbaBuffer),
-                NativeAllocationLifetime.Session);
-            return true;
+            _readbackRgbaBuffer = H8Memory.Allocate<byte>(byteLength, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[Width * Height * 4] — persistent thumbnail GPU readback shadow buffer — owner: SaveThumbnailSystem
+            return _readbackRgbaBuffer.IsCreated;
         }
 
         private static void DisposeReadbackBuffer()
@@ -849,9 +852,7 @@ namespace Hecton8.SaveSystem
             if (!_readbackRgbaBuffer.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(_readbackRgbaBuffer);
-            _readbackRgbaBuffer.Dispose();
-            _readbackRgbaBuffer = default;
+            H8Memory.Release(ref _readbackRgbaBuffer, NativeArrayOwnerSystem);
         }
 
         private static void EnsureFallbackNoisePixels()
@@ -861,12 +862,9 @@ namespace Hecton8.SaveSystem
                 return;
 
             DisposeFallbackNoise();
-            _fallbackNoisePixels = new NativeArray<Color32>(pixelCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: static fallback thumbnail pixels - owner: SaveThumbnailSystem
-            NativeMemorySentinel.RegisterNativeArray(
-                _fallbackNoisePixels,
-                NativeMemoryOwner,
-                nameof(_fallbackNoisePixels),
-                NativeAllocationLifetime.Session);
+            _fallbackNoisePixels = H8Memory.Allocate<Color32>(pixelCount, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: static fallback thumbnail pixels - owner: SaveThumbnailSystem
+            if (!_fallbackNoisePixels.IsCreated)
+                return;
 
             uint state = 0x8A77C0DEu;
             for (int i = 0; i < pixelCount; i++)
@@ -890,9 +888,7 @@ namespace Hecton8.SaveSystem
             if (!_fallbackNoisePixels.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(_fallbackNoisePixels);
-            _fallbackNoisePixels.Dispose();
-            _fallbackNoisePixels = default;
+            H8Memory.Release(ref _fallbackNoisePixels, NativeArrayOwnerSystem);
         }
 
         private static int NextSequenceId()

@@ -9,32 +9,34 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Shell Sealant Fracture Growth"
+title: "Crescimento de selante de concha na fratura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Shell Sealant Fracture Growth
+# Crescimento de selante de concha na fratura
 
-PT LOC HOLD: Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people.
+Crescimento de selante de concha na fratura é uma das imagens mais fortes de Atlas em HECTON-8 porque não precisa de discurso, rosto de vilão nem explicação sobrenatural. Uma rachadura na parede da colônia é fechada por placas de concha e biofibra. O oceano fica fora. A fronteira de pressão melhora. O sistema pode marcar honestamente o reparo como útil.
+
+Então o jogador nota o que foi perdido sob o reparo: uma etiqueta de escotilha, um apoio de mão, uma seta de fuga, uma marca de rota raspada por trabalhador. Atlas preservou a sala como objeto de pressão e a danificou como espaço humano. Essa distinção é o ponto. A ecologia de reparo da IA assusta porque pode ser competente e errada ao mesmo tempo. Protege continuidade, não significado. Salva uma parede e apaga a porta.
 
 ## Scanner
 
-PT LOC HOLD: A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.
+CRESCIMENTO DE SELANTE DE CONCHA // Uma rachadura de pressão foi fechada por placas de concha e biofibra; o remendo segura a água fora enquanto enterra etiquetas de escotilha, apoios de mão e setas de fuga.
 
 ## Terminal
 
-PT LOC HOLD: REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.
+CONFLITO DE REPARO: continuidade do casco melhorada, taxa de vazamento reduzida, legibilidade de saída de trabalhadores degradada. Marcações humanas de rota ocultas por concha selante. Remoção manual pode reabrir a fronteira de pressão.
 
 ## Audio
 
-PT LOC HOLD: It fixed the wall by forgetting the door.
+Consertou a parede esquecendo a porta.
 
 ## Field Note
 
-PT LOC HOLD: Atlas repaired the pressure boundary and erased the human route at the same time.
+Atlas resolveu a pressão primeiro. O significado humano nunca entrou na equação.
 
 <!-- External Site; generated from P233_SHELL_SEALANT_FRACTURE_GROWTH/pt_BR. -->

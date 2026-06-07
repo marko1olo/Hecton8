@@ -1,0 +1,29 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS150_DROWNED_WORKER_ROOM_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P800_WORKER_LOCKER_SEAL_FAILURE",
+    "P801_PRESSURE_BUNK_AIR_TALLY",
+    "P802_SHIFT_BOARD_C12_ROUTE_HOLD",
+    "P803_MESS_HEATER_LUNCH_TOKEN",
+    "P804_BARNARD_TOOL_MARK_FIRST_TRACE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P800_WORKER_LOCKER_SEAL_FAILURE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P801_PRESSURE_BUNK_AIR_TALLY.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P802_SHIFT_BOARD_C12_ROUTE_HOLD.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P803_MESS_HEATER_LUNCH_TOKEN.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P804_BARNARD_TOOL_MARK_FIRST_TRACE.production.md"
+  ],
+  "packet_bundle_source": "Docs/Lore/AppliedContent/packets/RS150_DROWNED_WORKER_ROOM_ARTICLES.packets.json",
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

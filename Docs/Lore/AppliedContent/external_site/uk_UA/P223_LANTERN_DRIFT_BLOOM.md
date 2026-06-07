@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Lantern Drift Bloom"
+title: "Цвітіння ліхтарного дрейфу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Lantern Drift Bloom
+# Цвітіння ліхтарного дрейфу
 
-UA LOC HOLD: Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web.
+Цвітіння ліхтарного дрейфу - спосіб HECTON-8 сказати, що яскраве не означає безпечне. Bloom не є декоративним шаром туману. Це рухома панель приладів із живих клітин, течії, вібрації та голоду. У тихій воді він креслить мілкий шельф краще за ліхтар: завихрення світяться по краю, кабельні петлі проступають зламаними ореолами, уламки pressure glass кидають тонкі сині порізи, а безпечний канал може скидатися на ріку зірок. Пастка в тому, що те саме світло записує збурення. Запусти cutter, змусь помпу кашлянути, надто часто ping-уй сонаром або штовхни thruster у паніці - і bloom понесе твою позицію назовні. Цокання скребців рідшає. Фільтратори повертаються. Щось більше може піти за підсвіченим слідом раніше, ніж UI встигне його назвати. Ця стаття не дає красі HECTON-8 стати шпалерами. Хороший encounter має дозволити гравцеві захотіти світло, використати світло, а потім злякатися того, що світло говорить про нього. Коридор bloom може бути найяснішим проходом крізь риф і все одно найгіршим місцем для ремонту гучного клапана. Він стоїть поруч зі скляними скребцями й тінями хижаків, бо всі троє вчать одному правилу: океан можна читати, і океан теж читає тебе.
 
 ## Scanner
 
-UA LOC HOLD: A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.
+ЦВІТІННЯ ЛІХТАРНОГО ДРЕЙФУ // Біолюмінесцентний планктон смугами позначає течію. Він окреслює безпечну воду й малі загрози, але шум інструментів перетворює bloom на світний слід.
 
 ## Terminal
 
-UA LOC HOLD: VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.
+ПОДІЯ ВИДИМОСТІ: bloom покращує читання силуету й трасування течії, але зменшує прихованість. Збурення від cutter, помпи, pinger, thruster або удару корпусу може вести фільтраторів, скребців і мілководних хижаків уздовж підсвіченого сліду.
 
 ## Audio
 
-UA LOC HOLD: Pretty water is still water. It carries your noise.
+Красива вода все одно вода. Вона несе твій шум.
 
 ## Field Note
 
-UA LOC HOLD: Lantern drift is not decoration. It is a visibility event with acoustic consequences.
+Світло тут не втіха. У воді bloom кожен імпульс cutter, кашель помпи й відгук pinger ідуть далі, ніж твій ліхтар.
 
 <!-- External Site; generated from P223_LANTERN_DRIFT_BLOOM/uk_UA. -->

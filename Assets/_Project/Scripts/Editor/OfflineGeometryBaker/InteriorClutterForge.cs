@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -239,6 +240,9 @@ namespace Hecton8.Editor.OfflineGeometry
             MeshUpdateFlags.DontRecalculateBounds |
             MeshUpdateFlags.DontValidateIndices |
             MeshUpdateFlags.DontNotifyMeshUsers;
+        private const string NativeMemoryOwner = "SHINOBU_211";
+        private const string NativeMemorySentinelTypeName = "Hecton8.Core.NativeMemorySentinel";
+        private const string NativeAllocationLifetimeTypeName = "Hecton8.Core.NativeAllocationLifetime";
 
         private static readonly Stopwatch _Stopwatch = new Stopwatch();
 
@@ -394,14 +398,14 @@ namespace Hecton8.Editor.OfflineGeometry
                         return false;
 
                     // COLD ALLOC: NativeArray<InteriorClutterSourceVertex>[totalVertexCount] - editor room triangle-soup staging - owner: InteriorClutterForge
-                    sourceVertices = new NativeArray<InteriorClutterSourceVertex>(totalVertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    sourceVertices = AllocateTrackedNativeArray<InteriorClutterSourceVertex>(totalVertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(sourceVertices));
                     // COLD ALLOC: NativeArray<int>[totalVertexCount] - editor vertex-to-segment map - owner: InteriorClutterForge
-                    segmentByVertex = new NativeArray<int>(totalVertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    segmentByVertex = AllocateTrackedNativeArray<int>(totalVertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(segmentByVertex));
                     // COLD ALLOC: NativeArray<InteriorClutterSegment>[staticSegments.Count] - editor transform/atlas windows - owner: InteriorClutterForge
-                    nativeSegments = new NativeArray<InteriorClutterSegment>(staticSegments.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    nativeSegments = AllocateTrackedNativeArray<InteriorClutterSegment>(staticSegments.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(nativeSegments));
                     FillNativeSource(sourceRoot.transform, staticSegments, materials, atlas, sourceVertices, segmentByVertex, nativeSegments, ref metric);
                     // COLD ALLOC: NativeArray<InteriorClutterRawVertex>[totalVertexCount] - editor transformed LOD0 room mesh - owner: InteriorClutterForge
-                    lod0Raw = new NativeArray<InteriorClutterRawVertex>(totalVertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    lod0Raw = AllocateTrackedNativeArray<InteriorClutterRawVertex>(totalVertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(lod0Raw));
 
                     _Stopwatch.Restart();
                     JobHandle transformHandle;
@@ -422,9 +426,9 @@ namespace Hecton8.Editor.OfflineGeometry
                     int lod1Triangles = math.max(1, (int)math.round(lod0Triangles * math.saturate(profile.Lod1Ratio)));
                     int lod2Triangles = math.max(1, (int)math.round(lod0Triangles * math.saturate(profile.Lod2Ratio)));
                     // COLD ALLOC: NativeArray<InteriorClutterRawVertex>[lod1Triangles*3] - editor deterministic LOD1 triangle soup - owner: InteriorClutterForge
-                    lod1Raw = new NativeArray<InteriorClutterRawVertex>(lod1Triangles * 3, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    lod1Raw = AllocateTrackedNativeArray<InteriorClutterRawVertex>(lod1Triangles * 3, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(lod1Raw));
                     // COLD ALLOC: NativeArray<InteriorClutterRawVertex>[lod2Triangles*3] - editor deterministic LOD2 triangle soup - owner: InteriorClutterForge
-                    lod2Raw = new NativeArray<InteriorClutterRawVertex>(lod2Triangles * 3, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    lod2Raw = AllocateTrackedNativeArray<InteriorClutterRawVertex>(lod2Triangles * 3, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(lod2Raw));
                     JobHandle lod1Handle = new DecimateTriangleSoupJob
                     {
                         SourceVertices = lod0Raw,
@@ -471,12 +475,12 @@ namespace Hecton8.Editor.OfflineGeometry
                 }
                 finally
                 {
-                    if (lod2Raw.IsCreated) lod2Raw.Dispose();
-                    if (lod1Raw.IsCreated) lod1Raw.Dispose();
-                    if (lod0Raw.IsCreated) lod0Raw.Dispose();
-                    if (nativeSegments.IsCreated) nativeSegments.Dispose();
-                    if (segmentByVertex.IsCreated) segmentByVertex.Dispose();
-                    if (sourceVertices.IsCreated) sourceVertices.Dispose();
+                    DisposeTrackedNativeArray(ref lod2Raw);
+                    DisposeTrackedNativeArray(ref lod1Raw);
+                    DisposeTrackedNativeArray(ref lod0Raw);
+                    DisposeTrackedNativeArray(ref nativeSegments);
+                    DisposeTrackedNativeArray(ref segmentByVertex);
+                    DisposeTrackedNativeArray(ref sourceVertices);
                 }
             }
             finally
@@ -494,7 +498,7 @@ namespace Hecton8.Editor.OfflineGeometry
             try
             {
                 // COLD ALLOC: NativeArray<InteriorClutterRawVertex>[18000] - editor emergency mock clutter stress mesh - owner: InteriorClutterForge
-                raw = new NativeArray<InteriorClutterRawVertex>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                raw = AllocateTrackedNativeArray<InteriorClutterRawVertex>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(raw));
                 _Stopwatch.Restart();
                 JobHandle mockHandle = new GenerateMockClutterCombineJob
                 {
@@ -515,9 +519,103 @@ namespace Hecton8.Editor.OfflineGeometry
             }
             finally
             {
-                if (raw.IsCreated)
-                    raw.Dispose();
+                DisposeTrackedNativeArray(ref raw);
             }
+        }
+
+        internal static NativeArray<T> AllocateTrackedNativeArray<T>(int length, Allocator allocator, NativeArrayOptions options, string label) where T : struct
+        {
+            if (length <= 0)
+                return default;
+
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[SHINOBU_211] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                RegisterTrackedNativeArray(array, label, ResolveNativeAllocationLifetimeName(allocator));
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        internal static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                UnregisterTrackedNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
+        }
+
+        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label, string lifetimeName) where T : struct
+        {
+            Type sentinelType = FindType(NativeMemorySentinelTypeName);
+            Type lifetimeType = FindType(NativeAllocationLifetimeTypeName);
+            if (sentinelType == null || lifetimeType == null)
+                throw new InvalidOperationException("[SHINOBU_211] NativeMemorySentinel bridge unavailable for " + label + ".");
+
+            MethodInfo method = sentinelType.GetMethod("RegisterNativeArray", BindingFlags.Public | BindingFlags.Static);
+            if (method == null)
+                throw new InvalidOperationException("[SHINOBU_211] NativeMemorySentinel.RegisterNativeArray unavailable for " + label + ".");
+
+            object lifetime = Enum.Parse(lifetimeType, lifetimeName);
+            object id = method.MakeGenericMethod(typeof(T)).Invoke(
+                null,
+                new object[] { array, NativeMemoryOwner, label, lifetime });
+            if (!(id is int sentinelId) || sentinelId <= 0)
+                throw new InvalidOperationException("[SHINOBU_211] NativeMemorySentinel rejected native allocation registration for " + label + ".");
+        }
+
+        private static void UnregisterTrackedNativeArray<T>(NativeArray<T> array) where T : struct
+        {
+            Type sentinelType = FindType(NativeMemorySentinelTypeName);
+            MethodInfo method = sentinelType != null ? sentinelType.GetMethod("UnregisterNativeArray", BindingFlags.Public | BindingFlags.Static) : null;
+            if (method == null)
+                throw new InvalidOperationException("[SHINOBU_211] NativeMemorySentinel.UnregisterNativeArray unavailable.");
+
+            method.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { array });
+        }
+
+        private static string ResolveNativeAllocationLifetimeName(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return "Temp";
+                case Allocator.TempJob:
+                    return "TempJob";
+                case Allocator.Persistent:
+                    return "Session";
+                default:
+                    return "Session";
+            }
+        }
+
+        private static Type FindType(string fullName)
+        {
+            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (int i = 0; i < assemblies.Length; i++)
+            {
+                Type type = assemblies[i].GetType(fullName, false);
+                if (type != null)
+                    return type;
+            }
+
+            return null;
         }
 
         internal static void WriteConsolidationReport(List<InteriorClutterBakeMetric> metrics)
@@ -1011,9 +1109,9 @@ namespace Hecton8.Editor.OfflineGeometry
             {
                 int vertexCount = raw.Length;
                 // COLD ALLOC: NativeArray<InteriorClutterRawVertex>[vertexCount] - editor interleaved room vertex buffer - owner: InteriorClutterForge
-                packed = new NativeArray<InteriorClutterRawVertex>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                packed = AllocateTrackedNativeArray<InteriorClutterRawVertex>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(packed));
                 // COLD ALLOC: NativeArray<uint>[vertexCount] - editor linear room index buffer - owner: InteriorClutterForge
-                indices = new NativeArray<uint>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                indices = AllocateTrackedNativeArray<uint>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(indices));
                 JobHandle pack = new PackInteriorClutterVertexJob
                 {
                     SourceVertices = raw,
@@ -1047,8 +1145,8 @@ namespace Hecton8.Editor.OfflineGeometry
             }
             finally
             {
-                if (indices.IsCreated) indices.Dispose();
-                if (packed.IsCreated) packed.Dispose();
+                DisposeTrackedNativeArray(ref indices);
+                DisposeTrackedNativeArray(ref packed);
             }
         }
 

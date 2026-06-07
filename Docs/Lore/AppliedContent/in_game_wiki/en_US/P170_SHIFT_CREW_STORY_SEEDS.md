@@ -7,6 +7,9 @@ poi_tags: poi.shift_seed_card;poi.crew_route_seed
 biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Shift Crew Story Seeds"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

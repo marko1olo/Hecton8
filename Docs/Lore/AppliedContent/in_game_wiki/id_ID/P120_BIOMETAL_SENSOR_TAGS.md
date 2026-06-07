@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "Tag Sensor Biometal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# Tag Sensor Biometal
 
-ID LOC HOLD: Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.
+Tag sensor biometal adalah sisik telemetri kecil yang ditemukan pada fauna, pertumbuhan kabel, dan ekologi perbaikan. Tag ini dapat menajamkan pinger dan rute scanner, tetapi setiap tag berguna juga bukti: Atlas memakai pembawa hidup untuk memperluas jaringan perawatan yang rusak.
 
 ## Scanner
 
-ID LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+TAG SENSOR BIOMETAL // Sisik logam tipis yang tumbuh pada ikan, kelp kabel, dan jaringan perbaikan. Memperbaiki setelan pinger; jika dipanen panas, Atlas bisa mendengar pembawa yang hilang.
 
 ## Terminal
 
-ID LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+KELAS SUMBER DAYA: diubah Atlas / peka bukti. Kegunaan: fokus pinger, kisi scanner, keyakinan rute, paket bukti. Panen dingin disarankan. Risiko: kenaikan perhatian, balikan pembawa palsu, fauna rusak.
 
 ## Audio
 
-ID LOC HOLD: The fish is not a drone. The tag does not know the difference.
+Ikan itu bukan drone. Tagnya tetap melapor.
 
 ## Field Note
 
-ID LOC HOLD: Make resource extraction feel like evidence handling.
+Jika berkedip di bawah pisau, rekam sebelum memotong.
 
 <!-- In-Game Wiki; generated from P120_BIOMETAL_SENSOR_TAGS/id_ID. -->

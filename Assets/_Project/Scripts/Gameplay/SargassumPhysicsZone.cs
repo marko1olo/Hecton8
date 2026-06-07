@@ -150,8 +150,16 @@ namespace Hecton8.Gameplay
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
                 RefreshPlayerReferencesCold(currentService as IPlayerRuntimeContext, false);
-            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            TryUnregister();
+            if (currentService != null && isActiveAndEnabled)
                 TryRegister();
         }
 

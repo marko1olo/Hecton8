@@ -3277,6 +3277,15 @@ namespace Hecton8.Tools
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregisterUpdatable();
+                    TryUnregisterLateFrame();
+                    if (currentService != null && isActiveAndEnabled && _isInitialized)
+                    {
+                        TryRegisterUpdatable();
+                        TryRegisterLateFrame();
+                    }
+                    break;
                 case GlobalRegistryServiceSlot.ModularEquipment:
                     _registeredService = ReferenceEquals(currentService, this);
                     break;

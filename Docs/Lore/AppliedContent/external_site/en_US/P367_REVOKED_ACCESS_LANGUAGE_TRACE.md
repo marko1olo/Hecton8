@@ -7,6 +7,9 @@ poi_tags: poi.revoked_access_phrase;poi.lockout_response_card
 biome_tags: biome.colony;biome.industrial_shelf
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Revoked Access Language Trace"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.catalog_plate;poi.ran_b_h8_stamp
 biome_tags: biome.shallow_annex;biome.moon_ladder
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "RAN-B:H8 Public Catalog"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.tool_cert_board;poi.sealant_cartridge_stamp
 biome_tags: biome.colony;biome.engineering
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Tool Certification Board"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

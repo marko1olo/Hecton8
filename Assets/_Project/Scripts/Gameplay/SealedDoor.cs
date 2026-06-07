@@ -368,7 +368,7 @@ namespace Hecton8.Gameplay
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
-                _cachedAudioService = currentService as IAudioService;
+                CacheAudioService(currentService as IAudioService);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -624,7 +624,7 @@ namespace Hecton8.Gameplay
                 PublishDoorGpuVfx(1f, DebrisSpawnSignal.DebrisKindRockShard);
             }
 
-            IAudioService audio = _cachedAudioService;
+            IAudioService audio = ResolveAudioService();
             if (_pendingCuttingAudio)
             {
                 _pendingCuttingAudio = false;
@@ -892,12 +892,38 @@ namespace Hecton8.Gameplay
 
         private void CacheColdDependencies()
         {
-            _cachedAudioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
         }
 
         private void ClearColdDependencies()
         {
             _cachedAudioService = null;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _cachedAudioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private static bool TryResolveOwnedComponent<T>(Transform root, out T component) where T : Component

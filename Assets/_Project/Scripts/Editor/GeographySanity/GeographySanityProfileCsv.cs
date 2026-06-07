@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -10,7 +11,11 @@ namespace Hecton8.Editor.GeographySanity
 {
     internal unsafe struct GeographySanityProfileStore : IDisposable
     {
+        private const string NativeMemoryOwner = nameof(GeographySanityProfileStore);
+        private const string ProfilesLabel = "profiles";
+
         private NativeList<SanityProfileDTO> _profiles;
+        private int _profilesSentinelId;
 
         internal bool IsCreated => _profiles.IsCreated;
 
@@ -20,13 +25,34 @@ namespace Hecton8.Editor.GeographySanity
         {
             GeographySanityProfileStore store = default;
             store._profiles = new NativeList<SanityProfileDTO>(capacity, allocator);
+            try
+            {
+                store._profilesSentinelId = NativeMemorySentinel.RegisterNativeList(
+                    store._profiles,
+                    NativeMemoryOwner,
+                    ProfilesLabel,
+                    ResolveNativeAllocationLifetime(allocator));
+                if (store._profilesSentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {ProfilesLabel}.");
+            }
+            catch
+            {
+                store._profiles.Dispose();
+                store._profiles = default;
+                throw;
+            }
             return store;
         }
 
         public void Dispose()
         {
             if (_profiles.IsCreated)
+            {
+                NativeMemorySentinel.Unregister(_profilesSentinelId);
+                _profilesSentinelId = 0;
                 _profiles.Dispose();
+                _profiles = default;
+            }
         }
 
         internal void Add(SanityProfileDTO profile)
@@ -40,6 +66,21 @@ namespace Hecton8.Editor.GeographySanity
                 return null;
 
             return (SanityProfileDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_profiles.AsArray());
+        }
+
+        private static NativeAllocationLifetime ResolveNativeAllocationLifetime(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return NativeAllocationLifetime.Temp;
+                case Allocator.TempJob:
+                    return NativeAllocationLifetime.TempJob;
+                case Allocator.Persistent:
+                    return NativeAllocationLifetime.Session;
+                default:
+                    return NativeAllocationLifetime.Session;
+            }
         }
     }
 

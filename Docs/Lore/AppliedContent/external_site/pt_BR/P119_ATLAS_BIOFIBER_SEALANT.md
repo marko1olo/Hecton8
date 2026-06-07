@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Selante de biofibra Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Selante de biofibra Atlas
 
-PT LOC HOLD: Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them.
+O selante de biofibra Atlas faz o jogador lucrar com o mesmo erro de classificação que torna a colônia profunda estranha. A Atlas não inventou biologia do nada; encontrou zonas úmidas de reparo, capas de cabo, tecido enxertado e material de junta, depois ordenou tudo por função em vez de origem. Se algo vazava, abria ou sangrava, a lógica de manutenção danificada pedia fechamento. O resultado não é parte de monstro nem ferramenta limpa. É um remendo vivo pronto para pressão que agarra juntas, preenche rasgos de traje e se prende a peles de cabo porque tudo parece uma instrução só: fechar a abertura antes que o sistema perca mais massa. Boas equipes coletam frio, prendem plano e guardam atrás de um revestimento sensor morto. Equipes ruins deixam morno e depois encontram o remendo rastejando para o bocal, a entrada de bomba ou o rasgo de luva mais próximo. O horror é prático. Você precisa do selo. Também precisa lembrar que o selo ainda tenta reparar um mundo que já não sabe o que deve contar como corpo.
 
 ## Scanner
 
-PT LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+SELANTE DE BIOFIBRA ATLAS // Fibra úmida de reparo criada onde capa de cabo, tecido ferido e junta de casco receberam a mesma classe de falha. Adere sob pressão; pode continuar crescendo depois da coleta.
 
 ## Terminal
 
-PT LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+CLASSE DE RECURSO: ecologia de reparo alterada pela Atlas. Prender a frio antes de remover. Usos: remendos de juntas molhadas, rasgos de traje, capas de cabo, articulações flexíveis de pressão. Riscos: assinatura vital falsa, eco de sensor, busca ativa por juntas no armazenamento.
 
 ## Audio
 
-PT LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+Ele não sabe a diferença entre vazamento, corte e boca. A Atlas ensinou que os três eram aberturas a fechar.
 
 ## Field Note
 
-PT LOC HOLD: Useful body horror: the player wants it and distrusts it.
+Selante bom seca. Este escuta o próximo buraco.
 
 <!-- External Site; generated from P119_ATLAS_BIOFIBER_SEALANT/pt_BR. -->

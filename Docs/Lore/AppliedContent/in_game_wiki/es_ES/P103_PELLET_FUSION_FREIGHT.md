@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "Flete de fusión por pellets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# Flete de fusión por pellets
 
-ES LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.
+El viaje interestelar pesado es posible sin FTL, pero castiga. Impulso de vela de haz, fusión alimentada por pellets, masa de escudo, largas derivas y arquitectura de frenado llevaron cargas seed y luego flete colonial hasta Aegir. La misma logística vuelve lento el rescate: cada kilogramo, litera, ranura de frenado y asiento de superviviente pertenece a un horario.
 
 ## Scanner
 
-ES LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Placa de motor. El flete con fusión alimentada por pellets cruzó como infraestructura: impulso, escudo, deriva, frenado y pérdidas facturadas.
 
 ## Terminal
 
-ES LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+DOCTRINA DE FLETE: cargas seed clase Atlas y flete colonial usaron impulso de vela de haz, fusión alimentada por pellets, frenado con vela magnética e intervalos largos de deriva. La carga viva llegó después de que las máquinas hicieron facturable la ruta.
 
 ## Audio
 
-ES LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+Una nave pesada no es un milagro. Es una hipoteca con motores.
 
 ## Field Note
 
-ES LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+El tránsito pesado no es heroico. Es un contrato de ruta viejo con cicatrices de calor.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/es_ES. -->

@@ -7,6 +7,9 @@ poi_tags: poi.pressure_glass_certificate;poi.sealant_feedstock_tag
 biome_tags: biome.drowned_crust;biome.vent_forge
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Полевой сертификат pressure glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

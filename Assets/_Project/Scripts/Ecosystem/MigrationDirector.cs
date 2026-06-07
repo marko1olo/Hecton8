@@ -210,12 +210,8 @@ namespace Hecton8.Ecosystem
 
         private void Awake()
         {
-            MigrationDirector registered = GlobalRegistry.Migration;
-            if (registered != null && registered != this)
-            {
-                SuppressDuplicateService();
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             SanitizeMigrationSettings();
             AllocateMigrationNativeState();
@@ -225,6 +221,9 @@ namespace Hecton8.Ecosystem
         private void OnEnable()
         {
             if (_duplicateServiceSuppressed)
+                return;
+
+            if (TryAbortForUsableExistingRuntime())
                 return;
 
             TryRegisterService();
@@ -242,7 +241,13 @@ namespace Hecton8.Ecosystem
 
         private void Start()
         {
-            if (_duplicateServiceSuppressed || (Application.isPlaying && !_serviceRegistered))
+            if (_duplicateServiceSuppressed)
+                return;
+
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
+            if (Application.isPlaying && !_serviceRegistered)
                 return;
 
             TryRegisterToTickManager();
@@ -311,8 +316,8 @@ namespace Hecton8.Ecosystem
 
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
-            _registeredToTick = false;
-            _registeredLateFrameTick = false;
+            UnregisterFromTickManager();
+            UnregisterLateFrameTickManager();
             if (currentService == null || !isActiveAndEnabled)
                 return;
             if (_duplicateServiceSuppressed || (Application.isPlaying && !_serviceRegistered))
@@ -340,7 +345,7 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static float ResolveSelectionMultiplier(int biomeIndex, CreatureArchetypeData archetype)
         {
-            MigrationDirector runtime = s_activeRuntime;
+            MigrationDirector runtime = ResolveActiveRuntime();
             return runtime != null ? runtime.ResolveSelectionMultiplierInternal(biomeIndex, archetype) : 1f;
         }
 
@@ -349,7 +354,7 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static int ResolveVisibleBoidCount(int speciesId, Vector3 origin, int requestedPopulationCount)
         {
-            MigrationDirector runtime = s_activeRuntime;
+            MigrationDirector runtime = ResolveActiveRuntime();
             return runtime != null
                 ? runtime.ResolveVisibleBoidCountInternal(speciesId, origin, requestedPopulationCount)
                 : ResolveVisibleBoidCountFromMigrationPopulationStatic(requestedPopulationCount);
@@ -360,7 +365,7 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static void RegisterStatisticalSwarmPopulation(int speciesId, Vector3 origin, int populationCount)
         {
-            MigrationDirector runtime = s_activeRuntime;
+            MigrationDirector runtime = ResolveActiveRuntime();
             if (runtime != null)
                 runtime.RegisterStatisticalSwarmPopulationInternal(speciesId, origin, populationCount);
         }
@@ -370,7 +375,7 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static float ResolveVatSwayAmplitudeScale()
         {
-            MigrationDirector runtime = s_activeRuntime;
+            MigrationDirector runtime = ResolveActiveRuntime();
             return runtime != null ? runtime.ResolveVatSwayAmplitudeScaleInternal() : 1f;
         }
 
@@ -379,7 +384,7 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static void RegisterPredatorKillPoi(uint uniqueInstanceUid, Vector3 worldPosition, float fallbackRuntimeSeconds)
         {
-            MigrationDirector runtime = s_activeRuntime;
+            MigrationDirector runtime = ResolveActiveRuntime();
             if (runtime != null)
                 runtime.RegisterPredatorKillPoiInternal(uniqueInstanceUid, worldPosition, fallbackRuntimeSeconds);
         }
@@ -387,13 +392,13 @@ namespace Hecton8.Ecosystem
         internal static bool TryResolveMigrationTarget(int speciesId, Vector3 origin, out Vector3 target)
         {
             target = origin;
-            MigrationDirector runtime = s_activeRuntime;
+            MigrationDirector runtime = ResolveActiveRuntime();
             return runtime != null && runtime.TryBuildMigrationTargetInternal(speciesId, origin, out target);
         }
 
         internal static int RegisterStatisticalSwarmPopulationAndResolveCount(int speciesId, Vector3 origin, int populationCount)
         {
-            MigrationDirector runtime = s_activeRuntime;
+            MigrationDirector runtime = ResolveActiveRuntime();
             return runtime != null
                 ? runtime.RegisterStatisticalSwarmPopulationInternal(speciesId, origin, populationCount)
                 : Mathf.Max(0, populationCount);
@@ -401,7 +406,7 @@ namespace Hecton8.Ecosystem
 
         internal static int ResolveVisibleBoidCountFromMigrationPopulation(int migrationPopulationCount)
         {
-            MigrationDirector runtime = s_activeRuntime;
+            MigrationDirector runtime = ResolveActiveRuntime();
             return runtime != null
                 ? runtime.ResolveVisibleBoidCountFromMigrationPopulationInternal(migrationPopulationCount)
                 : ResolveVisibleBoidCountFromMigrationPopulationStatic(migrationPopulationCount);
@@ -409,7 +414,7 @@ namespace Hecton8.Ecosystem
 
         internal static int3 ResolveMigrationPopulationAupCell(Vector3 origin)
         {
-            MigrationDirector runtime = s_activeRuntime;
+            MigrationDirector runtime = ResolveActiveRuntime();
             return runtime != null
                 ? runtime.ResolveMigrationAupCell(origin)
                 : ResolveMigrationAupCell(origin, GlobalMigrationCellSizeMeters);
@@ -1924,12 +1929,8 @@ namespace Hecton8.Ecosystem
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            MigrationDirector registered = GlobalRegistry.Migration;
-            if (registered != null && registered != this)
-            {
-                SuppressDuplicateService();
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterMigrationDirectorRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Migration, this);
@@ -1942,6 +1943,83 @@ namespace Hecton8.Ecosystem
                 _celestialEngine = GlobalRegistry.CelestialEngine;
                 WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _mapMagicVegetationBridge);
             }
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            MigrationDirector active = s_activeRuntime;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsMigrationDirectorRuntimeUsable(active))
+                {
+                    SuppressDuplicateService();
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntime, active))
+                    s_activeRuntime = null;
+
+                if (ReferenceEquals(GlobalRegistry.Migration, active))
+                    GlobalRegistry.UnregisterMigrationDirectorRuntime(active);
+            }
+
+            MigrationDirector registered = GlobalRegistry.Migration;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsMigrationDirectorRuntimeUsable(registered))
+            {
+                s_activeRuntime = registered;
+                SuppressDuplicateService();
+                return true;
+            }
+
+            if (ReferenceEquals(s_activeRuntime, registered))
+                s_activeRuntime = null;
+
+            GlobalRegistry.UnregisterMigrationDirectorRuntime(registered);
+            return false;
+        }
+
+        private static MigrationDirector ResolveActiveRuntime()
+        {
+            MigrationDirector active = s_activeRuntime;
+            if (IsMigrationDirectorRuntimeUsable(active))
+                return active;
+
+            if (!ReferenceEquals(active, null))
+            {
+                if (ReferenceEquals(s_activeRuntime, active))
+                    s_activeRuntime = null;
+
+                if (ReferenceEquals(GlobalRegistry.Migration, active))
+                    GlobalRegistry.UnregisterMigrationDirectorRuntime(active);
+            }
+
+            MigrationDirector registered = GlobalRegistry.Migration;
+            if (IsMigrationDirectorRuntimeUsable(registered))
+            {
+                s_activeRuntime = registered;
+                return registered;
+            }
+
+            if (!ReferenceEquals(registered, null))
+            {
+                if (ReferenceEquals(s_activeRuntime, registered))
+                    s_activeRuntime = null;
+
+                GlobalRegistry.UnregisterMigrationDirectorRuntime(registered);
+            }
+
+            return null;
+        }
+
+        private static bool IsMigrationDirectorRuntimeUsable(MigrationDirector director)
+        {
+            return director != null &&
+                   director._serviceRegistered &&
+                   !director._duplicateServiceSuppressed &&
+                   director.isActiveAndEnabled;
         }
 
         private void SuppressDuplicateService()

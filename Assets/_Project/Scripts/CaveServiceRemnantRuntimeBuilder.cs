@@ -91,12 +91,21 @@ namespace Hecton8.Caves
                 return;
             }
 
-            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, preset, out Bounds volumeBounds))
+            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, preset, out Bounds volumeBounds) ||
+                !CaveDressingRuntimeSanitizer.IsFinite(volumeBounds))
+            {
+                DisableUnusedCachedPrimitives(primitiveObjects, 0);
                 return;
+            }
 
             Material remnantMaterial = ResolveRemnantMaterial(volume);
-            long runtimeSeed = volume.caveKey != 0L ? volume.caveKey : ComputeFallbackSeed(volume.transform.position, preset);
-            int remnantCount = ResolveRemnantCount(preset, volumeBounds, config, globalIntensity);
+            float safeGlobalIntensity = CaveDressingRuntimeSanitizer.ClampFinite(
+                globalIntensity,
+                1f,
+                0f,
+                CaveDressingRuntimeSanitizer.MaxGlobalIntensity);
+            long runtimeSeed = volume.caveKey != 0L ? volume.caveKey : ComputeFallbackSeed(CaveDressingRuntimeSanitizer.SeedPosition(volume.transform.position), preset);
+            int remnantCount = ResolveRemnantCount(preset, volumeBounds, config, safeGlobalIntensity);
             ActivateTransform(remnantRoot);
 
             for (int i = 0; i < remnantCount; i++)
@@ -110,7 +119,7 @@ namespace Hecton8.Caves
                     remnantMaterial,
                     runtimeSeed,
                     config,
-                    globalIntensity);
+                    safeGlobalIntensity);
                 ApplyRemnantVisuals(renderer, config, runtimeSeed, i);
             }
 
@@ -142,15 +151,21 @@ namespace Hecton8.Caves
             MeshFilter filter = primitiveFilters[index];
             MeshRenderer renderer = primitiveRenderers[index];
             if (primitiveObject == null || filter == null || renderer == null)
+            {
+                if (primitiveObject != null && primitiveObject.activeSelf)
+                    primitiveObject.SetActive(false);
                 return null;
+            }
 
             bool cylindrical = Hash01(runtimeSeed, index, 11) > 0.45f;
             PrimitiveType primitiveType = cylindrical ? PrimitiveType.Cylinder : PrimitiveType.Cube;
-            float intensityT = math.saturate(globalIntensity);
+            float intensityT = CaveDressingRuntimeSanitizer.SaturateFinite(globalIntensity, 1f);
+            float minScale = CaveDressingRuntimeSanitizer.ClampFinite(config.minScale, 0.35f, 0.1f, 6f);
+            float maxScale = math.max(minScale, CaveDressingRuntimeSanitizer.ClampFinite(config.maxScale, 1.4f, 0.1f, 8f));
             float x = volumeBounds.center.x + HashSigned(runtimeSeed, index, 17) * volumeBounds.extents.x * 0.62f;
             float z = volumeBounds.center.z + HashSigned(runtimeSeed, index, 23) * volumeBounds.extents.z * 0.62f;
             float y = math.lerp(volumeBounds.min.y, volumeBounds.center.y, math.lerp(0.05f, 0.28f, Hash01(runtimeSeed, index, 31)));
-            float width = math.lerp(config.minScale, config.maxScale, Hash01(runtimeSeed, index, 43)) * math.lerp(0.82f, 1.18f, intensityT);
+            float width = math.lerp(minScale, maxScale, Hash01(runtimeSeed, index, 43)) * math.lerp(0.82f, 1.18f, intensityT);
             float height = cylindrical
                 ? math.lerp(width * 0.8f, width * 2.4f, Hash01(runtimeSeed, index, 59))
                 : math.lerp(width * 0.35f, width * 1.2f, Hash01(runtimeSeed, index, 59));
@@ -162,6 +177,14 @@ namespace Hecton8.Caves
             float roll = HashSigned(runtimeSeed, index, 109) * (cylindrical ? 80f : 28f);
             Vector3 localPosition = new Vector3(x, y, z);
             Vector3 localScale = new Vector3(width, height, depth);
+            if (!CaveDressingRuntimeSanitizer.IsFinite(localPosition) ||
+                !CaveDressingRuntimeSanitizer.IsFinite(localScale))
+            {
+                if (primitiveObject.activeSelf)
+                    primitiveObject.SetActive(false);
+                return null;
+            }
+
             Quaternion localRotation = Quaternion.Euler(pitch, yaw, roll);
 
             if (!primitiveObject.activeSelf)
@@ -224,8 +247,11 @@ namespace Hecton8.Caves
                 return;
 
             float accent = math.lerp(0.18f, 0.82f, Hash01(runtimeSeed, index, 127));
-            Color baseColor = Color.Lerp(config.baseColor, config.accentColor, accent * 0.25f);
-            Color emission = config.accentColor * (config.accentEmission * accent);
+            Color remnantBaseColor = CaveDressingRuntimeSanitizer.SanitizeColor(config.baseColor, new Color(0.26f, 0.3f, 0.34f, 1f));
+            Color remnantAccentColor = CaveDressingRuntimeSanitizer.SanitizeColor(config.accentColor, new Color(0.16f, 0.72f, 0.9f, 1f));
+            float accentEmission = CaveDressingRuntimeSanitizer.ClampFinite(config.accentEmission, 0.35f, 0f, 2f);
+            Color baseColor = Color.Lerp(remnantBaseColor, remnantAccentColor, accent * 0.25f);
+            Color emission = remnantAccentColor * (accentEmission * accent);
             MaterialPropertyBlock propertyBlock = GetRemnantPropertyBlock();
             propertyBlock.Clear();
             renderer.GetPropertyBlock(propertyBlock);
@@ -258,9 +284,12 @@ namespace Hecton8.Caves
             if (maxCount <= 0)
                 return 0;
 
+            if (!CaveDressingRuntimeSanitizer.IsFinite(volumeBounds))
+                return 0;
+
             float complexity = Mathf.Clamp01((preset.maxRooms + preset.maxStructures) / 28f);
             float footprint = Mathf.Clamp01((volumeBounds.size.x * volumeBounds.size.z) / 1000f);
-            float intensity = Mathf.Clamp(globalIntensity, 0.1f, 1.25f);
+            float intensity = CaveDressingRuntimeSanitizer.ClampFinite(globalIntensity, 0.1f, 0.1f, CaveDressingRuntimeSanitizer.MaxGlobalIntensity);
             return Mathf.Clamp(
                 Mathf.RoundToInt(maxCount * Mathf.Max(complexity, footprint) * intensity),
                 1,
@@ -273,6 +302,9 @@ namespace Hecton8.Caves
                 return false;
 
             Vector3 boundsSize = renderer.bounds.size;
+            if (!CaveDressingRuntimeSanitizer.IsFinite(boundsSize))
+                return false;
+
             float maxDimension = Mathf.Max(boundsSize.x, Mathf.Max(boundsSize.y, boundsSize.z));
             return maxDimension >= 0.5f;
         }

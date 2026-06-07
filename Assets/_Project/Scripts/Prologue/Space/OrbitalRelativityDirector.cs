@@ -1396,7 +1396,9 @@ namespace Hecton8.Prologue.Space
                 const int rowBytes = 52;
                 int length = telemetryRing.Length;
                 int byteCount = headerBytes + length * rowBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = H8Memory.Allocate<byte>(byteCount, OwnerSystemId, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                if (!payload.IsCreated)
+                    return;
 
                 unsafe
                 {
@@ -1431,7 +1433,7 @@ namespace Hecton8.Prologue.Space
             finally
             {
                 if (payload.IsCreated)
-                    payload.Dispose();
+                    H8Memory.Release(ref payload, OwnerSystemId);
             }
         }
 

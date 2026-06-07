@@ -122,6 +122,7 @@ namespace Hecton8.Gameplay
             TryUnregisterHotSwapListener();
             UnregisterFromTick();
             UnregisterFromLateFrame();
+            ClearPendingReleaseWork();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -194,7 +195,7 @@ namespace Hecton8.Gameplay
             if (_pendingReleaseAudio)
             {
                 _pendingReleaseAudio = false;
-                IAudioService audio = _audioService;
+                IAudioService audio = ResolveAudioService();
                 if (releaseSound != null && audio != null)
                     audio.PlayAtPoint(releaseSound, _pendingReleaseAudioPosition, releaseVolume);
             }
@@ -205,6 +206,13 @@ namespace Hecton8.Gameplay
         {
             _pendingReleaseAudioPosition = position;
             _pendingReleaseAudio = releaseSound != null;
+        }
+
+        private void ClearPendingReleaseWork()
+        {
+            _pendingBubbleReleaseCount = 0;
+            _pendingReleaseAudio = false;
+            _pendingReleaseAudioPosition = Vector3.zero;
         }
 
         private void CalculateNextReleaseTime()
@@ -299,7 +307,33 @@ namespace Hecton8.Gameplay
         private void RefreshColdRegistryReferences()
         {
             _objectPool = GlobalRegistry.ObjectPoolService;
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -331,12 +365,12 @@ namespace Hecton8.Gameplay
                     _poolMissingLogged = false;
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _isRegistered = false;
-                    _lateFrameRegistered = false;
-                    if (currentService != null)
+                    UnregisterFromTick();
+                    UnregisterFromLateFrame();
+                    if (currentService != null && isActiveAndEnabled)
                     {
                         RegisterToTick();
                         RegisterToLateFrame();

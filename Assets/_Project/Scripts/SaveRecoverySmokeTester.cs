@@ -27,6 +27,10 @@ namespace Hecton8.Dev
         private const int FileHashBufferSize = 64 * 1024;
         private const ulong Fnv1A64Offset = 14695981039346656037UL;
         private const ulong Fnv1A64Prime = 1099511628211UL;
+        private const string NativeMemoryOwner = nameof(SaveRecoverySmokeTester);
+        private const string PersistentWorldDeltasLabel = "persistentWorldDeltas";
+        private const string RawBufferLabel = "rawBuffer";
+        private const string CompressedBufferLabel = "compressedBuffer";
 
         [Header("References")]
         [SerializeField]
@@ -394,13 +398,13 @@ namespace Hecton8.Dev
             NativeArray<byte> compressedBuffer = default;
             try
             {
-                persistentWorldDeltas = new NativeArray<PersistentWorldDeltaRecord>(1, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                persistentWorldDeltas = AllocateTrackedTempArray<PersistentWorldDeltaRecord>(1, PersistentWorldDeltasLabel, NativeArrayOptions.UninitializedMemory);
                 persistentWorldDeltas[0] = BuildSyntheticDeletedResourceNode();
 
                 // COLD ALLOC: NativeArray<byte>[8388608] - synthetic save raw staging buffer for recovery smoke - owner: SaveRecoverySmokeTester
-                rawBuffer = new NativeArray<byte>(SmokeRawPayloadCapacityBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                rawBuffer = AllocateTrackedTempArray<byte>(SmokeRawPayloadCapacityBytes, RawBufferLabel, NativeArrayOptions.UninitializedMemory);
                 // COLD ALLOC: NativeArray<byte>[9437184] - synthetic save compressed staging buffer for recovery smoke - owner: SaveRecoverySmokeTester
-                compressedBuffer = new NativeArray<byte>(SmokeCompressedPayloadCapacityBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                compressedBuffer = AllocateTrackedTempArray<byte>(SmokeCompressedPayloadCapacityBytes, CompressedBufferLabel, NativeArrayOptions.UninitializedMemory);
 
                 return SaveBinaryStorage.TryWriteSaveFile(
                     absolutePath,
@@ -420,12 +424,48 @@ namespace Hecton8.Dev
             }
             finally
             {
-                if (compressedBuffer.IsCreated)
-                    compressedBuffer.Dispose();
-                if (rawBuffer.IsCreated)
-                    rawBuffer.Dispose();
-                if (persistentWorldDeltas.IsCreated)
-                    persistentWorldDeltas.Dispose();
+                DisposeTrackedTempArray(ref compressedBuffer);
+                DisposeTrackedTempArray(ref rawBuffer);
+                DisposeTrackedTempArray(ref persistentWorldDeltas);
+            }
+        }
+
+        private static NativeArray<T> AllocateTrackedTempArray<T>(int length, string label, NativeArrayOptions options)
+            where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.Temp, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Temp);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+
+            array.Dispose();
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void DisposeTrackedTempArray<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
             }
         }
 

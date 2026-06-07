@@ -59,7 +59,7 @@ MonoBehaviour:
   shotCooldown: 0.6
   targetMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 2121609
   feedbackInterval: 0.35
 --- !u!114 &9150663868011811746
 MonoBehaviour:

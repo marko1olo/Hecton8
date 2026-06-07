@@ -1,0 +1,2 @@
+packet_id,packet_hash_hex,packet_hash_uint,release_set,primary_component,primary_field,secondary_component,secondary_field,suggested_world_target,unlock_moment,notes
+P1090_SILENT_ORBIT_RECEIPT_LEDGER,0x526B68EB,1382770923,RS164_SILENT_ORBIT_RECEIPT_ARTICLE,NarrativeDiscovery,appliedLorePacketHash,MessageTerminal,appliedLorePacketHash,"poi.black_keel_receipt_console, poi.acoustic_relay_spine, poi.silent_orbit_log",silent_orbit_receipt_ledger,Authoring evidence only; runtime consumes baked packet hash and string-pool rows. Unity placement still requires an editor binding pass.

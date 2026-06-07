@@ -7,6 +7,9 @@ poi_tags: poi.vent_forge_sample;poi.cooling_path_tag
 biome_tags: biome.vent;biome.resource
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Vent Forge Field Process Guide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

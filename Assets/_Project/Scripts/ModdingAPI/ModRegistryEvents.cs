@@ -95,19 +95,7 @@ namespace Hecton8.Modding
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ModRegistryEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ModRegistryEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseNativeQueues();
 
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
@@ -355,28 +343,69 @@ namespace Hecton8.Modding
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
+            try
             {
-                _pendingEvents = new NativeQueue<ModRegistryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] — deferred coalesced mod registry event lane — owner: ModRegistryEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(ModRegistryEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<ModRegistryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] — deferred coalesced mod registry event lane — owner: ModRegistryEvents
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                }
+
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<ModRegistryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] — next-frame mod registry lane prevents same-frame reentrant dispatch — owner: ModRegistryEvents
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                }
+            }
+            catch
+            {
+                ReleaseNativeQueues();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                _runtimeRegistryChangeQueued = false;
+                _settingsRegistryChangeQueued = false;
+                _recipeRegistryChangeQueued = false;
+                _buildableRegistryChangeQueued = false;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(ModRegistryEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            queue.Dispose();
+            queue = default;
+            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ModRegistryEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
             }
 
-            if (!_nextFrameEvents.IsCreated)
+            if (_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<ModRegistryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] — next-frame mod registry lane prevents same-frame reentrant dispatch — owner: ModRegistryEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(ModRegistryEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ModRegistryEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
             }
         }
 

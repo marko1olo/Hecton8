@@ -7,6 +7,9 @@ poi_tags: poi.repair_fauna_scan;poi.drone_den
 biome_tags: biome.abyssal_slope;biome.repair_ecology
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Abisalna fauna naprawcza"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

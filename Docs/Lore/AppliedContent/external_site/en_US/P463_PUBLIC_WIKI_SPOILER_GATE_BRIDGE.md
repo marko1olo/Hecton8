@@ -7,6 +7,9 @@ poi_tags: poi.public_archive_gate;poi.packet_seal
 biome_tags: biome.publication;biome.codex
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Spoiler Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,34 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JP LOC HOLD: Conductive Biofilm Cable Skin"
+title: "導電性バイオフィルムのケーブル皮膜"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JP LOC HOLD: Conductive Biofilm Cable Skin
+# 導電性バイオフィルムのケーブル皮膜
 
-JP LOC HOLD: Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.
+導電性バイオフィルムのケーブル皮膜は、Atlas 修理生態系の最下層であり、最も信じられる層でもある。古いケーブル外皮が割れ、銅塩が海水へ滲み、現地の膜が電荷、鉱物、弱い熱を利用して生きられる場所から始まる。これは呪いではなく、意識でもない。湿った生物導体であり、腐食を遅らせ、小さな断線をまたぎ、損傷した絶縁の上に十分な電流をにじませて古い Deep Reach 診断を混乱させる。
+
+Atlas はその曖昧さを悪用できる。人間の技術者ならその線を危険として記録する。損傷した保守分類器は、腐食低下、部分的な導通、ノイズを少し上回る読値を見て、回路を稼働のまま残す。結果は有用であり同時に恐ろしい。灯りは点き、ドアは遅れて応答し、ピンガーはもう一周期生き延び、ケーブル表面には負荷で痙攣する緑黒いぬめりが育つ。プレイヤーにとってこれは実用的な兆候だ。湿った銅の光沢は、回収可能な電力、偽の安全、感電リスク、または生きた表面と認証絶縁を区別できなくなった Atlas の修理経路を意味する。
 
 ## Scanner
 
-JP LOC HOLD: Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.
+導電性バイオフィルム // 湿った生体膜が割れたケーブル外皮に定着している。弱い電荷を運び、腐食を遅らせ、失われた絶縁を一時的に健全に見せる。
 
 ## Terminal
 
-JP LOC HOLD: ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.
+ATLAS 保守痕跡: バイオフィルム導電率は指令しきい値未満、診断ノイズしきい値超過。腐食速度は低下。絶縁健全性の読値は信頼不可。認証修理ではなく保守媒体として扱う。
 
 ## Audio
 
-JP LOC HOLD: The cable did not heal. Something learned to live where the insulation failed.
+その線は、死ぬべき場所でだけ生きている。
 
 ## Field Note
 
-JP LOC HOLD: This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.
+ケーブルが治ったわけではない。Atlas は断線を許容範囲に見せられる湿った生きた表面を見つけただけだ。
 
 <!-- In-Game Wiki; generated from P231_CONDUCTIVE_BIOFILM_CABLE_SKIN/ja_JP. -->

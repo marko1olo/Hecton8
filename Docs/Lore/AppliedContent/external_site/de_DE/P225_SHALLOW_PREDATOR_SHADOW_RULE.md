@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Shallow Predator Shadow Rule"
+title: "Regel des Flachwasser-Raubtierschattens"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Shallow Predator Shadow Rule
+# Regel des Flachwasser-Raubtierschattens
 
-DE LOC HOLD: Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact.
+Die Regel des Flachwasser-Raubtierschattens ist eine Lore- und Encounter-Regel, kein Artenprofil. Ihre Aufgabe ist, den Ton des photischen Shelfs zu schützen: schön, lesbar, lebendig und trotzdem tödlich. Das Raubtier kommt durch Zeugen. Glasgraser lassen Futter zurück und verschwinden. Laternenstrom-Bloom leuchtet weiter, verliert aber sein weiches Partikelrauschen. Schalenklammer-Riffe ziehen sich an Kabeln fest, als hätte die ganze Route eingeatmet. Erst dann bewegt sich ein Schatten durch das Licht. Diese Reihenfolge ist wichtig, weil sie den Ozean systemisch statt theatralisch wirken lässt. Der Spieler wird nicht von einem Monster bestraft, das aus dem Nichts materialisiert; der Spieler wird von Zeichen unter Druck gesetzt, die er hätte lesen lernen können. Gute Umsetzung sollte Audio-, visuelle und ökologische Hinweise schichten, damit die Warnung verschiedene Displays, Sprachen und Barrierefreiheitsbedürfnisse übersteht: fehlende Ticks, geschnittener Bloom-Lärm, breite Silhouette, versetzte Kielspur, Routenfauna außer Phase. Der direkte Angriff ist der am wenigsten interessante Teil. Stärker ist der Moment, in dem ein Reparaturziel noch erreichbar ist, das Wasser noch wunderschön bleibt und jedes lebende Instrument sagt, dass die Route teuer geworden ist.
 
 ## Scanner
 
-DE LOC HOLD: A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.
+FLACHWASSER-RAUBTIERSCHATTEN // Fehlende Graser-Ticks, zerrissener Bloom-Lärm und ein breiter wandernder Schatten sind der erste Kontakt. Routendruck kommt vor Kampfkontakt.
 
 ## Terminal
 
-DE LOC HOLD: CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.
+KONTAKTREGEL: Raubtierbeweise sollen die Routenwahl ändern, bevor Schaden erzwungen wird. Als Abwesenheit, Stille, Silhouette und Kielspur inszenieren; direkter Angriff erst, nachdem der Spieler mindestens zwei Hinweise ignoriert oder falsch gelesen hat.
 
 ## Audio
 
-DE LOC HOLD: When the little mouths stop ticking, stop moving.
+Wenn die kleinen Mäuler aufhören zu ticken, hör auf dich zu bewegen.
 
 ## Field Note
 
-DE LOC HOLD: Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.
+Gib dem Raubtier nicht zuerst ein Gesicht. Lass den Shelf falsch werden: Futter bleibt, Wasser wird heller, kleines Leben geht, dann kreuzt der Schatten die Aufgabe.
 
 <!-- External Site; generated from P225_SHALLOW_PREDATOR_SHADOW_RULE/de_DE. -->

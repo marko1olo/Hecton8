@@ -7,6 +7,9 @@ poi_tags: poi.drop_capsule;poi.crash_shelter
 biome_tags: biome.crash_shelf;biome.shallow_repair
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "강하 캡슐 손상"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

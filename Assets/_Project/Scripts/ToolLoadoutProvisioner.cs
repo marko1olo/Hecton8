@@ -246,6 +246,9 @@ namespace Hecton8.Dev
                 "Assets/_Project/Data/Items/Tools/Item_Tool_SeafloorDrill.asset",
             };
 
+            if (allToolItems == null || allToolItems.Length != itemPaths.Length)
+                System.Array.Resize(ref allToolItems, itemPaths.Length);
+
             for (int i = 0; i < allToolItems.Length && i < itemPaths.Length; i++)
             {
                 if (allToolItems[i] != null)

@@ -7,6 +7,9 @@ poi_tags: poi.final_payload_sale_clause;poi.xo_coordinate_receipt
 biome_tags: biome.atlas_basin;biome.black_keel_orbit
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Финальный вопрос продажи места преступления"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

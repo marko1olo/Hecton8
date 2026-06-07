@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using Hecton8.Core;
 using Unity.Collections;
 using UnityEditor;
 using UnityEditor.Build;
@@ -1610,8 +1611,11 @@ namespace Hecton8.Editor
         private const uint GraphFlagPackOneRuntimeStruct = 8u;
         private const uint GraphFlagAsmdefCycle = 16u;
         private const string DumpAssetPath = "Docs/AgentLogs/Dump_SHINOBU_31.h8dump";
+        private const string NativeMemoryOwner = nameof(CompileWallBlackBox);
+        private const string EntriesLabel = "entries";
 
         private static NativeArray<CompileWallBlackBoxEntry> _entries;
+        private static int _entriesSentinelId;
         private static int _head;
         private static int _sequence;
 
@@ -1704,13 +1708,38 @@ namespace Hecton8.Editor
         private static void EnsureAllocated()
         {
             if (!_entries.IsCreated)
-                _entries = new NativeArray<CompileWallBlackBoxEntry>(Capacity, Allocator.Persistent);
+            {
+                try
+                {
+                    _entries = new NativeArray<CompileWallBlackBoxEntry>(Capacity, Allocator.Persistent);
+                    _entriesSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                        _entries,
+                        NativeMemoryOwner,
+                        EntriesLabel,
+                        NativeAllocationLifetime.Session);
+                    if (_entriesSentinelId <= 0)
+                        throw new InvalidOperationException($"Native memory sentinel registration failed for {EntriesLabel}.");
+                }
+                catch
+                {
+                    if (_entries.IsCreated)
+                        _entries.Dispose();
+                    _entries = default;
+                    _entriesSentinelId = 0;
+                    throw;
+                }
+            }
         }
 
         private static void Dispose()
         {
             if (_entries.IsCreated)
+            {
+                NativeMemorySentinel.Unregister(_entriesSentinelId);
+                _entriesSentinelId = 0;
                 _entries.Dispose();
+                _entries = default;
+            }
         }
 
         private static void Write(CompileWallBlackBoxEntry entry)

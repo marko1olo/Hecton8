@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "Pelletfusie-vracht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# Pelletfusie-vracht
 
-NL LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.
+Zware interstellaire reis is mogelijk zonder FTL, maar hard. Straalzeilboost, pelletgevoede fusie, schildmassa, lange drift en remarchitectuur brachten seed-ladingen en latere kolonievracht naar Aegir. Dezelfde logistiek maakt redding traag: elke kilo, slaapplaats, remslot en overlevendenstoel hoort bij een schema.
 
 ## Scanner
 
-NL LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Aandrijfplaat. Pelletgevoede fusievracht stak over als infrastructuur: boost, schild, drift, remmen en verlies afrekenen.
 
 ## Terminal
 
-NL LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+VRACHTDOCTRINE: Atlas-klasse seed-ladingen en kolonievracht gebruikten straalzeilboost, pelletgevoede fusie, magnetzeilremmen en lange driftintervallen. Levende vracht arriveerde nadat machines de route factureerbaar maakten.
 
 ## Audio
 
-NL LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+Een zwaar schip is geen wonder. Het is een hypotheek met motoren.
 
 ## Field Note
 
-NL LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+Zwaar transit is niet heroïsch. Het is een oud routecontract met hittesporen.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/nl_NL. -->

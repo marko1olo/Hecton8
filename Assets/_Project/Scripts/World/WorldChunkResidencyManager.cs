@@ -1914,22 +1914,24 @@ namespace Hecton8.World
             EnsureStreamingLedgerBuffers(capacity);
             // COLD VAULT: double[maxChunkCount] and byte[maxChunkCount] - Addressables IO timing and immediate-radius flags.
             // COLD VAULT: HLOD impostor SoA and counters.
+            try
+            {
             if (TryResolveChunkTableBuffers(out NativeArray<long> chunkIds, out NativeArray<AbsoluteUniversePositionBlit> chunkCenters))
             {
-                NativeMemorySentinel.RegisterNativeArray(chunkIds, nameof(WorldChunkResidencyManager), nameof(_chunkIdsHandle), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(chunkCenters, nameof(WorldChunkResidencyManager), nameof(_chunkCentersHandle), NativeAllocationLifetime.Session);
+                RegisterStreamingLedgerArray(chunkIds, nameof(_chunkIdsHandle));
+                RegisterStreamingLedgerArray(chunkCenters, nameof(_chunkCentersHandle));
             }
             if (TryResolveChunkStateSlots(out NativeArray<ChunkStateSlotDTO> chunkStateSlots))
-                NativeMemorySentinel.RegisterNativeArray(chunkStateSlots, nameof(WorldChunkResidencyManager), nameof(_chunkStateSlotsHandle), NativeAllocationLifetime.Session);
+                RegisterStreamingLedgerArray(chunkStateSlots, nameof(_chunkStateSlotsHandle));
             if (TryResolveLoadRequestQueue(out NativeArray<ChunkLoadRequest> loadRequests))
-                NativeMemorySentinel.RegisterNativeArray(loadRequests, nameof(WorldChunkResidencyManager), nameof(_loadRequestsHandle), NativeAllocationLifetime.Session);
+                RegisterStreamingLedgerArray(loadRequests, nameof(_loadRequestsHandle));
             if (TryResolveWorldStreamingVaultBuffer(
                     in _residencyDecisionsHandle,
                     ResidencyDecisionsVaultBufferId,
                     capacity,
                     out NativeArray<ResidencyDecisionDTO> residencyDecisions))
             {
-                NativeMemorySentinel.RegisterNativeArray(residencyDecisions, nameof(WorldChunkResidencyManager), nameof(_residencyDecisionsHandle), NativeAllocationLifetime.Session);
+                RegisterStreamingLedgerArray(residencyDecisions, nameof(_residencyDecisionsHandle));
             }
             if (TryResolveWorldStreamingVaultBuffer(
                     in _residencyTelemetryHandle,
@@ -1937,7 +1939,7 @@ namespace Hecton8.World
                     TelemetryCapacity,
                     out NativeArray<ChunkResidencyTelemetryEntry> residencyTelemetry))
             {
-                NativeMemorySentinel.RegisterNativeArray(residencyTelemetry, nameof(WorldChunkResidencyManager), nameof(_residencyTelemetryHandle), NativeAllocationLifetime.Session);
+                RegisterStreamingLedgerArray(residencyTelemetry, nameof(_residencyTelemetryHandle));
             }
             if (TryResolveWorldStreamingVaultBuffer(
                     in _loadStartTimesHandle,
@@ -1945,7 +1947,7 @@ namespace Hecton8.World
                     capacity,
                     out NativeArray<double> loadStartTimes))
             {
-                NativeMemorySentinel.RegisterNativeArray(loadStartTimes, nameof(WorldChunkResidencyManager), nameof(_loadStartTimesHandle), NativeAllocationLifetime.Session);
+                RegisterStreamingLedgerArray(loadStartTimes, nameof(_loadStartTimesHandle));
             }
             if (TryResolveWorldStreamingVaultBuffer(
                     in _loadImmediateRadiusFlagsHandle,
@@ -1953,7 +1955,7 @@ namespace Hecton8.World
                     capacity,
                     out NativeArray<byte> loadImmediateRadiusFlags))
             {
-                NativeMemorySentinel.RegisterNativeArray(loadImmediateRadiusFlags, nameof(WorldChunkResidencyManager), nameof(_loadImmediateRadiusFlagsHandle), NativeAllocationLifetime.Session);
+                RegisterStreamingLedgerArray(loadImmediateRadiusFlags, nameof(_loadImmediateRadiusFlagsHandle));
             }
             IDataVault vault = _streamingLedgerVault ?? _dataVault;
             if (TryResolveActiveImpostorBuffers(
@@ -1969,16 +1971,16 @@ namespace Hecton8.World
                     out NativeArray<int> activeImpostorCount,
                     out NativeArray<int> activeImpostorFadeOutCount))
             {
-                NativeMemorySentinel.RegisterNativeArray(activeImpostors, nameof(WorldChunkResidencyManager), nameof(_activeImpostorsHandle), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(impostorTypes, nameof(WorldChunkResidencyManager), nameof(_impostorTypesHandle), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(activeImpostorChunkIds, nameof(WorldChunkResidencyManager), nameof(_activeImpostorChunkIdsHandle), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(activeImpostorSpawnTimes, nameof(WorldChunkResidencyManager), nameof(_activeImpostorSpawnTimesHandle), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(activeImpostorCenters, nameof(WorldChunkResidencyManager), nameof(_activeImpostorCentersHandle), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(activeImpostorSizes, nameof(WorldChunkResidencyManager), nameof(_activeImpostorSizesHandle), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(activeImpostorFlags, nameof(WorldChunkResidencyManager), nameof(_activeImpostorFlagsHandle), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(activeImpostorCartographyPoints, nameof(WorldChunkResidencyManager), nameof(_activeImpostorCartographyPointsHandle), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(activeImpostorCount, nameof(WorldChunkResidencyManager), nameof(_activeImpostorCountHandle), NativeAllocationLifetime.Session);
-                NativeMemorySentinel.RegisterNativeArray(activeImpostorFadeOutCount, nameof(WorldChunkResidencyManager), nameof(_activeImpostorFadeOutCountHandle), NativeAllocationLifetime.Session);
+                RegisterStreamingLedgerArray(activeImpostors, nameof(_activeImpostorsHandle));
+                RegisterStreamingLedgerArray(impostorTypes, nameof(_impostorTypesHandle));
+                RegisterStreamingLedgerArray(activeImpostorChunkIds, nameof(_activeImpostorChunkIdsHandle));
+                RegisterStreamingLedgerArray(activeImpostorSpawnTimes, nameof(_activeImpostorSpawnTimesHandle));
+                RegisterStreamingLedgerArray(activeImpostorCenters, nameof(_activeImpostorCentersHandle));
+                RegisterStreamingLedgerArray(activeImpostorSizes, nameof(_activeImpostorSizesHandle));
+                RegisterStreamingLedgerArray(activeImpostorFlags, nameof(_activeImpostorFlagsHandle));
+                RegisterStreamingLedgerArray(activeImpostorCartographyPoints, nameof(_activeImpostorCartographyPointsHandle));
+                RegisterStreamingLedgerArray(activeImpostorCount, nameof(_activeImpostorCountHandle));
+                RegisterStreamingLedgerArray(activeImpostorFadeOutCount, nameof(_activeImpostorFadeOutCountHandle));
             }
             if (TryResolveWorldStreamingVaultBuffer(
                     in _pagerReadTicketsHandle,
@@ -1986,7 +1988,7 @@ namespace Hecton8.World
                     PagerReadTicketCapacity,
                     out NativeArray<H8WorldPageReadTicket> pagerReadTickets))
             {
-                NativeMemorySentinel.RegisterNativeArray(pagerReadTickets, nameof(WorldChunkResidencyManager), nameof(_pagerReadTicketsHandle), NativeAllocationLifetime.Session);
+                RegisterStreamingLedgerArray(pagerReadTickets, nameof(_pagerReadTicketsHandle));
             }
             if (TryResolveWorldStreamingVaultBuffer(
                     in _macroDatabaseEvictionScratchHandle,
@@ -1994,7 +1996,7 @@ namespace Hecton8.World
                     MacroDatabaseEvictionScratchCapacity,
                     out NativeArray<ulong> macroDatabaseEvictionScratch))
             {
-                NativeMemorySentinel.RegisterNativeArray(macroDatabaseEvictionScratch, nameof(WorldChunkResidencyManager), nameof(_macroDatabaseEvictionScratchHandle), NativeAllocationLifetime.Session);
+                RegisterStreamingLedgerArray(macroDatabaseEvictionScratch, nameof(_macroDatabaseEvictionScratchHandle));
             }
             if (TryResolveWorldStreamingVaultBuffer(
                     in _hydrationApplyRecordsHandle,
@@ -2002,7 +2004,7 @@ namespace Hecton8.World
                     capacity,
                     out NativeArray<ChunkHydrationApplyRecord> hydrationApplyRecords))
             {
-                NativeMemorySentinel.RegisterNativeArray(hydrationApplyRecords, nameof(WorldChunkResidencyManager), nameof(_hydrationApplyRecordsHandle), NativeAllocationLifetime.Session);
+                RegisterStreamingLedgerArray(hydrationApplyRecords, nameof(_hydrationApplyRecordsHandle));
             }
             if (TryResolveWorldStreamingVaultBuffer(
                     in _dehydrationMetadataPayloadHandle,
@@ -2010,7 +2012,7 @@ namespace Hecton8.World
                     DehydrationMetadataPayloadBytes,
                     out NativeArray<byte> dehydrationMetadataPayload))
             {
-                NativeMemorySentinel.RegisterNativeArray(dehydrationMetadataPayload, nameof(WorldChunkResidencyManager), nameof(_dehydrationMetadataPayloadHandle), NativeAllocationLifetime.Session);
+                RegisterStreamingLedgerArray(dehydrationMetadataPayload, nameof(_dehydrationMetadataPayloadHandle));
             }
 
             NativeArray<ChunkResidencyDTO> residencyDtos = ResolveChunkResidencyDtos();
@@ -2024,6 +2026,23 @@ namespace Hecton8.World
             NativeArray<WorldStreamingRuntimeTuning> tuning = ResolveStreamingTuning();
             if (tuning.IsCreated && tuning.Length > 0)
                 tuning[0] = _coldStartTuning;
+            }
+            catch
+            {
+                ReleaseStreamingLedgerBuffers();
+                throw;
+            }
+        }
+
+        private static void RegisterStreamingLedgerArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+                array,
+                nameof(WorldChunkResidencyManager),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId <= 0)
+                throw new InvalidOperationException($"NativeMemorySentinel rejected world chunk residency ledger registration for {label}.");
         }
 
         private void EnsureStreamingLedgerBuffers(int capacity)

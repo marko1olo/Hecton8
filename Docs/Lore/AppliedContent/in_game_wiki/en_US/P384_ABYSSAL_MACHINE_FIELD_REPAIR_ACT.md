@@ -7,6 +7,9 @@ poi_tags: poi.abyssal_machine_field;poi.biofilm_relay_wall
 biome_tags: biome.abyssal_machine_field;biome.cable_reef
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Abyssal Machine Field Repair Act"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

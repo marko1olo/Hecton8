@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Glass Grazer Schools"
+title: "Cardumes de pastadores de vidro"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Glass Grazer Schools
+# Cardumes de pastadores de vidro
 
-PT LOC HOLD: Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.
+Pastadores de vidro são os primeiros animais rasos que tornam a beleza útil sem tornar a plataforma segura. Suas conchas transparentes e cristas bucais duras raspam filme mineral do pressure glass, de tapetes fóticos soltos e de jaquetas de cabos antigas. Um cardume se alimentando deixa faixas pálidas que mostram corrente recente, crescimento novo e a linha mais calma ao redor de uma emenda contaminada. Observe a borda do cardume, não o centro: eles evitam selante quente, vazamentos de salmoura azeda e superfícies que carregam deriva de sinal compatível com Atlas. Se o tique-taque para enquanto ainda há comida, algo maior mudou a água. A faixa limpa é evidência, não permissão para correr.
 
 ## Scanner
 
-PT LOC HOLD: Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.
+CARDUME DE PASTADORES DE VIDRO // Alimentadores de concha transparente raspam filme mineral do pressure glass e das bordas de tapetes fóticos. O tique-taque abre cicatrizes claras de rota; silêncio súbito é dado de predador.
 
 ## Terminal
 
-PT LOC HOLD: FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.
+FAUNA DE BASE: agrupamento de pastadores não hostis. Rastrear filme de pressure glass, bloom mineral fresco, perturbação de corrente e deslocamento por predador. Ausência depois de alimentação ativa é aviso de rota, não ponto de spawn vazio.
 
 ## Audio
 
-PT LOC HOLD: Hear the ticking on the shell? That is lunch, map and warning in the same sound.
+Ouve o tique-taque na concha? É almoço, mapa e aviso no mesmo som.
 
 ## Field Note
 
-PT LOC HOLD: Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.
+Não persiga o cardume. Leia o que ele expõe: filme fresco, raspagem antiga, desvio de selante quente e a faixa vazia que os animais se recusam a cruzar.
 
 <!-- In-Game Wiki; generated from P222_GLASS_GRAZER_SCHOOLS/pt_BR. -->

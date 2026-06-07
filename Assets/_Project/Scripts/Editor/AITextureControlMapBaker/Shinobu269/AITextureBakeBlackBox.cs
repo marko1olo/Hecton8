@@ -13,6 +13,8 @@ namespace Hecton8.Editor.AITextureControlMaps
     [InitializeOnLoad]
     internal static class AITextureBakeBlackBox
     {
+        private const string NativeMemoryOwner = nameof(AITextureBakeBlackBox);
+        private const string RingLabel = "ring";
         private static NativeArray<AITextureBakeTelemetryEntry> _ring;
         private static int _cursor;
 
@@ -72,10 +74,12 @@ namespace Hecton8.Editor.AITextureControlMaps
             if (_ring.IsCreated)
                 return;
 
-            _ring = new NativeArray<AITextureBakeTelemetryEntry>(
+            _ring = AITextureNativeMemory.AllocateArray<AITextureBakeTelemetryEntry>(
                 AITextureControlMapConstants.BakeBlackBoxCapacity,
                 Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<AITextureBakeTelemetryEntry>[300] - editor bake forensic blackbox - owner: AITextureBakeBlackBox
+                NativeArrayOptions.UninitializedMemory,
+                NativeMemoryOwner,
+                RingLabel); // COLD ALLOC: NativeArray<AITextureBakeTelemetryEntry>[300] - editor bake forensic blackbox - owner: AITextureBakeBlackBox
 
             AITextureBakeTelemetryEntry sentinel = default;
             sentinel.SourceHash = 0x5348494Eu;
@@ -103,7 +107,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             if (!_ring.IsCreated)
                 return;
 
-            _ring.Dispose();
+            AITextureNativeMemory.DisposeArray(ref _ring);
             _cursor = 0;
         }
 

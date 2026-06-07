@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Hecton8.World;
 using NUnit.Framework;
 using Unity.Collections;
@@ -10,6 +11,10 @@ namespace Hecton8.Editor.Tests
     /// </summary>
     public sealed class HectonSpatialHashEditorSelfTests
     {
+        private const string NativeMemoryOwner = nameof(HectonSpatialHashEditorSelfTests);
+        private const string RecycledHandleResultsLabel = "recycledHandleResults";
+        private const string MoveResultsLabel = "moveResults";
+        private const string LargeAupResultsLabel = "largeAupResults";
         private const int ResourceKind = 1;
         private const ulong ResourceFlag = 1UL;
 
@@ -17,7 +22,7 @@ namespace Hecton8.Editor.Tests
         public void RecycledHandle_AdvancesGeneration_AndRejectsStaleHandle()
         {
             HectonSpatialHash spatialHash = new HectonSpatialHash(8, 64, 8d);
-            NativeList<int> results = new NativeList<int>(8, Allocator.Temp);
+            NativeList<int> results = AllocateTrackedResults(8, RecycledHandleResultsLabel);
 
             try
             {
@@ -66,8 +71,7 @@ namespace Hecton8.Editor.Tests
             }
             finally
             {
-                if (results.IsCreated)
-                    results.Dispose();
+                DisposeTrackedResults(ref results, RecycledHandleResultsLabel);
 
                 spatialHash.Dispose();
             }
@@ -77,7 +81,7 @@ namespace Hecton8.Editor.Tests
         public void UpdateEntry_MovesBetweenCells_WithoutLeavingGhostOccupancy()
         {
             HectonSpatialHash spatialHash = new HectonSpatialHash(4, 32, 8d);
-            NativeList<int> results = new NativeList<int>(4, Allocator.Temp);
+            NativeList<int> results = AllocateTrackedResults(4, MoveResultsLabel);
 
             try
             {
@@ -96,8 +100,7 @@ namespace Hecton8.Editor.Tests
             }
             finally
             {
-                if (results.IsCreated)
-                    results.Dispose();
+                DisposeTrackedResults(ref results, MoveResultsLabel);
 
                 spatialHash.Dispose();
             }
@@ -107,7 +110,7 @@ namespace Hecton8.Editor.Tests
         public void LargeAupCoordinates_QueryWithoutRuntimeFloatDrift()
         {
             HectonSpatialHash spatialHash = new HectonSpatialHash(4, 32, 16d);
-            NativeList<int> results = new NativeList<int>(4, Allocator.Temp);
+            NativeList<int> results = AllocateTrackedResults(4, LargeAupResultsLabel);
 
             try
             {
@@ -123,10 +126,46 @@ namespace Hecton8.Editor.Tests
             }
             finally
             {
-                if (results.IsCreated)
-                    results.Dispose();
+                DisposeTrackedResults(ref results, LargeAupResultsLabel);
 
                 spatialHash.Dispose();
+            }
+        }
+
+        private static NativeList<int> AllocateTrackedResults(int capacity, string label)
+        {
+            NativeList<int> results = new NativeList<int>(capacity, Allocator.Temp);
+            if (!results.IsCreated)
+                throw new System.InvalidOperationException("[HectonSpatialHashEditorSelfTests] NativeList allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeList(results, NativeMemoryOwner, label, NativeAllocationLifetime.Temp);
+                if (sentinelId <= 0)
+                    throw new System.InvalidOperationException("[HectonSpatialHashEditorSelfTests] NativeMemorySentinel rejected NativeList registration for " + label + ".");
+            }
+            catch
+            {
+                results.Dispose();
+                throw;
+            }
+
+            return results;
+        }
+
+        private static void DisposeTrackedResults(ref NativeList<int> results, string label)
+        {
+            if (!results.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
+            }
+            finally
+            {
+                results.Dispose();
+                results = default;
             }
         }
     }

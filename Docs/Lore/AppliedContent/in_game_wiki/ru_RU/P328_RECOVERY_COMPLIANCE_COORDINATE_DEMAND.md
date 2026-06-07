@@ -7,6 +7,9 @@ poi_tags: poi.coordinate_demand_packet;poi.payload_receiver_toggle
 biome_tags: biome.deep_reach;biome.contract
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Требование координат Recovery Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

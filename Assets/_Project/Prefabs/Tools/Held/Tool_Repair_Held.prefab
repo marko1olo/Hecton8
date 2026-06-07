@@ -168,7 +168,7 @@ MonoBehaviour:
   repairSpeed: 20
   repairMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 2121609
   repairLine: {fileID: 0}
   sparksVFX: {fileID: 0}
   weldLight: {fileID: 0}

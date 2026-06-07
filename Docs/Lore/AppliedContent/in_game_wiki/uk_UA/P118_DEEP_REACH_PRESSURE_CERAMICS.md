@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "Напірна кераміка Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# Напірна кераміка Deep Reach
 
-UA LOC HOLD: Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.
+Напірна кераміка Deep Reach - це місцеві мінерали HECTON-8, продавлені через печі, каталізаторні ванни й цикли вент-горнів, доки вони не змогли тримати тиск там, де метал поплив би або заклинив. Вона трапляється в затискних кільцях, сідлах ущільнень, контактах різаків та ізоляції стартових колисок, тому критична для ремонту й виготовлення ланцюга втечі. Її небезпека не в тому, що це злий матеріал. Її небезпека - компетентність під поганою відповідальністю: кільце може тримати роками, а потім розцвісти різальними уламками, якщо екіпаж ударить його теплом або порушить порядок скидання тиску.
 
 ## Scanner
 
-UA LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+НАПІРНА КЕРАМІКА DEEP REACH // Місцева глина, сульфідний флюс і тепло вент-горна, перетворені на затискні кільця й сідла ущільнень. Тиск тримає прекрасно; від удару розсипається ножами.
 
 ## Terminal
 
-UA LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+КЛАС РЕСУРСУ: посилений Deep Reach. Використання: затискні кільця, сідла ущільнень, контакти різака, ізоляція стартової колиски. Відмова: цвітіння уламків при тепловому ударі або неправильному скиданні тиску.
 
 ## Audio
 
-UA LOC HOLD: The company was good at building things. That is part of the crime.
+Deep Reach уміла будувати. Саме тому брехня спрацювала.
 
 ## Field Note
 
-UA LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+Постукай по холодній. Якщо співає високо, не грій.
 
 <!-- In-Game Wiki; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/uk_UA. -->

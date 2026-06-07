@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "Deep Reach压力陶瓷"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# Deep Reach压力陶瓷
 
-CN LOC HOLD: Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.
+Deep Reach压力陶瓷是HECTON-8本地矿物经过窑炉、催化浴和喷口炉循环后形成的材料，能在金属会蠕变或卡死的地方承受压力。它出现在夹环、密封座、切割器触点和上升摇架隔热层里，因此对维修和逃生链制造至关重要。它的危险不在于材料邪恶，而在于坏监管下的高能力：一个环可以稳定多年，然后在热冲击或错误释压顺序下开成锋利碎片。
 
 ## Scanner
 
-CN LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+DEEP REACH压力陶瓷 // 本地黏土、硫化物助熔剂与喷口炉热，被制成夹环和密封座。承压极好；受冲击时碎成刀片。
 
 ## Terminal
 
-CN LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+资源类别：Deep-Reach强化材料。用途：夹环、密封座、切割器触点、上升摇架隔热。失效模式：热冲击或错误释压导致碎片开花。
 
 ## Audio
 
-CN LOC HOLD: The company was good at building things. That is part of the crime.
+Deep Reach很会造东西。所以谎言才成立。
 
 ## Field Note
 
-CN LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+冷的时候轻敲。如果声音发高，就别加热。
 
 <!-- In-Game Wiki; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/zh_CN. -->

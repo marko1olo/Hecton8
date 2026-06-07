@@ -38,6 +38,8 @@ namespace Hecton8.UI
         private static ReadOnlySpan<char> StationKeepingArmed => "STATION KEEPING ARMED".AsSpan();
         private static ReadOnlySpan<char> StationKeepingReleased => "STATION KEEPING RELEASED".AsSpan();
         private static ReadOnlySpan<char> HostileDroneDetected => "HOSTILE DRONE DETECTED".AsSpan();
+        private static ReadOnlySpan<char> EngineTelemetryMasked => "ENGINE TELEMETRY MASKED".AsSpan();
+        private static ReadOnlySpan<char> EngineTelemetryRestored => "ENGINE TELEMETRY RESTORED".AsSpan();
         private struct PendingEntry
         {
             public HectonSubmarineOsLogCode Code;
@@ -199,16 +201,11 @@ namespace Hecton8.UI
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            if (currentService == null)
-            {
-                _registeredUpdatable = false;
-                return;
-            }
-
+            TryUnregister();
             if (isActiveAndEnabled)
             {
-                TryUnregister();
-                RefreshTickRegistration();
+                if (currentService != null)
+                    RefreshTickRegistration();
             }
         }
 
@@ -304,6 +301,10 @@ namespace Hecton8.UI
             int cursor = 0;
             switch (code)
             {
+                case HectonSubmarineOsLogCode.ReactorStable:
+                    cursor = AppendSpan(destination, cursor, OkPrefix);
+                    return AppendSpan(destination, cursor, ReactorStable);
+
                 case HectonSubmarineOsLogCode.LowPowerModeEngaged:
                     cursor = AppendSpan(destination, cursor, WarnPrefix);
                     cursor = AppendSpan(destination, cursor, LowBusPower);
@@ -369,13 +370,20 @@ namespace Hecton8.UI
                     cursor = AppendSpan(destination, cursor, FailPrefix);
                     return AppendSpan(destination, cursor, HostileDroneDetected);
 
+                case HectonSubmarineOsLogCode.EngineTelemetryMasked:
+                    cursor = AppendSpan(destination, cursor, WarnPrefix);
+                    return AppendSpan(destination, cursor, EngineTelemetryMasked);
+
+                case HectonSubmarineOsLogCode.EngineTelemetryRestored:
+                    cursor = AppendSpan(destination, cursor, OkPrefix);
+                    return AppendSpan(destination, cursor, EngineTelemetryRestored);
+
                 case HectonSubmarineOsLogCode.EmergencyLevelNominal:
                     cursor = AppendSpan(destination, cursor, OkPrefix);
                     return AppendSpan(destination, cursor, EmergencyNominal);
 
                 default:
-                    cursor = AppendSpan(destination, cursor, OkPrefix);
-                    return AppendSpan(destination, cursor, ReactorStable);
+                    return 0;
             }
         }
 

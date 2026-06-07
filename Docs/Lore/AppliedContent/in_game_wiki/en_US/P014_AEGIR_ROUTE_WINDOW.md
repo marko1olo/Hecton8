@@ -7,6 +7,9 @@ poi_tags: poi.window_table;poi.moon_shadow_timer
 biome_tags: biome.crash_shelf;biome.surface_storm
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Aegir Route Window"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

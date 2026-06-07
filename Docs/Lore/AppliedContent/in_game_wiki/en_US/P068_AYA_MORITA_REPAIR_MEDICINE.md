@@ -7,6 +7,9 @@ poi_tags: poi.medical_bay;poi.repair_tissue_record
 biome_tags: biome.medical_lock;biome.repair_fauna
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Aya Morita Repair Medicine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

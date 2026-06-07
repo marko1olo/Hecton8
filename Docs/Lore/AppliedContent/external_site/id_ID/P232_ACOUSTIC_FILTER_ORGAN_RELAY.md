@@ -9,32 +9,34 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Acoustic Filter Organ Relay"
+title: "Relai Organ Filter Akustik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Acoustic Filter Organ Relay
+# Relai Organ Filter Akustik
 
-ID LOC HOLD: Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence.
+Relai Organ Filter Akustik adalah jembatan antara gameplay sonar dan horor biomekanis Atlas. Sistem HECTON-8 yang ditinggalkan tidak membutuhkan monster berbicara di dinding. Mereka membutuhkan infrastruktur rusak yang merekrut filter akustik hidup, karena daging, pipa, dan tekanan kadang menyelesaikan masalah rute lebih baik daripada elektronik mati.
+
+Organ relai tumbuh di sekitar pipa seperti dinding insang basah. Ia meredam raungan pompa, meloloskan pulsa pinger sempit, dan membengkokkan gema secara konsisten. Ini memberi desain level aturan kuat: suara boleh berbohong, tetapi harus berbohong dengan pola. Pemain dapat mempelajari pantulan mana yang dilipat, koridor mana yang hanya tersembunyi oleh pergeseran fase, dan rute pemeliharaan mana yang dipertahankan Atlas dengan menerima biologi sebagai perangkat keras. Horornya bukan karena ruangan punya suara. Horornya karena ia dapat mendengar, mengarahkan, dan memperbaiki tanpa pernah memahami untuk apa manusia membutuhkan ruangan itu.
 
 ## Scanner
 
-ID LOC HOLD: Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
+ORGAN FILTER AKUSTIK // Jaringan seperti dinding insang tumbuh di sekitar pipa relai; ia meredam raungan pompa, meloloskan pulsa pinger sempit, dan melipat sonar menjadi kebohongan yang berulang.
 
 ## Terminal
 
-ID LOC HOLD: RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
+CATATAN RELAI: sekat hidup meloloskan pulsa kelas pinger, menolak derau pompa lebar, dan menggeser fase gema balik. Tandai peta hilir sebagai benar bersyarat.
 
 ## Audio
 
-ID LOC HOLD: The room is listening with meat and pipe.
+Ruangan ini mendengar dengan daging dan pipa.
 
 ## Field Note
 
-ID LOC HOLD: Atlas does not need language here. It needs filters, pulses and living baffles.
+Atlas tidak membutuhkan suara di sini. Ia membutuhkan organ yang membiarkan suara yang benar bertahan.
 
 <!-- External Site; generated from P232_ACOUSTIC_FILTER_ORGAN_RELAY/id_ID. -->

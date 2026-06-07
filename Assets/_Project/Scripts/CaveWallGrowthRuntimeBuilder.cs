@@ -83,11 +83,20 @@ namespace Hecton8.Caves
             if (growthRoot == null || volume == null || config == null || !config.enabled)
                 return;
 
-            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, preset, out Bounds volumeBounds))
+            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, preset, out Bounds volumeBounds) ||
+                !CaveDressingRuntimeSanitizer.IsFinite(volumeBounds))
+            {
+                DisableUnusedCachedPrimitives(primitiveObjects, 0);
                 return;
+            }
 
             Material growthMaterial = ResolveGrowthMaterial(volume);
-            int growthCount = ResolveGrowthCount(preset, volumeBounds, config, globalIntensity);
+            float safeGlobalIntensity = CaveDressingRuntimeSanitizer.ClampFinite(
+                globalIntensity,
+                1f,
+                0f,
+                CaveDressingRuntimeSanitizer.MaxGlobalIntensity);
+            int growthCount = ResolveGrowthCount(preset, volumeBounds, config, safeGlobalIntensity);
             ActivateTransform(growthRoot);
 
             for (int i = 0; i < growthCount; i++)
@@ -100,9 +109,9 @@ namespace Hecton8.Caves
                     volumeBounds,
                     growthMaterial,
                     config,
-                    globalIntensity,
-                    volume.caveKey != 0L ? volume.caveKey : ComputeFallbackSeed(volume.transform.position, preset));
-                ApplyGrowthVisuals(growthRenderer, config, globalIntensity);
+                    safeGlobalIntensity,
+                    volume.caveKey != 0L ? volume.caveKey : ComputeFallbackSeed(CaveDressingRuntimeSanitizer.SeedPosition(volume.transform.position), preset));
+                ApplyGrowthVisuals(growthRenderer, config, safeGlobalIntensity);
             }
 
             DisableUnusedCachedPrimitives(primitiveObjects, growthCount);
@@ -133,12 +142,16 @@ namespace Hecton8.Caves
             MeshFilter filter = primitiveFilters[index];
             MeshRenderer renderer = primitiveRenderers[index];
             if (primitiveObject == null || filter == null || renderer == null)
+            {
+                if (primitiveObject != null && primitiveObject.activeSelf)
+                    primitiveObject.SetActive(false);
                 return null;
+            }
 
             bool ceilingBias = Hash01(runtimeSeed, index, 11) > 0.55f;
             float side = HashSigned(runtimeSeed, index, 17);
-            float intensityT = math.saturate(globalIntensity);
-            float swayT = math.saturate(config.swayAmount);
+            float intensityT = CaveDressingRuntimeSanitizer.SaturateFinite(globalIntensity, 1f);
+            float swayT = CaveDressingRuntimeSanitizer.SaturateFinite(config.swayAmount, 0.3f);
             float wallInset = math.lerp(0.14f, 0.32f, Hash01(runtimeSeed, index, 23));
             float forwardOffset = HashSigned(runtimeSeed, index, 31) * volumeBounds.extents.z * 0.72f;
             float verticalT = ceilingBias
@@ -148,7 +161,7 @@ namespace Hecton8.Caves
             float y = math.lerp(volumeBounds.min.y, volumeBounds.max.y, verticalT);
             float z = volumeBounds.center.z + forwardOffset;
             float length = math.lerp(0.8f, 2.8f, Hash01(runtimeSeed, index, 59)) * math.lerp(0.8f, 1.15f, intensityT);
-            float radius = math.lerp(0.12f, 0.42f, Hash01(runtimeSeed, index, 71)) * math.lerp(0.8f, 1.1f, math.saturate(config.swayAmount + 0.2f));
+            float radius = math.lerp(0.12f, 0.42f, Hash01(runtimeSeed, index, 71)) * math.lerp(0.8f, 1.1f, CaveDressingRuntimeSanitizer.SaturateFinite(config.swayAmount + 0.2f, 0.5f));
             float yaw = HashSigned(runtimeSeed, index, 83) * 40f;
             float roll = HashSigned(runtimeSeed, index, 97) * math.lerp(8f, 26f, swayT);
             float pitch = ceilingBias
@@ -156,6 +169,14 @@ namespace Hecton8.Caves
                 : math.lerp(-20f, 30f, Hash01(runtimeSeed, index, 109));
             Vector3 localPosition = new Vector3(x, y, z);
             Vector3 localScale = new Vector3(radius, length, radius);
+            if (!CaveDressingRuntimeSanitizer.IsFinite(localPosition) ||
+                !CaveDressingRuntimeSanitizer.IsFinite(localScale))
+            {
+                if (primitiveObject.activeSelf)
+                    primitiveObject.SetActive(false);
+                return null;
+            }
+
             Quaternion localRotation = Quaternion.Euler(pitch, yaw, roll);
 
             if (!primitiveObject.activeSelf)
@@ -217,8 +238,15 @@ namespace Hecton8.Caves
             if (renderer == null || config == null)
                 return;
 
-            Color baseColor = Color.Lerp(new Color(0.14f, 0.18f, 0.16f, 1f), config.growthColor, Mathf.Clamp01(0.55f + config.pulseAmount * 0.35f));
-            Color emission = config.growthColor * math.lerp(0.15f, 1.4f, Mathf.Clamp01(config.pulseAmount * globalIntensity));
+            Color growthColor = CaveDressingRuntimeSanitizer.SanitizeColor(config.growthColor, new Color(0.4f, 0.8f, 0.6f, 1f));
+            float pulse = CaveDressingRuntimeSanitizer.SaturateFinite(config.pulseAmount, 0.2f);
+            float intensity = CaveDressingRuntimeSanitizer.ClampFinite(
+                globalIntensity,
+                1f,
+                0f,
+                CaveDressingRuntimeSanitizer.MaxGlobalIntensity);
+            Color baseColor = Color.Lerp(new Color(0.14f, 0.18f, 0.16f, 1f), growthColor, math.saturate(0.55f + pulse * 0.35f));
+            Color emission = growthColor * math.lerp(0.15f, 1.4f, math.saturate(pulse * intensity));
             MaterialPropertyBlock propertyBlock = GetGrowthPropertyBlock();
             propertyBlock.Clear();
             renderer.GetPropertyBlock(propertyBlock);
@@ -250,10 +278,13 @@ namespace Hecton8.Caves
             if (preset != null)
                 complexity = Mathf.Clamp01((preset.maxRooms + preset.maxStructures) / 24f);
 
+            if (!CaveDressingRuntimeSanitizer.IsFinite(volumeBounds))
+                return 0;
+
             float surfaceFactor = Mathf.Clamp01(
                 (volumeBounds.size.x * volumeBounds.size.y + volumeBounds.size.z * volumeBounds.size.y) / 1200f);
-            float intensity = Mathf.Clamp(globalIntensity, 0.1f, 1.25f);
-            float swayBias = math.lerp(0.65f, 1.15f, math.saturate(config.swayAmount));
+            float intensity = CaveDressingRuntimeSanitizer.ClampFinite(globalIntensity, 0.1f, 0.1f, CaveDressingRuntimeSanitizer.MaxGlobalIntensity);
+            float swayBias = math.lerp(0.65f, 1.15f, CaveDressingRuntimeSanitizer.SaturateFinite(config.swayAmount, 0.3f));
             return Mathf.Clamp(
                 Mathf.RoundToInt(math.lerp(4f, 16f, Mathf.Max(complexity, surfaceFactor)) * swayBias * intensity),
                 3,

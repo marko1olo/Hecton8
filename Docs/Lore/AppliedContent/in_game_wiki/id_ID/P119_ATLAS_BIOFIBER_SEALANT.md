@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Sealant Biofiber Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Sealant Biofiber Atlas
 
-ID LOC HOLD: Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.
+Sealant biofiber Atlas adalah kesalahan yang berguna. Ia tumbuh dalam ekologi perbaikan tempat jaringan hidup, jaket kabel robek, dan sambungan bocor diklasifikasikan sebagai jenis luka yang sama. Strip yang disiapkan dapat menyegel perlengkapan bertahan hidup atau sendi fleksibel tekanan di air, tetapi penyimpanan hangat dapat membangunkan pertumbuhan pencari sambungan dan tanda hidup palsu.
 
 ## Scanner
 
-ID LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+SEALANT BIOFIBER ATLAS // Serat perbaikan basah yang tumbuh saat jaket kabel, jaringan luka, dan gasket lambung diberi kelas kegagalan yang sama. Merekat di bawah tekanan; dapat terus tumbuh setelah dipanen.
 
 ## Terminal
 
-ID LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+KELAS SUMBER DAYA: ekologi perbaikan yang diubah Atlas. Jepit dingin sebelum dilepas. Kegunaan: tambalan sambungan basah, robekan setelan, jaket kabel, sendi fleksibel tekanan. Risiko: tanda hidup palsu, gema sensor, pencarian sambungan aktif dalam penyimpanan.
 
 ## Audio
 
-ID LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+Ia tidak tahu bedanya kebocoran, sayatan, dan mulut. Atlas mengajarinya bahwa ketiganya adalah bukaan yang harus ditutup.
 
 ## Field Note
 
-ID LOC HOLD: Useful body horror: the player wants it and distrusts it.
+Sealant yang baik mengering. Yang ini mendengar lubang berikutnya.
 
 <!-- In-Game Wiki; generated from P119_ATLAS_BIOFIBER_SEALANT/id_ID. -->

@@ -7,6 +7,9 @@ poi_tags: poi.packet_seal;poi.black_keel_window
 biome_tags: biome.publication;biome.codex
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Packet Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

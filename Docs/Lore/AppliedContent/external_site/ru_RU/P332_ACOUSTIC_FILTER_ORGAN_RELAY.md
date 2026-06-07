@@ -7,6 +7,9 @@ poi_tags: poi.acoustic_filter_organ;poi.relay_flesh_resonator
 biome_tags: biome.atlas;biome.comms
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Acoustic filter organ relay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

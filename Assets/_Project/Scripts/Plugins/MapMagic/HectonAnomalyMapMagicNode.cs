@@ -516,16 +516,26 @@ namespace MapMagic.Nodes.MatrixGenerators
             out int visitedStampRegistrationId,
             out int acceptedCellsRegistrationId)
         {
-            heightmapRegistrationId = NativeMemorySentinel.RegisterNativeArray(heightmap, NativeMemoryOwner, HeightLabel, NativeAllocationLifetime.TempJob);
-            basinMaskRegistrationId = NativeMemorySentinel.RegisterNativeArray(basinMask, NativeMemoryOwner, BasinMaskLabel, NativeAllocationLifetime.TempJob);
-            basinLipMaskRegistrationId = NativeMemorySentinel.RegisterNativeArray(basinLipMask, NativeMemoryOwner, BasinLipMaskLabel, NativeAllocationLifetime.TempJob);
-            candidateMaskRegistrationId = NativeMemorySentinel.RegisterNativeArray(candidateMask, NativeMemoryOwner, CandidateMaskLabel, NativeAllocationLifetime.TempJob);
-            basinRecordsRegistrationId = NativeMemorySentinel.RegisterNativeArray(basinRecords, NativeMemoryOwner, BasinRecordsLabel, NativeAllocationLifetime.TempJob);
-            featureRecordsRegistrationId = NativeMemorySentinel.RegisterNativeArray(featureRecords, NativeMemoryOwner, FeatureRecordsLabel, NativeAllocationLifetime.TempJob);
-            fissureMaskRegistrationId = NativeMemorySentinel.RegisterNativeArray(fissureMask, NativeMemoryOwner, FissureMaskLabel, NativeAllocationLifetime.TempJob);
-            floodHeapRegistrationId = NativeMemorySentinel.RegisterNativeArray(floodHeap, NativeMemoryOwner, FloodHeapLabel, NativeAllocationLifetime.TempJob);
-            visitedStampRegistrationId = NativeMemorySentinel.RegisterNativeArray(visitedStamp, NativeMemoryOwner, VisitedStampLabel, NativeAllocationLifetime.TempJob);
-            acceptedCellsRegistrationId = NativeMemorySentinel.RegisterNativeArray(acceptedCells, NativeMemoryOwner, AcceptedCellsLabel, NativeAllocationLifetime.TempJob);
+            heightmapRegistrationId = RegisterTempJobArray(heightmap, HeightLabel);
+            basinMaskRegistrationId = RegisterTempJobArray(basinMask, BasinMaskLabel);
+            basinLipMaskRegistrationId = RegisterTempJobArray(basinLipMask, BasinLipMaskLabel);
+            candidateMaskRegistrationId = RegisterTempJobArray(candidateMask, CandidateMaskLabel);
+            basinRecordsRegistrationId = RegisterTempJobArray(basinRecords, BasinRecordsLabel);
+            featureRecordsRegistrationId = RegisterTempJobArray(featureRecords, FeatureRecordsLabel);
+            fissureMaskRegistrationId = RegisterTempJobArray(fissureMask, FissureMaskLabel);
+            floodHeapRegistrationId = RegisterTempJobArray(floodHeap, FloodHeapLabel);
+            visitedStampRegistrationId = RegisterTempJobArray(visitedStamp, VisitedStampLabel);
+            acceptedCellsRegistrationId = RegisterTempJobArray(acceptedCells, AcceptedCellsLabel);
+        }
+
+        private static int RegisterTempJobArray<T>(NativeArray<T> array, string label)
+            where T : struct
+        {
+            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+            if (registrationId <= 0)
+                throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+
+            return registrationId;
         }
 
         private static void DisposeTracked<T>(ref NativeArray<T> array, ref int registrationId) where T : struct

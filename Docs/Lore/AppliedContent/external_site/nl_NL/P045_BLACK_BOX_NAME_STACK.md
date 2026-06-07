@@ -7,6 +7,9 @@ poi_tags: poi.black_box_stack;poi.evacuation_manifest
 biome_tags: biome.deep_colony;biome.factory_threshold
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Naamstapel uit zwarte dozen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

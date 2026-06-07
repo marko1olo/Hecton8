@@ -7,6 +7,9 @@ poi_tags: poi.legal_ping_queue;poi.insurance_delay_stamp
 biome_tags: biome.contract;biome.orbit
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Автоматический legal insurance ping"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

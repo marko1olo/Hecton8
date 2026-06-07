@@ -7,6 +7,9 @@ poi_tags: poi.partial_return_lien_notice;poi.same_seed_return_stamp
 biome_tags: biome.ending;biome.replay
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Partial Return Lien Extension"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

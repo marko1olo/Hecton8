@@ -1,0 +1,40 @@
+---
+packet_id: P624_CABLE_FOREST_CONDUCTIVE_BIOTA
+release_set_id: RS128_CABLE_FOREST_CONDUCTIVE_BIOTA
+article_id: applied_lore.cable_forest_conductive_biota
+unlock_id: unlock.cable_forest_conductive_biota
+poi_tags: poi.cable_forest_service_trunk;poi.live_relay_jacket
+biome_tags: biome.cable_forest;biome.service_canyon
+locale: he_IL
+surface: external_site
+source_voice: Field Archive Longform
+spoiler_tier: 0
+title: "ביוטה מוליכה ביער הכבלים"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: rtl
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# ביוטה מוליכה ביער הכבלים
+
+ביער הכבלים HECTON-8 מפסיק להפריד בין ביולוגיה לתשתית. גזעי ממסר מתים, בידוד קרוע, חלחול תמלחת ואצות מושבה סבלניות נתנו לחיים המקומיים שלד עשיר בנחושת, אבק קרמי וזיכרון של זרם. קלפ הכבלים נכנס לשלד הזה תחילה ככתם, אחר כך כחוט, ולבסוף כמוליך רטוב קלוע. הסבך הסטטי למד להתקשח כאשר פעימות שירות עוברות בקווים. עשב הפנס גדל ליד דליפות ומשיב בהבזקים לגלי לחץ, לא לשפה, אבל הקצב קרוב מספיק כדי לגרום לצולל עייף להביט שוב. עבור Marauder, האקולוגיה הזו היא מפת משאבים עם שיניים. חתך מוארק יכול להפיק סיב מוליך, אנזים פנס ומטען קטן שימושי. חתך רשלני יכול להפוך גזע שקט לתלונה: פינגי תחזוקה כוזבים, צלילי פינוי ישנים, שברי נתיב שחוזרים דרך רקמה רטובה ורחפנים שמגיעים לתקן קו שכבר אינו רק מתכת. היער אינו מרושע ואינו נס. זה הירח משתמש במה שהמושבה השאירה, והמושבה הנטושה מפרשת חיים בטעות כנזק או תיקון לפי הפרוטוקול שמתעורר ראשון.
+
+## Scanner
+
+קלפ מוליך // גדילים חיים קלועים בתוך כבל ממסר מת. אוגר מטען חלש, חוזר על פינגים כוזבים ומספק זרם נקי אם חותכים אחרי הארקה.
+
+## Terminal
+
+אקולוגיית יער הכבלים // סבך סטטי, עשב פנס וקלפ כבלים מתיישבים בבידוד קרוע. יש להתייחס לרקמה רטובה כקו חי: היא קוראת רטט, מגשרת נתיבים פגומים ועלולה להירשם אצל רחפני תיקון כתשתית.
+
+## Audio
+
+סליל Marauder: אם הקלפ מזמזם בחזרה, הפסק לחתוך. זו לא צמחייה ששרה. זה הנתיב שזוכר לחץ.
+
+## Field Note
+
+חוט טוב לא מתעוות. אם הוא מתעוות, הארק אותו, סמן אותו, ואז החלט אם אתה צריך חשמל עד כדי כך.
+
+<!-- External Site; generated from P624_CABLE_FOREST_CONDUCTIVE_BIOTA/he_IL. -->

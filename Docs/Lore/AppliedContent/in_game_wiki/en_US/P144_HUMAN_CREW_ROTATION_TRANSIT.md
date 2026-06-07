@@ -7,6 +7,9 @@ poi_tags: poi.crew_rotation_manifest;poi.torpor_rack_cert
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Human Crew Rotation Transit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

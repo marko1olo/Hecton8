@@ -9,32 +9,34 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Silt Ambusher Telegraph"
+title: "Voortekens van de slib-hinderlaag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Silt Ambusher Telegraph
+# Voortekens van de slib-hinderlaag
 
-NL LOC HOLD: Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact.
+Voortekens van de slib-hinderlaag is tegelijk een wezenartikel en een eerlijkheidsregel voor HECTON-8. De diepste zones mogen vijandig, donker en moeilijk leesbaar zijn, maar ze mogen de speler niet straffen met onzichtbare dobbelstenen. Een slib-hinderlaag is angstaanjagend omdat ze bijna terrein is: een levende val begraven onder sediment, wachtend op trilling, warmte en onvoorzichtig gewicht. Ze hoort in de afgrond omdat de afgrond al draait om vertrouwen in sensoren.
+
+Goede plaatsing geeft de speler bewijs voor het gevaar. De plaat is te glad. De kleine kruipers ontbreken. De rand vormt een sikkel die natuurlijke bezinking niet maakt. Een puls komt laat, laag en zacht terug. Een lamp vangt één adem slib waar geen stroming zou mogen bewegen. Zodra de speler deze tekenen kent, wordt elke vlakke plek een vraag, geen willekeurige straf. Dat is het HECTON-8-contract: de oceaan mag wreed zijn, maar moet leesbaar zijn voor wie oplet.
 
 ## Scanner
 
-NL LOC HOLD: A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.
+SLIB-HINDERLAAGBED // Schoon slib, ontbrekende grazers en een lage pulsretour markeren een levende val voordat de plaat opengaat.
 
 ## Terminal
 
-NL LOC HOLD: CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.
+CONTACTREGEL: hinderlaagbedden vereisen minstens twee voortekens voor contact: schone plaat, ontbrekende microfauna, sikkelrand, lage pulsretour of vertraagde slibademhaling. Als het tekenbudget faalt, verlaag naar een ontmoeting met alleen spoor.
 
 ## Audio
 
-NL LOC HOLD: Flat ground is a lie down here.
+Vlakke grond liegt hier beneden. Kijk naar wat er niet overheen kruipt.
 
 ## Field Note
 
-NL LOC HOLD: Deep danger must telegraph. The player should learn the wrongness before paying for it.
+De afgrond mag oneerlijk zijn voor het personage; de game mag niet oneerlijk zijn voor de speler. Elke hinderlaag moet leesbare verkeerdheid achterlaten.
 
 <!-- External Site; generated from P230_SILT_AMBUSHER_TELEGRAPH/nl_NL. -->

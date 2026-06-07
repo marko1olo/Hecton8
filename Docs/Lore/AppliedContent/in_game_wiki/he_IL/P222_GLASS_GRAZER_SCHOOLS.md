@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Glass Grazer Schools"
+title: "להקות רועי זכוכית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Glass Grazer Schools
+# להקות רועי זכוכית
 
-HE LOC HOLD: Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.
+רועי הזכוכית הם בעלי החיים הראשונים במים הרדודים שהופכים יופי לשימושי בלי להפוך את המדף לבטוח. המעטפות השקופות שלהם ורכסי הפה הקשים מגרדים שכבת מינרלים מ-pressure glass, ממרבדים פוטיים רופפים וממעטפות כבל ישנות. להקה ניזונה משאירה נתיבים חיוורים שמראים זרם אחרון, צמיחה חדשה והקו השקט ביותר סביב תפר מזוהם. הבט בקצה הלהקה, לא במרכז: הם נמנעים מחומר איטום חם, מדליפות תמלחת חמוצות וממשטחים שנושאים סחיפת אות תואמת Atlas. אם הנקישות נפסקות בזמן שהמזון נשאר, משהו גדול יותר שינה את המים. הנתיב שפונה הוא ראיה, לא אישור לזנק קדימה.
 
 ## Scanner
 
-HE LOC HOLD: Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.
+להקת רועי זכוכית // אוכלי-מעטפת שקופים מגרדים שכבת מינרלים מ-pressure glass ומשולי מרבדים פוטיים. הנקישות שלהם פותחות צלקות נתיב בהירות; שקט פתאומי הוא נתון על טורף.
 
 ## Terminal
 
-HE LOC HOLD: FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.
+קו בסיס פאונה: אשכול רועים לא עוין. לעקוב אחר שכבת pressure glass, bloom מינרלי טרי, הפרעת זרם והזחה בידי טורף. היעדרות אחרי הזנה פעילה היא אזהרת נתיב, לא נקודת הופעה ריקה.
 
 ## Audio
 
-HE LOC HOLD: Hear the ticking on the shell? That is lunch, map and warning in the same sound.
+אתה שומע את הנקישות על המעטפת? זו ארוחה, מפה ואזהרה באותו צליל.
 
 ## Field Note
 
-HE LOC HOLD: Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.
+אל תרדוף אחרי הלהקה. קרא את מה שהיא חושפת: שכבה חדשה, גירוד ישן, הימנעות מחומר איטום חם, והמסלול הריק שהחיות מסרבות לחצות.
 
 <!-- In-Game Wiki; generated from P222_GLASS_GRAZER_SCHOOLS/he_IL. -->

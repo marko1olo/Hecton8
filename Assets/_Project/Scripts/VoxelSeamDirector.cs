@@ -77,12 +77,17 @@ namespace Hecton8.World
         /// </summary>
         public static Vector3 ResolveTerrainNormalAtSeam(Vector3 absoluteUniversePosition, float seamBlendRadius)
         {
+            if (!IsFinite(absoluteUniversePosition))
+                return Vector3.up;
+
             MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
             if (mapMagicBridge == null)
                 return Vector3.up;
 
-            float sampleDistance = Mathf.Clamp(seamBlendRadius * 0.18f, 1f, 4f);
-            return mapMagicBridge.TryGetNormalAUP(absoluteUniversePosition, sampleDistance, out Vector3 terrainNormal)
+            float safeSeamBlendRadius = ClampFinite(seamBlendRadius, MinimumFunnelLength, 0f, MaximumFunnelLength);
+            float sampleDistance = Mathf.Clamp(safeSeamBlendRadius * 0.18f, 1f, 4f);
+            return mapMagicBridge.TryGetNormalAUP(absoluteUniversePosition, sampleDistance, out Vector3 terrainNormal) &&
+                   IsFinite(terrainNormal)
                 ? terrainNormal
                 : Vector3.up;
         }
@@ -91,6 +96,8 @@ namespace Hecton8.World
         {
             terrainColor = Color.clear;
             blend = 0f;
+            if (!IsFinite(absoluteUniversePosition))
+                return false;
 
             MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
             if (mapMagicBridge == null)
@@ -99,16 +106,18 @@ namespace Hecton8.World
             if (!mapMagicBridge.TryGetTerrainSplatColorAUP(absoluteUniversePosition, out terrainColor, out float confidence))
                 return false;
 
-            blend = Mathf.Clamp01(confidence);
+            terrainColor = SanitizeColor(terrainColor, Color.clear);
+            blend = SaturateFinite(confidence);
             return blend > 0.0001f;
         }
 
         public static float ResolveTerrainVoxelSnapStep(Vector3 voxelVolumeSize, float fallbackRadiusMeters)
         {
+            Vector3 safeVoxelVolumeSize = IsFinite(voxelVolumeSize) ? voxelVolumeSize : Vector3.zero;
             float dominantSize = math.max(
-                math.max(math.abs(voxelVolumeSize.x), math.abs(voxelVolumeSize.y)),
-                math.abs(voxelVolumeSize.z));
-            float fallbackSize = math.max(1f, fallbackRadiusMeters * 2f);
+                math.max(math.abs(safeVoxelVolumeSize.x), math.abs(safeVoxelVolumeSize.y)),
+                math.abs(safeVoxelVolumeSize.z));
+            float fallbackSize = math.max(1f, ClampFinite(fallbackRadiusMeters, MinimumEntranceRadius, 0.5f, MaximumEntranceRadius) * 2f);
             float size = dominantSize > 0.001f ? dominantSize : fallbackSize;
             return math.clamp(size / 64f, 0.125f, 2f);
         }
@@ -131,7 +140,7 @@ namespace Hecton8.World
             float slopeDegrees,
             WorldGenerativeGeologyProfile.CaveBlendMode caveBlendMode)
         {
-            if (!hasTerrainSample || slopeDegrees < CliffSlopeThresholdDegrees)
+            if (!hasTerrainSample || !math.isfinite(slopeDegrees) || slopeDegrees < CliffSlopeThresholdDegrees)
                 return false;
 
             return caveBlendMode == WorldGenerativeGeologyProfile.CaveBlendMode.SdfBlend
@@ -151,8 +160,18 @@ namespace Hecton8.World
             Vector3 terrainNormal = default,
             Vector3 absoluteTerrainContactPosition = default)
         {
-            Vector3 inward = runtimeVolumeCenter - runtimeSurfacePosition;
-            if (inward.sqrMagnitude <= 0.0001f)
+            Vector3 safeSurfacePosition = IsFinite(runtimeSurfacePosition) ? runtimeSurfacePosition : Vector3.zero;
+            Vector3 safeVolumeCenter = IsFinite(runtimeVolumeCenter)
+                ? runtimeVolumeCenter
+                : safeSurfacePosition + (Vector3.down * MinimumFunnelLength);
+            float safeVoxelY = ClampFinite(math.abs(voxelSize.y), MinimumFunnelLength, 0.1f, 256f);
+            float safeBlendWeight = SaturateFinite(blendWeight);
+            float safeSeamBlendRadius = ClampFinite(seamBlendRadius, MinimumEntranceRadius, 0f, MaximumEntranceRadius * 4f);
+            float safeTerrainCut = ClampFinite(suggestedTerrainCut, MinimumEntranceRadius, 0f, MaximumEntranceRadius * 4f);
+
+            Vector3 inward = safeVolumeCenter - safeSurfacePosition;
+            float inwardSq = IsFinite(inward) ? inward.sqrMagnitude : 0f;
+            if (!math.isfinite(inwardSq) || inwardSq <= 0.0001f)
                 inward = Vector3.down;
 
             if (inward.y > -0.18f)
@@ -160,24 +179,28 @@ namespace Hecton8.World
 
             inward.Normalize();
 
-            float baseRadius = Mathf.Max(seamBlendRadius * 0.24f, suggestedTerrainCut * 0.55f + 2f);
-            float radius = Mathf.Clamp(baseRadius * Mathf.Lerp(0.94f, 1.12f, Mathf.Clamp01(blendWeight)), MinimumEntranceRadius, MaximumEntranceRadius);
-            float funnelLength = Mathf.Clamp(Mathf.Max(radius * 2.6f, voxelSize.y * 0.34f), MinimumFunnelLength, MaximumFunnelLength);
+            float baseRadius = Mathf.Max(safeSeamBlendRadius * 0.24f, safeTerrainCut * 0.55f + 2f);
+            float radius = Mathf.Clamp(baseRadius * Mathf.Lerp(0.94f, 1.12f, safeBlendWeight), MinimumEntranceRadius, MaximumEntranceRadius);
+            float funnelLength = Mathf.Clamp(Mathf.Max(radius * 2.6f, safeVoxelY * 0.34f), MinimumFunnelLength, MaximumFunnelLength);
             float innerRadius = Mathf.Clamp(radius * 0.62f, 1.5f, radius * 0.92f);
-            Vector3 safeTerrainNormal = terrainNormal.sqrMagnitude > 0.0001f ? terrainNormal.normalized : Vector3.up;
-            float terrainNormalBlend = terrainNormal.sqrMagnitude > 0.0001f ? Mathf.Clamp01(blendWeight) : 0f;
+            float terrainNormalSq = IsFinite(terrainNormal) ? terrainNormal.sqrMagnitude : 0f;
+            if (!math.isfinite(terrainNormalSq))
+                terrainNormalSq = 0f;
+            Vector3 safeTerrainNormal = terrainNormalSq > 0.0001f ? terrainNormal.normalized : Vector3.up;
+            float terrainNormalBlend = terrainNormalSq > 0.0001f ? safeBlendWeight : 0f;
             Color terrainSplatColor = Color.clear;
             float terrainSplatBlend = 0f;
-            if (absoluteTerrainContactPosition.sqrMagnitude > 0.0001f &&
+            if (IsFinite(absoluteTerrainContactPosition) &&
+                absoluteTerrainContactPosition.sqrMagnitude > 0.0001f &&
                 ResolveTerrainSplatColorAtSeam(absoluteTerrainContactPosition, out Color sampledSplatColor, out float sampledBlend))
             {
-                terrainSplatColor = sampledSplatColor;
+                terrainSplatColor = SanitizeColor(sampledSplatColor, Color.clear);
                 terrainSplatBlend = sampledBlend;
             }
 
             return new CaveEntrance
             {
-                surfacePosition = runtimeSurfacePosition,
+                surfacePosition = safeSurfacePosition,
                 inwardDirection = inward,
                 radius = radius,
                 funnelLength = funnelLength,
@@ -191,6 +214,35 @@ namespace Hecton8.World
                     terrainSplatColor.a),
                 terrainSplatBlend = terrainSplatBlend
             };
+        }
+
+        private static float ClampFinite(float value, float fallback, float minimum, float maximum)
+        {
+            float safeFallback = math.select(minimum, fallback, math.isfinite(fallback));
+            float safeValue = math.select(safeFallback, value, math.isfinite(value));
+            return math.clamp(safeValue, minimum, maximum);
+        }
+
+        private static float SaturateFinite(float value)
+        {
+            return math.saturate(math.select(0f, value, math.isfinite(value)));
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
+        private static Color SanitizeColor(Color value, Color fallback)
+        {
+            return math.isfinite(value.r) &&
+                   math.isfinite(value.g) &&
+                   math.isfinite(value.b) &&
+                   math.isfinite(value.a)
+                ? value
+                : fallback;
         }
     }
 }

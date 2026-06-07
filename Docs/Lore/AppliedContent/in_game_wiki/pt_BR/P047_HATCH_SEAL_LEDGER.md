@@ -7,6 +7,9 @@ poi_tags: poi.hatch_seal;poi.airlock_frame
 biome_tags: biome.drowned_colony;biome.service_corridor
 locale: pt_BR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Livro do selo da escotilha"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

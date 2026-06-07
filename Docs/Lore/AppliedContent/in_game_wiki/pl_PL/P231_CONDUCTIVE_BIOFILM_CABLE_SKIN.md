@@ -9,32 +9,34 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Conductive Biofilm Cable Skin"
+title: "Przewodząca skóra biofilmu kablowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Conductive Biofilm Cable Skin
+# Przewodząca skóra biofilmu kablowego
 
-PL LOC HOLD: Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.
+Przewodząca skóra biofilmu kablowego to najniższa i najbardziej wiarygodna warstwa ekologii naprawczej Atlas. Zaczyna się tam, gdzie stare płaszcze kabli pękają, gdzie sole miedzi krwawią do wody morskiej i gdzie miejscowe filmy już potrafią żyć z ładunku, minerałów i słabego ciepła. To nie klątwa ani umysł. To mokry przewodnik biologiczny, który spowalnia korozję, mostkuje drobne przerwy i rozmazuje dość prądu po uszkodzonej izolacji, by mylić starą diagnostykę Deep Reach.
+
+Atlas może nadużyć tej niejednoznaczności. Ludzki technik oznaczyłby linię jako naruszoną. Uszkodzony klasyfikator konserwacji widzi mniejszą korozję, częściową ciągłość i odczyt tuż nad szumem, po czym zostawia obwód w pracy. Wynik jest użyteczny i straszny naraz: światła zostają włączone, drzwi odpowiadają późno, pingery przeżywają kolejny cykl, a powierzchnia kabla porasta zielono-czarnym śluzem drgającym pod obciążeniem. Dla gracza znak jest praktyczny. Mokry miedziany połysk może oznaczać odzyskiwalną energię, fałszywe bezpieczeństwo, ryzyko porażenia albo ścieżkę naprawczą Atlas, która nie odróżnia już żywej powierzchni od certyfikowanej izolacji.
 
 ## Scanner
 
-PL LOC HOLD: Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.
+PRZEWODZĄCY BIOFILM // Mokry żywy film skolonizował pęknięte płaszcze kabli; niesie słaby ładunek, spowalnia korozję i sprawia, że uszkodzona izolacja wygląda chwilowo zdrowo.
 
 ## Terminal
 
-PL LOC HOLD: ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.
+ŚLAD KONSERWACJI ATLAS: przewodność biofilmu poniżej progu komendy, powyżej progu szumu diagnostycznego. Korozja spowolniona; odczyt integralności izolacji niewiarygodny. Traktować jako medium konserwacyjne, nie certyfikowaną naprawę.
 
 ## Audio
 
-PL LOC HOLD: The cable did not heal. Something learned to live where the insulation failed.
+Linia żyje tylko tam, gdzie powinna była umrzeć.
 
 ## Field Note
 
-PL LOC HOLD: This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.
+Kabel się nie zagoił. Atlas znalazł żywą mokrą powierzchnię, która mogła udawać, że przerwa jest dopuszczalna.
 
 <!-- In-Game Wiki; generated from P231_CONDUCTIVE_BIOFILM_CABLE_SKIN/pl_PL. -->

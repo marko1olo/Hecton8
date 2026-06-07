@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Brine Vane Forests"
+title: "Lasy solankowych łopat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Brine Vane Forests
+# Lasy solankowych łopat
 
-PL LOC HOLD: Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.
+Lasy solankowych łopat to pierwsza średniogłębna ekologia, która czyni niewidzialną fizykę widzialną. Są płaskimi solno-mineralnymi membranami rozciągniętymi wzdłuż granic między solanką, temperaturą i ciśnieniem. Z daleka wyglądają jak blade liście w zatopionym kanionie; z bliska są przyrządami trasy. Nienaruszony arkusz znaczy, że woda po drugiej stronie nie tylko jest inna, ale trudna do wejścia, z dość silnym ścinaniem gęstości, by zgiąć sonar i wytrącić ciało z trimu. Poszarpane krawędzie oznaczają świeże przejście. Zawinięte końce pokazują, gdzie granica słabnie w okno ścinania. Blade mineralne żebra można zbierać z odrzuconych pasm, ale cięcie żywego arkusza może zamknąć jedyny czytelny pas przez ścianę kanionu. Idź za rozdartymi łopatami, gdy potrzebujesz trasy. Unikaj czarnej warstwowej wody, która usuwa ich krawędzie.
 
 ## Scanner
 
-PL LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+LAS SOLANKOWYCH ŁOPAT // Membrany solno-mineralne rosną wzdłuż ścinania gęstości. Pokazują, gdzie woda gęstnieje w ścianę i gdzie sonar się ugnie.
 
 ## Terminal
 
-PL LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+BAZA KANIONU: nienaruszone arkusze łopat oznaczają twarde granice gęstości. Poszarpane krawędzie i zawinięte końce wskazują okna ścinania, mniej słone kieszenie albo niedawny ruch. Unikaj nieprzezroczystej warstwowej wody; może oślepić sonar i ściągnąć kombinezon poniżej oczekiwanej wyporności.
 
 ## Audio
 
-PL LOC HOLD: The canyon has leaves because it has pressure gradients.
+Kanion ma liście, bo ma gradienty ciśnienia.
 
 ## Field Note
 
-PL LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+To nie są drzewa. To liście ciśnienia: membrany karmiące się gradientami chemicznymi, rozdarte tylko tam, gdzie trasa niedawno przebiła się przez nie.
 
 <!-- In-Game Wiki; generated from P226_BRINE_VANE_FORESTS/pl_PL. -->

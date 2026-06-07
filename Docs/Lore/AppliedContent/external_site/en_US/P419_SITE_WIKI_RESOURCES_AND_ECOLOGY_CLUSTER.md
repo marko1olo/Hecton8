@@ -7,6 +7,9 @@ poi_tags: poi.resource_ecology_nav_cluster;poi.fauna_encounter_index
 biome_tags: biome.publication;biome.ecology
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 1
+title: "Resources and Ecology"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

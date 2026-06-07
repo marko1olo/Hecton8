@@ -7,6 +7,9 @@ poi_tags: poi.drop_capsule_ascent_sleeve;poi.guidance_gimbal_scar
 biome_tags: biome.crash_shelf;biome.p63_shallows
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Поврежденные узлы посадочной капсулы"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

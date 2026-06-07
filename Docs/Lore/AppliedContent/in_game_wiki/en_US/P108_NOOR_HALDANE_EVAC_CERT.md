@@ -7,6 +7,9 @@ poi_tags: poi.evac_cert_hold;poi.quarantine_release_panel
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Noor Haldane Evac Cert"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,34 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Silt Ambusher Telegraph"
+title: "איתות אורב הסחף"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Silt Ambusher Telegraph
+# איתות אורב הסחף
 
-HE LOC HOLD: Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact.
+איתות אורב הסחף הוא גם מאמר יצור וגם כלל הוגנות עבור HECTON-8. האזורים העמוקים ביותר יכולים להיות עוינים, חשוכים וקשים לקריאה, אבל הם אינם צריכים להעניש את השחקן בהטלות בלתי נראות. אורב סחף מפחיד מפני שהוא כמעט שטח: מלכודת חיה קבורה מתחת למשקע, מחכה לרטט, חום ומשקל לא זהיר. הוא שייך לתהום מפני שהתוהם כבר עוסק באמון בחיישנים.
+
+מיקום טוב נותן לשחקן ראיות לפני הסכנה. הלוח חלק מדי. הזוחלים הקטנים חסרים. השפה יוצרת סהר ששקיעה טבעית אינה יוצרת. פעימה חוזרת מאוחרת, נמוכה ורכה. מנורה תופסת נשימה אחת של סחף במקום שבו שום זרם לא אמור לנוע. כאשר השחקן מכיר את הסימנים האלה, כל כתם שטוח נעשה שאלה, לא עונש אקראי. זה החוזה של HECTON-8: האוקיינוס יכול להיות אכזרי, אבל הוא חייב להיות קריא למי שמקדיש תשומת לב.
 
 ## Scanner
 
-HE LOC HOLD: A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.
+מצע אורב סחף // סחף נקי, היעדר מלחכים והחזר פעימה נמוך מסמנים מלכודת חיה לפני שהלוח נפתח.
 
 ## Terminal
 
-HE LOC HOLD: CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.
+כלל מגע: מצעי אורב דורשים לפחות שני סימנים לפני מגע: לוח נקי, מיקרופאונה חסרה, שפה בצורת סהר, החזר פעימה נמוך או נשימת סחף מאוחרת. אם תקציב הסימנים נכשל, להוריד למפגש עקבה בלבד.
 
 ## Audio
 
-HE LOC HOLD: Flat ground is a lie down here.
+קרקע שטוחה משקרת כאן למטה. חפש את מה שלא זוחל עליה.
 
 ## Field Note
 
-HE LOC HOLD: Deep danger must telegraph. The player should learn the wrongness before paying for it.
+התהום יכולה להיות לא הוגנת כלפי הדמות; המשחק לא יכול להיות לא הוגן כלפי השחקן. כל מארב חייב להשאיר חריגה קריאה.
 
 <!-- External Site; generated from P230_SILT_AMBUSHER_TELEGRAPH/he_IL. -->

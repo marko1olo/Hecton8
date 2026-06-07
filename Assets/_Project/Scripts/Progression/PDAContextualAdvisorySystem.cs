@@ -892,8 +892,8 @@ namespace Hecton8.Progression
                     _advisoryNotificationsCached = false;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredToTick = false;
-                    if (currentService != null)
+                    UnregisterFromTickManager();
+                    if (currentService != null && isActiveAndEnabled)
                         TryRegisterWithTickManager();
                     break;
             }

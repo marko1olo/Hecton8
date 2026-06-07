@@ -12,6 +12,8 @@ namespace Hecton8.Dev
     [AddComponentMenu("Hecton8/Dev/Thermal Melt Smoke Tester")]
     public sealed class ThermalMeltSmokeTester : MonoBehaviour
     {
+        private const string NativeMemoryOwner = nameof(ThermalMeltSmokeTester);
+
         [SerializeField] private bool runOnStart;
         [SerializeField] private bool verboseLogging;
         [SerializeField] private int _debugRunCount;
@@ -115,11 +117,11 @@ namespace Hecton8.Dev
             NativeArray<float> dirty = default;
             try
             {
-                positions = new NativeArray<float3>(2, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                dirty = new NativeArray<float>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                modifiedCells = new NativeArray<VoxelModifiedCellEntry>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                bucketHeads = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                bucketNext = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                positions = AllocateTrackedTempJobArray<float3>(2, nameof(positions), NativeArrayOptions.UninitializedMemory);
+                dirty = AllocateTrackedTempJobArray<float>(2, nameof(dirty), NativeArrayOptions.ClearMemory);
+                modifiedCells = AllocateTrackedTempJobArray<VoxelModifiedCellEntry>(1, nameof(modifiedCells), NativeArrayOptions.UninitializedMemory);
+                bucketHeads = AllocateTrackedTempJobArray<int>(1, nameof(bucketHeads), NativeArrayOptions.UninitializedMemory);
+                bucketNext = AllocateTrackedTempJobArray<int>(1, nameof(bucketNext), NativeArrayOptions.UninitializedMemory);
                 positions[0] = new float3(0.5f, 0.5f, 0.5f);
                 positions[1] = new float3(8.5f, 8.5f, 8.5f);
                 modifiedCells[0] = new VoxelModifiedCellEntry
@@ -149,16 +151,11 @@ namespace Hecton8.Dev
             }
             finally
             {
-                if (positions.IsCreated)
-                    positions.Dispose();
-                if (modifiedCells.IsCreated)
-                    modifiedCells.Dispose();
-                if (bucketHeads.IsCreated)
-                    bucketHeads.Dispose();
-                if (bucketNext.IsCreated)
-                    bucketNext.Dispose();
-                if (dirty.IsCreated)
-                    dirty.Dispose();
+                DisposeTrackedTempJobArray(ref positions);
+                DisposeTrackedTempJobArray(ref modifiedCells);
+                DisposeTrackedTempJobArray(ref bucketHeads);
+                DisposeTrackedTempJobArray(ref bucketNext);
+                DisposeTrackedTempJobArray(ref dirty);
             }
         }
 
@@ -168,8 +165,8 @@ namespace Hecton8.Dev
             NativeArray<VoxelSdfRaycastHit> result = default;
             try
             {
-                sdf = new NativeArray<byte>(16, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                result = new NativeArray<VoxelSdfRaycastHit>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                sdf = AllocateTrackedTempJobArray<byte>(16, nameof(sdf), NativeArrayOptions.UninitializedMemory);
+                result = AllocateTrackedTempJobArray<VoxelSdfRaycastHit>(1, nameof(result), NativeArrayOptions.ClearMemory);
                 for (int i = 0; i < sdf.Length; i++)
                 {
                     int x = i & 3;
@@ -196,10 +193,8 @@ namespace Hecton8.Dev
             }
             finally
             {
-                if (sdf.IsCreated)
-                    sdf.Dispose();
-                if (result.IsCreated)
-                    result.Dispose();
+                DisposeTrackedTempJobArray(ref sdf);
+                DisposeTrackedTempJobArray(ref result);
             }
         }
 
@@ -209,8 +204,8 @@ namespace Hecton8.Dev
             NativeArray<byte> passability = default;
             try
             {
-                density = new NativeArray<float>(8, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                passability = new NativeArray<byte>(8, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                density = AllocateTrackedTempJobArray<float>(8, nameof(density), NativeArrayOptions.ClearMemory);
+                passability = AllocateTrackedTempJobArray<byte>(8, nameof(passability), NativeArrayOptions.ClearMemory);
                 density[7] = 1f;
                 JobHandle handle = new VoxelDynamicNavGridRuntime.UpdateNavCellsJob
                 {
@@ -228,10 +223,45 @@ namespace Hecton8.Dev
             }
             finally
             {
-                if (density.IsCreated)
-                    density.Dispose();
-                if (passability.IsCreated)
-                    passability.Dispose();
+                DisposeTrackedTempJobArray(ref density);
+                DisposeTrackedTempJobArray(ref passability);
+            }
+        }
+
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, string label, NativeArrayOptions options) where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+
+            array.Dispose();
+            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void DisposeTrackedTempJobArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
             }
         }
 

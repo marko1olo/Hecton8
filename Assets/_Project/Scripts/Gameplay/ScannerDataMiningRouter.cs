@@ -627,8 +627,7 @@ namespace Hecton8.Gameplay
             if (!EnsureVaultState())
             {
                 _runtimeStateColdInitRequired = true;
-                if (!_registeredCold)
-                    _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+                TryRegisterColdTickLane();
                 return false;
             }
 
@@ -638,14 +637,7 @@ namespace Hecton8.Gameplay
                 SeedMockGridFromPose();
 
             _cachedGlobalQualityWeight = ResolveGlobalQualityWeight();
-            if (!_registeredFast)
-                _registeredFast = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Player);
-            if (!_registeredSlow)
-                _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
-            if (!_registeredLate)
-                _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
-            if (!_registeredCold)
-                _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+            TryRegisterRuntimeTickLanes();
 
             return true;
         }
@@ -669,8 +661,7 @@ namespace Hecton8.Gameplay
 
             if (_queryScheduled && !TryFinalizeScheduledQuery())
             {
-                if (!_registeredLate)
-                    _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+                TryRegisterLateFrameTickLane();
                 _lateTickDormant = false;
                 return;
             }
@@ -913,9 +904,7 @@ namespace Hecton8.Gameplay
             if (!_registeredLate)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
-            _registeredLate = false;
-            _lateTickDormant = false;
+            UnregisterLateFrameTickLane();
         }
 
         private MockScannerInputSignal BuildInputSignal(float deltaTime, int frame, in ScannerSettingsDTO settings)
@@ -1555,6 +1544,9 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.Player:
                     CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
                     break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    RebindDispatcherTickLanes(currentService);
+                    break;
             }
         }
 
@@ -1630,6 +1622,89 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
+        }
+
+        private void TryRegisterRuntimeTickLanes()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!_registeredFast)
+                _registeredFast = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Player);
+            if (!_registeredSlow)
+                _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
+            TryRegisterLateFrameTickLane();
+            TryRegisterColdTickLane();
+        }
+
+        private void TryRegisterColdTickLane()
+        {
+            if (_registeredCold || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryRegisterLateFrameTickLane()
+        {
+            if (_registeredLate || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void UnregisterRuntimeTickLanes(bool includeLateFrame)
+        {
+            if (_registeredFast)
+                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Player);
+            if (_registeredSlow)
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+            if (_registeredCold)
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+
+            _registeredFast = false;
+            _registeredSlow = false;
+            _registeredCold = false;
+
+            if (includeLateFrame)
+                UnregisterLateFrameTickLane();
+        }
+
+        private void UnregisterLateFrameTickLane()
+        {
+            if (!_registeredLate)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLate = false;
+            _lateTickDormant = false;
+        }
+
+        private void RebindDispatcherTickLanes(object currentService)
+        {
+            bool hadLateFrameRoute = _registeredLate || _queryScheduled || _disableCleanupPending;
+            UnregisterRuntimeTickLanes(includeLateFrame: true);
+
+            if (currentService == null || !isActiveAndEnabled)
+                return;
+
+            if (_disableCleanupPending)
+            {
+                if (hadLateFrameRoute)
+                {
+                    TryRegisterLateFrameTickLane();
+                    _lateTickDormant = false;
+                }
+                return;
+            }
+
+            if (_runtimeStateColdInitRequired)
+            {
+                TryRegisterColdTickLane();
+                return;
+            }
+
+            TryRegisterRuntimeTickLanes();
         }
 
         private bool TryAcquireQueryMutationGuard(IDataVault vault)

@@ -7,6 +7,9 @@ poi_tags: poi.shift_board;poi.transit_gate
 biome_tags: biome.drowned_colony;biome.service_canyon
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Затримки маршрутів на дошці змін"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

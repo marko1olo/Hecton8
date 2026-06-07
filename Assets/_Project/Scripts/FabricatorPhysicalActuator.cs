@@ -91,17 +91,22 @@ namespace Hecton8.Crafting
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
+            bool hadLateFrameRoute = _registeredLateFrame;
+            bool hadTickRoute = _registeredTick;
             TryUnregisterLateFrame();
-            TryRegisterLateFrame();
+            TryUnregisterTick();
 
-            if (!_leverLockedDown && !_emergencyStopPressed)
+            if (currentService == null || !isActiveAndEnabled)
                 return;
 
-            TryUnregisterTick();
-            TryRegisterTick();
+            if (hadLateFrameRoute)
+                TryRegisterLateFrame();
+
+            if (hadTickRoute || _leverLockedDown || _emergencyStopPressed)
+                TryRegisterTick();
         }
 
         public void ArmRecipe(RecipeData recipe, int multiplier)

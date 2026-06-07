@@ -9,32 +9,32 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "弹丸聚变货运"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# 弹丸聚变货运
 
-CN LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for.
+弹丸聚变货运是 HECTON-8 背后的工业航运史。机器和重货物能抵达 Aegir，是因为基础设施可以用几十年推动、供料、防护并制动质量；这条航线仍然残酷，因为账目比紧急事件活得更久。
 
 ## Scanner
 
-CN LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+驱动板。弹丸供料聚变货运以基础设施形式穿越：加速、护盾、巡航、制动，并核算损失。
 
 ## Terminal
 
-CN LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+货运 doctrine：Atlas 级 seed 载荷和殖民地货运使用光束帆加速、弹丸供料聚变、磁帆制动和漫长巡航间隔。活体货物是在机器把航线变成可计费路线后才抵达的。
 
 ## Audio
 
-CN LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+重型飞船不是奇迹。它是带发动机的抵押贷款。
 
 ## Field Note
 
-CN LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+重型运输不是英雄故事。它是一份带热疤的旧航线合同。
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/zh_CN. -->

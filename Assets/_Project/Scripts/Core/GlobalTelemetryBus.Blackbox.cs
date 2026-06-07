@@ -258,6 +258,7 @@ namespace Hecton8.Core
         private const int BlackboxLoggingMaskCapacity = 64;
         private const int BlackboxWatchdogLaneCount = 64;
         private const int BlackboxWatchdogProbeMilliseconds = 500;
+        private const int BlackboxWatchdogStopJoinMilliseconds = 750;
         private const int BlackboxWatchdogStaleProbeLimit = 4;
         private const int BlackboxHashHistoryOffsetBytes = BlackboxCacheLineBytes;
         private const int BlackboxHeaderPadBytes = BlackboxHashHistoryOffsetBytes - BlackboxHeaderPrefixBytes;
@@ -1457,17 +1458,19 @@ namespace Hecton8.Core
                 {
                     Volatile.Write(ref _blackboxWatchdogStopRequested, 0);
                     // COLD ALLOC: Thread[1] - SHINOBU 500 ms critical-system watchdog - owner: GlobalTelemetryBus
-                    _blackboxWatchdogThread = new Thread(RunBlackboxWatchdogThread)
+                    Thread thread = new Thread(RunBlackboxWatchdogThread)
                     {
                         IsBackground = true,
                         Name = BlackboxWatchdogThreadName,
                         Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.Heartbeat)
                     };
-                    _blackboxWatchdogThread.Start();
+                    _blackboxWatchdogThread = thread;
+                    thread.Start();
                     return true;
                 }
                 catch (Exception)
                 {
+                    Volatile.Write(ref _blackboxWatchdogStopRequested, 1);
                     _blackboxWatchdogThread = null;
                     return false;
                 }
@@ -1483,16 +1486,33 @@ namespace Hecton8.Core
                 thread = _blackboxWatchdogThread;
             }
 
-            if (thread != null && thread.IsAlive && !ReferenceEquals(Thread.CurrentThread, thread))
-                thread.Join();
+            bool stopped = TryJoinBlackboxWatchdogThreadNoThrow(thread);
 
             lock (_blackboxWatchdogGate)
             {
-                bool stopped = thread == null || !thread.IsAlive;
                 if (stopped && ReferenceEquals(_blackboxWatchdogThread, thread))
                     _blackboxWatchdogThread = null;
                 if (stopped)
                     Volatile.Write(ref _blackboxWatchdogStopRequested, 0);
+            }
+        }
+
+        private static bool TryJoinBlackboxWatchdogThreadNoThrow(Thread thread)
+        {
+            if (thread == null || !thread.IsAlive)
+                return true;
+
+            if (ReferenceEquals(Thread.CurrentThread, thread))
+                return false;
+
+            try
+            {
+                thread.Join(BlackboxWatchdogStopJoinMilliseconds);
+                return !thread.IsAlive;
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
 

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "Céramique de pression Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# Céramique de pression Deep Reach
 
-FR LOC HOLD: Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.
+Les céramiques de pression Deep Reach sont des minéraux locaux de HECTON-8 forcés par des fours, des bains catalytiques et des cycles de forge d'évent jusqu'à tenir la pression là où le métal fluerait ou gripperait. On les trouve dans les bagues de serrage, les sièges de joint, les contacts de coupe et l'isolation des berceaux d'ascension, ce qui les rend essentielles aux réparations et à la fabrication de la chaîne de fuite. Leur danger ne vient pas d'un matériau maléfique. Il vient d'une compétence sous mauvaise garde : une bague peut tenir des années, puis fleurir en éclats coupants si l'équipage la choque à la chaleur ou relâche la pression hors séquence.
 
 ## Scanner
 
-FR LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+CERAMIQUE DE PRESSION DEEP REACH // Argile locale, flux sulfuré et chaleur de forge d'évent transformés en bagues de serrage et sièges de joint. Tient magnifiquement la pression ; devient couteaux sous choc.
 
 ## Terminal
 
-FR LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+CLASSE RESSOURCE : amplifiée par Deep Reach. Usages : bagues de serrage, sièges de joint, contacts de coupe, isolation de berceau d'ascension. Mode de rupture : floraison d'éclats sous choc thermique ou mauvaise détente.
 
 ## Audio
 
-FR LOC HOLD: The company was good at building things. That is part of the crime.
+Deep Reach savait construire. C'est pour cela que le mensonge a tenu.
 
 ## Field Note
 
-FR LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+Frappe-la à froid. Si elle chante haut, ne la chauffe pas.
 
 <!-- In-Game Wiki; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/fr_FR. -->

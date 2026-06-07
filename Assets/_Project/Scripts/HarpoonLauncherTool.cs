@@ -137,7 +137,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float maxReelMass = 55f;
         private const float PlayerRecoilEquivalentMassKg = 80f;
         [SerializeField] private float shotCooldown = 0.85f;
-        [SerializeField] private LayerMask targetMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask targetMask = Hecton8.Core.HectonLayerMasks.FieldToolSurfaceLayerMask;
         [SerializeField] private float feedbackInterval = 0.35f;
         [SerializeField] private float tetherDuration = 5f;
         [SerializeField] private float tetherPullBonus = 1.35f;
@@ -232,11 +232,10 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null || !isActiveAndEnabled || !_lateFrameRegistered)
-                        return;
-
+                    bool needsLateFrameTick = _lateFrameRegistered || _tracerActive || isActiveAndEnabled;
                     TryUnregisterLateFrameTick();
-                    TryRegisterLateFrameTick();
+                    if (needsLateFrameTick && currentService != null && isActiveAndEnabled)
+                        TryRegisterLateFrameTick();
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _localization = currentService as ILocalizationTextReadModel;
@@ -271,7 +270,7 @@ namespace Hecton8.Gameplay
             float runtimeDamage = GetRuntimePowerScalar(damage);
             Vector3 endPoint = toolOrigin + toolForward * runtimeRange;
 
-            if (RequestPrimarySurfaceHit(toolOrigin, toolForward, runtimeRange, targetMask.value, QueryTriggerInteraction.Ignore, out InteractionSurfaceHit hit))
+            if (RequestPrimarySurfaceHit(toolOrigin, toolForward, runtimeRange, ResolveTargetSurfaceMask(), QueryTriggerInteraction.Ignore, out InteractionSurfaceHit hit))
             {
                 endPoint = hit.point;
                 ToolHitUtility.ApplyDamage(
@@ -723,7 +722,7 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterLateFrameTick()
         {
-            if (_lateFrameRegistered || !Application.isPlaying)
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
@@ -996,7 +995,12 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            return RequestPrimarySurfaceHit(origin, forward, GetRuntimeMaxRange(range), targetMask.value, QueryTriggerInteraction.Ignore, out hit);
+            return RequestPrimarySurfaceHit(origin, forward, GetRuntimeMaxRange(range), ResolveTargetSurfaceMask(), QueryTriggerInteraction.Ignore, out hit);
+        }
+
+        private int ResolveTargetSurfaceMask()
+        {
+            return HectonLayerMasks.ResolveSurfaceInteractionLayerMask(targetMask.value);
         }
 
         private bool TryResolveToolPose(out Vector3 origin, out Vector3 forward)

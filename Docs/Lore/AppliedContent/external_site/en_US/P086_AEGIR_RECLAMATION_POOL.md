@@ -7,6 +7,9 @@ poi_tags: poi.claim_pool_ledger;poi.aegir_reclamation_stamp
 biome_tags: biome.arrival_shelf;biome.drowned_admin
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Aegir Reclamation Pool"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

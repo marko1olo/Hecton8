@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: 00_Profile_Surface
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Environment.HectonBiomeProfile
   biomeName: Surface Photic Shelf
-  scatterColorBase: {r: 0.025, g: 0.125, b: 0.18, a: 1}
-  scatterColorShallow: {r: 0.12, g: 0.56, b: 0.5, a: 1}
-  depthFogDensity: {x: 0.0042, y: 0.0042, z: 0.0042}
-  fogColor: {r: 0.68, g: 0.86, b: 0.98, a: 1}
-  turbidityMultiplier: 0.78
+  scatterColorBase: {r: 0.055, g: 0.205, b: 0.32, a: 1}
+  scatterColorShallow: {r: 0.5, g: 0.74, b: 0.88, a: 1}
+  depthFogDensity: {x: 0.026, y: 0.034, z: 0.046}
+  fogColor: {r: 0.62, g: 0.8, b: 0.92, a: 1}
+  turbidityMultiplier: 0.72

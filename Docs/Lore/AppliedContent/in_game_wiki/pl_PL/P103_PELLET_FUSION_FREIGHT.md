@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "Fracht fuzyjny na pelletach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# Fracht fuzyjny na pelletach
 
-PL LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.
+Ciężka podróż międzygwiezdna bez FTL jest możliwa, ale karze. Rozpęd żaglem wiązkowym, fuzja karmiona pelletami, masa osłon, długie dryfy i architektura hamowania zaniosły ładunki seed i późniejszy fracht kolonialny do Aegir. Ta sama logistyka spowalnia ratunek: każdy kilogram, koja, slot hamowania i miejsce ocalałego należy do harmonogramu.
 
 ## Scanner
 
-PL LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Płyta napędu. Fracht z fuzją karmioną pelletami szedł jako infrastruktura: rozpęd, osłona, dryf, hamowanie i rozliczenie strat.
 
 ## Terminal
 
-PL LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+DOKTRYNA FRACHTU: ładunki seed klasy Atlas i fracht kolonialny używały rozpędu żaglem wiązkowym, fuzji karmionej pelletami, hamowania żaglem magnetycznym i długich interwałów dryfu. Żywy ładunek przybył po tym, jak maszyny uczyniły trasę rozliczalną.
 
 ## Audio
 
-PL LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+Ciężki statek nie jest cudem. To hipoteka z silnikami.
 
 ## Field Note
 
-PL LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+Ciężki tranzyt nie jest heroiczny. To stary kontrakt trasy z bliznami po cieple.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/pl_PL. -->

@@ -7,6 +7,9 @@ poi_tags: poi.sanitized_reply_packet;poi.deep_reach_window_clock
 biome_tags: biome.first_hour;biome.deep_reach
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Окно ответа sanitized accident"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

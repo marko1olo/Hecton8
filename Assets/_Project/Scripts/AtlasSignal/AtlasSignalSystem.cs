@@ -43,13 +43,16 @@ namespace Hecton8.AtlasSignal
     [DefaultExecutionOrder(-120)]
     public sealed class AtlasSignalSystem : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IAtlasSignalReadModel, IAtlasSignalDecodeSink, IGlobalRegistryHotSwapListener
     {
+        private const float DefaultPulsePeriodSeconds = 683f;
+        private const float DefaultDetectionThreshold = 0.05f;
+
         // ----------------------------------------------------------
         //  INSPECTOR
         // ----------------------------------------------------------
 
         [Header("-- Signal Parameters ----------------------")]
         [Tooltip("Pulse period in seconds. 683 equals 11 minutes 23 seconds.")]
-        [SerializeField] private float pulsePeriodSeconds = 683f;
+        [SerializeField] private float pulsePeriodSeconds = DefaultPulsePeriodSeconds;
 
         [Tooltip("Maximum signal detection range in meters.")]
         [SerializeField] private float maxSignalRange = 8000f;
@@ -58,7 +61,7 @@ namespace Hecton8.AtlasSignal
         [SerializeField] private Vector3 atlasCorePosWorld = new Vector3(0f, -5000f, 0f);
 
         [Tooltip("Minimum signal strength required for scanner detection.")]
-        [SerializeField, Range(0f, 1f)] private float detectionThreshold = 0.05f;
+        [SerializeField, Range(0f, 1f)] private float detectionThreshold = DefaultDetectionThreshold;
 
         [Header("-- Late Manifestation ---------------------")]
         [Tooltip("Atlas stays dormant until the first-hour spine has already handed the player to deeper route/module play.")]
@@ -116,6 +119,7 @@ namespace Hecton8.AtlasSignal
         private bool _stage3LogQueued;
         private bool _stage4LogQueued;
         private bool _atlasCoreAupCached;
+        private bool _atlasCoreAupValid;
         private bool _lateFrameRegistered;
         private bool _pendingShaderStrengthDirty;
         private float _pendingShaderStrength;
@@ -166,24 +170,23 @@ namespace Hecton8.AtlasSignal
         //  PUBLIC PROPERTIES
         // ----------------------------------------------------------
 
-        public float CurrentStrength => _currentStrength;
-        public int CurrentStrengthBand => _currentStrengthBand;
+        public float CurrentStrength => CurrentAtlasSignalStrength01;
+        public int CurrentStrengthBand => math.clamp(_currentStrengthBand, 0, FullDecodeRevealStage);
         public bool IsDetected =>
             _maxRevealStageUnlocked >= FormalDetectionRevealStage &&
-            _currentStrength >= detectionThreshold;
+            CurrentAtlasSignalStrength01 >= ResolveDetectionThreshold();
         public float CurrentAtlasSignalStrength01 =>
             math.saturate(math.select(0f, _currentStrength, math.isfinite(_currentStrength)));
-        public int CurrentAtlasSignalRevealStage => math.max(0, _maxRevealStageUnlocked);
+        public int CurrentAtlasSignalRevealStage => SanitizeRevealStage(_maxRevealStageUnlocked);
         public bool IsAtlasSignalDetected => IsDetected;
         public Vector3 AtlasCorePosition => atlasCorePosWorld;
 
         public AbsoluteUniversePosition AtlasCoreAup => ResolveAtlasCoreAup();
-        public int CurrentRevealStage => _maxRevealStageUnlocked;
+        public int CurrentRevealStage => SanitizeRevealStage(_maxRevealStageUnlocked);
 
         public bool TryReadAtlasSignalCoreAup(out AbsoluteUniversePosition coreAup)
         {
-            coreAup = ResolveAtlasCoreAup();
-            return coreAup.IsFinite();
+            return TryResolveAtlasCoreAup(out coreAup);
         }
 
         public bool TryReadAtlasSignalSnapshot(
@@ -194,19 +197,19 @@ namespace Hecton8.AtlasSignal
             if (!observerAup.IsFinite())
                 return false;
 
-            AbsoluteUniversePosition coreAup = ResolveAtlasCoreAup();
-            if (!coreAup.IsFinite())
+            if (!TryResolveAtlasCoreAup(out AbsoluteUniversePosition coreAup))
                 return false;
 
             float strength = math.saturate(math.select(0f, _currentStrength, math.isfinite(_currentStrength)));
-            int revealStage = math.max(0, _maxRevealStageUnlocked);
+            int revealStage = SanitizeRevealStage(_maxRevealStageUnlocked);
+            float detectionThreshold01 = ResolveDetectionThreshold();
             Vector3 direction = SignalStrengthSystem.CalculateDirectionToCore(in observerAup, in coreAup);
             float3 directionToCore = new float3(direction.x, direction.y, direction.z);
             if (!math.all(math.isfinite(directionToCore)))
                 directionToCore = new float3(0f, -1f, 0f);
 
             uint flags = 0u;
-            if (revealStage >= FormalDetectionRevealStage && strength >= detectionThreshold)
+            if (revealStage >= FormalDetectionRevealStage && strength >= detectionThreshold01)
                 flags |= AtlasSignalReadSnapshot.IsDetectedFlag;
             if (revealStage >= IdentityRevealStage)
                 flags |= AtlasSignalReadSnapshot.HasNavigationFlag;
@@ -230,7 +233,9 @@ namespace Hecton8.AtlasSignal
                 if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                     return Vector3.down;
 
-                AbsoluteUniversePosition coreAup = ResolveAtlasCoreAup();
+                if (!TryResolveAtlasCoreAup(out AbsoluteUniversePosition coreAup))
+                    return Vector3.down;
+
                 return SignalStrengthSystem.CalculateDirectionToCore(in playerAup, in coreAup);
             }
         }
@@ -306,9 +311,16 @@ namespace Hecton8.AtlasSignal
                 return;
             }
 
-            _pulseTimer += 0.5f; // SlowTick ~0.5s
+            _pulseTimer = math.isfinite(_pulseTimer)
+                ? _pulseTimer + 0.5f
+                : 0f; // SlowTick ~0.5s
 
-            AbsoluteUniversePosition coreAup = ResolveAtlasCoreAup();
+            if (!TryResolveAtlasCoreAup(out AbsoluteUniversePosition coreAup))
+            {
+                ClearLiveSignalState();
+                return;
+            }
+
             float rawStrength = CalculateRawStrength(in playerAup, in coreAup);
             int previousRevealStage = _maxRevealStageUnlocked;
             int desiredRevealStage = ResolveDesiredRevealStage(ResolveCurrentDepthMeters(in playerAup));
@@ -316,6 +328,7 @@ namespace Hecton8.AtlasSignal
                 _maxRevealStageUnlocked = desiredRevealStage;
 
             float newStrength = math.min(rawStrength, ResolveRevealStrengthCap(_maxRevealStageUnlocked));
+            float detectionThreshold01 = ResolveDetectionThreshold();
             _currentStrengthBand = math.min(
                 SignalStrengthSystem.StrengthToBand(newStrength),
                 math.clamp(_maxRevealStageUnlocked, 0, FullDecodeRevealStage));
@@ -329,7 +342,7 @@ namespace Hecton8.AtlasSignal
 
                 // Pervoe obnaruzhenie
                 if (!_signalEverDetected &&
-                    newStrength >= detectionThreshold &&
+                    newStrength >= detectionThreshold01 &&
                     _maxRevealStageUnlocked >= FormalDetectionRevealStage)
                 {
                     _signalEverDetected = true;
@@ -351,7 +364,7 @@ namespace Hecton8.AtlasSignal
             if (_maxRevealStageUnlocked <= 0)
                 return;
 
-            if (_pulseTimer < pulsePeriodSeconds)
+            if (_pulseTimer < ResolvePulsePeriodSeconds())
                 return;
 
             _pulseTimer = 0f;
@@ -378,6 +391,27 @@ namespace Hecton8.AtlasSignal
 
             if (publishToShader)
                 QueueShaderStrength(0f);
+        }
+
+        private static int SanitizeRevealStage(int revealStage)
+        {
+            return math.clamp(revealStage, 0, FullDecodeRevealStage);
+        }
+
+        private float ResolvePulsePeriodSeconds()
+        {
+            return math.isfinite(pulsePeriodSeconds) && pulsePeriodSeconds > 0f
+                ? pulsePeriodSeconds
+                : DefaultPulsePeriodSeconds;
+        }
+
+        private float ResolveDetectionThreshold()
+        {
+            return math.isfinite(detectionThreshold) &&
+                   detectionThreshold >= 0f &&
+                   detectionThreshold <= 1f
+                ? detectionThreshold
+                : DefaultDetectionThreshold;
         }
 
         public void LateFrameTick()
@@ -453,13 +487,20 @@ namespace Hecton8.AtlasSignal
             {
                 _atlasCoreAupSource = atlasCorePosWorld;
                 double3 atlasCoreAup = new double3(atlasCorePosWorld.x, atlasCorePosWorld.y, atlasCorePosWorld.z);
-                _atlasCoreAup = math.all(math.isfinite(atlasCoreAup))
+                _atlasCoreAupValid = math.all(math.isfinite(atlasCoreAup));
+                _atlasCoreAup = _atlasCoreAupValid
                     ? AbsoluteUniversePosition.FromAbsolutePosition(atlasCoreAup)
                     : default;
                 _atlasCoreAupCached = true;
             }
 
             return _atlasCoreAup;
+        }
+
+        private bool TryResolveAtlasCoreAup(out AbsoluteUniversePosition coreAup)
+        {
+            coreAup = ResolveAtlasCoreAup();
+            return _atlasCoreAupValid && coreAup.IsFinite();
         }
 
         private float ResolveCurrentDepthMeters(in AbsoluteUniversePosition playerAup)
@@ -589,7 +630,7 @@ namespace Hecton8.AtlasSignal
             _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
             _firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHourReadModel;
             _narrativeDiscoveryReadModel = GlobalRegistry.NarrativeDiscoveryReadModel;
-            _audioLogs = GlobalRegistry.AudioLogRuntime;
+            CacheAudioLogSystem(GlobalRegistry.AudioLogRuntime);
             _localization = Hecton8.Core.GlobalRegistry.LocalizationText;
             _saveService = Hecton8.Core.GlobalRegistry.Save;
         }
@@ -603,6 +644,32 @@ namespace Hecton8.AtlasSignal
             _audioLogs = null;
             _localization = null;
             _saveService = null;
+        }
+
+        private void CacheAudioLogSystem(IAudioLogRuntime audioLogSystem)
+        {
+            _audioLogs = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null;
+        }
+
+        private IAudioLogRuntime ResolveAudioLogSystem()
+        {
+            IAudioLogRuntime audioLogSystem = _audioLogs;
+            if (IsAudioLogRuntimeUsable(audioLogSystem))
+                return audioLogSystem;
+
+            _audioLogs = null;
+            return null;
+        }
+
+        private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogSystem)
+        {
+            if (audioLogSystem == null)
+                return false;
+
+            if (audioLogSystem is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -640,7 +707,7 @@ namespace Hecton8.AtlasSignal
                     _narrativeDiscoveryReadModel = currentService as INarrativeDiscoveryReadModel;
                     break;
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
-                    _audioLogs = currentService as IAudioLogRuntime;
+                    CacheAudioLogSystem(currentService as IAudioLogRuntime);
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _localization = currentService as ILocalizationTextReadModel;
@@ -648,15 +715,11 @@ namespace Hecton8.AtlasSignal
                 case GlobalRegistryServiceSlot.Save:
                     TryUnregisterSaveParticipant();
                     _saveService = currentService as ISaveService;
-                    if (_saveService != null)
-                    {
-                        _saveService.Register(this);
-                        _saveRegistered = true;
-                    }
+                    TryRegisterSaveParticipant();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registered = false;
-                    _lateFrameRegistered = false;
+                    TryUnregister();
+                    TryUnregisterLateFrame();
                     if (currentService != null)
                     {
                         TryRegister();
@@ -668,7 +731,7 @@ namespace Hecton8.AtlasSignal
 
         private void TryRegisterSaveParticipant()
         {
-            if (_saveRegistered)
+            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
             if (_saveService == null)
@@ -739,7 +802,7 @@ namespace Hecton8.AtlasSignal
                     break;
 
                 case 2:
-                    if (!_signalEverDetected && manifestedStrength >= detectionThreshold)
+                    if (!_signalEverDetected && manifestedStrength >= ResolveDetectionThreshold())
                     {
                         _signalEverDetected = true;
                         AtlasSignalEvents.TryRaiseDetected(atlasCorePosWorld);
@@ -839,7 +902,7 @@ namespace Hecton8.AtlasSignal
             if (logHash == 0u)
                 return;
 
-            IAudioLogRuntime audioLogs = _audioLogs;
+            IAudioLogRuntime audioLogs = ResolveAudioLogSystem();
             if (audioLogs != null)
             {
                 if (audioLogs.TryPlayAudioLogByHash(logHash))
@@ -932,16 +995,18 @@ namespace Hecton8.AtlasSignal
         {
             if (data == null) return;
             data.atlasSignalDetected = _signalEverDetected;
-            data.atlasSignalPulseTimer = _pulseTimer;
-            data.atlasSignalRevealStage = _maxRevealStageUnlocked;
+            data.atlasSignalPulseTimer = math.isfinite(_pulseTimer) ? math.max(0f, _pulseTimer) : 0f;
+            data.atlasSignalRevealStage = math.clamp(_maxRevealStageUnlocked, 0, FullDecodeRevealStage);
         }
 
         public void LoadFromSaveData(SaveData data)
         {
             if (data == null) return;
             _signalEverDetected = data.atlasSignalDetected;
-            _pulseTimer = data.atlasSignalPulseTimer;
-            _maxRevealStageUnlocked = math.clamp(data.atlasSignalRevealStage, 0, 4);
+            _pulseTimer = math.isfinite(data.atlasSignalPulseTimer)
+                ? math.max(0f, data.atlasSignalPulseTimer)
+                : 0f;
+            _maxRevealStageUnlocked = math.clamp(data.atlasSignalRevealStage, 0, FullDecodeRevealStage);
             _ghostManifestationAnnounced = _maxRevealStageUnlocked > 0 && !_signalEverDetected;
             _identityDiscoverySynchronized = _maxRevealStageUnlocked >= IdentityRevealStage;
             _fullDecodeDiscoverySynchronized = _maxRevealStageUnlocked >= FullDecodeRevealStage;
@@ -969,13 +1034,17 @@ namespace Hecton8.AtlasSignal
             in AbsoluteUniversePosition coreAup,
             float maxRangeMeters)
         {
+            if (!math.isfinite(maxRangeMeters) || maxRangeMeters <= 0f)
+                return 0f;
+
             double safeRange = math.max(0.001f, maxRangeMeters);
             double safeRangeSq = safeRange * safeRange;
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in coreAup);
-            if (distanceSq >= safeRangeSq)
+            if (!math.isfinite(distanceSq) || distanceSq >= safeRangeSq)
                 return 0f;
 
-            return math.saturate((float)(1d - distanceSq / safeRangeSq));
+            float strength = (float)(1d - distanceSq / safeRangeSq);
+            return math.isfinite(strength) ? math.saturate(strength) : 0f;
         }
 
         public static int CalculateStrengthBand(
@@ -988,6 +1057,9 @@ namespace Hecton8.AtlasSignal
 
         public static int StrengthToBand(float strength01)
         {
+            if (!math.isfinite(strength01))
+                return 0;
+
             float strength = math.saturate(strength01);
             if (strength < StrengthBandOneThreshold)
                 return 0;

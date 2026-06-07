@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Lantern Drift Bloom"
+title: "تفتح الانجراف الفانوسي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Lantern Drift Bloom
+# تفتح الانجراف الفانوسي
 
-AR LOC HOLD: Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.
+تفتح الانجراف الفانوسي هو حدث رؤية عوالقي على الرف الضوئي. يرسم خطوط التيار، والحطام المعلق، وأقواس الكابلات، والأخطار الصغيرة ذات الأسنان قبل أن يجدها المصباح. لذلك يفيد bloom في الملاحة، لكنه ليس إضاءة مطمئنة. الخلايا المضطربة تنبض وتنقل الاهتزاز عبر شبكة الغذاء؛ يمكن لcutter أو مضخة أو pinger أو دافع غير حذر أن يترك خلف اللاعب أثرا صوتيا مضيئا. وقد يسطح الوهج التباين أيضا، مخفيا أشواكا صغيرة وshell clamps مكسورة داخل جمال زائد. تعامل مع bloom كقرار مسار: انجرف معه حين تحتاج إلى الحدود، واقطعه حين تهمك السكينة، ولا تعمل بصوت عال في وسطه إلا إذا أردت رفقة.
 
 ## Scanner
 
-AR LOC HOLD: A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.
+تفتح الانجراف الفانوسي // عوالق مضيئة حيويا ترسم التيار في أشرطة. إنها تحدد الماء الآمن والأخطار الصغيرة، لكن ضجيج الأداة يحول bloom إلى أثر مضاء.
 
 ## Terminal
 
-AR LOC HOLD: VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.
+حدث رؤية: bloom يحسن قراءة الظلال وتتبع التيار، لكنه يقلل التخفي. الاضطراب بفعل cutter أو مضخة أو pinger أو دافع أو ضربة هيكل قد يجذب المرشحات والرعاة ومفترسات المياه الضحلة على طول الأثر المضيء.
 
 ## Audio
 
-AR LOC HOLD: Pretty water is still water. It carries your noise.
+الماء الجميل يبقى ماء. إنه يحمل ضجيجك.
 
 ## Field Note
 
-AR LOC HOLD: Lantern drift is not decoration. It is a visibility event with acoustic consequences.
+الضوء هنا ليس راحة. في ماء bloom ينتقل كل نبض cutter، وسعال مضخة، وارتداد pinger أبعد من مصباحك.
 
 <!-- In-Game Wiki; generated from P223_LANTERN_DRIFT_BLOOM/ar_SA. -->

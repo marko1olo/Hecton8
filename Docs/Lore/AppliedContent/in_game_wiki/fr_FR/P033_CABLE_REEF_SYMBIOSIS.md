@@ -7,6 +7,9 @@ poi_tags: poi.cable_reef;poi.service_trench
 biome_tags: biome.service_canyon;biome.cable_reef
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Symbiose du récif-câble"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

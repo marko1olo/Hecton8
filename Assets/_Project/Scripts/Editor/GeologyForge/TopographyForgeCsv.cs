@@ -10,6 +10,8 @@ namespace Hecton8.Editor.GeologyForge
 {
     internal struct TopographyBiomeRecipeStore : IDisposable
     {
+        private const string NativeMemoryOwner = nameof(TopographyBiomeRecipeStore);
+        private const string RecipesLabel = "_recipes";
         private NativeList<TopographyBiomeRecipeDTO> _recipes;
 
         internal bool IsCreated => _recipes.IsCreated;
@@ -21,14 +23,13 @@ namespace Hecton8.Editor.GeologyForge
         internal static TopographyBiomeRecipeStore Create(Allocator allocator, int capacity)
         {
             TopographyBiomeRecipeStore store = default;
-            store._recipes = new NativeList<TopographyBiomeRecipeDTO>(capacity, allocator);
+            store._recipes = GeologyForgeNativeMemory.AllocateList<TopographyBiomeRecipeDTO>(capacity, allocator, NativeMemoryOwner, RecipesLabel);
             return store;
         }
 
         public void Dispose()
         {
-            if (_recipes.IsCreated)
-                _recipes.Dispose();
+            GeologyForgeNativeMemory.DisposeList(ref _recipes, NativeMemoryOwner, RecipesLabel);
         }
 
         internal void Clear()
@@ -55,6 +56,7 @@ namespace Hecton8.Editor.GeologyForge
         private const int CsvErrorNoRecipes = 2401009;
         private const int MaximumCsvBytes = 2 * 1024 * 1024;
         private const int ExpectedColumns = 19;
+        private const string NativeMemoryOwner = nameof(TopographyBiomeCsv);
 
         public static TopographyBiomeRecipeStore LoadRecipes(Allocator allocator)
         {
@@ -92,7 +94,7 @@ namespace Hecton8.Editor.GeologyForge
                         throw new InvalidDataException("Topography biome CSV error " + CsvErrorFileSize + ": invalid file size " + length64 + " bytes.");
 
                     int length = (int)length64;
-                    bytes = new NativeArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    bytes = GeologyForgeNativeMemory.AllocateArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory, NativeMemoryOwner, nameof(bytes));
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(bytes);
                     Span<byte> target = new Span<byte>(ptr, length);
                     int read = 0;
@@ -125,8 +127,7 @@ namespace Hecton8.Editor.GeologyForge
             }
             finally
             {
-                if (bytes.IsCreated)
-                    bytes.Dispose();
+                GeologyForgeNativeMemory.DisposeArray(ref bytes);
             }
 
             if (recipes.Length == 0)

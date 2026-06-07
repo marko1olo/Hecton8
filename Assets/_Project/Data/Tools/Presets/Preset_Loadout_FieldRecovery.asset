@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Preset_Loadout_FieldRecovery
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Tools.ToolLoadoutPreset
   presetName: FIELD RECOVERY
-  description: 'Salvage-focused kit: sampler, cutter, propulsion, and analyzer.'
+  description: 'Recovery kit: sampler, cutter, propulsion, and seafloor drill.'
   slotPrefabs:
   - {fileID: 6564105744471423693, guid: f57d76c5db394a34aa52a3e94785f1de, type: 3}
   - {fileID: 5076310524989112150, guid: 9ca050d6528fee3448cf92682aff30f2, type: 3}
   - {fileID: 1883046840169899827, guid: 5dc3c28d8d02bdd4e85ce79380a857df, type: 3}
-  - {fileID: 7743704587066382820, guid: 6c238274f01396e4abf84994c62699e5, type: 3}
+  - {fileID: 5910000000000000001, guid: fac9885a2cc043d8bee862580e1ed6dd, type: 3}

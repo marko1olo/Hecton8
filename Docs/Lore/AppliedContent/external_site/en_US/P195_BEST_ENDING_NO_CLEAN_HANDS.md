@@ -7,6 +7,9 @@ poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Best Ending No Clean Hands"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

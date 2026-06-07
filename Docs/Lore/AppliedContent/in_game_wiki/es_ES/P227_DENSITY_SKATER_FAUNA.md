@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Density Skater Fauna"
+title: "Fauna de patinadores de densidad"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Density Skater Fauna
+# Fauna de patinadores de densidad
 
-ES LOC HOLD: Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.
+Los patinadores de densidad son animales de media profundidad que hacen que el cañón de salmuera parezca maquinaria estratificada en vez de volumen vacío. Sus pies, aletas o almohadillas ganchudas presionan interfaces de densidad lo bastante fuertes para sostener cuerpos pequeños durante segundos. A simple vista parecen deslizarse por agua abierta; para el scanner dejan ondas donde el agua abierta no debería tener superficie. Esa contradicción es la pista. Una huella de patinador puede marcar una ventana de corte, un escalón de salmuera, un borde ciego del sonar o una ruta de caza usada por criaturas mayores. El animal no es magia ni promesa de seguridad. Un traje es más pesado, más ruidoso y peor formado para el mismo truco. Usa sus estelas para leer la capa. No asumas que puedes seguirlo.
 
 ## Scanner
 
-ES LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+PATINADOR DE DENSIDAD // Fauna de extremidades finas recorre la interfaz de salmuera como una superficie y deja ondas donde el sonar espera agua abierta.
 
 ## Terminal
 
-ES LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+FAUNA BASE: el contacto con patinadores aumenta cerca de brine vanes rasgadas, escalones de salmuera caliente y bordes muertos del sonar. Su estela marca una repisa de densidad, no apoyo seguro. No los persigas por capas opacas.
 
 ## Audio
 
-ES LOC HOLD: Something is walking on the water inside the water.
+Algo camina sobre el agua dentro del agua.
 
 ## Field Note
 
-ES LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+No levitan. Caminan sobre una frontera por la que tu traje puede caer.
 
 <!-- In-Game Wiki; generated from P227_DENSITY_SKATER_FAUNA/es_ES. -->

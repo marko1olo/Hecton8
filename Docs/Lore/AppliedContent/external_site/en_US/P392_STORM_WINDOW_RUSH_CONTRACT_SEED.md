@@ -7,6 +7,9 @@ poi_tags: poi.storm_window_rush_card;poi.orbital_timing_warning
 biome_tags: biome.contract_layer;biome.storm_window
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Storm Window Rush Contract Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

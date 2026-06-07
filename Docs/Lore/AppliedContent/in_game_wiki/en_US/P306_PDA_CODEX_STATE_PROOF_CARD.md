@@ -7,6 +7,9 @@ poi_tags: poi.pda_codex_state_card;poi.unlock_tier_strip
 biome_tags: biome.ui;biome.dossier
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "PDA Evidence State"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -22,6 +22,7 @@ namespace Hecton8.AI.Cognition.Editor
         private const uint FailureDefrag = 1u << 3;
         private const uint FailureThread = 1u << 4;
         private const uint FailureReadback = 1u << 5;
+        private const int DefragWorkerJoinMilliseconds = 1000;
         private static int s_workerDefragGate;
 
         static AICognitionMemorySovereigntyValidator1300()
@@ -85,7 +86,11 @@ namespace Hecton8.AI.Cognition.Editor
                 });
             worker.IsBackground = true;
             worker.Name = "H8_1300_AICognitionVaultFuzzer";
-            worker.Start();
+            if (!TryStartDefragWorkerNoThrow(worker))
+            {
+                failureFlags |= FailureThread;
+                return false;
+            }
 
             try
             {
@@ -131,7 +136,7 @@ namespace Hecton8.AI.Cognition.Editor
             {
                 Volatile.Write(ref s_workerDefragGate, 0);
                 Volatile.Write(ref stopThread, 1);
-                if (!worker.Join(1000))
+                if (!TryJoinDefragWorkerNoThrow(worker, DefragWorkerJoinMilliseconds))
                     failureFlags |= FailureThread;
             }
 
@@ -139,6 +144,41 @@ namespace Hecton8.AI.Cognition.Editor
                 failureFlags |= FailureThread;
 
             return failureFlags == 0u;
+        }
+
+        private static bool TryStartDefragWorkerNoThrow(Thread worker)
+        {
+            if (worker == null)
+                return false;
+
+            try
+            {
+                worker.Start();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryJoinDefragWorkerNoThrow(Thread worker, int timeoutMilliseconds)
+        {
+            if (worker == null || !worker.IsAlive)
+                return true;
+
+            if (Thread.CurrentThread.ManagedThreadId == worker.ManagedThreadId)
+                return false;
+
+            try
+            {
+                worker.Join(timeoutMilliseconds);
+                return !worker.IsAlive;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private static bool RunLockedCognitionPass(

@@ -2,6 +2,7 @@
     "name": "Hecton8.Rendering.TexturePacker.Editor",
     "rootNamespace": "Hecton8.EditorTools",
     "references": [
+        "Hecton8.Core",
         "Unity.Collections",
         "Unity.Mathematics",
         "Unity.Burst",

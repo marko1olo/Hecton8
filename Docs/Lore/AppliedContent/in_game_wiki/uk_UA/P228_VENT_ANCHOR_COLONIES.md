@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Vent Anchor Colonies"
+title: "Колонії вент-якорів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Vent Anchor Colonies
+# Колонії вент-якорів
 
-UA LOC HOLD: Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.
+Колонії вент-якорів пояснюють, чому Marauder не може вирішити всі ремонтні проблеми, лишаючись на мілководді. Колонії ростуть там, де термальні виходи проштовхують тепло й сульфідну хімію в розсольні шари. Їхні ребристі тіла ловлять мінерали, холонуть плитами й укривають дрібну вент-фауна на краю смертельної води. Це робить їх цінними, але не магічною рудою. Скинуті ребра можуть піти на pressure-ceramic filler, cold-sealant grit і хімічні фільтри. Живі гарячі ребра можуть швидко вбити костюм або тріснути голівку інструмента термошоком. Правильне читання - терпіння: скануй тепловий bloom, дочекайся охололого краю, ріж лише скинуті плити й не чіпай активне горло, якщо ціль не варта ризику.
 
 ## Scanner
 
-UA LOC HOLD: Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.
+КОЛОНІЯ ВЕНТ-ЯКОРІВ // Ребристі колонії замикаються довкола термальних виходів, ловлять сульфіди й вирощують хімію, потрібну для глибинного ремонту.
 
 ## Terminal
 
-UA LOC HOLD: RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.
+БАЗА РЕСУРСУ: колонії підвищують шанс cold-sealant grit, pressure-ceramic precursor і sulfide salt. Тепловий bloom лишається смертельним; брати зразки лише з охололих ребер і скинутих плит.
 
 ## Audio
 
-UA LOC HOLD: Every good repair part is sitting in water that wants to cook you.
+Кожна добра ремонтна деталь лежить у воді, що хоче тебе зварити.
 
 ## Field Note
 
-UA LOC HOLD: Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.
+Вент-якір - знак ресурсу, теплове попередження, край укриття і доказ, що forge chemistry має живі руки довкола.
 
 <!-- In-Game Wiki; generated from P228_VENT_ANCHOR_COLONIES/uk_UA. -->

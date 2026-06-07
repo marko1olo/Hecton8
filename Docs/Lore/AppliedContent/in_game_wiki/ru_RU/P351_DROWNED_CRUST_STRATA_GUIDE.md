@@ -7,6 +7,9 @@ poi_tags: poi.drowned_strata_slate;poi.pressure_glass_shelf
 biome_tags: biome.geology;biome.ocean
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Fieldguide drowned crust strata"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

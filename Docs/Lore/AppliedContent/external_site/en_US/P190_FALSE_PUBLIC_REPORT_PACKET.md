@@ -7,6 +7,9 @@ poi_tags: poi.public_report_packet;poi.quarantine_redaction
 biome_tags: biome.public_archive;biome.relay_archive
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "False Public Report Packet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

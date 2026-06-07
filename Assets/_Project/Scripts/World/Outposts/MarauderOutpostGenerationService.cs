@@ -105,7 +105,7 @@ namespace Hecton8.World.Outposts
 
             public bool EnsureSolve(int length, NativeArrayOptions options)
             {
-                return EnsureNativeScratch(ref SolveWfcGrid, length, options, nameof(SolveWfcGrid));
+                return EnsureNativeScratch(ref SolveWfcGrid, length, options);
             }
 
             public bool IsSolveReady(int length)
@@ -115,11 +115,11 @@ namespace Hecton8.World.Outposts
 
             public bool EnsureExtraction()
             {
-                return EnsureNativeScratch(ref ExtractionMutableGrid, MarauderOutpostConstants.FullCellCount, NativeArrayOptions.ClearMemory, nameof(ExtractionMutableGrid)) &&
-                       EnsureNativeScratch(ref ExtractionShellMatrices, MarauderOutpostConstants.MaxShellMatrices, NativeArrayOptions.ClearMemory, nameof(ExtractionShellMatrices)) &&
-                       EnsureNativeScratch(ref ExtractionShellCellTypes, MarauderOutpostConstants.MaxShellMatrices, NativeArrayOptions.ClearMemory, nameof(ExtractionShellCellTypes)) &&
-                       EnsureNativeScratch(ref ExtractionInteractableSpawns, MarauderOutpostConstants.MaxInteractables, NativeArrayOptions.ClearMemory, nameof(ExtractionInteractableSpawns)) &&
-                       EnsureNativeScratch(ref ExtractionCounters, MarauderOutpostConstants.CounterCount, NativeArrayOptions.ClearMemory, nameof(ExtractionCounters));
+                return EnsureNativeScratch(ref ExtractionMutableGrid, MarauderOutpostConstants.FullCellCount, NativeArrayOptions.ClearMemory) &&
+                       EnsureNativeScratch(ref ExtractionShellMatrices, MarauderOutpostConstants.MaxShellMatrices, NativeArrayOptions.ClearMemory) &&
+                       EnsureNativeScratch(ref ExtractionShellCellTypes, MarauderOutpostConstants.MaxShellMatrices, NativeArrayOptions.ClearMemory) &&
+                       EnsureNativeScratch(ref ExtractionInteractableSpawns, MarauderOutpostConstants.MaxInteractables, NativeArrayOptions.ClearMemory) &&
+                       EnsureNativeScratch(ref ExtractionCounters, MarauderOutpostConstants.CounterCount, NativeArrayOptions.ClearMemory);
             }
 
             public bool IsExtractionReady()
@@ -138,7 +138,7 @@ namespace Hecton8.World.Outposts
 
             public bool EnsureShift(int length, NativeArrayOptions options)
             {
-                return EnsureNativeScratch(ref ShiftShellMatrices, length, options, nameof(ShiftShellMatrices));
+                return EnsureNativeScratch(ref ShiftShellMatrices, length, options);
             }
 
             public bool IsShiftReady(int length)
@@ -177,8 +177,7 @@ namespace Hecton8.World.Outposts
             private static bool EnsureNativeScratch<T>(
                 ref NativeArray<T> scratch,
                 int length,
-                NativeArrayOptions options,
-                string fieldName) where T : struct
+                NativeArrayOptions options) where T : struct
             {
                 if (scratch.IsCreated && scratch.Length == length)
                     return true;
@@ -186,8 +185,7 @@ namespace Hecton8.World.Outposts
                 DisposeNativeScratch(ref scratch);
                 try
                 {
-                    scratch = new NativeArray<T>(length, Allocator.Persistent, options);
-                    NativeMemorySentinel.RegisterNativeArray(scratch, nameof(MarauderOutpostGenerationService), fieldName, NativeAllocationLifetime.Scene);
+                    scratch = H8Memory.Allocate<T>(length, VaultOwnerSystemId, Allocator.Persistent, options);
                     return scratch.IsCreated;
                 }
                 catch
@@ -202,9 +200,7 @@ namespace Hecton8.World.Outposts
                 if (!scratch.IsCreated)
                     return;
 
-                NativeMemorySentinel.UnregisterNativeArray(scratch);
-                scratch.Dispose();
-                scratch = default;
+                H8Memory.Release(ref scratch, VaultOwnerSystemId);
             }
         }
 
@@ -416,11 +412,11 @@ namespace Hecton8.World.Outposts
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregisterLateFrame();
+                    TryUnregisterUpdate();
                     if (currentService == null || !isActiveAndEnabled)
                         return;
 
-                    TryUnregisterLateFrame();
-                    TryUnregisterUpdate();
                     TryRegisterUpdate();
                     TryRegisterLateFrame();
                     break;

@@ -123,6 +123,23 @@ namespace Hecton8.Input
             return 1UL << (unchecked((int)bufferId) & 63);
         }
 
+        private static bool TryAllocateScratch<T>(
+            int length,
+            NativeArrayOptions options,
+            out NativeArray<T> array) where T : struct
+        {
+            array = H8Memory.Allocate<T>(length, SystemID.UI, Allocator.Temp, options);
+            return array.IsCreated;
+        }
+
+        private static void ReleaseScratch<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            H8Memory.Release(ref array, SystemID.UI);
+        }
+
         public static bool TryDumpTelemetry(
             IDataVault vault,
             in VaultGenerationHandle<InputBindingTelemetryEntry> ringHandle,
@@ -139,7 +156,9 @@ namespace Hecton8.Input
                 if (maxByteCount <= 0)
                     return false;
 
-                snapshot = new NativeArray<byte>(maxByteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                if (!TryAllocateScratch(maxByteCount, NativeArrayOptions.UninitializedMemory, out snapshot))
+                    return false;
+
                 int byteCount = 0;
                 bool ringLocked = false;
                 try
@@ -197,8 +216,7 @@ namespace Hecton8.Input
             }
             finally
             {
-                if (snapshot.IsCreated)
-                    snapshot.Dispose();
+                ReleaseScratch(ref snapshot);
             }
         }
 
@@ -241,7 +259,12 @@ namespace Hecton8.Input
                     return false;
                 }
 
-                buffer = new NativeArray<byte>(MaxControlsJsonBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                if (!TryAllocateScratch(MaxControlsJsonBytes, NativeArrayOptions.UninitializedMemory, out buffer))
+                {
+                    MarkIoFailure(ref result, InputBindingTelemetryOperation.Save, startTicks);
+                    return false;
+                }
+
                 byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
                 int index = 0;
                 if (!WriteLiteral(ptr, buffer.Length, ref index, "{\"v\":1,\"bindings\":["))
@@ -328,8 +351,7 @@ namespace Hecton8.Input
             }
             finally
             {
-                if (buffer.IsCreated)
-                    buffer.Dispose();
+                ReleaseScratch(ref buffer);
             }
         }
 
@@ -367,7 +389,12 @@ namespace Hecton8.Input
                     return false;
                 }
 
-                fileBytes = new NativeArray<byte>(MaxControlsJsonBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                if (!TryAllocateScratch(MaxControlsJsonBytes, NativeArrayOptions.UninitializedMemory, out fileBytes))
+                {
+                    MarkIoFailure(ref result, InputBindingTelemetryOperation.Load, startTicks);
+                    return false;
+                }
+
                 byte* bytesPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(fileBytes);
                 int byteCount = TryReadAllCold(path, bytesPtr, fileBytes.Length, ref result);
                 if (byteCount <= 0)
@@ -377,7 +404,12 @@ namespace Hecton8.Input
                     return false;
                 }
 
-                records = new NativeArray<InputActionStateDTO>(MaxBindingRecords, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                if (!TryAllocateScratch(MaxBindingRecords, NativeArrayOptions.ClearMemory, out records))
+                {
+                    MarkIoFailure(ref result, InputBindingTelemetryOperation.Load, startTicks);
+                    return false;
+                }
+
                 if (!TryParseBindings(bytesPtr, byteCount, records, out int recordCount, ref result))
                 {
                     result.ResultCode = InputBindingTelemetryResult.InvalidJson;
@@ -493,10 +525,8 @@ namespace Hecton8.Input
             }
             finally
             {
-                if (records.IsCreated)
-                    records.Dispose();
-                if (fileBytes.IsCreated)
-                    fileBytes.Dispose();
+                ReleaseScratch(ref records);
+                ReleaseScratch(ref fileBytes);
                 ClearRollbackRecords(LoadRollbackRecords, rollbackCount);
                 if (rollbackLeaseHeld)
                     Interlocked.Exchange(ref LoadRollbackLease, 0);

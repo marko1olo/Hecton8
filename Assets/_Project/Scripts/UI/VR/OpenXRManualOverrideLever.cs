@@ -257,6 +257,8 @@ namespace Hecton8.UI.VR
             if (_pendingLatchShutdown)
             {
                 _pendingLatchShutdown = false;
+                TryUnregisterReceiver();
+                TryUnregisterTick();
             }
         }
 
@@ -682,10 +684,16 @@ namespace Hecton8.UI.VR
                 string path = Path.Combine(projectRoot, DumpRelativePath);
                 const int headerBytes = 8;
                 int byteCount = headerBytes + (BlackBoxFrameCount * BlackBoxDumpEntryBytes);
-                payload = new NativeArray<byte>(
+                payload = H8Memory.Allocate<byte>(
                     byteCount,
+                    VaultOwnerSystemId,
                     Allocator.Temp,
                     NativeArrayOptions.UninitializedMemory);
+                if (!payload.IsCreated)
+                {
+                    _blackBoxDumpQueued = true;
+                    return;
+                }
 
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                 Span<byte> header = new Span<byte>(payloadPtr, headerBytes);
@@ -729,7 +737,7 @@ namespace Hecton8.UI.VR
             finally
             {
                 if (payload.IsCreated)
-                    payload.Dispose();
+                    H8Memory.Release(ref payload, VaultOwnerSystemId);
             }
         }
 

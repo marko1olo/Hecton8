@@ -351,10 +351,9 @@ namespace Hecton8.Ecosystem
                         EnsureVaultState();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    UnregisterDispatcherRoutes();
                     if (currentService != null)
                         TryRegister();
-                    else
-                        UnregisterDispatcherRoutes();
                     break;
             }
         }

@@ -179,3 +179,5 @@ Scope: RS113-RS124
 - Contains banned phrase: 'unlock'
 ### RS107_NAVIGATION_LINK_SUPPRESSION_BRIDGE.md
 - Contains banned phrase: 'unlock'
+### RS155_PRESSURE_ACCESS_ROUTE_ARTICLES.md
+- Contains banned phrase: 'unlock'

@@ -2437,6 +2437,8 @@ namespace Hecton8.Core.Memory
         private const int FatalLeakDumpVersion = 5;
         private const ulong AddressFingerprintSeed = 14695981039346656037UL;
         private const ulong AddressFingerprintPrime = 1099511628211UL;
+        private const uint ReplaySnapshotHashSeed = 2166136261U;
+        private const uint ReplaySnapshotHashPrime = 16777619U;
         private const byte BlackBoxRingKindHeartbeat = 1;
         private const byte BlackBoxRingKindLifecycleEvent = 2;
         private const string AgentDumpFileName = "Dump_SENTINEL_DISPOSAL_GUARD.bin";
@@ -2611,56 +2613,64 @@ namespace Hecton8.Core.Memory
             if (!ValidateAbiLayout())
                 return;
             int safeCapacity = ResolveTrackingCapacity(capacity);
-            // COLD ALLOC: NativeParallelHashMap<long,SystemID>[capacity] - pointer to owner registry - owner: H8Memory
-            _allocationOwners = new NativeParallelHashMap<long, SystemID>(safeCapacity, Allocator.Persistent);
-            // COLD ALLOC: NativeParallelHashMap<long,int>[capacity] - pointer to allocation record index - owner: H8Memory
-            _allocationRecordIndices = new NativeParallelHashMap<long, int>(safeCapacity, Allocator.Persistent);
-            // COLD ALLOC: NativeParallelHashMap<ushort,NativeList<IntPtr>>[256] - SystemID value to allocation pointer registry - owner: H8Memory
-            _ownerPointers = new NativeParallelHashMap<ushort, NativeList<IntPtr>>(OwnerRegistryCapacity, Allocator.Persistent);
-            // COLD ALLOC: NativeParallelHashMap<ushort,JobHandle>[256] - SystemID value teardown job fences - owner: H8Memory
-            _ownerJobHandles = new NativeParallelHashMap<ushort, JobHandle>(OwnerRegistryCapacity, Allocator.Persistent);
-            // COLD ALLOC: NativeList<ushort>[256] - SystemID value owner pointer registry keys for deterministic disposal - owner: H8Memory
-            _ownerPointerKeys = new NativeList<ushort>(OwnerRegistryCapacity, Allocator.Persistent);
-            // COLD ALLOC: NativeList<ushort>[256] - SystemID value job fence registry keys for deterministic shutdown - owner: H8Memory
-            _ownerJobKeys = new NativeList<ushort>(OwnerRegistryCapacity, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<H8AllocationRecord>[capacity] - allocation table for leak reaping - owner: H8Memory
-            _records = new NativeArray<H8AllocationRecord>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<long>[65536] - bytes per SystemID slot - owner: H8Memory
-            _ownerBytes = new NativeArray<long>(OwnerByteSlots, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeList<BlockDescriptor>[capacity] - native memory map descriptors - owner: H8Memory
-            _blockDescriptors = new NativeList<BlockDescriptor>(safeCapacity, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<H8MemoryTelemetryEntry>[300] - sentinel heartbeat ring - owner: H8Memory
-            _blackBox = new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<H8MemoryTelemetryEntry>[300] - lifecycle snapshots for leak dumps - owner: H8Memory
-            _eventBlackBox = new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _recordCount = 0;
-            _totalBytes = 0L;
-            _poolCapBytes = poolCapBytes > 0L ? poolCapBytes : LowTierPoolCapBytes;
-            _fatalLeakPreventedCount = 0;
-            _blackBoxCursor = 0;
-            _eventBlackBoxCursor = 0;
-            _blackBoxRecordedCount = 0;
-            _eventBlackBoxRecordedCount = 0;
-            _blackBoxSequence = 0u;
-            _eventBlackBoxSequence = 0u;
-            _telemetryFrameId = 0u;
-            _blockDescriptorMutationGate = 0;
-            _allocationGeneration = 1;
-            _transitionCutoffGeneration = NoTransitionCutoffGeneration;
-            _transitionSequence = 0;
-            _lastTransitionReleasedCount = 0;
-            _lastTransitionReleasedBytes = 0L;
-            _transitionBaselineBytes = 0L;
-            _transitionExpectedBytes = 0L;
-            _lastTransitionBaselineVerified = true;
-            _deferSceneUnloadedVerificationToRuntime = false;
-            _initialized = true;
-            RegisterSceneHooks();
-            RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.Initialized);
+            try
+            {
+                // COLD ALLOC: NativeParallelHashMap<long,SystemID>[capacity] - pointer to owner registry - owner: H8Memory
+                _allocationOwners = new NativeParallelHashMap<long, SystemID>(safeCapacity, Allocator.Persistent);
+                // COLD ALLOC: NativeParallelHashMap<long,int>[capacity] - pointer to allocation record index - owner: H8Memory
+                _allocationRecordIndices = new NativeParallelHashMap<long, int>(safeCapacity, Allocator.Persistent);
+                // COLD ALLOC: NativeParallelHashMap<ushort,NativeList<IntPtr>>[256] - SystemID value to allocation pointer registry - owner: H8Memory
+                _ownerPointers = new NativeParallelHashMap<ushort, NativeList<IntPtr>>(OwnerRegistryCapacity, Allocator.Persistent);
+                // COLD ALLOC: NativeParallelHashMap<ushort,JobHandle>[256] - SystemID value teardown job fences - owner: H8Memory
+                _ownerJobHandles = new NativeParallelHashMap<ushort, JobHandle>(OwnerRegistryCapacity, Allocator.Persistent);
+                // COLD ALLOC: NativeList<ushort>[256] - SystemID value owner pointer registry keys for deterministic disposal - owner: H8Memory
+                _ownerPointerKeys = new NativeList<ushort>(OwnerRegistryCapacity, Allocator.Persistent);
+                // COLD ALLOC: NativeList<ushort>[256] - SystemID value job fence registry keys for deterministic shutdown - owner: H8Memory
+                _ownerJobKeys = new NativeList<ushort>(OwnerRegistryCapacity, Allocator.Persistent);
+                // COLD ALLOC: NativeArray<H8AllocationRecord>[capacity] - allocation table for leak reaping - owner: H8Memory
+                _records = new NativeArray<H8AllocationRecord>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                // COLD ALLOC: NativeArray<long>[65536] - bytes per SystemID slot - owner: H8Memory
+                _ownerBytes = new NativeArray<long>(OwnerByteSlots, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                // COLD ALLOC: NativeList<BlockDescriptor>[capacity] - native memory map descriptors - owner: H8Memory
+                _blockDescriptors = new NativeList<BlockDescriptor>(safeCapacity, Allocator.Persistent);
+                // COLD ALLOC: NativeArray<H8MemoryTelemetryEntry>[300] - sentinel heartbeat ring - owner: H8Memory
+                _blackBox = new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                // COLD ALLOC: NativeArray<H8MemoryTelemetryEntry>[300] - lifecycle snapshots for leak dumps - owner: H8Memory
+                _eventBlackBox = new NativeArray<H8MemoryTelemetryEntry>(BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _recordCount = 0;
+                _totalBytes = 0L;
+                _poolCapBytes = poolCapBytes > 0L ? poolCapBytes : LowTierPoolCapBytes;
+                _fatalLeakPreventedCount = 0;
+                _blackBoxCursor = 0;
+                _eventBlackBoxCursor = 0;
+                _blackBoxRecordedCount = 0;
+                _eventBlackBoxRecordedCount = 0;
+                _blackBoxSequence = 0u;
+                _eventBlackBoxSequence = 0u;
+                _telemetryFrameId = 0u;
+                _blockDescriptorMutationGate = 0;
+                _allocationGeneration = 1;
+                _transitionCutoffGeneration = NoTransitionCutoffGeneration;
+                _transitionSequence = 0;
+                _lastTransitionReleasedCount = 0;
+                _lastTransitionReleasedBytes = 0L;
+                _transitionBaselineBytes = 0L;
+                _transitionExpectedBytes = 0L;
+                _lastTransitionBaselineVerified = true;
+                _deferSceneUnloadedVerificationToRuntime = false;
+                _initialized = true;
+                RegisterSceneHooks();
+                RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.Initialized);
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-            _aliasSafetyHandle = AtomicSafetyHandle.Create();
-            _aliasSafetyHandleCreated = true;
+                _aliasSafetyHandle = AtomicSafetyHandle.Create();
+                _aliasSafetyHandleCreated = true;
 #endif
+            }
+            catch
+            {
+                AbortInitialize();
+                throw;
+            }
         }
 
         private static bool ValidateAbiLayout()
@@ -2822,10 +2832,25 @@ namespace Hecton8.Core.Memory
             }
 
             void* pointer = NativeArrayUnsafeUtility.GetUnsafePtr(array);
+            IntPtr pointerValue = (IntPtr)pointer;
+            H8AllocationRecord record = default;
+            bool canRestoreTracking = TryFindRecordIndex(pointerValue, out int recordIndex);
+            if (canRestoreTracking)
+                record = _records[recordIndex];
             if (!UnregisterPointer(pointer, owner))
                 return;
-            array.Dispose();
-            array = default;
+            try
+            {
+                array.Dispose();
+                array = default;
+            }
+            catch (Exception disposeException)
+            {
+                if (canRestoreTracking && array.IsCreated && !TryRestoreUnregisteredRecord(in record))
+                    throw new AggregateException("H8Memory NativeArray tracking restore failed after dispose failure.", disposeException);
+
+                throw;
+            }
         }
 
         /// <summary>
@@ -2847,12 +2872,67 @@ namespace Hecton8.Core.Memory
             }
 
             void* pointer = NativeArrayUnsafeUtility.GetUnsafePtr(array);
+            IntPtr pointerValue = (IntPtr)pointer;
+            H8AllocationRecord record = default;
+            bool canRestoreTracking = TryFindRecordIndex(pointerValue, out int recordIndex);
+            if (canRestoreTracking)
+                record = _records[recordIndex];
             if (!UnregisterPointer(pointer, owner))
                 return dependency;
-            JobHandle disposeHandle = array.Dispose(dependency);
-            RegisterActiveJob(owner, disposeHandle);
-            array = default;
-            return disposeHandle;
+            try
+            {
+                JobHandle disposeHandle = array.Dispose(dependency);
+                if (!RegisterActiveJob(owner, disposeHandle))
+                    TryCompleteOwnerJobHandle(ref disposeHandle);
+                array = default;
+                return disposeHandle;
+            }
+            catch (Exception disposeException)
+            {
+                if (canRestoreTracking && array.IsCreated && !TryRestoreUnregisteredRecord(in record))
+                    throw new AggregateException("H8Memory NativeArray tracking restore failed after deferred dispose failure.", disposeException);
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Copies H8-owned native allocations into the deterministic replay source list.
+        /// </summary>
+        internal static int CopySnapshotSources(
+            NativeArray<Hecton8.Core.NativeAllocationSnapshotSource> destination,
+            int startIndex,
+            uint excludedOwnerHash = 0u)
+        {
+            if (!destination.IsCreated)
+                return 0;
+
+            int writeIndex = startIndex < 0 ? 0 : startIndex;
+            if (writeIndex >= destination.Length)
+                return destination.Length;
+
+            if (!_initialized || !_records.IsCreated)
+                return writeIndex;
+
+            int count = _recordCount;
+            for (int i = 0; i < count && writeIndex < destination.Length; i++)
+            {
+                H8AllocationRecord record = _records[i];
+                if (!CanCopyReplaySnapshotSource(in record, excludedOwnerHash))
+                    continue;
+
+                Hecton8.Core.NativeAllocationSnapshotSource snapshot = default;
+                snapshot.SourcePointerValue = unchecked((ulong)record.Pointer.ToInt64());
+                snapshot.Bytes = record.Bytes;
+                snapshot.OwnerHash = ComputeReplayOwnerHash(record.Owner);
+                snapshot.LabelHash = ComputeReplayLabelHash(in record);
+                snapshot.AllocationFrame = record.Generation;
+                snapshot.Lifetime = ResolveReplayLifetime(record.Allocator);
+                snapshot.Allocator = (byte)record.Allocator;
+                destination[writeIndex++] = snapshot;
+            }
+
+            return writeIndex;
         }
 
         /// <summary>
@@ -2860,36 +2940,70 @@ namespace Hecton8.Core.Memory
         /// </summary>
         /// <param name="owner">Native allocation owner.</param>
         /// <param name="handle">Active job handle touching owner memory.</param>
-        public static void RegisterActiveJob(SystemID owner, JobHandle handle)
+        public static bool RegisterActiveJob(SystemID owner, JobHandle handle)
         {
             if (owner == SystemID.Unknown)
             {
                 RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
-                return;
+                TryCompleteOwnerJobHandle(ref handle);
+                return false;
             }
             if (!_initialized)
                 Initialize();
             if (!_initialized)
-                return;
+            {
+                TryCompleteOwnerJobHandle(ref handle);
+                return false;
+            }
 
             if (!_ownerJobHandles.IsCreated)
-                return;
+            {
+                TryCompleteOwnerJobHandle(ref handle);
+                return false;
+            }
 
             ushort ownerKey = GetOwnerKey(owner);
-            if (_ownerJobHandles.TryGetValue(ownerKey, out JobHandle existingHandle))
+            try
             {
-                _ownerJobHandles[ownerKey] = JobHandle.CombineDependencies(existingHandle, handle);
-                AddOwnerJobKey(ownerKey);
-                return;
-            }
+                if (_ownerJobHandles.TryGetValue(ownerKey, out JobHandle existingHandle))
+                {
+                    JobHandle combinedHandle = JobHandle.CombineDependencies(existingHandle, handle);
+                    _ownerJobHandles[ownerKey] = combinedHandle;
+                    if (!EnsureOwnerJobKey(ownerKey))
+                    {
+                        TryCompleteOwnerJobHandle(ref combinedHandle);
+                        _ownerJobHandles.Remove(ownerKey);
+                        RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                        return false;
+                    }
 
-            if (!_ownerJobKeys.IsCreated || !_ownerJobHandles.TryAdd(ownerKey, handle))
+                    return true;
+                }
+
+                if (!_ownerJobHandles.TryAdd(ownerKey, handle))
+                {
+                    TryCompleteOwnerJobHandle(ref handle);
+                    RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                    return false;
+                }
+
+                if (!EnsureOwnerJobKey(ownerKey))
+                {
+                    TryCompleteOwnerJobHandle(ref handle);
+                    _ownerJobHandles.Remove(ownerKey);
+                    RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                    return false;
+                }
+
+                return true;
+            }
+            catch
             {
+                TryCompleteOwnerJobHandle(ref handle);
+                CompleteOwnerJobs(owner);
                 RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
-                return;
+                return false;
             }
-
-            AddOwnerJobKey(ownerKey);
         }
 
         /// <summary>
@@ -3015,7 +3129,7 @@ namespace Hecton8.Core.Memory
 
             if (!RegisterPointer(pointer, bytes, 0, 0, safeAlignment, owner, allocator, H8AllocationFlags.Raw | extraFlags))
             {
-                UnsafeUtility.Free(pointer, allocator);
+                TryFreeUntrackedRawPointer(pointer, allocator, owner);
                 RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
                 return null;
             }
@@ -3082,18 +3196,34 @@ namespace Hecton8.Core.Memory
 
             if (!RegisterPointer(newPointer, newBytes, 0, 0, safeAlignment, owner, allocator, H8AllocationFlags.Raw | extraFlags))
             {
-                UnsafeUtility.Free(newPointer, allocator);
+                TryFreeUntrackedRawPointer(newPointer, allocator, owner);
                 RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
                 return null;
             }
 
+            H8AllocationRecord oldRecord = default;
+            bool canRestoreOldTracking = TryFindRecordIndex((IntPtr)oldPointer, out int oldRecordIndex);
+            if (canRestoreOldTracking)
+                oldRecord = _records[oldRecordIndex];
             if (!UnregisterPointer(oldPointer, owner))
             {
-                UnregisterPointer(newPointer, owner, requireOwnerMatch: false);
-                UnsafeUtility.Free(newPointer, allocator);
+                if (!TryUnregisterFreeAndRestoreOnFailure(newPointer, owner, allocator, requireOwnerMatch: false))
+                    RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
                 return null;
             }
-            UnsafeUtility.Free(oldPointer, allocator);
+            try
+            {
+                UnsafeUtility.Free(oldPointer, allocator);
+            }
+            catch (Exception freeException)
+            {
+                bool restoredOldTracking = !canRestoreOldTracking || TryRestoreUnregisteredRecord(in oldRecord);
+                bool releasedNewPointer = TryUnregisterFreeAndRestoreOnFailure(newPointer, owner, allocator, requireOwnerMatch: false);
+                if (!restoredOldTracking || !releasedNewPointer)
+                    throw new AggregateException("H8Memory raw reallocation rollback failed after old pointer free failure.", freeException);
+
+                throw;
+            }
 
             return newPointer;
         }
@@ -3125,9 +3255,24 @@ namespace Hecton8.Core.Memory
                 return;
             }
 
+            IntPtr pointerValue = (IntPtr)pointer;
+            H8AllocationRecord record = default;
+            bool canRestoreTracking = TryFindRecordIndex(pointerValue, out int recordIndex);
+            if (canRestoreTracking)
+                record = _records[recordIndex];
             if (!UnregisterPointer(pointer, requester))
                 return;
-            UnsafeUtility.Free(pointer, allocator);
+            try
+            {
+                UnsafeUtility.Free(pointer, allocator);
+            }
+            catch (Exception freeException)
+            {
+                if (canRestoreTracking && !TryRestoreUnregisteredRecord(in record))
+                    throw new AggregateException("H8Memory raw allocation tracking restore failed after free failure.", freeException);
+
+                throw;
+            }
         }
 
         /// <summary>
@@ -3148,7 +3293,7 @@ namespace Hecton8.Core.Memory
                 return ForceFreeRecordAt(recordIndex, removeOwnerPointer: true, out releasedRecord);
             }
 
-            UnsafeUtility.Free(pointer, fallbackAllocator);
+            TryFreeUntrackedRawPointer(pointer, fallbackAllocator, SystemID.Unknown);
             return false;
         }
 
@@ -3328,11 +3473,7 @@ namespace Hecton8.Core.Memory
             if (TryReserveReusableBlockDescriptorSlot(in reservation, out index))
                 return true;
             if (_blockDescriptors.Length < _blockDescriptors.Capacity)
-            {
-                index = _blockDescriptors.Length;
-                _blockDescriptors.AddNoResize(reservation);
-                return true;
-            }
+                return TryAppendBlockDescriptorNoLock(in reservation, out index);
 
             int oldCapacity = _blockDescriptors.Capacity;
             if (oldCapacity >= MaxTrackingCapacity)
@@ -3342,13 +3483,12 @@ namespace Hecton8.Core.Memory
             if (newCapacity < oldCapacity || newCapacity > MaxTrackingCapacity)
                 newCapacity = MaxTrackingCapacity;
 
-            EnsureBlockDescriptorCapacity(newCapacity);
+            if (!TryEnsureBlockDescriptorCapacityNoLock(newCapacity))
+                return false;
             if (_blockDescriptors.Length >= _blockDescriptors.Capacity)
                 return false;
 
-            index = _blockDescriptors.Length;
-            _blockDescriptors.AddNoResize(reservation);
-            return true;
+            return TryAppendBlockDescriptorNoLock(in reservation, out index);
         }
 
         internal static void ReleaseReservedBlockDescriptor(int index)
@@ -3428,13 +3568,23 @@ namespace Hecton8.Core.Memory
             for (int i = _recordCount - 1; i >= 0; i--)
             {
                 H8AllocationRecord record = _records[i];
-                if (record.Pointer != IntPtr.Zero)
-                    UnsafeUtility.Free(record.Pointer.ToPointer(), record.Allocator);
+                if (!TryFreeRecordPointerForShutdown(in record))
+                    RecordBlackBox(record.Owner, H8MemoryTelemetryFlags.Fault);
             }
 
             _recordCount = 0;
             _totalBytes = 0L;
             RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.Shutdown);
+            DisposeOwnerPointerLists();
+            ClearTrackingMemoryBeforeDispose();
+            DisposeTrackingContainers();
+            ReleaseAliasSafetyHandleIfCreated();
+            ResetStaticValueState();
+        }
+
+        private static void AbortInitialize()
+        {
+            UnregisterSceneHooks();
             DisposeOwnerPointerLists();
             ClearTrackingMemoryBeforeDispose();
             DisposeTrackingContainers();
@@ -3756,18 +3906,26 @@ namespace Hecton8.Core.Memory
             }
         }
 
-        private static void AddOwnerJobKey(ushort ownerKey)
+        private static bool EnsureOwnerJobKey(ushort ownerKey)
         {
             if (!_ownerJobKeys.IsCreated)
-                return;
+                return false;
 
             for (int i = 0; i < _ownerJobKeys.Length; i++)
             {
                 if (_ownerJobKeys[i] == ownerKey)
-                    return;
+                    return true;
             }
 
-            _ownerJobKeys.Add(ownerKey);
+            try
+            {
+                _ownerJobKeys.Add(ownerKey);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private static void RemoveOwnerPointerKey(ushort ownerKey)
@@ -3784,18 +3942,19 @@ namespace Hecton8.Core.Memory
             }
         }
 
-        private static void AddOwnerPointerKey(ushort ownerKey)
+        private static bool AddOwnerPointerKey(ushort ownerKey)
         {
             if (!_ownerPointerKeys.IsCreated)
-                return;
+                return false;
 
             for (int i = 0; i < _ownerPointerKeys.Length; i++)
             {
                 if (_ownerPointerKeys[i] == ownerKey)
-                    return;
+                    return false;
             }
 
             _ownerPointerKeys.Add(ownerKey);
+            return true;
         }
 
         private static void RemoveOwnerPointerLane(ushort ownerKey, ref NativeList<IntPtr> pointers)
@@ -3907,9 +4066,51 @@ namespace Hecton8.Core.Memory
             }
 
             releasedRecord = record;
-            UnsafeUtility.Free(record.Pointer.ToPointer(), record.Allocator);
+            try
+            {
+                UnsafeUtility.Free(record.Pointer.ToPointer(), record.Allocator);
+            }
+            catch
+            {
+                RecordBlackBox(record.Owner, H8MemoryTelemetryFlags.ForcedRelease | H8MemoryTelemetryFlags.Fault);
+                return false;
+            }
+
             RemoveRecordAt(index, removeOwnerPointer, H8MemoryTelemetryFlags.ForcedRelease);
             return true;
+        }
+
+        private static bool TryFreeRecordPointerForShutdown(in H8AllocationRecord record)
+        {
+            if (record.Pointer == IntPtr.Zero)
+                return true;
+
+            try
+            {
+                UnsafeUtility.Free(record.Pointer.ToPointer(), record.Allocator);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryFreeUntrackedRawPointer(void* pointer, Allocator allocator, SystemID owner)
+        {
+            if (pointer == null)
+                return true;
+
+            try
+            {
+                UnsafeUtility.Free(pointer, allocator);
+                return true;
+            }
+            catch
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                return false;
+            }
         }
 
         private static bool RegisterOwnerPointer(SystemID owner, IntPtr pointer)
@@ -3918,21 +4119,49 @@ namespace Hecton8.Core.Memory
                 return false;
 
             ushort ownerKey = GetOwnerKey(owner);
+            bool createdLane = false;
             if (!_ownerPointers.TryGetValue(ownerKey, out NativeList<IntPtr> pointers))
             {
-                // COLD ALLOC: NativeList<IntPtr>[16] - owner pointer lane for ReleaseAll(SystemID) - owner: H8Memory
-                pointers = new NativeList<IntPtr>(DefaultOwnerPointerCapacity, Allocator.Persistent);
+                try
+                {
+                    // COLD ALLOC: NativeList<IntPtr>[16] - owner pointer lane for ReleaseAll(SystemID) - owner: H8Memory
+                    pointers = new NativeList<IntPtr>(DefaultOwnerPointerCapacity, Allocator.Persistent);
+                }
+                catch
+                {
+                    return false;
+                }
+
                 if (!_ownerPointers.TryAdd(ownerKey, pointers))
                 {
                     pointers.Dispose();
                     return false;
                 }
+
+                createdLane = true;
             }
 
-            AddOwnerPointerKey(ownerKey);
-            pointers.Add(pointer);
-            _ownerPointers[ownerKey] = pointers;
-            return true;
+            bool addedKey = false;
+            try
+            {
+                addedKey = AddOwnerPointerKey(ownerKey);
+                pointers.Add(pointer);
+                _ownerPointers[ownerKey] = pointers;
+                return true;
+            }
+            catch
+            {
+                if (createdLane)
+                {
+                    RemoveOwnerPointerLane(ownerKey, ref pointers);
+                }
+                else if (addedKey)
+                {
+                    RemoveOwnerPointerKey(ownerKey);
+                }
+
+                return false;
+            }
         }
 
         private static void RemoveOwnerPointer(SystemID owner, IntPtr pointer)
@@ -4265,6 +4494,56 @@ namespace Hecton8.Core.Memory
             return hash != 0UL ? hash : 1UL;
         }
 
+        private static bool CanCopyReplaySnapshotSource(in H8AllocationRecord record, uint excludedOwnerHash)
+        {
+            if (record.Pointer == IntPtr.Zero || record.Bytes <= 0L)
+                return false;
+
+            uint ownerHash = ComputeReplayOwnerHash(record.Owner);
+            return excludedOwnerHash == 0u || ownerHash != excludedOwnerHash;
+        }
+
+        private static uint ComputeReplayOwnerHash(SystemID owner)
+        {
+            uint hash = ReplaySnapshotHashSeed;
+            hash = MixReplaySnapshotHash(hash, 0x48384F57u); // H8OW
+            hash = MixReplaySnapshotHash(hash, (ushort)owner);
+            return hash != 0u ? hash : 1u;
+        }
+
+        private static uint ComputeReplayLabelHash(in H8AllocationRecord record)
+        {
+            ulong fingerprint = ComputeAllocationAddressFingerprint(in record);
+            uint hash = ReplaySnapshotHashSeed;
+            hash = MixReplaySnapshotHash(hash, 0x4838414Cu); // H8AL
+            hash = MixReplaySnapshotHash(hash, unchecked((uint)fingerprint));
+            hash = MixReplaySnapshotHash(hash, unchecked((uint)(fingerprint >> 32)));
+            hash = MixReplaySnapshotHash(hash, unchecked((uint)record.Length));
+            hash = MixReplaySnapshotHash(hash, unchecked((uint)record.Stride));
+            hash = MixReplaySnapshotHash(hash, record.Flags);
+            return hash != 0u ? hash : 1u;
+        }
+
+        private static uint MixReplaySnapshotHash(uint hash, uint value)
+        {
+            return unchecked((hash ^ value) * ReplaySnapshotHashPrime);
+        }
+
+        private static byte ResolveReplayLifetime(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return (byte)Hecton8.Core.NativeAllocationLifetime.Temp;
+                case Allocator.TempJob:
+                    return (byte)Hecton8.Core.NativeAllocationLifetime.TempJob;
+                case Allocator.Persistent:
+                    return (byte)Hecton8.Core.NativeAllocationLifetime.Session;
+                default:
+                    return (byte)Hecton8.Core.NativeAllocationLifetime.Session;
+            }
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ulong MixAddressFingerprint(ulong hash, ulong value)
         {
@@ -4392,28 +4671,41 @@ namespace Hecton8.Core.Memory
             if (newCapacity < oldCapacity || newCapacity > MaxTrackingCapacity)
                 newCapacity = MaxTrackingCapacity;
 
-            NativeArray<H8AllocationRecord> newRecords =
-                new NativeArray<H8AllocationRecord>(newCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeParallelHashMap<long, SystemID> newOwners =
-                new NativeParallelHashMap<long, SystemID>(newCapacity, Allocator.Persistent);
-            NativeParallelHashMap<long, int> newIndices =
-                new NativeParallelHashMap<long, int>(newCapacity, Allocator.Persistent);
+            NativeArray<H8AllocationRecord> newRecords = default;
+            NativeParallelHashMap<long, SystemID> newOwners = default;
+            NativeParallelHashMap<long, int> newIndices = default;
 
-            for (int i = 0; i < _recordCount; i++)
+            try
             {
-                H8AllocationRecord record = _records[i];
-                newRecords[i] = record;
-                if (record.Pointer == IntPtr.Zero)
-                    continue;
+                newRecords = new NativeArray<H8AllocationRecord>(newCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                newOwners = new NativeParallelHashMap<long, SystemID>(newCapacity, Allocator.Persistent);
+                newIndices = new NativeParallelHashMap<long, int>(newCapacity, Allocator.Persistent);
 
-                long pointerKey = record.Pointer.ToInt64();
-                if (!newOwners.TryAdd(pointerKey, record.Owner) || !newIndices.TryAdd(pointerKey, i))
+                for (int i = 0; i < _recordCount; i++)
                 {
-                    newRecords.Dispose();
-                    newOwners.Dispose();
-                    newIndices.Dispose();
+                    H8AllocationRecord record = _records[i];
+                    newRecords[i] = record;
+                    if (record.Pointer == IntPtr.Zero)
+                        continue;
+
+                    long pointerKey = record.Pointer.ToInt64();
+                    if (newOwners.TryAdd(pointerKey, record.Owner) && newIndices.TryAdd(pointerKey, i))
+                        continue;
+
+                    DisposeTrackingCapacityScratch(ref newRecords, ref newOwners, ref newIndices);
                     return false;
                 }
+
+                if (!TryEnsureBlockDescriptorCapacity(newCapacity))
+                {
+                    DisposeTrackingCapacityScratch(ref newRecords, ref newOwners, ref newIndices);
+                    return false;
+                }
+            }
+            catch
+            {
+                DisposeTrackingCapacityScratch(ref newRecords, ref newOwners, ref newIndices);
+                return false;
             }
 
             if (_records.IsCreated)
@@ -4426,18 +4718,39 @@ namespace Hecton8.Core.Memory
             _records = newRecords;
             _allocationOwners = newOwners;
             _allocationRecordIndices = newIndices;
+            return true;
+        }
+
+        private static void DisposeTrackingCapacityScratch(
+            ref NativeArray<H8AllocationRecord> records,
+            ref NativeParallelHashMap<long, SystemID> owners,
+            ref NativeParallelHashMap<long, int> indices)
+        {
+            if (records.IsCreated)
+                records.Dispose();
+            if (owners.IsCreated)
+                owners.Dispose();
+            if (indices.IsCreated)
+                indices.Dispose();
+
+            records = default;
+            owners = default;
+            indices = default;
+        }
+
+        private static bool TryEnsureBlockDescriptorCapacity(int requiredCapacity)
+        {
             if (!TryEnterBlockDescriptorMutationGate())
                 return false;
 
             try
             {
-                EnsureBlockDescriptorCapacity(newCapacity);
+                return TryEnsureBlockDescriptorCapacityNoLock(requiredCapacity);
             }
             finally
             {
                 ReleaseBlockDescriptorMutationGate();
             }
-            return true;
         }
 
         private static bool RegisterPointer(
@@ -4448,7 +4761,8 @@ namespace Hecton8.Core.Memory
             int alignment,
             SystemID owner,
             Allocator allocator,
-            H8AllocationFlags flags)
+            H8AllocationFlags flags,
+            int generationOverride = 0)
         {
             if (pointer == null || bytes <= 0L || _recordCount >= _records.Length)
                 return false;
@@ -4456,10 +4770,27 @@ namespace Hecton8.Core.Memory
             IntPtr pointerValue = (IntPtr)pointer;
             long pointerKey = pointerValue.ToInt64();
             int recordIndex = _recordCount;
-            if (!_allocationOwners.TryAdd(pointerKey, owner))
+            try
+            {
+                if (!_allocationOwners.TryAdd(pointerKey, owner))
+                    return false;
+            }
+            catch
+            {
                 return false;
+            }
 
-            if (!_allocationRecordIndices.TryAdd(pointerKey, recordIndex))
+            bool addedRecordIndex = false;
+            try
+            {
+                addedRecordIndex = _allocationRecordIndices.TryAdd(pointerKey, recordIndex);
+            }
+            catch
+            {
+                addedRecordIndex = false;
+            }
+
+            if (!addedRecordIndex)
             {
                 _allocationOwners.Remove(pointerKey);
                 return false;
@@ -4479,7 +4810,7 @@ namespace Hecton8.Core.Memory
             record.Stride = stride;
             record.Alignment = alignment;
             record.AllocationIndex = recordIndex;
-            record.Generation = _allocationGeneration;
+            record.Generation = generationOverride > 0 ? generationOverride : _allocationGeneration;
             record.Owner = owner;
             record.Allocator = allocator;
             record.Flags = (ushort)flags;
@@ -4506,7 +4837,16 @@ namespace Hecton8.Core.Memory
             blockDescriptor.Flags = (ushort)flags;
             blockDescriptor.State = (byte)H8BlockState.Occupied;
 
-            int descriptorIndex = RegisterBlockDescriptorThreadSafe(in blockDescriptor);
+            int descriptorIndex;
+            try
+            {
+                descriptorIndex = RegisterBlockDescriptorThreadSafe(in blockDescriptor);
+            }
+            catch
+            {
+                RemoveRecordAt(recordIndex);
+                return false;
+            }
 
             if (descriptorIndex >= 0)
             {
@@ -4516,6 +4856,52 @@ namespace Hecton8.Core.Memory
 
             RemoveRecordAt(recordIndex);
             return false;
+        }
+
+        private static bool TryRestoreUnregisteredRecord(in H8AllocationRecord record)
+        {
+            if (record.Pointer == IntPtr.Zero || record.Bytes <= 0L)
+                return false;
+
+            return RegisterPointer(
+                record.Pointer.ToPointer(),
+                record.Bytes,
+                record.Length,
+                record.Stride,
+                record.Alignment,
+                record.Owner,
+                record.Allocator,
+                (H8AllocationFlags)record.Flags,
+                record.Generation);
+        }
+
+        private static bool TryUnregisterFreeAndRestoreOnFailure(
+            void* pointer,
+            SystemID owner,
+            Allocator allocator,
+            bool requireOwnerMatch)
+        {
+            if (pointer == null)
+                return true;
+
+            H8AllocationRecord record = default;
+            bool canRestoreTracking = TryFindRecordIndex((IntPtr)pointer, out int recordIndex);
+            if (canRestoreTracking)
+                record = _records[recordIndex];
+            if (!UnregisterPointer(pointer, owner, requireOwnerMatch))
+                return false;
+
+            try
+            {
+                UnsafeUtility.Free(pointer, allocator);
+                return true;
+            }
+            catch
+            {
+                if (canRestoreTracking)
+                    TryRestoreUnregisteredRecord(in record);
+                return false;
+            }
         }
 
         private static bool UnregisterPointer(void* pointer, SystemID requester)
@@ -4733,14 +5119,46 @@ namespace Hecton8.Core.Memory
                 if (newCapacity < oldCapacity || newCapacity > MaxTrackingCapacity)
                     newCapacity = MaxTrackingCapacity;
 
-                EnsureBlockDescriptorCapacity(newCapacity);
+                if (!TryEnsureBlockDescriptorCapacityNoLock(newCapacity))
+                    return -1;
                 if (_blockDescriptors.Length >= _blockDescriptors.Capacity)
                     return -1;
             }
 
-            int index = _blockDescriptors.Length;
-            _blockDescriptors.AddNoResize(descriptor);
-            return index;
+            int appendedIndex;
+            return TryAppendBlockDescriptorNoLock(in descriptor, out appendedIndex) ? appendedIndex : -1;
+        }
+
+        private static bool TryEnsureBlockDescriptorCapacityNoLock(int requiredCapacity)
+        {
+            try
+            {
+                EnsureBlockDescriptorCapacity(requiredCapacity);
+                return _blockDescriptors.IsCreated && _blockDescriptors.Capacity >= requiredCapacity;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryAppendBlockDescriptorNoLock(in BlockDescriptor descriptor, out int index)
+        {
+            index = -1;
+            if (!_blockDescriptors.IsCreated || _blockDescriptors.Length >= _blockDescriptors.Capacity)
+                return false;
+
+            try
+            {
+                index = _blockDescriptors.Length;
+                _blockDescriptors.AddNoResize(descriptor);
+                return true;
+            }
+            catch
+            {
+                index = -1;
+                return false;
+            }
         }
 
         private static bool TryReserveReusableBlockDescriptorSlot(in BlockDescriptor reservation, out int index)

@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Photic Mat Baseline"
+title: "קו בסיס מרבד פוטי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Photic Mat Baseline
+# קו בסיס מרבד פוטי
 
-HE LOC HOLD: Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered.
+קו בסיס מרבד פוטי הופך את היופי של HECTON-8 לכלל מעשי. המרבד אינו תפאורה. הוא מד חי שהופך את המדף המוקדם לקריא: צבע לחילוף חמצן, קשיחות שוליים לכימיית לחץ, קצב בועות לתנועת מים ומרקם אקוסטי לתפרים נסתרים. לכן הסלעים הבהירים הראשונים צריכים להרגיש מזמינים וחשודים בו זמנית. Marauder תקוע יכול להשתמש בקצה מרבד לסיבים, למקדימי משחת איטום או לקריאת חמצן חירומית, אבל כל חיתוך משנה את הכיס. הקציר הבטוח ביותר הוא שוליים חופשיים הרחק ממתכת, מתפרי פתחים ומצנרת Deep Reach ישנה. הקציר הגרוע ביותר הוא המרכז היפה, כי לרוב זה החלק שעובד הכי קשה. הצבה טובה מלמדת בלי הרצאה: מרבד בריא זוהר על אבן נקייה; מרבד מתוח מגדל שוליים לבנים של מלח סביב דליפות לחץ; מרבד מורעל נראה חלק מדי ונשמע לא נכון תחת הכלי. המדף הרדוד נשאר בהיר כי החיים עובדים שם. הוא נשאר מתוח כי השחקן יכול לשבור את העבודה הזאת בגירוד חמדני אחד.
 
 ## Scanner
 
-HE LOC HOLD: Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.
+מרבד פוטי // סרט חי שניזון ממינרלים על סלע רדוד. פסים בהירים מחמצנים מים; שוליים קשים ממלח מסמנים כימיית לחץ מתוחה ודליפות תפר נסתרות.
 
 ## Terminal
 
-HE LOC HOLD: ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.
+קו בסיס אקולוגי: ממפה עור חמצן, נגר מינרלי, דעיכה אקוסטית ומתח שולי מלח. לקצור רק שוליים חופשיים. קריעה ליד תפרים או ציוד אטום עלולה להפיל כיס לזיהום.
 
 ## Audio
 
-HE LOC HOLD: It looks clean because it is working hard. That is not the same as safe.
+זה נראה נקי כי זה עובד. זה לא אותו דבר כמו בטוח.
 
 ## Field Note
 
-HE LOC HOLD: Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.
+אל תגרד קודם את הכתם הבהיר ביותר. קרא את הקצה, הבועות והצליל; המרבד הוא מד לפני שהוא משאב.
 
 <!-- External Site; generated from P221_PHOTIC_MAT_BASELINE/he_IL. -->

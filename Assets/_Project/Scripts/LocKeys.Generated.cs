@@ -549,6 +549,8 @@ namespace Hecton.Localization
         public static readonly int ITEM_TOOL_SALVAGE_SAMPLER_NAME = LocHash.Compute("ITEM_TOOL_SALVAGE_SAMPLER_NAME");
         public static readonly int ITEM_TOOL_SCANNER_DESCRIPTION = LocHash.Compute("ITEM_TOOL_SCANNER_DESCRIPTION");
         public static readonly int ITEM_TOOL_SCANNER_NAME = LocHash.Compute("ITEM_TOOL_SCANNER_NAME");
+        public static readonly int ITEM_TOOL_SEAFLOOR_DRILL_DESCRIPTION = LocHash.Compute("ITEM_TOOL_SEAFLOOR_DRILL_DESCRIPTION");
+        public static readonly int ITEM_TOOL_SEAFLOOR_DRILL_NAME = LocHash.Compute("ITEM_TOOL_SEAFLOOR_DRILL_NAME");
         public static readonly int ITEM_TOOL_STUN_PISTOL_DESCRIPTION = LocHash.Compute("ITEM_TOOL_STUN_PISTOL_DESCRIPTION");
         public static readonly int ITEM_TOOL_STUN_PISTOL_NAME = LocHash.Compute("ITEM_TOOL_STUN_PISTOL_NAME");
         public static readonly int ITEM_TUNGSTEN_CHUNK_DESCRIPTION = LocHash.Compute("ITEM_TUNGSTEN_CHUNK_DESCRIPTION");

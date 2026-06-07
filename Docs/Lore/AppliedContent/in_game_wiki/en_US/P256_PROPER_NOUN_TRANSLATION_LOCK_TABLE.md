@@ -7,6 +7,9 @@ poi_tags: poi.localization_glossary_card;poi.name_lock_sheet
 biome_tags: biome.publication;biome.localization
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Proper Noun Translation Lock Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

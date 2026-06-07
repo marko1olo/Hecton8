@@ -15,7 +15,11 @@ namespace Hecton8.EditorTools
     {
         private const int CellCapacity = 256;
         private const float NominalPressureKpa = HectonSurvivalContract.KPaPerAtmosphere;
+        private const string NativeMemoryOwner = nameof(DodReplayPressureMapWindow);
+        private const string CellsLabel = "cells";
+
         private NativeArray<DodReplayAtmosphereCellRecord> _cells;
+        private int _cellsSentinelId;
         private int _cellCount;
 
         [MenuItem("Hecton8/Forensics/DOD Atmosphere Pressure Map")]
@@ -27,6 +31,24 @@ namespace Hecton8.EditorTools
         private void OnEnable()
         {
             _cells = new NativeArray<DodReplayAtmosphereCellRecord>(CellCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DodReplayAtmosphereCellRecord>[256] - editor pressure map staging - owner: DodReplayPressureMapWindow
+            try
+            {
+                _cellsSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    _cells,
+                    NativeMemoryOwner,
+                    CellsLabel,
+                    NativeAllocationLifetime.Session);
+                if (_cellsSentinelId <= 0)
+                    throw new System.InvalidOperationException($"Native memory sentinel registration failed for {CellsLabel}.");
+            }
+            catch
+            {
+                _cells.Dispose();
+                _cells = default;
+                _cellsSentinelId = 0;
+                throw;
+            }
+            EditorApplication.update -= Repaint;
             EditorApplication.update += Repaint;
         }
 
@@ -34,7 +56,12 @@ namespace Hecton8.EditorTools
         {
             EditorApplication.update -= Repaint;
             if (_cells.IsCreated)
+            {
+                NativeMemorySentinel.Unregister(_cellsSentinelId);
+                _cellsSentinelId = 0;
                 _cells.Dispose();
+                _cells = default;
+            }
         }
 
         private void OnGUI()

@@ -7,6 +7,9 @@ poi_tags: poi.outer_claim_beacon;poi.mute_moon_packet
 biome_tags: biome.orbital_window;biome.dead_claim_cache
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Холодные claims внешних лун"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

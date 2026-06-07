@@ -7,6 +7,9 @@ poi_tags: poi.carrier_contract;poi.claim_pool_ledger
 biome_tags: biome.crash_shelf;biome.surface_weather
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Black Keel 보관권"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

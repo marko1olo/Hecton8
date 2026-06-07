@@ -7,6 +7,9 @@ poi_tags: poi.moon_atlas_name_plate;poi.route_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Правило фиксации имен лун"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

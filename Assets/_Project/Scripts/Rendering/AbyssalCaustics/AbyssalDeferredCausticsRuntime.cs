@@ -1952,6 +1952,14 @@ namespace Hecton8.Rendering
                 NativeArrayOptions.UninitializedMemory);
             try
             {
+                payload = H8Memory.Allocate<byte>(
+                    totalBytes,
+                    OwnerSystemId,
+                    Allocator.Temp,
+                    NativeArrayOptions.UninitializedMemory);
+                if (!payload.IsCreated)
+                    return;
+
                 WriteUInt32LittleEndian(payload, 0, 0x32334353u);
                 WriteInt32LittleEndian(payload, 4, entryCount);
                 WriteInt32LittleEndian(payload, 8, telemetryWriteCursor);

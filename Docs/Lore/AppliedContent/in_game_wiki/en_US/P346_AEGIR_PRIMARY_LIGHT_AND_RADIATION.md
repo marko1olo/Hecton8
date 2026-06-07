@@ -7,6 +7,9 @@ poi_tags: poi.stellar_card;poi.radiation_schedule
 biome_tags: biome.orbit;biome.system
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Aegir Primary Light and Radiation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

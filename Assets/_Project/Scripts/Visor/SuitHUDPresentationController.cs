@@ -662,7 +662,7 @@ namespace NASAPunk.Visor
                 return;
             }
 
-            if (canvasOverlay == null || visorProjectionCamera == null)
+            if (visorProjectionCamera == null)
                 return;
 
             bool createdThisPass = false;
@@ -680,10 +680,9 @@ namespace NASAPunk.Visor
             if (!ReferenceEquals(_normalizedProjectionSourceOverlay, projectionSourceOverlay))
                 _normalizedProjectionSourceOverlay = projectionSourceOverlay;
 
-            if (syncProjectionLayoutFromOverlay || createdThisPass)
+            if (canvasOverlay != null && (syncProjectionLayoutFromOverlay || createdThisPass))
                 projectionSourceOverlay.CopyConfigurationFrom(canvasOverlay);
-            projectionSourceOverlay.SetProjectionCamera(visorProjectionCamera);
-            projectionSourceOverlay.SetRenderPathProjectionSource(true);
+            projectionSourceOverlay.ConfigureRuntimeProjection(visorProjectionCamera);
         }
 
         private SuitHUDV4CanvasOverlay CreateProjectionSourceOverlay()
@@ -1276,8 +1275,7 @@ namespace NASAPunk.Visor
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _tickRegistered = false;
-                _lateFrameRegistered = false;
+                UnregisterTick();
                 if (currentService != null && isActiveAndEnabled)
                     EvaluateTickRegistration();
             }

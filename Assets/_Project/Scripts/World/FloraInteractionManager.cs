@@ -1730,12 +1730,7 @@ namespace Hecton8.World
             _cascadeEmissionBoost = Mathf.Max(0f, _cascadeEmissionBoost);
             _cascadeRetriggerCooldownSeconds = Mathf.Max(0.1f, _cascadeRetriggerCooldownSeconds);
             _cascadeSpatialRefreshIntervalSeconds = Mathf.Max(0.1f, _cascadeSpatialRefreshIntervalSeconds);
-            _toxicSporeScanIntervalSeconds = Mathf.Max(0.05f, _toxicSporeScanIntervalSeconds);
-            _toxicSporeDetectionRadius = Mathf.Max(1f, _toxicSporeDetectionRadius);
-            _toxicSporeHazardRadius = Mathf.Max(1f, _toxicSporeHazardRadius);
-            _toxicSporeHazardIntensity = Mathf.Clamp01(_toxicSporeHazardIntensity);
-            _toxicSporeDragMultiplier = Mathf.Max(1f, _toxicSporeDragMultiplier);
-            _toxicSporeVisorGlitchBias = Mathf.Max(0f, _toxicSporeVisorGlitchBias);
+            SanitizeSporeHazardAuthoringValues();
             _matureToxicSporeEventScanBudget = Mathf.Clamp(_matureToxicSporeEventScanBudget, 8, 512);
             _moduleParasiteScanIntervalSeconds = Mathf.Max(0.1f, _moduleParasiteScanIntervalSeconds);
             _moduleParasiteAttachmentRadius = Mathf.Max(0.5f, _moduleParasiteAttachmentRadius);
@@ -1749,11 +1744,6 @@ namespace Hecton8.World
             _parasiteBioReactorOverheatMultiplier = Mathf.Max(1f, _parasiteBioReactorOverheatMultiplier);
             _fungalMindSpreadSeedGrowth01 = Mathf.Clamp(_fungalMindSpreadSeedGrowth01, 0.01f, 0.25f);
             _fungalMindSpreadDrainScale = Mathf.Clamp(_fungalMindSpreadDrainScale, 0.1f, 1f);
-            _defensiveSporeBurstRadius = Mathf.Max(1f, _defensiveSporeBurstRadius);
-            _defensiveSporeBurstDose = Mathf.Max(0.25f, _defensiveSporeBurstDose);
-            _defensiveSporeBurstLifetimeSeconds = Mathf.Max(1f, _defensiveSporeBurstLifetimeSeconds);
-            _defensiveSporeHazardIntensity = Mathf.Max(0f, _defensiveSporeHazardIntensity);
-            _defensiveSporeVisorGlitchBias = Mathf.Max(0f, _defensiveSporeVisorGlitchBias);
             _floraSwaySpringDecayRate = Mathf.Clamp(_floraSwaySpringDecayRate, 0.1f, 12f);
             _floraSwayGlobalCurrentInfluence = Mathf.Clamp01(_floraSwayGlobalCurrentInfluence);
             _floraSwayEntityMassMultiplier = Mathf.Clamp(_floraSwayEntityMassMultiplier, 0f, 4f);
@@ -5150,9 +5140,10 @@ namespace Hecton8.World
             int hazardPayloadIndex = -1;
             float hazardAge01 = 1f;
             bool hazardUnderwater = true;
+            float toxicSporeDetectionRadius = ClampFinite(_toxicSporeDetectionRadius, 4.5f, 1f, 8f);
             TryResolveNearestToxicSporeEmitter(
                 playerPositionWS,
-                Mathf.Max(1f, _toxicSporeDetectionRadius),
+                toxicSporeDetectionRadius,
                 ref exposure01,
                 ref hazardPosition,
                 ref hazardTemplateIndex,
@@ -5165,7 +5156,7 @@ namespace Hecton8.World
                 hazardUnderwater = false;
                 TryResolveNearestToxicSporeEmitter(
                     playerPositionWS,
-                    Mathf.Max(1f, _toxicSporeDetectionRadius),
+                    toxicSporeDetectionRadius,
                     ref exposure01,
                     ref hazardPosition,
                     ref hazardTemplateIndex,
@@ -5267,8 +5258,13 @@ namespace Hecton8.World
             ref float bestAge01,
             bool underwater)
         {
-            if (_vegetationBridge == null)
+            if (_vegetationBridge == null ||
+                !IsFiniteVector3(playerPositionWS) ||
+                !float.IsFinite(detectionRadius) ||
+                detectionRadius <= 0f)
+            {
                 return;
+            }
 
             NativeArray<Matrix4x4> matrices;
             NativeArray<HectonVegetationInstanceData> metadata;
@@ -5300,12 +5296,15 @@ namespace Hecton8.World
                     continue;
 
                 Vector3 instancePositionWS = ExtractTranslation(matrices[i]);
+                if (!IsFiniteVector3(instancePositionWS))
+                    continue;
+
                 float distanceSq = (instancePositionWS - playerPositionWS).sqrMagnitude;
-                if (distanceSq > detectionRadiusSq)
+                if (!math.isfinite(distanceSq) || distanceSq > detectionRadiusSq)
                     continue;
 
                 float exposure01 = 1f - math.saturate(distanceSq * invDetectionRadiusSq);
-                if (exposure01 <= bestExposure01)
+                if (!math.isfinite(exposure01) || exposure01 <= bestExposure01)
                     continue;
 
                 bestExposure01 = exposure01;
@@ -6788,6 +6787,9 @@ namespace Hecton8.World
 
         public void RegisterDefensiveSporeBurst(Vector3 positionWS, float intensity01)
         {
+            if (!IsFiniteVector3(positionWS) || !float.IsFinite(intensity01))
+                return;
+
             float simulationTime = GetCurrentSimulationTimeSeconds();
             float clampedIntensity = Mathf.Max(0.1f, intensity01);
             ChemicalInfluenceGrid.QueueToxicityBurst(positionWS, _defensiveSporeBurstDose * clampedIntensity);
@@ -6836,16 +6838,22 @@ namespace Hecton8.World
             {
                 DefensiveSporeBurstState burst = _defensiveSporeBursts[i];
                 float radius = burst.Radius;
-                if (radius < 0f)
+                if (!float.IsFinite(radius) ||
+                    radius <= 0f ||
+                    !float.IsFinite(burst.Intensity) ||
+                    burst.Intensity <= 0f ||
+                    !IsFiniteVector3(burst.PositionWS))
+                {
                     continue;
+                }
 
                 float radiusSq = radius * radius;
                 float distanceSq = (playerPositionWS - burst.PositionWS).sqrMagnitude;
-                if (distanceSq > radiusSq)
+                if (!math.isfinite(distanceSq) || distanceSq > radiusSq)
                     continue;
 
                 float exposure01 = (1f - math.saturate(distanceSq / math.max(0.001f, radiusSq))) * burst.Intensity;
-                if (exposure01 <= strongestExposure)
+                if (!math.isfinite(exposure01) || exposure01 <= strongestExposure)
                     continue;
 
                 strongestExposure = exposure01;
@@ -10542,6 +10550,21 @@ namespace Hecton8.World
             return Mathf.Clamp(sanitized, safeMin, safeMax);
         }
 
+        private void SanitizeSporeHazardAuthoringValues()
+        {
+            _toxicSporeScanIntervalSeconds = ClampFinite(_toxicSporeScanIntervalSeconds, 0.2f, 0.05f, 1f);
+            _toxicSporeDetectionRadius = ClampFinite(_toxicSporeDetectionRadius, 4.5f, 1f, 8f);
+            _toxicSporeHazardRadius = ClampFinite(_toxicSporeHazardRadius, 3f, 1f, 8f);
+            _toxicSporeHazardIntensity = ClampFinite(_toxicSporeHazardIntensity, 0.78f, 0f, 1f);
+            _toxicSporeDragMultiplier = ClampFinite(_toxicSporeDragMultiplier, 1.3f, 1f, 3f);
+            _toxicSporeVisorGlitchBias = ClampFinite(_toxicSporeVisorGlitchBias, 1.25f, 0f, 2f);
+            _defensiveSporeBurstRadius = ClampFinite(_defensiveSporeBurstRadius, 7f, 1f, 20f);
+            _defensiveSporeBurstDose = ClampFinite(_defensiveSporeBurstDose, 8f, 0.25f, 16f);
+            _defensiveSporeBurstLifetimeSeconds = ClampFinite(_defensiveSporeBurstLifetimeSeconds, 10f, 1f, 20f);
+            _defensiveSporeHazardIntensity = ClampFinite(_defensiveSporeHazardIntensity, 1.15f, 0f, 2f);
+            _defensiveSporeVisorGlitchBias = ClampFinite(_defensiveSporeVisorGlitchBias, 1.75f, 0f, 3f);
+        }
+
         private static bool IsFiniteVector3(Vector3 value)
         {
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
@@ -10593,6 +10616,7 @@ namespace Hecton8.World
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            SanitizeSporeHazardAuthoringValues();
             TryAutoAssignWakeTrailSimulationCompute();
         }
 #endif

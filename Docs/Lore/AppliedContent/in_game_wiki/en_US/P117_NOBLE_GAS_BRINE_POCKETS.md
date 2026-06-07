@@ -7,6 +7,9 @@ poi_tags: poi.noble_gas_bubble_trap;poi.brine_pocket_vent
 biome_tags: biome.brine_canyon;biome.vent_forge
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Noble Gas Brine Pockets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -16,22 +19,22 @@ localization_flags: 0
 
 # Noble Gas Brine Pockets
 
-Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.
+Noble gas brine pockets are sealed pressure records inside HECTON-8's mineral brines. A useful pocket is not just xenon in water; it is gas ratio, pressure curve, temperature scar and mineral defect lattice held together long enough to prove what happened underground. Venting the pocket destroys both the value and the evidence. These samples become important because Deep Reach and later Atlas processes can push the right pressure-history feedstock toward Xenon-Omega, but the raw pocket is still geology, not treasure by itself.
 
 ## Scanner
 
-Natural-to-process resource. Valuable only if pressure history survives extraction.
+NOBLE-GAS BRINE POCKET // Sealed pressure bubble in mineral brine. Value survives only if the pressure history stays sealed; vent it and the fortune becomes weather.
 
 ## Terminal
 
-RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+RESOURCE CLASS: native/process feedstock. Use pressure-bell extraction. Do not vent or warm sample. Required evidence: pressure curve, gas ratio, mineral defect map.
 
 ## Audio
 
-Open it wrong and the fortune becomes weather.
+Xenon-Omega begins here as trapped chemistry, not miracle ore.
 
 ## Field Note
 
-This is where Xenon-Omega begins as chemistry, not magic.
+Do not open the pocket to see if it is rich. That is how poor crews make bubbles.
 
 <!-- In-Game Wiki; generated from P117_NOBLE_GAS_BRINE_POCKETS/en_US. -->

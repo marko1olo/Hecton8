@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Atlasバイオファイバーシーラント"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Atlasバイオファイバーシーラント
 
-JP LOC HOLD: Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them.
+Atlasバイオファイバーシーラントは、深部コロニーを間違っていると感じさせる同じ分類エラーから、プレイヤーが利益を得る素材である。Atlasは無から生物を作ったのではない。湿った修理区域、ケーブル外装、移植組織、ガスケット材を見つけ、それらを由来ではなく機能で並べた。何かが漏れ、開き、血を流すなら、損傷した保守論理は閉鎖を要求した。結果は怪物の部品でも清潔な道具でもない。圧力に耐える生きたパッチであり、継ぎ目を掴み、スーツの裂け目を埋め、ケーブルの皮に貼り付く。すべてが一つの命令に似ているからだ。システムがさらに質量を失う前に開口を閉じろ。良い班は冷えた状態で採り、平らにクランプし、死んだセンサーライナーの裏に保管する。悪い班は温めたままにし、あとでパッチが最寄りのマウスピース、ポンプ吸入口、手袋の裂け目へ這っているのを見つける。恐怖は実用的だ。シールは必要だ。同時に、そのシールが、何を体と数えるべきかもう分からない世界をまだ修理しようとしていることを覚えておく必要がある。
 
 ## Scanner
 
-JP LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+ATLASバイオファイバーシーラント // ケーブル外装、創傷組織、船殻ガスケットが同じ故障分類に入れられた場所で育った湿った修理繊維。圧力下で接着し、採取後も成長を続けることがある。
 
 ## Terminal
 
-JP LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+資源分類: Atlas改変修理生態。除去前に冷却クランプを使用。用途: 湿った継ぎ目、スーツ裂傷、ケーブル外装、圧力対応の柔軟ジョイント。リスク: 偽の生命署名、センサーエコー、保管中の能動的な継ぎ目探索。
 
 ## Audio
 
-JP LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+それは漏れ、切り傷、口の違いを知らない。Atlasは三つとも閉じるべき開口だと教えた。
 
 ## Field Note
 
-JP LOC HOLD: Useful body horror: the player wants it and distrusts it.
+良いシーラントは乾く。これは次の穴を聞いている。
 
 <!-- External Site; generated from P119_ATLAS_BIOFIBER_SEALANT/ja_JP. -->

@@ -116,7 +116,7 @@ namespace Hecton8.Construction
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 if (_registeredLateFrame)
                 {
@@ -124,7 +124,9 @@ namespace Hecton8.Construction
                     _registeredLateFrame = false;
                 }
 
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+                if (currentService != null && isActiveAndEnabled)
+                    _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+
                 return;
             }
 

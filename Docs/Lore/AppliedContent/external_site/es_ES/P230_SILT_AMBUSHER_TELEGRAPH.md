@@ -9,32 +9,34 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Silt Ambusher Telegraph"
+title: "Señales del emboscador de limo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Silt Ambusher Telegraph
+# Señales del emboscador de limo
 
-ES LOC HOLD: Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact.
+Señales del emboscador de limo es a la vez un artículo de criatura y una regla de justicia para HECTON-8. Las zonas más profundas pueden ser hostiles, oscuras y difíciles de leer, pero no deben castigar al jugador con tiradas invisibles. Un emboscador de limo da miedo porque es casi terreno: una trampa viva enterrada bajo sedimento, esperando vibración, calor y peso descuidado. Pertenece al abismo porque el abismo ya trata sobre la confianza en los sensores.
+
+Una buena colocación da pruebas antes del peligro. La placa es demasiado lisa. Faltan los pequeños reptadores. El borde forma un creciente que el asentamiento natural no produce. Un pulso vuelve tarde, bajo y blando. Una lámpara capta una respiración de limo donde no debería moverse ninguna corriente. Cuando el jugador conoce esas señales, cada parche plano se convierte en una pregunta, no en un castigo aleatorio. Ese es el contrato de HECTON-8: el océano puede ser cruel, pero debe ser legible para quien presta atención.
 
 ## Scanner
 
-ES LOC HOLD: A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.
+LECHO DE EMBOSCADOR DE LIMO // Limo limpio, ausencia de pastadores y un retorno de pulso bajo señalan una trampa viva antes de que se abra la placa.
 
 ## Terminal
 
-ES LOC HOLD: CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.
+REGLA DE CONTACTO: los lechos de emboscador requieren al menos dos señales previas al contacto: placa limpia, microfauna ausente, borde creciente, retorno de pulso bajo o respiración retardada del limo. Si falla el presupuesto de señales, degradar a encuentro de solo rastro.
 
 ## Audio
 
-ES LOC HOLD: Flat ground is a lie down here.
+El suelo plano miente aquí abajo. Mira lo que no está reptando sobre él.
 
 ## Field Note
 
-ES LOC HOLD: Deep danger must telegraph. The player should learn the wrongness before paying for it.
+El abismo puede ser injusto con el personaje; el juego no puede ser injusto con el jugador. Toda emboscada debe dejar una rareza legible.
 
 <!-- External Site; generated from P230_SILT_AMBUSHER_TELEGRAPH/es_ES. -->

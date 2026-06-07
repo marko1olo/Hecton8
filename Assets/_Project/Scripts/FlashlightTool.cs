@@ -73,7 +73,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool autoTurnOffOnUnequip = true;
         [SerializeField] private bool secondaryCyclesBeamMode = true;
         [SerializeField] private float contextProbeRange = 18f;
-        [SerializeField] private LayerMask contextMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask contextMask = Hecton8.Core.HectonLayerMasks.FieldToolSurfaceLayerMask;
 
         [Header("── Battery Settings ─────────────────────────")]
         [Tooltip("Battery item type this tool uses.")]
@@ -274,11 +274,13 @@ namespace Hecton8.Gameplay
             object currentService)
         {
             base.OnToolRegistryServiceReplaced(serviceSlot, previousService, currentService);
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled || !_lateFrameRegistered)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
+            bool needsLateFrameTick = _lateFrameRegistered || _powerIndicatorDirty;
             TryUnregisterLateFrameTick();
-            TryRegisterLateFrameTick();
+            if (needsLateFrameTick && currentService != null && isActiveAndEnabled)
+                TryRegisterLateFrameTick();
         }
 
         private void SyncFlashlightChargeMirrorFromCentral()
@@ -439,7 +441,7 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterLateFrameTick()
         {
-            if (_lateFrameRegistered || !Application.isPlaying)
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
@@ -744,13 +746,14 @@ namespace Hecton8.Gameplay
             Ray ray = new Ray(origin, direction);
             
             const QueryTriggerInteraction triggerMode = QueryTriggerInteraction.Collide;
-            if (!cache.TryGetHit(ray, contextProbeRange, contextMask, triggerMode, out InteractionSurfaceHit finalHit))
+            LayerMask resolvedContextMask = ResolveContextSurfaceLayerMask();
+            if (!cache.TryGetHit(ray, contextProbeRange, resolvedContextMask, triggerMode, out InteractionSurfaceHit finalHit))
             {
-                if (!RequestPrimarySurfaceHit(ray.origin, ray.direction, contextProbeRange, contextMask.value, triggerMode, out InteractionSurfaceHit hit))
+                if (!RequestPrimarySurfaceHit(ray.origin, ray.direction, contextProbeRange, resolvedContextMask.value, triggerMode, out InteractionSurfaceHit hit))
                     return false;
 
                 finalHit = hit;
-                cache.SetHit(ray, contextProbeRange, contextMask, triggerMode, finalHit);
+                cache.SetHit(ray, contextProbeRange, resolvedContextMask, triggerMode, finalHit);
             }
 
             Collider collider = finalHit.collider;
@@ -770,6 +773,13 @@ namespace Hecton8.Gameplay
             }
 
             return TryBuildDistanceContextDirective(finalHit.distance, out directive);
+        }
+
+        private LayerMask ResolveContextSurfaceLayerMask()
+        {
+            LayerMask resolvedMask = default;
+            resolvedMask.value = HectonLayerMasks.ResolveSurfaceInteractionLayerMask(contextMask.value);
+            return resolvedMask;
         }
 
         private bool TryResolveContextRay(out Vector3 origin, out Vector3 direction)

@@ -7,6 +7,9 @@ poi_tags: poi.sensor_tagged_fin;poi.noisy_tag_echo
 biome_tags: biome.abyssal_machine_field;biome.atlas_repair_network
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Sensor-Tagged Fauna Pursuit Encounter Grammar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

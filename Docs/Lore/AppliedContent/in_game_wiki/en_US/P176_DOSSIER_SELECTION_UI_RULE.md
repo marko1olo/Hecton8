@@ -7,6 +7,9 @@ poi_tags: poi.dossier_selection_panel;poi.contract_seed_terminal
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Dossier Selection UI Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

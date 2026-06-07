@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using Hecton8.Core;
 using Hecton8.Editor.ColliderOptimization1716;
 using Unity.Collections;
 using Unity.Jobs;
@@ -20,6 +21,7 @@ namespace Hecton8.Editor.ProceduralGen
         private const string DefaultRuleFolder = "Assets/_Project/Data/ProceduralGen";
         private const string DefaultGeneratedMaterialPath = "Assets/_Project/Art/Generated/Flora/MAT_BioForge_Default.mat";
         private const float MinimumColliderAxisMeters1716 = 0.05f;
+        private const string NativeMemoryOwner = nameof(BioForgeGenerator);
 
         private static bool _deferAssetSave;
 
@@ -44,9 +46,12 @@ namespace Hecton8.Editor.ProceduralGen
 
             string assetStem = ResolveAssetStem(rule, seed, nameOverride, "Flora");
 
-            using (NativeList<Matrix4x4> branchMatrices = new NativeList<Matrix4x4>(rule.MaxBranches, Allocator.TempJob))
-            using (NativeList<BioForgeBranch> branches = new NativeList<BioForgeBranch>(rule.MaxBranches, Allocator.TempJob))
+            NativeList<Matrix4x4> branchMatrices = default;
+            NativeList<BioForgeBranch> branches = default;
+            try
             {
+                branchMatrices = AllocateTrackedNativeList<Matrix4x4>(rule.MaxBranches, Allocator.TempJob, nameof(branchMatrices));
+                branches = AllocateTrackedNativeList<BioForgeBranch>(rule.MaxBranches, Allocator.TempJob, nameof(branches));
                 string expanded = ExpandAxiom(rule);
                 ParseLSystem(rule, expanded, seed, branchMatrices, branches);
 
@@ -60,6 +65,11 @@ namespace Hecton8.Editor.ProceduralGen
                 int sdfModeFlags = rule.SdfProfile == BioForgeSdfProfile.RibbonFlora ? BioForgeSdfBuildJob.ModeFlagRibbon : 0;
                 Mesh[] lodMeshes = BuildMeshesFromSdf(rule, seed, branches.AsArray(), boundsMin, boundsMax, sdfModeFlags);
                 SaveMeshesAndPrefab(rule, assetStem, lodMeshes, boundsMin, boundsMax, false);
+            }
+            finally
+            {
+                DisposeTrackedNativeList(ref branches, nameof(branches));
+                DisposeTrackedNativeList(ref branchMatrices, nameof(branchMatrices));
             }
         }
 
@@ -76,13 +86,19 @@ namespace Hecton8.Editor.ProceduralGen
             float3 boundsMin = new float3(-radius, -radius, -radius);
             float3 boundsMax = new float3(radius, radius, radius);
 
-            using (NativeArray<BioForgeBranch> emptyBranches = new NativeArray<BioForgeBranch>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory))
+            NativeArray<BioForgeBranch> emptyBranches = default;
+            try
             {
+                emptyBranches = AllocateTrackedNativeArray<BioForgeBranch>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory, nameof(emptyBranches));
                 int sdfModeFlags = BioForgeSdfBuildJob.ModeFlagRock;
                 if (rule.SdfProfile == BioForgeSdfProfile.PorousRock)
                     sdfModeFlags |= BioForgeSdfBuildJob.ModeFlagPorous;
                 Mesh[] lodMeshes = BuildMeshesFromSdf(rule, seed, emptyBranches, boundsMin, boundsMax, sdfModeFlags);
                 SaveMeshesAndPrefab(rule, assetStem, lodMeshes, boundsMin, boundsMax, true);
+            }
+            finally
+            {
+                DisposeTrackedNativeArray(ref emptyBranches);
             }
         }
 
@@ -203,12 +219,12 @@ namespace Hecton8.Editor.ProceduralGen
             try
             {
                 // COLD ALLOC: NativeArray<float>[pointCount] - editor SDF density scratch - owner: BioForgeGenerator
-                density = new NativeArray<float>(pointCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                density = AllocateTrackedNativeArray<float>(pointCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(density));
                 int rawCapacity = math.min(cellCount * 18, 3000000);
                 // COLD ALLOC: NativeList<BioForgeRawVertex>[rawCapacity] - editor marching-cubes raw vertex output - owner: BioForgeGenerator
-                rawVertices = new NativeList<BioForgeRawVertex>(rawCapacity, Allocator.TempJob);
+                rawVertices = AllocateTrackedNativeList<BioForgeRawVertex>(rawCapacity, Allocator.TempJob, nameof(rawVertices));
                 // COLD ALLOC: NativeArray<int>[1] - editor MC overflow flag - owner: BioForgeGenerator
-                overflow = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                overflow = AllocateTrackedNativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory, nameof(overflow));
 
                 var sdfJob = new BioForgeSdfBuildJob
                 {
@@ -255,7 +271,7 @@ namespace Hecton8.Editor.ProceduralGen
                     return CreateEmptyLods(rule.AssetPrefix);
 
                 // COLD ALLOC: NativeArray<BioForgeMeshVertex>[rawCount] - editor vertex attribute bake - owner: BioForgeGenerator
-                bakedVertices = new NativeArray<BioForgeMeshVertex>(rawCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                bakedVertices = AllocateTrackedNativeArray<BioForgeMeshVertex>(rawCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(bakedVertices));
 
                 var bakeJob = new BioForgeVertexBakeJob
                 {
@@ -276,10 +292,10 @@ namespace Hecton8.Editor.ProceduralGen
             }
             finally
             {
-                if (bakedVertices.IsCreated) bakedVertices.Dispose();
-                if (rawVertices.IsCreated) rawVertices.Dispose();
-                if (overflow.IsCreated) overflow.Dispose();
-                if (density.IsCreated) density.Dispose();
+                DisposeTrackedNativeArray(ref bakedVertices);
+                DisposeTrackedNativeList(ref rawVertices, nameof(rawVertices));
+                DisposeTrackedNativeArray(ref overflow);
+                DisposeTrackedNativeArray(ref density);
             }
         }
 
@@ -302,7 +318,7 @@ namespace Hecton8.Editor.ProceduralGen
             try
             {
                 // COLD ALLOC: NativeArray<BioForgeMeshVertex>[outputCount] - editor LOD output vertices - owner: BioForgeGenerator
-                outputVertices = new NativeArray<BioForgeMeshVertex>(outputCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                outputVertices = AllocateTrackedNativeArray<BioForgeMeshVertex>(outputCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(outputVertices));
 
                 var decimateJob = new BioForgeEdgeCollapseDecimationJob
                 {
@@ -321,7 +337,100 @@ namespace Hecton8.Editor.ProceduralGen
             }
             finally
             {
-                if (outputVertices.IsCreated) outputVertices.Dispose();
+                DisposeTrackedNativeArray(ref outputVertices);
+            }
+        }
+
+        private static NativeArray<T> AllocateTrackedNativeArray<T>(int length, Allocator allocator, NativeArrayOptions options, string label) where T : struct
+        {
+            if (length <= 0)
+                return default;
+
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[BioForge] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, ResolveNativeAllocationLifetime(allocator));
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("[BioForge] NativeMemorySentinel rejected NativeArray registration for " + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
+        }
+
+        private static NativeList<T> AllocateTrackedNativeList<T>(int capacity, Allocator allocator, string label) where T : unmanaged
+        {
+            int safeCapacity = math.max(1, capacity);
+            NativeList<T> list = new NativeList<T>(safeCapacity, allocator);
+            if (!list.IsCreated)
+                throw new InvalidOperationException("[BioForge] NativeList allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeList(list, NativeMemoryOwner, label, ResolveNativeAllocationLifetime(allocator));
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("[BioForge] NativeMemorySentinel rejected NativeList registration for " + label + ".");
+            }
+            catch
+            {
+                list.Dispose();
+                throw;
+            }
+
+            return list;
+        }
+
+        private static void DisposeTrackedNativeList<T>(ref NativeList<T> list, string label) where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
+            }
+            finally
+            {
+                list.Dispose();
+                list = default;
+            }
+        }
+
+        private static NativeAllocationLifetime ResolveNativeAllocationLifetime(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return NativeAllocationLifetime.Temp;
+                case Allocator.TempJob:
+                    return NativeAllocationLifetime.TempJob;
+                case Allocator.Persistent:
+                    return NativeAllocationLifetime.Session;
+                default:
+                    return NativeAllocationLifetime.Session;
             }
         }
 
@@ -666,7 +775,7 @@ namespace Hecton8.Editor.ProceduralGen
 
         private static void ParseLSystem(BioRuleData rule, string expanded, int seed, NativeList<Matrix4x4> branchMatrices, NativeList<BioForgeBranch> branches)
         {
-            var stateStack = new NativeList<TurtleState>(64, Allocator.Temp);
+            NativeList<TurtleState> stateStack = AllocateTrackedNativeList<TurtleState>(math.max(64, rule.MaxBranches), Allocator.Temp, nameof(stateStack));
             try
             {
                 float angleRad = math.radians(rule.AngleDegrees + (Hash01((uint)seed, 17u) - 0.5f) * 4f);
@@ -722,7 +831,7 @@ namespace Hecton8.Editor.ProceduralGen
             }
             finally
             {
-                stateStack.Dispose();
+                DisposeTrackedNativeList(ref stateStack, nameof(stateStack));
             }
         }
 

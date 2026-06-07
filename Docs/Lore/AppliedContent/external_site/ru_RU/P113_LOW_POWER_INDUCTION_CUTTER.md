@@ -7,6 +7,9 @@ poi_tags: poi.cutter_charge_cradle;poi.jammed_service_hatch
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Low-power induction cutter"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

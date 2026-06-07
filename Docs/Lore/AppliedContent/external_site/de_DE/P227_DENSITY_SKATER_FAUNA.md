@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Density Skater Fauna"
+title: "Dichteskater-Fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Density Skater Fauna
+# Dichteskater-Fauna
 
-DE LOC HOLD: Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes.
+Dichteskater-Fauna verwandelt eine der seltsamsten Hard-Sci-Fi-Ideen von HECTON-8 in eine Begegnung, die Spieler ohne Vortrag verstehen können: Wasser kann Oberflächen enthalten. Im Solecanyon stapeln sich Salzgehalt, Temperatur und Druck zu Dichteshelfs. Kleine Tiere nutzen diese Shelfs, wie Oberflächeninsekten Spannung nutzen, nur dass die Oberfläche im Ozean vergraben ist. Das Ergebnis soll unheimlich, aber fair wirken. Ein Skater kreuzt eine scheinbar leere Lücke; Sonar zeigt eine Welle; der Anzugstrim wackelt; der Spieler erkennt eine Grenze. Text und Platzierung müssen Fantasy-Levitation widerstehen. Der Skater schwebt nicht, weil die Welt Physik vergessen hat. Er lebt, weil die Physik spezifisch ist. Sein Weg kann zu gerissenen brine vanes, salzärmeren Taschen, warmen Solestufen oder Hinterhaltbahnen führen. Er kann auch täuschen: Was ein leichtes Tier trägt, kann einen beladenen Marauder in schwarzes Schichtwasser fallen lassen. Der Designwert ist nicht die Kreatur allein, sondern die Lektion. Der Canyon ist kein offener Raum. Er ist eine Maschine aus gestapeltem Wasser, und jeder kleine Körper darauf zeichnet die Karte in Bewegung.
 
 ## Scanner
 
-DE LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+DICHTESKATER // Dünngliedrige Fauna läuft auf der Solegrenze wie auf einer Oberfläche und hinterlässt Wellen, wo Sonar offenes Wasser erwartet.
 
 ## Terminal
 
-DE LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+FAUNA-BASIS: Skaterkontakt steigt nahe gerissenen brine vanes, warmen Solestufen und toten Sonarkanten. Ihre Spur markiert ein Dichteshelf, keinen sicheren Stand. Nicht durch opake Schichten hinterherjagen.
 
 ## Audio
 
-DE LOC HOLD: Something is walking on the water inside the water.
+Etwas läuft auf dem Wasser im Wasser.
 
 ## Field Note
 
-DE LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+Sie schweben nicht. Sie laufen auf einer Grenze, durch die dein Anzug fallen kann.
 
 <!-- External Site; generated from P227_DENSITY_SKATER_FAUNA/de_DE. -->

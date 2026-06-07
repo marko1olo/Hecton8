@@ -7,6 +7,9 @@ poi_tags: poi.black_keel_mass_ledger;poi.payout_conversion_note
 biome_tags: biome.claim_admin;biome.black_keel_orbit
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Mass-ledger выплат Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

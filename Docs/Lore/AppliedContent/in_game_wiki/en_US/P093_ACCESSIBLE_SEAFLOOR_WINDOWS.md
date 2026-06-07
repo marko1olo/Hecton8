@@ -7,6 +7,9 @@ poi_tags: poi.exposed_ridge_marker;poi.vent_scar_floor
 biome_tags: biome.brine_canyon;biome.vent_forge
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Accessible Seafloor Windows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -4,9 +4,12 @@ using System.Collections.Generic;
 using System.IO;
 using Hecton.Localization;
 using Hecton8.AI;
+using Hecton8.Audio;
 using Hecton8.Building;
+using Hecton8.Core;
 using Hecton8.Crafting;
 using Hecton8.Dev;
+using Hecton8.EditorTools;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
@@ -33,8 +36,33 @@ namespace Hecton8.Editor.Validation
         private const string PrefabRoot = "Assets/_Project/Prefabs";
         private const string CopperVeinTemplatePath = DataRoot + "/Scavenging/ResourceNodes/ResourceNodeTemplate_CopperVein.asset";
         private const string PlayerPrefabPath = "Assets/_Project/Prefabs/Player.prefab";
+        private const string StarterSurvivalStatsPath = DataRoot + "/Survival/Standard_Suit_V1.asset";
+        private const string ProductionWorldScenePath = "Assets/_Project/Scenes/02_HECTON_WORLD.unity";
+        private const string FabricatorScriptPath = "Assets/_Project/Scripts/Fabricator.cs";
+        private const string AssemblyHologramMaterialPath = "Assets/_Project/Art/Materials/MAT_FabricatorAssembly_Hologram.asset";
+        private const string ForwardFabricatorObjectName = "Forward_Fabricator";
+        private const string ForwardFabricatorSocketId = "socket.fabrication.forward";
+        private const string ResourceDistributionDirectorScriptPath = "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs";
+        private const string ScavengingLootOracleRuntimeScriptPath = "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs";
+        private const string PdaLoadoutTabScriptPath = "Assets/_Project/Scripts/UI/PDALoadoutTab.cs";
+        private const string PdaLoadoutPresetPathPrefix = "Assets/_Project/Data/Tools/Presets/";
+        private const string RuntimeOrePrefabPath = "Assets/_Project/Prefabs/Resources/Nodes/PFB_Ore_Generic.prefab";
+        private const string RuntimeMagmaVentPrefabPath = "Assets/_Project/Prefabs/Resources/Nodes/PFB_Ore_MagmaVentMarker.prefab";
         private const string ToolHeldPrefabRoot = "Assets/_Project/Prefabs/Tools/Held";
+        private const string GenericResourceScanEntryId = "scan.resource_node";
+        private const string ScannerToolItemId = "Item_Tool_Scanner";
         private const string SeafloorDrillItemId = "Item_Tool_SeafloorDrill";
+        private const string SeafloorDrillRecipePath = DataRoot + "/Crafting/Recipes/Recipe_SeafloorDrill.asset";
+        private const string GlassPanelItemId = "Comp_GlassPanel";
+        private const string FiberMeshItemId = "Comp_FiberMesh";
+        private const string SilicaShardsItemId = "Data_SilicaShards";
+        private const string FiberKelpItemId = "Data_FiberKelp";
+        private const string GlassPanelRecipePath = DataRoot + "/Crafting/Recipes/Recipe_GlassPanel.asset";
+        private const string FiberMeshRecipePath = DataRoot + "/Crafting/Recipes/Recipe_FiberMesh.asset";
+        private const string SilicaShardClusterTemplatePath = DataRoot + "/Scavenging/ResourceNodes/ResourceNodeTemplate_SilicaShardCluster.asset";
+        private const string FiberKelpStandTemplatePath = DataRoot + "/Scavenging/ResourceNodes/ResourceNodeTemplate_FiberKelpStand.asset";
+        private const string CopperItemId = "Data_Copper";
+        private const string CopperWireItemId = "Comp_CopperWire";
         private const string EmergencyO2CanisterItemId = "Data_EmergencyO2Canister";
         private const string ItemCatalogPath = DataRoot + "/Items/ItemCatalog.asset";
         private const string GeneratedRoot = DataRoot + "/Diagnostics/Generated/ContentSanity";
@@ -49,7 +77,8 @@ namespace Hecton8.Editor.Validation
             EmergencyO2CanisterItemId,
             "Item_Tool_BeaconDeployer",
             "Item_Tool_Repair",
-            "Comp_PressureSeal"
+            "Comp_PressureSeal",
+            SeafloorDrillItemId
         };
 
         private sealed class ValidationResult
@@ -91,13 +120,16 @@ namespace Hecton8.Editor.Validation
             public int ResourceNodeYieldNotCatalogedCount;
             public int ResourceNodeYieldInvalidWorldPrefabContractCount;
             public int ResourceNodeToolGateErrorCount;
+            public int ResourceDistributionRouteErrorCount;
             public int FirstHourCraftGateErrorCount;
             public int FirstHourDrillRouteErrorCount;
             public int FirstHourOxygenRouteErrorCount;
             public int PlayerPdaHeadlessOpenRiskCount;
             public int PlayerPdaBridgeWarningCount;
+            public int PdaLoadoutPresetPathErrorCount;
             public int PlayerDevProvisionerStartupRiskCount;
             public int PlayerStarterLoadoutErrorCount;
+            public int PlayerSurfaceProbeAuthoringErrorCount;
         }
 
         [MenuItem(MenuPath, priority = 141)]
@@ -120,11 +152,15 @@ namespace Hecton8.Editor.Validation
             ValidateFloraTemplates(result, wireMesh, wireMaterial);
             ValidateFaunaTemplates(result, wireMesh, wireMaterial);
             ValidateResourceNodeTemplates(result);
+            ValidateResourceDistributionRuntimeRoute(result);
             ValidateFirstHourDrillRoute(result);
+            ValidateFirstHourFabricatorSceneRoute(result);
             ValidateBaseModuleTemplates(result);
             ValidatePlayerPdaShell(result);
+            ValidatePdaLoadoutPresetReferences(result);
             ValidatePlayerDevProvisioning(result);
             ValidatePlayerStarterLoadout(result);
+            ValidatePlayerSurfaceProbeAuthoring(result);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -1086,12 +1122,398 @@ namespace Hecton8.Editor.Validation
                     result.Errors.Add($"{assetPath}: ResourceNodeTemplate.StableHashId resolves to 0.");
 
                 ValidateFirstHourResourceNodeToolGate(result, template, assetPath);
-
-                if (template.NodeMesh == null)
-                    result.Warnings.Add($"{assetPath}: nodeMesh is null. Runtime ghost-box standard remains active.");
+                ValidateResourceNodeHostLayers(result, template, assetPath);
 
                 ValidateResourceNodeYieldArray(result, itemCatalog, template, assetPath, "harvestYield", "harvestYield");
                 ValidateResourceNodeYieldArray(result, itemCatalog, template, assetPath, "rarityDrops", "rarityDrops");
+            }
+        }
+
+        private static void ValidateResourceDistributionRuntimeRoute(ValidationResult result)
+        {
+            if (result.ResourceNodeCount <= 0)
+                return;
+
+            string sceneText = string.Empty;
+            bool sceneTextAvailable = TryReadProjectTextFile(ProductionWorldScenePath, out sceneText, out string sceneReadFailure);
+            string directorGuid = AssetDatabase.AssetPathToGUID(ResourceDistributionDirectorScriptPath);
+            string directorSceneBlock = string.Empty;
+            bool hasDirectorInScene = sceneTextAvailable &&
+                                      !string.IsNullOrWhiteSpace(directorGuid) &&
+                                      TryExtractMonoBehaviourBlockByScriptGuid(sceneText, directorGuid, out directorSceneBlock);
+            if (string.IsNullOrWhiteSpace(directorGuid))
+            {
+                AddResourceDistributionRouteError(
+                    result,
+                    $"{ResourceDistributionDirectorScriptPath}: missing script asset; production resource distribution cannot register a runtime director.");
+            }
+            else if (!hasDirectorInScene)
+            {
+                string readFailureSuffix = string.IsNullOrWhiteSpace(sceneReadFailure)
+                    ? string.Empty
+                    : $" Read failure: {sceneReadFailure}";
+                AddResourceDistributionRouteError(
+                    result,
+                    $"{ProductionWorldScenePath}: production scene has ResourceNodeTemplate data but no serialized ResourceDistributionDirector component. " +
+                    $"Run HECTON-8/World/Install Resource Distribution Director in the loaded world scene. " +
+                    $"Director script GUID={directorGuid}.{readFailureSuffix}");
+            }
+
+            ValidateScavengingLootOracleHost(result, sceneTextAvailable, sceneText, sceneReadFailure);
+
+            bool hasOreFallbackPrefab = ValidateResourceDistributionOreFallbackPrefab(result);
+            bool hasMagmaVentPrefab = ValidateResourceDistributionMagmaVentPrefab();
+            CountResourceTemplateRuntimePrefabCoverage(out int templateCount, out int validTemplatePrefabCount);
+            bool allTemplatesHaveRuntimePrefab = templateCount > 0 && validTemplatePrefabCount == templateCount;
+            if (hasDirectorInScene)
+            {
+                ValidateResourceDistributionSceneAssignments(
+                    result,
+                    directorSceneBlock,
+                    hasOreFallbackPrefab,
+                    hasMagmaVentPrefab,
+                    allTemplatesHaveRuntimePrefab);
+            }
+
+            if (!hasOreFallbackPrefab && !allTemplatesHaveRuntimePrefab)
+            {
+                AddResourceDistributionRouteError(
+                    result,
+                    $"{RuntimeOrePrefabPath}: missing valid ResourceNode fallback prefab and only {validTemplatePrefabCount}/{templateCount} ResourceNodeTemplate assets have valid runtimeNodePrefab assignments. " +
+                    $"Runtime ore spawning will fail closed; run HECTON-8/World/Install Resource Distribution Director or author valid template prefabs.");
+            }
+
+            if (!hasMagmaVentPrefab)
+            {
+                result.Warnings.Add(
+                    $"{RuntimeMagmaVentPrefabPath}: optional magma-vent marker prefab is missing or invalid. " +
+                    "Seismic vent markers will be silent until the resource-distribution bootstrap is installed.");
+            }
+        }
+
+        private static void ValidateScavengingLootOracleHost(
+            ValidationResult result,
+            bool sceneTextAvailable,
+            string sceneText,
+            string sceneReadFailure)
+        {
+            string oracleGuid = AssetDatabase.AssetPathToGUID(ScavengingLootOracleRuntimeScriptPath);
+            if (string.IsNullOrWhiteSpace(oracleGuid))
+            {
+                AddResourceDistributionRouteError(
+                    result,
+                    $"{ScavengingLootOracleRuntimeScriptPath}: missing script asset; ResourceNode incremental yield cannot queue item acquisition signals.");
+                return;
+            }
+
+            if (sceneTextAvailable &&
+                TryExtractMonoBehaviourBlockByScriptGuid(sceneText, oracleGuid, out _))
+            {
+                return;
+            }
+
+            string readFailureSuffix = string.IsNullOrWhiteSpace(sceneReadFailure)
+                ? string.Empty
+                : $" Read failure: {sceneReadFailure}";
+            AddResourceDistributionRouteError(
+                result,
+                $"{ProductionWorldScenePath}: production resource distribution has no serialized ScavengingLootOracleRuntime host. " +
+                "ResourceNode extraction can deplete nodes while failing to publish item pickup signals. " +
+                $"Run HECTON-8/World/Install Resource Distribution Director. Loot oracle script GUID={oracleGuid}.{readFailureSuffix}");
+        }
+
+        private static bool ValidateResourceDistributionOreFallbackPrefab(ValidationResult result)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(RuntimeOrePrefabPath);
+            if (prefab == null)
+                return false;
+
+            bool valid = true;
+            if (prefab.GetComponent<ResourceNode>() == null)
+            {
+                valid = false;
+                AddResourceDistributionRouteError(
+                    result,
+                    $"{RuntimeOrePrefabPath}: fallback prefab exists but its root has no ResourceNode component. ResourceDistributionDirector only accepts ResourceNode roots.");
+            }
+
+            MeshFilter meshFilter = prefab.GetComponent<MeshFilter>();
+            if (meshFilter == null || meshFilter.sharedMesh == null)
+            {
+                valid = false;
+                AddResourceDistributionRouteError(
+                    result,
+                    $"{RuntimeOrePrefabPath}: fallback prefab root must keep a MeshFilter with a shared mesh so meshless ResourceNodeTemplate assets remain visible.");
+            }
+
+            MeshRenderer meshRenderer = prefab.GetComponent<MeshRenderer>();
+            if (meshRenderer == null || meshRenderer.sharedMaterial == null)
+            {
+                valid = false;
+                AddResourceDistributionRouteError(
+                    result,
+                    $"{RuntimeOrePrefabPath}: fallback prefab root must keep a MeshRenderer with a shared material so meshless ResourceNodeTemplate assets remain visible.");
+            }
+
+            if (WorldProceduralFinalPrefabQualityGate.AssetPathUsesUnityBuiltInPrimitiveMesh(RuntimeOrePrefabPath))
+            {
+                valid = false;
+                AddResourceDistributionRouteError(
+                    result,
+                    $"{RuntimeOrePrefabPath}: fallback prefab uses a Unity built-in primitive mesh. Run the resource-distribution bootstrap to replace it with generated production mesh assets.");
+            }
+
+            if (!IsLayerIncludedInMask(prefab.layer, HectonLayerMasks.FieldToolSurfaceLayerMask) ||
+                !IsLayerIncludedInMask(prefab.layer, HectonLayerMasks.FieldToolScanLayerMask))
+            {
+                valid = false;
+                AddResourceDistributionRouteError(
+                    result,
+                    $"{RuntimeOrePrefabPath}: fallback prefab root layer {prefab.layer} is not included by field tool surface/scan masks. " +
+                    "Spawned resources would exist but handheld tools could miss them.");
+            }
+
+            BoxCollider boxCollider = prefab.GetComponent<BoxCollider>();
+            SphereCollider sphereCollider = prefab.GetComponent<SphereCollider>();
+            if (boxCollider == null || sphereCollider == null)
+            {
+                valid = false;
+                AddResourceDistributionRouteError(
+                    result,
+                    $"{RuntimeOrePrefabPath}: fallback prefab root must keep both BoxCollider and SphereCollider. " +
+                    "ResourceNodeTemplate.RuntimeColliderShape swaps these primitive colliders at spawn time.");
+            }
+            else if (boxCollider.isTrigger || sphereCollider.isTrigger)
+            {
+                valid = false;
+                AddResourceDistributionRouteError(
+                    result,
+                    $"{RuntimeOrePrefabPath}: fallback prefab primitive colliders must be non-trigger colliders for handheld tool raycasts.");
+            }
+
+            return valid;
+        }
+
+        private static bool ValidateResourceDistributionMagmaVentPrefab()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(RuntimeMagmaVentPrefabPath);
+            if (prefab == null)
+                return false;
+
+            MeshFilter meshFilter = prefab.GetComponent<MeshFilter>();
+            MeshRenderer meshRenderer = prefab.GetComponent<MeshRenderer>();
+            return meshFilter != null &&
+                   meshFilter.sharedMesh != null &&
+                   meshRenderer != null &&
+                   meshRenderer.sharedMaterial != null &&
+                   !WorldProceduralFinalPrefabQualityGate.AssetPathUsesUnityBuiltInPrimitiveMesh(RuntimeMagmaVentPrefabPath);
+        }
+
+        private static void ValidateResourceDistributionSceneAssignments(
+            ValidationResult result,
+            string directorSceneBlock,
+            bool hasOreFallbackPrefab,
+            bool hasMagmaVentPrefab,
+            bool allTemplatesHaveRuntimePrefab)
+        {
+            if (string.IsNullOrWhiteSpace(directorSceneBlock))
+                return;
+
+            if (hasOreFallbackPrefab && !allTemplatesHaveRuntimePrefab)
+            {
+                string orePrefabGuid = AssetDatabase.AssetPathToGUID(RuntimeOrePrefabPath);
+                if (!string.IsNullOrWhiteSpace(orePrefabGuid) &&
+                    directorSceneBlock.IndexOf(orePrefabGuid, StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    AddResourceDistributionRouteError(
+                        result,
+                        $"{ProductionWorldScenePath}: ResourceDistributionDirector route exists but does not serialize {RuntimeOrePrefabPath}. " +
+                        "Runtime ore spawning can still fail closed; rerun HECTON-8/World/Install Resource Distribution Director.");
+                }
+            }
+
+            if (hasMagmaVentPrefab)
+            {
+                string magmaVentPrefabGuid = AssetDatabase.AssetPathToGUID(RuntimeMagmaVentPrefabPath);
+                if (!string.IsNullOrWhiteSpace(magmaVentPrefabGuid) &&
+                    directorSceneBlock.IndexOf(magmaVentPrefabGuid, StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    result.Warnings.Add(
+                        $"{ProductionWorldScenePath}: ResourceDistributionDirector route exists but does not serialize {RuntimeMagmaVentPrefabPath}. " +
+                        "Seismic vent markers remain disabled until the bootstrap is rerun.");
+                }
+            }
+
+            if (directorSceneBlock.IndexOf("resourceTemplates:", StringComparison.Ordinal) < 0)
+            {
+                AddResourceDistributionRouteError(
+                    result,
+                    $"{ProductionWorldScenePath}: ResourceDistributionDirector route exists but no resourceTemplates field was found in scene serialization.");
+            }
+            else
+            {
+                ValidateResourceDistributionSceneTemplateCoverage(result, directorSceneBlock);
+            }
+        }
+
+        private static void ValidateResourceDistributionSceneTemplateCoverage(ValidationResult result, string directorSceneBlock)
+        {
+            string[] resourceGuids = AssetDatabase.FindAssets("t:ResourceNodeTemplate", DataRoots);
+            if (resourceGuids == null || resourceGuids.Length == 0)
+                return;
+
+            int missingCount = 0;
+            List<string> missingSamples = new List<string>(4);
+            for (int i = 0; i < resourceGuids.Length; i++)
+            {
+                string templateGuid = resourceGuids[i];
+                if (string.IsNullOrWhiteSpace(templateGuid) ||
+                    directorSceneBlock.IndexOf(templateGuid, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    continue;
+                }
+
+                missingCount++;
+                if (missingSamples.Count < 4)
+                {
+                    string assetPath = AssetDatabase.GUIDToAssetPath(templateGuid);
+                    missingSamples.Add(string.IsNullOrWhiteSpace(assetPath) ? templateGuid : assetPath);
+                }
+            }
+
+            if (missingCount <= 0)
+                return;
+
+            AddResourceDistributionRouteError(
+                result,
+                $"{ProductionWorldScenePath}: ResourceDistributionDirector.resourceTemplates is missing {missingCount}/{resourceGuids.Length} ResourceNodeTemplate assets. " +
+                $"Examples: {string.Join(", ", missingSamples)}. Rerun HECTON-8/World/Install Resource Distribution Director.");
+        }
+
+        private static void CountResourceTemplateRuntimePrefabCoverage(out int templateCount, out int validTemplatePrefabCount)
+        {
+            templateCount = 0;
+            validTemplatePrefabCount = 0;
+
+            string[] resourceGuids = AssetDatabase.FindAssets("t:ResourceNodeTemplate", DataRoots);
+            for (int i = 0; i < resourceGuids.Length; i++)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(resourceGuids[i]);
+                ResourceNodeTemplate template = AssetDatabase.LoadAssetAtPath<ResourceNodeTemplate>(assetPath);
+                if (template == null)
+                    continue;
+
+                templateCount++;
+                if (template.ValidateRuntimeNodePrefabCold())
+                    validTemplatePrefabCount++;
+            }
+        }
+
+        private static void AddResourceDistributionRouteError(ValidationResult result, string message)
+        {
+            result.ResourceDistributionRouteErrorCount++;
+            result.Errors.Add(message);
+        }
+
+        private static bool IsLayerIncludedInMask(int layer, int layerMask)
+        {
+            return layer >= 0 &&
+                   layer < 32 &&
+                   (layerMask & (1 << layer)) != 0;
+        }
+
+        private static bool TryExtractMonoBehaviourBlockByScriptGuid(string sceneText, string scriptGuid, out string block)
+        {
+            block = string.Empty;
+            if (string.IsNullOrWhiteSpace(sceneText) || string.IsNullOrWhiteSpace(scriptGuid))
+                return false;
+
+            int guidIndex = sceneText.IndexOf(scriptGuid, StringComparison.OrdinalIgnoreCase);
+            if (guidIndex < 0)
+                return false;
+
+            int blockStart = sceneText.LastIndexOf("\n--- !u!114", guidIndex, StringComparison.Ordinal);
+            if (blockStart < 0)
+                blockStart = sceneText.LastIndexOf("--- !u!114", guidIndex, StringComparison.Ordinal);
+            if (blockStart < 0)
+                return false;
+
+            int blockEnd = sceneText.IndexOf("\n--- !u!", guidIndex, StringComparison.Ordinal);
+            if (blockEnd < 0)
+                blockEnd = sceneText.Length;
+
+            block = sceneText.Substring(blockStart, blockEnd - blockStart);
+            return block.IndexOf(scriptGuid, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool TryReadProjectTextFile(string projectAssetPath, out string text, out string failure)
+        {
+            failure = string.Empty;
+            text = string.Empty;
+            if (string.IsNullOrWhiteSpace(projectAssetPath))
+                return false;
+
+            string absolutePath = ProjectAssetPathToAbsolutePath(projectAssetPath);
+            if (string.IsNullOrWhiteSpace(absolutePath) || !File.Exists(absolutePath))
+            {
+                failure = "File is missing.";
+                return false;
+            }
+
+            try
+            {
+                text = File.ReadAllText(absolutePath);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                failure = $"{exception.GetType().Name}: {exception.Message}";
+                return false;
+            }
+        }
+
+        private static string ProjectAssetPathToAbsolutePath(string projectAssetPath)
+        {
+            if (string.IsNullOrWhiteSpace(projectAssetPath))
+                return string.Empty;
+
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string normalizedPath = projectAssetPath.Replace('/', Path.DirectorySeparatorChar);
+            return Path.GetFullPath(Path.Combine(projectRoot, normalizedPath));
+        }
+
+        private static void ValidateResourceNodeHostLayers(
+            ValidationResult result,
+            ResourceNodeTemplate template,
+            string assetPath)
+        {
+            SerializedObject serializedTemplate = new SerializedObject(template);
+            SerializedProperty validLayersProperty = serializedTemplate.FindProperty("validLayers");
+            if (validLayersProperty == null || validLayersProperty.propertyType != SerializedPropertyType.LayerMask)
+            {
+                result.Errors.Add($"{assetPath}: ResourceNodeTemplate.validLayers is missing or no longer serialized as a LayerMask.");
+                return;
+            }
+
+            int authoredMask = validLayersProperty.intValue;
+            int resolvedMask = HectonLayerMasks.ResolveResourceNodeHostLayerMask(authoredMask);
+            bool hasTerrainSdfHost = (resolvedMask & HectonLayerMasks.TerrainSdfProbeLayerMask) != 0;
+            if (authoredMask == 0 ||
+                authoredMask == HectonLayerMasks.StrictInteractionLayerMask ||
+                HectonLayerMasks.IsEverythingLayerMask(authoredMask) ||
+                !hasTerrainSdfHost)
+            {
+                result.Errors.Add(
+                    $"{assetPath}: ResourceNodeTemplate.validLayers must target terrain/SDF host surfaces. " +
+                    $"Current mask={authoredMask}, expected={HectonLayerMasks.TerrainSdfProbeLayerMask}.");
+                return;
+            }
+
+            if (authoredMask != resolvedMask)
+            {
+                result.Warnings.Add(
+                    $"{assetPath}: ResourceNodeTemplate.validLayers is missing one or more terrain/SDF host layers. " +
+                    $"Current mask={authoredMask}, resolved={resolvedMask}.");
             }
         }
 
@@ -1120,18 +1542,453 @@ namespace Hecton8.Editor.Validation
 
             ItemData drillItem = FindItemDataByPersistentId(SeafloorDrillItemId);
             bool hasHeldPrefab = HasHeldToolPrefabForItemId(SeafloorDrillItemId);
-            if (drillItem != null && hasHeldPrefab)
+            bool hasPlayerKnownToolRegistry = PlayerKnownToolPrefabRegistryContainsItemId(
+                SeafloorDrillItemId,
+                out string playerKnownToolRegistryFailure);
+            RecipeData drillRecipe = AssetDatabase.LoadAssetAtPath<RecipeData>(SeafloorDrillRecipePath);
+            bool hasCraftRecipe = RecipeResultMatchesPersistentId(drillRecipe, SeafloorDrillItemId) &&
+                                  drillRecipe.ingredients != null &&
+                                  drillRecipe.ingredients.Count > 0;
+            bool hasRecipeScanGate = drillRecipe != null &&
+                                     string.Equals(drillRecipe.RequiredScanEntryId, GenericResourceScanEntryId, StringComparison.Ordinal);
+            bool hasCircularCopperIngredient =
+                RecipeUsesItemPersistentId(drillRecipe, CopperItemId) ||
+                RecipeUsesItemPersistentId(drillRecipe, CopperWireItemId);
+            bool hasEarlyIngredientRoute = HasFirstHourDrillIngredientRoute(drillRecipe, out string ingredientRouteFailure);
+            if (drillItem != null &&
+                hasHeldPrefab &&
+                hasPlayerKnownToolRegistry &&
+                hasCraftRecipe &&
+                hasRecipeScanGate &&
+                !hasCircularCopperIngredient &&
+                hasEarlyIngredientRoute)
+            {
+                return;
+            }
+
+            result.FirstHourDrillRouteErrorCount++;
+            List<string> missing = new List<string>(6);
+            if (drillItem == null)
+                missing.Add("ItemData");
+            if (!hasHeldPrefab)
+                missing.Add("held prefab");
+            if (!hasPlayerKnownToolRegistry)
+                missing.Add($"player known-tool registry ({playerKnownToolRegistryFailure})");
+            if (!hasCraftRecipe)
+                missing.Add("craft recipe");
+            if (!hasRecipeScanGate)
+                missing.Add($"{GenericResourceScanEntryId} scan gate");
+            if (hasCircularCopperIngredient)
+                missing.Add("non-circular drill recipe ingredients");
+            if (!hasEarlyIngredientRoute)
+                missing.Add($"pre-copper ingredient route ({ingredientRouteFailure})");
+            result.Errors.Add(
+                $"{CopperVeinTemplatePath}: copper is Drill-gated, but first-hour seafloor drill route is incomplete; " +
+                $"missing {string.Join(", ", missing)} for PersistentId='{SeafloorDrillItemId}'. " +
+                $"Do not fall back to Knife/Any and do not require copper/copper wire before the copper drill gate opens.");
+        }
+
+        private static void ValidateFirstHourFabricatorSceneRoute(ValidationResult result)
+        {
+            string fabricatorScriptGuid = AssetDatabase.AssetPathToGUID(FabricatorScriptPath);
+            string drillRecipeGuid = AssetDatabase.AssetPathToGUID(SeafloorDrillRecipePath);
+            string glassPanelRecipeGuid = AssetDatabase.AssetPathToGUID(GlassPanelRecipePath);
+            string fiberMeshRecipeGuid = AssetDatabase.AssetPathToGUID(FiberMeshRecipePath);
+            string hologramMaterialGuid = AssetDatabase.AssetPathToGUID(AssemblyHologramMaterialPath);
+            bool sceneTextAvailable = TryReadProjectTextFile(ProductionWorldScenePath, out string sceneText, out string sceneReadFailure);
+            if (!sceneTextAvailable)
+            {
+                result.FirstHourDrillRouteErrorCount++;
+                result.Errors.Add(
+                    $"{ProductionWorldScenePath}: failed to read production scene for first-hour fabricator route validation: {sceneReadFailure}");
+                return;
+            }
+
+            if (!TryExtractSceneObjectBlockByName(sceneText, ForwardFabricatorObjectName, out string fabricatorBlock))
+            {
+                result.FirstHourDrillRouteErrorCount++;
+                result.Errors.Add(
+                    $"{ProductionWorldScenePath}: missing '{ForwardFabricatorObjectName}' scene object. First-hour crafting cannot reach the seafloor drill route.");
+                return;
+            }
+
+            List<string> missing = new List<string>(6);
+            if (fabricatorBlock.IndexOf($"m_Name: {ForwardFabricatorObjectName}", StringComparison.Ordinal) < 0)
+                missing.Add("named scene object");
+            if (fabricatorBlock.IndexOf("m_Layer: 3", StringComparison.Ordinal) < 0)
+                missing.Add("Interactable layer");
+            if (fabricatorBlock.IndexOf(ForwardFabricatorSocketId, StringComparison.Ordinal) < 0)
+                missing.Add("fabrication socket id");
+            if (fabricatorBlock.IndexOf("--- !u!65", StringComparison.Ordinal) < 0)
+                missing.Add("BoxCollider");
+            if (string.IsNullOrWhiteSpace(fabricatorScriptGuid) ||
+                fabricatorBlock.IndexOf(fabricatorScriptGuid, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                missing.Add("Fabricator component");
+            }
+            if (string.IsNullOrWhiteSpace(drillRecipeGuid) ||
+                fabricatorBlock.IndexOf(drillRecipeGuid, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                missing.Add("seafloor drill recipe ref");
+            }
+            if (fabricatorBlock.IndexOf("assemblyFallbackMesh:", StringComparison.Ordinal) < 0 ||
+                fabricatorBlock.IndexOf("assemblyFallbackMesh: {fileID: 0}", StringComparison.Ordinal) >= 0)
+            {
+                missing.Add("assembly fallback mesh ref");
+            }
+            if (fabricatorBlock.IndexOf("assemblyPreviewMeshFilter:", StringComparison.Ordinal) < 0 ||
+                fabricatorBlock.IndexOf("assemblyPreviewMeshFilter: {fileID: 0}", StringComparison.Ordinal) >= 0)
+            {
+                missing.Add("assembly preview mesh filter ref");
+            }
+            else
+            {
+                ValidateSceneFileIdReference(
+                    sceneText,
+                    fabricatorBlock,
+                    "assemblyPreviewMeshFilter",
+                    "33",
+                    "assembly preview MeshFilter object",
+                    missing);
+            }
+            if (fabricatorBlock.IndexOf("assemblyPreviewRenderer:", StringComparison.Ordinal) < 0 ||
+                fabricatorBlock.IndexOf("assemblyPreviewRenderer: {fileID: 0}", StringComparison.Ordinal) >= 0)
+            {
+                missing.Add("assembly preview renderer ref");
+            }
+            else
+            {
+                ValidateSceneFileIdReference(
+                    sceneText,
+                    fabricatorBlock,
+                    "assemblyPreviewRenderer",
+                    "23",
+                    "assembly preview MeshRenderer object",
+                    missing);
+            }
+            if (string.IsNullOrWhiteSpace(hologramMaterialGuid) ||
+                fabricatorBlock.IndexOf(hologramMaterialGuid, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                missing.Add("assembly hologram material ref");
+            }
+            if (fabricatorBlock.IndexOf("outputSocket:", StringComparison.Ordinal) < 0 ||
+                fabricatorBlock.IndexOf("outputSocket: {fileID: 0}", StringComparison.Ordinal) >= 0)
+            {
+                missing.Add("craft output socket ref");
+            }
+            else
+            {
+                ValidateSceneFileIdReference(
+                    sceneText,
+                    fabricatorBlock,
+                    "outputSocket",
+                    "4",
+                    "craft output Transform object",
+                    missing);
+            }
+            if (fabricatorBlock.IndexOf("deconstructOutputSocket:", StringComparison.Ordinal) < 0 ||
+                fabricatorBlock.IndexOf("deconstructOutputSocket: {fileID: 0}", StringComparison.Ordinal) >= 0)
+            {
+                missing.Add("deconstruct output socket ref");
+            }
+            else
+            {
+                ValidateSceneFileIdReference(
+                    sceneText,
+                    fabricatorBlock,
+                    "deconstructOutputSocket",
+                    "4",
+                    "deconstruct output Transform object",
+                    missing);
+            }
+            if (string.IsNullOrWhiteSpace(glassPanelRecipeGuid) ||
+                fabricatorBlock.IndexOf(glassPanelRecipeGuid, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                missing.Add("glass panel recipe ref");
+            }
+            if (string.IsNullOrWhiteSpace(fiberMeshRecipeGuid) ||
+                fabricatorBlock.IndexOf(fiberMeshRecipeGuid, StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                missing.Add("fiber mesh recipe ref");
+            }
+
+            if (missing.Count <= 0)
                 return;
 
             result.FirstHourDrillRouteErrorCount++;
-            string missing = drillItem == null && !hasHeldPrefab
-                ? "ItemData and held prefab"
-                : drillItem == null
-                    ? "ItemData"
-                    : "held prefab";
             result.Errors.Add(
-                $"{CopperVeinTemplatePath}: copper is Drill-gated, but first-hour seafloor drill route is incomplete; " +
-                $"missing {missing} for PersistentId='{SeafloorDrillItemId}'. Do not fall back to Knife/Any; author the tool route or an explicit validated alternative.");
+                $"{ProductionWorldScenePath}: '{ForwardFabricatorObjectName}' is not a complete first-hour fabricator route; " +
+                $"missing {string.Join(", ", missing)}.");
+        }
+
+        private static bool TryExtractSceneObjectBlockByName(string sceneText, string objectName, out string block)
+        {
+            block = string.Empty;
+            if (string.IsNullOrWhiteSpace(sceneText) || string.IsNullOrWhiteSpace(objectName))
+                return false;
+
+            int nameIndex = sceneText.IndexOf($"m_Name: {objectName}", StringComparison.Ordinal);
+            if (nameIndex < 0)
+                return false;
+
+            int blockStart = sceneText.LastIndexOf("\n--- !u!1 &", nameIndex, StringComparison.Ordinal);
+            if (blockStart < 0)
+                blockStart = sceneText.LastIndexOf("--- !u!1 &", nameIndex, StringComparison.Ordinal);
+            if (blockStart < 0)
+                return false;
+
+            int nextBlockStart = sceneText.IndexOf("\n--- !u!1 &", nameIndex + objectName.Length, StringComparison.Ordinal);
+            if (nextBlockStart < 0)
+                nextBlockStart = sceneText.Length;
+
+            block = sceneText.Substring(blockStart, nextBlockStart - blockStart);
+            return true;
+        }
+
+        private static void ValidateSceneFileIdReference(
+            string sceneText,
+            string ownerBlock,
+            string propertyName,
+            string unityClassId,
+            string label,
+            List<string> missing)
+        {
+            if (!TryExtractSceneFileIdReference(ownerBlock, propertyName, out string fileId) ||
+                string.Equals(fileId, "0", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (!SceneTextHasUnityObject(sceneText, unityClassId, fileId))
+                missing.Add(label);
+        }
+
+        private static bool TryExtractSceneFileIdReference(string ownerBlock, string propertyName, out string fileId)
+        {
+            fileId = string.Empty;
+            if (string.IsNullOrWhiteSpace(ownerBlock) || string.IsNullOrWhiteSpace(propertyName))
+                return false;
+
+            string marker = propertyName + ": {fileID:";
+            int markerIndex = ownerBlock.IndexOf(marker, StringComparison.Ordinal);
+            if (markerIndex < 0)
+                return false;
+
+            int cursor = markerIndex + marker.Length;
+            while (cursor < ownerBlock.Length && ownerBlock[cursor] == ' ')
+                cursor++;
+
+            int start = cursor;
+            while (cursor < ownerBlock.Length &&
+                   (ownerBlock[cursor] == '-' || char.IsDigit(ownerBlock[cursor])))
+            {
+                cursor++;
+            }
+
+            if (cursor <= start)
+                return false;
+
+            fileId = ownerBlock.Substring(start, cursor - start);
+            return true;
+        }
+
+        private static bool SceneTextHasUnityObject(string sceneText, string unityClassId, string fileId)
+        {
+            if (string.IsNullOrWhiteSpace(sceneText) ||
+                string.IsNullOrWhiteSpace(unityClassId) ||
+                string.IsNullOrWhiteSpace(fileId))
+            {
+                return false;
+            }
+
+            string marker = $"--- !u!{unityClassId} &{fileId}";
+            return sceneText.StartsWith(marker, StringComparison.Ordinal) ||
+                   sceneText.IndexOf("\n" + marker, StringComparison.Ordinal) >= 0;
+        }
+
+        private static bool RecipeResultMatchesPersistentId(RecipeData recipe, string persistentId)
+        {
+            if (recipe == null || recipe.resultItem == null || string.IsNullOrWhiteSpace(persistentId))
+                return false;
+
+            return string.Equals(recipe.resultItem.PersistentId, persistentId, StringComparison.Ordinal);
+        }
+
+        private static bool RecipeUsesItemPersistentId(RecipeData recipe, string persistentId)
+        {
+            if (recipe == null || recipe.ingredients == null || string.IsNullOrWhiteSpace(persistentId))
+                return false;
+
+            for (int i = 0; i < recipe.ingredients.Count; i++)
+            {
+                InventoryCost cost = recipe.ingredients[i];
+                if (cost == null || cost.item == null)
+                    continue;
+
+                if (string.Equals(cost.item.PersistentId, persistentId, StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool HasFirstHourDrillIngredientRoute(RecipeData drillRecipe, out string failure)
+        {
+            failure = string.Empty;
+            List<string> failures = new List<string>(8);
+            if (drillRecipe == null)
+            {
+                failure = "drill recipe missing";
+                return false;
+            }
+
+            RequireRecipeIngredient(drillRecipe, SeafloorDrillRecipePath, GlassPanelItemId, failures);
+            RequireRecipeIngredient(drillRecipe, SeafloorDrillRecipePath, FiberMeshItemId, failures);
+            ValidateFirstHourDrillRecipeIngredientSet(drillRecipe, failures);
+
+            ValidateEarlyComponentRecipe(GlassPanelRecipePath, GlassPanelItemId, SilicaShardsItemId, failures);
+            ValidateEarlyComponentRecipe(FiberMeshRecipePath, FiberMeshItemId, FiberKelpItemId, failures);
+
+            ValidatePreDrillResourceNode(SilicaShardClusterTemplatePath, SilicaShardsItemId, failures);
+            ValidatePreDrillResourceNode(FiberKelpStandTemplatePath, FiberKelpItemId, failures);
+
+            if (failures.Count <= 0)
+                return true;
+
+            failure = string.Join("; ", failures);
+            return false;
+        }
+
+        private static void ValidateFirstHourDrillRecipeIngredientSet(
+            RecipeData recipe,
+            List<string> failures)
+        {
+            if (recipe == null || recipe.ingredients == null)
+                return;
+
+            for (int i = 0; i < recipe.ingredients.Count; i++)
+            {
+                InventoryCost cost = recipe.ingredients[i];
+                ItemData item = cost.item;
+                string persistentId = item != null ? item.PersistentId : null;
+                if (item == null || string.IsNullOrWhiteSpace(persistentId))
+                {
+                    failures.Add($"{SeafloorDrillRecipePath} ingredient[{i}] has no valid ItemData");
+                    continue;
+                }
+
+                if (cost.amount <= 0)
+                    failures.Add($"{SeafloorDrillRecipePath} ingredient '{persistentId}' must have amount > 0");
+
+                if (!string.Equals(persistentId, GlassPanelItemId, StringComparison.Ordinal) &&
+                    !string.Equals(persistentId, FiberMeshItemId, StringComparison.Ordinal))
+                {
+                    failures.Add(
+                        $"{SeafloorDrillRecipePath} ingredient '{persistentId}' is not proven reachable in the pre-drill safe-depth route");
+                }
+            }
+        }
+
+        private static void RequireRecipeIngredient(
+            RecipeData recipe,
+            string recipePath,
+            string persistentId,
+            List<string> failures)
+        {
+            if (RecipeUsesItemPersistentId(recipe, persistentId))
+                return;
+
+            failures.Add($"{recipePath} missing ingredient '{persistentId}'");
+        }
+
+        private static void ValidateEarlyComponentRecipe(
+            string recipePath,
+            string resultItemId,
+            string rawIngredientItemId,
+            List<string> failures)
+        {
+            RecipeData recipe = AssetDatabase.LoadAssetAtPath<RecipeData>(recipePath);
+            if (!RecipeResultMatchesPersistentId(recipe, resultItemId))
+            {
+                failures.Add($"{recipePath} must produce '{resultItemId}'");
+                return;
+            }
+
+            if (recipe.RequiresScanUnlock)
+                failures.Add($"{recipePath} must not require a scan gate before the drill route opens");
+
+            if (!RecipeUsesItemPersistentId(recipe, rawIngredientItemId))
+                failures.Add($"{recipePath} missing raw ingredient '{rawIngredientItemId}'");
+
+            if (RecipeUsesItemPersistentId(recipe, CopperItemId) || RecipeUsesItemPersistentId(recipe, CopperWireItemId))
+                failures.Add($"{recipePath} must not require copper/copper wire before the copper drill gate opens");
+        }
+
+        private static void ValidatePreDrillResourceNode(
+            string templatePath,
+            string yieldedItemId,
+            List<string> failures)
+        {
+            ResourceNodeTemplate template = AssetDatabase.LoadAssetAtPath<ResourceNodeTemplate>(templatePath);
+            if (template == null)
+            {
+                failures.Add($"{templatePath} missing ResourceNodeTemplate");
+                return;
+            }
+
+            if (template.RequiredToolClass == ResourceNodeTemplate.HarvestToolClass.Drill)
+                failures.Add($"{templatePath} must not be Drill-gated before the drill route opens");
+
+            SurvivalStats starterStats = AssetDatabase.LoadAssetAtPath<SurvivalStats>(StarterSurvivalStatsPath);
+            if (starterStats == null)
+            {
+                failures.Add($"{StarterSurvivalStatsPath} missing starter SurvivalStats; cannot prove pre-drill safe-depth resource access");
+            }
+            else if (template.MinimumDepthMeters > starterStats.SafeDepth)
+            {
+                failures.Add(
+                    $"{templatePath} starts at {template.MinimumDepthMeters:0.#}m, beyond starter safe depth {starterStats.SafeDepth:0.#}m; " +
+                    "pre-drill ingredient resources must be reachable before pressure attrition");
+            }
+
+            if (!ResourceNodeTemplateYieldsPersistentId(template, yieldedItemId))
+                failures.Add($"{templatePath} must yield '{yieldedItemId}'");
+
+            if (template.DefaultLootCount <= 0)
+                failures.Add($"{templatePath} must have DefaultLootCount > 0 so depletion cannot tombstone before first-hour yield");
+
+            if (template.LootPickupPrefab == null)
+                failures.Add($"{templatePath} must keep a loot pickup prefab for first-hour world-item contract proof");
+
+            if (template.ExtractorYieldItem == null ||
+                !string.Equals(template.ExtractorYieldItem.PersistentId, yieldedItemId, StringComparison.Ordinal))
+            {
+                failures.Add($"{templatePath} extractor/fallback yield item must resolve to '{yieldedItemId}'");
+            }
+        }
+
+        private static bool ResourceNodeTemplateYieldsPersistentId(ResourceNodeTemplate template, string persistentId)
+        {
+            if (template == null || string.IsNullOrWhiteSpace(persistentId))
+                return false;
+
+            SerializedObject serializedTemplate = new SerializedObject(template);
+            SerializedProperty yieldProperty = serializedTemplate.FindProperty("harvestYield");
+            if (yieldProperty == null || !yieldProperty.isArray)
+                return false;
+
+            for (int i = 0; i < yieldProperty.arraySize; i++)
+            {
+                SerializedProperty entryProperty = yieldProperty.GetArrayElementAtIndex(i);
+                SerializedProperty itemProperty = entryProperty != null ? entryProperty.FindPropertyRelative("item") : null;
+                if (itemProperty == null || !(itemProperty.objectReferenceValue is ItemData item))
+                    continue;
+
+                if (string.Equals(item.PersistentId, persistentId, StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
         }
 
         private static void ValidateResourceNodeYieldArray(
@@ -1295,6 +2152,59 @@ namespace Hecton8.Editor.Validation
             }
         }
 
+        private static void ValidatePdaLoadoutPresetReferences(ValidationResult result)
+        {
+            string absolutePath = ProjectAssetPathToAbsolutePath(PdaLoadoutTabScriptPath);
+            if (!File.Exists(absolutePath))
+            {
+                result.PdaLoadoutPresetPathErrorCount++;
+                result.Errors.Add($"{PdaLoadoutTabScriptPath}: script missing; PDA loadout preset auto-resolve references cannot be validated.");
+                return;
+            }
+
+            string sourceText;
+            try
+            {
+                sourceText = File.ReadAllText(absolutePath);
+            }
+            catch (Exception exception)
+            {
+                result.PdaLoadoutPresetPathErrorCount++;
+                result.Errors.Add($"{PdaLoadoutTabScriptPath}: failed to read script for loadout preset reference validation: {exception.Message}");
+                return;
+            }
+
+            HashSet<string> referencedPresetPaths = new HashSet<string>(StringComparer.Ordinal);
+            int cursor = 0;
+            while (cursor < sourceText.Length)
+            {
+                int start = sourceText.IndexOf(PdaLoadoutPresetPathPrefix, cursor, StringComparison.Ordinal);
+                if (start < 0)
+                    break;
+
+                int end = sourceText.IndexOf(".asset", start, StringComparison.Ordinal);
+                if (end < 0)
+                {
+                    result.PdaLoadoutPresetPathErrorCount++;
+                    result.Errors.Add($"{PdaLoadoutTabScriptPath}: malformed PDA loadout preset path starting near character {start}.");
+                    break;
+                }
+
+                end += ".asset".Length;
+                string assetPath = sourceText.Substring(start, end - start).Replace('\\', '/');
+                cursor = end;
+                if (!referencedPresetPaths.Add(assetPath))
+                    continue;
+
+                ToolLoadoutPreset preset = AssetDatabase.LoadAssetAtPath<ToolLoadoutPreset>(assetPath);
+                if (preset != null)
+                    continue;
+
+                result.PdaLoadoutPresetPathErrorCount++;
+                result.Errors.Add($"{PdaLoadoutTabScriptPath}: PDA loadout preset reference does not resolve to ToolLoadoutPreset -> {assetPath}");
+            }
+        }
+
         private static void WarnIfMissingObjectReference(
             ValidationResult result,
             SerializedObject serializedObject,
@@ -1379,9 +2289,16 @@ namespace Hecton8.Editor.Validation
                     return;
                 }
 
+                if (prefabRoot.GetComponentInChildren<ScanLogSystem>(true) == null)
+                {
+                    result.PlayerStarterLoadoutErrorCount++;
+                    result.Errors.Add($"{PlayerPrefabPath}: canonical player prefab is missing ScanLogSystem; '{GenericResourceScanEntryId}' cannot unlock first-hour crafting.");
+                }
+
                 SerializedObject serializedToolManager = new SerializedObject(toolManager);
                 SerializedProperty grantProperty = serializedToolManager.FindProperty("grantAssignedToolItemsOnRuntimeStart");
                 SerializedProperty budgetProperty = serializedToolManager.FindProperty("runtimeStartToolGrantBudget");
+                SerializedProperty fieldLoadoutAdviceMaskProperty = serializedToolManager.FindProperty("fieldLoadoutAdviceMask");
                 SerializedProperty toolPrefabsProperty = serializedToolManager.FindProperty("toolPrefabs");
                 if (grantProperty == null || !grantProperty.boolValue)
                 {
@@ -1395,6 +2312,8 @@ namespace Hecton8.Editor.Validation
                     result.Errors.Add($"{PlayerPrefabPath}: PlayerToolManager.runtimeStartToolGrantBudget is missing.");
                 }
 
+                ValidatePlayerFieldLoadoutAdviceMask(result, fieldLoadoutAdviceMaskProperty);
+
                 if (toolPrefabsProperty == null || !toolPrefabsProperty.isArray)
                 {
                     result.PlayerStarterLoadoutErrorCount++;
@@ -1405,6 +2324,7 @@ namespace Hecton8.Editor.Validation
                 ItemCatalog itemCatalog = AssetDatabase.LoadAssetAtPath<ItemCatalog>(ItemCatalogPath);
                 int assignedCount = 0;
                 int validItemCount = 0;
+                bool hasStarterScanner = false;
                 for (int i = 0; i < toolPrefabsProperty.arraySize; i++)
                 {
                     SerializedProperty slotProperty = toolPrefabsProperty.GetArrayElementAtIndex(i);
@@ -1437,6 +2357,8 @@ namespace Hecton8.Editor.Validation
                     }
 
                     validItemCount++;
+                    if (string.Equals(item.PersistentId, ScannerToolItemId, StringComparison.Ordinal))
+                        hasStarterScanner = true;
                 }
 
                 if (assignedCount < 3 || validItemCount < assignedCount)
@@ -1451,11 +2373,150 @@ namespace Hecton8.Editor.Validation
                     result.PlayerStarterLoadoutErrorCount++;
                     result.Errors.Add($"{PlayerPrefabPath}: runtimeStartToolGrantBudget={grantBudget} is lower than authored starter tool count={assignedCount}.");
                 }
+
+                if (!hasStarterScanner)
+                {
+                    result.PlayerStarterLoadoutErrorCount++;
+                    result.Errors.Add($"{PlayerPrefabPath}: production starter loadout must include '{ScannerToolItemId}' because the first-hour drill recipe is gated by '{GenericResourceScanEntryId}'.");
+                }
             }
             finally
             {
                 PrefabUtility.UnloadPrefabContents(prefabRoot);
             }
+        }
+
+        private static void ValidatePlayerFieldLoadoutAdviceMask(
+            ValidationResult result,
+            SerializedProperty fieldLoadoutAdviceMaskProperty)
+        {
+            if (fieldLoadoutAdviceMaskProperty == null ||
+                fieldLoadoutAdviceMaskProperty.propertyType != SerializedPropertyType.LayerMask)
+            {
+                result.PlayerStarterLoadoutErrorCount++;
+                result.Errors.Add($"{PlayerPrefabPath}: PlayerToolManager.fieldLoadoutAdviceMask is missing or no longer serialized as a LayerMask.");
+                return;
+            }
+
+            int authoredMask = fieldLoadoutAdviceMaskProperty.intValue;
+            int resolvedMask = HectonLayerMasks.ResolveFieldToolScanLayerMask(authoredMask);
+            if (authoredMask == HectonLayerMasks.FieldToolScanLayerMask &&
+                resolvedMask == HectonLayerMasks.FieldToolScanLayerMask)
+            {
+                return;
+            }
+
+            result.PlayerStarterLoadoutErrorCount++;
+            result.Errors.Add(
+                $"{PlayerPrefabPath}: PlayerToolManager.fieldLoadoutAdviceMask must be FieldToolScanLayerMask " +
+                $"for production loadout advice. Current mask={authoredMask}, resolved={resolvedMask}, expected={HectonLayerMasks.FieldToolScanLayerMask}.");
+        }
+
+        private static void ValidatePlayerSurfaceProbeAuthoring(ValidationResult result)
+        {
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
+            if (prefabRoot == null)
+            {
+                result.PlayerSurfaceProbeAuthoringErrorCount++;
+                result.Errors.Add($"{PlayerPrefabPath}: failed to load prefab contents for player surface-probe validation.");
+                return;
+            }
+
+            try
+            {
+                HectonPlayerMovement movement = prefabRoot.GetComponentInChildren<HectonPlayerMovement>(true);
+                if (movement == null)
+                {
+                    result.PlayerSurfaceProbeAuthoringErrorCount++;
+                    result.Errors.Add($"{PlayerPrefabPath}: canonical player prefab is missing HectonPlayerMovement; terrain/SDF movement probes cannot be validated.");
+                }
+                else
+                {
+                    SerializedObject serializedMovement = new SerializedObject(movement);
+                    ValidateTerrainSdfProbeMask(
+                        result,
+                        serializedMovement,
+                        "groundLayers",
+                        $"{PlayerPrefabPath}: HectonPlayerMovement.groundLayers");
+                }
+
+                Hecton8.Physics.BuoyancyObject buoyancy = prefabRoot.GetComponentInChildren<Hecton8.Physics.BuoyancyObject>(true);
+                if (buoyancy == null)
+                {
+                    result.PlayerSurfaceProbeAuthoringErrorCount++;
+                    result.Errors.Add($"{PlayerPrefabPath}: canonical player prefab is missing BuoyancyObject; terrain/SDF buoyancy ground suppression cannot be validated.");
+                }
+                else
+                {
+                    SerializedObject serializedBuoyancy = new SerializedObject(buoyancy);
+                    ValidateTerrainSdfProbeMask(
+                        result,
+                        serializedBuoyancy,
+                        "groundLayers",
+                        $"{PlayerPrefabPath}: BuoyancyObject.groundLayers");
+                }
+
+                PlayerFootstepAudio footstepAudio = prefabRoot.GetComponentInChildren<PlayerFootstepAudio>(true);
+                if (footstepAudio == null)
+                {
+                    result.PlayerSurfaceProbeAuthoringErrorCount++;
+                    result.Errors.Add($"{PlayerPrefabPath}: canonical player prefab is missing PlayerFootstepAudio; terrain/SDF surface audio probes cannot be validated.");
+                    return;
+                }
+
+                SerializedObject serializedFootsteps = new SerializedObject(footstepAudio);
+                ValidateTerrainSdfProbeMask(
+                    result,
+                    serializedFootsteps,
+                    "surfaceLayers",
+                    $"{PlayerPrefabPath}: PlayerFootstepAudio.surfaceLayers");
+                SerializedProperty terrainLayerIndexProperty = serializedFootsteps.FindProperty("terrainLayerIndex");
+                if (terrainLayerIndexProperty == null ||
+                    terrainLayerIndexProperty.propertyType != SerializedPropertyType.Integer ||
+                    terrainLayerIndexProperty.intValue != HectonLayerMasks.Terrain)
+                {
+                    result.PlayerSurfaceProbeAuthoringErrorCount++;
+                    int currentValue = terrainLayerIndexProperty != null ? terrainLayerIndexProperty.intValue : -1;
+                    result.Errors.Add(
+                        $"{PlayerPrefabPath}: PlayerFootstepAudio.terrainLayerIndex must match HectonLayerMasks.Terrain. " +
+                        $"Current={currentValue}, expected={HectonLayerMasks.Terrain}.");
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        private static void ValidateTerrainSdfProbeMask(
+            ValidationResult result,
+            SerializedObject serializedObject,
+            string propertyName,
+            string context)
+        {
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null || property.propertyType != SerializedPropertyType.LayerMask)
+            {
+                result.PlayerSurfaceProbeAuthoringErrorCount++;
+                result.Errors.Add($"{context} is missing or no longer serialized as a LayerMask.");
+                return;
+            }
+
+            int authoredMask = property.intValue;
+            int resolvedMask = HectonLayerMasks.ResolveTerrainSdfProbeLayerMask(authoredMask);
+            bool includesTerrainSdf = (resolvedMask & HectonLayerMasks.TerrainSdfProbeLayerMask) == HectonLayerMasks.TerrainSdfProbeLayerMask;
+            if (authoredMask != 0 &&
+                authoredMask != HectonLayerMasks.StrictInteractionLayerMask &&
+                !HectonLayerMasks.IsEverythingLayerMask(authoredMask) &&
+                includesTerrainSdf)
+            {
+                return;
+            }
+
+            result.PlayerSurfaceProbeAuthoringErrorCount++;
+            result.Errors.Add(
+                $"{context} must author explicit terrain/SDF host layers, not legacy broad/empty masks. " +
+                $"Current mask={authoredMask}, resolved={resolvedMask}, requiredBits={HectonLayerMasks.TerrainSdfProbeLayerMask}.");
         }
 
         private static ItemData FindItemDataByPersistentId(string persistentId)
@@ -1494,6 +2555,60 @@ namespace Hecton8.Editor.Validation
             }
 
             return false;
+        }
+
+        private static bool PlayerKnownToolPrefabRegistryContainsItemId(string persistentId, out string failure)
+        {
+            failure = string.Empty;
+            if (string.IsNullOrWhiteSpace(persistentId))
+            {
+                failure = "empty persistent id";
+                return false;
+            }
+
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
+            if (prefabRoot == null)
+            {
+                failure = "player prefab failed to load";
+                return false;
+            }
+
+            try
+            {
+                PlayerToolManager toolManager = prefabRoot.GetComponentInChildren<PlayerToolManager>(true);
+                if (toolManager == null)
+                {
+                    failure = "missing PlayerToolManager";
+                    return false;
+                }
+
+                SerializedObject serializedToolManager = new SerializedObject(toolManager);
+                SerializedProperty knownToolPrefabs = serializedToolManager.FindProperty("knownToolPrefabs");
+                if (knownToolPrefabs == null || !knownToolPrefabs.isArray)
+                {
+                    failure = "knownToolPrefabs is missing";
+                    return false;
+                }
+
+                for (int i = 0; i < knownToolPrefabs.arraySize; i++)
+                {
+                    SerializedProperty element = knownToolPrefabs.GetArrayElementAtIndex(i);
+                    GameObject knownPrefab = element != null ? element.objectReferenceValue as GameObject : null;
+                    if (knownPrefab == null || !knownPrefab.TryGetComponent(out PlayerTool tool) || tool == null)
+                        continue;
+
+                    ItemData item = tool.ToolData;
+                    if (item != null && string.Equals(item.PersistentId, persistentId, StringComparison.Ordinal))
+                        return true;
+                }
+
+                failure = $"'{persistentId}' not present in PlayerToolManager.knownToolPrefabs";
+                return false;
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
         }
 
         private static void ErrorIfSerializedBoolTrue(
@@ -2075,13 +3190,16 @@ namespace Hecton8.Editor.Validation
                 $"ResourceNodeYieldNotCataloged={result.ResourceNodeYieldNotCatalogedCount}, " +
                 $"ResourceNodeYieldInvalidWorldPrefabContract={result.ResourceNodeYieldInvalidWorldPrefabContractCount}, " +
                 $"ResourceNodeToolGateErrors={result.ResourceNodeToolGateErrorCount}, " +
+                $"ResourceDistributionRouteErrors={result.ResourceDistributionRouteErrorCount}, " +
                 $"FirstHourCraftGateErrors={result.FirstHourCraftGateErrorCount}, " +
                 $"FirstHourDrillRouteErrors={result.FirstHourDrillRouteErrorCount}, " +
                 $"FirstHourOxygenRouteErrors={result.FirstHourOxygenRouteErrorCount}, " +
                 $"PlayerPdaHeadlessOpenRisk={result.PlayerPdaHeadlessOpenRiskCount}, " +
                 $"PlayerPdaBridgeWarnings={result.PlayerPdaBridgeWarningCount}, " +
+                $"PdaLoadoutPresetPathErrors={result.PdaLoadoutPresetPathErrorCount}, " +
                 $"PlayerDevProvisionerStartupRisk={result.PlayerDevProvisionerStartupRiskCount}, " +
                 $"PlayerStarterLoadoutErrors={result.PlayerStarterLoadoutErrorCount}, " +
+                $"PlayerSurfaceProbeAuthoringErrors={result.PlayerSurfaceProbeAuthoringErrorCount}, " +
                 $"Errors={result.Errors.Count}, Warnings={result.Warnings.Count}.";
 
             if (result.Errors.Count > 0)

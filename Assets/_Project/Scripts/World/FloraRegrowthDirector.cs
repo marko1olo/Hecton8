@@ -326,8 +326,18 @@ namespace Hecton8.World
                     _saveService = currentService as ISaveService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _tickRegistered = false;
-                    _slowTickRegistered = false;
+                    if (_tickRegistered)
+                    {
+                        GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                        _tickRegistered = false;
+                    }
+
+                    if (_slowTickRegistered)
+                    {
+                        GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                        _slowTickRegistered = false;
+                    }
+
                     if (currentService != null && isActiveAndEnabled)
                         TryRegisterDispatcherLanes();
                     break;

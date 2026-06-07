@@ -1556,8 +1556,25 @@ namespace Hecton8.World
                 return false;
 
             _bufferSource = null;
-            NativeArray<Matrix4x4> matrices = new NativeArray<Matrix4x4>(count, TransientVegetationCullingAllocator, NativeArrayOptions.UninitializedMemory);
-            NativeArray<HectonVegetationInstanceData> instanceData = new NativeArray<HectonVegetationInstanceData>(count, TransientVegetationCullingAllocator, NativeArrayOptions.UninitializedMemory);
+            NativeArray<Matrix4x4> matrices = H8Memory.Allocate<Matrix4x4>(
+                count,
+                VaultOwnerSystemId,
+                TransientVegetationCullingAllocator,
+                NativeArrayOptions.UninitializedMemory);
+            NativeArray<HectonVegetationInstanceData> instanceData = H8Memory.Allocate<HectonVegetationInstanceData>(
+                count,
+                VaultOwnerSystemId,
+                TransientVegetationCullingAllocator,
+                NativeArrayOptions.UninitializedMemory);
+            if (!matrices.IsCreated || !instanceData.IsCreated)
+            {
+                if (matrices.IsCreated)
+                    H8Memory.Release(ref matrices, VaultOwnerSystemId);
+                if (instanceData.IsCreated)
+                    H8Memory.Release(ref instanceData, VaultOwnerSystemId);
+                return false;
+            }
+
             try
             {
                 MockMatrixGeneratorJob job = new MockMatrixGeneratorJob
@@ -1579,9 +1596,9 @@ namespace Hecton8.World
             finally
             {
                 if (matrices.IsCreated)
-                    matrices.Dispose();
+                    H8Memory.Release(ref matrices, VaultOwnerSystemId);
                 if (instanceData.IsCreated)
-                    instanceData.Dispose();
+                    H8Memory.Release(ref instanceData, VaultOwnerSystemId);
             }
         }
 
@@ -1818,10 +1835,10 @@ namespace Hecton8.World
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                TryUnregister();
                 if (currentService == null || !isActiveAndEnabled)
                     return;
 
-                TryUnregister();
                 TryRegister();
                 return;
             }
@@ -2573,15 +2590,24 @@ namespace Hecton8.World
             });
 
             _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for vegetation renderer - owner: HectonIndirectVegetationRenderer
-            NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, TransientVegetationCullingAllocator);
+            NativeArray<MetadataValue> batchMetadata = H8Memory.Allocate<MetadataValue>(
+                BrgMetadataPlaceholderCount,
+                VaultOwnerSystemId,
+                TransientVegetationCullingAllocator);
             try
             {
+                if (!batchMetadata.IsCreated)
+                {
+                    ReleaseBatchRendererGroupResources();
+                    return;
+                }
+
                 _batchId = _batchRendererGroup.AddBatch(batchMetadata, _batchHandleBuffer.bufferHandle);
             }
             finally
             {
                 if (batchMetadata.IsCreated)
-                    batchMetadata.Dispose();
+                    H8Memory.Release(ref batchMetadata, VaultOwnerSystemId);
             }
         }
 
@@ -4572,11 +4598,36 @@ namespace Hecton8.World
                 return;
 
             DisposeCullTelemetryReadbackData();
-            _cullTelemetryReadback.Data = new NativeArray<uint>(
-                ScatterCullTelemetryCounterCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[4] - async GPU cull telemetry readback target - owner: HectonIndirectVegetationRenderer
-            NativeMemorySentinel.RegisterNativeArray(_cullTelemetryReadback.Data, nameof(HectonIndirectVegetationRenderer), "_cullTelemetryReadbackData", NativeAllocationLifetime.Scene);
+            NativeArray<uint> replacement = default;
+            try
+            {
+                replacement = new NativeArray<uint>(
+                    ScatterCullTelemetryCounterCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[4] - async GPU cull telemetry readback target - owner: HectonIndirectVegetationRenderer
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(replacement, nameof(HectonIndirectVegetationRenderer), "_cullTelemetryReadbackData", NativeAllocationLifetime.Scene);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("Native memory sentinel registration failed for cull telemetry readback data.");
+
+                _cullTelemetryReadback.Data = replacement;
+            }
+            catch
+            {
+                if (replacement.IsCreated)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.UnregisterNativeArray(replacement);
+                    }
+                    finally
+                    {
+                        replacement.Dispose();
+                    }
+                }
+
+                throw;
+            }
+
             _scatterCullTelemetryReadbackRepairRequested = false;
         }
 

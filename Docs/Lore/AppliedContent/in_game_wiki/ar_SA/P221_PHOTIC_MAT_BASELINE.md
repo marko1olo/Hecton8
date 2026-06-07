@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Photic Mat Baseline"
+title: "خط أساس الحصيرة الضوئية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Photic Mat Baseline
+# خط أساس الحصيرة الضوئية
 
-AR LOC HOLD: Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.
+الحصر الضوئية هي أول حياة ضحلة تساعد اللاعب على التنفس ومع ذلك تعاقب الحصاد الطائش. ينمو الغشاء حيث يلتقي الضوء والجريان المعدني والماء البطيء، فيغطي الصخر بلون غني بالأكسجين. المركز الصحي لين وساطع؛ أما الحافة الصلبة بالملح فتعني أن كيمياء الضغط أو بنية قديمة تجهد الجيب. تغير الحصيرة الصوت أيضا: النمو الجيد يخمد الصدمات الصغيرة، بينما الدروز الملوثة تطقطق وتفور تحت الكاشطة. اقطع الأطراف الحرة فقط إذا احتجت أليافا أو كيمياء أكسجين. تمزيق المركز الساطع قرب فتحة أو أنبوب أو لوحة مختومة قد يخفض الأكسجين المحلي ويكشف ما كانت الحصيرة تمسكه في الأسفل.
 
 ## Scanner
 
-AR LOC HOLD: Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.
+حصيرة ضوئية // غشاء حي تغذيه المعادن فوق صخر ضحل. الأشرطة الساطعة تؤكسج الماء؛ والحواف الصلبة بالملح تكشف كيمياء ضغط متوترة وتسريبات خفية في الدروز.
 
 ## Terminal
 
-AR LOC HOLD: ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.
+خط أساس بيئي: يرسم جلد الأكسجين والجريان المعدني والتخميد الصوتي وإجهاد الحواف الملحية. اجمع الأطراف الحرة فقط. تمزيق الحصر قرب الدروز أو المعدات المختومة قد يسقط الجيب إلى تلوث.
 
 ## Audio
 
-AR LOC HOLD: It looks clean because it is working hard. That is not the same as safe.
+يبدو نظيفا لأنه يعمل. هذا ليس مثل أن يكون آمنا.
 
 ## Field Note
 
-AR LOC HOLD: Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.
+لا تكشط ألمع بقعة أولا. اقرأ الحافة والفقاعات والصوت؛ الحصيرة مقياس قبل أن تكون موردا.
 
 <!-- In-Game Wiki; generated from P221_PHOTIC_MAT_BASELINE/ar_SA. -->

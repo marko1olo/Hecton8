@@ -7,6 +7,9 @@ poi_tags: poi.ascent_package;poi.launch_floodgate
 biome_tags: biome.atlas_bottom;biome.deep_launch_route
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Jendela Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

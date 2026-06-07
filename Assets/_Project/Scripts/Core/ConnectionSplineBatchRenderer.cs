@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -19,6 +20,7 @@ namespace Hecton8.Core
         private const int MaxRenderedLinksPerBatch = 64;
         private const float FarPipeSpanThresholdMetersSq = 40f * 40f;
         private const float RelayRadiusMeters = 0.028f;
+        private const SystemID NativeArrayOwnerSystem = SystemID.GraphicsScalability;
 
         private static readonly int s_FlexiblePipeInstancesId = Shader.PropertyToID("_HectonFlexiblePipeInstances");
         private static readonly int s_BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -919,34 +921,14 @@ namespace Hecton8.Core
             batch.MaterialProperties = new MaterialPropertyBlock();
         }
 
-        private static void EnsureArrayCapacityCold(ref NativeArray<SplineDescriptor> array, int requiredLength)
+        private static void EnsureArrayCapacityCold<T>(ref NativeArray<T> array, int requiredLength)
+            where T : struct
         {
             if (array.IsCreated && array.Length >= requiredLength)
                 return;
 
-            if (array.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                array.Dispose();
-            }
-
-            array = new NativeArray<SplineDescriptor>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(array, nameof(ConnectionSplineBatchRenderer), nameof(BatchState.Descriptors), NativeAllocationLifetime.Session);
-        }
-
-        private static void EnsureArrayCapacityCold(ref NativeArray<FlexiblePipeInstanceGpuData> array, int requiredLength)
-        {
-            if (array.IsCreated && array.Length >= requiredLength)
-                return;
-
-            if (array.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                array.Dispose();
-            }
-
-            array = new NativeArray<FlexiblePipeInstanceGpuData>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(array, nameof(ConnectionSplineBatchRenderer), nameof(BatchState.InstanceData), NativeAllocationLifetime.Session);
+            DisposeNativeArray(ref array);
+            array = H8Memory.Allocate<T>(requiredLength, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
         }
 
         private static void EnsureInstanceBufferCapacityCold(BatchState batch, int requiredLength)
@@ -983,9 +965,7 @@ namespace Hecton8.Core
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            H8Memory.Release(ref array, NativeArrayOwnerSystem);
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)

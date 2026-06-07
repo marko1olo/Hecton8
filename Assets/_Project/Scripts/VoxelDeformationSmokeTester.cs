@@ -20,6 +20,8 @@ namespace Hecton8.Dev
     [AddComponentMenu("Hecton8/Dev/Voxel Deformation Smoke Tester")]
     public sealed class VoxelDeformationSmokeTester : MonoBehaviour
     {
+        private const string NativeMemoryOwner = nameof(VoxelDeformationSmokeTester);
+
         [Header("Execution")]
         [SerializeField] private bool runOnStart;
         [SerializeField] private bool verboseLogging;
@@ -220,11 +222,11 @@ namespace Hecton8.Dev
             NativeArray<int> pureVoidFlags = default;
             try
             {
-                passability = new NativeArray<byte>(8, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                distance = new NativeArray<ushort>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                pureVoidFlags = new NativeArray<int>(
+                passability = AllocateTrackedTempJobArray<byte>(8, nameof(passability), NativeArrayOptions.ClearMemory);
+                distance = AllocateTrackedTempJobArray<ushort>(8, nameof(distance), NativeArrayOptions.UninitializedMemory);
+                pureVoidFlags = AllocateTrackedTempJobArray<int>(
                     VoxelDynamicNavGridRuntime.ResolvePureVoidBlockCount(passability.Length),
-                    Allocator.TempJob,
+                    nameof(pureVoidFlags),
                     NativeArrayOptions.UninitializedMemory);
                 for (int i = 0; i < passability.Length; i++)
                     passability[i] = VoxelDynamicNavGridRuntime.OpenCell;
@@ -255,12 +257,9 @@ namespace Hecton8.Dev
             }
             finally
             {
-                if (passability.IsCreated)
-                    passability.Dispose();
-                if (distance.IsCreated)
-                    distance.Dispose();
-                if (pureVoidFlags.IsCreated)
-                    pureVoidFlags.Dispose();
+                DisposeTrackedTempJobArray(ref passability);
+                DisposeTrackedTempJobArray(ref distance);
+                DisposeTrackedTempJobArray(ref pureVoidFlags);
             }
         }
 
@@ -270,8 +269,8 @@ namespace Hecton8.Dev
             NativeArray<int> hasContent = default;
             try
             {
-                density = new NativeArray<float>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                hasContent = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                density = AllocateTrackedTempJobArray<float>(8, nameof(density), NativeArrayOptions.UninitializedMemory);
+                hasContent = AllocateTrackedTempJobArray<int>(1, nameof(hasContent), NativeArrayOptions.ClearMemory);
                 for (int i = 0; i < density.Length; i++)
                     density[i] = -1f;
 
@@ -302,10 +301,8 @@ namespace Hecton8.Dev
             }
             finally
             {
-                if (density.IsCreated)
-                    density.Dispose();
-                if (hasContent.IsCreated)
-                    hasContent.Dispose();
+                DisposeTrackedTempJobArray(ref density);
+                DisposeTrackedTempJobArray(ref hasContent);
             }
         }
 
@@ -318,11 +315,11 @@ namespace Hecton8.Dev
             NativeArray<float> ambientOcclusion = default;
             try
             {
-                density = new NativeArray<sbyte>(27, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                positions = new NativeArray<float3>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                normals = new NativeArray<float3>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                curvature = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                ambientOcclusion = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                density = AllocateTrackedTempJobArray<sbyte>(27, nameof(density), NativeArrayOptions.UninitializedMemory);
+                positions = AllocateTrackedTempJobArray<float3>(1, nameof(positions), NativeArrayOptions.UninitializedMemory);
+                normals = AllocateTrackedTempJobArray<float3>(1, nameof(normals), NativeArrayOptions.UninitializedMemory);
+                curvature = AllocateTrackedTempJobArray<float>(1, nameof(curvature), NativeArrayOptions.UninitializedMemory);
+                ambientOcclusion = AllocateTrackedTempJobArray<float>(1, nameof(ambientOcclusion), NativeArrayOptions.UninitializedMemory);
 
                 int index = 0;
                 for (int z = 0; z < 3; z++)
@@ -364,16 +361,11 @@ namespace Hecton8.Dev
             }
             finally
             {
-                if (density.IsCreated)
-                    density.Dispose();
-                if (positions.IsCreated)
-                    positions.Dispose();
-                if (normals.IsCreated)
-                    normals.Dispose();
-                if (curvature.IsCreated)
-                    curvature.Dispose();
-                if (ambientOcclusion.IsCreated)
-                    ambientOcclusion.Dispose();
+                DisposeTrackedTempJobArray(ref density);
+                DisposeTrackedTempJobArray(ref positions);
+                DisposeTrackedTempJobArray(ref normals);
+                DisposeTrackedTempJobArray(ref curvature);
+                DisposeTrackedTempJobArray(ref ambientOcclusion);
             }
         }
 
@@ -657,6 +649,43 @@ namespace Hecton8.Dev
             int limit = VoxelChunkModifiedEvents.DebugCapacity + 4;
             for (int i = 0; i < limit && VoxelChunkModifiedEvents.TryDequeue(out _); i++)
             {
+            }
+        }
+
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, string label, NativeArrayOptions options) where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+
+            array.Dispose();
+            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void DisposeTrackedTempJobArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
             }
         }
 

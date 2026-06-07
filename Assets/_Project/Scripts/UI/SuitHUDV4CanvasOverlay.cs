@@ -2015,7 +2015,7 @@ namespace Hecton8.UI
             ILocalizationStressPresentationReadModel localizationRuntime = GlobalRegistry.LocalizationStressPresentation;
             bool localizationChanged = !ReferenceEquals(_localizationRuntime, localizationRuntime);
             _localizationRuntime = localizationRuntime;
-            _spatialAudioManager = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _playerRuntimeContext = GlobalRegistry.Player;
             if (_vegetationBridge == null)
                 _vegetationBridge = GlobalRegistry.MapMagicVegetation;
@@ -2023,6 +2023,32 @@ namespace Hecton8.UI
             RefreshRuntimeDependenciesFromCachedServices();
             RefreshQualityPolicy();
             return localizationChanged;
+        }
+
+        private void CacheAudioService(Hecton8.Core.IAudioService audioService)
+        {
+            _spatialAudioManager = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private Hecton8.Core.IAudioService ResolveAudioService()
+        {
+            Hecton8.Core.IAudioService audioService = _spatialAudioManager;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _spatialAudioManager = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(Hecton8.Core.IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void RefreshRuntimeDependenciesFromCachedServices()
@@ -2074,7 +2100,7 @@ namespace Hecton8.UI
                     break;
 
                 case GlobalRegistryServiceSlot.Audio:
-                    _spatialAudioManager = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
 
                 case GlobalRegistryServiceSlot.Player:
@@ -2767,8 +2793,9 @@ namespace Hecton8.UI
 
             NativeArray<float>.ReadOnly radarSamples = default;
             int radarResolution = 0;
-            bool hasRadarPayload = _spatialAudioManager != null &&
-                                   _spatialAudioManager.TryGetAcousticRadarPayload(out radarSamples, out radarResolution) &&
+            Hecton8.Core.IAudioService audioManager = ResolveAudioService();
+            bool hasRadarPayload = audioManager != null &&
+                                   audioManager.TryGetAcousticRadarPayload(out radarSamples, out radarResolution) &&
                                    radarSamples.Length > 0 &&
                                    radarResolution > 0;
 
@@ -2785,8 +2812,9 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (_spatialAudioManager == null ||
-                !_spatialAudioManager.TryUploadAcousticRadarPayload(
+            audioManager = ResolveAudioService();
+            if (audioManager == null ||
+                !audioManager.TryUploadAcousticRadarPayload(
                     _acousticRadarTexture,
                     out int uploadedSampleCount,
                     out float uploadedPeakIntensity) ||
@@ -7215,6 +7243,12 @@ namespace Hecton8.UI
             RequestRefresh();
         }
 
+        public void ConfigureRuntimeProjection(Camera camera)
+        {
+            SetProjectionCamera(camera);
+            SetRenderPathProjectionSource(true);
+        }
+
         private bool CanvasStateMatchesRequestedRenderPath(RenderPath requestedRenderPath, Camera requestedProjectionCamera)
         {
             Canvas canvas = ResolveTargetCanvas();
@@ -7906,7 +7940,7 @@ namespace Hecton8.UI
 
         private void RegisterToTickManager()
         {
-            if (!_runtimeScalerCallbacksActive)
+            if (!_runtimeScalerCallbacksActive || GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registeredToTickManager)
@@ -7925,15 +7959,12 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
-                currentService == null ||
-                !isActiveAndEnabled)
-            {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
-            }
 
             UnregisterFromTickManager();
-            RegisterToTickManager();
+            if (currentService != null && isActiveAndEnabled)
+                RegisterToTickManager();
         }
 
         private void TryRegisterHotSwapListener()

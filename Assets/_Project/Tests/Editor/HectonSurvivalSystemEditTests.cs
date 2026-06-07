@@ -301,6 +301,9 @@ public sealed class HectonSurvivalSystemEditTests
         Assert.That(source, Does.Contain("if (count >= sourceCapacity)"));
         Assert.That(source, Does.Contain("math.min(BlackboxMaxSourceCount, sources.Length),"));
         Assert.That(source, Does.Contain("int sourceCount = math.min(math.max(0, Volatile.Read(ref _blackboxSourceCount)), sourceCapacity);"));
+        Assert.That(source, Does.Contain("if (!TryReadBlackboxFrameBounds(out int validFrames, out int activeFrames, out int writeIndex))"));
+        Assert.That(source, Does.Contain("if (validFrames >= activeFrames)"));
+        Assert.That(source, Does.Contain("newestSlot = validFrames - 1;"));
     }
 
     [Test]

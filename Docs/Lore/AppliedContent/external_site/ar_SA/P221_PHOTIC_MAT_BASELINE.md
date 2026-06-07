@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Photic Mat Baseline"
+title: "خط أساس الحصيرة الضوئية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Photic Mat Baseline
+# خط أساس الحصيرة الضوئية
 
-AR LOC HOLD: Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered.
+خط أساس الحصيرة الضوئية يحول جمال HECTON-8 إلى قاعدة عملية. الحصيرة ليست منظرا. إنها مقياس حي يجعل الرف الأول مقروءا: اللون لتبادل الأكسجين، صلابة الحافة لكيمياء الضغط، إيقاع الفقاعات لحركة الماء، والملمس الصوتي للدروز الخفية. لذلك يجب أن تبدو الصخور الساطعة الأولى جذابة ومريبة في الوقت نفسه. يستطيع Marauder عالق أن يستخدم حافة الحصيرة للألياف أو مقدمات معجون الإغلاق أو قراءة أكسجين طارئة، لكن كل قطع يغير الجيب. الحصاد الأسلم هو الطرف الحر بعيدا عن المعدن ودروز الفتحات وأنابيب Deep Reach القديمة. أسوأ حصاد هو المركز الجميل، لأنه غالبا الجزء الذي يعمل أكثر. التوزيع الجيد يعلم بلا محاضرة: حصيرة صحية تضيء على حجر نظيف؛ حصيرة متوترة تنمي حوافا بيضاء من الملح حول تسريبات الضغط؛ حصيرة مسمومة تبدو ملساء أكثر من اللازم وتصدر صوتا خاطئا تحت الأداة. يبقى الرف الضحل مضيئا لأن الحياة تعمل هناك. ويبقى متوترا لأن اللاعب يستطيع كسر هذا العمل بكشطة جشعة واحدة.
 
 ## Scanner
 
-AR LOC HOLD: Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.
+حصيرة ضوئية // غشاء حي تغذيه المعادن فوق صخر ضحل. الأشرطة الساطعة تؤكسج الماء؛ والحواف الصلبة بالملح تكشف كيمياء ضغط متوترة وتسريبات خفية في الدروز.
 
 ## Terminal
 
-AR LOC HOLD: ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.
+خط أساس بيئي: يرسم جلد الأكسجين والجريان المعدني والتخميد الصوتي وإجهاد الحواف الملحية. اجمع الأطراف الحرة فقط. تمزيق الحصر قرب الدروز أو المعدات المختومة قد يسقط الجيب إلى تلوث.
 
 ## Audio
 
-AR LOC HOLD: It looks clean because it is working hard. That is not the same as safe.
+يبدو نظيفا لأنه يعمل. هذا ليس مثل أن يكون آمنا.
 
 ## Field Note
 
-AR LOC HOLD: Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.
+لا تكشط ألمع بقعة أولا. اقرأ الحافة والفقاعات والصوت؛ الحصيرة مقياس قبل أن تكون موردا.
 
 <!-- External Site; generated from P221_PHOTIC_MAT_BASELINE/ar_SA. -->

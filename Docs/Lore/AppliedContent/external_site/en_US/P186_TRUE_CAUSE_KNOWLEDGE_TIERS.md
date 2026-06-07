@@ -7,6 +7,9 @@ poi_tags: poi.knowledge_tier_matrix;poi.risk_margin_stamp
 biome_tags: biome.claim_admin;biome.worker_archive
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "True Cause Knowledge Tiers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

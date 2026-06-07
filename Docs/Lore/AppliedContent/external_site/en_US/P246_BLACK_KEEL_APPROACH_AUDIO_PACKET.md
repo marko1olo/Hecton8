@@ -7,6 +7,9 @@ poi_tags: poi.black_keel_approach_log;poi.tender_audio_buffer
 biome_tags: biome.carrier_interface;biome.claim_admin
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Black Keel Approach Packet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

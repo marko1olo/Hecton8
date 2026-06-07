@@ -180,10 +180,9 @@ namespace Hecton8.Gameplay
             if (item.UseDuration <= 0f)
             {
                 // ÐœÐ³Ð½Ð¾Ð²ÐµÐ½Ð½Ð¾Ðµ Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ð¸Ðµ - ÑƒÐ´Ð°Ð»ÑÐµÐ¼ Ð¸Ð· Ð¸Ð½Ð²ÐµÐ½Ñ‚Ð°Ñ€Ñ ÐµÑÐ»Ð¸ ÐµÑÑ‚ÑŒ ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚Ñ‹
-                if (anchorX >= 0 && anchorY >= 0)
-                {
-                    RemoveItemFromInventory(anchorX, anchorY);
-                }
+                if (HasInventoryAnchor(anchorX, anchorY) && !TryRemoveItemFromInventory(anchorX, anchorY, item))
+                    return false;
+
                 ConsumableItem.TryConsumeWithoutAudio(item, _survivalSystem);
                 PlayCompletionSound(item);
                 return true;
@@ -234,12 +233,8 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            PlayerActionController registered = GlobalRegistry.PlayerActions;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             _cachedTransform = transform;
 
@@ -258,6 +253,9 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             // ÐšÑÑˆÐ¸Ñ€ÑƒÐµÐ¼ SurvivalSystem
             if (_survivalSystem == null)
                 TryGetComponent(out _survivalSystem);
@@ -287,7 +285,12 @@ namespace Hecton8.Gameplay
                     _playerInventoryService = currentService as IPlayerInventoryService;
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister(clearQueuedPresentation: false);
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
                     break;
             }
         }
@@ -522,10 +525,12 @@ namespace Hecton8.Gameplay
             // â”€â”€ ATOMIC: Remove item from inventory ONLY on completion â”€â”€
             if (completedItem != null)
             {
-                if (anchorX >= 0 && anchorY >= 0)
+                if (HasInventoryAnchor(anchorX, anchorY) && !TryRemoveItemFromInventory(anchorX, anchorY, completedItem))
                 {
-                    RemoveItemFromInventory(anchorX, anchorY);
+                    PublishActionCancelled(completedItem, 1f, PlayerActionCancelledSignal.ReasonGeneric);
+                    return;
                 }
+
                 ConsumableItem.TryConsumeWithoutAudio(completedItem, _survivalSystem);
                 PlayCompletionSound(completedItem);
             }
@@ -537,13 +542,24 @@ namespace Hecton8.Gameplay
         /// Removes one item from inventory at the specified position.
         /// Called only on successful action completion (atomicity).
         /// </summary>
-        private void RemoveItemFromInventory(int anchorX, int anchorY)
+        private bool TryRemoveItemFromInventory(int anchorX, int anchorY, ItemData expectedItem)
         {
             IPlayerInventoryService inventoryService = _playerInventoryService;
             PlayerInventory inventory = inventoryService != null ? inventoryService.Inventory : null;
-            if (inventory == null) return;
+            if (inventory == null)
+                return false;
 
-            inventory.RemoveOneItem(anchorX, anchorY);
+            int expectedHash = expectedItem != null ? expectedItem.PersistentHashId : 0;
+            if (expectedHash != 0 && inventory.GetItemHashAt(anchorX, anchorY) != expectedHash)
+                return false;
+
+            int removedHash = inventory.RemoveOneItem(anchorX, anchorY);
+            return removedHash != 0 && (expectedHash == 0 || removedHash == expectedHash);
+        }
+
+        private static bool HasInventoryAnchor(int anchorX, int anchorY)
+        {
+            return anchorX >= 0 && anchorY >= 0;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -578,8 +594,7 @@ namespace Hecton8.Gameplay
 
             if (clip == null && eventId == 0u) return;
 
-            IAudioService audioService = _audioService;
-            if (audioService != null && _cachedTransform != null)
+            if (ResolveAudioService() != null && _cachedTransform != null)
                 QueueActionAudio(clipKind, eventId, itemHash, _cachedTransform.position);
         }
 
@@ -635,7 +650,7 @@ namespace Hecton8.Gameplay
         {
             if (cancelSound == null) return;
 
-            if (_audioService != null && _cachedTransform != null)
+            if (ResolveAudioService() != null && _cachedTransform != null)
                 QueueActionAudio(ActionAudioClipCancel, 0u, 0u, _cachedTransform.position);
         }
 
@@ -659,7 +674,7 @@ namespace Hecton8.Gameplay
             ActionAudioRequest request = _pendingActionAudio;
             _pendingActionAudio = default;
 
-            IAudioService audioService = _audioService;
+            IAudioService audioService = ResolveAudioService();
             if (audioService == null)
                 return;
 
@@ -739,7 +754,7 @@ namespace Hecton8.Gameplay
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
-        private void TryUnregister()
+        private void TryUnregister(bool clearQueuedPresentation = true)
         {
             if (_registered)
             {
@@ -753,7 +768,8 @@ namespace Hecton8.Gameplay
                 _registeredLateFrame = false;
             }
 
-            ClearQueuedActionAudio();
+            if (clearQueuedPresentation)
+                ClearQueuedActionAudio();
         }
 
         private void TryRegisterService()
@@ -761,15 +777,32 @@ namespace Hecton8.Gameplay
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            PlayerActionController registered = GlobalRegistry.PlayerActions;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterPlayerActionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PlayerActions, this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            PlayerActionController registered = GlobalRegistry.PlayerActions;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsPlayerActionRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterPlayerActionRuntime(registered);
+            return false;
+        }
+
+        private static bool IsPlayerActionRuntimeUsable(PlayerActionController controller)
+        {
+            return controller != null && controller._serviceRegistered && controller.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()
@@ -784,7 +817,33 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             _playerInventoryService = GlobalRegistry.PlayerInventory;
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwap()

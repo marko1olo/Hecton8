@@ -7,6 +7,9 @@ poi_tags: poi.eclipse_window_chart;poi.radiation_shutter_clock
 biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "HECTON-8 Orbital Hazard Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

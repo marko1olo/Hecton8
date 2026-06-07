@@ -7,6 +7,9 @@ poi_tags: poi.relay_mast;poi.signal_buffer
 biome_tags: biome.storm_shelf;biome.surface_relay
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Light-Delay Authority"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

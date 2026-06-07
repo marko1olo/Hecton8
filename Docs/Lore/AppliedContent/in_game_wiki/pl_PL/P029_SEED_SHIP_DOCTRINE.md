@@ -7,6 +7,9 @@ poi_tags: poi.seed_factory_log;poi.atlas_directive
 biome_tags: biome.drowned_colony;biome.deep_archive
 locale: pl_PL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Doktryna Seed Ship"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

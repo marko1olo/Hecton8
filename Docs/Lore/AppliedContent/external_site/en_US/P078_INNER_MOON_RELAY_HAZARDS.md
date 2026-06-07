@@ -7,6 +7,9 @@ poi_tags: poi.radiation_shutter;poi.inner_relay_dead_zone
 biome_tags: biome.orbital_window;biome.drowned_comms
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Inner Moon Relay Hazards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.black_keel_mass_ledger;poi.payout_conversion_note
 biome_tags: biome.claim_admin;biome.black_keel_orbit
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Black Keel Payout Mass Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

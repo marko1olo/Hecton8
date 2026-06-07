@@ -7,6 +7,9 @@ poi_tags: poi.locker_name_strip;poi.marauder_preserved_label
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Locker Name Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

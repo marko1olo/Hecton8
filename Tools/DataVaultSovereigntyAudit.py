@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit direct NativeArray constructors against DataVault sovereignty."""
+"""Audit direct native collection constructors against DataVault sovereignty."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import json
 import re
 import sys
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Container, Iterable, Sequence
 
@@ -29,8 +30,26 @@ DEFAULT_REPORT_PATH = (
 AUDIT_SCHEMA = "hecton8.datavault_sovereignty_audit.v4"
 BASELINE_SCHEMA = "hecton8.datavault_sovereignty_baseline.v4"
 REPORT_SCHEMA = "hecton8.datavault_sovereignty_audit_report.v3"
-NATIVE_ARRAY_CONSTRUCTOR_RE = re.compile(r"\bnew\s+NativeArray\s*<")
+NATIVE_COLLECTION_TYPE_PATTERN = r"NativeArray|NativeList|Native(?:Parallel)?HashMap"
+CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN = r"(?:<[^>\r\n;{}()]+>)?"
+NATIVE_COLLECTION_CONSTRUCTOR_RE = re.compile(
+    r"\bnew\s+(?P<collection>" + NATIVE_COLLECTION_TYPE_PATTERN + r")\s*<[^;\r\n=]+>\s*\("
+)
+NATIVE_ARRAY_CONSTRUCTOR_RE = NATIVE_COLLECTION_CONSTRUCTOR_RE
 NATIVE_ARRAY_ALLOCATOR_RE = re.compile(r"\bAllocator\s*\.\s*(?P<allocator>Persistent|TempJob|Temp)\b")
+NATIVE_COLLECTION_CONSTRUCTOR_ASSIGNMENT_RE = re.compile(
+    r"(?:\b(?:" + NATIVE_COLLECTION_TYPE_PATTERN + r")\s*<[^>\r\n;=(){}]+>\s+)?"
+    r"(?P<name>[A-Za-z_]\w*)\s*=\s*new\s+"
+    r"(?P<collection>" + NATIVE_COLLECTION_TYPE_PATTERN + r")\s*<[^;\r\n=]+>\s*\("
+)
+NATIVE_ARRAY_CONSTRUCTOR_ASSIGNMENT_RE = NATIVE_COLLECTION_CONSTRUCTOR_ASSIGNMENT_RE
+NATIVE_COLLECTION_CONSTRUCTOR_ASSIGNMENT_BLOCK_RE = re.compile(
+    r"(?:\b(?:" + NATIVE_COLLECTION_TYPE_PATTERN + r")\s*<[^>\r\n;=(){}]+>\s+)?"
+    r"(?P<name>[A-Za-z_]\w*)\s*=\s*"
+    r"(?:\r?\n\s*)?new\s+(?P<collection>" + NATIVE_COLLECTION_TYPE_PATTERN + r")\s*<[^;\r\n=]+>\s*\(",
+    re.MULTILINE,
+)
+NATIVE_ARRAY_CONSTRUCTOR_ASSIGNMENT_BLOCK_RE = NATIVE_COLLECTION_CONSTRUCTOR_ASSIGNMENT_BLOCK_RE
 LATEST_CREATED_FALLBACK_RE = re.compile(r"\bGlobalDataVault\s*\.\s*TryGetLatestCreated\s*\(")
 NATIVE_COLLECTION_DECLARATION_RE = re.compile(
     r"^\s*(?:\[[^\]]+\]\s*)*"
@@ -40,8 +59,9 @@ NATIVE_COLLECTION_DECLARATION_RE = re.compile(
 )
 NATIVE_ARRAY_DECLARATION_RE = NATIVE_COLLECTION_DECLARATION_RE
 TYPE_DECLARATION_RE = re.compile(
-    r"\b(?P<kind>class|struct|interface|record\s+struct|record\s+class|record)\s+"
+    r"\b(?P<kind>ref\s+(?:partial\s+)?struct|record\s+struct|record\s+class|class|struct|interface|record)\s+"
     r"(?P<name>[A-Za-z_]\w*)"
+    r"(?:\s*<[^>{}]+>)?"
     r"(?:\s*:\s*(?P<bases>[^{]+))?"
 )
 JOB_INTERFACE_TOKENS = (
@@ -51,6 +71,7 @@ JOB_INTERFACE_TOKENS = (
     "IJobParallelForTransform",
     "IJobEntity",
     "IJobChunk",
+    "IAnimationJob",
 )
 NATIVE_COLLECTION_TOKENS = (
     "NativeArray",
@@ -58,17 +79,37 @@ NATIVE_COLLECTION_TOKENS = (
     "NativeHashMap",
     "NativeParallelHashMap",
 )
+SENTINEL_REGISTER_METHODS_BY_COLLECTION = {
+    "NativeArray": ("RegisterNativeArray",),
+    "NativeList": ("RegisterNativeList", "RegisterNativeListInstance"),
+    "NativeHashMap": ("RegisterNativeHashMap",),
+    "NativeParallelHashMap": (
+        "RegisterNativeParallelHashMap",
+        "RegisterNativeParallelHashMapInstance",
+    ),
+}
 NATIVE_VIEW_STRUCT_SUFFIXES = (
     "Buffer",
+    "BufferSet",
     "Buffers",
     "BufferView",
     "BufferViews",
+    "Command",
+    "Data",
+    "Lease",
+    "NativeScratch",
+    "NativeState",
+    "PendingJob",
     "View",
     "Views",
     "Payload",
+    "Writer",
     "Snapshot",
     "Kernel",
 )
+REGISTERED_NATIVE_OWNER_STRUCT_NAMES = frozenset({
+    "RegisteredTransientNativeArray",
+})
 DEFAULT_ALLOWED_PATH_SUFFIXES = (
     "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
 )
@@ -242,7 +283,7 @@ def scan_source_tree(
             source = path.read_text(encoding="utf-8", errors="ignore")
         except OSError as exc:
             raise OSError(f"failed to read {path}") from exc
-        if "NativeArray" not in source:
+        if not contains_native_collection_token(source):
             continue
 
         sanitized_lines = sanitize_csharp_source(source).splitlines()
@@ -497,6 +538,20 @@ def is_native_view_scope(scope: TypeScope | None) -> bool:
     return scope.name.endswith(NATIVE_VIEW_STRUCT_SUFFIXES)
 
 
+def is_ref_struct_scope(scope: TypeScope | None) -> bool:
+    if scope is None:
+        return False
+    return scope.kind.startswith("ref ") and "struct" in scope.kind
+
+
+def is_registered_native_owner_scope(scope: TypeScope | None) -> bool:
+    if scope is None:
+        return False
+    if "struct" not in scope.kind:
+        return False
+    return scope.name in REGISTERED_NATIVE_OWNER_STRUCT_NAMES
+
+
 def classify_constructor_allocator(line: str) -> str:
     match = NATIVE_ARRAY_ALLOCATOR_RE.search(line)
     return match.group("allocator") if match else "Unknown"
@@ -506,15 +561,1354 @@ def constructor_window(lines: Sequence[str], line_index: int, max_lines: int = 8
     return "\n".join(lines[line_index : min(len(lines), line_index + max_lines)])
 
 
-def is_sentinel_tracked_constructor_wrapper(source: str, lines: Sequence[str], line_index: int) -> bool:
-    if "NativeMemorySentinel.RegisterNativeArray" not in source:
-        return False
-    if "NativeMemorySentinel.UnregisterNativeArray" not in source:
+def native_array_constructor_assignment_name(lines: Sequence[str], line_index: int) -> str:
+    line = lines[line_index]
+    matches = list(NATIVE_ARRAY_CONSTRUCTOR_ASSIGNMENT_RE.finditer(line))
+    if not matches:
+        window = "\n".join(lines[max(0, line_index - 3) : line_index + 1])
+        matches = list(NATIVE_ARRAY_CONSTRUCTOR_ASSIGNMENT_BLOCK_RE.finditer(window))
+    if not matches:
+        return ""
+
+    name = matches[-1].group("name")
+    return "" if name == "_" else name
+
+
+def native_collection_constructor_type(lines: Sequence[str], line_index: int) -> str:
+    window = constructor_window(lines, line_index, 4)
+    match = NATIVE_COLLECTION_CONSTRUCTOR_RE.search(window)
+    return match.group("collection") if match else "NativeArray"
+
+
+def sentinel_register_methods_for_collection(collection_type: str) -> tuple[str, ...]:
+    return SENTINEL_REGISTER_METHODS_BY_COLLECTION.get(collection_type, ())
+
+
+def native_tracking_register_owner_pattern() -> str:
+    return (
+        r"(?:NativeMemorySentinel|"
+        r"(?:Hecton8\s*\.\s*Core\s*\.\s*Contracts\s*\.\s*)?NativeMemoryTrackingBridge)"
+    )
+
+
+def h8memory_owner_pattern() -> str:
+    return r"(?:Hecton8\s*\.\s*Core\s*\.\s*Memory\s*\.)?H8Memory"
+
+
+def helper_name_fragments_for_collection(collection_type: str) -> tuple[str, ...]:
+    if collection_type == "NativeArray":
+        return ("NativeArray", "Array")
+    if collection_type == "NativeList":
+        return ("NativeList", "List")
+    if collection_type == "NativeHashMap":
+        return ("NativeHashMap", "HashMap")
+    if collection_type == "NativeParallelHashMap":
+        return ("NativeParallelHashMap", "ParallelHashMap", "HashMap")
+
+    return (collection_type,)
+
+
+def csharp_blocks_containing_line(lines: Sequence[str], line_index: int) -> list[tuple[int, int]]:
+    stack: list[int] = []
+    blocks: list[tuple[int, int]] = []
+    for index, line in enumerate(lines):
+        for char in line:
+            if char == "{":
+                stack.append(index)
+                continue
+            if char == "}":
+                if not stack:
+                    continue
+                start = stack.pop()
+                if start <= line_index <= index:
+                    blocks.append((start, index))
+
+    return blocks
+
+
+def csharp_block_header(lines: Sequence[str], start_index: int, max_lines: int = 6) -> str:
+    return "\n".join(lines[max(0, start_index - max_lines) : start_index + 1])
+
+
+def is_method_like_block_header(header: str) -> bool:
+    control_prefixes = (
+        "if",
+        "else",
+        "for",
+        "foreach",
+        "while",
+        "switch",
+        "try",
+        "catch",
+        "finally",
+        "using",
+        "lock",
+        "fixed",
+    )
+    raw_lines = [line.strip() for line in header.splitlines() if line.strip()]
+    if not raw_lines:
         return False
 
-    lookback = "\n".join(lines[max(0, line_index - 12) : line_index + 1])
-    lookahead = "\n".join(lines[line_index : min(len(lines), line_index + 8)])
-    return "NewTrackedArray" in lookback and "RegisterNativeArray" in lookahead
+    last_line = raw_lines[-1]
+    signature_lines: list[str] = []
+    if "{" in last_line:
+        before_brace = last_line.rsplit("{", 1)[0].strip()
+        if before_brace:
+            signature_lines.append(before_brace)
+
+    if not signature_lines:
+        for line in reversed(raw_lines[:-1]):
+            signature_lines.insert(0, line)
+            first_token_match = re.match(r"^(?P<token>[A-Za-z_]\w*)\b", line)
+            if first_token_match and first_token_match.group("token") in control_prefixes:
+                break
+            if "(" in line:
+                break
+
+    compact = " ".join(" ".join(signature_lines).strip().split())
+    if "(" not in compact or ")" not in compact:
+        return False
+
+    first_token_match = re.match(r"^(?P<token>[A-Za-z_]\w*)\b", compact)
+    if first_token_match and first_token_match.group("token") in control_prefixes:
+        return False
+
+    return True
+
+
+def csharp_method_bounds_for_line(lines: Sequence[str], line_index: int) -> tuple[int, int]:
+    candidates: list[tuple[int, int]] = []
+    for start, end in csharp_blocks_containing_line(lines, line_index):
+        if is_method_like_block_header(csharp_block_header(lines, start)):
+            candidates.append((start, end))
+
+    if candidates:
+        return max(candidates, key=lambda item: item[0])
+
+    return max(0, line_index - 8), min(len(lines) - 1, line_index + 16)
+
+
+def register_native_array_helper_names(method_text: str, variable_name: str) -> list[str]:
+    return register_native_collection_helper_names(method_text, variable_name, "NativeArray")
+
+
+def helper_name_pattern_for_collection(collection_type: str) -> str:
+    fragments = list(helper_name_fragments_for_collection(collection_type))
+    fragments.extend(["NativeMemory", "Sentinel", "Tracked", "NativeCollection", "Collection"])
+    if collection_type == "NativeArray":
+        fragments.extend(["Buffer", "Buffers"])
+
+    helper_fragment_pattern = "|".join(re.escape(fragment) for fragment in sorted(set(fragments)))
+    return (
+        r"\b(?P<helper>Register[A-Za-z0-9_]*(?:"
+        + helper_fragment_pattern
+        + r")[A-Za-z0-9_]*|"
+        r"[A-Za-z_]\w*Register[A-Za-z0-9_]*(?:"
+        + helper_fragment_pattern
+        + r")[A-Za-z0-9_]*)"
+        r"\s*"
+        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
+        + r"\s*\("
+    )
+
+
+def find_matching_parenthesis(text: str, open_index: int) -> int:
+    if open_index < 0 or open_index >= len(text) or text[open_index] != "(":
+        return -1
+
+    depth = 0
+    for index in range(open_index, len(text)):
+        char = text[index]
+        if char == "(":
+            depth += 1
+            continue
+        if char == ")":
+            depth -= 1
+            if depth == 0:
+                return index
+
+    return -1
+
+
+def split_csharp_arguments(argument_text: str) -> list[str]:
+    arguments: list[str] = []
+    start = 0
+    depth = 0
+    for index, char in enumerate(argument_text):
+        if char in "([{<":
+            depth += 1
+            continue
+        if char in ")]}>":
+            depth = max(0, depth - 1)
+            continue
+        if char == "," and depth == 0:
+            arguments.append(argument_text[start:index].strip())
+            start = index + 1
+
+    tail = argument_text[start:].strip()
+    if tail:
+        arguments.append(tail)
+    return arguments
+
+
+def csharp_argument_identifier(argument: str) -> str:
+    cleaned = re.sub(r"\b(ref|in|out)\s+", "", argument.strip())
+    identifiers = re.findall(r"[A-Za-z_]\w*", cleaned)
+    return identifiers[-1] if identifiers else ""
+
+
+def csharp_reference_pattern(identifier: str) -> str:
+    parts = [part for part in re.findall(r"[A-Za-z_]\w*", identifier) if part]
+    if not parts:
+        return re.escape(identifier)
+
+    if len(parts) > 1:
+        return r"\s*\.\s*".join(re.escape(part) for part in parts) + r"\b"
+
+    return r"(?:[A-Za-z_]\w*\s*\.\s*)*" + re.escape(parts[0]) + r"\b"
+
+
+def csharp_parameter_name(parameter: str) -> str:
+    cleaned = parameter.split("=", 1)[0].strip()
+    identifiers = re.findall(r"[A-Za-z_]\w*", cleaned)
+    return identifiers[-1] if identifiers else ""
+
+
+def register_native_collection_helper_calls(
+    method_text: str,
+    variable_name: str,
+    collection_type: str,
+) -> list[tuple[str, int]]:
+    helper_pattern = re.compile(helper_name_pattern_for_collection(collection_type))
+    calls: list[tuple[str, int]] = []
+    for match in helper_pattern.finditer(method_text):
+        open_index = match.end() - 1
+        close_index = find_matching_parenthesis(method_text, open_index)
+        if close_index < 0:
+            continue
+
+        arguments = split_csharp_arguments(method_text[open_index + 1 : close_index])
+        for argument_index, argument in enumerate(arguments):
+            if csharp_argument_identifier(argument) == variable_name:
+                calls.append((match.group("helper"), argument_index))
+                break
+
+    return calls
+
+
+def register_native_collection_helper_names(
+    method_text: str,
+    variable_name: str,
+    collection_type: str,
+) -> list[str]:
+    return [
+        helper_name
+        for helper_name, _ in register_native_collection_helper_calls(
+            method_text,
+            variable_name,
+            collection_type,
+        )
+    ]
+
+
+def source_has_sentinel_register_helper(
+    sanitized_source: str,
+    helper_name: str,
+    collection_type: str = "NativeArray",
+) -> bool:
+    direct_register_methods = sentinel_register_methods_for_collection(collection_type)
+    if not direct_register_methods:
+        return False
+
+    direct_methods_pattern = "|".join(re.escape(method) for method in direct_register_methods)
+    direct_register_pattern = re.compile(
+        r"\b" + native_tracking_register_owner_pattern() + r"\s*\.\s*(?:"
+        + direct_methods_pattern + r")\s*\("
+    )
+    for helper_text in source_method_bodies_named(sanitized_source, helper_name):
+        if direct_register_pattern.search(helper_text):
+            return True
+
+    helper_pattern = re.compile(
+        r"\b" + re.escape(helper_name) + r"\s*"
+        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
+        + r"\s*\("
+    )
+    helper_lines = sanitized_source.splitlines()
+    for helper_match in helper_pattern.finditer(sanitized_source):
+        helper_line_index = sanitized_source[: helper_match.start()].count("\n")
+        start, end = csharp_method_bounds_for_line(helper_lines, helper_line_index)
+        helper_text = "\n".join(helper_lines[start : end + 1])
+        if direct_register_pattern.search(helper_text):
+            return True
+
+    return False
+
+
+def source_has_reflective_sentinel_register_for_parameter(
+    method_text: str,
+    parameter_name: str,
+    collection_type: str,
+) -> bool:
+    if "NativeMemorySentinel" not in method_text or "GetMethod" not in method_text or "Invoke" not in method_text:
+        return False
+
+    direct_register_methods = sentinel_register_methods_for_collection(collection_type)
+    if not direct_register_methods:
+        return False
+
+    if not any(method_name in method_text for method_name in direct_register_methods):
+        return False
+
+    for object_array_match in re.finditer(r"\bnew\s+object\s*\[\]\s*\{(?P<arguments>[^}]*)\}", method_text, re.DOTALL):
+        arguments = split_csharp_arguments(object_array_match.group("arguments"))
+        if arguments and csharp_argument_identifier(arguments[0]) == parameter_name:
+            return True
+
+    return False
+
+
+@lru_cache(maxsize=4096)
+def source_method_definitions_named(
+    sanitized_source: str,
+    method_name: str,
+) -> list[tuple[str, list[str]]]:
+    method_pattern = re.compile(
+        r"\b(?:public|private|internal|protected|static|readonly|unsafe|sealed|"
+        r"virtual|override|async|extern|partial|\s)+"
+        r"[A-Za-z_][A-Za-z0-9_<>,\s\[\]\.?]*\s+"
+        + re.escape(method_name)
+        + r"\s*"
+        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
+        + r"\s*\("
+    )
+    lines = sanitized_source.splitlines()
+    definitions: list[tuple[str, list[str]]] = []
+    for method_match in method_pattern.finditer(sanitized_source):
+        open_paren = sanitized_source.find("(", method_match.end() - 1)
+        close_paren = find_matching_parenthesis(sanitized_source, open_paren)
+        next_brace = sanitized_source.find("{", close_paren if close_paren >= 0 else method_match.end())
+        next_semicolon = sanitized_source.find(";", close_paren if close_paren >= 0 else method_match.end())
+        if open_paren < 0 or close_paren < 0 or next_brace < 0:
+            continue
+        if next_semicolon >= 0 and next_semicolon < next_brace:
+            continue
+
+        line_index = sanitized_source[:next_brace].count("\n")
+        start, end = csharp_method_bounds_for_line(lines, line_index)
+        parameter_names = [
+            csharp_parameter_name(parameter)
+            for parameter in split_csharp_arguments(sanitized_source[open_paren + 1 : close_paren])
+        ]
+        definitions.append(("\n".join(lines[start : end + 1]), parameter_names))
+
+    return definitions
+
+
+def source_method_bodies_named(sanitized_source: str, method_name: str) -> list[str]:
+    return [body for body, _ in source_method_definitions_named(sanitized_source, method_name)]
+
+
+def source_has_sentinel_register_helper_argument(
+    sanitized_source: str,
+    helper_name: str,
+    argument_index: int,
+    collection_type: str = "NativeArray",
+    raw_source: str | None = None,
+    visited_helper_keys: set[tuple[str, int]] | None = None,
+) -> bool:
+    if visited_helper_keys is None:
+        visited_helper_keys = set()
+    helper_key = (helper_name, argument_index)
+    if helper_key in visited_helper_keys:
+        return False
+    visited_helper_keys.add(helper_key)
+
+    direct_register_methods = sentinel_register_methods_for_collection(collection_type)
+    if not direct_register_methods:
+        return False
+
+    direct_methods_pattern = "|".join(re.escape(method) for method in direct_register_methods)
+    for helper_text, parameter_names in source_method_definitions_named(sanitized_source, helper_name):
+        if argument_index >= len(parameter_names):
+            continue
+
+        parameter_name = parameter_names[argument_index]
+        if not parameter_name:
+            continue
+
+        direct_register_pattern = re.compile(
+            r"\b"
+            + native_tracking_register_owner_pattern()
+            + r"\s*\.\s*(?:"
+            + direct_methods_pattern
+            + r")\s*\(\s*"
+            + csharp_reference_pattern(parameter_name)
+        )
+        if direct_register_pattern.search(helper_text):
+            return True
+
+        if raw_source is not None:
+            for raw_helper_text, raw_parameter_names in source_method_definitions_named(raw_source, helper_name):
+                if argument_index >= len(raw_parameter_names):
+                    continue
+
+                raw_parameter_name = raw_parameter_names[argument_index]
+                if not raw_parameter_name:
+                    continue
+
+                if source_has_reflective_sentinel_register_for_parameter(
+                    raw_helper_text,
+                    raw_parameter_name,
+                    collection_type,
+                ):
+                    return True
+
+        for nested_helper_name, nested_argument_index in register_native_collection_helper_calls(
+            helper_text,
+            parameter_name,
+            collection_type,
+        ):
+            if source_has_sentinel_register_helper_argument(
+                sanitized_source,
+                nested_helper_name,
+                nested_argument_index,
+                collection_type,
+                raw_source,
+                visited_helper_keys,
+            ):
+                return True
+
+    return False
+
+
+
+def bulk_sentinel_registration_method_names(method_text: str) -> list[str]:
+    method_pattern = re.compile(
+        r"\b(?:[A-Za-z_]\w*\s*\.\s*)?"
+        r"(?P<method>Register[A-Za-z0-9_]*)\s*\("
+    )
+    return [match.group("method") for match in method_pattern.finditer(method_text)]
+
+
+def source_has_bulk_sentinel_registration_for_field(
+    sanitized_source: str,
+    bulk_method_name: str,
+    field_name: str,
+    collection_type: str = "NativeArray",
+    raw_source: str | None = None,
+    visited_method_names: set[str] | None = None,
+) -> bool:
+    if visited_method_names is None:
+        visited_method_names = set()
+    if bulk_method_name in visited_method_names:
+        return False
+    visited_method_names.add(bulk_method_name)
+
+    direct_register_methods = sentinel_register_methods_for_collection(collection_type)
+    direct_register_pattern: re.Pattern[str] | None = None
+    if direct_register_methods:
+        direct_methods_pattern = "|".join(re.escape(method) for method in direct_register_methods)
+        direct_register_pattern = re.compile(
+            r"\b"
+            + native_tracking_register_owner_pattern()
+            + r"\s*\.\s*(?:"
+            + direct_methods_pattern
+            + r")\s*\(\s*"
+            + csharp_reference_pattern(field_name)
+        )
+
+    for bulk_method_body in source_method_bodies_named(sanitized_source, bulk_method_name):
+        if direct_register_pattern is not None and direct_register_pattern.search(bulk_method_body):
+            return True
+
+        for helper_name, argument_index in register_native_collection_helper_calls(
+            bulk_method_body,
+            field_name,
+            collection_type,
+        ):
+            if source_has_sentinel_register_helper_argument(
+                sanitized_source,
+                helper_name,
+                argument_index,
+                collection_type,
+                raw_source,
+            ):
+                return True
+
+        for nested_method_name in bulk_sentinel_registration_method_names(bulk_method_body):
+            if source_has_bulk_sentinel_registration_for_field(
+                sanitized_source,
+                nested_method_name,
+                field_name,
+                collection_type,
+                raw_source,
+                visited_method_names,
+            ):
+                return True
+
+    return False
+
+
+def native_lifetime_helper_calls(method_text: str, variable_name: str) -> list[tuple[str, int]]:
+    helper_pattern = re.compile(
+        r"\b(?P<helper>[A-Za-z_]\w*)\s*"
+        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
+        + r"\s*\("
+    )
+    calls: list[tuple[str, int]] = []
+    for match in helper_pattern.finditer(method_text):
+        helper_name = match.group("helper")
+        if "Dispose" not in helper_name and "Release" not in helper_name:
+            continue
+
+        open_index = match.end() - 1
+        close_index = find_matching_parenthesis(method_text, open_index)
+        if close_index < 0:
+            continue
+
+        arguments = split_csharp_arguments(method_text[open_index + 1 : close_index])
+        for argument_index, argument in enumerate(arguments):
+            if csharp_argument_identifier(argument) == variable_name:
+                calls.append((helper_name, argument_index))
+                break
+
+    return calls
+
+
+def native_lifetime_helper_label_calls(method_text: str, field_name: str) -> list[tuple[str, int, int]]:
+    helper_pattern = re.compile(
+        r"\b(?P<helper>[A-Za-z_]\w*)\s*"
+        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
+        + r"\s*\("
+    )
+    calls: list[tuple[str, int, int]] = []
+    label_argument_pattern = re.compile(r"\bnameof\s*\(\s*" + re.escape(field_name) + r"\s*\)")
+    for match in helper_pattern.finditer(method_text):
+        helper_name = match.group("helper")
+        if "Dispose" not in helper_name and "Release" not in helper_name:
+            continue
+
+        open_index = match.end() - 1
+        close_index = find_matching_parenthesis(method_text, open_index)
+        if close_index < 0:
+            continue
+
+        arguments = split_csharp_arguments(method_text[open_index + 1 : close_index])
+        field_argument_index = -1
+        label_argument_index = -1
+        for argument_index, argument in enumerate(arguments):
+            if field_argument_index < 0 and csharp_argument_identifier(argument) == field_name:
+                field_argument_index = argument_index
+            if label_argument_index < 0 and label_argument_pattern.search(argument):
+                label_argument_index = argument_index
+
+        if field_argument_index >= 0 and label_argument_index >= 0:
+            calls.append((helper_name, field_argument_index, label_argument_index))
+
+    return calls
+
+
+def native_allocation_helper_calls(method_text: str, variable_name: str) -> list[tuple[str, int]]:
+    helper_pattern = re.compile(
+        r"\b(?P<helper>[A-Za-z_]\w*)\s*"
+        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
+        + r"\s*\("
+    )
+    calls: list[tuple[str, int]] = []
+    for match in helper_pattern.finditer(method_text):
+        helper_name = match.group("helper")
+        if not any(token in helper_name for token in ("Acquire", "Allocate", "Claim", "Create", "Ensure")):
+            continue
+
+        open_index = match.end() - 1
+        close_index = find_matching_parenthesis(method_text, open_index)
+        if close_index < 0:
+            continue
+
+        arguments = split_csharp_arguments(method_text[open_index + 1 : close_index])
+        for argument_index, argument in enumerate(arguments):
+            if csharp_argument_identifier(argument) == variable_name:
+                calls.append((helper_name, argument_index))
+                break
+
+    return calls
+
+
+def source_has_h8memory_allocate_helper_argument(
+    sanitized_source: str,
+    helper_name: str,
+    argument_index: int,
+    visited_helper_keys: set[tuple[str, int]] | None = None,
+) -> bool:
+    if visited_helper_keys is None:
+        visited_helper_keys = set()
+    helper_key = (helper_name, argument_index)
+    if helper_key in visited_helper_keys:
+        return False
+    visited_helper_keys.add(helper_key)
+
+    for helper_text, parameter_names in source_method_definitions_named(sanitized_source, helper_name):
+        if argument_index >= len(parameter_names):
+            continue
+
+        parameter_name = parameter_names[argument_index]
+        if not parameter_name:
+            continue
+
+        direct_allocate_pattern = re.compile(
+            csharp_reference_pattern(parameter_name)
+            + r"\s*=\s*"
+            + h8memory_owner_pattern()
+            + r"\s*\.\s*Allocate\s*<"
+        )
+        if direct_allocate_pattern.search(helper_text):
+            return True
+
+        for nested_helper_name, nested_argument_index in native_allocation_helper_calls(helper_text, parameter_name):
+            if source_has_h8memory_allocate_helper_argument(
+                sanitized_source,
+                nested_helper_name,
+                nested_argument_index,
+                visited_helper_keys,
+            ):
+                return True
+
+    return False
+
+
+def source_has_h8memory_release_helper_argument(
+    sanitized_source: str,
+    helper_name: str,
+    argument_index: int,
+    visited_helper_keys: set[tuple[str, int]] | None = None,
+) -> bool:
+    if visited_helper_keys is None:
+        visited_helper_keys = set()
+    helper_key = (helper_name, argument_index)
+    if helper_key in visited_helper_keys:
+        return False
+    visited_helper_keys.add(helper_key)
+
+    for helper_text, parameter_names in source_method_definitions_named(sanitized_source, helper_name):
+        if argument_index >= len(parameter_names):
+            continue
+
+        parameter_name = parameter_names[argument_index]
+        if not parameter_name:
+            continue
+
+        direct_release_pattern = re.compile(
+            r"\b"
+            + h8memory_owner_pattern()
+            + r"\s*\.\s*Release\s*\(\s*ref\s+"
+            + csharp_reference_pattern(parameter_name)
+        )
+        if direct_release_pattern.search(helper_text):
+            return True
+
+        for nested_helper_name, nested_argument_index in native_lifetime_helper_calls(helper_text, parameter_name):
+            if source_has_h8memory_release_helper_argument(
+                sanitized_source,
+                nested_helper_name,
+                nested_argument_index,
+                visited_helper_keys,
+            ):
+                return True
+
+    return False
+
+
+def source_has_h8memory_allocate_factory_helper(sanitized_source: str, helper_name: str) -> bool:
+    for helper_text in source_method_bodies_named(sanitized_source, helper_name):
+        direct_allocate_pattern = re.compile(
+            r"\b"
+            + h8memory_owner_pattern()
+            + r"\s*\.\s*Allocate\s*<"
+        )
+        if direct_allocate_pattern.search(helper_text):
+            return True
+
+    return False
+
+
+def source_has_h8memory_tracked_field_lifetime(
+    sanitized_source: str,
+    field_name: str,
+) -> bool:
+    if "H8Memory.Allocate" not in sanitized_source or "H8Memory.Release" not in sanitized_source:
+        return False
+
+    field_pattern = csharp_reference_pattern(field_name)
+    allocate_pattern = re.compile(
+        field_pattern
+        + r"\s*=\s*"
+        + h8memory_owner_pattern()
+        + r"\s*\.\s*Allocate\s*<"
+    )
+    has_allocate = allocate_pattern.search(sanitized_source) is not None
+    if not has_allocate:
+        factory_assignment_pattern = re.compile(
+            field_pattern
+            + r"\s*=\s*(?P<helper>[A-Za-z_]\w*)\s*"
+            + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
+            + r"\s*\("
+        )
+        for match in factory_assignment_pattern.finditer(sanitized_source):
+            if source_has_h8memory_allocate_factory_helper(
+                sanitized_source,
+                match.group("helper"),
+            ):
+                has_allocate = True
+                break
+
+    if not has_allocate:
+        for helper_name, argument_index in native_allocation_helper_calls(sanitized_source, field_name):
+            if source_has_h8memory_allocate_helper_argument(
+                sanitized_source,
+                helper_name,
+                argument_index,
+            ):
+                has_allocate = True
+                break
+
+    if not has_allocate:
+        if source_has_h8memory_constructor_alias_field_lifetime(
+            sanitized_source,
+            field_name,
+        ):
+            return True
+
+    if not has_allocate:
+        return False
+
+    direct_release_pattern = re.compile(
+        r"\b" + h8memory_owner_pattern() + r"\s*\.\s*Release\s*\(\s*ref\s+" + field_pattern
+    )
+    if direct_release_pattern.search(sanitized_source):
+        return True
+
+    for helper_name, argument_index in native_lifetime_helper_calls(sanitized_source, field_name):
+        if source_has_h8memory_release_helper_argument(
+            sanitized_source,
+            helper_name,
+            argument_index,
+        ):
+            return True
+
+    return False
+
+
+def source_has_h8memory_constructor_alias_field_lifetime(
+    sanitized_source: str,
+    field_name: str,
+) -> bool:
+    if field_name not in sanitized_source or field_name + " =" not in sanitized_source:
+        return False
+
+    assignment_pattern = re.compile(
+        r"\b" + re.escape(field_name) + r"\s*=\s*(?P<local>[A-Za-z_]\w*)\s*;"
+    )
+    for assignment_match in assignment_pattern.finditer(sanitized_source):
+        local_name = assignment_match.group("local")
+        if not source_local_is_h8memory_allocated(sanitized_source, local_name):
+            continue
+        if source_local_is_h8memory_released(sanitized_source, local_name):
+            return True
+        if source_field_alias_is_h8memory_released(sanitized_source, field_name, local_name):
+            return True
+
+    return False
+
+
+@lru_cache(maxsize=4096)
+def source_local_is_h8memory_allocated(sanitized_source: str, local_name: str) -> bool:
+    if local_name not in sanitized_source:
+        return False
+
+    allocate_pattern = re.compile(
+        csharp_reference_pattern(local_name)
+        + r"\s*=\s*"
+        + h8memory_owner_pattern()
+        + r"\s*\.\s*Allocate\s*<"
+    )
+    return allocate_pattern.search(sanitized_source) is not None
+
+
+@lru_cache(maxsize=4096)
+def source_local_is_h8memory_released(sanitized_source: str, local_name: str) -> bool:
+    release_pattern = re.compile(
+        r"\b"
+        + h8memory_owner_pattern()
+        + r"\s*\.\s*Release\s*\(\s*ref\s+"
+        + csharp_reference_pattern(local_name)
+    )
+    return release_pattern.search(sanitized_source) is not None
+
+
+def source_field_alias_is_h8memory_released(
+    sanitized_source: str,
+    field_name: str,
+    preferred_local_name: str,
+) -> bool:
+    if "." + field_name not in sanitized_source:
+        return False
+
+    alias_pattern = re.compile(
+        r"\bNativeArray\s*<[^>\r\n;=(){}]+>\s+(?P<local>[A-Za-z_]\w*)\s*=\s*"
+        + csharp_reference_pattern(field_name)
+        + r"\s*;"
+    )
+    for alias_match in alias_pattern.finditer(sanitized_source):
+        local_name = alias_match.group("local")
+        if local_name != preferred_local_name and local_name.lower() != preferred_local_name.lower():
+            continue
+        if source_local_is_h8memory_released(sanitized_source, local_name):
+            return True
+
+    return False
+
+
+def sentinel_unregister_methods_for_collection(collection_type: str) -> tuple[str, ...]:
+    if collection_type == "NativeArray":
+        return ("UnregisterNativeArray",)
+    if collection_type == "NativeList":
+        return ("UnregisterNativeList",)
+    if collection_type == "NativeHashMap":
+        return ("UnregisterNativeHashMap",)
+    if collection_type == "NativeParallelHashMap":
+        return ("UnregisterNativeParallelHashMap",)
+
+    return ()
+
+
+def source_has_sentinel_registered_field_lifetime(
+    sanitized_source: str,
+    field_name: str,
+    collection_type: str,
+) -> bool:
+    if "NativeMemorySentinel.Register" not in sanitized_source:
+        return False
+
+    field_pattern = csharp_reference_pattern(field_name)
+    allocate_pattern = re.compile(
+        field_pattern
+        + r"\s*=\s*new\s+"
+        + re.escape(collection_type)
+        + r"\s*<"
+    )
+    has_registered_allocation = allocate_pattern.search(sanitized_source) is not None
+    factory_registered_assignment = False
+    if not has_registered_allocation:
+        factory_registered_assignment = source_has_sentinel_registered_factory_assignment_for_field(
+            sanitized_source,
+            field_name,
+            collection_type,
+        )
+        has_registered_allocation = factory_registered_assignment
+
+    if not has_registered_allocation:
+        return False
+
+    if not source_has_sentinel_registration_for_field(sanitized_source, field_name, collection_type):
+        if not factory_registered_assignment:
+            return False
+
+    return source_has_sentinel_unregistration_for_field(sanitized_source, field_name, collection_type)
+
+
+def source_has_sentinel_registered_factory_assignment_for_field(
+    sanitized_source: str,
+    field_name: str,
+    collection_type: str,
+) -> bool:
+    if field_name not in sanitized_source:
+        return False
+
+    field_pattern = csharp_reference_pattern(field_name)
+    factory_assignment_pattern = re.compile(
+        field_pattern
+        + r"\s*=\s*(?P<helper>[A-Za-z_]\w*)\s*"
+        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
+        + r"\s*\("
+    )
+    label_pattern = re.compile(r"\bnameof\s*\(\s*" + re.escape(field_name) + r"\s*\)")
+    for match in factory_assignment_pattern.finditer(sanitized_source):
+        helper_name = match.group("helper")
+        close_index = find_matching_parenthesis(sanitized_source, match.end() - 1)
+        if close_index < 0:
+            continue
+
+        arguments = split_csharp_arguments(sanitized_source[match.end() : close_index])
+        if not any(label_pattern.search(argument) for argument in arguments):
+            continue
+
+        if source_has_sentinel_registered_factory_helper(
+            sanitized_source,
+            helper_name,
+            collection_type,
+        ):
+            return True
+
+    return False
+
+
+def source_has_sentinel_registered_factory_helper(
+    sanitized_source: str,
+    helper_name: str,
+    collection_type: str,
+) -> bool:
+    collection_constructor_pattern = re.compile(
+        r"\bnew\s+" + re.escape(collection_type) + r"\s*<"
+    )
+    for helper_text in source_method_bodies_named(sanitized_source, helper_name):
+        if not collection_constructor_pattern.search(helper_text):
+            continue
+        if source_has_sentinel_register_helper(sanitized_source, helper_name, collection_type):
+            return True
+
+    return False
+
+
+def source_has_sentinel_registration_for_field(
+    sanitized_source: str,
+    field_name: str,
+    collection_type: str,
+) -> bool:
+    escaped_field = re.escape(field_name)
+    register_methods = sentinel_register_methods_for_collection(collection_type)
+    if not register_methods:
+        return False
+
+    direct_methods_pattern = "|".join(re.escape(method) for method in register_methods)
+    direct_register_pattern = re.compile(
+        r"\bNativeMemorySentinel\s*\.\s*(?:"
+        + direct_methods_pattern
+        + r")\s*\(\s*"
+        + escaped_field
+        + r"\b"
+    )
+    if direct_register_pattern.search(sanitized_source):
+        return True
+
+    for helper_name in register_native_collection_helper_names(sanitized_source, field_name, collection_type):
+        if source_has_sentinel_register_helper(sanitized_source, helper_name, collection_type):
+            return True
+
+    for bulk_method_name in bulk_sentinel_registration_method_names(sanitized_source):
+        if source_has_bulk_sentinel_registration_for_field(
+            sanitized_source,
+            bulk_method_name,
+            field_name,
+            collection_type,
+        ):
+            return True
+
+    return False
+
+
+def source_has_sentinel_unregistration_for_field(
+    sanitized_source: str,
+    field_name: str,
+    collection_type: str,
+) -> bool:
+    unregister_methods = sentinel_unregister_methods_for_collection(collection_type)
+    if not unregister_methods:
+        return False
+
+    method_pattern = "|".join(re.escape(method) for method in unregister_methods)
+    field_argument_pattern = csharp_reference_pattern(field_name)
+    label_argument_pattern = r"nameof\s*\(\s*" + re.escape(field_name) + r"\s*\)"
+    direct_unregister_pattern = re.compile(
+        r"\bNativeMemorySentinel\s*\.\s*(?:"
+        + method_pattern
+        + r")\s*\([^;\n]*(?:"
+        + field_argument_pattern
+        + r"|"
+        + label_argument_pattern
+        + r")"
+    )
+    if direct_unregister_pattern.search(sanitized_source):
+        return True
+
+    for helper_name, argument_index in native_lifetime_helper_calls(sanitized_source, field_name):
+        if source_has_sentinel_unregister_helper_argument(
+            sanitized_source,
+            helper_name,
+            argument_index,
+            collection_type,
+        ):
+            return True
+
+    label_reference_pattern = re.compile(r"\bnameof\s*\(\s*" + re.escape(field_name) + r"\s*\)")
+    if label_reference_pattern.search(sanitized_source):
+        for helper_name, field_argument_index, label_argument_index in native_lifetime_helper_label_calls(
+            sanitized_source,
+            field_name,
+        ):
+            if source_has_sentinel_label_unregister_helper_argument(
+                sanitized_source,
+                helper_name,
+                field_argument_index,
+                label_argument_index,
+                collection_type,
+            ):
+                return True
+
+    return False
+
+
+def source_has_sentinel_id_backed_struct_field_lifetime(
+    sanitized_source: str,
+    field_name: str,
+    collection_type: str,
+) -> bool:
+    sentinel_field_name = field_name + "SentinelId"
+    if sentinel_field_name not in sanitized_source:
+        return False
+
+    register_methods = sentinel_register_methods_for_collection(collection_type)
+    if not register_methods:
+        return False
+
+    register_method_pattern = "|".join(re.escape(method) for method in register_methods)
+    registration_assignment_pattern = re.compile(
+        r"\b(?P<registration>[A-Za-z_]\w*)\s*=\s*NativeMemorySentinel\s*\.\s*(?:"
+        + register_method_pattern
+        + r")\s*\("
+    )
+    registration_names = {
+        match.group("registration")
+        for match in registration_assignment_pattern.finditer(sanitized_source)
+    }
+    if not registration_names:
+        return False
+
+    sentinel_field_assignment_found = False
+    for registration_name in registration_names:
+        assignment_pattern = re.compile(
+            r"\b"
+            + re.escape(sentinel_field_name)
+            + r"\s*=\s*"
+            + re.escape(registration_name)
+            + r"\b"
+        )
+        if assignment_pattern.search(sanitized_source):
+            sentinel_field_assignment_found = True
+            break
+
+    if not sentinel_field_assignment_found:
+        return False
+
+    direct_unregister_pattern = re.compile(
+        r"\bNativeMemorySentinel\s*\.\s*Unregister\s*\(\s*"
+        + csharp_reference_pattern(sentinel_field_name)
+    )
+    if direct_unregister_pattern.search(sanitized_source):
+        return True
+
+    ref_dispose_pattern = re.compile(
+        r"\b[A-Za-z_]\w*\s*"
+        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
+        + r"\s*\([^;{}]*\bref\s+"
+        + csharp_reference_pattern(field_name)
+        + r"[^;{}]*\bref\s+"
+        + csharp_reference_pattern(sentinel_field_name),
+        re.DOTALL,
+    )
+    helper_unregisters_id = re.search(
+        r"\bNativeMemorySentinel\s*\.\s*Unregister\s*\(\s*[A-Za-z_]\w*\s*\)",
+        sanitized_source,
+    ) is not None
+    return helper_unregisters_id and ref_dispose_pattern.search(sanitized_source) is not None
+
+
+def source_has_sentinel_unregister_helper_argument(
+    sanitized_source: str,
+    helper_name: str,
+    argument_index: int,
+    collection_type: str,
+    visited_helper_keys: set[tuple[str, int, str]] | None = None,
+) -> bool:
+    if visited_helper_keys is None:
+        visited_helper_keys = set()
+    helper_key = (helper_name, argument_index, collection_type)
+    if helper_key in visited_helper_keys:
+        return False
+    visited_helper_keys.add(helper_key)
+
+    unregister_methods = sentinel_unregister_methods_for_collection(collection_type)
+    if not unregister_methods:
+        return False
+
+    method_pattern = "|".join(re.escape(method) for method in unregister_methods)
+    for helper_text, parameter_names in source_method_definitions_named(sanitized_source, helper_name):
+        if argument_index >= len(parameter_names):
+            continue
+
+        parameter_name = parameter_names[argument_index]
+        if not parameter_name:
+            continue
+
+        direct_unregister_pattern = re.compile(
+            r"\bNativeMemorySentinel\s*\.\s*(?:"
+            + method_pattern
+            + r")\s*\([^;\n]*"
+            + csharp_reference_pattern(parameter_name)
+        )
+        if direct_unregister_pattern.search(helper_text):
+            return True
+
+        for nested_helper_name, nested_argument_index in native_lifetime_helper_calls(helper_text, parameter_name):
+            if source_has_sentinel_unregister_helper_argument(
+                sanitized_source,
+                nested_helper_name,
+                nested_argument_index,
+                collection_type,
+                visited_helper_keys,
+            ):
+                return True
+
+    return False
+
+
+def source_has_sentinel_label_unregister_helper_argument(
+    sanitized_source: str,
+    helper_name: str,
+    field_argument_index: int,
+    label_argument_index: int,
+    collection_type: str,
+) -> bool:
+    unregister_methods = sentinel_unregister_methods_for_collection(collection_type)
+    if not unregister_methods:
+        return False
+
+    method_pattern = "|".join(re.escape(method) for method in unregister_methods)
+    for helper_text, parameter_names in source_method_definitions_named(sanitized_source, helper_name):
+        if field_argument_index >= len(parameter_names) or label_argument_index >= len(parameter_names):
+            continue
+
+        collection_parameter_name = parameter_names[field_argument_index]
+        label_parameter_name = parameter_names[label_argument_index]
+        if not collection_parameter_name or not label_parameter_name:
+            continue
+
+        label_unregister_pattern = re.compile(
+            r"\bNativeMemorySentinel\s*\.\s*(?:"
+            + method_pattern
+            + r")\s*\([^;\n]*"
+            + csharp_reference_pattern(label_parameter_name)
+        )
+        dispose_pattern = re.compile(
+            csharp_reference_pattern(collection_parameter_name)
+            + r"\s*\.\s*Dispose\s*\("
+        )
+        if label_unregister_pattern.search(helper_text) and dispose_pattern.search(helper_text):
+            return True
+
+    return False
+
+
+def data_vault_alias_helper_calls(method_text: str, field_name: str) -> list[tuple[str, int]]:
+    helper_pattern = re.compile(
+        r"\b(?P<helper>[A-Za-z_]\w*)\s*"
+        + CSHARP_INLINE_GENERIC_ARGUMENTS_PATTERN
+        + r"\s*\("
+    )
+    calls: list[tuple[str, int]] = []
+    for match in helper_pattern.finditer(method_text):
+        helper_name = match.group("helper")
+        if not any(token in helper_name for token in ("Acquire", "Open", "Read", "Resolve", "Vault", "View", "Buffer")):
+            continue
+
+        open_index = match.end() - 1
+        close_index = find_matching_parenthesis(method_text, open_index)
+        if close_index < 0:
+            continue
+
+        arguments = split_csharp_arguments(method_text[open_index + 1 : close_index])
+        for argument_index, argument in enumerate(arguments):
+            if not re.search(r"\b(out|ref)\b", argument):
+                continue
+            if csharp_argument_identifier(argument) == field_name:
+                calls.append((helper_name, argument_index))
+                break
+
+    return calls
+
+
+def source_has_datavault_alias_helper_argument(
+    sanitized_source: str,
+    helper_name: str,
+    argument_index: int,
+    visited_helper_keys: set[tuple[str, int]] | None = None,
+) -> bool:
+    if visited_helper_keys is None:
+        visited_helper_keys = set()
+    helper_key = (helper_name, argument_index)
+    if helper_key in visited_helper_keys:
+        return False
+    visited_helper_keys.add(helper_key)
+
+    for helper_text, parameter_names in source_method_definitions_named(sanitized_source, helper_name):
+        if argument_index >= len(parameter_names):
+            continue
+
+        parameter_name = parameter_names[argument_index]
+        if not parameter_name:
+            continue
+
+        datavault_signal = (
+            "EnsureGenerationHandle" in helper_text
+            or "TryResolveHandle" in helper_text
+            or "TryAcquireWriteLock" in helper_text
+        )
+        parameter_receives_alias = (
+            re.search(r"\bout\s+" + csharp_reference_pattern(parameter_name), helper_text) is not None
+            or re.search(csharp_reference_pattern(parameter_name) + r"\s*=", helper_text) is not None
+        )
+        if datavault_signal and parameter_receives_alias:
+            return True
+
+        for nested_helper_name, nested_argument_index in data_vault_alias_helper_calls(helper_text, parameter_name):
+            if source_has_datavault_alias_helper_argument(
+                sanitized_source,
+                nested_helper_name,
+                nested_argument_index,
+                visited_helper_keys,
+            ):
+                return True
+
+    return False
+
+
+def source_has_datavault_alias_field_lifetime(
+    sanitized_source: str,
+    field_name: str,
+) -> bool:
+    if (
+        "EnsureGenerationHandle" not in sanitized_source
+        and "TryResolveHandle" not in sanitized_source
+        and "TryAcquireWriteLock" not in sanitized_source
+    ):
+        return False
+
+    direct_alias_pattern = re.compile(
+        r"\b(?:TryResolveHandle|TryAcquireWriteLock)\s*\([^;{}]*\bout\s+"
+        + csharp_reference_pattern(field_name),
+        re.DOTALL,
+    )
+    if direct_alias_pattern.search(sanitized_source):
+        return True
+
+    if source_has_datavault_context_field_alias_assignment(sanitized_source, field_name):
+        return True
+
+    for helper_name, argument_index in data_vault_alias_helper_calls(sanitized_source, field_name):
+        if source_has_datavault_alias_helper_argument(
+            sanitized_source,
+            helper_name,
+            argument_index,
+        ):
+            return True
+
+    return False
+
+
+def source_has_datavault_context_field_alias_assignment(
+    sanitized_source: str,
+    field_name: str,
+) -> bool:
+    if "." + field_name not in sanitized_source:
+        return False
+
+    assignment_pattern = re.compile(
+        r"\b[A-Za-z_]\w*\s*\.\s*"
+        + re.escape(field_name)
+        + r"\s*=\s*(?P<local>[A-Za-z_]\w*)\s*;"
+    )
+    for assignment_match in assignment_pattern.finditer(sanitized_source):
+        local_name = assignment_match.group("local")
+        if source_has_datavault_resolved_local_alias(sanitized_source, local_name):
+            return True
+
+    return False
+
+
+def source_has_datavault_resolved_local_alias(sanitized_source: str, local_name: str) -> bool:
+    if local_name not in sanitized_source:
+        return False
+
+    local_pattern = csharp_reference_pattern(local_name)
+    resolve_pattern = re.compile(
+        r"\b(?:TryResolve|TryResolveHandle|TryAcquireWriteLock)\s*\([^;{}]*\bout\s+"
+        + r"(?:[A-Za-z_][A-Za-z0-9_<>,\s\[\]\.?]*\s+)?"
+        + local_pattern,
+        re.DOTALL,
+    )
+    return resolve_pattern.search(sanitized_source) is not None
+
+
+def is_sentinel_tracked_constructor_wrapper(source: str, lines: Sequence[str], line_index: int) -> bool:
+    sanitized_source = "\n".join(lines)
+    source_mentions_native_tracking = (
+        "NativeMemorySentinel.Register" in sanitized_source
+        or "NativeMemoryTrackingBridge.Register" in sanitized_source
+        or (
+            "NativeMemorySentinel" in source
+            and any(
+                method_name in source
+                for methods in SENTINEL_REGISTER_METHODS_BY_COLLECTION.values()
+                for method_name in methods
+            )
+        )
+    )
+    if not source_mentions_native_tracking:
+        return False
+
+    variable_name = native_array_constructor_assignment_name(lines, line_index)
+    if not variable_name:
+        return False
+
+    collection_type = native_collection_constructor_type(lines, line_index)
+    direct_register_methods = sentinel_register_methods_for_collection(collection_type)
+    if not direct_register_methods:
+        return False
+
+    start, end = csharp_method_bounds_for_line(lines, line_index)
+    method_text = "\n".join(lines[start : end + 1])
+    direct_methods_pattern = "|".join(re.escape(method) for method in direct_register_methods)
+    direct_register_pattern = re.compile(
+        r"\b"
+        + native_tracking_register_owner_pattern()
+        + r"\s*\.\s*(?:"
+        + direct_methods_pattern
+        + r")\s*\(\s*"
+        + csharp_reference_pattern(variable_name)
+    )
+    if direct_register_pattern.search(method_text):
+        return True
+
+    for helper_name, argument_index in register_native_collection_helper_calls(method_text, variable_name, collection_type):
+        if source_has_sentinel_register_helper_argument(
+            sanitized_source,
+            helper_name,
+            argument_index,
+            collection_type,
+            source,
+        ):
+            return True
+
+    for bulk_method_name in bulk_sentinel_registration_method_names(method_text):
+        if source_has_bulk_sentinel_registration_for_field(
+                sanitized_source,
+                bulk_method_name,
+                variable_name,
+                collection_type,
+                source):
+            return True
+
+    return False
 
 
 def classify_constructor_allocator_at_line(
@@ -531,7 +1925,7 @@ def classify_constructor_allocator_at_line(
 def constructor_is_gate_relevant(execution_surface: str, allocator: str) -> bool:
     if execution_surface in EDITOR_OFFLINE_SURFACES and allocator in {"Temp", "TempJob"}:
         return False
-    if execution_surface in EDITOR_OFFLINE_SURFACES and allocator == "SentinelTracked":
+    if allocator == "SentinelTracked":
         return False
 
     return True
@@ -638,9 +2032,11 @@ def constructor_finding_to_dict(finding: FileFinding) -> dict[str, Any]:
     forbidden_lines: list[int] = []
     forbidden_allocators: list[str] = []
     forbidden_surfaces: list[str] = []
-    transient_lines: list[int] = []
-    transient_allocators: list[str] = []
-    transient_surfaces: list[str] = []
+    transient_editor_scratch_lines: list[int] = []
+    transient_editor_scratch_allocators: list[str] = []
+    transient_editor_scratch_surfaces: list[str] = []
+    sentinel_tracked_lines: list[int] = []
+    sentinel_tracked_surfaces: list[str] = []
 
     for index, line_number in enumerate(line_numbers):
         allocator = allocator_kinds[index] if index < len(allocator_kinds) else "Unknown"
@@ -651,12 +2047,16 @@ def constructor_finding_to_dict(finding: FileFinding) -> dict[str, Any]:
             forbidden_lines.append(line_number)
             forbidden_allocators.append(allocator)
             forbidden_surfaces.append(line_surface)
+        elif allocator == "SentinelTracked":
+            sentinel_tracked_lines.append(line_number)
+            sentinel_tracked_surfaces.append(line_surface)
         else:
-            transient_lines.append(line_number)
-            transient_allocators.append(allocator)
-            transient_surfaces.append(line_surface)
+            transient_editor_scratch_lines.append(line_number)
+            transient_editor_scratch_allocators.append(allocator)
+            transient_editor_scratch_surfaces.append(line_surface)
 
     forbidden_count = len(forbidden_lines)
+    non_gate_relevant_count = len(transient_editor_scratch_lines) + len(sentinel_tracked_lines)
     return {
         "path": finding.path,
         "count": finding.count,
@@ -678,11 +2078,16 @@ def constructor_finding_to_dict(finding: FileFinding) -> dict[str, Any]:
             forbidden_surfaces,
             forbidden_allocators,
         ),
-        "transientEditorScratchCount": len(transient_lines),
-        "transientEditorScratchLines": transient_lines,
-        "transientEditorScratchExecutionSurfaces": transient_surfaces,
-        "transientEditorScratchExecutionSurfaceCounts": count_values(transient_surfaces),
-        "transientEditorScratchAllocatorCounts": count_values(transient_allocators),
+        "nonGateRelevantConstructorCount": non_gate_relevant_count,
+        "transientEditorScratchCount": len(transient_editor_scratch_lines),
+        "transientEditorScratchLines": transient_editor_scratch_lines,
+        "transientEditorScratchExecutionSurfaces": transient_editor_scratch_surfaces,
+        "transientEditorScratchExecutionSurfaceCounts": count_values(transient_editor_scratch_surfaces),
+        "transientEditorScratchAllocatorCounts": count_values(transient_editor_scratch_allocators),
+        "sentinelTrackedCount": len(sentinel_tracked_lines),
+        "sentinelTrackedLines": sentinel_tracked_lines,
+        "sentinelTrackedExecutionSurfaces": sentinel_tracked_surfaces,
+        "sentinelTrackedExecutionSurfaceCounts": count_values(sentinel_tracked_surfaces),
     }
 
 
@@ -695,6 +2100,10 @@ def classify_declaration_scope(scope: TypeScope | None, relative_path: str = "")
         return "unknownOwnerField"
     if is_job_scope(scope):
         return "burstJobInput" if scope.burst else "jobInputStruct"
+    if is_registered_native_owner_scope(scope):
+        return "registeredNativeOwnerStruct"
+    if is_ref_struct_scope(scope):
+        return "nativeViewStruct"
     if is_native_view_scope(scope):
         return "nativeViewStruct"
     if is_editor_offline_surface(relative_path) and (scope.kind == "class" or scope.kind == "record class"):
@@ -752,6 +2161,41 @@ def scan_native_collection_declarations_in_source(
         and "H8Memory.Allocate" in source
         and "H8Memory.Release" in source
     )
+    sanitized_source = "\n".join(sanitized_lines)
+    h8memory_lifetime_cache: dict[str, bool] = {}
+    sentinel_lifetime_cache: dict[tuple[str, str], bool] = {}
+    datavault_alias_lifetime_cache: dict[str, bool] = {}
+    has_sentinel_lifetime_source = (
+        "NativeMemorySentinel.Register" in sanitized_source
+        and "NativeMemorySentinel.Unregister" in sanitized_source
+    )
+
+    def has_h8memory_tracked_field_lifetime(field_name: str) -> bool:
+        if field_name not in h8memory_lifetime_cache:
+            h8memory_lifetime_cache[field_name] = source_has_h8memory_tracked_field_lifetime(
+                sanitized_source,
+                field_name,
+            )
+        return h8memory_lifetime_cache[field_name]
+
+    def has_sentinel_registered_field_lifetime(field_name: str, collection: str) -> bool:
+        key = (field_name, collection)
+        if key not in sentinel_lifetime_cache:
+            sentinel_lifetime_cache[key] = source_has_sentinel_registered_field_lifetime(
+                sanitized_source,
+                field_name,
+                collection,
+            )
+        return sentinel_lifetime_cache[key]
+
+    def has_datavault_alias_field_lifetime(field_name: str) -> bool:
+        if field_name not in datavault_alias_lifetime_cache:
+            datavault_alias_lifetime_cache[field_name] = source_has_datavault_alias_field_lifetime(
+                sanitized_source,
+                field_name,
+            )
+        return datavault_alias_lifetime_cache[field_name]
+
     scopes: list[TypeScope] = []
     pending_scope: TypeScope | None = None
     depth = 0
@@ -792,7 +2236,35 @@ def scan_native_collection_declarations_in_source(
         if declaration_match:
             owner = scopes[-1] if scopes else None
             classification = classify_declaration_scope(owner, relative_path)
+            field_name = declaration_match.group("name")
             collection = declaration_match.group("collection")
+            lifetime_checked_classification = classification in (
+                "persistentOwnerField",
+                "unknownStructField",
+            )
+            if (
+                lifetime_checked_classification
+                and has_h8memory_tracked_field_lifetime(field_name)
+            ):
+                classification = "h8MemoryTrackedOwnerField"
+            elif (
+                lifetime_checked_classification
+                and has_sentinel_lifetime_source
+                and (
+                    has_sentinel_registered_field_lifetime(field_name, collection)
+                    or source_has_sentinel_id_backed_struct_field_lifetime(
+                        sanitized_source,
+                        field_name,
+                        collection,
+                    )
+                )
+            ):
+                classification = "sentinelTrackedOwnerField"
+            elif (
+                lifetime_checked_classification
+                and has_datavault_alias_field_lifetime(field_name)
+            ):
+                classification = "dataVaultAliasOwnerField"
             finding_allowed = (
                 allowed
                 or not declaration_is_gate_relevant(classification)
@@ -809,7 +2281,7 @@ def scan_native_collection_declarations_in_source(
                     allowed=finding_allowed,
                     classification=classification,
                     collection_type=collection,
-                    names=(declaration_match.group("name"),),
+                    names=(field_name,),
                     owner_type=owner.name if owner else "",
                     owner_kind=owner.kind if owner else "",
                     owner_line=owner.line if owner else 0,
@@ -1045,6 +2517,15 @@ def build_audit_payload(
         int(finding["transientEditorScratchCount"])
         for finding in constructor_findings
     )
+    sentinel_tracked_direct = sum(
+        int(finding["sentinelTrackedCount"])
+        for finding in constructor_findings
+    )
+    runtime_sentinel_tracked_direct = aggregate_constructor_count_for_surfaces(
+        constructor_findings,
+        "sentinelTrackedExecutionSurfaceCounts",
+        {RUNTIME_SURFACE},
+    )
     forbidden_runtime_constructor_count = aggregate_constructor_count_for_surfaces(
         constructor_findings,
         "forbiddenLineExecutionSurfaceCounts",
@@ -1069,6 +2550,15 @@ def build_audit_payload(
     forbidden_declaration_count = sum(finding.count for finding in forbidden_declarations)
     persistent_declarations = [
         finding for finding in declaration_findings if finding.classification == "persistentOwnerField"
+    ]
+    h8memory_tracked_owner_declarations = [
+        finding for finding in declaration_findings if finding.classification == "h8MemoryTrackedOwnerField"
+    ]
+    sentinel_tracked_owner_declarations = [
+        finding for finding in declaration_findings if finding.classification == "sentinelTrackedOwnerField"
+    ]
+    datavault_alias_owner_declarations = [
+        finding for finding in declaration_findings if finding.classification == "dataVaultAliasOwnerField"
     ]
     job_input_declarations = [
         finding for finding in declaration_findings if finding.classification in {"jobInputStruct", "burstJobInput"}
@@ -1137,6 +2627,8 @@ def build_audit_payload(
         "forbiddenDirectConstructorsByAllocator": forbidden_constructor_allocator_counts,
         "editorOfflineForbiddenDirectConstructorsByAllocator": editor_offline_forbidden_constructor_allocator_counts,
         "editorOfflineTransientScratchDirectConstructors": editor_offline_transient_scratch_direct,
+        "sentinelTrackedDirectConstructors": sentinel_tracked_direct,
+        "runtimeSentinelTrackedDirectConstructors": runtime_sentinel_tracked_direct,
         "runtimeForbiddenDirectConstructors": forbidden_runtime_constructor_count,
         "editorOfflineForbiddenDirectConstructors": forbidden_editor_offline_constructor_count,
         "forbiddenFileCount": len(forbidden),
@@ -1147,6 +2639,15 @@ def build_audit_payload(
         "forbiddenNativeArrayDeclarations": forbidden_declaration_count,
         "forbiddenNativeCollectionDeclarations": forbidden_declaration_count,
         "persistentNativeCollectionDeclarations": sum(finding.count for finding in persistent_declarations),
+        "h8MemoryTrackedNativeCollectionDeclarations": sum(
+            finding.count for finding in h8memory_tracked_owner_declarations
+        ),
+        "sentinelTrackedNativeCollectionDeclarations": sum(
+            finding.count for finding in sentinel_tracked_owner_declarations
+        ),
+        "dataVaultAliasNativeCollectionDeclarations": sum(
+            finding.count for finding in datavault_alias_owner_declarations
+        ),
         "jobInputNativeCollectionDeclarations": sum(finding.count for finding in job_input_declarations),
         "burstJobInputNativeCollectionDeclarations": sum(finding.count for finding in burst_job_input_declarations),
         "transientJobDataNativeCollectionDeclarations": 0,
@@ -1248,6 +2749,11 @@ def build_baseline(payload: dict[str, Any]) -> dict[str, Any]:
         ),
         "editorOfflineTransientScratchDirectConstructors": payload.get(
             "editorOfflineTransientScratchDirectConstructors",
+            0,
+        ),
+        "sentinelTrackedDirectConstructors": payload.get("sentinelTrackedDirectConstructors", 0),
+        "runtimeSentinelTrackedDirectConstructors": payload.get(
+            "runtimeSentinelTrackedDirectConstructors",
             0,
         ),
         "runtimeForbiddenDirectConstructors": payload.get("runtimeForbiddenDirectConstructors", 0),
@@ -1470,7 +2976,7 @@ def collect_regression_details(
     baseline_total = int(baseline.get("forbiddenDirectConstructors", -1))
     if current_total > baseline_total:
         errors.append(
-            "Forbidden direct NativeArray constructors increased "
+            "Forbidden direct native collection constructors increased "
             f"from {baseline_total} to {current_total}."
         )
 
@@ -1503,7 +3009,7 @@ def collect_regression_details(
         baseline_declaration_total = int(baseline.get("forbiddenNativeArrayDeclarations", -1))
         if current_declaration_total > baseline_declaration_total:
             errors.append(
-                "Forbidden NativeArray field declarations increased "
+                "Forbidden native collection field declarations increased "
                 f"from {baseline_declaration_total} to {current_declaration_total}."
             )
 
@@ -1517,7 +3023,7 @@ def collect_regression_details(
             if count > baseline_count:
                 delta = count - baseline_count
                 errors.append(
-                    f"{path}: forbidden NativeArray field declarations increased from {baseline_count} to {count}."
+                    f"{path}: forbidden native collection field declarations increased from {baseline_count} to {count}."
                 )
                 details.append(
                     {
@@ -1803,19 +3309,23 @@ def write_markdown_report(
         "",
         "| Metric | Count |",
         "|---|---:|",
-        f"| Total direct `new NativeArray<T>` constructors | {payload['totalDirectConstructors']} |",
+        f"| Total direct native collection constructors | {payload['totalDirectConstructors']} |",
         f"| Allowed allocator-internal constructors | {payload['allowedDirectConstructors']} |",
         f"| Forbidden system constructors | {payload['forbiddenDirectConstructors']} |",
         f"| Runtime forbidden constructors | {payload.get('runtimeForbiddenDirectConstructors', 0)} |",
         f"| Editor/offline forbidden constructors | {payload.get('editorOfflineForbiddenDirectConstructors', 0)} |",
         f"| Editor/offline transient scratch constructors | {payload.get('editorOfflineTransientScratchDirectConstructors', 0)} |",
+        f"| Sentinel-tracked owner wrapper constructors | {payload.get('sentinelTrackedDirectConstructors', 0)} |",
+        f"| Runtime sentinel-tracked owner wrapper constructors | {payload.get('runtimeSentinelTrackedDirectConstructors', 0)} |",
         f"| Files with forbidden constructors | {payload['forbiddenFileCount']} |",
         f"| Editor/offline session scratch declarations | {payload.get('editorOfflineSessionScratchNativeCollectionDeclarations', 0)} |",
         f"| Editor/offline persistent preview declarations | {payload.get('editorOfflinePersistentPreviewNativeCollectionDeclarations', 0)} |",
-        f"| Total field-like `NativeArray<T>` declarations | {payload.get('totalNativeArrayDeclarations', 0)} |",
+        f"| Total field-like native collection declarations | {payload.get('totalNativeArrayDeclarations', 0)} |",
         f"| Allowed DataVault/H8Memory declarations | {payload.get('allowedNativeArrayDeclarations', 0)} |",
         f"| Forbidden system declarations | {payload.get('forbiddenNativeArrayDeclarations', 0)} |",
         f"| Persistent owner native collection declarations | {payload.get('persistentNativeCollectionDeclarations', 0)} |",
+        f"| H8Memory-tracked owner field declarations | {payload.get('h8MemoryTrackedNativeCollectionDeclarations', 0)} |",
+        f"| DataVault alias owner field declarations | {payload.get('dataVaultAliasNativeCollectionDeclarations', 0)} |",
         f"| Job input native collection declarations | {payload.get('jobInputNativeCollectionDeclarations', 0)} |",
         f"| Burst job input native collection declarations | {payload.get('burstJobInputNativeCollectionDeclarations', 0)} |",
         f"| Native view/payload/kernel struct declarations | {payload.get('nativeViewNativeCollectionDeclarations', 0)} |",
@@ -2130,11 +3640,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     failure_reasons = list(regression_errors)
     if args.fail_on_any and int(payload["forbiddenDirectConstructors"]) > 0:
         failure_reasons.append(
-            f"{payload['forbiddenDirectConstructors']} forbidden direct NativeArray constructors remain."
+            f"{payload['forbiddenDirectConstructors']} forbidden direct native collection constructors remain."
         )
     if args.fail_on_any and int(payload.get("forbiddenNativeArrayDeclarations", 0)) > 0:
         failure_reasons.append(
-            f"{payload['forbiddenNativeArrayDeclarations']} forbidden NativeArray field declarations remain."
+            f"{payload['forbiddenNativeArrayDeclarations']} forbidden native collection field declarations remain."
         )
     if args.fail_on_any and int(payload.get("forbiddenLatestCreatedFallbacks", 0)) > 0:
         failure_reasons.append(
@@ -2154,11 +3664,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         f"runtimeForbidden={payload.get('runtimeForbiddenDirectConstructors', 0)}, "
         f"editorOfflineForbidden={payload.get('editorOfflineForbiddenDirectConstructors', 0)}, "
         f"editorOfflineTransientScratch={payload.get('editorOfflineTransientScratchDirectConstructors', 0)}, "
+        f"sentinelTracked={payload.get('sentinelTrackedDirectConstructors', 0)}, "
+        f"runtimeSentinelTracked={payload.get('runtimeSentinelTrackedDirectConstructors', 0)}, "
         f"editorOfflineAllocatorSplit={payload.get('editorOfflineForbiddenDirectConstructorsByAllocator', {})}, "
         f"files={payload['forbiddenFileCount']}, "
         f"declarations={payload.get('totalNativeArrayDeclarations', 0)}, "
         f"forbiddenDeclarations={payload.get('forbiddenNativeArrayDeclarations', 0)}, "
         f"persistentDeclarations={payload.get('persistentNativeCollectionDeclarations', 0)}, "
+        f"h8MemoryTrackedDeclarations={payload.get('h8MemoryTrackedNativeCollectionDeclarations', 0)}, "
+        f"dataVaultAliasDeclarations={payload.get('dataVaultAliasNativeCollectionDeclarations', 0)}, "
         f"editorSessionScratchDeclarations={payload.get('editorOfflineSessionScratchNativeCollectionDeclarations', 0)}, "
         f"editorPreviewPersistentDeclarations={payload.get('editorOfflinePersistentPreviewNativeCollectionDeclarations', 0)}, "
         f"jobInputDeclarations={payload.get('jobInputNativeCollectionDeclarations', 0)}, "

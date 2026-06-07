@@ -7,6 +7,9 @@ poi_tags: poi.deep_reach_old_charter;poi.centauri_shell_mark
 biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Цепочка происхождения Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

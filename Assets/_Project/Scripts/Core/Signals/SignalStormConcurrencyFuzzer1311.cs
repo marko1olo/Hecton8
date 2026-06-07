@@ -44,6 +44,8 @@ namespace Hecton8.Core
     {
         private const int DefaultProducerCount = 8;
         private const int DefaultWritesPerProducer = 32768;
+        private const int ProducerJoinTimeoutMilliseconds = 5000;
+        private const int ProducerStopJoinTimeoutMilliseconds = 250;
         private const uint StatusGreen = 0u;
         private const uint StatusRed = 1u;
 
@@ -106,16 +108,26 @@ namespace Hecton8.Core
                     threads[i].Start(states[i]);
                 }
 
-                startGate.Set();
-                for (int i = 0; i < producerCount; i++)
-                    threads[i].Join();
+                SignalStartGateNoThrow(startGate);
+                bool producersCompleted = JoinProducerThreadsNoThrow(threads, states);
+                bool producersStopped = !HasAliveProducerThread(threads);
+                if (!producersStopped)
+                {
+                    result.MissingWrites = expectedWrites;
+                    result.ElapsedTicks = stopwatch.ElapsedTicks;
+                    result.Status = StatusRed;
+                    result.ResultHash = BuildResultHash(in result);
+                    return result;
+                }
 
                 int accepted = 0;
                 int dropped = 0;
+                int faulted = 0;
                 for (int i = 0; i < producerCount; i++)
                 {
                     accepted += states[i].AcceptedWrites;
                     dropped += states[i].DroppedWrites;
+                    faulted += Volatile.Read(ref states[i].Faulted);
                 }
 
                 int drained = 0;
@@ -150,7 +162,9 @@ namespace Hecton8.Core
                 result.CorruptedWrites = corrupted;
                 result.MissingWrites = expectedWrites - unique;
                 result.ElapsedTicks = stopwatch.ElapsedTicks;
-                result.Status = accepted == expectedWrites &&
+                result.Status = producersCompleted &&
+                                faulted == 0 &&
+                                accepted == expectedWrites &&
                                 dropped == 0 &&
                                 drained == expectedWrites &&
                                 unique == expectedWrites &&
@@ -164,32 +178,148 @@ namespace Hecton8.Core
             finally
             {
                 stopwatch.Stop();
-                startGate.Dispose();
-                if (seen.IsCreated)
-                    H8Memory.Release(ref seen, SystemID.CoreDataVault);
-                if (ring.IsCreated)
-                    ring.Dispose();
+                RequestProducerStop(states);
+                SignalStartGateNoThrow(startGate);
+                JoinProducerThreadsAfterStopNoThrow(threads);
+                if (!HasAliveProducerThread(threads))
+                {
+                    startGate.Dispose();
+                    if (seen.IsCreated)
+                        H8Memory.Release(ref seen, SystemID.CoreDataVault);
+                    if (ring.IsCreated)
+                        ring.Dispose();
+                }
             }
         }
 
         private static void ProducerThread(object stateObject)
         {
             ProducerState state = (ProducerState)stateObject;
-            state.StartGate.Wait();
-            for (int i = 0; i < state.WritesPerProducer; i++)
+            try
             {
-                uint producer = (uint)state.ProducerIndex;
-                uint sequence = (uint)i;
-                uint globalSequence = (uint)((state.ProducerIndex * state.WritesPerProducer) + i);
-                SignalStormFuzzerPayload1311 payload = default;
-                payload.Producer = producer;
-                payload.Sequence = sequence;
-                payload.GlobalSequence = globalSequence;
-                payload.Hash = BuildPayloadHash(producer, sequence, globalSequence);
-                if (state.Writer.TryEnqueue(in payload))
-                    state.AcceptedWrites++;
-                else
-                    state.DroppedWrites++;
+                state.StartGate.Wait();
+                for (int i = 0; i < state.WritesPerProducer; i++)
+                {
+                    if (Volatile.Read(ref state.StopRequested) != 0)
+                        break;
+
+                    uint producer = (uint)state.ProducerIndex;
+                    uint sequence = (uint)i;
+                    uint globalSequence = (uint)((state.ProducerIndex * state.WritesPerProducer) + i);
+                    SignalStormFuzzerPayload1311 payload = default;
+                    payload.Producer = producer;
+                    payload.Sequence = sequence;
+                    payload.GlobalSequence = globalSequence;
+                    payload.Hash = BuildPayloadHash(producer, sequence, globalSequence);
+                    if (state.Writer.TryEnqueue(in payload))
+                        state.AcceptedWrites++;
+                    else
+                        state.DroppedWrites++;
+                }
+            }
+            catch (Exception)
+            {
+                Volatile.Write(ref state.Faulted, 1);
+            }
+        }
+
+        private static bool JoinProducerThreadsNoThrow(Thread[] threads, ProducerState[] states)
+        {
+            bool completed = true;
+            long deadline = Stopwatch.GetTimestamp() + ProducerJoinTimeoutMilliseconds * Stopwatch.Frequency / 1000L;
+            for (int i = 0; i < threads.Length; i++)
+            {
+                int timeoutMilliseconds = ResolveRemainingJoinMilliseconds(deadline);
+                if (!TryJoinProducerThreadNoThrow(threads[i], timeoutMilliseconds))
+                {
+                    completed = false;
+                    RequestProducerStop(states);
+                }
+            }
+
+            if (!completed)
+                JoinProducerThreadsAfterStopNoThrow(threads);
+
+            return completed && !HasAliveProducerThread(threads);
+        }
+
+        private static int ResolveRemainingJoinMilliseconds(long deadline)
+        {
+            long remainingTicks = deadline - Stopwatch.GetTimestamp();
+            if (remainingTicks <= 0L)
+                return 1;
+
+            long remainingMilliseconds = remainingTicks * 1000L / Stopwatch.Frequency;
+            if (remainingMilliseconds <= 0L)
+                return 1;
+            return remainingMilliseconds > ProducerJoinTimeoutMilliseconds
+                ? ProducerJoinTimeoutMilliseconds
+                : (int)remainingMilliseconds;
+        }
+
+        private static void JoinProducerThreadsAfterStopNoThrow(Thread[] threads)
+        {
+            for (int i = 0; i < threads.Length; i++)
+                TryJoinProducerThreadNoThrow(threads[i], ProducerStopJoinTimeoutMilliseconds);
+        }
+
+        private static bool TryJoinProducerThreadNoThrow(Thread thread, int timeoutMilliseconds)
+        {
+            if (thread == null || !thread.IsAlive)
+                return true;
+
+            if (ReferenceEquals(Thread.CurrentThread, thread))
+                return false;
+
+            try
+            {
+                thread.Join(math.max(1, timeoutMilliseconds));
+                return !thread.IsAlive;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static bool HasAliveProducerThread(Thread[] threads)
+        {
+            if (threads == null)
+                return false;
+
+            for (int i = 0; i < threads.Length; i++)
+            {
+                Thread thread = threads[i];
+                if (thread != null && thread.IsAlive)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void RequestProducerStop(ProducerState[] states)
+        {
+            if (states == null)
+                return;
+
+            for (int i = 0; i < states.Length; i++)
+            {
+                ProducerState state = states[i];
+                if (state != null)
+                    Volatile.Write(ref state.StopRequested, 1);
+            }
+        }
+
+        private static bool SignalStartGateNoThrow(ManualResetEventSlim startGate)
+        {
+            try
+            {
+                startGate.Set();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
 
@@ -267,6 +397,8 @@ namespace Hecton8.Core
             public int WritesPerProducer;
             public int AcceptedWrites;
             public int DroppedWrites;
+            public int StopRequested;
+            public int Faulted;
         }
     }
 }

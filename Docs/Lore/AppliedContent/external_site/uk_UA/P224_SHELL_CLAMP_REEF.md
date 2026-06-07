@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Shell Clamp Reef"
+title: "Риф мушлевих затискачів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Shell Clamp Reef
+# Риф мушлевих затискачів
 
-UA LOC HOLD: Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures.
+Риф мушлевих затискачів - візуальний міст між яскравою екологією HECTON-8 і пізнішим машинним жахом. Сенс не в тому, що океан ненавидить людське обладнання. Сенс гірший і корисніший: океан навчився рости навколо нього. Затискачі селяться там, де течія, мінеральне просочування і вібрація роблять твердий край вигідним, тому кабельна оболонка, шов капсули й базальтова губа можуть стати одним типом середовища. Це робить мілкий шельф тактильним, а не декоративним. Гравець має бачити болти, вдягнені в життя, кабельні траси, що стають ребрами рифу, шви pressure glass, вкриті білими затискачами, і розуміти: не всякий ріст є забрудненням. Деякий ріст тримає навантаження. Ця думка заздалегідь підводить до логіки ремонту Atlas без магії. Atlas пізніше зловживає звичкою, яку риф уже довів: місцеві організми можуть сприймати людські машини як структуру. Добре розміщення має робити збір рішенням, а не кнопкою. Мертва бахрома дає мушлеву крихту, текстуру sealing paste і ранню довіру до матеріалів. Живе серце рифу може втримувати маршрутний знак або закривати протік. Прибери його наосліп, і океан не читатиме лекцію; кабель почне ходити, шов почне плакати, зграя скребців піде, і маршрут зміниться.
 
 ## Scanner
 
-UA LOC HOLD: Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.
+РИФ МУШЛЕВИХ ЗАТИСКАЧІВ // Місцеві мушлеві затискачі хапають камінь, кабельні оболонки, обшивку капсули й шви pressure glass. Риф прийняв машини як субстрат.
 
 ## Terminal
 
-UA LOC HOLD: REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.
+БАЗОВИЙ РИФ: зчеплення зростає на стертих кабельних оболонках, теплому металі швів і краях pressure glass з мінеральним просочуванням. Збирати лише мертві зовнішні мушлі. Зріз живих затискачів біля сервісних ліній може відкрити протікання або привернути увагу ремонтної фауни.
 
 ## Audio
 
-UA LOC HOLD: The reef has learned the shape of bolts.
+Риф вивчив форму болтів.
 
 ## Field Note
 
-UA LOC HOLD: Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.
+Не відламуй перший затискач, до якого дістався. Живий кластер може тримати кабель нерухомим, закривати волосяний протік або позначати маршрутний якір.
 
 <!-- External Site; generated from P224_SHELL_CLAMP_REEF/uk_UA. -->

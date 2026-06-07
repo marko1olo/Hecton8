@@ -1139,9 +1139,9 @@ namespace Hecton8.Core.Hardware
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                TryUnregisterFrameTick();
+                TryUnregisterFrostTick();
                 _dispatcher = currentService as SystemDispatcher;
-                _registeredFrameTick = false;
-                _registeredFrostTick = false;
                 if (currentService != null && isActiveAndEnabled && _serviceRegistered)
                 {
                     TryRegisterFrameTick();

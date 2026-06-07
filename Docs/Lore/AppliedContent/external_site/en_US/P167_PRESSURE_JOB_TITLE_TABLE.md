@@ -7,6 +7,9 @@ poi_tags: poi.job_title_board;poi.pressure_cert_stamp
 biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Pressure Job Title Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

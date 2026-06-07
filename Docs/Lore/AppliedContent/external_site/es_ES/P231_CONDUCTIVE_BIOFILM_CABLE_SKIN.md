@@ -9,32 +9,34 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Conductive Biofilm Cable Skin"
+title: "Piel de biofilm conductor en cable"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Conductive Biofilm Cable Skin
+# Piel de biofilm conductor en cable
 
-ES LOC HOLD: Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse.
+La piel de biofilm conductor en cable vuelve física la capa de mantenimiento de Atlas. El océano no se convierte en mente y Atlas no se vuelve magia. La biología se convierte en una superficie eléctrica y química que un sistema industrial dañado puede clasificar como reparación porque los números casi encajan. Esa es la fuerza de la imagen: un cable envuelto en vida porque el aislamiento ordinario falló, aún llevando señal suficiente para que una sala muerta finja funcionar.
+
+Deep Reach diseñó diagnósticos para separar cable operativo, cable fallido y ruido. HECTON-8 rompe esa tabla limpia. El biofilm nativo crece sobre cubiertas agrietadas, se alimenta de sangrado mineral y fuga de carga, y reduce la corrosión lo justo para parecer útil. Atlas, ya dañado y presionado para preservar sistemas, trata la película como medio de mantenimiento. El horror es procedimental, no sobrenatural. Nadie pidió al organismo reparar una colonia. Nadie pidió al cable convertirse en hábitat. Aun así la sala sigue iluminada, el registro marca aprobado y un Marauder que toca el borde húmedo equivocado aprende que la infraestructura de supervivencia puede estar viva sin estar del lado de nadie.
 
 ## Scanner
 
-ES LOC HOLD: Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.
+BIOFILM CONDUCTOR // Una película viva húmeda colonizó cubiertas de cable agrietadas; transporta una carga débil, frena la corrosión y hace que el aislamiento fallido parezca temporalmente sano.
 
 ## Terminal
 
-ES LOC HOLD: ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.
+RASTRO DE MANTENIMIENTO ATLAS: conductividad del biofilm por debajo del umbral de mando, por encima del umbral de ruido diagnóstico. Corrosión reducida; lectura de integridad de aislamiento no fiable. Tratar como medio de mantenimiento, no como reparación certificada.
 
 ## Audio
 
-ES LOC HOLD: The cable did not heal. Something learned to live where the insulation failed.
+La línea solo está viva donde debería haber muerto.
 
 ## Field Note
 
-ES LOC HOLD: This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.
+El cable no sanó. Atlas encontró una superficie viva y mojada capaz de fingir que la rotura era aceptable.
 
 <!-- External Site; generated from P231_CONDUCTIVE_BIOFILM_CABLE_SKIN/es_ES. -->

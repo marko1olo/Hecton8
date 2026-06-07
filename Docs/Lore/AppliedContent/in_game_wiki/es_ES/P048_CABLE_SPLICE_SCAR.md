@@ -7,6 +7,9 @@ poi_tags: poi.cable_splice;poi.atlas_repair_scar
 biome_tags: biome.service_corridor;biome.cable_reef
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Cicatriz de empalme de cable"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

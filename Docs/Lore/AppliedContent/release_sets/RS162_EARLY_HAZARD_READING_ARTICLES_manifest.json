@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS162_EARLY_HAZARD_READING_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P960_PRESSURE_POP_RIVET_LINE",
+    "P961_HOT_RELAY_OZONE_SMELL",
+    "P962_LOOSE_DECKING_EDGE_LIFT",
+    "P963_BRINE_SLICK_RAINBOW_EDGE",
+    "P964_GLASS_PING_MEMORY_MARK"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P960_PRESSURE_POP_RIVET_LINE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P961_HOT_RELAY_OZONE_SMELL.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P962_LOOSE_DECKING_EDGE_LIFT.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P963_BRINE_SLICK_RAINBOW_EDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P964_GLASS_PING_MEMORY_MARK.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

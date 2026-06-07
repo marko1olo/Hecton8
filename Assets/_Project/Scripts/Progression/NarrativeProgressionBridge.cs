@@ -18,7 +18,7 @@ namespace Hecton8.Progression
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Progression/Narrative Progression Bridge")]
-    public sealed class NarrativeProgressionBridge : MonoBehaviour, IBiomeMatrixEventListener, IScanEventListener, IBaseIntegrityEventListener, IBaseAirlockEventListener
+    public sealed class NarrativeProgressionBridge : MonoBehaviour, IBiomeMatrixEventListener, IScanEventListener, IBaseIntegrityEventListener, IBaseAirlockEventListener, IGlobalRegistryHotSwapListener
     {
         private const string ExitLifePodDiscoveryId = "first_hour_exit_lifepod";
         private const string AtlasSignalDiscoveryId = "atlas6_signal_identified";
@@ -86,6 +86,8 @@ namespace Hecton8.Progression
         private readonly int[] _biomeRuleBucketWriteOffsets = new int[MaxBiomeMarkerRules];
         private int _biomeRuleBucketCount;
         private bool _biomeRuleHashesCached;
+        private bool _registeredHotSwapListener;
+        private AudioLogSystem _audioLogs;
 
         private void Awake()
         {
@@ -95,6 +97,8 @@ namespace Hecton8.Progression
         private void OnEnable()
         {
             EnsureRuleHashesCached();
+            CacheAudioLogSystem(GlobalRegistry.AudioLogs);
+            TryRegisterHotSwapListener();
             BiomeMatrixEvents.Register(this);
             BaseAirlockEvents.Register(this);
             ScanEvents.Register(this);
@@ -107,6 +111,8 @@ namespace Hecton8.Progression
             ScanEvents.Unregister(this);
             BaseAirlockEvents.Unregister(this);
             BiomeMatrixEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
+            ClearCachedRuntimeServices();
         }
 
         private void OnDestroy()
@@ -115,6 +121,17 @@ namespace Hecton8.Progression
             ScanEvents.Unregister(this);
             BaseAirlockEvents.Unregister(this);
             BiomeMatrixEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
+            ClearCachedRuntimeServices();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.AudioLogRuntime)
+                CacheAudioLogSystem(currentService as AudioLogSystem);
         }
 
         public void OnMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
@@ -155,12 +172,54 @@ namespace Hecton8.Progression
             NarrativeEvents.TryRaiseDiscoveryMade(_hullFailureDiscoveryHash);
             ProceduralAudioEvents.TryRaiseStructuralStressTriggered(ResolvePlayerRuntimePosition(), 1f, 0.72f);
 
-            AudioLogSystem audioLogs = GlobalRegistry.AudioLogs;
+            AudioLogSystem audioLogs = ResolveAudioLogSystem();
             if (audioLogs != null)
             {
                 audioLogs.NotifyAtmosphericWarningStarted(0.7f);
                 audioLogs.TryPlayLogByHash(_hullFailureLogHash);
             }
+        }
+
+        private AudioLogSystem ResolveAudioLogSystem()
+        {
+            AudioLogSystem audioLogs = _audioLogs;
+            if (IsAudioLogSystemUsable(audioLogs))
+                return audioLogs;
+
+            _audioLogs = null;
+            return null;
+        }
+
+        private static bool IsAudioLogSystemUsable(AudioLogSystem audioLogs)
+        {
+            return audioLogs != null && audioLogs.isActiveAndEnabled;
+        }
+
+        private void CacheAudioLogSystem(AudioLogSystem audioLogs)
+        {
+            _audioLogs = IsAudioLogSystemUsable(audioLogs) ? audioLogs : null;
+        }
+
+        private void ClearCachedRuntimeServices()
+        {
+            _audioLogs = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         public void OnBaseAirlockEvent(in BaseAirlockEventPayload payload)

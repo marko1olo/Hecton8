@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 08bf591172857124b9c2b86356d84407, type: 3}
+  m_Name: ToolMetadata_SeafloorDrill
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Tools.ToolMetadata
+  toolID: tool_seafloor_drill
+  tier: 0
+  category: 0
+  maxDurability: 900
+  durabilityDrainRate: 1
+  durabilityDrainRateSecondary: 0.5
+  criticalDurabilityThreshold: 20
+  efficiency: 1
+  speed: 1
+  energyConsumptionRate: 0.65
+  maxUpgradeSlots: 2
+  installedUpgrades:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  defaultModules:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  authoredHeatGenerationRate: 0.18
+  authoredCooldownRate: 0.35
+  authoredRecoilImpulse: 2.2
+  repairCostFull: 8
+  repairResourceID: titanium
+  nameLocKey: TOOL_SEAFLOOR_DRILL_NAME
+  descriptionLocKey: TOOL_SEAFLOOR_DRILL_DESC

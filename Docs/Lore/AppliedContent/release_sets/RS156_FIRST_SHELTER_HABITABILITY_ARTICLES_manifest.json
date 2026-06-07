@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS156_FIRST_SHELTER_HABITABILITY_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P860_AIR_SCRUBBER_CARTRIDGE_DUST",
+    "P861_CONDENSER_CUP_FIRST_DRIP",
+    "P862_THERMAL_BLANKET_SALT_STIFF",
+    "P863_SLEEP_STRAP_TORN_ANCHOR",
+    "P864_SHELTER_STATUS_TALLY_BOARD"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P860_AIR_SCRUBBER_CARTRIDGE_DUST.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P861_CONDENSER_CUP_FIRST_DRIP.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P862_THERMAL_BLANKET_SALT_STIFF.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P863_SLEEP_STRAP_TORN_ANCHOR.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P864_SHELTER_STATUS_TALLY_BOARD.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

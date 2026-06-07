@@ -7,6 +7,9 @@ poi_tags: poi.atlas_argument_core;poi.factory_temple_choice
 biome_tags: biome.factory_temple;biome.atlas_core
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Argumento final de Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

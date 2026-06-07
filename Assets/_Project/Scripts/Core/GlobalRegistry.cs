@@ -7538,17 +7538,38 @@ namespace Hecton8.Core
         private static void EnsureServiceReboundQueue()
         {
             if (!_pendingServiceRebounds.IsCreated)
-            {
-                _pendingServiceRebounds = new NativeQueue<RegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - service rebound event lane - owner: GlobalRegistry
-                NativeMemorySentinel.RegisterNativeQueue(_pendingServiceRebounds, MaxPendingServiceRebounds, nameof(GlobalRegistry), nameof(_pendingServiceRebounds), NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingServiceRebounds, MaxPendingServiceRebounds);
-            }
+                _pendingServiceRebounds = CreateServiceReboundQueue(nameof(_pendingServiceRebounds)); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - service rebound event lane - owner: GlobalRegistry
 
             if (!_nextFrameServiceRebounds.IsCreated)
+                _nextFrameServiceRebounds = CreateServiceReboundQueue(nameof(_nextFrameServiceRebounds)); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - next-frame service rebound event lane - owner: GlobalRegistry
+        }
+
+        private static NativeQueue<RegistryEventPayload> CreateServiceReboundQueue(string label)
+        {
+            NativeQueue<RegistryEventPayload> queue = new NativeQueue<RegistryEventPayload>(Allocator.Persistent);
+            bool registered = false;
+            try
             {
-                _nextFrameServiceRebounds = new NativeQueue<RegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - next-frame service rebound event lane - owner: GlobalRegistry
-                NativeMemorySentinel.RegisterNativeQueue(_nextFrameServiceRebounds, MaxPendingServiceRebounds, nameof(GlobalRegistry), nameof(_nextFrameServiceRebounds), NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameServiceRebounds, MaxPendingServiceRebounds);
+                int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                    queue,
+                    MaxPendingServiceRebounds,
+                    nameof(GlobalRegistry),
+                    label,
+                    NativeAllocationLifetime.Session);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("NativeMemorySentinel rejected GlobalRegistry service rebound queue registration.");
+
+                registered = true;
+                PrewarmQueue(ref queue, MaxPendingServiceRebounds);
+                return queue;
+            }
+            catch
+            {
+                if (registered)
+                    NativeMemorySentinel.UnregisterNativeQueue(nameof(GlobalRegistry), label);
+                if (queue.IsCreated)
+                    queue.Dispose();
+                throw;
             }
         }
 

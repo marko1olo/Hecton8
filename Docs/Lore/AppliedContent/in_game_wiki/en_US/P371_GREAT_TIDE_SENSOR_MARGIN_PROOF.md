@@ -7,6 +7,9 @@ poi_tags: poi.tide_sensor_margin;poi.overwritten_pressure_trace
 biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Great Tide Sensor Margin Proof"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

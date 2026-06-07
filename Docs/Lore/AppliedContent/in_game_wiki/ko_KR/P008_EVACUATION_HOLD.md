@@ -7,6 +7,9 @@ poi_tags: poi.evac_gate;poi.medical_route_lock
 biome_tags: biome.deep_abyss;biome.drowned_colony
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "대피 보류"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Brine Vane Forests"
+title: "Solefahnen-Wälder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Brine Vane Forests
+# Solefahnen-Wälder
 
-DE LOC HOLD: Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure.
+Solefahnen-Wälder sind der Ort, an dem HECTON-8 Wasser nicht mehr wie leeren Raum behandeln lässt. Im Canyon wird Wasser zu Architektur: Dichteschichten stapeln sich wie Wände, Sonar biegt um unsichtbare Simse, und ein sorgloser Abstieg kann einen Anzug unter seine erwartete Auftriebslage setzen, bevor der Tiefenmesser dramatisch wirkt. Solefahnen machen diese Mathematik sichtbar. Sie sind keine Erdpflanzen und kein sprechendes Alienriff. Sie sind salzmineralische Membranen, die dort wachsen, wo chemische Gradienten sie weiter füttern, flach genug, um botanisch zu wirken, und physisch genug, um ihnen zu vertrauen. Eine lebende Fahnenschicht sagt: hier nicht kreuzen. Eine gerissene Kante sagt: Etwas ist kürzlich hindurch. Eine eingerollte Spitze sagt: Die Grenze wird schwach. Eine bleiche Rippe sagt: Die Membran hat Material abgeworfen, vielleicht nützlich für Solechemie, Dichtmittelgrit oder Dichtesensor-Kalibrierung. Gutes Canyon-Design sollte Spieler nach diesen Zeichen navigieren lassen statt nach Pfeilen: an einer intakten Wand entlangtreiben, das gerissene Maul finden, Sonarverzug sehen, den Anzugstrim wechseln fühlen und verstehen, dass der Ozean den Weg nicht aus Bosheit sperrt. Er gehorcht Druck. Darum sind Solefahnen-Wälder auf kältere Art schön als der photische Shelf. Sie heißen nicht willkommen. Sie sind lesbar.
 
 ## Scanner
 
-DE LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+SOLEFAHNEN-WALD // Salzmineralische Membranen wachsen entlang von Dichtescheren. Sie zeigen, wo Wasser zu einer Wand verdickt und wo Sonar sich biegen wird.
 
 ## Terminal
 
-DE LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+CANYON-BASIS: intakte Fahnenschichten markieren harte Dichtegrenzen. Gerissene Kanten und eingerollte Spitzen zeigen Scherfenster, salzärmere Taschen oder jüngsten Verkehr. Opakes Schichtwasser meiden; es kann Sonar blenden und einen Anzug unter erwartete Auftriebslage ziehen.
 
 ## Audio
 
-DE LOC HOLD: The canyon has leaves because it has pressure gradients.
+Der Canyon hat Blätter, weil er Druckgradienten hat.
 
 ## Field Note
 
-DE LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+Das sind keine Bäume. Es sind Druckblätter: Membranen, die von chemischen Gradienten leben und nur dort gerissen sind, wo kürzlich eine Route hindurchgedrückt wurde.
 
 <!-- External Site; generated from P226_BRINE_VANE_FORESTS/de_DE. -->

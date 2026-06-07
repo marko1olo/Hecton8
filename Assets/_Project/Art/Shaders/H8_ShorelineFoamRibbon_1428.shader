@@ -29,7 +29,7 @@ Shader "HECTON/World/H8_ShorelineFoamRibbon_1428"
             Name "ShorelineFoamRibbon"
             Tags { "LightMode" = "UniversalForward" }
 
-            Cull Back
+            Cull Off
             ZWrite Off
             ZTest LEqual
             Blend SrcAlpha OneMinusSrcAlpha
@@ -48,10 +48,10 @@ Shader "HECTON/World/H8_ShorelineFoamRibbon_1428"
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
                 half4 _FoamColor;
-                half _Alpha;
-                half _Threshold;
-                half _Softness;
-                half _EdgeFade;
+                float _Alpha;
+                float _Threshold;
+                float _Softness;
+                float _EdgeFade;
                 float4 _TilingA;
                 float4 _TilingB;
             CBUFFER_END
@@ -93,20 +93,25 @@ Shader "HECTON/World/H8_ShorelineFoamRibbon_1428"
                 float2 flowA = uv * _TilingA.xy + _Time.y * _TilingA.zw;
                 float2 flowB = uv * _TilingB.xy + _Time.y * _TilingB.zw + float2(0.37, 0.11);
                 float2 flowBreak = uv * float2(_TilingB.x * 1.73, max(0.17, _TilingA.y * 0.47)) + _Time.y * float2(-0.006, 0.002) + float2(0.19, 0.61);
-                half foamA = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, flowA).r;
-                half foamB = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, flowB).g;
-                half foamBreak = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, flowBreak).b;
+                half4 foamSampleA = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, flowA);
+                half4 foamSampleB = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, flowB);
+                half4 foamSampleBreak = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, flowBreak);
+                half foamA = foamSampleA.r;
+                half foamB = foamSampleB.g;
+                half foamBreak = foamSampleBreak.b;
                 half signal = saturate(foamA * 0.72h + foamB * 0.42h);
-                half foamMask = smoothstep(_Threshold, _Threshold + _Softness, signal);
+                half foamMask = smoothstep((half)_Threshold, (half)(_Threshold + _Softness), signal);
                 half breakup = smoothstep(0.38h, 0.86h, saturate(foamBreak * 0.78h + foamB * 0.24h));
                 half strand = smoothstep(0.12h, 0.88h, abs(frac(uv.x * 11.0 + foamBreak * 0.37h) - 0.5h) * 2.0h);
+                half alphaGate = smoothstep(0.08h, 0.72h, saturate(foamSampleA.a * 0.52h + foamSampleB.a * 0.33h + foamSampleBreak.a * 0.28h));
                 foamMask *= saturate(breakup * (0.46h + strand * 0.72h));
+                foamMask *= alphaGate;
 
                 half edgeX = min((half)uv.x, (half)(1.0 - uv.x));
                 half edgeY = min((half)uv.y, (half)(1.0 - uv.y));
-                half edge = smoothstep(0.0h, _EdgeFade, min(edgeX, edgeY));
+                half edge = smoothstep(0.0h, (half)_EdgeFade, min(edgeX, edgeY));
                 half cameraAboveSurface = step(input.positionWS.y - 0.04h, _WorldSpaceCameraPos.y);
-                half alpha = saturate(foamMask * edge * _Alpha * _FoamColor.a) * cameraAboveSurface;
+                half alpha = saturate(foamMask * edge * (half)_Alpha * _FoamColor.a) * cameraAboveSurface;
                 half3 color = _FoamColor.rgb * (0.62h + signal * 0.48h);
                 return half4(color, alpha);
             }

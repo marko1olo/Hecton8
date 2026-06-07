@@ -564,9 +564,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
-                currentService == null ||
-                !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
             {
                 return;
             }
@@ -584,6 +582,9 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
                 _registeredFixedTick = false;
             }
+
+            if (currentService == null || !isActiveAndEnabled)
+                return;
 
             if (needsFixed)
             {

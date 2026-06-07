@@ -226,11 +226,15 @@ namespace MapMagic.Nodes.MatrixGenerators
 
         private static int RegisterTempJobArray(NativeArray<float> array, string label)
         {
-            return NativeMemorySentinel.RegisterNativeArray(
+            int registrationId = NativeMemorySentinel.RegisterNativeArray(
                 array,
                 NativeMemoryOwner,
                 label,
                 NativeAllocationLifetime.TempJob);
+            if (registrationId <= 0)
+                throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+
+            return registrationId;
         }
 
         private static void DisposeTracked(ref NativeArray<float> array, ref int registrationId)

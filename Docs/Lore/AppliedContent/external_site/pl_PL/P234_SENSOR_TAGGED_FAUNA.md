@@ -9,32 +9,34 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Sensor-Tagged Fauna"
+title: "Fauna z etykietami sensorów"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Sensor-Tagged Fauna
+# Fauna z etykietami sensorów
 
-PL LOC HOLD: Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets.
+Fauna z etykietami sensorów chroni biomechaniczną warstwę HECTON-8 przed prostą fikcją skażenia. Stworzenia nie są magicznie zmieniane w drony. To zwierzęta i kolonie, które przeżyły sprzęt monitoringu. Znacznik stał się gniazdem, blizną, pierścieniem wzrostu, mineralnym pęcherzem albo fałszywym okiem, bo ekosystem zrobił to, co robią ekosystemy: rósł wokół uszkodzenia.
+
+Dzięki temu każdy duch sygnału ma historię. Marauder może usłyszeć słaby identyfikator Deep Reach z wnętrza muszlowego żerującego zwierzęcia albo zobaczyć biometalowy węzeł oka migający na ciele ignorującym komendy. Stara korporacja wciąż zostawia papierkową robotę w ciele, ale ciało nie jest posłuszne. Atlas może wykorzystać sygnał, nie posiada zwierzęcia. To czyni horror smutniejszym i mocniejszym: przemysłowa kontrola próbowała oznaczyć życie, życie przetrwało, a znak nadal raportuje systemom, które już nie rozumieją, co słyszą.
 
 ## Scanner
 
-PL LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+FAUNA Z ETYKIETAMI SENSORÓW // Stare znaczniki biometalowe tkwią w pierścieniach wzrostu, bliznach i gniazdach muszli; zwierzę nosi sprzęt monitoringu jako historię ciała, nie posłuszeństwo.
 
 ## Terminal
 
-PL LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+NOTA ZNACZNIKA: ciągłość sygnału słaba, integracja biologiczna wysoka, odpowiedź na komendy niewiarygodna. Traktować jako bierną bliznę, przerywany beacon i możliwego ducha diagnostycznego Atlas.
 
 ## Audio
 
-PL LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+Zwierzę nie jest dronem. Dron jest starą raną w zwierzęciu.
 
 ## Field Note
 
-PL LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+Zwierzę nie jest dronem. Dron jest starą raną, wokół której zwierzę przetrwało.
 
 <!-- External Site; generated from P234_SENSOR_TAGGED_FAUNA/pl_PL. -->

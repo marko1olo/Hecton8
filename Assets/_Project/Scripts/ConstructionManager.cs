@@ -321,8 +321,6 @@ namespace Hecton8.Construction
 
         /// <summary>Default flood state.</summary>
         private const bool  DefaultIsFlooded = false;
-        private const byte ModuleBlitFlagFlooded = 1 << 0;
-        private const byte ModuleBlitFlagInteriorReef = 1 << 1;
 
         // PUBLIC API - QUERIES
 
@@ -514,7 +512,7 @@ namespace Hecton8.Construction
             _cachedGasDynamics = GlobalRegistry.GasDynamics;
             _cachedAtmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
             _cachedAmbientCurrentReadModel = GlobalRegistry.AmbientCurrent;
-            _cachedAudioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _cachedFluidDecalPresentation = GlobalRegistry.FluidDecalPresentation;
             _cachedPhysicsService = GlobalRegistry.Physics;
         }
@@ -524,7 +522,7 @@ namespace Hecton8.Construction
             _habitatGraphManager?.SetRuntimeServices(
                 _cachedAtmosphereReadModel,
                 _cachedAmbientCurrentReadModel,
-                _cachedAudioService,
+                ResolveAudioService(),
                 _cachedFluidDecalPresentation);
             BaseDegradationSystem.BindRuntimeServices(this, _cachedFluidDecalPresentation);
         }
@@ -542,9 +540,40 @@ namespace Hecton8.Construction
             _cachedGasDynamics = null;
             _cachedAtmosphereReadModel = null;
             _cachedAmbientCurrentReadModel = null;
-            _cachedAudioService = null;
+            ClearCachedAudioService();
             _cachedFluidDecalPresentation = null;
             _cachedPhysicsService = null;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            ClearCachedAudioService();
+            return null;
+        }
+
+        private void ClearCachedAudioService()
+        {
+            _cachedAudioService = null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void OnEnable()
@@ -2835,9 +2864,9 @@ namespace Hecton8.Construction
         {
             byte flags = 0;
             if (moduleDto.isFlooded)
-                flags |= ModuleBlitFlagFlooded;
+                flags |= ModuleBlitDTO.FlagFlooded;
             if (moduleDto.interiorReefInfestationActive)
-                flags |= ModuleBlitFlagInteriorReef;
+                flags |= ModuleBlitDTO.FlagInteriorReef;
 
             return new ModuleBlitDTO
             {
@@ -2911,21 +2940,25 @@ namespace Hecton8.Construction
                     if (destinationIndex <= sourceIndex || destinationIndex >= savedNodeCount)
                         continue;
 
-                if (edgeWriteIndex >= ConstructionDTO.MaxGraphEdges)
-                {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Hecton8.Core.H8Debug.LogWarning(
-                        "[ConstructionManager] Habitat graph edge budget exceeded during save. Truncating persisted topology.");
-#endif
-                    dto.graphEdgeCount = edgeWriteIndex;
-                    return;
-                }
-
-                    dto.graphEdges[edgeWriteIndex] = new ModuleGraphEdgeDTO
+                    ModuleGraphEdgeDTO edge = new ModuleGraphEdgeDTO
                     {
                         sourceNodeIndex = sourceIndex,
                         destinationNodeIndex = destinationIndex
                     };
+                    if (ModuleGraphEdgeDTO.ContainsPersistenceEdge(dto.graphEdges, edgeWriteIndex, in edge))
+                        continue;
+
+                    if (edgeWriteIndex >= ConstructionDTO.MaxGraphEdges)
+                    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        Hecton8.Core.H8Debug.LogWarning(
+                            "[ConstructionManager] Habitat graph edge budget exceeded during save. Truncating persisted topology.");
+#endif
+                        dto.graphEdgeCount = edgeWriteIndex;
+                        return;
+                    }
+
+                    dto.graphEdges[edgeWriteIndex] = edge;
                     edgeWriteIndex++;
                 }
             }
@@ -3246,8 +3279,8 @@ namespace Hecton8.Construction
                     _habitatGraphManager?.SetAmbientCurrentReadModel(_cachedAmbientCurrentReadModel);
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _cachedAudioService = currentService as IAudioService;
-                    _habitatGraphManager?.SetAudioService(_cachedAudioService);
+                    CacheAudioService(currentService as IAudioService);
+                    _habitatGraphManager?.SetAudioService(ResolveAudioService());
                     break;
                 case GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime:
                     _cachedFluidDecalPresentation = currentService as IFluidDecalPresentationSink;

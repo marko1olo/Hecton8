@@ -7,6 +7,9 @@ poi_tags: poi.repaired_ascent_cradle;poi.partial_exit_console
 biome_tags: biome.surface_squall;biome.shallow_shelter
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "비겁한 탈출 사슬"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

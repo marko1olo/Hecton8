@@ -1,5 +1,5 @@
 #if UNITY_EDITOR && HECTON8_ENABLE_LEGACY_MEMORY_FUZZER_1310
-// Legacy 1310 fuzzer is opt-in only. It uses raw Thread joins and a disposable GlobalDataVault;
+// Legacy 1310 fuzzer is opt-in only. It uses a disposable GlobalDataVault;
 // agent 1412 keeps the active compaction stress path in Core/Memory/Editor with bounded cleanup proof.
 using System;
 using System.Diagnostics;
@@ -25,6 +25,8 @@ namespace Hecton8.EditorValidation
         private const int ChurnBufferBase = 99032;
         private const int ChurnBufferCount = 24;
         private const int WorkerCount = 4;
+        private const int WorkerCompletionJoinMilliseconds = 30000;
+        private const int WorkerStopJoinMilliseconds = 1000;
 
         [MenuItem("Hecton8/Memory/Run 1310 Concurrent Relocation Fuzzer")]
         private static void RunFromMenu()
@@ -70,23 +72,26 @@ namespace Hecton8.EditorValidation
                 new Thread(() => RunCompactionWorker(vault, targetFrames, ref completedFrames, ref compactionTicks, ref stop, ref workerFailures, ref firstFailure, failureLock))
             };
 
+            bool joined = true;
             for (int i = 0; i < workers.Length; i++)
             {
                 workers[i].IsBackground = true;
                 workers[i].Name = "H8MemorySentry1310_" + i.ToString(CultureInfo.InvariantCulture);
-                workers[i].Start();
+                if (!TryStartWorkerNoThrow(workers[i]))
+                {
+                    joined = false;
+                    Volatile.Write(ref stop, 1);
+                    RecordWorkerFailure("ThreadStartFailed", ref workerFailures, ref firstFailure, failureLock);
+                    break;
+                }
             }
 
-            bool joined = true;
             for (int i = 0; i < workers.Length; i++)
-                joined &= workers[i].Join(30000);
+                joined &= TryJoinWorkerNoThrow(workers[i], WorkerCompletionJoinMilliseconds);
 
             Volatile.Write(ref stop, 1);
             for (int i = 0; i < workers.Length; i++)
-            {
-                if (workers[i].IsAlive)
-                    joined &= workers[i].Join(1000);
-            }
+                joined &= TryJoinWorkerNoThrow(workers[i], WorkerStopJoinMilliseconds);
 
             long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
             long endManagedBytes = GetAllocatedBytesForCurrentThreadSafe();
@@ -302,11 +307,51 @@ namespace Hecton8.EditorValidation
 
         private static void RecordWorkerFailure(Exception ex, ref int workerFailures, ref string firstFailure, object failureLock)
         {
+            RecordWorkerFailure(ex.GetType().Name + ": " + ex.Message, ref workerFailures, ref firstFailure, failureLock);
+        }
+
+        private static void RecordWorkerFailure(string message, ref int workerFailures, ref string firstFailure, object failureLock)
+        {
             Interlocked.Increment(ref workerFailures);
             lock (failureLock)
             {
                 if (string.IsNullOrEmpty(firstFailure))
-                    firstFailure = ex.GetType().Name + ": " + ex.Message;
+                    firstFailure = message;
+            }
+        }
+
+        private static bool TryStartWorkerNoThrow(Thread worker)
+        {
+            if (worker == null)
+                return false;
+
+            try
+            {
+                worker.Start();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryJoinWorkerNoThrow(Thread worker, int timeoutMilliseconds)
+        {
+            if (worker == null || !worker.IsAlive)
+                return true;
+
+            if (Thread.CurrentThread.ManagedThreadId == worker.ManagedThreadId)
+                return false;
+
+            try
+            {
+                worker.Join(timeoutMilliseconds);
+                return !worker.IsAlive;
+            }
+            catch
+            {
+                return false;
             }
         }
 

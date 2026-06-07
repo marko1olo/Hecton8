@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Hecton8.Core;
 using Hecton8.Editor.ColliderOptimization1716;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -24,6 +25,8 @@ namespace Hecton8.Editor.GeologyForge
             MeshUpdateFlags.DontNotifyMeshUsers;
         private const string AsyncBakeProgressTitle = "Geology Forge";
         private const string AsyncBakeProgressMessage = "Baking geology profiles";
+        private const string NativeMemoryOwner = nameof(GeologyForgeGenerator);
+        private const string NormalBucketsLabel = "normalBuckets";
         private const MeshColliderCookingOptions CollisionCookingOptions =
             MeshColliderCookingOptions.CookForFasterSimulation |
             MeshColliderCookingOptions.EnableMeshCleaning |
@@ -197,7 +200,11 @@ namespace Hecton8.Editor.GeologyForge
             int telemetryCursor = 0;
             try
             {
-                telemetry = new NativeArray<GeologyBakeTelemetryEntry>(GeologyForgeConstants.BlackBoxFrameCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                telemetry = AllocateGeologyArray<GeologyBakeTelemetryEntry>(
+                    GeologyForgeConstants.BlackBoxFrameCount,
+                    Allocator.TempJob,
+                    NativeArrayOptions.ClearMemory,
+                    nameof(telemetry));
                 List<GeologyMeshManifestRecord> manifestRecords = saveAssets ? new List<GeologyMeshManifestRecord>(1) : null;
                 GeologyBakeMetrics metric = BakeSingle(profile, variation, saveAssets, telemetry, ref telemetryCursor, manifestRecords);
                 bool hasManifestRecords = manifestRecords != null && manifestRecords.Count > 0;
@@ -218,8 +225,7 @@ namespace Hecton8.Editor.GeologyForge
             }
             finally
             {
-                if (telemetry.IsCreated)
-                    telemetry.Dispose();
+                ReleaseGeologyArray(ref telemetry);
             }
         }
 
@@ -259,7 +265,11 @@ namespace Hecton8.Editor.GeologyForge
                 int telemetryCursor = 0;
                 try
                 {
-                    telemetry = new NativeArray<GeologyBakeTelemetryEntry>(GeologyForgeConstants.BlackBoxFrameCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                    telemetry = AllocateGeologyArray<GeologyBakeTelemetryEntry>(
+                        GeologyForgeConstants.BlackBoxFrameCount,
+                        Allocator.TempJob,
+                        NativeArrayOptions.ClearMemory,
+                        nameof(telemetry));
 
                     GeologyBakeMetrics metric = BakeSingle(profile, _asyncVariationIndex, _asyncSaveAssets, telemetry, ref telemetryCursor, _asyncManifestRecords);
 
@@ -275,8 +285,7 @@ namespace Hecton8.Editor.GeologyForge
                 }
                 finally
                 {
-                    if (telemetry.IsCreated)
-                        telemetry.Dispose();
+                    ReleaseGeologyArray(ref telemetry);
                 }
 
                 _asyncCompletedBakes++;
@@ -373,7 +382,7 @@ namespace Hecton8.Editor.GeologyForge
             try
             {
                 // COLD ALLOC: NativeArray<float>[pointCount] — editor SDF density scratch fully overwritten by Burst — owner: GeologyForgeGenerator
-                density = new NativeArray<float>(pointCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                density = AllocateGeologyArray<float>(pointCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(density));
                 _Stopwatch.Restart();
                 JobHandle sdfHandle = new GenerateMockFractalNoiseJob
                 {
@@ -401,7 +410,7 @@ namespace Hecton8.Editor.GeologyForge
                 metric.WarningFlags = RecordTelemetry(telemetry, ref telemetryCursor, profile, seed, 1u, metric, 0, 0, 0, 0, metric.SdfMilliseconds);
 
                 // COLD ALLOC: NativeArray<int>[cellCount] — editor per-cell emitted vertex counts — owner: GeologyForgeGenerator
-                counts = new NativeArray<int>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                counts = AllocateGeologyArray<int>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(counts));
                 _Stopwatch.Restart();
                 JobHandle countHandle = new SdfCellVertexCountJob
                 {
@@ -416,7 +425,7 @@ namespace Hecton8.Editor.GeologyForge
                 pendingDisposeFence = default;
 
                 // COLD ALLOC: NativeArray<int>[cellCount] — editor exact extraction offsets — owner: GeologyForgeGenerator
-                offsets = new NativeArray<int>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                offsets = AllocateGeologyArray<int>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(offsets));
                 int rawCount = 0;
                 for (int i = 0; i < cellCount; i++)
                 {
@@ -432,7 +441,7 @@ namespace Hecton8.Editor.GeologyForge
                 }
 
                 // COLD ALLOC: NativeArray<GeologyRawVertex>[rawCount] — exact editor triangle soup output — owner: GeologyForgeGenerator
-                rawVertices = new NativeArray<GeologyRawVertex>(rawCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                rawVertices = AllocateGeologyArray<GeologyRawVertex>(rawCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(rawVertices));
                 JobHandle extractHandle = new SdfToMeshExtractionJob
                 {
                     Density = density,
@@ -455,7 +464,7 @@ namespace Hecton8.Editor.GeologyForge
                 float normalWeldTolerance = math.max(voxelStep * 0.03f, 1e-5f);
                 float normalBucketSize = math.max(normalWeldTolerance * 2f, 1e-5f);
                 // COLD ALLOC: NativeParallelMultiHashMap<ulong,int>[rawCount] — editor normal weld buckets — owner: GeologyForgeGenerator
-                normalBuckets = new NativeParallelMultiHashMap<ulong, int>(rawCount, Allocator.TempJob);
+                normalBuckets = AllocateGeologyMultiHashMap<ulong, int>(rawCount, Allocator.TempJob, NormalBucketsLabel);
                 JobHandle bucketHandle = new BuildNormalBucketJob
                 {
                     Vertices = rawVertices,
@@ -539,11 +548,107 @@ namespace Hecton8.Editor.GeologyForge
             finally
             {
                 pendingDisposeFence.Complete();
-                if (normalBuckets.IsCreated) normalBuckets.Dispose();
-                if (rawVertices.IsCreated) rawVertices.Dispose();
-                if (offsets.IsCreated) offsets.Dispose();
-                if (counts.IsCreated) counts.Dispose();
-                if (density.IsCreated) density.Dispose();
+                ReleaseGeologyMultiHashMap(ref normalBuckets, NormalBucketsLabel);
+                ReleaseGeologyArray(ref rawVertices);
+                ReleaseGeologyArray(ref offsets);
+                ReleaseGeologyArray(ref counts);
+                ReleaseGeologyArray(ref density);
+            }
+        }
+
+        private static NativeArray<T> AllocateGeologyArray<T>(int length, Allocator allocator, NativeArrayOptions options, string label = null) where T : struct
+        {
+            if (length <= 0)
+                return default;
+
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("Geology Forge native array allocation failed.");
+
+            try
+            {
+                string sentinelLabel = string.IsNullOrEmpty(label) ? typeof(T).Name : label;
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    array,
+                    NativeMemoryOwner,
+                    sentinelLabel,
+                    ResolveNativeAllocationLifetime(allocator));
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {sentinelLabel}.");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private static void ReleaseGeologyArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
+        }
+
+        private static NativeParallelMultiHashMap<TKey, TValue> AllocateGeologyMultiHashMap<TKey, TValue>(int capacity, Allocator allocator, string label)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (capacity <= 0)
+                return default;
+
+            NativeParallelMultiHashMap<TKey, TValue> map = new NativeParallelMultiHashMap<TKey, TValue>(capacity, allocator);
+            if (!map.IsCreated)
+                throw new InvalidOperationException("Geology Forge native multi-hash-map allocation failed.");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeParallelMultiHashMap(
+                    map,
+                    NativeMemoryOwner,
+                    label,
+                    ResolveNativeAllocationLifetime(allocator));
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            }
+            catch
+            {
+                map.Dispose();
+                throw;
+            }
+
+            return map;
+        }
+
+        private static void ReleaseGeologyMultiHashMap<TKey, TValue>(ref NativeParallelMultiHashMap<TKey, TValue> map, string label)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(NativeMemoryOwner, label);
+            map.Dispose();
+            map = default;
+        }
+
+        private static NativeAllocationLifetime ResolveNativeAllocationLifetime(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return NativeAllocationLifetime.Temp;
+                case Allocator.TempJob:
+                    return NativeAllocationLifetime.TempJob;
+                case Allocator.Persistent:
+                    return NativeAllocationLifetime.Session;
+                default:
+                    return NativeAllocationLifetime.Session;
             }
         }
 
@@ -753,7 +858,7 @@ namespace Hecton8.Editor.GeologyForge
             try
             {
                 // COLD ALLOC: NativeArray<GeologyRawVertex>[outputVertexCount] — editor LOD decimation output — owner: GeologyForgeGenerator
-                lodVertices = new NativeArray<GeologyRawVertex>(outputVertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                lodVertices = AllocateGeologyArray<GeologyRawVertex>(outputVertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(lodVertices));
                 JobHandle decimateHandle = new GeologyLodDecimationJob
                 {
                     SourceVertices = sourceVertices,
@@ -768,7 +873,7 @@ namespace Hecton8.Editor.GeologyForge
             }
             finally
             {
-                if (lodVertices.IsCreated) lodVertices.Dispose();
+                ReleaseGeologyArray(ref lodVertices);
             }
         }
 
@@ -780,9 +885,9 @@ namespace Hecton8.Editor.GeologyForge
             try
             {
                 // COLD ALLOC: NativeArray<GeologyVertex32>[vertexCount] — editor GPU upload stream — owner: GeologyForgeGenerator
-                packed = new NativeArray<GeologyVertex32>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                packed = AllocateGeologyArray<GeologyVertex32>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(packed));
                 // COLD ALLOC: NativeArray<uint>[vertexCount] — editor linear index stream — owner: GeologyForgeGenerator
-                indices = new NativeArray<uint>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                indices = AllocateGeologyArray<uint>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(indices));
                 JobHandle packHandle = new GeologyPackVertexJob
                 {
                     SourceVertices = rawVertices,
@@ -823,8 +928,8 @@ namespace Hecton8.Editor.GeologyForge
             {
                 if (mesh != null)
                     UnityEngine.Object.DestroyImmediate(mesh);
-                if (indices.IsCreated) indices.Dispose();
-                if (packed.IsCreated) packed.Dispose();
+                ReleaseGeologyArray(ref indices);
+                ReleaseGeologyArray(ref packed);
             }
         }
 

@@ -9,6 +9,7 @@ namespace Hecton8.Thermodynamics
     public sealed unsafe partial class ThermodynamicsHazardGridRuntime
     {
         private const int ConfigWorkerSleepMs = 64;
+        private const int ConfigWorkerJoinTimeoutMs = 250;
         private const int ConfigWorkerIdle = 0;
         private const int ConfigWorkerRequested = 1;
         private const int ConfigWorkerBusy = 2;
@@ -34,8 +35,16 @@ namespace Hecton8.Thermodynamics
 
         private void StartConfigWorkerIfNeeded()
         {
-            if (_configWorkerThread != null ||
-                !HasHandle(in _constants) ||
+            Thread existingWorker = _configWorkerThread;
+            if (existingWorker != null)
+            {
+                if (existingWorker.IsAlive)
+                    return;
+
+                _configWorkerThread = null;
+            }
+
+            if (!HasHandle(in _constants) ||
                 !HasHandle(in _binaryConstantBytes))
                 return;
 
@@ -49,27 +58,59 @@ namespace Hecton8.Thermodynamics
 #if UNITY_EDITOR
             _csvWorkerBytes ??= new byte[CsvBufferBytes]; // COLD ALLOC: byte[4096] - CSV worker staging, parsed before constants commit - owner: ThermodynamicsHazardGridRuntime
 #endif
-            Volatile.Write(ref _configWorkerRun, 1);
-
-            _configWorkerThread = new Thread(ConfigWorkerLoop)
+            try
             {
-                IsBackground = true,
-                Name = "H8 Thermodynamics Config IO"
-            }; // COLD ALLOC: Thread[1] - persistent MMF config reader - owner: ThermodynamicsHazardGridRuntime
-            _configWorkerThread.Start();
+                Volatile.Write(ref _configWorkerRun, 1);
+                Thread worker = new Thread(ConfigWorkerLoop)
+                {
+                    IsBackground = true,
+                    Name = "H8 Thermodynamics Config IO"
+                }; // COLD ALLOC: Thread[1] - persistent MMF config reader - owner: ThermodynamicsHazardGridRuntime
+                _configWorkerThread = worker;
+                worker.Start();
+            }
+            catch (Exception)
+            {
+                Volatile.Write(ref _configWorkerRun, 0);
+                _configWorkerThread = null;
+                Volatile.Write(ref _binaryRequestState, ConfigWorkerFault);
+#if UNITY_EDITOR
+                Volatile.Write(ref _csvRequestState, ConfigWorkerFault);
+#endif
+            }
         }
 
-        private void StopConfigWorker()
+        private bool StopConfigWorker()
         {
             Thread worker = _configWorkerThread;
             if (worker == null)
-                return;
+                return true;
 
             Volatile.Write(ref _configWorkerRun, 0);
-            if (worker.IsAlive)
-                worker.Join(250);
+            bool stopped = TryJoinConfigWorkerNoThrow(worker);
 
-            _configWorkerThread = null;
+            if (stopped && ReferenceEquals(_configWorkerThread, worker))
+                _configWorkerThread = null;
+            return stopped;
+        }
+
+        private static bool TryJoinConfigWorkerNoThrow(Thread worker)
+        {
+            if (worker == null || !worker.IsAlive)
+                return true;
+
+            if (ReferenceEquals(Thread.CurrentThread, worker))
+                return false;
+
+            try
+            {
+                worker.Join(ConfigWorkerJoinTimeoutMs);
+                return !worker.IsAlive;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         private void RequestBinaryConstantsLoad()

@@ -15,6 +15,9 @@ namespace Hecton8.Editor
 {
     public sealed class Shinobu132CablePhysicsTunerWindow : EditorWindow
     {
+        private const string NativeMemoryOwner = nameof(Shinobu132CablePhysicsTunerWindow);
+        private const string CsvBytesLabel = "csvBytes";
+
         private Slider _quality;
         private Slider _gravity;
         private Slider _friction;
@@ -154,11 +157,17 @@ namespace Hecton8.Editor
                 return;
             }
 
-            using (NativeArray<byte> csvBytes = new NativeArray<byte>((int)info.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory))
+            NativeArray<byte> csvBytes = default;
+            try
             {
+                csvBytes = AllocateTrackedArray<byte>((int)info.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory, CsvBytesLabel, NativeAllocationLifetime.Temp);
                 int bytesRead = ReadFileIntoNativeScratch(path, csvBytes);
                 int parsed = TryApplyCsvBytes(vault, csvBytes, bytesRead);
                 _status.text = parsed > 0 ? "CSV materials applied to SHINOBU_132." : "CSV parsed no rows.";
+            }
+            finally
+            {
+                DisposeTrackedArray(ref csvBytes);
             }
         }
 
@@ -201,6 +210,43 @@ namespace Hecton8.Editor
 
             CablePhysicsSolver132.EnsureMockBuffers(vault, HomeostasisBrain.GlobalQualityWeight, 0u);
             return CablePhysicsSolver132.TrySampleTuning(vault, out tuning);
+        }
+
+        private static NativeArray<T> AllocateTrackedArray<T>(int length, Allocator allocator, NativeArrayOptions options, string label, NativeAllocationLifetime lifetime) where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[Shinobu132CablePhysicsTunerWindow] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("[Shinobu132CablePhysicsTunerWindow] NativeMemorySentinel rejected NativeArray registration for " + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private static void DisposeTrackedArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
         }
 
         private static unsafe int ReadFileIntoNativeScratch(string path, NativeArray<byte> scratch)

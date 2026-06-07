@@ -1851,13 +1851,82 @@ namespace Hecton8.Audio
                 return;
             }
 
-            GlobalRegistry.RegisterAudioService(this);
-            GlobalRegistry.RegisterAudioVirtualizationService(this);
+            if (!TryRegisterAudioRuntimeServices())
+            {
+                ShutdownServiceState(releaseRuntimeResources: false);
+                return;
+            }
+
             TryRegisterUpdatable();
             TryRegisterFastTickable();
             TryRegisterSlowTickable();
             TryRegisterLateFrameTickable();
             _isInitialized = true;
+        }
+
+        private bool TryRegisterAudioRuntimeServices()
+        {
+            IAudioService registeredAudioService = GlobalRegistry.Audio;
+            IAudioVirtualizationService registeredVirtualization = GlobalRegistry.AudioVirtualization;
+
+            if (!ReferenceEquals(registeredAudioService, null) && !ReferenceEquals(registeredAudioService, this))
+            {
+                if (IsAudioServiceOwnerUsable(registeredAudioService))
+                {
+                    RestoreActiveRuntimeInstanceFromOwner(registeredAudioService);
+                    Destroy(this);
+                    return false;
+                }
+            }
+
+            if (!ReferenceEquals(registeredVirtualization, null) && !ReferenceEquals(registeredVirtualization, this))
+            {
+                if (IsAudioVirtualizationOwnerUsable(registeredVirtualization))
+                {
+                    RestoreActiveRuntimeInstanceFromOwner(registeredVirtualization);
+                    Destroy(this);
+                    return false;
+                }
+            }
+
+            if (!ReferenceEquals(registeredAudioService, null) && !ReferenceEquals(registeredAudioService, this))
+                GlobalRegistry.UnregisterAudioService(registeredAudioService);
+
+            if (!ReferenceEquals(registeredVirtualization, null) && !ReferenceEquals(registeredVirtualization, this))
+                GlobalRegistry.UnregisterAudioVirtualizationService(registeredVirtualization);
+
+            GlobalRegistry.RegisterAudioService(this);
+            GlobalRegistry.RegisterAudioVirtualizationService(this);
+            return ReferenceEquals(GlobalRegistry.Audio, this) &&
+                   ReferenceEquals(GlobalRegistry.AudioVirtualization, this);
+        }
+
+        private static bool IsAudioServiceOwnerUsable(IAudioService audioService)
+        {
+            if (ReferenceEquals(audioService, null))
+                return false;
+
+            if (audioService is Behaviour behaviour && (behaviour == null || !behaviour.isActiveAndEnabled))
+                return false;
+
+            return audioService.IsInitialized;
+        }
+
+        private static bool IsAudioVirtualizationOwnerUsable(IAudioVirtualizationService virtualization)
+        {
+            if (ReferenceEquals(virtualization, null))
+                return false;
+
+            if (virtualization is Behaviour behaviour && (behaviour == null || !behaviour.isActiveAndEnabled))
+                return false;
+
+            return virtualization.IsVirtualizationReady;
+        }
+
+        private static void RestoreActiveRuntimeInstanceFromOwner(object owner)
+        {
+            if (owner is SpatialAudioManager manager && manager != null)
+                ActiveRuntimeInstance = manager;
         }
 
         private void EnsureRuntimeResourcesInitialized()
@@ -2958,7 +3027,7 @@ namespace Hecton8.Audio
 
         public bool QueuePrologueAudioTransition(in AudioTransitionState state)
         {
-            IPlayerCriticalAudioSignalSink playerCriticalAudio = _cachedPlayerCriticalAudio;
+            IPlayerCriticalAudioSignalSink playerCriticalAudio = ResolvePlayerCriticalAudioSignalSink();
             return playerCriticalAudio != null && playerCriticalAudio.QueuePrologueAudioTransition(in state);
         }
 
@@ -3102,7 +3171,7 @@ namespace Hecton8.Audio
                 amplitude * ImpactEmitterAmplitudeScale,
                 amplitude);
 
-            IPlayerCriticalAudioSignalSink renderer = _cachedPlayerCriticalAudio;
+            IPlayerCriticalAudioSignalSink renderer = ResolvePlayerCriticalAudioSignalSink();
             bool proceduralQueued = renderer != null && renderer.QueueHighSpeedImpactSignal(in signal);
             return radarQueued || proceduralQueued;
         }
@@ -4998,7 +5067,7 @@ namespace Hecton8.Audio
             _cachedWeatherService = weatherService != null && weatherService.IsInitialized ? weatherService : null;
             _cachedAcousticZone = GlobalRegistry.AcousticZoneReadModel;
             _cachedSurfaceWeatherDirector = GlobalRegistry.SurfaceWeatherReadModel;
-            _cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalAudioSignals;
+            CachePlayerCriticalAudio(GlobalRegistry.PlayerCriticalAudioSignals);
             _cachedHabitatGraph = GlobalRegistry.HabitatGraph;
             _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
             _dataVault = GlobalRegistry.DataVault;
@@ -5040,7 +5109,7 @@ namespace Hecton8.Audio
                     _surfaceWeatherResolveFrame = nextResolveFrame;
                     break;
                 case GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime:
-                    _cachedPlayerCriticalAudio = currentService as IPlayerCriticalAudioSignalSink;
+                    CachePlayerCriticalAudio(currentService as IPlayerCriticalAudioSignalSink);
                     break;
                 case GlobalRegistryServiceSlot.Logistics:
                     _cachedHabitatGraph = currentService as IHabitatGraphService;
@@ -5063,6 +5132,34 @@ namespace Hecton8.Audio
                     RebindPhysicsStateEventService(currentService as IPhysicsStateEventService);
                     break;
             }
+        }
+
+        private void CachePlayerCriticalAudio(IPlayerCriticalAudioSignalSink playerCriticalAudio)
+        {
+            _cachedPlayerCriticalAudio = IsPlayerCriticalAudioSignalSinkUsable(playerCriticalAudio)
+                ? playerCriticalAudio
+                : null;
+        }
+
+        private IPlayerCriticalAudioSignalSink ResolvePlayerCriticalAudioSignalSink()
+        {
+            IPlayerCriticalAudioSignalSink playerCriticalAudio = _cachedPlayerCriticalAudio;
+            if (IsPlayerCriticalAudioSignalSinkUsable(playerCriticalAudio))
+                return playerCriticalAudio;
+
+            _cachedPlayerCriticalAudio = null;
+            return null;
+        }
+
+        private static bool IsPlayerCriticalAudioSignalSinkUsable(IPlayerCriticalAudioSignalSink playerCriticalAudio)
+        {
+            if (playerCriticalAudio == null)
+                return false;
+
+            if (playerCriticalAudio is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterPhysicsImpactListener()

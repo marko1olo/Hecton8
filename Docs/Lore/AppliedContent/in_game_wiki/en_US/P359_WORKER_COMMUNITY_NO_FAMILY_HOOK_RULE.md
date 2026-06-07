@@ -7,6 +7,9 @@ poi_tags: poi.story_boundary_card;poi.former_deep_reach_record
 biome_tags: biome.colony;biome.contract
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Worker Community Notice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

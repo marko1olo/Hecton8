@@ -1,0 +1,32 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS129_FIRST_SURVIVAL_ARTICLE_SURFACES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE",
+    "P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE",
+    "P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE",
+    "P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE",
+    "P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS129_FIRST_SURVIVAL_ARTICLE_SURFACES.packets.json",
+    "Docs/Lore/AppliedContent/production_packets/P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE.production.md"
+  ],
+  "canonical_importer_sources": [
+    "Docs/Lore/AppliedContent/packets/RS129_FIRST_SURVIVAL_ARTICLE_SURFACES.packets.json"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

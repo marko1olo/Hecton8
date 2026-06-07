@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS179_FIRST_SENSOR_SURFACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1170_SENSOR_WINDOW_BIOFILM_SMEAR",
+    "P1171_TEMP_PROBE_GREEN_DOT",
+    "P1172_PRESSURE_PORT_SALT_NEEDLE",
+    "P1173_RANGE_FIND_LENS_SCRATCH",
+    "P1174_CALIBRATION_STICKER_EDGE_LIFT"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1170_SENSOR_WINDOW_BIOFILM_SMEAR.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1171_TEMP_PROBE_GREEN_DOT.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1172_PRESSURE_PORT_SALT_NEEDLE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1173_RANGE_FIND_LENS_SCRATCH.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1174_CALIBRATION_STICKER_EDGE_LIFT.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

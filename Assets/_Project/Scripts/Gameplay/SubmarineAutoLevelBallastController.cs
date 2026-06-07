@@ -758,7 +758,7 @@ namespace Hecton8.Gameplay
 
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
             {
-                _audio = currentService as IAudioService;
+                CacheAudioService(currentService as IAudioService);
                 return;
             }
 
@@ -795,7 +795,7 @@ namespace Hecton8.Gameplay
         private void RegisterRuntime()
         {
             _powerGrid = GlobalRegistry.PowerGrid;
-            _audio = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _analyticalFlowReadModel = GlobalRegistry.AnalyticalFlow;
             RefreshDynamicFloodServicesFromRegistry();
             RefreshOwnerPhaseSnapshotsCold();
@@ -924,13 +924,34 @@ namespace Hecton8.Gameplay
             ClearBallastMassCoupling();
             SetFluidDynamicsCenterAuthority(false);
             _powerGrid = null;
-            _audio = null;
+            ClearCachedAudioService();
             _analyticalFlowReadModel = null;
             ResetDynamicFloodState(clearSignalFrame: true);
             ClearPendingDynamicFloodFeedback();
             RestoreDynamicFloodAngularDrag();
             RestoreDynamicFloodInertiaTensor();
             ResetExternalFloodDragTensor();
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audio = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private void ClearCachedAudioService()
+        {
+            _audio = null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void ClearPendingDynamicFloodFeedback()

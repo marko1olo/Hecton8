@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "Kargo Fusi Pelet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# Kargo Fusi Pelet
 
-ID LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for.
+Kargo fusi pelet adalah sejarah industri di balik HECTON-8. Mesin dan kargo berat mencapai Aegir karena infrastruktur mampu selama puluhan tahun mendorong, memberi makan, melindungi, dan mengerem massa; rute tetap kejam karena akuntansi hidup lebih lama daripada keadaan darurat.
 
 ## Scanner
 
-ID LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Pelat penggerak. Kargo fusi makan pelet menyeberang sebagai infrastruktur: dorong, perisai, luncur, rem, dan tagih kerugian.
 
 ## Terminal
 
-ID LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+DOKTRIN KARGO: muatan seed kelas Atlas dan kargo koloni memakai dorongan layar berkas, fusi makan pelet, pengereman magsail, dan interval luncur panjang. Kargo hidup tiba setelah mesin membuat rute bisa ditagih.
 
 ## Audio
 
-ID LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+Kapal berat bukan keajaiban. Itu hipotek dengan mesin.
 
 ## Field Note
 
-ID LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+Transit berat bukan heroik. Itu kontrak rute tua dengan bekas panas.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/id_ID. -->

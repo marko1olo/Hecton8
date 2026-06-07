@@ -7,6 +7,9 @@ poi_tags: poi.professional_guilt_note;poi.old_signature_match
 biome_tags: biome.colony;biome.atlas_basin
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Professional Guilt To Personal Stake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

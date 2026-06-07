@@ -7,6 +7,9 @@ poi_tags: poi.liability_memo_shards;poi.packet_notary_stamp
 biome_tags: biome.worker_archive;biome.relay_archive
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Liability Memo Fragment Chain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -20,6 +20,7 @@ namespace Hecton8.Editor.GeologyForge
         private const int CsvErrorFileSize = 1008;
         private const int CsvErrorNoProfiles = 1009;
         private const int MaximumCsvBytes = 4 * 1024 * 1024;
+        private const string NativeMemoryOwner = nameof(GeologyProfileCsv);
 
         public static void LoadProfiles(List<GeologyBakeProfile> profiles)
         {
@@ -44,7 +45,7 @@ namespace Hecton8.Editor.GeologyForge
                         throw new InvalidDataException("Geology profile CSV error " + CsvErrorFileSize + ": invalid file size " + length64 + " bytes.");
 
                     int length = (int)length64;
-                    bytes = new NativeArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    bytes = GeologyForgeNativeMemory.AllocateArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory, NativeMemoryOwner, nameof(bytes));
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(bytes);
                     Span<byte> target = new Span<byte>(ptr, length);
                     int read = 0;
@@ -78,8 +79,7 @@ namespace Hecton8.Editor.GeologyForge
             }
             finally
             {
-                if (bytes.IsCreated)
-                    bytes.Dispose();
+                GeologyForgeNativeMemory.DisposeArray(ref bytes);
             }
 
             if (profiles.Count == 0)

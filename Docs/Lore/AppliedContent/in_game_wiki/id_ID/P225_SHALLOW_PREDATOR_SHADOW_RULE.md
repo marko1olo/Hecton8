@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Shallow Predator Shadow Rule"
+title: "Aturan Bayangan Predator Dangkal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Shallow Predator Shadow Rule
+# Aturan Bayangan Predator Dangkal
 
-ID LOC HOLD: Shallow Predator Shadow Rule defines early creature horror as readable systemic pressure: silence, shadow and route change before attack.
+Aturan Bayangan Predator Dangkal menjaga predator pertama agar tidak menjadi sekadar reveal monster. HECTON-8 harus memperkenalkan bahaya lewat ekologi yang satu menit sebelumnya berguna. Glass grazer berhenti mengetuk sementara film mineral masih ada. Lantern drift tetap menyala, tetapi suara kecilnya robek. Shell clamp mengencang pada jalur kabel. Baru setelah itu bayangan lebar melintasi rute terang dan garis aman berhenti terasa aman. Predator tidak butuh nama di awal. Ia butuh konsekuensi: kanal tertutup, detour mahal oksigen, tugas alat yang tiba-tiba terdengar terlalu keras, atau near-miss yang membuktikan air telah berubah. Tempur bisa datang nanti. Kontak pertama harus berupa tekanan yang bisa dibaca, bukan wajah di kamera.
 
 ## Scanner
 
-ID LOC HOLD: A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.
+BAYANGAN PREDATOR DANGKAL // Ketukan grazer yang hilang, suara bloom yang robek, dan bayangan lebar bergerak adalah kontak pertama. Tekanan rute datang sebelum kontak tempur.
 
 ## Terminal
 
-ID LOC HOLD: CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.
+ATURAN KONTAK: bukti predator harus mengubah pilihan rute sebelum memaksa damage. Panggungnya sebagai absensi, hening, siluet, dan wake; serangan langsung hanya setelah pemain mengabaikan atau salah membaca sedikitnya dua petunjuk.
 
 ## Audio
 
-ID LOC HOLD: When the little mouths stop ticking, stop moving.
+Saat mulut-mulut kecil berhenti mengetuk, berhenti bergerak.
 
 ## Field Note
 
-ID LOC HOLD: Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.
+Jangan memberi predator wajah terlebih dahulu. Biarkan shelf terasa salah: makanan tetap ada, air makin terang, kehidupan kecil pergi, lalu bayangan melintasi tugas.
 
 <!-- In-Game Wiki; generated from P225_SHALLOW_PREDATOR_SHADOW_RULE/id_ID. -->

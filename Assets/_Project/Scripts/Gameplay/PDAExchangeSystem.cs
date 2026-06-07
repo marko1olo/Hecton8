@@ -173,6 +173,7 @@ namespace Hecton8.Gameplay
         private IScanLogService _scanLogRuntime;
         private ISaveService _saveService;
         private IAtlas6DirectiveCommandSink _atlas6DirectiveCommandSink;
+        private ExtractionGatingSystem _subscribedLiabilityExtractionGating;
         private uint _inventorySignalHash;
         private uint _scanLogSourceId;
 
@@ -646,6 +647,7 @@ namespace Hecton8.Gameplay
         {
             ClearExecutionCounts();
             ClearRecentTransactions();
+            _canTransmit = true;
             if (data == null)
                 return;
 
@@ -683,6 +685,8 @@ namespace Hecton8.Gameplay
                         tx.rewardSummary));
             }
 
+            TryResolveAtlas6LiabilityManager();
+            SyncTransmissionStateFromLiability(false);
             PublishExchangeStateChanged(PdaExchangeStateChangedSignal.ReasonLoaded);
         }
 
@@ -713,8 +717,16 @@ namespace Hecton8.Gameplay
 
         private void TryBindAtlas6LiabilityManager()
         {
+            TryResolveAtlas6LiabilityManager();
+            SyncTransmissionStateFromLiability(true);
+        }
+
+        private bool TryResolveAtlas6LiabilityManager()
+        {
             if (liabilityManager == null)
                 liabilityManager = Atlas6CorporateLiabilityManager.ActiveRuntimeInstance;
+
+            return liabilityManager != null;
         }
 
         private void TryRegisterLiabilityEvents()
@@ -723,28 +735,54 @@ namespace Hecton8.Gameplay
                 return;
 
             TryBindAtlas6LiabilityManager();
-            if (liabilityManager == null || liabilityManager.ExtractionGating == null)
+            ExtractionGatingSystem extractionGating = liabilityManager != null ? liabilityManager.ExtractionGating : null;
+            if (extractionGating == null)
                 return;
 
-            liabilityManager.ExtractionGating.OnTetherSeveredSatoRen += HandleSatoRenSilenceProtocol;
+            extractionGating.OnTetherSeveredSatoRen += HandleSatoRenSilenceProtocol;
+            _subscribedLiabilityExtractionGating = extractionGating;
             _liabilityEventsRegistered = true;
+            SyncTransmissionStateFromLiability(true);
         }
 
         private void TryUnregisterLiabilityEvents()
         {
-            if (!_liabilityEventsRegistered)
+            if (!_liabilityEventsRegistered && _subscribedLiabilityExtractionGating == null)
                 return;
 
-            if (liabilityManager != null && liabilityManager.ExtractionGating != null)
-                liabilityManager.ExtractionGating.OnTetherSeveredSatoRen -= HandleSatoRenSilenceProtocol;
+            ExtractionGatingSystem extractionGating = _subscribedLiabilityExtractionGating;
+            if (extractionGating != null)
+                extractionGating.OnTetherSeveredSatoRen -= HandleSatoRenSilenceProtocol;
 
+            _subscribedLiabilityExtractionGating = null;
             _liabilityEventsRegistered = false;
         }
 
         private void HandleSatoRenSilenceProtocol()
         {
+            ApplySatoRenSilenceProtocol(true);
+        }
+
+        private void SyncTransmissionStateFromLiability(bool publishStateChanged)
+        {
+            ExtractionGatingSystem extractionGating = liabilityManager != null ? liabilityManager.ExtractionGating : null;
+            if (extractionGating == null ||
+                extractionGating.CarrierState != ExtractionCarrierState.TetherSevered)
+            {
+                return;
+            }
+
+            ApplySatoRenSilenceProtocol(publishStateChanged);
+        }
+
+        private void ApplySatoRenSilenceProtocol(bool publishStateChanged)
+        {
+            if (!_canTransmit)
+                return;
+
             _canTransmit = false;
-            PublishExchangeStateChanged(PdaExchangeStateChangedSignal.ReasonInventoryChanged, PdaExchangeStateChangedSignal.FlagInventoryDirty);
+            if (publishStateChanged)
+                PublishExchangeStateChanged(PdaExchangeStateChangedSignal.ReasonInventoryChanged, PdaExchangeStateChangedSignal.FlagInventoryDirty);
         }
 
         private static bool ContainsAtlas6LiabilityPayload(string dataPayload)
@@ -793,7 +831,8 @@ namespace Hecton8.Gameplay
                     RefreshSignalFilters();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService != null)
+                    TryUnregister();
+                    if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;
                 case GlobalRegistryServiceSlot.Save:
@@ -836,6 +875,18 @@ namespace Hecton8.Gameplay
 
         public void Tick(float deltaTime)
         {
+            if (_liabilityEventsRegistered)
+            {
+                ExtractionGatingSystem currentExtractionGating = liabilityManager != null
+                    ? liabilityManager.ExtractionGating
+                    : null;
+                if (!ReferenceEquals(_subscribedLiabilityExtractionGating, currentExtractionGating))
+                    TryUnregisterLiabilityEvents();
+            }
+
+            if (!_liabilityEventsRegistered)
+                TryRegisterLiabilityEvents();
+
             RefreshSignalFilters();
             byte dirtyFlags = 0;
             if (ConsumeInventoryChangedSignals())
@@ -979,7 +1030,12 @@ namespace Hecton8.Gameplay
         {
             int slot = FindOrCreateExecutionSlot(offerHash);
             if (slot >= 0)
-                _executionCounts[slot] = math.max(0, _executionCounts[slot]) + 1;
+            {
+                int safeCount = math.max(0, _executionCounts[slot]);
+                _executionCounts[slot] = safeCount < int.MaxValue
+                    ? safeCount + 1
+                    : int.MaxValue;
+            }
         }
 
         private void SetExecutionCount(int offerHash, int count)

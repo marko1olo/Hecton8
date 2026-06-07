@@ -7,6 +7,9 @@ poi_tags: poi.return_action_queue;poi.payload_first_stamp
 biome_tags: biome.claim_admin;biome.black_keel
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Return Action Queue Signatures"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.claim_loss_conversion;poi.keelmark_loss_desk_stamp
 biome_tags: biome.claim_route;biome.safe_module
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Claim Continuity Loss Conversion Proof"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

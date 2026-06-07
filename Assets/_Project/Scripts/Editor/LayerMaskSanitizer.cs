@@ -179,9 +179,22 @@ namespace Hecton8.Editor.Validation
 
         private static int SelectReplacementMask(UnityEngine.Object asset, string assetPath)
         {
+            if (IsResourceNodeTemplateAsset(asset, assetPath))
+                return HectonLayerMasks.TerrainSdfProbeLayerMask;
+
             return IsTargetTemplateAsset(asset, assetPath)
                 ? HectonLayerMasks.DataTemplateAuthoringMask
                 : HectonLayerMasks.AllDefinedProjectLayersMask;
+        }
+
+        private static bool IsResourceNodeTemplateAsset(UnityEngine.Object asset, string assetPath)
+        {
+            string typeName = asset != null ? asset.GetType().Name : string.Empty;
+            if (string.Equals(typeName, "ResourceNodeTemplate", StringComparison.Ordinal))
+                return true;
+
+            string fileName = Path.GetFileNameWithoutExtension(assetPath);
+            return fileName.StartsWith("ResourceNodeTemplate_", StringComparison.Ordinal);
         }
 
         private static bool IsTargetTemplateAsset(UnityEngine.Object asset, string assetPath)

@@ -9,32 +9,34 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Silt Ambusher Telegraph"
+title: "Tanda Penyergap Lumpur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Silt Ambusher Telegraph
+# Tanda Penyergap Lumpur
 
-ID LOC HOLD: Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact.
+Tanda Penyergap Lumpur adalah artikel makhluk sekaligus aturan keadilan untuk HECTON-8. Zona terdalam boleh bermusuhan, gelap, dan sulit dibaca, tetapi tidak boleh menghukum pemain dengan lemparan dadu tak terlihat. Penyergap lumpur menakutkan karena ia hampir menjadi medan: perangkap hidup yang terkubur di bawah sedimen, menunggu getaran, panas, dan bobot yang ceroboh. Ia cocok dengan jurang karena jurang memang sudah tentang kepercayaan pada sensor.
+
+Penempatan yang baik memberi pemain bukti sebelum bahaya. Lempengnya terlalu halus. Perayap kecil hilang. Bibirnya membentuk sabit yang tidak dibuat pengendapan alami. Pulsa kembali terlambat, rendah, dan lunak. Lampu menangkap satu napas lumpur di tempat arus seharusnya tidak bergerak. Setelah pemain mengenal tanda-tanda ini, setiap bidang datar menjadi pertanyaan, bukan hukuman acak. Itulah kontrak HECTON-8: laut boleh kejam, tetapi harus bisa dibaca oleh orang yang memperhatikan.
 
 ## Scanner
 
-ID LOC HOLD: A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.
+RANJANG PENYERGAP LUMPUR // Lumpur bersih, ketiadaan pemakan kecil, dan pantulan pulsa rendah menandai perangkap hidup sebelum lempeng terbuka.
 
 ## Terminal
 
-ID LOC HOLD: CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.
+ATURAN KONTAK: ranjang penyergap membutuhkan setidaknya dua tanda sebelum kontak: lempeng bersih, mikrofauna hilang, tepi sabit, pantulan pulsa rendah, atau napas lumpur yang terlambat. Jika anggaran tanda gagal, turunkan menjadi pertemuan jejak saja.
 
 ## Audio
 
-ID LOC HOLD: Flat ground is a lie down here.
+Tanah datar berbohong di sini. Cari apa yang tidak merayap di atasnya.
 
 ## Field Note
 
-ID LOC HOLD: Deep danger must telegraph. The player should learn the wrongness before paying for it.
+Jurang boleh tidak adil pada karakter; game tidak boleh tidak adil pada pemain. Setiap penyergapan harus meninggalkan kejanggalan yang bisa dibaca.
 
 <!-- External Site; generated from P230_SILT_AMBUSHER_TELEGRAPH/id_ID. -->

@@ -7,6 +7,9 @@ poi_tags: poi.material_payout_record;poi.keelmark_receipt
 biome_tags: biome.ending;biome.contract
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Запись материальной выплаты"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

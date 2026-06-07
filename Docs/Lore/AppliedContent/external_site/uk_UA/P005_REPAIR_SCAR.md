@@ -7,6 +7,9 @@ poi_tags: poi.repair_scar;poi.drone_nest
 biome_tags: biome.cable_forest;biome.deep_abyss
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Ремонтний шрам"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

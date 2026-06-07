@@ -7,6 +7,9 @@ poi_tags: poi.old_evacuation_procedure;poi.route_safe_stamp
 biome_tags: biome.colony;biome.brine_canyon
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Сигнал узнавания старой процедуры"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.outer_claim_beacon;poi.mute_moon_packet
 biome_tags: biome.orbital_window;biome.dead_claim_cache
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Outer Moon Cold Claims"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

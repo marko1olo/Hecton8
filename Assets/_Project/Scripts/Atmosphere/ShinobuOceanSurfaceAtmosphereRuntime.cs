@@ -218,10 +218,7 @@ namespace Hecton8.Atmosphere
                 _registeredOcean = true;
             }
 
-            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
-            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            TryRegisterDispatcherTicks();
             PublishShaderGlobals();
         }
 
@@ -267,6 +264,55 @@ namespace Hecton8.Atmosphere
 
             TryUnregisterHotSwapListener();
             ClearRuntimePlayerContext();
+        }
+
+        private void TryRegisterDispatcherTicks()
+        {
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (isActiveAndEnabled)
+            {
+                if (!_registeredUpdate)
+                    _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+                if (!_registeredSlow)
+                    _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+                if (!_registeredCold)
+                    _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
+                if (!_registeredLate)
+                    _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+                return;
+            }
+
+            if (_readbackDisposePending && !_registeredLate)
+                _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterDispatcherTicks()
+        {
+            if (_registeredUpdate)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredUpdate = false;
+            }
+
+            if (_registeredSlow)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlow = false;
+            }
+
+            if (_registeredCold)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredCold = false;
+            }
+
+            if (_registeredLate)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLate = false;
+            }
         }
 
 #if UNITY_EDITOR
@@ -1489,8 +1535,10 @@ namespace Hecton8.Atmosphere
                 return;
 
             ref AsyncGPUReadbackRequest request = ref ResolveReadbackRequest(slot);
+            if (!EnsureWaveReadbackData(slot))
+                return;
+
             ref NativeArray<float4> readbackData = ref ResolveReadbackData(slot);
-            EnsureWaveReadbackData(ref readbackData, ResolveWaveReadbackDataLabel(slot));
             request = AsyncGPUReadback.RequestIntoNativeArray(ref readbackData, resultBuffer, readbackBytes, 0, null);
             if (request.hasError)
                 return;
@@ -1775,31 +1823,46 @@ namespace Hecton8.Atmosphere
             return ref _waveReadback.Data2;
         }
 
-        private static void EnsureWaveReadbackData(ref NativeArray<float4> data, string label)
-        {
-            if (data.IsCreated && data.Length >= OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity)
-                return;
-
-            if (data.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(data);
-                data.Dispose();
-            }
-
-            data = new NativeArray<float4>(
-                OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4>[wave readback capacity] - async wave-height readback target - owner: ShinobuOceanSurfaceAtmosphereRuntime
-            NativeMemorySentinel.RegisterNativeArray(data, nameof(ShinobuOceanSurfaceAtmosphereRuntime), label, NativeAllocationLifetime.Scene);
-        }
-
-        private static string ResolveWaveReadbackDataLabel(int slot)
+        private bool EnsureWaveReadbackData(int slot)
         {
             if (slot == 0)
-                return "_readbackData0";
+            {
+                if (_waveReadback.Data0.IsCreated && _waveReadback.Data0.Length >= OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity)
+                    return true;
+
+                H8Memory.Release(ref _waveReadback.Data0, SystemID.HabitatAtmosphere);
+                _waveReadback.Data0 = H8Memory.Allocate<float4>(
+                    OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity,
+                    SystemID.HabitatAtmosphere,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+                return _waveReadback.Data0.IsCreated && _waveReadback.Data0.Length >= OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity;
+            }
+
             if (slot == 1)
-                return "_readbackData1";
-            return "_readbackData2";
+            {
+                if (_waveReadback.Data1.IsCreated && _waveReadback.Data1.Length >= OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity)
+                    return true;
+
+                H8Memory.Release(ref _waveReadback.Data1, SystemID.HabitatAtmosphere);
+                _waveReadback.Data1 = H8Memory.Allocate<float4>(
+                    OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity,
+                    SystemID.HabitatAtmosphere,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+                return _waveReadback.Data1.IsCreated && _waveReadback.Data1.Length >= OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity;
+            }
+
+            if (_waveReadback.Data2.IsCreated && _waveReadback.Data2.Length >= OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity)
+                return true;
+
+            H8Memory.Release(ref _waveReadback.Data2, SystemID.HabitatAtmosphere);
+            _waveReadback.Data2 = H8Memory.Allocate<float4>(
+                OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity,
+                SystemID.HabitatAtmosphere,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            return _waveReadback.Data2.IsCreated && _waveReadback.Data2.Length >= OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity;
         }
 
         private void DisposeWaveReadbackData()
@@ -1811,12 +1874,7 @@ namespace Hecton8.Atmosphere
 
         private static void DisposeWaveReadbackData(ref NativeArray<float4> data)
         {
-            if (data.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(data);
-                data.Dispose();
-                data = default;
-            }
+            H8Memory.Release(ref data, SystemID.HabitatAtmosphere);
         }
 
         private int ResolveReadbackSampleBudget(float globalQualityWeight)
@@ -2581,21 +2639,9 @@ namespace Hecton8.Atmosphere
                     RefreshCachedSurfaceSnapshot();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredUpdate = false;
-                    _registeredSlow = false;
-                    _registeredCold = false;
-                    _registeredLate = false;
-                    if (currentService != null && isActiveAndEnabled)
-                    {
-                        if (!_registeredUpdate)
-                            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-                        if (!_registeredSlow)
-                            _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
-                        if (!_registeredCold)
-                            _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
-                        if (!_registeredLate)
-                            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-                    }
+                    TryUnregisterDispatcherTicks();
+                    if (currentService != null)
+                        TryRegisterDispatcherTicks();
                     break;
             }
         }

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "ペレット核融合貨物"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# ペレット核融合貨物
 
-JP LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.
+重い恒星間移動はFTLなしでも可能だが苛酷だ。ビームセイル加速、ペレット供給式核融合、遮蔽質量、長い巡航、制動設備がseed payloadと後の植民地貨物をAegirへ運んだ。同じ物流が救助を遅くする。すべてのキログラム、寝台、制動枠、生存者席は予定表に属する。
 
 ## Scanner
 
-JP LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+ドライブプレート。ペレット供給式核融合貨物はインフラとして渡った。加速、遮蔽、巡航、制動、損失請求。
 
 ## Terminal
 
-JP LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+貨物ドクトリン: Atlas級seed payloadと植民地貨物はビームセイル加速、ペレット供給式核融合、磁気帆制動、長い巡航間隔を使った。生きた貨物は、機械が航路を請求可能にしてから到着した。
 
 ## Audio
 
-JP LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+重い船は奇跡ではない。エンジン付きの抵当だ。
 
 ## Field Note
 
-JP LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+重輸送は英雄譚ではない。熱傷だらけの古い航路契約だ。
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/ja_JP. -->

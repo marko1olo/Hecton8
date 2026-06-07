@@ -96,8 +96,8 @@ namespace Hecton8.Construction
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
+            TryUnregisterLateFrameTick();
             _dispatcherAvailable = currentService != null;
-            _registeredLateFrame = false;
             _visualDirty = true;
             if (_dispatcherAvailable && isActiveAndEnabled)
                 TryRegisterLateFrameTick();

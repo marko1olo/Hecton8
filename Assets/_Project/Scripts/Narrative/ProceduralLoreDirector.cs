@@ -113,6 +113,7 @@ namespace Hecton8.Narrative
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
             DespawnAllInstances();
+            ClearCachedRuntimeServices();
         }
 
         private void OnDestroy()
@@ -122,6 +123,7 @@ namespace Hecton8.Narrative
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
             DespawnAllInstances();
+            ClearCachedRuntimeServices();
         }
 
         internal static bool IsInstalledOn(GameObject owner)
@@ -299,6 +301,7 @@ namespace Hecton8.Narrative
 
         private void RefreshActivePlacements()
         {
+            AudioLogSystem audioLogSystem = ResolveAudioLogSystem();
             for (int i = _activePlacements.Count - 1; i >= 0; i--)
             {
                 ActiveLorePlacement placement = _activePlacements[i];
@@ -308,7 +311,7 @@ namespace Hecton8.Narrative
                     _activePlacements[i] = placement;
                 }
 
-                bool discovered = _audioLogSystem != null && _audioLogSystem.IsDiscovered(placement.logHash);
+                bool discovered = audioLogSystem != null && audioLogSystem.IsDiscovered(placement.logHash);
 
                 if (discovered)
                 {
@@ -355,7 +358,8 @@ namespace Hecton8.Narrative
         private bool TrySpawnInstance(ref ActiveLorePlacement placement)
         {
             IObjectPoolService pool = _objectPool;
-            if (pickupTemplate == null || _audioLogSystem == null || pool == null)
+            AudioLogSystem audioLogSystem = ResolveAudioLogSystem();
+            if (pickupTemplate == null || audioLogSystem == null || pool == null)
                 return false;
 
             AudioLogData logData = FindCatalogEntry(placement.logId);
@@ -422,13 +426,13 @@ namespace Hecton8.Narrative
 
         private bool ResolveOwners()
         {
-            return _explorationTracker != null && _audioLogSystem != null;
+            return _explorationTracker != null && ResolveAudioLogSystem() != null;
         }
 
         private void RefreshCachedOwners()
         {
             _explorationTracker = GlobalRegistry.PlayerExplorationReadModel;
-            _audioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogs;
+            CacheAudioLogSystem(Hecton8.Core.GlobalRegistry.AudioLogs);
             IObjectPoolService currentPool = GlobalRegistry.ObjectPoolService;
             if (!ReferenceEquals(_objectPool, currentPool))
             {
@@ -437,6 +441,35 @@ namespace Hecton8.Narrative
             }
 
             _saveService = GlobalRegistry.Save;
+        }
+
+        private void ClearCachedRuntimeServices()
+        {
+            _explorationTracker = null;
+            _audioLogSystem = null;
+            _objectPool = null;
+            _saveService = null;
+            _poolWarmed = false;
+        }
+
+        private void CacheAudioLogSystem(AudioLogSystem audioLogSystem)
+        {
+            _audioLogSystem = IsAudioLogSystemUsable(audioLogSystem) ? audioLogSystem : null;
+        }
+
+        private AudioLogSystem ResolveAudioLogSystem()
+        {
+            AudioLogSystem audioLogSystem = _audioLogSystem;
+            if (IsAudioLogSystemUsable(audioLogSystem))
+                return audioLogSystem;
+
+            _audioLogSystem = null;
+            return null;
+        }
+
+        private static bool IsAudioLogSystemUsable(AudioLogSystem audioLogSystem)
+        {
+            return audioLogSystem != null && audioLogSystem.isActiveAndEnabled;
         }
 
         private bool ResolveCatalog()
@@ -512,6 +545,7 @@ namespace Hecton8.Narrative
             if (_catalogCount <= 0)
                 return false;
 
+            AudioLogSystem audioLogSystem = ResolveAudioLogSystem();
             int startIndex = _nextCatalogIndex % _catalogCount;
             for (int i = 0; i < _catalogCount; i++)
             {
@@ -524,7 +558,7 @@ namespace Hecton8.Narrative
                 if (candidateHash == 0u)
                     continue;
 
-                if (_audioLogSystem != null && _audioLogSystem.IsDiscovered(candidateHash))
+                if (audioLogSystem != null && audioLogSystem.IsDiscovered(candidateHash))
                     continue;
 
                 if (IsAlreadyActive(candidateHash))
@@ -629,7 +663,7 @@ namespace Hecton8.Narrative
                     _explorationTracker = currentService as IPlayerExplorationChunkReadModel;
                     break;
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
-                    _audioLogSystem = currentService as AudioLogSystem;
+                    CacheAudioLogSystem(currentService as AudioLogSystem);
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _objectPool = currentService as IObjectPoolService;

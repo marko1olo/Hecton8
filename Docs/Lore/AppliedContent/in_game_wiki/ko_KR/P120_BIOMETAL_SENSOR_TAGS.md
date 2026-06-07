@@ -9,32 +9,32 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "바이오메탈 센서 태그"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# 바이오메탈 센서 태그
 
-KO LOC HOLD: Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.
+바이오메탈 센서 태그는 동물상, 케이블 성장, 수리 생태에서 발견되는 작은 원격측정 비늘이다. 핑거와 스캐너 경로를 더 정밀하게 만들 수 있지만, 유용한 태그는 모두 증거이기도 하다. Atlas는 손상된 정비망을 확장하기 위해 살아 있는 운반체를 사용했다.
 
 ## Scanner
 
-KO LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+바이오메탈 센서 태그 // 물고기, 케이블 켈프, 수리 조직에 자란 얇은 금속 비늘. 핑거 조율을 향상한다. 뜨거운 채취는 Atlas가 사라진 운반체를 듣게 할 수 있다.
 
 ## Terminal
 
-KO LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+자원 등급: Atlas 변형 / 증거 민감. 용도: 핑거 초점, 스캐너 격자, 경로 신뢰도, 증거 패킷. 냉각 채취 권장. 위험: 주의 상승, 가짜 운반체 반환, 손상된 동물상.
 
 ## Audio
 
-KO LOC HOLD: The fish is not a drone. The tag does not know the difference.
+물고기는 드론이 아니다. 태그는 그래도 계속 보고한다.
 
 ## Field Note
 
-KO LOC HOLD: Make resource extraction feel like evidence handling.
+칼 밑에서 깜박이면 자르기 전에 기록해라.
 
 <!-- In-Game Wiki; generated from P120_BIOMETAL_SENSOR_TAGS/ko_KR. -->

@@ -724,6 +724,18 @@ public struct VoxelDensityJob : IJobParallelFor
     private const float AlienBiomeFullLodNoiseFrequency = 0.19f;
     private const float AlienBiomeMidLodNoiseFrequency = 0.11f;
     private const uint AlienBiomeNoiseSeed = 0xA11E5DFu;
+    private const float MinSafeEntranceRadius = 0.1f;
+    private const float MaxSafeEntranceRadius = 32f;
+    private const float MinSafeEntranceFunnelLength = 0.25f;
+    private const float MaxSafeEntranceFunnelLength = 128f;
+    private const float MinSafeEntranceInnerRadius = 0.05f;
+    private const float MinSafeGraphRadius = 0.1f;
+    private const float MaxSafeGraphRadius = 256f;
+    private const float MaxSafeGraphBlendRadius = 96f;
+    private const float MaxSafeTunnelScale = 8f;
+    private const float MaxSafeTunnelWarpAmount = 64f;
+    private const float MaxSafeGraphNoiseScale = 8f;
+    private const float MaxSafeGraphNoiseAmplitude = 8f;
 
     // ── Grid dimensions ──
     public int ptsX, ptsY, ptsZ;
@@ -1015,17 +1027,20 @@ public struct VoxelDensityJob : IJobParallelFor
         for (int e = 0; e < caveEntrances.Length; e++)
         {
             CaveEntrance entrance = caveEntrances[e];
-            float influenceRadius = math.max(entrance.radius * 2.6f, entrance.innerRadius + entrance.funnelLength * 0.35f);
-            float2 horizontalDelta = wp.xz - entrance.surfacePosition.xz;
+            if (!TryResolveSafeEntrance(in entrance, out float3 surfacePosition, out float3 direction, out float radius, out float innerRadius, out float funnelLength))
+                continue;
+
+            float influenceRadius = math.max(radius * 2.6f, innerRadius + funnelLength * 0.35f);
+            float2 horizontalDelta = wp.xz - surfacePosition.xz;
             float horizontalDistSq = math.lengthsq(horizontalDelta);
             float influenceRadiusSq = influenceRadius * influenceRadius;
             if (horizontalDistSq >= influenceRadiusSq)
                 continue;
 
             float horizontalDist = FastMagnitude(horizontalDistSq);
-            float exemption = 1f - math.smoothstep(entrance.radius * 0.4f, influenceRadius, horizontalDist);
+            float exemption = 1f - math.smoothstep(radius * 0.4f, influenceRadius, horizontalDist);
             topSealStrength = math.min(topSealStrength, 1f - exemption);
-            if (entrance.inwardDirection.y > 0.3f)
+            if (direction.y > 0.3f)
                 bottomSealStrength = math.min(bottomSealStrength, 1f - exemption);
         }
 
@@ -1048,26 +1063,28 @@ public struct VoxelDensityJob : IJobParallelFor
         for (int i = 0; i < caveEntrances.Length; i++)
         {
             CaveEntrance entrance = caveEntrances[i];
-            float3 direction = ResolveEntranceDirection(entrance);
-            float3 innerPoint = entrance.surfacePosition + direction * entrance.funnelLength;
-            float embedDepth = math.max(5f, math.max(voxelStep * 1.5f, entrance.radius * 0.35f));
-            float transitionZone = math.clamp(math.max(2.5f, entrance.radius * 0.18f), 2f, 3.5f);
-            float3 skirtStart = entrance.surfacePosition + direction * math.min(entrance.funnelLength * 0.18f, entrance.radius);
-            float3 skirtEnd = innerPoint + direction * (entrance.innerRadius + embedDepth * 0.6f);
+            if (!TryResolveSafeEntrance(in entrance, out float3 surfacePosition, out float3 direction, out float radius, out float innerRadius, out float funnelLength))
+                continue;
+
+            float3 innerPoint = surfacePosition + direction * funnelLength;
+            float embedDepth = math.max(5f, math.max(voxelStep * 1.5f, radius * 0.35f));
+            float transitionZone = math.clamp(math.max(2.5f, radius * 0.18f), 2f, 3.5f);
+            float3 skirtStart = surfacePosition + direction * math.min(funnelLength * 0.18f, radius);
+            float3 skirtEnd = innerPoint + direction * (innerRadius + embedDepth * 0.6f);
 
             float outer = SDCapsuleConic(
                 wp,
                 skirtStart,
                 skirtEnd,
-                entrance.radius * 1.35f,
-                math.max(entrance.innerRadius * 1.55f, entrance.innerRadius + 1.35f));
+                radius * 1.35f,
+                math.max(innerRadius * 1.55f, innerRadius + 1.35f));
 
             float inner = SDCapsuleConic(
                 wp,
-                entrance.surfacePosition - direction * embedDepth,
-                innerPoint + direction * (entrance.innerRadius * 0.75f),
-                entrance.radius * 0.92f,
-                math.max(entrance.innerRadius * 0.92f, 0.1f));
+                surfacePosition - direction * embedDepth,
+                innerPoint + direction * (innerRadius * 0.75f),
+                radius * 0.92f,
+                math.max(innerRadius * 0.92f, 0.1f));
 
             float shell = math.max(outer, -inner);
             float terrainClip = wp.y - (SampleTerrainHeight(wp.xz) - embedDepth);
@@ -1080,16 +1097,160 @@ public struct VoxelDensityJob : IJobParallelFor
         return skirtDist;
     }
 
-    float3 ResolveEntranceDirection(CaveEntrance entrance)
+    float3 ResolveSafeEntranceDirection(CaveEntrance entrance, float3 baseDirection)
     {
-        float3 direction = NormalizeFastOrDefault(entrance.inwardDirection, new float3(0f, -1f, 0f));
-        float normalBlend = math.saturate(entrance.terrainNormalBlend);
+        float3 direction = baseDirection;
+        float normalBlend = math.isfinite(entrance.terrainNormalBlend) ? math.saturate(entrance.terrainNormalBlend) : 0f;
         if (normalBlend <= 0f)
             return direction;
 
-        float3 terrainNormal = NormalizeFastOrDefault(entrance.terrainNormal, new float3(0f, 1f, 0f));
+        float3 terrainNormal = TryNormalizeFinite(entrance.terrainNormal, out float3 safeTerrainNormal)
+            ? safeTerrainNormal
+            : new float3(0f, 1f, 0f);
         float3 terrainInward = NormalizeFastOrDefault(-terrainNormal, direction);
         return NormalizeFastOrDefault(math.lerp(direction, terrainInward, normalBlend * 0.55f), direction);
+    }
+
+    bool TryResolveSafeEntrance(
+        in CaveEntrance entrance,
+        out float3 surfacePosition,
+        out float3 direction,
+        out float radius,
+        out float innerRadius,
+        out float funnelLength)
+    {
+        surfacePosition = entrance.surfacePosition;
+        direction = default;
+        radius = default;
+        innerRadius = default;
+        funnelLength = default;
+
+        if (!IsFinite(surfacePosition) ||
+            !math.isfinite(entrance.radius) ||
+            !math.isfinite(entrance.funnelLength) ||
+            entrance.radius <= 0f ||
+            entrance.funnelLength <= 0f ||
+            !TryNormalizeFinite(entrance.inwardDirection, out float3 baseDirection))
+        {
+            return false;
+        }
+
+        radius = math.clamp(entrance.radius, MinSafeEntranceRadius, MaxSafeEntranceRadius);
+        funnelLength = math.clamp(entrance.funnelLength, MinSafeEntranceFunnelLength, MaxSafeEntranceFunnelLength);
+        float innerRadiusFallback = math.max(radius * 0.6f, MinSafeEntranceInnerRadius);
+        innerRadius = math.isfinite(entrance.innerRadius) && entrance.innerRadius > 0f
+            ? math.clamp(entrance.innerRadius, MinSafeEntranceInnerRadius, math.max(radius, innerRadiusFallback))
+            : innerRadiusFallback;
+        direction = ResolveSafeEntranceDirection(entrance, baseDirection);
+        return IsFinite(direction);
+    }
+
+    bool TryResolveSafeEntranceMouthMask(
+        in CaveEntrance entrance,
+        out float3 surfacePosition,
+        out float radius)
+    {
+        surfacePosition = entrance.surfacePosition;
+        radius = default;
+        if (!IsFinite(surfacePosition) ||
+            !IsFinite(entrance.inwardDirection) ||
+            !math.isfinite(entrance.radius) ||
+            entrance.radius <= 0f)
+        {
+            return false;
+        }
+
+        float directionSq = math.lengthsq(entrance.inwardDirection);
+        if (!math.isfinite(directionSq) || directionSq <= 0.0001f)
+            return false;
+
+        radius = math.clamp(entrance.radius, MinSafeEntranceRadius, MaxSafeEntranceRadius);
+        return math.isfinite(radius);
+    }
+
+    bool TryResolveSafeNode(in CaveNode source, out CaveNode node)
+    {
+        node = default;
+        if (!IsFinite(source.position) || !IsFinite(source.radii) || math.cmin(source.radii) <= 0f)
+            return false;
+
+        node = source;
+        node.radii = ClampFinite(source.radii, new float3(MinSafeGraphRadius), MinSafeGraphRadius, MaxSafeGraphRadius);
+        node.blendRadius = ClampFinite(source.blendRadius, MinSafeGraphRadius, MinSafeGraphRadius, MaxSafeGraphBlendRadius);
+        node.noiseScale = ClampFinite(source.noiseScale, 1f, 0.1f, MaxSafeGraphNoiseScale);
+        node.noiseAmplitude = ClampFinite(source.noiseAmplitude, 0f, 0f, MaxSafeGraphNoiseAmplitude);
+        return true;
+    }
+
+    bool TryResolveSafeTunnel(in CaveTunnel source, out CaveTunnel tunnel)
+    {
+        tunnel = default;
+        if (!IsFinite(source.pointA) ||
+            !IsFinite(source.pointB) ||
+            !IsFinite(source.radiusA) ||
+            !IsFinite(source.radiusB) ||
+            source.radiusA <= 0f ||
+            source.radiusB <= 0f)
+        {
+            return false;
+        }
+
+        tunnel = source;
+        tunnel.radiusA = ClampFinite(source.radiusA, MinSafeGraphRadius, MinSafeGraphRadius, MaxSafeGraphRadius);
+        tunnel.radiusB = ClampFinite(source.radiusB, MinSafeGraphRadius, MinSafeGraphRadius, MaxSafeGraphRadius);
+        tunnel.blendRadius = ClampFinite(source.blendRadius, MinSafeGraphRadius, MinSafeGraphRadius, MaxSafeGraphBlendRadius);
+        tunnel.heightScale = ClampFinite(source.heightScale, 1f, 0.1f, MaxSafeTunnelScale);
+        tunnel.widthScale = ClampFinite(source.widthScale, 1f, 0.1f, MaxSafeTunnelScale);
+        tunnel.warpAmount = ClampFinite(source.warpAmount, 0f, 0f, MaxSafeTunnelWarpAmount);
+        return true;
+    }
+
+    bool TryResolveSafeStructure(in CaveStructure source, out CaveStructure structure)
+    {
+        structure = default;
+        if (!IsFinite(source.position) || !IsFinite(source.size) || math.cmax(source.size) <= 0f)
+            return false;
+
+        structure = source;
+        structure.pointB = IsFinite(source.pointB) ? source.pointB : source.position;
+        structure.size = ClampFinite(source.size, new float3(MinSafeGraphRadius), MinSafeGraphRadius, MaxSafeGraphRadius);
+        structure.blendRadius = ClampFinite(source.blendRadius, MinSafeGraphRadius, MinSafeGraphRadius, MaxSafeGraphBlendRadius);
+        structure.noiseAmount = ClampFinite(source.noiseAmount, 0f, 0f, MaxSafeGraphNoiseAmplitude);
+        return true;
+    }
+
+    static float ClampFinite(float value, float fallback, float minimum, float maximum)
+    {
+        return math.isfinite(value) ? math.clamp(value, minimum, maximum) : fallback;
+    }
+
+    static float3 ClampFinite(float3 value, float3 fallback, float minimum, float maximum)
+    {
+        return IsFinite(value) ? math.clamp(value, new float3(minimum), new float3(maximum)) : fallback;
+    }
+
+    static bool TryNormalizeFinite(float3 value, out float3 normalized)
+    {
+        normalized = default;
+        if (!IsFinite(value))
+            return false;
+
+        float lengthSq = math.lengthsq(value);
+        if (!math.isfinite(lengthSq) || lengthSq <= 0.0001f)
+            return false;
+
+        normalized = value * math.rsqrt(lengthSq);
+        return IsFinite(normalized);
+    }
+
+    static bool IsFinite(float value)
+    {
+        return math.isfinite(value);
+    }
+
+    static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
     }
 
 
@@ -1106,11 +1267,17 @@ public struct VoxelDensityJob : IJobParallelFor
         smoothCaveDist = 99999f;
         finalCaveDist = 99999f;
 
-        if (TryGetPartitionRange(nodeBucketOffsets, wp, out int nodeStart, out int nodeEnd))
+        if (TryGetPartitionRange(nodeBucketOffsets, nodeBucketIndices, wp, out int nodeStart, out int nodeEnd))
         {
             for (int i = nodeStart; i < nodeEnd; i++)
             {
-                CaveNode node = caveNodes[nodeBucketIndices[i]];
+                int nodeIndex = nodeBucketIndices[i];
+                if ((uint)nodeIndex >= (uint)caveNodes.Length)
+                    continue;
+
+                if (!TryResolveSafeNode(in caveNodes[nodeIndex], out CaveNode node))
+                    continue;
+
                 EvaluateRoom(warpedPos, absoluteWp, node, out float smoothNodeDist, out float finalNodeDist);
                 smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, smoothNodeDist, node.blendRadius);
                 finalCaveDist = SmoothMinQuadratic(finalCaveDist, finalNodeDist, node.blendRadius);
@@ -1120,17 +1287,26 @@ public struct VoxelDensityJob : IJobParallelFor
         {
             for (int i = 0; i < caveNodes.Length; i++)
             {
-                EvaluateRoom(warpedPos, absoluteWp, caveNodes[i], out float smoothNodeDist, out float finalNodeDist);
-                smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, smoothNodeDist, caveNodes[i].blendRadius);
-                finalCaveDist = SmoothMinQuadratic(finalCaveDist, finalNodeDist, caveNodes[i].blendRadius);
+                if (!TryResolveSafeNode(in caveNodes[i], out CaveNode node))
+                    continue;
+
+                EvaluateRoom(warpedPos, absoluteWp, node, out float smoothNodeDist, out float finalNodeDist);
+                smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, smoothNodeDist, node.blendRadius);
+                finalCaveDist = SmoothMinQuadratic(finalCaveDist, finalNodeDist, node.blendRadius);
             }
         }
 
-        if (TryGetPartitionRange(tunnelBucketOffsets, wp, out int tunnelStart, out int tunnelEnd))
+        if (TryGetPartitionRange(tunnelBucketOffsets, tunnelBucketIndices, wp, out int tunnelStart, out int tunnelEnd))
         {
             for (int i = tunnelStart; i < tunnelEnd; i++)
             {
-                CaveTunnel tunnel = caveTunnels[tunnelBucketIndices[i]];
+                int tunnelIndex = tunnelBucketIndices[i];
+                if ((uint)tunnelIndex >= (uint)caveTunnels.Length)
+                    continue;
+
+                if (!TryResolveSafeTunnel(in caveTunnels[tunnelIndex], out CaveTunnel tunnel))
+                    continue;
+
                 float tunnelDist = EvaluateTunnel(warpedPos, absoluteWp, wp, tunnel);
                 smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, tunnelDist, tunnel.blendRadius);
                 finalCaveDist = SmoothMinQuadratic(finalCaveDist, tunnelDist, tunnel.blendRadius);
@@ -1140,9 +1316,12 @@ public struct VoxelDensityJob : IJobParallelFor
         {
             for (int i = 0; i < caveTunnels.Length; i++)
             {
-                float tunnelDist = EvaluateTunnel(warpedPos, absoluteWp, wp, caveTunnels[i]);
-                smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, tunnelDist, caveTunnels[i].blendRadius);
-                finalCaveDist = SmoothMinQuadratic(finalCaveDist, tunnelDist, caveTunnels[i].blendRadius);
+                if (!TryResolveSafeTunnel(in caveTunnels[i], out CaveTunnel tunnel))
+                    continue;
+
+                float tunnelDist = EvaluateTunnel(warpedPos, absoluteWp, wp, tunnel);
+                smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, tunnelDist, tunnel.blendRadius);
+                finalCaveDist = SmoothMinQuadratic(finalCaveDist, tunnelDist, tunnel.blendRadius);
             }
         }
 
@@ -1165,19 +1344,24 @@ public struct VoxelDensityJob : IJobParallelFor
         }
     }
 
-    bool TryGetPartitionRange(NativeArray<int> bucketOffsets, float3 wp, out int start, out int end)
+    bool TryGetPartitionRange(NativeArray<int> bucketOffsets, NativeArray<int> bucketIndices, float3 wp, out int start, out int end)
     {
         start = 0;
         end = 0;
-        if (!bucketOffsets.IsCreated || bucketOffsets.Length < 2)
+        if (!bucketOffsets.IsCreated || bucketOffsets.Length < 2 || !bucketIndices.IsCreated)
             return false;
 
         int bucketIndex = ResolvePartitionBucketIndex(wp);
         if (bucketIndex < 0 || bucketIndex + 1 >= bucketOffsets.Length)
             return false;
 
-        start = bucketOffsets[bucketIndex];
-        end = bucketOffsets[bucketIndex + 1];
+        int rangeStart = bucketOffsets[bucketIndex];
+        int rangeEnd = bucketOffsets[bucketIndex + 1];
+        if (rangeStart < 0 || rangeEnd < rangeStart || rangeEnd > bucketIndices.Length)
+            return false;
+
+        start = rangeStart;
+        end = rangeEnd;
         return true;
     }
 
@@ -1438,23 +1622,25 @@ public struct VoxelDensityJob : IJobParallelFor
 
     float EvaluateEntrance(float3 warpedPos, CaveEntrance entrance)
     {
-        float3 direction = ResolveEntranceDirection(entrance);
-        float3 innerPoint = entrance.surfacePosition + direction * entrance.funnelLength;
+        if (!TryResolveSafeEntrance(in entrance, out float3 surfacePosition, out float3 direction, out float radius, out float innerRadius, out float funnelLength))
+            return 99999f;
+
+        float3 innerPoint = surfacePosition + direction * funnelLength;
         float core = SDCapsuleConic(
             warpedPos,
-            entrance.surfacePosition,
+            surfacePosition,
             innerPoint,
-            entrance.radius,
-            entrance.innerRadius);
+            radius,
+            innerRadius);
 
-        float3 flareStart = entrance.surfacePosition - direction * math.max(entrance.radius * 0.65f, voxelStep);
-        float3 flareEnd = entrance.surfacePosition + direction * math.min(entrance.funnelLength * 0.45f, entrance.radius * 2.2f);
+        float3 flareStart = surfacePosition - direction * math.max(radius * 0.65f, voxelStep);
+        float3 flareEnd = surfacePosition + direction * math.min(funnelLength * 0.45f, radius * 2.2f);
         float flare = SDCapsuleConic(
             warpedPos,
             flareStart,
             flareEnd,
-            entrance.radius * 1.3f,
-            math.max(entrance.innerRadius, entrance.radius * 0.85f));
+            radius * 1.3f,
+            math.max(innerRadius, radius * 0.85f));
 
         return SmoothMinQuadratic(core, flare, caveParams.entranceBlendK * 0.4f);
     }
@@ -1465,8 +1651,11 @@ public struct VoxelDensityJob : IJobParallelFor
         for (int i = 0; i < caveEntrances.Length; i++)
         {
             CaveEntrance entrance = caveEntrances[i];
-            float radius = math.max(entrance.radius, voxelStep);
-            float distanceSq = math.lengthsq(wp - entrance.surfacePosition);
+            if (!TryResolveSafeEntranceMouthMask(in entrance, out float3 surfacePosition, out float radius))
+                continue;
+
+            radius = math.max(radius, voxelStep);
+            float distanceSq = math.lengthsq(wp - surfacePosition);
             float inner = radius * 1.35f;
             float outer = radius * 2.75f;
             mask = math.min(mask, math.smoothstep(inner * inner, outer * outer, distanceSq));
@@ -1483,7 +1672,9 @@ public struct VoxelDensityJob : IJobParallelFor
 
         for (int i = 0; i < caveStructures.Length; i++)
         {
-            CaveStructure s = caveStructures[i];
+            if (!TryResolveSafeStructure(in caveStructures[i], out CaveStructure s))
+                continue;
+
             float smoothSd;
 
             switch (s.structureType)
@@ -2810,6 +3001,9 @@ public struct VoxelBiomeSampleJob : IJobParallelFor
 [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelColorJob : IJobParallelFor
 {
+    private const float MinSafeCaveMouthColorRadius = 0.1f;
+    private const float MaxSafeCaveMouthColorRadius = 32f;
+
     public float maxDepth;
     public float caveEdgeWidth;
     public float seamTransitionBand;
@@ -2943,14 +3137,21 @@ public struct VoxelColorJob : IJobParallelFor
         for (int i = 0; i < caveEntrances.Length; i++)
         {
             CaveEntrance entrance = caveEntrances[i];
-            float blend = math.saturate(math.max(entrance.terrainSplatBlend, entrance.terrainSplatColor.w));
-            if (blend <= 0.0001f)
+            if (!TryResolveCaveMouthTerrainColorPayload(
+                    in entrance,
+                    out float3 surfacePosition,
+                    out float radius,
+                    out float4 safeTerrainSplatColor,
+                    out float blend))
+            {
                 continue;
+            }
 
-            float radius = math.max(entrance.radius, voxelStep);
-            float distanceSq = math.lengthsq(position - entrance.surfacePosition);
+            float safeVoxelStep = ResolveSafeVoxelStep();
+            radius = math.max(radius, safeVoxelStep);
+            float distanceSq = math.lengthsq(position - surfacePosition);
             float inner = radius * 0.35f;
-            float outer = math.max(math.max(radius * 1.85f, voxelStep), 0.0001f);
+            float outer = math.max(math.max(radius * 1.85f, safeVoxelStep), 0.0001f);
             float outerSq = outer * outer;
             float localWeight = (1f - math.smoothstep(inner * inner, outerSq, distanceSq)) * blend;
             if (localWeight <= weight)
@@ -2958,11 +3159,68 @@ public struct VoxelColorJob : IJobParallelFor
 
             weight = localWeight;
             float mouthDarkening = math.saturate(1f - distanceSq * math.rcp(outerSq)) * blend * 0.58f;
-            terrainColor = math.saturate(entrance.terrainSplatColor);
+            terrainColor = safeTerrainSplatColor;
             terrainColor.xyz *= 1f - mouthDarkening;
         }
 
         return weight > 0.0001f;
+    }
+
+    bool TryResolveCaveMouthTerrainColorPayload(
+        in CaveEntrance entrance,
+        out float3 surfacePosition,
+        out float radius,
+        out float4 terrainColor,
+        out float blend)
+    {
+        surfacePosition = entrance.surfacePosition;
+        radius = default;
+        terrainColor = float4.zero;
+        blend = 0f;
+
+        if (!IsFinite(surfacePosition) ||
+            !math.isfinite(entrance.radius) ||
+            entrance.radius <= 0f ||
+            !IsFinite(entrance.terrainSplatColor))
+        {
+            return false;
+        }
+
+        blend = math.max(SaturateFinite(entrance.terrainSplatBlend), SaturateFinite(entrance.terrainSplatColor.w));
+        if (blend <= 0.0001f)
+            return false;
+
+        radius = math.clamp(entrance.radius, MinSafeCaveMouthColorRadius, MaxSafeCaveMouthColorRadius);
+        terrainColor = SaturateFinite(entrance.terrainSplatColor);
+        terrainColor.w = blend;
+        return math.isfinite(radius) && IsFinite(terrainColor);
+    }
+
+    float ResolveSafeVoxelStep()
+    {
+        return math.isfinite(voxelStep) && voxelStep > 0f
+            ? math.min(voxelStep, MaxSafeCaveMouthColorRadius)
+            : MinSafeCaveMouthColorRadius;
+    }
+
+    static float SaturateFinite(float value)
+    {
+        return math.isfinite(value) ? math.saturate(value) : 0f;
+    }
+
+    static float4 SaturateFinite(float4 value)
+    {
+        return IsFinite(value) ? math.saturate(value) : float4.zero;
+    }
+
+    static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
+    }
+
+    static bool IsFinite(float4 value)
+    {
+        return math.all(math.isfinite(value));
     }
 
     float SampleTerrainHeight(float2 worldXZ)
@@ -3074,6 +3332,8 @@ public struct VoxelDirtyBlendJob : IJobParallelFor
 [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelSpawnPointJob : IJob
 {
+    private const float MaxSafeSpawnPointCoordinate = 1048576f;
+
     [ReadOnly, NoAlias] public NativeArray<float3> positions;
     [ReadOnly, NoAlias] public NativeArray<float3> normals;
 
@@ -3119,32 +3379,44 @@ public struct VoxelSpawnPointJob : IJob
 
         float3 pos = positions[idx];
         float3 nrm = normals[idx];
+        if (!IsFinite(pos) || math.any(math.abs(pos) > new float3(MaxSafeSpawnPointCoordinate)) || !TryNormalizeFinite(nrm, out float3 normal))
+            return;
 
         // ── Filter 1: Floor normal ──
-        float upDot = math.dot(nrm, new float3(0, 1, 0));
-        if (upDot < floorNormalThreshold)
+        float safeFloorNormalThreshold = ClampFinite(floorNormalThreshold, 0.75f, -1f, 1f);
+        float upDot = math.dot(normal, new float3(0, 1, 0));
+        if (!math.isfinite(upDot) || upDot < safeFloorNormalThreshold)
             return;
 
         // ── Filter 2: Interior depth ──
-        if (minInteriorDepth > 1f)
+        if (!math.isfinite(minInteriorDepth) || minInteriorDepth > 1f)
             return;
 
-        if (minInteriorDepth > 0f)
+        float safeMinInteriorDepth = math.max(minInteriorDepth, 0f);
+        if (safeMinInteriorDepth > 0f)
         {
-            float maxInteriorRadius = math.max(volumeHalfExtent, 1f) * math.max(0f, 1f - minInteriorDepth);
-            if (math.lengthsq(pos - volumeCenter) > maxInteriorRadius * maxInteriorRadius)
+            if (!IsFinite(volumeCenter) || !math.isfinite(volumeHalfExtent) || volumeHalfExtent <= 0f)
+                return;
+
+            float maxInteriorRadius = math.max(volumeHalfExtent, 1f) * math.max(0f, 1f - safeMinInteriorDepth);
+            float distanceSq = math.lengthsq(pos - volumeCenter);
+            if (!math.isfinite(distanceSq) || distanceSq > maxInteriorRadius * maxInteriorRadius)
                 return;
         }
 
         // ── Filter 3: Spatial hash (deterministic thinning) ──
+        float safeKeepFraction = ClampFinite(keepFraction, 0f, 0f, 1f);
+        if (safeKeepFraction <= 0f)
+            return;
+
         uint hash = SpatialHash(pos, seed);
         float hashNormalized = (hash & 0xFFFF) / 65535f;
-        if (hashNormalized > keepFraction)
+        if (hashNormalized > safeKeepFraction)
             return;
 
         // ── Passed all filters ──
         // hashId is deterministic: same position → same hash → same ID always
-        int hashId = (int)(hash & 0x7FFFFFFF); // Positive int, stable across runs
+        int hashId = (int)(hash & 0x7FFFFFFF);
 
         spawnPoints[writeIndex] = new CaveSpawnData
         {
@@ -3161,7 +3433,11 @@ public struct VoxelSpawnPointJob : IJob
     static uint SpatialHash(float3 p, uint seed)
     {
         // Quantize to 10cm grid — prevents floating-point jitter
-        int3 ip = (int3)math.floor(p * 10f);
+        float3 safePoint = math.clamp(
+            p,
+            new float3(-MaxSafeSpawnPointCoordinate),
+            new float3(MaxSafeSpawnPointCoordinate));
+        int3 ip = (int3)math.floor(safePoint * 10f);
 
         uint h = seed;
         h ^= (uint)ip.x * 0x9E3779B9u;
@@ -3231,6 +3507,15 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     private const float PredictiveVoxelProxyDampenerStrength01 = 0.35f;
     private const float PredictiveVoxelProxyCinematicPaddingMeters = 0.75f;
     private const uint PredictiveVoxelProxyKccVelocityMaxAgeFrames = 12u;
+    private const float MinRuntimeCaveEntranceHoleRadius = 0.1f;
+    private const float MaxRuntimeCaveEntranceHoleRadius = 96f;
+    private const float MaxRuntimeCaveEntranceHolePadding = 24f;
+    private const float MinRuntimeCaveGraphBucketRadius = 0.1f;
+    private const float MaxRuntimeCaveGraphBucketRadius = 256f;
+    private const float MaxRuntimeCaveGraphBucketBlendRadius = 96f;
+    private const float MaxRuntimeCaveGraphBucketWarpMeters = 64f;
+    private const float MaxRuntimeCaveGraphBucketNoiseMeters = 64f;
+    private const float MaxRuntimeCaveGraphBucketVoxelStep = 64f;
     private const int VoxelSurfaceMeshPoolSize = 256;
     private const int VoxelPhysicsBakeMeshPoolSize = 256;
     private const int VoxelMeshPoolAcquireWarmupRetryFrames = 4;
@@ -3670,7 +3955,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             RebindDeferredVoxelLateFrameDrivers();
@@ -8128,6 +8413,49 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         return TryResolveLocalDeltaFloat3(deltaAup, out runtimePosition);
     }
 
+    private static bool TryResolveSafeEntranceTerrainHole(
+        in CaveEntrance entrance,
+        float holePadding,
+        double3 capturedTotalOffset,
+        double3 committedTotalOffset,
+        out Vector3 runtimeSurfacePosition,
+        out float radius)
+    {
+        runtimeSurfacePosition = default;
+        radius = default;
+        if (!IsFiniteFloat3(entrance.surfacePosition) ||
+            !IsFiniteFloat3(entrance.inwardDirection) ||
+            !math.isfinite(entrance.radius) ||
+            entrance.radius <= 0f)
+        {
+            return false;
+        }
+
+        float directionSq = math.lengthsq(entrance.inwardDirection);
+        if (!math.isfinite(directionSq) || directionSq <= 0.0001f)
+            return false;
+
+        float safePadding = math.isfinite(holePadding) && holePadding > 0f
+            ? math.min(holePadding, MaxRuntimeCaveEntranceHolePadding)
+            : 1f;
+        float safeInnerRadius = math.isfinite(entrance.innerRadius) && entrance.innerRadius > 0f
+            ? entrance.innerRadius
+            : 0f;
+        radius = math.clamp(
+            math.max(entrance.radius, safeInnerRadius) + safePadding,
+            MinRuntimeCaveEntranceHoleRadius,
+            MaxRuntimeCaveEntranceHoleRadius);
+        if (!math.isfinite(radius))
+            return false;
+
+        double3 runtimeSurfaceDelta = ToDouble3(entrance.surfacePosition) + capturedTotalOffset - committedTotalOffset;
+        if (!TryResolveLocalDeltaFloat3(runtimeSurfaceDelta, out float3 runtimeSurfaceFloat))
+            return false;
+
+        runtimeSurfacePosition = ToVector3(runtimeSurfaceFloat);
+        return IsFiniteVector(runtimeSurfacePosition);
+    }
+
     private static bool TryRebaseCapturedRuntimeFloat3(
         float3 capturedRuntimePosition,
         double3 capturedOriginAup,
@@ -10961,11 +11289,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
-                CaveNode node = nodes[nodeIndex];
-                float maxRadius = math.cmax(node.radii);
-                float inflation = math.max(node.noiseAmplitude, 0f) + data.CaveParams.warpAmplitude + data.CaveParams.noiseEvalDistance + node.blendRadius + (data.VoxelStep * 2f);
-                float3 boundsMin = node.position - new float3(maxRadius + inflation);
-                float3 boundsMax = node.position + new float3(maxRadius + inflation);
+                if (!TryResolveNodePartitionBounds(in nodes[nodeIndex], data, out float3 boundsMin, out float3 boundsMax))
+                    continue;
 
                 ResolvePartitionRange(data, boundsMin, boundsMax, out int3 minCell, out int3 maxCell);
                 for (int z = minCell.z; z <= maxCell.z; z++)
@@ -11019,11 +11344,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
-                CaveNode node = nodes[nodeIndex];
-                float maxRadius = math.cmax(node.radii);
-                float inflation = math.max(node.noiseAmplitude, 0f) + data.CaveParams.warpAmplitude + data.CaveParams.noiseEvalDistance + node.blendRadius + (data.VoxelStep * 2f);
-                float3 boundsMin = node.position - new float3(maxRadius + inflation);
-                float3 boundsMax = node.position + new float3(maxRadius + inflation);
+                if (!TryResolveNodePartitionBounds(in nodes[nodeIndex], data, out float3 boundsMin, out float3 boundsMax))
+                    continue;
 
                 ResolvePartitionRange(data, boundsMin, boundsMax, out int3 minCell, out int3 maxCell);
                 for (int z = minCell.z; z <= maxCell.z; z++)
@@ -11096,11 +11418,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
             for (int tunnelIndex = 0; tunnelIndex < tunnelCount; tunnelIndex++)
             {
-                CaveTunnel tunnel = tunnels[tunnelIndex];
-                float maxRadius = math.max(tunnel.radiusA, tunnel.radiusB);
-                float inflation = maxRadius + tunnel.blendRadius + data.CaveParams.warpAmplitude + tunnel.warpAmount + data.CaveParams.noiseEvalDistance + (data.VoxelStep * 2f);
-                float3 boundsMin = math.min(tunnel.pointA, tunnel.pointB) - new float3(inflation);
-                float3 boundsMax = math.max(tunnel.pointA, tunnel.pointB) + new float3(inflation);
+                if (!TryResolveTunnelPartitionBounds(in tunnels[tunnelIndex], data, out float3 boundsMin, out float3 boundsMax))
+                    continue;
 
                 ResolvePartitionRange(data, boundsMin, boundsMax, out int3 minCell, out int3 maxCell);
                 for (int z = minCell.z; z <= maxCell.z; z++)
@@ -11154,11 +11473,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
             for (int tunnelIndex = 0; tunnelIndex < tunnelCount; tunnelIndex++)
             {
-                CaveTunnel tunnel = tunnels[tunnelIndex];
-                float maxRadius = math.max(tunnel.radiusA, tunnel.radiusB);
-                float inflation = maxRadius + tunnel.blendRadius + data.CaveParams.warpAmplitude + tunnel.warpAmount + data.CaveParams.noiseEvalDistance + (data.VoxelStep * 2f);
-                float3 boundsMin = math.min(tunnel.pointA, tunnel.pointB) - new float3(inflation);
-                float3 boundsMax = math.max(tunnel.pointA, tunnel.pointB) + new float3(inflation);
+                if (!TryResolveTunnelPartitionBounds(in tunnels[tunnelIndex], data, out float3 boundsMin, out float3 boundsMax))
+                    continue;
 
                 ResolvePartitionRange(data, boundsMin, boundsMax, out int3 minCell, out int3 maxCell);
                 for (int z = minCell.z; z <= maxCell.z; z++)
@@ -11186,6 +11502,81 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         }
 
         return true;
+    }
+
+    private static bool TryResolveNodePartitionBounds(
+        in CaveNode node,
+        VoxelPipelineData data,
+        out float3 boundsMin,
+        out float3 boundsMax)
+    {
+        boundsMin = default;
+        boundsMax = default;
+        if (data == null || !IsFiniteFloat3(node.position) || !IsFiniteFloat3(node.radii) || math.cmin(node.radii) <= 0f)
+            return false;
+
+        float3 safeRadii = math.clamp(
+            node.radii,
+            new float3(MinRuntimeCaveGraphBucketRadius),
+            new float3(MaxRuntimeCaveGraphBucketRadius));
+        float maxRadius = math.cmax(safeRadii);
+        float inflation =
+            ClampRuntimeFinite(node.noiseAmplitude, 0f, 0f, MaxRuntimeCaveGraphBucketNoiseMeters) +
+            ClampRuntimeFinite(node.blendRadius, MinRuntimeCaveGraphBucketRadius, MinRuntimeCaveGraphBucketRadius, MaxRuntimeCaveGraphBucketBlendRadius) +
+            ClampRuntimeFinite(data.CaveParams.warpAmplitude, 0f, 0f, MaxRuntimeCaveGraphBucketWarpMeters) +
+            ClampRuntimeFinite(data.CaveParams.noiseEvalDistance, 0f, 0f, MaxRuntimeCaveGraphBucketNoiseMeters) +
+            ClampRuntimeFinite(data.VoxelStep, 0.25f, 0.01f, MaxRuntimeCaveGraphBucketVoxelStep) * 2f;
+
+        if (!math.isfinite(maxRadius) || !math.isfinite(inflation))
+            return false;
+
+        float extent = maxRadius + inflation;
+        boundsMin = node.position - new float3(extent);
+        boundsMax = node.position + new float3(extent);
+        return IsFiniteFloat3(boundsMin) && IsFiniteFloat3(boundsMax);
+    }
+
+    private static bool TryResolveTunnelPartitionBounds(
+        in CaveTunnel tunnel,
+        VoxelPipelineData data,
+        out float3 boundsMin,
+        out float3 boundsMax)
+    {
+        boundsMin = default;
+        boundsMax = default;
+        if (data == null ||
+            !IsFiniteFloat3(tunnel.pointA) ||
+            !IsFiniteFloat3(tunnel.pointB) ||
+            !math.isfinite(tunnel.radiusA) ||
+            !math.isfinite(tunnel.radiusB) ||
+            tunnel.radiusA <= 0f ||
+            tunnel.radiusB <= 0f)
+        {
+            return false;
+        }
+
+        float maxRadius = math.max(
+            ClampRuntimeFinite(tunnel.radiusA, MinRuntimeCaveGraphBucketRadius, MinRuntimeCaveGraphBucketRadius, MaxRuntimeCaveGraphBucketRadius),
+            ClampRuntimeFinite(tunnel.radiusB, MinRuntimeCaveGraphBucketRadius, MinRuntimeCaveGraphBucketRadius, MaxRuntimeCaveGraphBucketRadius));
+        float inflation =
+            maxRadius +
+            ClampRuntimeFinite(tunnel.blendRadius, MinRuntimeCaveGraphBucketRadius, MinRuntimeCaveGraphBucketRadius, MaxRuntimeCaveGraphBucketBlendRadius) +
+            ClampRuntimeFinite(tunnel.warpAmount, 0f, 0f, MaxRuntimeCaveGraphBucketWarpMeters) +
+            ClampRuntimeFinite(data.CaveParams.warpAmplitude, 0f, 0f, MaxRuntimeCaveGraphBucketWarpMeters) +
+            ClampRuntimeFinite(data.CaveParams.noiseEvalDistance, 0f, 0f, MaxRuntimeCaveGraphBucketNoiseMeters) +
+            ClampRuntimeFinite(data.VoxelStep, 0.25f, 0.01f, MaxRuntimeCaveGraphBucketVoxelStep) * 2f;
+
+        if (!math.isfinite(maxRadius) || !math.isfinite(inflation))
+            return false;
+
+        boundsMin = math.min(tunnel.pointA, tunnel.pointB) - new float3(inflation);
+        boundsMax = math.max(tunnel.pointA, tunnel.pointB) + new float3(inflation);
+        return IsFiniteFloat3(boundsMin) && IsFiniteFloat3(boundsMax);
+    }
+
+    private static float ClampRuntimeFinite(float value, float fallback, float minimum, float maximum)
+    {
+        return math.isfinite(value) ? math.clamp(value, minimum, maximum) : fallback;
     }
 
     static void ResolvePartitionRange(VoxelPipelineData data, float3 boundsMin, float3 boundsMax, out int3 minCell, out int3 maxCell)
@@ -12734,12 +13125,17 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         for (int i = 0; i < entrances.Length; i++)
         {
             CaveEntrance entrance = entrances[i];
-            float radius = math.max(entrance.radius, entrance.innerRadius) + holePadding;
-            double3 runtimeSurfaceDelta = ToDouble3(entrance.surfacePosition) + capturedTotalOffset - committedTotalOffset;
-            if (!TryResolveLocalDeltaFloat3(runtimeSurfaceDelta, out float3 runtimeSurfaceFloat))
+            if (!TryResolveSafeEntranceTerrainHole(
+                    in entrance,
+                    holePadding,
+                    capturedTotalOffset,
+                    committedTotalOffset,
+                    out Vector3 runtimeSurfacePosition,
+                    out float radius))
+            {
                 continue;
+            }
 
-            Vector3 runtimeSurfacePosition = new Vector3(runtimeSurfaceFloat.x, runtimeSurfaceFloat.y, runtimeSurfaceFloat.z);
             int holeHandle = vegetationBridge.RegisterTerrainHoleHandle(runtimeSurfacePosition, radius);
             volume.TrackTerrainHoleHandle(holeHandle);
         }
@@ -12757,13 +13153,19 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (!spawnPointList.IsCreated ||
             spawnPointList.Length <= 0 ||
             spawnPointCount <= 0 ||
-            scavengePopulator == null)
+            scavengePopulator == null ||
+            !IsFiniteVector(worldCenter) ||
+            !math.all(math.isfinite(capturedTotalOffset)) ||
+            !math.all(math.isfinite(committedTotalOffset)))
         {
             return;
         }
 
         double3 absoluteUniverseCenter = ToDouble3(worldCenter) + capturedTotalOffset;
-        float tileSize = mapMagicTileSize > 0f ? mapMagicTileSize : 999f;
+        if (!math.all(math.isfinite(absoluteUniverseCenter)))
+            return;
+
+        float tileSize = math.isfinite(mapMagicTileSize) && mapMagicTileSize > 0f ? mapMagicTileSize : 999f;
         Vector2Int chunkCoord = new Vector2Int(
             (int)math.floor(absoluteUniverseCenter.x / tileSize),
             (int)math.floor(absoluteUniverseCenter.z / tileSize));

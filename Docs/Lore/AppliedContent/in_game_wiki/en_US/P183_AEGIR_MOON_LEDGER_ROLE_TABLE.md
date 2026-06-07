@@ -7,6 +7,9 @@ poi_tags: poi.moon_role_ledger;poi.relay_lane_card
 biome_tags: biome.claim_admin;biome.relay_archive
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Aegir Moon Ledger Role Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

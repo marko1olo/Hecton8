@@ -7,6 +7,9 @@ poi_tags: poi.conductive_biofilm_bus;poi.wet_cable_skin
 biome_tags: biome.atlas;biome.ecology
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Проводящая biofilm repair bus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

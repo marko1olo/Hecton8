@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Glass Grazer Schools"
+title: "Зграї скляних скребців"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Glass Grazer Schools
+# Зграї скляних скребців
 
-UA LOC HOLD: Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf.
+Зграї скляних скребців - перший урок HECTON-8 про поведінку тварин як про прилад. Скребці не домашні істоти, не мішки здобичі і не безпечна прикраса. Це малі прозорі панцирні живильники, що роблять мілкий шельф читабельним, зішкрібаючи мінеральну плівку у світлі смуги. Жива зграя повідомляє Marauder, де росте pressure glass, який шов надто теплий, де течія щойно повернула і де хижаки останнім часом не проходили. Важливий момент зазвичай є відсутністю: плівка лишається, малі панцирні роти перестають цокати, і чистий прохід раптом здається неправильним. Ця тиша прямо з'єднується з граматикою мілководного хижака, де небезпека приходить спершу як зникла фауна, зламаний шум bloom і тінь над усе ще красивим рифом. Добре розміщення має навчати гравця тілом: плисти до блідого зішкребу, чути, як цокання гострішає об панцир, помічати чисту зону біля теплої плями герметика, а потім бачити, як зграя складається вбік раніше, ніж сонар зрозуміє чому. Скляні скребці оживляють HECTON-8, бо вони корисні, крихкі й чесні. Вони не пояснюють океан. Вони відкривають те, що океан щойно зробив.
 
 ## Scanner
 
-UA LOC HOLD: Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.
+ЗГРАЯ СКЛЯНИХ СКРЕБЦІВ // Прозорі панцирні живильники зішкрібають мінеральну плівку з pressure glass і країв фотичних матів. Їхнє цокання відкриває світлі маршрутні шрами; раптова тиша - дані про хижака.
 
 ## Terminal
 
-UA LOC HOLD: FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.
+БАЗОВА ФАУНА: неворожий кластер скребців. Відстежувати плівку pressure glass, свіжий мінеральний наліт, порушення течії та витіснення хижаком. Зникнення після активного живлення - попередження маршруту, а не порожня точка появи.
 
 ## Audio
 
-UA LOC HOLD: Hear the ticking on the shell? That is lunch, map and warning in the same sound.
+Чуєш цокання по панциру? Це їжа, карта і попередження в одному звуці.
 
 ## Field Note
 
-UA LOC HOLD: Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.
+Не женися за зграєю. Читай те, що вона відкриває: свіжу плівку, старий зішкріб, обхід теплого герметика і порожню смугу, яку тварини відмовляються перетинати.
 
 <!-- External Site; generated from P222_GLASS_GRAZER_SCHOOLS/uk_UA. -->

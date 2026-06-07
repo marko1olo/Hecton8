@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Density Skater Fauna"
+title: "Фауна щільнісних ковзанярів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Density Skater Fauna
+# Фауна щільнісних ковзанярів
 
-UA LOC HOLD: Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.
+Щільнісні ковзанярі - середньоглибинні тварини, через які розсольний каньйон відчувається шаруватою машиною, а не порожнім об'ємом. Їхні лапи, плавці або гачкуваті подушечки тиснуть на межі щільності, достатньо міцні, щоб кілька секунд тримати мале тіло. Око бачить, ніби вони ковзають відкритою водою; scanner бачить брижі там, де у відкритої води не має бути поверхні. Ця суперечність і є підказкою. Слід ковзаняра може позначати вікно зсуву, розсольну сходинку, сліпий край сонара або мисливську лінію більших істот. Тварина не магія і не обіцянка безпеки. Костюм важчий, гучніший і погано сформований для того самого трюку. Використовуй сліди ковзанярів, щоб читати шар. Не вважай, що можеш пройти за ними.
 
 ## Scanner
 
-UA LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+ЩІЛЬНІСНИЙ КОВЗАНЯР // Тонконога фауна рухається по межі розсолу як по поверхні, лишаючи брижі там, де сонар очікує відкриту воду.
 
 ## Terminal
 
-UA LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+БАЗОВА ФАУНА: контакт із ковзанярами частішає біля розірваних brine vanes, теплих розсольних сходинок і мертвих країв сонара. Їхній слід позначає полицю щільності, а не безпечну опору. Не женися крізь непрозорі шари.
 
 ## Audio
 
-UA LOC HOLD: Something is walking on the water inside the water.
+Щось іде по воді всередині води.
 
 ## Field Note
 
-UA LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+Вони не левітують. Вони йдуть по межі, крізь яку твій костюм може провалитися.
 
 <!-- In-Game Wiki; generated from P227_DENSITY_SKATER_FAUNA/uk_UA. -->

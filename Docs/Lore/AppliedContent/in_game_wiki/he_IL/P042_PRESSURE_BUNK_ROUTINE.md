@@ -7,6 +7,9 @@ poi_tags: poi.pressure_bunk;poi.hab_sleep_bay
 biome_tags: biome.drowned_colony;biome.pressure_hab
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "שגרת דרגשי לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

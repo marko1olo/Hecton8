@@ -7,6 +7,9 @@ poi_tags: poi.duration_band_chart;poi.probe_freight_crew_table
 biome_tags: biome.relay_archive;biome.claim_admin
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Transit Duration Bands"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

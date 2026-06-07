@@ -7,6 +7,9 @@ poi_tags: poi.social_dev_note_card;poi.caption_asset_match_label
 biome_tags: biome.publication;biome.copy
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Public Note Copy Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

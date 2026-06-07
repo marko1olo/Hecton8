@@ -271,14 +271,9 @@ namespace Hecton8.Core
             {
                 if (Volatile.Read(ref _pendingCommandsReady) == 0)
                 {
-                    _pendingCommands = new NativeQueue<EntityCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EntityCommand>(Persistent) - structural command ingress drained by SystemDispatcher LateUpdate - owner: ThreadSafeCommandQueue
-                    NativeMemorySentinel.RegisterNativeQueue(
-                        _pendingCommands,
+                    _pendingCommands = CreateTrackedPersistentQueue<EntityCommand>(
                         MaxMainThreadCommandsPerDrain,
-                        nameof(ThreadSafeCommandQueue),
-                        nameof(_pendingCommands),
-                        NativeAllocationLifetime.Session);
-                    PrewarmQueue(ref _pendingCommands, MaxMainThreadCommandsPerDrain);
+                        nameof(_pendingCommands)); // COLD ALLOC: NativeQueue<EntityCommand>(Persistent) - structural command ingress drained by SystemDispatcher LateUpdate - owner: ThreadSafeCommandQueue
                     Volatile.Write(ref _pendingCommandsReady, 1);
                 }
             }
@@ -879,15 +874,40 @@ namespace Hecton8.Core
             if (Volatile.Read(ref _pendingStorageReservationCommitResolvedReady) != 0)
                 return;
 
-            _pendingStorageReservationCommitResolved = new NativeQueue<StorageReservationCommitResolvedPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<StorageReservationCommitResolvedPayload>[64] - deferred storage reservation acknowledgements - owner: ThreadSafeCommandQueue
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingStorageReservationCommitResolved,
+            _pendingStorageReservationCommitResolved = CreateTrackedPersistentQueue<StorageReservationCommitResolvedPayload>(
                 StorageReservationCommitEventCapacity,
-                nameof(ThreadSafeCommandQueue),
-                nameof(_pendingStorageReservationCommitResolved),
-                NativeAllocationLifetime.Session);
-            PrewarmQueue(ref _pendingStorageReservationCommitResolved, StorageReservationCommitEventCapacity);
+                nameof(_pendingStorageReservationCommitResolved)); // COLD ALLOC: NativeQueue<StorageReservationCommitResolvedPayload>[64] - deferred storage reservation acknowledgements - owner: ThreadSafeCommandQueue
             Volatile.Write(ref _pendingStorageReservationCommitResolvedReady, 1);
+        }
+
+        private static NativeQueue<T> CreateTrackedPersistentQueue<T>(int capacity, string label)
+            where T : unmanaged
+        {
+            NativeQueue<T> queue = new NativeQueue<T>(Allocator.Persistent);
+            bool registered = false;
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                    queue,
+                    capacity,
+                    nameof(ThreadSafeCommandQueue),
+                    label,
+                    NativeAllocationLifetime.Session);
+                if (sentinelId <= 0)
+                    throw new System.InvalidOperationException("NativeMemorySentinel rejected ThreadSafeCommandQueue queue registration.");
+
+                registered = true;
+                PrewarmQueue(ref queue, capacity);
+                return queue;
+            }
+            catch
+            {
+                if (registered)
+                    NativeMemorySentinel.UnregisterNativeQueue(nameof(ThreadSafeCommandQueue), label);
+                if (queue.IsCreated)
+                    queue.Dispose();
+                throw;
+            }
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)

@@ -86,7 +86,11 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            TryUnregister();
+            if (currentService != null && isActiveAndEnabled)
                 TryRegister();
         }
 

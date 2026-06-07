@@ -43,16 +43,15 @@ namespace Hecton8.Ecosystem
 
         private void Awake()
         {
-            EcosystemHealthDirector registered = GlobalRegistry.EcosystemHealth;
-            if (registered != null && registered != this)
-            {
-                SuppressDuplicateService();
-            }
+            TryAbortForUsableExistingRuntime();
         }
 
         private void OnEnable()
         {
             if (_duplicateServiceSuppressed)
+                return;
+
+            if (TryAbortForUsableExistingRuntime())
                 return;
 
             TryRegisterService();
@@ -69,6 +68,9 @@ namespace Hecton8.Ecosystem
         private void Start()
         {
             if (_duplicateServiceSuppressed)
+                return;
+
+            if (TryAbortForUsableExistingRuntime())
                 return;
 
             CacheRuntimeDependencies();
@@ -432,17 +434,55 @@ namespace Hecton8.Ecosystem
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            EcosystemHealthDirector registered = GlobalRegistry.EcosystemHealth;
-            if (registered != null && registered != this)
-            {
-                SuppressDuplicateService();
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterEcosystemHealthRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.EcosystemHealth, this);
             if (_serviceRegistered)
                 s_activeRuntime = this;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            EcosystemHealthDirector active = s_activeRuntime;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsEcosystemHealthRuntimeUsable(active))
+                {
+                    SuppressDuplicateService();
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntime, active))
+                    s_activeRuntime = null;
+                if (ReferenceEquals(GlobalRegistry.EcosystemHealth, active))
+                    GlobalRegistry.UnregisterEcosystemHealthRuntime(active);
+            }
+
+            EcosystemHealthDirector registered = GlobalRegistry.EcosystemHealth;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsEcosystemHealthRuntimeUsable(registered))
+            {
+                s_activeRuntime = registered;
+                SuppressDuplicateService();
+                return true;
+            }
+
+            if (ReferenceEquals(s_activeRuntime, registered))
+                s_activeRuntime = null;
+            GlobalRegistry.UnregisterEcosystemHealthRuntime(registered);
+            return false;
+        }
+
+        private static bool IsEcosystemHealthRuntimeUsable(EcosystemHealthDirector director)
+        {
+            return director != null &&
+                   director._serviceRegistered &&
+                   !director._duplicateServiceSuppressed &&
+                   director.isActiveAndEnabled;
         }
 
         private void SuppressDuplicateService()

@@ -7,6 +7,9 @@ poi_tags: poi.aegir_continuity_shell_stamp;poi.shell_company_ledger
 biome_tags: biome.black_keel_orbit;biome.industrial_shelf
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Aegir Continuity Holdings"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -140,9 +140,8 @@ namespace Hecton8.Audio
         [Tooltip("Layer index for Terrain objects.\n" +
                  "Objects on this layer trigger MapMagic biome lookup.\n" +
                  "Objects on OTHER layers trigger tag-based lookup.\n" +
-                 "Default Unity Terrain layer is usually index 6 or custom.\n" +
-                 "Set this to match your Terrain layer in Layer settings.")]
-        [SerializeField] private int terrainLayerIndex = 6;
+                 "Keep this synchronized with HectonLayerMasks.Terrain.")]
+        [SerializeField] private int terrainLayerIndex = HectonLayerMasks.Terrain;
 
         [Header("── Speed-Based Volume ────────────────────────")]
         [Tooltip("Scale footstep volume by player horizontal speed.\n" +
@@ -206,25 +205,12 @@ namespace Hecton8.Audio
             TryRegisterHotSwapListener();
             RefreshColdRegistryReferences();
 
-            if (!_registeredUpdate)
-                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
-            if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            TryRegisterDispatcherTicks();
         }
 
         private void OnDisable()
         {
-            if (_registeredUpdate)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-                _registeredUpdate = false;
-            }
-
-            if (_registeredLateFrame)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
-                _registeredLateFrame = false;
-            }
+            TryUnregisterDispatcherTicks();
 
             TryUnregisterHotSwapListener();
             _audioService = null;
@@ -239,7 +225,7 @@ namespace Hecton8.Audio
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
             {
-                _audioService = currentService as IAudioService;
+                CacheAudioService(currentService as IAudioService);
                 return;
             }
 
@@ -251,15 +237,9 @@ namespace Hecton8.Audio
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredUpdate = false;
-                _registeredLateFrame = false;
+                TryUnregisterDispatcherTicks();
                 if (currentService != null && isActiveAndEnabled)
-                {
-                    if (!_registeredUpdate)
-                        _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
-                    if (!_registeredLateFrame)
-                        _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
-                }
+                    TryRegisterDispatcherTicks();
             }
         }
 
@@ -385,7 +365,7 @@ namespace Hecton8.Audio
             float pitch = 1f + locomotionPitchOffset + NextFootstepRange(-pitchVariation, pitchVariation);
             Vector3 playPosition = _surfaceHitValid ? _surfaceHit.point : transform.position;
 
-            IAudioService sam = _audioService;
+            IAudioService sam = ResolveAudioService();
             if (sam != null)
                 sam.PlayAtPoint(clip, playPosition, finalVolume, pitch);
         }
@@ -590,7 +570,7 @@ namespace Hecton8.Audio
         private bool TryGetSurfaceHit(out HectonPlayerMovement.PlayerMovementSurfaceHit hit)
         {
             if (playerMovement != null &&
-                playerMovement.TryGetRecentFootstepSurfaceHit(surfaceRayDistance, surfaceLayers, out hit))
+                playerMovement.TryGetRecentFootstepSurfaceHit(surfaceRayDistance, ResolveFootstepSurfaceLayerMask(), out hit))
             {
                 return true;
             }
@@ -599,10 +579,44 @@ namespace Hecton8.Audio
             return false;
         }
 
+        private LayerMask ResolveFootstepSurfaceLayerMask()
+        {
+            LayerMask resolvedMask = default;
+            int mask = surfaceLayers.value;
+            resolvedMask.value = mask == 0 ? 0 : HectonLayerMasks.ResolveTerrainSdfProbeLayerMask(mask);
+            return resolvedMask;
+        }
+
         private void RefreshColdRegistryReferences()
         {
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _mapMagic = GlobalRegistry.MapMagic;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -611,6 +625,30 @@ namespace Hecton8.Audio
                 return;
 
             _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryRegisterDispatcherTicks()
+        {
+            if (!_registeredUpdate)
+                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterDispatcherTicks()
+        {
+            if (_registeredUpdate)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                _registeredUpdate = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrame = false;
+            }
         }
 
         private void TryUnregisterHotSwapListener()

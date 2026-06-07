@@ -7,6 +7,9 @@ poi_tags: poi.deep_reach_public_charter;poi.combine_seal_plate
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Deep Reach Public Combine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

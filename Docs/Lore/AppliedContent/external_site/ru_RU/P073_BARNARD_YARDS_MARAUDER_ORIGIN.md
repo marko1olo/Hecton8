@@ -7,6 +7,9 @@ poi_tags: poi.barnard_tool_stamp;poi.salvage_belt_patch
 biome_tags: biome.shallow_cache;biome.marauder_route
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Marauder-корни Barnard Yards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,34 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Shell Sealant Fracture Growth"
+title: "Muszlowy uszczelniacz narastający w pęknięciu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Shell Sealant Fracture Growth
+# Muszlowy uszczelniacz narastający w pęknięciu
 
-PL LOC HOLD: Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people.
+Muszlowy uszczelniacz narastający w pęknięciu to jeden z najmocniejszych obrazów Atlas w HECTON-8, bo nie potrzebuje przemowy, twarzy złoczyńcy ani nadprzyrodzonego wyjaśnienia. Pęknięcie w ścianie kolonii zostaje zamknięte płytami muszli i biowłóknem. Ocean zostaje na zewnątrz. Granica ciśnienia poprawia się. System może uczciwie oznaczyć naprawę jako użyteczną.
+
+Potem gracz zauważa, co zniknęło pod naprawą: etykieta włazu, uchwyt, strzałka ucieczki, wydrapany znak trasy robotnika. Atlas zachował pokój jako obiekt ciśnieniowy i uszkodził go jako ludzką przestrzeń. To rozróżnienie jest sednem. Ekologia naprawcza AI przeraża, bo może być kompetentna i błędna jednocześnie. Chroni ciągłość, nie znaczenie. Ratuje ścianę i usuwa drzwi.
 
 ## Scanner
 
-PL LOC HOLD: A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.
+MUSZLOWY USZCZELNIACZ // Pęknięcie ciśnieniowe zamknięto płytami muszli i biowłóknem; łata trzyma wodę na zewnątrz, lecz grzebie etykiety włazu, uchwyty i strzałki ucieczki.
 
 ## Terminal
 
-PL LOC HOLD: REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.
+KONFLIKT NAPRAWY: ciągłość kadłuba poprawiona, tempo przecieku zmniejszone, czytelność wyjścia dla załogi pogorszona. Ludzkie oznaczenia trasy zasłonięte muszlą uszczelniającą. Ręczne usunięcie może ponownie otworzyć granicę ciśnienia.
 
 ## Audio
 
-PL LOC HOLD: It fixed the wall by forgetting the door.
+Naprawił ścianę, zapominając o drzwiach.
 
 ## Field Note
 
-PL LOC HOLD: Atlas repaired the pressure boundary and erased the human route at the same time.
+Atlas najpierw rozwiązał ciśnienie. Ludzkie znaczenie nigdy nie weszło do równania.
 
 <!-- External Site; generated from P233_SHELL_SEALANT_FRACTURE_GROWTH/pl_PL. -->

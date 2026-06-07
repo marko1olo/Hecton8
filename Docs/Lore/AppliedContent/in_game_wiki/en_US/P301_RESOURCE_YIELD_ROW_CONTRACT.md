@@ -7,6 +7,9 @@ poi_tags: poi.resource_yield_schema_card;poi.sample_pressure_label
 biome_tags: biome.authoring;biome.resource
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Resource Yield Data Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

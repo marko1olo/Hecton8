@@ -206,19 +206,7 @@ namespace Hecton8.Narrative
             UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(AudioLogEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(AudioLogEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseNativeQueues();
 
             _listeners.Clear();
             Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
@@ -396,29 +384,66 @@ namespace Hecton8.Narrative
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
+            try
             {
-                _pendingEvents = new NativeQueue<AudioLogEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] — deferred audio-log event lane flushed by SystemDispatcher LateUpdate — owner: AudioLogEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(AudioLogEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<AudioLogEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] — deferred audio-log event lane flushed by SystemDispatcher LateUpdate — owner: AudioLogEvents
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                }
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<AudioLogEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] — next-frame audio-log event lane prevents same-frame reentrant dispatch — owner: AudioLogEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(AudioLogEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<AudioLogEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] — next-frame audio-log event lane prevents same-frame reentrant dispatch — owner: AudioLogEvents
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                }
             }
+            catch
+            {
+                ReleaseNativeQueues();
+                ClearReferenceSlots();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(AudioLogEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeQueue(ref queue, label);
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
+            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(AudioLogEvents), label);
+            queue.Dispose();
+            queue = default;
         }
 
         private static bool Enqueue(

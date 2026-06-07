@@ -133,18 +133,12 @@ namespace Hecton8.Dev
             try
             {
                 // COLD ALLOC: NativeArray<float>[sampleCount * 4] + NativeArray<float3>[4] + NativeArray<SpaceEngine098PipelineMetricSample>[sampleCount] - dev-only Burst terrain pipeline probe - owner: SpaceEngine098TerrainSmokeTester
-                input = new NativeArray<float>(sampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                ridged = new NativeArray<float>(sampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                crater = new NativeArray<float>(sampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                rille = new NativeArray<float>(sampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                craterCenters = new NativeArray<float3>(4, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                metrics = new NativeArray<SpaceEngine098PipelineMetricSample>(sampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                Register(input, nameof(input));
-                Register(ridged, nameof(ridged));
-                Register(crater, nameof(crater));
-                Register(rille, nameof(rille));
-                Register(craterCenters, nameof(craterCenters));
-                Register(metrics, nameof(metrics));
+                input = AllocateTrackedTempJobArray<float>(sampleCount, nameof(input), NativeArrayOptions.UninitializedMemory);
+                ridged = AllocateTrackedTempJobArray<float>(sampleCount, nameof(ridged), NativeArrayOptions.UninitializedMemory);
+                crater = AllocateTrackedTempJobArray<float>(sampleCount, nameof(crater), NativeArrayOptions.UninitializedMemory);
+                rille = AllocateTrackedTempJobArray<float>(sampleCount, nameof(rille), NativeArrayOptions.UninitializedMemory);
+                craterCenters = AllocateTrackedTempJobArray<float3>(4, nameof(craterCenters), NativeArrayOptions.UninitializedMemory);
+                metrics = AllocateTrackedTempJobArray<SpaceEngine098PipelineMetricSample>(sampleCount, nameof(metrics), NativeArrayOptions.UninitializedMemory);
 
                 for (int i = 0; i < sampleCount; i++)
                 {
@@ -329,10 +323,26 @@ namespace Hecton8.Dev
             return math.max(1, math.min(64, sampleCount / 16));
         }
 
-        private static void Register<T>(NativeArray<T> array, string label)
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, string label, NativeArrayOptions options)
             where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+
+            array.Dispose();
+            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void DisposeTracked<T>(ref NativeArray<T> array)
@@ -341,9 +351,15 @@ namespace Hecton8.Dev
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
         }
 
         private static int Milli(float value)

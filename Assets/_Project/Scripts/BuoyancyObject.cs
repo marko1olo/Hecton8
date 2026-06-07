@@ -516,16 +516,11 @@ namespace Hecton8.Physics
                     break;
 
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                    {
-                        _registeredToFixedTick = false;
-                        break;
-                    }
-
+                    TryUnregisterFromFixedTick();
                     if (isActiveAndEnabled)
                     {
-                        TryUnregisterFromFixedTick();
-                        TryRegisterToFixedTick();
+                        if (currentService != null)
+                            TryRegisterToFixedTick();
                     }
                     break;
             }
@@ -609,14 +604,7 @@ namespace Hecton8.Physics
 
         private int ResolveGroundProbeMask()
         {
-            int mask = groundLayers.value;
-            if (mask == 0)
-                return HectonLayerMasks.TerrainLayerMask | HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask;
-
-            if (mask == HectonLayerMasks.StrictInteractionLayerMask)
-                return mask | HectonLayerMasks.TerrainLayerMask | HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask;
-
-            return mask;
+            return HectonLayerMasks.ResolveTerrainSdfProbeLayerMask(groundLayers.value);
         }
 
         private bool TryResolveCachedGroundHit(Vector3 origin, float range, int layerMask, out KinematicSurfaceHit hit)

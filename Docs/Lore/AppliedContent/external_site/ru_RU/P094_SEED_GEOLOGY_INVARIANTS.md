@@ -7,6 +7,9 @@ poi_tags: poi.seed_invariant_chart;poi.route_generation_note
 biome_tags: biome.photic_shelf;biome.brine_canyon
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Seed Geology Invariants"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

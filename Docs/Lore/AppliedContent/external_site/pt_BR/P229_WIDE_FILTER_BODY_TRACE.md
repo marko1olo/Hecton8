@@ -9,32 +9,34 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Wide Filter Body Trace"
+title: "Rastro do corpo filtrador amplo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Wide Filter Body Trace
+# Rastro do corpo filtrador amplo
 
-PT LOC HOLD: Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep.
+Rastro do corpo filtrador amplo é como HECTON-8 lida com fauna gigante sem transformá-la em revelação encenada de chefe. Um corpo filtrador amplo é ecologia em movimento: uma frente climática viva no abismo que pasta nuvens de plâncton, limpa faixas de visibilidade, distorce o sonar e expõe brevemente a geometria do hardware colonial abandonado. O jogador deve sentir escala porque as regras de navegação mudam, não porque a câmera para para admirar um monstro.
+
+Sob o corpo, o som perde bordas duras. Ao redor da margem, ecos se dobram. Atrás dele, o oceano fica antinaturalmente limpo, e trilhos velhos, costelas de tubos ou torres de serviço podem aparecer onde o mapa estava vazio. Essa utilidade é a armadilha. A mesma esteira que revela uma rota pode puxar um Marauder carregado para água profunda aberta, sem parede, sem chão e sem linha confiável de retorno. O animal permanece indiferente. Não é mau, não é domesticado e não está esperando o jogador. É o oceano provando que conhecimento de sobrevivência inclui paciência: esperar a passagem, ler a lacuna de plâncton, marcar a ruína e sair antes que o silte volte a cair.
 
 ## Scanner
 
-PT LOC HOLD: A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.
+CORPO FILTRADOR AMPLO // Um animal filtrador largo cruza a trincheira; o plâncton clareia atrás dele, o sonar borra na borda, e ruínas podem surgir ou sumir sob sua sombra.
 
 ## Terminal
 
-PT LOC HOLD: CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.
+BASE DE CONTATO: a passagem de um corpo filtrador amplo produz baixa densidade de plâncton, borrão de eco na borda, esteira silenciosa de pressão e corredores temporários de visibilidade. Não perseguir sob a sombra ventral. Usar a lacuna acústica somente depois que o silte traseiro cair.
 
 ## Audio
 
-PT LOC HOLD: That is not a roar. That is the sound of the map being wiped clean.
+Isso não é um rugido. É o som do mapa sendo limpo.
 
 ## Field Note
 
-PT LOC HOLD: Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.
+Não chame de chefe. Chame de clima com estômago: lento, enorme, útil e indiferente.
 
 <!-- External Site; generated from P229_WIDE_FILTER_BODY_TRACE/pt_BR. -->

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Vent Anchor Colonies"
+title: "Colonies d'ancres de évent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Vent Anchor Colonies
+# Colonies d'ancres de évent
 
-FR LOC HOLD: Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.
+Les colonies d'ancres de évent expliquent pourquoi le Marauder ne peut pas résoudre toutes les réparations en restant dans les hauts-fonds. Elles poussent là où les évents thermiques poussent chaleur et chimie sulfurée dans les couches de saumure. Leurs corps nervurés piègent les minéraux, refroidissent en plaques et abritent de petites faunes d'évent au bord de l'eau mortelle. Cela les rend précieuses sans les transformer en minerai magique. Les côtes tombées peuvent alimenter pressure-ceramic filler, cold-sealant grit et filtres chimiques. Les côtes vivantes et chaudes peuvent tuer une combinaison vite ou fendre une tête d'outil par choc thermique. La bonne lecture est la patience : scanner le bloom thermique, attendre le bord refroidi, couper seulement les plaques tombées, et laisser la gorge active tranquille sauf si l'objectif vaut le risque.
 
 ## Scanner
 
-FR LOC HOLD: Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.
+COLONIE D'ANCRES DE ÉVENT // Des colonies nervurées se verrouillent autour des évents thermiques, piègent les sulfures et cultivent la chimie nécessaire aux réparations de grande profondeur.
 
 ## Terminal
 
-FR LOC HOLD: RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.
+BASE RESSOURCE : les colonies augmentent la probabilité de cold-sealant grit, pressure-ceramic precursor et sulfide salt. Le bloom thermique reste mortel ; prélever seulement sur côtes refroidies et plaques tombées.
 
 ## Audio
 
-FR LOC HOLD: Every good repair part is sitting in water that wants to cook you.
+Chaque bonne pièce de réparation se trouve dans une eau qui veut te cuire.
 
 ## Field Note
 
-FR LOC HOLD: Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.
+Une ancre de évent est signe de ressource, avertissement thermique, bord d'abri et preuve que la forge chemistry a des mains vivantes autour d'elle.
 
 <!-- In-Game Wiki; generated from P228_VENT_ANCHOR_COLONIES/fr_FR. -->

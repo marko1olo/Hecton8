@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "מערום מלחי גופרית טבעיים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# מערום מלחי גופרית טבעיים
 
-HE LOC HOLD: Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.
+מערומי מלחי הגופרית הטבעיים הם מההוכחות הראשונות לכך ש-HECTON-8 אינו רק זירת פשע תאגידית. הם גדלים במקום שבו חום פתחים, חלחול תמלחת וקרום עשיר במתכות נשחקים זה בזה תחת לחץ, ומשאירים מלחים שחורים-ירוקים על מדפים, צלעות וארובות שבירות. הם מנקים מוליכים, מעירים תאי חירום, מכוונים שטף קרמי ומשמידים כלים כשצוות מתייחס אליהם כמו אל עפרה רגילה. הם צריכים להופיע לפני החוב הכחול: השחקן צריך ללמוד שלירח היו כימיה, ערך וסכנות משלו עוד לפני ש-Deep Reach הטביעה עליו חותמת.
 
 ## Scanner
 
-HE LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+מלחי גופרית טבעיים // גבישים שנערמו בידי פתחים תרמיים וקרום תמלחת שחור, עתיקים מ-Deep Reach. רטובים הם מוליכים, חמימים הם מאכלים, ושימושיים עוד לפני שמשהו נעשה כחול.
 
 ## Terminal
 
-HE LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+סיווג משאב: גיאולוגיה טבעית. שימושים: שטיפת מוליכים, כימיית תאי חירום, שטף קרמי, זרז קורוזיה. לבודד מאוויר יניקה חמים; האבק פורח כסרט חומצי על מתכת החליפה.
 
 ## Audio
 
-HE LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+הירח לא נזקק לחברה כדי להיות מסוכן. הוא כבר הכיר כימיה.
 
 ## Field Note
 
-HE LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+אם הכפפות מגרדות, כבר איחרת. לשטוף, להאריק, לרשום את הקיר.
 
 <!-- In-Game Wiki; generated from P116_NATIVE_SULFIDE_SALT_STACK/he_IL. -->

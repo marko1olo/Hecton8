@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Memory.Layout;
@@ -21,6 +22,9 @@ namespace Hecton8.Editor
 {
     public sealed class Arm64MemoryAlignmentXRayWindow : EditorWindow
     {
+        private const string NativeMemoryOwner = nameof(Arm64MemoryAlignmentXRayWindow);
+        private const string MockInputLabel = "mockAlignedInput";
+        private const string MockOutputLabel = "mockAlignedOutput";
         private const string ReportPath = "Docs/Reports/ARM64_ALIGNMENT_XRAY_REPORT.txt";
         private static readonly Color GoodColor = new Color(0.08f, 0.2f, 0.15f, 1f);
         private static readonly Color BadColor = new Color(0.42f, 0.05f, 0.04f, 1f);
@@ -66,8 +70,8 @@ namespace Hecton8.Editor
             if (goodOffset != 0 || UnsafeUtility.SizeOf<MockAlignedLayout>() != 32)
                 throw new BuildFailedException("MockAlignedLayout failed ARM64 correction proof.");
 
-            NativeArray<MockAlignedLayout> input = new NativeArray<MockAlignedLayout>(64, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            NativeArray<double> output = new NativeArray<double>(64, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<MockAlignedLayout> input = AllocateTrackedTempJobArray<MockAlignedLayout>(64, NativeArrayOptions.ClearMemory, MockInputLabel);
+            NativeArray<double> output = AllocateTrackedTempJobArray<double>(64, NativeArrayOptions.UninitializedMemory, MockOutputLabel);
             try
             {
                 for (int i = 0; i < input.Length; i++)
@@ -91,10 +95,45 @@ namespace Hecton8.Editor
             }
             finally
             {
-                if (input.IsCreated)
-                    input.Dispose();
-                if (output.IsCreated)
-                    output.Dispose();
+                DisposeTracked(ref input);
+                DisposeTracked(ref output);
+            }
+        }
+
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, NativeArrayOptions options, string label) where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[Arm64MemoryAlignmentXRayWindow] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("[Arm64MemoryAlignmentXRayWindow] NativeMemorySentinel rejected NativeArray registration for " + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
             }
         }
 

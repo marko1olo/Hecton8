@@ -474,11 +474,16 @@ namespace Hecton8.Quest
 
         internal unsafe bool TryCopyPackedStateSnapshot(void* destinationPtr, int destinationWordCapacity, out QuestSaveHeader header, double timestamp)
         {
-            header = _stateManager != null
-                ? _stateManager.BuildSaveHeader(timestamp)
-                : default;
-            return _stateManager != null &&
-                   _stateManager.TryCopyPackedStateSnapshot(destinationPtr, destinationWordCapacity);
+            header = default;
+            if (_stateManager == null)
+                return false;
+
+            QuestSaveHeader candidateHeader = _stateManager.BuildSaveHeader(timestamp);
+            if (!_stateManager.TryCopyPackedStateSnapshot(destinationPtr, destinationWordCapacity))
+                return false;
+
+            header = candidateHeader;
+            return true;
         }
 
         public static void StageLoadedPackedState(uint[] packedWords)
@@ -488,20 +493,22 @@ namespace Hecton8.Quest
 
         internal static void StageLoadedPackedState(in QuestSaveHeader header, uint[] packedWords)
         {
-            s_stagedLoadedQuestHeader = header;
             if (packedWords == null || packedWords.Length <= 0)
             {
                 s_stagedLoadedPackedState = null;
+                s_stagedLoadedQuestHeader = default;
                 return;
             }
 
-            if (s_stagedLoadedPackedState == null || s_stagedLoadedPackedState.Length != packedWords.Length)
+            s_stagedLoadedQuestHeader = header;
+            int wordCount = Math.Min(packedWords.Length, QuestRuntimeLayout.WordCapacity);
+            if (s_stagedLoadedPackedState == null || s_stagedLoadedPackedState.Length != wordCount)
             {
-                // COLD ALLOC: uint[packedWords.Length] - staged packed quest words from SaveManager load handoff - owner: QuestManager
-                s_stagedLoadedPackedState = new uint[packedWords.Length];
+                // COLD ALLOC: uint[wordCount] - staged packed quest words from SaveManager load handoff - owner: QuestManager
+                s_stagedLoadedPackedState = new uint[wordCount];
             }
 
-            Array.Copy(packedWords, s_stagedLoadedPackedState, packedWords.Length);
+            Array.Copy(packedWords, s_stagedLoadedPackedState, wordCount);
         }
 
         public void PopulateSaveData(SaveData data)

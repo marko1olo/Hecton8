@@ -7,6 +7,9 @@ poi_tags: poi.photic_mat_scan_patch;poi.oxygen_color_sample
 biome_tags: biome.photic_shelf;biome.ecology
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Codex card: photic mat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

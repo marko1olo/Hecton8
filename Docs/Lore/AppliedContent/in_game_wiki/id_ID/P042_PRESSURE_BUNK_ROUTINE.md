@@ -7,6 +7,9 @@ poi_tags: poi.pressure_bunk;poi.hab_sleep_bay
 biome_tags: biome.drowned_colony;biome.pressure_hab
 locale: id_ID
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Rutinitas Bunk Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

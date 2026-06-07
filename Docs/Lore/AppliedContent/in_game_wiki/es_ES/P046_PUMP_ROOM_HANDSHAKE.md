@@ -7,6 +7,9 @@ poi_tags: poi.pump_room;poi.sump_control
 biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Acuerdo de sala de bombas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

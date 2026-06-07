@@ -170,19 +170,17 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
-            if (!isActiveAndEnabled)
-                return;
-
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService != null)
-                {
-                    TryUnregisterSlowTickable();
+                TryUnregisterSlowTickable();
+                if (currentService != null && isActiveAndEnabled)
                     TryRegisterSlowTickable();
-                }
 
                 return;
             }
+
+            if (!isActiveAndEnabled)
+                return;
 
             if (serviceSlot == GlobalRegistryServiceSlot.TickManager)
                 _tickManager = currentService as GameTickManager;

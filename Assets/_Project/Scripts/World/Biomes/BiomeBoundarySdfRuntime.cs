@@ -229,7 +229,7 @@ namespace Hecton8.World.Biomes
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredSlowTick = false;
+                TryUnregister();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegister();
                 return;
@@ -626,11 +626,36 @@ namespace Hecton8.World.Biomes
                 return true;
 
             DisposeSampleScratchCold();
-            _sampleScratch.Result = new NativeArray<BiomeBoundarySdfResult>(
-                1,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_sampleScratch.Result, nameof(BiomeBoundarySdfRuntime), "_sampleResultScratch", NativeAllocationLifetime.Scene);
+            NativeArray<BiomeBoundarySdfResult> replacement = default;
+            try
+            {
+                replacement = new NativeArray<BiomeBoundarySdfResult>(
+                    1,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(replacement, nameof(BiomeBoundarySdfRuntime), "_sampleResultScratch", NativeAllocationLifetime.Scene);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("Native memory sentinel registration failed for biome sample scratch.");
+
+                _sampleScratch.Result = replacement;
+            }
+            catch
+            {
+                if (replacement.IsCreated)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.UnregisterNativeArray(replacement);
+                    }
+                    finally
+                    {
+                        replacement.Dispose();
+                    }
+                }
+
+                throw;
+            }
+
             return _sampleScratch.Result.IsCreated && _sampleScratch.Result.Length >= 1;
         }
 

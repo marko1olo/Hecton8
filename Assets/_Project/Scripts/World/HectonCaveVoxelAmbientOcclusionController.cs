@@ -115,8 +115,7 @@ namespace Hecton8.World
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredSlowTickable = false;
-                _registeredLateFrame = false;
+                TryUnregister();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegister();
             }

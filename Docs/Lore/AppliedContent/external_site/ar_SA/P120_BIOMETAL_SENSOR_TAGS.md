@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "وسوم استشعار بمعدن حيوي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# وسوم استشعار بمعدن حيوي
 
-AR LOC HOLD: Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems.
+وسوم الاستشعار بالمعدن الحيوي ليست مقتنيات عامة. إنها ما يحدث عندما يتوقف نظام إصلاح عن الاهتمام بما إذا كان الحامل آلة أو نمواً كابلياً أو حيواناً. الوسم قشرة رقيقة من معدن حيوي تنمو داخل النسيج، تشرب قليلاً من التيار، تسجل الحركة، وتكرر ثقة الموقع عبر الماء. يستطيع Marauder استخدام واحد لضبط نابض، أو تمديد مدى ماسح، أو إثبات أن مساراً كان حياً عندما لمسته Atlas. هذه الفائدة هي المشكلة. انزع الوسم بارداً فيصبح دليلاً. انزعه ساخناً وقد تلاحظ الشبكة الحامل المفقود، أو ترد بعودات كاذبة، أو ترسل منطق الإصلاح نحو الحيوان الجريح، أو العشب المقطوع، أو الغواص الذي يحمل الوسم. هذه المادة تجبر اللاعب على معاملة الغنيمة كملف قضية: مفيدة، قذرة، وما زالت تبلغ.
 
 ## Scanner
 
-AR LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+وسوم استشعار بمعدن حيوي // قشور معدنية رقيقة نمت داخل السمك، وعشب الكابل، وأنسجة الإصلاح. تحسن ضبط النابض؛ وإذا حُصدت ساخنة فقد تسمع Atlas غياب الحامل.
 
 ## Terminal
 
-AR LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+فئة المورد: معدل بواسطة Atlas / حساس كدليل. الاستخدامات: تركيز النابض، شبكة الماسح، ثقة المسار، حزم الإثبات. يوصى بحصاد بارد. المخاطر: ارتفاع الانتباه، عوائد حامل كاذبة، أحياء متضررة.
 
 ## Audio
 
-AR LOC HOLD: The fish is not a drone. The tag does not know the difference.
+السمكة ليست مسيرة. الوسم يواصل الإبلاغ رغم ذلك.
 
 ## Field Note
 
-AR LOC HOLD: Make resource extraction feel like evidence handling.
+إذا ومض تحت السكين، سجل قبل أن تقطع.
 
 <!-- External Site; generated from P120_BIOMETAL_SENSOR_TAGS/ar_SA. -->

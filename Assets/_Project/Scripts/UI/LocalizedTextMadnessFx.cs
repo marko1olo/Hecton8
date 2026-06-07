@@ -100,17 +100,9 @@ namespace Hecton8.UI
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            if (currentService == null)
-            {
-                _registered = false;
-                return;
-            }
-
-            if (isActiveAndEnabled && _effectActive)
-            {
-                UnregisterFromTickManager();
+            UnregisterFromTickManager();
+            if (currentService != null && isActiveAndEnabled && _effectActive)
                 RegisterToTickManager();
-            }
         }
 
         public void LateFrameTick()

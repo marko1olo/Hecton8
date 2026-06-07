@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Shell Clamp Reef"
+title: "שונית מהדקי קונכייה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Shell Clamp Reef
+# שונית מהדקי קונכייה
 
-HE LOC HOLD: Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.
+שוניות מהדקי קונכייה הן המקום הראשון שבו המדף הרדוד מפסיק להפריד בין חיים מקומיים לשברי אדם. מהדקי הקונכייה אינם תבוניים ואינם רקמת Atlas; הם עוקבים אחר חלחול מינרלי, חום, רטט ולחץ זרם. זה מספיק כדי שייאחזו בבזלת, במעטפות כבל ישנות, בציפוי קפסולה ובתפרי pressure glass בסבלנות מפחידה. עבור השחקן, שונית יכולה להיות סמן נתיב, מקור קציר ואזהרה מבנית בעת ובעונה אחת. קונכיות חיצוניות מתות הן גרגר שימושי לחומר איטום ולמילוי קרמי. הליבה החיה עשויה לעבוד: להחזיק כבל שקט, להקשיח תושבת סדוקה או להאט דליפה שה-scanner עדיין לא נתן לה שם. חתוך את האשכול הלא נכון והשונית לא תתקוף. הסביבה פשוט תאבד תמיכה.
 
 ## Scanner
 
-HE LOC HOLD: Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.
+שונית מהדקי קונכייה // מהדקי קונכייה מקומיים נאחזים בסלע, במעטפות כבל, בציפוי קפסולה ובתפרי pressure glass. השונית קיבלה מכונות כמצע.
 
 ## Terminal
 
-HE LOC HOLD: REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.
+קו בסיס שונית: היצמדות עולה על מעטפות כבל שחוקות, מתכת תפר חמה ושולי pressure glass עם חלחול מינרלי. לקצור רק קונכיות חיצוניות מתות. חיתוך מהדקים חיים ליד קווי שירות עלול לפתוח דליפות או למשוך תשומת לב של פאונת תיקון.
 
 ## Audio
 
-HE LOC HOLD: The reef has learned the shape of bolts.
+השונית למדה את צורת הברגים.
 
 ## Field Note
 
-HE LOC HOLD: Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.
+אל תעקור את המהדק הראשון שבהישג יד. אשכול חי עשוי להחזיק כבל דומם, לסגור דליפה דקיקה או לסמן עוגן נתיב.
 
 <!-- In-Game Wiki; generated from P224_SHELL_CLAMP_REEF/he_IL. -->

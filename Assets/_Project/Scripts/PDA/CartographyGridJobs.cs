@@ -1154,7 +1154,9 @@ namespace Hecton8.Cartography
                 int rowBytes = UnsafeUtility.SizeOf<CartographyTelemetryEntry>();
                 int safeLength = math.clamp(length, 0, TelemetryDumpSnapshot.Length);
                 int byteCount = headerBytes + safeLength * rowBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                payload = H8Memory.Allocate<byte>(byteCount, SystemID.UI, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                if (!payload.IsCreated)
+                    return;
 
                 unsafe
                 {
@@ -1204,7 +1206,7 @@ namespace Hecton8.Cartography
             finally
             {
                 if (payload.IsCreated)
-                    payload.Dispose();
+                    H8Memory.Release(ref payload, SystemID.UI);
 
                 Volatile.Write(ref telemetryDumpPending, 0);
             }

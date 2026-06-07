@@ -44,6 +44,7 @@ namespace Hecton8.Audio.Synthesis
 #if UNITY_EDITOR
         private const int CsvMetadataCapacity = 8192;
         private const int EditorCsvScratchBytes = 1048576;
+        private const string EditorCsvScratchLabel = "editorCsvScratch";
 #endif
         private const int DefaultMockSamples = 32000;
         private const uint DefaultMockPhraseHash = 0x05203E88u; // FNV1a("VO_SHINOBU_MOCK").
@@ -153,6 +154,7 @@ namespace Hecton8.Audio.Synthesis
         private int _csvMetadataCount;
         private byte* _editorCsvScratch;
         private int _editorCsvScratchCapacity;
+        private int _editorCsvScratchSentinelId;
 #endif
         private uint _frameCounter;
         private float _cachedGlobalQualityWeight = 1f;
@@ -1539,7 +1541,31 @@ namespace Hecton8.Audio.Synthesis
             {
                 ReleaseEditorCsvScratch();
                 _editorCsvScratch = (byte*)UnsafeUtility.Malloc(EditorCsvScratchBytes, 16, Allocator.Persistent);
-                _editorCsvScratchCapacity = EditorCsvScratchBytes;
+                try
+                {
+                    if (_editorCsvScratch == null)
+                        throw new InvalidOperationException("Vocal bank editor CSV scratch allocation failed.");
+
+                    _editorCsvScratchSentinelId = NativeMemorySentinel.RegisterPointer(
+                        _editorCsvScratch,
+                        EditorCsvScratchBytes,
+                        nameof(VocalBankPlaybackRuntime),
+                        EditorCsvScratchLabel,
+                        NativeAllocationLifetime.Session);
+                    if (_editorCsvScratchSentinelId <= 0)
+                        throw new InvalidOperationException("NativeMemorySentinel rejected vocal bank editor CSV scratch registration.");
+
+                    _editorCsvScratchCapacity = EditorCsvScratchBytes;
+                }
+                catch
+                {
+                    _editorCsvScratchSentinelId = 0;
+                    if (_editorCsvScratch != null)
+                        UnsafeUtility.Free(_editorCsvScratch, Allocator.Persistent);
+                    _editorCsvScratch = null;
+                    _editorCsvScratchCapacity = 0;
+                    throw;
+                }
             }
 
             scratch = _editorCsvScratch;
@@ -1550,7 +1576,11 @@ namespace Hecton8.Audio.Synthesis
         private void ReleaseEditorCsvScratch()
         {
             if (_editorCsvScratch != null)
+            {
+                NativeMemorySentinel.Unregister(_editorCsvScratchSentinelId);
+                _editorCsvScratchSentinelId = 0;
                 UnsafeUtility.Free(_editorCsvScratch, Allocator.Persistent);
+            }
 
             _editorCsvScratch = null;
             _editorCsvScratchCapacity = 0;

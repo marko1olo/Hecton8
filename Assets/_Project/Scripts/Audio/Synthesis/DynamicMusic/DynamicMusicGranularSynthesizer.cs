@@ -667,6 +667,8 @@ namespace Hecton8.Audio.Synthesis
             EnsureDynamicMusicSignalLaneCold();
             CacheDataVaultCold();
             CacheAudioServiceCold();
+            CacheMusicDirectorCold();
+            CacheSettingsManagerCold();
             EnsureVaultStorage();
 #if UNITY_EDITOR
             RefreshCsvPathCold();
@@ -687,6 +689,8 @@ namespace Hecton8.Audio.Synthesis
             EnsureDynamicMusicSignalLaneCold();
             CacheDataVaultCold();
             CacheAudioServiceCold();
+            CacheMusicDirectorCold();
+            CacheSettingsManagerCold();
             EnsureVaultStorage();
 #if UNITY_EDITOR
             RefreshCsvPathCold();
@@ -881,7 +885,7 @@ namespace Hecton8.Audio.Synthesis
         {
             if (ReferenceEquals(_activeInstance, this))
                 _activeInstance = null;
-            _cachedAudioService = null;
+            ClearCachedRuntimeServices();
             if (Interlocked.Exchange(ref _registeredHotSwap, 0) != 0)
                 GlobalRegistry.UnregisterHotSwapListener(this);
             if (Interlocked.Exchange(ref _registeredColdTick, 0) != 0)
@@ -891,6 +895,13 @@ namespace Hecton8.Audio.Synthesis
             if (Interlocked.Exchange(ref _registeredUpdate, 0) != 0)
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             ForceFlushSynthJobForShutdown();
+        }
+
+        private void ClearCachedRuntimeServices()
+        {
+            _cachedAudioService = null;
+            _cachedMusicDirector = null;
+            _cachedSettingsManager = null;
         }
 
         private void CacheDataVaultCold()
@@ -905,7 +916,28 @@ namespace Hecton8.Audio.Synthesis
 
         private void CacheAudioService(IAudioService audioService)
         {
-            _cachedAudioService = audioService != null && audioService.IsInitialized ? audioService : null;
+            _cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _cachedAudioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void CacheMusicDirectorCold()
@@ -1045,11 +1077,17 @@ namespace Hecton8.Audio.Synthesis
             }
 
             DisposeAudioThreadCopyBuffers();
-            _audioThreadCopyA = new NativeArray<float>(OutputSampleCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _audioThreadCopyB = new NativeArray<float>(OutputSampleCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _audioThreadCopyA = H8Memory.Allocate<float>(OutputSampleCapacity, VaultOwner, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _audioThreadCopyB = H8Memory.Allocate<float>(OutputSampleCapacity, VaultOwner, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            if (!_audioThreadCopyA.IsCreated || !_audioThreadCopyB.IsCreated)
+            {
+                DisposeAudioThreadCopyBuffers();
+                return false;
+            }
+
             Volatile.Write(ref _audioThreadPublishedBufferIndex, -1);
             Volatile.Write(ref _audioThreadCopiedPublishSequence, 0);
-            return _audioThreadCopyA.IsCreated && _audioThreadCopyB.IsCreated;
+            return true;
         }
 
         private void DisposeAudioThreadCopyBuffers()
@@ -1059,9 +1097,9 @@ namespace Hecton8.Audio.Synthesis
             Volatile.Write(ref _audioThreadCopyASampleCount, 0);
             Volatile.Write(ref _audioThreadCopyBSampleCount, 0);
             if (_audioThreadCopyA.IsCreated)
-                _audioThreadCopyA.Dispose();
+                H8Memory.Release(ref _audioThreadCopyA, VaultOwner);
             if (_audioThreadCopyB.IsCreated)
-                _audioThreadCopyB.Dispose();
+                H8Memory.Release(ref _audioThreadCopyB, VaultOwner);
         }
 
         private static void ReleaseVaultBuffer<T>(
@@ -1437,7 +1475,7 @@ namespace Hecton8.Audio.Synthesis
         private void ApplyAudioHostMixerRoute()
         {
             HectonMusicDirector musicDirector = _cachedMusicDirector;
-            AudioMixerGroup musicGroup = musicDirector != null ? musicDirector.DedicatedMusicMixerGroup : null;
+            AudioMixerGroup musicGroup = musicDirector != null && musicDirector.isActiveAndEnabled ? musicDirector.DedicatedMusicMixerGroup : null;
             if (musicGroup != null)
             {
                 if (_hostSource.outputAudioMixerGroup != musicGroup)
@@ -1448,7 +1486,7 @@ namespace Hecton8.Audio.Synthesis
 
             _hostSource.volume = ResolveFallbackMusicHostVolume01();
 
-            IAudioService audioService = _cachedAudioService;
+            IAudioService audioService = ResolveAudioService();
             if (audioService == null || audioService.AmbientGroup == null)
                 return;
 

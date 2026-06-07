@@ -9,32 +9,34 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Wide Filter Body Trace"
+title: "أثر جسم الترشيح الواسع"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Wide Filter Body Trace
+# أثر جسم الترشيح الواسع
 
-AR LOC HOLD: Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.
+أجسام الترشيح الواسعة هي أول دليل على أن الهاوية المفتوحة بين العلامات ليست فارغة. إنها تتحرك في الماء العميق كحصادات بطيئة لسحب البلانكتون، بأجسام أعرض من هياكل ملحقات صغيرة. الحيوان لا يصطاد Marauder؛ إنه يغير الخريطة حول Marauder. عند مروره تقل الحياة العالقة، وتتلطخ عوائد السونار على طول حافة الجسم، وقد تظهر ملامح صناعية مدفونة لبضع دقائق قبل أن يغلق الطمي فوقها من جديد.
+
+لذلك يكون الكائن خطرا وأداة في الوقت نفسه. ظله قد يخفي إطار خدمة، أو يجعل مسارا يبدو مفتوحا بينما الماء في الحقيقة ممتلئ بنسيج متحرك. القراءة الصحيحة هي قراءة الأثر: ماء صاف خلف الفم، هبوط متسخ عند الحافة، وهدوء صوتي في ظل الجسم. لا تسبح تحت الظل لمجرد رؤية الكائن. اتبع الفجوة التي يتركها فقط إذا كان لديك طاقة وحبل وطريق عودة.
 
 ## Scanner
 
-AR LOC HOLD: A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.
+جسم ترشيح واسع // حيوان ترشيح عريض يعبر الخندق؛ يصفو البلانكتون خلفه، ويتلطخ السونار عند حافته، وقد تظهر الأطلال أو تختفي تحت ظله.
 
 ## Terminal
 
-AR LOC HOLD: CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.
+خط أساس الاتصال: مرور جسم الترشيح الواسع ينتج كثافة بلانكتون منخفضة، وتلطخا في حافة الصدى، وأثرا صامتا بالضغط، وممرات رؤية مؤقتة. لا تطارده تحت الظل البطني. استخدم الفجوة الصوتية فقط بعد سقوط الطمي اللاحق.
 
 ## Audio
 
-AR LOC HOLD: That is not a roar. That is the sound of the map being wiped clean.
+هذا ليس زئيرا. هذا صوت خريطة تمسح حتى تصير نظيفة.
 
 ## Field Note
 
-AR LOC HOLD: Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.
+لا تسمه زعيما. سمه طقسا له معدة: بطيئا، هائلا، مفيدا وغير مبال.
 
 <!-- In-Game Wiki; generated from P229_WIDE_FILTER_BODY_TRACE/ar_SA. -->

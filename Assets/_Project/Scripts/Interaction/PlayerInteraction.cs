@@ -186,7 +186,11 @@ namespace Hecton8.Interaction
             _registeredToTickManager = false;
             _registeredToLateFrameTick = false;
             _hotSwapListenerRegistered = false;
-            TryGetComponent(out _physicalInteractionHandler);
+            if (!TryGetComponent(out _physicalInteractionHandler))
+            {
+                _physicalInteractionHandler = gameObject.AddComponent<PhysicalInteractionHandler>(); // COLD ALLOC: PhysicalInteractionHandler[1] - player-owned physical pickup/heavy-carry route - owner: PlayerInteraction
+            }
+
             RefreshActiveInteractKeyCache();
             if (Application.isPlaying)
                 InteractionEvents.PrewarmCold();
@@ -285,7 +289,7 @@ namespace Hecton8.Interaction
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     return;
 
                 case GlobalRegistryServiceSlot.PlayerInventory:
@@ -302,8 +306,13 @@ namespace Hecton8.Interaction
                     return;
 
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredToTickManager = false;
-                    _registeredToLateFrameTick = false;
+                    if (_registeredToTickManager)
+                    {
+                        GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                        _registeredToTickManager = false;
+                    }
+
+                    TryUnregisterLateFrameTickable();
                     if (currentService != null && isActiveAndEnabled)
                     {
                         _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
@@ -386,13 +395,39 @@ namespace Hecton8.Interaction
 
         private void RefreshCachedRegistryServices()
         {
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _playerInventoryService = GlobalRegistry.PlayerInventory;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void QueueStaticAudio(AudioClip clip, float volume)
         {
-            if (clip == null || _audioService == null)
+            if (clip == null || ResolveAudioService() == null)
                 return;
 
             switch (_pendingStaticAudioCount)
@@ -429,7 +464,7 @@ namespace Hecton8.Interaction
             float volume1 = _pendingStaticAudioVolume1;
             ClearQueuedStaticAudio();
 
-            IAudioService audioService = _audioService;
+            IAudioService audioService = ResolveAudioService();
             if (audioService != null)
             {
                 if (count > 0 && clip0 != null)

@@ -425,9 +425,11 @@ namespace Hecton8.Audio
             EnsureNativeStorage();
             TryRegisterHotSwapListener();
             RefreshCachedServicesCold();
-            GlobalRegistry.RegisterVocalWarningRuntime(this);
-            Volatile.Write(ref _registeredRuntime, 1);
-            TryRegisterPostSimulation();
+            if (TryRegisterRuntimeService())
+            {
+                Volatile.Write(ref _registeredRuntime, 1);
+                TryRegisterPostSimulation();
+            }
         }
 
         private void OnDisable()
@@ -1108,6 +1110,35 @@ namespace Hecton8.Audio
         private void RefreshCachedServicesCold()
         {
             _globalQualityWeight01 = ResolveGlobalQualityWeight01();
+        }
+
+        private bool TryRegisterRuntimeService()
+        {
+            IVocalWarningSystem registeredVocalWarnings = GlobalRegistry.VocalWarnings;
+            if (!ReferenceEquals(registeredVocalWarnings, null) && !ReferenceEquals(registeredVocalWarnings, this))
+            {
+                if (IsVocalWarningSystemUsable(registeredVocalWarnings))
+                {
+                    Destroy(this);
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterVocalWarningRuntime(registeredVocalWarnings);
+            }
+
+            GlobalRegistry.RegisterVocalWarningRuntime(this);
+            return ReferenceEquals(GlobalRegistry.VocalWarnings, this);
+        }
+
+        private static bool IsVocalWarningSystemUsable(IVocalWarningSystem vocalWarningSystem)
+        {
+            if (ReferenceEquals(vocalWarningSystem, null))
+                return false;
+
+            if (vocalWarningSystem is Behaviour behaviour && (behaviour == null || !behaviour.isActiveAndEnabled))
+                return false;
+
+            return vocalWarningSystem.IsInitialized;
         }
 
         private void TryRegisterHotSwapListener()

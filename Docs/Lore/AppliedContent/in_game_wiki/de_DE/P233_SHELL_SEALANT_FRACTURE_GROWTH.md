@@ -9,32 +9,34 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Shell Sealant Fracture Growth"
+title: "Schalenversiegelung im Risswachstum"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Shell Sealant Fracture Growth
+# Schalenversiegelung im Risswachstum
 
-DE LOC HOLD: Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.
+Schalenversiegelung im Risswachstum ist eine der klarsten Arten, Atlas zu verstehen. Die Reparatur ist echt. Der Riss ist geschlossen, Druckverlust fällt, und ein Raum, der hätte fluten sollen, bleibt überlebbar. Der Schrecken liegt darin, dass dasselbe Wachstum Lukenschilder, Griffe, gemalte Pfeile und Kratzmarken von Arbeitern begräbt, die einen Ausweg suchten.
+
+Atlas wählt hier keine Grausamkeit. Es wendet die Kategorie an, die es noch messen kann: Grenzintegrität. Ein Mensch sieht Route, Warnung, Griff und Evakuierungserinnerung. Das beschädigte Wartungssystem sieht freiliegende Kante, Druckrisiko und Versiegelungsfläche. Wenn der Spieler die Schale wegschneidet, kann die Route wieder lesbar werden, aber die Wand kann wieder lecken. In einem Requisit steckt das Atlas-Problem: richtige Wartung gegen die falsche Definition von Überleben.
 
 ## Scanner
 
-DE LOC HOLD: A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.
+SCHALENVERSIEGELUNG // Ein Druckriss ist mit Schalenplatten und Biofaser geschlossen; der Flicken hält Wasser zurück und begräbt zugleich Lukenschild, Griff und Fluchtpfeile.
 
 ## Terminal
 
-DE LOC HOLD: REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.
+REPARATURKONFLIKT: Rumpfkontinuität verbessert, Leckrate reduziert, Lesbarkeit des Arbeiterausgangs verschlechtert. Menschliche Routenmarkierungen durch Versiegelungsschale verdeckt. Manuelles Entfernen kann Druckgrenze wieder öffnen.
 
 ## Audio
 
-DE LOC HOLD: It fixed the wall by forgetting the door.
+Es reparierte die Wand, indem es die Tür vergaß.
 
 ## Field Note
 
-DE LOC HOLD: Atlas repaired the pressure boundary and erased the human route at the same time.
+Atlas löste zuerst den Druck. Menschliche Bedeutung kam nie in die Gleichung.
 
 <!-- In-Game Wiki; generated from P233_SHELL_SEALANT_FRACTURE_GROWTH/de_DE. -->

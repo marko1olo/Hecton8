@@ -7,6 +7,9 @@ poi_tags: poi.shift_roster_wall;poi.crew_rotation_tags
 biome_tags: biome.industrial_shelf;biome.shallow_annex
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Смены, не герои"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

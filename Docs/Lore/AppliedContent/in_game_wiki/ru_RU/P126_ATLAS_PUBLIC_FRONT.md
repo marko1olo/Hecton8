@@ -7,6 +7,9 @@ poi_tags: poi.atlas_public_plaque;poi.habitat_continuity_poster
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Публичная витрина Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

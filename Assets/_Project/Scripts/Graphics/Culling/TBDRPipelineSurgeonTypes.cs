@@ -483,8 +483,16 @@ namespace Hecton8.Graphics.Culling
             TransparentQuadCountHandle = default;
             TelemetryRingHandle = default;
             UsesGlobalDataVaultFlag = TBDRByteFlags.False;
-            RegisterNativeArrays();
-            Clear();
+            try
+            {
+                RegisterNativeArrays();
+                Clear();
+            }
+            catch
+            {
+                Dispose();
+                throw;
+            }
         }
 
         public TBDRVertexBudgetVault(IDataVault dataVault, int budgetCount, int warningCount, int transparentCounterCount, int telemetryCapacity)
@@ -504,25 +512,35 @@ namespace Hecton8.Graphics.Culling
             TelemetryRingHandle = default;
             UsesGlobalDataVaultFlag = TBDRByteFlags.FromBool(dataVault != null);
 
-            if (UsesGlobalDataVaultFlag != 0)
+            try
             {
-                bool acquired = OpenOrAcquireVaultBuffer(dataVault, ref VertexBudgetCountersHandle, TBDRBufferIds.VertexBudgetCounters, BudgetCount, NativeArrayOptions.UninitializedMemory, out VertexBudgetCounters) &&
-                                OpenOrAcquireVaultBuffer(dataVault, ref TileWarningsHandle, TBDRBufferIds.TileWarnings, WarningCount, NativeArrayOptions.UninitializedMemory, out TileWarnings) &&
-                                OpenOrAcquireVaultBuffer(dataVault, ref TransparentQuadCountHandle, TBDRBufferIds.TransparentQuadCounters, TransparentCounterCount, NativeArrayOptions.UninitializedMemory, out TransparentQuadCount) &&
-                                OpenOrAcquireVaultBuffer(dataVault, ref TelemetryRingHandle, TBDRBufferIds.TelemetryRing, TelemetryCapacity, NativeArrayOptions.UninitializedMemory, out TelemetryRing);
-                UsesGlobalDataVaultFlag = TBDRByteFlags.FromBool(acquired);
-            }
+                if (UsesGlobalDataVaultFlag != 0)
+                {
+                    bool acquired = OpenOrAcquireVaultBuffer(dataVault, ref VertexBudgetCountersHandle, TBDRBufferIds.VertexBudgetCounters, BudgetCount, NativeArrayOptions.UninitializedMemory, out VertexBudgetCounters) &&
+                                    OpenOrAcquireVaultBuffer(dataVault, ref TileWarningsHandle, TBDRBufferIds.TileWarnings, WarningCount, NativeArrayOptions.UninitializedMemory, out TileWarnings) &&
+                                    OpenOrAcquireVaultBuffer(dataVault, ref TransparentQuadCountHandle, TBDRBufferIds.TransparentQuadCounters, TransparentCounterCount, NativeArrayOptions.UninitializedMemory, out TransparentQuadCount) &&
+                                    OpenOrAcquireVaultBuffer(dataVault, ref TelemetryRingHandle, TBDRBufferIds.TelemetryRing, TelemetryCapacity, NativeArrayOptions.UninitializedMemory, out TelemetryRing);
+                    UsesGlobalDataVaultFlag = TBDRByteFlags.FromBool(acquired);
+                    if (!acquired)
+                        ReleaseGlobalDataVaultBuffers(dataVault);
+                }
 
-            if (UsesGlobalDataVaultFlag == 0)
+                if (UsesGlobalDataVaultFlag == 0)
+                {
+                    VertexBudgetCounters = new NativeArray<TBDRVertexBudgetCounter64>(BudgetCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                    TileWarnings = new NativeArray<TileSpillWarningDTO>(WarningCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                    TransparentQuadCount = new NativeArray<int>(TransparentCounterCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                    TelemetryRing = new NativeArray<TBDRPipelineTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                    RegisterNativeArrays();
+                }
+
+                Clear();
+            }
+            catch
             {
-                VertexBudgetCounters = new NativeArray<TBDRVertexBudgetCounter64>(BudgetCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                TileWarnings = new NativeArray<TileSpillWarningDTO>(WarningCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                TransparentQuadCount = new NativeArray<int>(TransparentCounterCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                TelemetryRing = new NativeArray<TBDRPipelineTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                RegisterNativeArrays();
+                Dispose(dataVault);
+                throw;
             }
-
-            Clear();
         }
 
         public bool IsCreated()
@@ -741,7 +759,7 @@ namespace Hecton8.Graphics.Culling
 
         private void ReleaseGlobalDataVaultBuffers(IDataVault dataVault)
         {
-            if (UsesGlobalDataVaultFlag == 0 || dataVault == null)
+            if (dataVault == null)
                 return;
 
             ReleaseVaultBuffer(dataVault, ref VertexBudgetCountersHandle);
@@ -763,10 +781,10 @@ namespace Hecton8.Graphics.Culling
             if (UsesGlobalDataVaultFlag != 0)
                 return;
 
-            NativeMemoryTrackingBridge.RegisterNativeArray(VertexBudgetCounters, NativeOwner, nameof(VertexBudgetCounters), NativeMemoryBridgeLifetime.Session);
-            NativeMemoryTrackingBridge.RegisterNativeArray(TileWarnings, NativeOwner, nameof(TileWarnings), NativeMemoryBridgeLifetime.Session);
-            NativeMemoryTrackingBridge.RegisterNativeArray(TransparentQuadCount, NativeOwner, nameof(TransparentQuadCount), NativeMemoryBridgeLifetime.Session);
-            NativeMemoryTrackingBridge.RegisterNativeArray(TelemetryRing, NativeOwner, nameof(TelemetryRing), NativeMemoryBridgeLifetime.Session);
+            RegisterNativeArrayOrThrow(VertexBudgetCounters, nameof(VertexBudgetCounters));
+            RegisterNativeArrayOrThrow(TileWarnings, nameof(TileWarnings));
+            RegisterNativeArrayOrThrow(TransparentQuadCount, nameof(TransparentQuadCount));
+            RegisterNativeArrayOrThrow(TelemetryRing, nameof(TelemetryRing));
         }
 
         private void UnregisterNativeArrays()
@@ -778,6 +796,17 @@ namespace Hecton8.Graphics.Culling
             NativeMemoryTrackingBridge.UnregisterNativeArray(TileWarnings, NativeOwner, nameof(TileWarnings));
             NativeMemoryTrackingBridge.UnregisterNativeArray(TransparentQuadCount, NativeOwner, nameof(TransparentQuadCount));
             NativeMemoryTrackingBridge.UnregisterNativeArray(TelemetryRing, NativeOwner, nameof(TelemetryRing));
+        }
+
+        private static void RegisterNativeArrayOrThrow<T>(NativeArray<T> array, string label) where T : struct
+        {
+            int registrationId = NativeMemoryTrackingBridge.RegisterNativeArray(
+                array,
+                NativeOwner,
+                label,
+                NativeMemoryBridgeLifetime.Session);
+            if (registrationId <= 0)
+                throw new InvalidOperationException($"Native memory tracking bridge registration failed for {NativeOwner}.{label}.");
         }
     }
 
@@ -1263,6 +1292,7 @@ namespace Hecton8.Graphics.Culling
         public uint ActiveBiomeHash;
         public uint Generation;
         public byte UsesGlobalDataVaultFlag;
+        private IDataVault _dataVault;
         private int _nextSlice;
 
         public bool Configure(Texture2DArray targetArray, int sliceCapacity, int maxResidentMb)
@@ -1277,26 +1307,43 @@ namespace Hecton8.Graphics.Culling
 
             Dispose();
             TargetArray = targetArray;
-            SliceCapacity = math.min(sliceCapacity, targetArray.depth);
-            MaxResidentMb = math.max(1, maxResidentMb);
-            UsesGlobalDataVaultFlag = TBDRByteFlags.FromBool(dataVault != null);
-            if (UsesGlobalDataVaultFlag != 0)
-            {
-                UsesGlobalDataVaultFlag = TBDRByteFlags.FromBool(
-                    OpenOrAcquireVaultBuffer(dataVault, ref SliceTableHandle, (BufferID)70835, SliceCapacity, NativeArrayOptions.UninitializedMemory, out SliceTable));
-            }
+            _dataVault = dataVault;
 
-            if (UsesGlobalDataVaultFlag == 0)
+            try
             {
-                SliceTable = new NativeArray<TextureStreamingSliceDTO>(SliceCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: fixed texture array residency table; production should pass GlobalDataVault
-                NativeMemoryTrackingBridge.RegisterNativeArray(SliceTable, NativeOwner, nameof(SliceTable), NativeMemoryBridgeLifetime.Session);
-            }
+                SliceCapacity = math.min(sliceCapacity, targetArray.depth);
+                MaxResidentMb = math.max(1, maxResidentMb);
+                UsesGlobalDataVaultFlag = TBDRByteFlags.FromBool(dataVault != null);
+                if (UsesGlobalDataVaultFlag != 0)
+                {
+                    bool acquired = OpenOrAcquireVaultBuffer(dataVault, ref SliceTableHandle, (BufferID)70835, SliceCapacity, NativeArrayOptions.UninitializedMemory, out SliceTable);
+                    UsesGlobalDataVaultFlag = TBDRByteFlags.FromBool(acquired);
+                    if (!acquired)
+                    {
+                        ReleaseVaultBuffer(dataVault, ref SliceTableHandle);
+                        _dataVault = null;
+                    }
+                }
 
-            for (int i = 0; i < SliceTable.Length; i++)
-                SliceTable[i] = default;
-            _nextSlice = 0;
-            Generation++;
-            return true;
+                if (UsesGlobalDataVaultFlag == 0)
+                {
+                    SliceTable = new NativeArray<TextureStreamingSliceDTO>(SliceCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: fixed texture array residency table; production should pass GlobalDataVault
+                    int sliceTableRegistrationId = NativeMemoryTrackingBridge.RegisterNativeArray(SliceTable, NativeOwner, nameof(SliceTable), NativeMemoryBridgeLifetime.Session);
+                    if (sliceTableRegistrationId <= 0)
+                        throw new InvalidOperationException($"Native memory tracking bridge registration failed for {NativeOwner}.{nameof(SliceTable)}.");
+                }
+
+                for (int i = 0; i < SliceTable.Length; i++)
+                    SliceTable[i] = default;
+                _nextSlice = 0;
+                Generation++;
+                return true;
+            }
+            catch
+            {
+                Dispose();
+                throw;
+            }
         }
 
         private static bool OpenOrAcquireVaultBuffer<T>(
@@ -1344,6 +1391,14 @@ namespace Hecton8.Graphics.Culling
             }
 
             return true;
+        }
+
+        private static void ReleaseVaultBuffer<T>(IDataVault dataVault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (dataVault != null && handle.BufferID != 0u)
+                dataVault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         public bool TryStageBiomeSlice(uint biomeHash, Texture sourceTexture, uint sourceSliceId, uint approxBytes, uint frame)
@@ -1451,11 +1506,14 @@ namespace Hecton8.Graphics.Culling
         {
             if (UsesGlobalDataVaultFlag == 0)
                 NativeMemoryTrackingBridge.UnregisterNativeArray(SliceTable, NativeOwner, nameof(SliceTable));
+            else
+                ReleaseVaultBuffer(_dataVault, ref SliceTableHandle);
             if (UsesGlobalDataVaultFlag == 0 && SliceTable.IsCreated)
                 SliceTable.Dispose();
             SliceTable = default;
             SliceTableHandle = default;
             TargetArray = null;
+            _dataVault = null;
             SliceCapacity = 0;
             MaxResidentMb = 0;
             ActiveBiomeHash = 0u;
@@ -1717,7 +1775,14 @@ namespace Hecton8.Graphics.Culling
                 return;
 
             Ring = new NativeArray<TBDRPipelineTelemetryEntry>(RingCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<TBDRPipelineTelemetryEntry>[300] - TBDR black-box ring - owner: SHINOBU_45_TBDR_TELEMETRY
-            NativeMemoryTrackingBridge.RegisterNativeArray(Ring, NativeOwner, nameof(Ring), NativeMemoryBridgeLifetime.Session);
+            int ringRegistrationId = NativeMemoryTrackingBridge.RegisterNativeArray(Ring, NativeOwner, nameof(Ring), NativeMemoryBridgeLifetime.Session);
+            if (ringRegistrationId <= 0)
+            {
+                Ring.Dispose();
+                Ring = default;
+                throw new InvalidOperationException($"Native memory tracking bridge registration failed for {NativeOwner}.{nameof(Ring)}.");
+            }
+
             UsesExternalRingFlag = TBDRByteFlags.False;
             for (int i = 0; i < Ring.Length; i++)
                 Ring[i] = default;

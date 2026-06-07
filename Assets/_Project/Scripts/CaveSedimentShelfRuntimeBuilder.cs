@@ -82,13 +82,19 @@ namespace Hecton8.Caves
             if (shelfRoot == null || volume == null || config == null || !config.enabled)
                 return;
 
-            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, preset, out Bounds volumeBounds))
+            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, preset, out Bounds volumeBounds) ||
+                !CaveDressingRuntimeSanitizer.IsFinite(volumeBounds))
             {
                 DisableUnusedCachedPrimitives(primitiveObjects, 0);
                 return;
             }
 
-            int shelfCount = ResolveShelfCount(config, preset, volumeBounds, globalIntensity);
+            float safeGlobalIntensity = CaveDressingRuntimeSanitizer.ClampFinite(
+                globalIntensity,
+                1f,
+                0f,
+                CaveDressingRuntimeSanitizer.MaxGlobalIntensity);
+            int shelfCount = ResolveShelfCount(config, preset, volumeBounds, safeGlobalIntensity);
             if (shelfCount <= 0)
             {
                 DisableUnusedCachedPrimitives(primitiveObjects, 0);
@@ -96,14 +102,16 @@ namespace Hecton8.Caves
             }
 
             Material shelfMaterial = ResolveShelfMaterial(volume);
-            float minScale = Mathf.Max(0.4f, Mathf.Min(config.scaleRange.x, config.scaleRange.y));
-            float maxScale = Mathf.Max(minScale, Mathf.Max(config.scaleRange.x, config.scaleRange.y));
+            float scaleX = CaveDressingRuntimeSanitizer.ClampFinite(config.scaleRange.x, 2f, 0.4f, 16f);
+            float scaleY = CaveDressingRuntimeSanitizer.ClampFinite(config.scaleRange.y, 8f, 0.4f, 16f);
+            float minScale = math.min(scaleX, scaleY);
+            float maxScale = math.max(minScale, math.max(scaleX, scaleY));
             float radiusX = Mathf.Max(1.25f, volumeBounds.extents.x * 0.58f);
             float radiusZ = Mathf.Max(1.25f, volumeBounds.extents.z * 0.58f);
-            float floorY = volumeBounds.min.y + Mathf.Clamp(config.floorOffset, 0f, 2f);
+            float floorY = volumeBounds.min.y + CaveDressingRuntimeSanitizer.ClampFinite(config.floorOffset, 0.3f, 0f, 2f);
             long runtimeSeed = volume.caveKey != 0L
                 ? volume.caveKey
-                : ComputeFallbackSeed(volume.transform.position, preset);
+                : ComputeFallbackSeed(CaveDressingRuntimeSanitizer.SeedPosition(volume.transform.position), preset);
             ActivateTransform(shelfRoot);
 
             for (int i = 0; i < shelfCount; i++)
@@ -124,6 +132,13 @@ namespace Hecton8.Caves
                     floorY + Hash01(runtimeSeed, i, 97) * Mathf.Max(0.1f, thickness * 0.25f),
                     volumeBounds.center.z + sine * radiusZ * radial);
                 Vector3 localScale = new Vector3(width, thickness, depth);
+                if (!CaveDressingRuntimeSanitizer.IsFinite(localPosition) ||
+                    !CaveDressingRuntimeSanitizer.IsFinite(localScale))
+                {
+                    DisableCachedPrimitive(primitiveObjects, i);
+                    continue;
+                }
+
                 Quaternion localRotation = Quaternion.Euler(pitch, yaw, roll);
                 Renderer shelfRenderer = CreateOrConfigureShelfCachedHot(
                     primitiveObjects,
@@ -164,7 +179,11 @@ namespace Hecton8.Caves
             MeshFilter filter = primitiveFilters[shelfIndex];
             MeshRenderer renderer = primitiveRenderers[shelfIndex];
             if (primitiveObject == null || filter == null || renderer == null)
+            {
+                if (primitiveObject != null && primitiveObject.activeSelf)
+                    primitiveObject.SetActive(false);
                 return null;
+            }
 
             if (!primitiveObject.activeSelf)
                 primitiveObject.SetActive(true);
@@ -220,13 +239,23 @@ namespace Hecton8.Caves
             }
         }
 
+        private static void DisableCachedPrimitive(GameObject[] primitiveObjects, int index)
+        {
+            if (primitiveObjects == null || (uint)index >= (uint)primitiveObjects.Length)
+                return;
+
+            GameObject primitiveObject = primitiveObjects[index];
+            if (primitiveObject != null && primitiveObject.activeSelf)
+                primitiveObject.SetActive(false);
+        }
+
         private static void ApplyShelfVisuals(Renderer renderer, SedimentShelfConfig config)
         {
             if (renderer == null || config == null)
                 return;
 
-            Color shelfColor = config.tint;
-            shelfColor.a = Mathf.Clamp01(config.opacity);
+            Color shelfColor = CaveDressingRuntimeSanitizer.SanitizeColor(config.tint, new Color(0.6f, 0.55f, 0.5f, 1f));
+            shelfColor.a = CaveDressingRuntimeSanitizer.SaturateFinite(config.opacity, 0.7f);
             MaterialPropertyBlock propertyBlock = GetShelfPropertyBlock();
             propertyBlock.Clear();
             renderer.GetPropertyBlock(propertyBlock);
@@ -261,8 +290,11 @@ namespace Hecton8.Caves
             if (preset != null)
                 complexity = Mathf.Clamp01((preset.maxRooms + preset.maxStructures) / 24f);
 
+            if (!CaveDressingRuntimeSanitizer.IsFinite(volumeBounds))
+                return 0;
+
             float footprintFactor = Mathf.Clamp01((volumeBounds.size.x * volumeBounds.size.z) / 900f);
-            float intensity = Mathf.Clamp(globalIntensity, 0.1f, 1.25f);
+            float intensity = CaveDressingRuntimeSanitizer.ClampFinite(globalIntensity, 0.1f, 0.1f, CaveDressingRuntimeSanitizer.MaxGlobalIntensity);
             float density = Mathf.Max(complexity, footprintFactor);
             return Mathf.Clamp(
                 Mathf.RoundToInt(maxCount * math.lerp(0.35f, 1f, density) * intensity),

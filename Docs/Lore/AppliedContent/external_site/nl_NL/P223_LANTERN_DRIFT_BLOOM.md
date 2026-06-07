@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Lantern Drift Bloom"
+title: "Lantaarnstroming-bloom"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Lantern Drift Bloom
+# Lantaarnstroming-bloom
 
-NL LOC HOLD: Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web.
+Lantaarnstroming-bloom is hoe HECTON-8 zegt dat helder niet veilig betekent. De bloom is geen decoratieve mistlaag. Het is een bewegend instrumentenpaneel van levende cellen, stroming, trilling en honger. In rustig water schetst het de ondiepe shelf beter dan een zaklamp: wervels lichten op aan de rand, kabellussen verschijnen als gebroken halo's, pressure-glass-scherven werpen dunne blauwe sneden, en een veilig kanaal kan eruitzien als een rivier van sterren. De val is dat hetzelfde licht verstoring registreert. Start een cutter, laat een pomp hoesten, ping sonar te vaak of trap in paniek een thruster, en de bloom draagt je positie naar buiten. Grazer-tikken dunnen uit. Filteraars draaien om. Iets groters kan het verlichte spoor volgen voordat de UI het kan benoemen. Dit artikel voorkomt dat de schoonheid van HECTON-8 behang wordt. Goed encounterontwerp moet de speler het licht laten willen, het licht laten gebruiken en daarna bang maken voor wat het licht over hem zegt. Een bloom-corridor kan de duidelijkste weg door een rif zijn en toch de slechtste plek om een lawaaierige klep te repareren. Hij hoort naast glasgrazers en roofdierschaduwen, omdat alle drie dezelfde regel leren: de oceaan is leesbaar, en hij leest jou ook.
 
 ## Scanner
 
-NL LOC HOLD: A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.
+LANTAARNSTROMING-BLOOM // Bioluminescent plankton tekent de stroming in banden. Het omlijnt veilig water en kleine gevaren, maar gereedschapslawaai verandert de bloom in een verlicht spoor.
 
 ## Terminal
 
-NL LOC HOLD: VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.
+ZICHTBAARHEIDSEVENT: bloom verbetert silhouetlezing en stromingsspoor, maar verlaagt stealth. Verstoring door cutter, pomp, pinger, thruster of rompimpact kan filteraars, grazers en ondiepe roofdieren langs het verlichte spoor trekken.
 
 ## Audio
 
-NL LOC HOLD: Pretty water is still water. It carries your noise.
+Mooi water is nog steeds water. Het draagt jouw geluid.
 
 ## Field Note
 
-NL LOC HOLD: Lantern drift is not decoration. It is a visibility event with acoustic consequences.
+Licht is hier geen troost. In bloom-water reizen elke cutterpuls, pomphoest en pingerretour verder dan je lamp.
 
 <!-- External Site; generated from P223_LANTERN_DRIFT_BLOOM/nl_NL. -->

@@ -7,6 +7,9 @@ poi_tags: poi.lian_torres_forge_glove;poi.anneal_timer_card
 biome_tags: biome.vent_forge;biome.abyssal_machine_field
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Lian Torres/Vent Forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

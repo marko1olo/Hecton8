@@ -158,12 +158,8 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            SettingsManager registered = GlobalRegistry.Settings;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             _isShuttingDown = false;
             s_runtimeInstance = this;
@@ -1486,12 +1482,34 @@ namespace Hecton8.UI
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            SettingsManager registered = GlobalRegistry.Settings;
-            if (registered != null && registered != this)
+            if (TryAbortForUsableExistingRuntime())
                 return;
 
             GlobalRegistry.RegisterSettingsRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Settings, this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            SettingsManager registered = GlobalRegistry.Settings;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsSettingsRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterSettingsRuntime(registered);
+            if (ReferenceEquals(s_runtimeInstance, registered))
+                s_runtimeInstance = null;
+            return false;
+        }
+
+        private static bool IsSettingsRuntimeUsable(SettingsManager settings)
+        {
+            return settings != null && settings._serviceRegistered && settings.isActiveAndEnabled;
         }
 
         private void UnregisterFromGlobalRegistry()
@@ -1533,16 +1551,27 @@ namespace Hecton8.UI
 
         private bool TryRefreshPersistenceReference(out bool changed)
         {
-            return TryAssignPersistence(GlobalRegistry.UserOptions, out changed);
+            UserOptionsPersistence persistence = GlobalRegistry.UserOptions;
+            return TryAssignPersistence(persistence, out changed);
         }
 
         private bool TryAssignPersistence(UserOptionsPersistence persistence, out bool changed)
         {
+            if (!IsUserOptionsPersistenceUsable(persistence))
+                persistence = null;
+
             changed = !ReferenceEquals(_persistence, persistence);
             if (changed)
                 _persistence = persistence;
 
             return _persistence != null;
+        }
+
+        private static bool IsUserOptionsPersistenceUsable(UserOptionsPersistence persistence)
+        {
+            return persistence != null &&
+                   persistence.IsServiceReady &&
+                   persistence.isActiveAndEnabled;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1978,7 +2007,10 @@ namespace Hecton8.UI
                 return;
             }
 
-            _persistence?.Save();
+            if (IsUserOptionsPersistenceUsable(_persistence))
+                _persistence.Save();
+            else
+                _persistence = null;
         }
 
         private void FlushPendingPersistenceSave()

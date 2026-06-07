@@ -7,6 +7,9 @@ poi_tags: poi.abyssal_machine_field_warning;poi.filter_body_shadow
 biome_tags: biome.abyssal_machine_field;biome.warning
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Abyssal Machine Field Warning"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

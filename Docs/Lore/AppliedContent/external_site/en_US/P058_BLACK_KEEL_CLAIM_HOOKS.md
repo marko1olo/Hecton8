@@ -7,6 +7,9 @@ poi_tags: poi.claim_hook_terminal;poi.carrier_tariff
 biome_tags: biome.claim_pool;biome.surface_relay
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Black Keel Claim Hooks"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

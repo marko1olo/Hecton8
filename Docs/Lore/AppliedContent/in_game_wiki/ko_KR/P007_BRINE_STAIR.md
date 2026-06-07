@@ -7,6 +7,9 @@ poi_tags: poi.brine_curtain;poi.ballast_station
 biome_tags: biome.brine_stairs;biome.thermal_field
 locale: ko_KR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "염수 계단"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.sahana_iqbal_torque_board;poi.triage_cot_route_tag
 biome_tags: biome.evacuation_queue;biome.service_module
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Sahana Iqbal/Triage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

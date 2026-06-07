@@ -169,7 +169,7 @@ MonoBehaviour:
   contextProbeRange: 18
   contextMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 2121609
 --- !u!114 &3595887011743355897
 MonoBehaviour:
   m_ObjectHideFlags: 0

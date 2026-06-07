@@ -50,6 +50,7 @@ namespace Hecton8.Audio.Synthesis.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;
         }
 

@@ -7,6 +7,9 @@ poi_tags: poi.final_payload_matrix;poi.atlas_choice_interface
 biome_tags: biome.factory_temple;biome.atlas_basin
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Final Choice Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

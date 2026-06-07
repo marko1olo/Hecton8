@@ -21,6 +21,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Hecton.Localization;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory.Layout;
 using Hecton8.Narrative;
@@ -55,21 +56,34 @@ namespace Hecton8.SaveSystem
 
         /// <summary>Save version that first persisted delayed hazard zone toxicity dose state.</summary>
         public const int HazardZoneRuntimePersistenceVersion = 74;
+        public const int Atlas6LiabilityPersistenceVersion = 75;
+        public const int VoxelDeltaPersistenceVersion = 76;
+        public const int VoxelDeltaDenseCellFlagsPersistenceVersion = 77;
         public const float HazardZoneMaxPersistedToxicityDose = 64f;
         public const float HazardZoneToxicityDamageDoseThreshold = 1f;
         public const float HazardZoneMaxPersistedToxicityPulseSeconds = 0.5f;
+        public const float Atlas6LiabilityMaxTrackedSectorYield = 1000000f;
+        public const float Atlas6LiabilityMaxBiomatterExposure = 100f;
         public const int RadiationGridPersistenceVersion = 68;
         public const int FirstHourDtoLockPersistenceVersion = 72;
         public const float PlayerKinematicVelocityHardCapMetersPerSecond = 80f;
         public const float PlayerKinematicVelocityHardCapSq =
             PlayerKinematicVelocityHardCapMetersPerSecond * PlayerKinematicVelocityHardCapMetersPerSecond;
         public const float PlayerStatsNitrogenBuildUpHardCap = 160f;
+        public const byte PlayerInjuryBleedingFlag = 0x01;
+        public const byte PlayerInjuryFractureFlag = 0x02;
+        public const byte PlayerInjurySupportedFlagMask = PlayerInjuryBleedingFlag | PlayerInjuryFractureFlag;
+        public const byte PlayerLastDeathCauseMaxKnown = 7;
         public const ushort InventoryDefaultQualityMilli = 1000;
         public const byte InventoryItemGeneticsSupportedFlagsMask = 0x0F;
         public const int InventoryShadowPayloadMaxBytes = 16 * 1024;
+        internal const byte ModuleFailureModeNone = 0;
+        internal const byte ModuleFailureModeMaxKnown = 3;
+        public const uint InventoryShadowPayloadHashSeed = 2166136261u;
+        public const uint InventoryShadowPayloadHashPrime = 16777619u;
 
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
-        public const int CurrentVersion = HazardZoneRuntimePersistenceVersion; // v74: delayed hazard zone toxicity state.
+        public const int CurrentVersion = VoxelDeltaDenseCellFlagsPersistenceVersion; // v77: dense voxel delta cell flags in binary payloads.
 
         internal static void EnsureExactArrayCapacity<T>(ref T[] values, int capacity)
         {
@@ -222,6 +236,39 @@ namespace Hecton8.SaveSystem
 
         /// <summary>Konflikt direktiv byl aktivirovan. v4.2 ATLAS6</summary>
         public bool atlas6DirectiveConflictTriggered;
+
+        /// <summary>Accumulated Xenon-Omega liability yield. v75 ATLAS6-LIABILITY</summary>
+        public float atlas6LiabilitySectorXenonOmegaYield;
+
+        /// <summary>Whether Atlas-6 disaster evidence is being carried/transmitted. v75 ATLAS6-LIABILITY</summary>
+        public bool atlas6LiabilityHasDisasterEvidence;
+
+        /// <summary>Number of persisted recovered worker tag hashes. v75 ATLAS6-LIABILITY</summary>
+        public int atlas6LiabilityRecoveredWorkerTagCount;
+
+        /// <summary>Recovered worker tag hashes for liability dedupe. v75 ATLAS6-LIABILITY</summary>
+        public uint[] atlas6LiabilityRecoveredWorkerTagHashes;
+
+        /// <summary>Corporate hostility accumulated by actuarial liability. v75 ATLAS6-LIABILITY</summary>
+        public float atlas6LiabilityCorporateHostilityIndex;
+
+        /// <summary>Corporate credit balance after ghost-PDA deductions. v75 ATLAS6-LIABILITY</summary>
+        public float atlas6LiabilityCorporateCreditBalance;
+
+        /// <summary>Extraction carrier state as ExtractionCarrierState int. v75 ATLAS6-LIABILITY</summary>
+        public int atlas6LiabilityExtractionCarrierState;
+
+        /// <summary>Persisted Xenon-Omega biomatter exposure. v75 ATLAS6-LIABILITY</summary>
+        public float atlas6LiabilityBiomatterExposureLevel;
+
+        /// <summary>Whether Haldane quarantine is already raised. v75 ATLAS6-LIABILITY</summary>
+        public bool atlas6LiabilityHaldaneLockoutActive;
+
+        /// <summary>Arendt pressure-seal integrity. v75 ATLAS6-LIABILITY</summary>
+        public float atlas6LiabilityPressureSealIntegrity;
+
+        /// <summary>Whether Arendt bulkhead lockdown is active. v75 ATLAS6-LIABILITY</summary>
+        public bool atlas6LiabilityBulkheadLocked;
 
         /// <summary>Poluchennye korporativnye prikazy. v4.3 CORP</summary>
         public List<string> corporateReceivedOrderIds = new List<string>();
@@ -380,6 +427,17 @@ namespace Hecton8.SaveSystem
                 atlas6PlayerStatus = 0,
                 atlas6BarterCount = 0,
                 atlas6DirectiveConflictTriggered = false,
+                atlas6LiabilitySectorXenonOmegaYield = 0f,
+                atlas6LiabilityHasDisasterEvidence = false,
+                atlas6LiabilityRecoveredWorkerTagCount = 0,
+                atlas6LiabilityRecoveredWorkerTagHashes = new uint[MaxAtlas6LiabilityWorkerTags],
+                atlas6LiabilityCorporateHostilityIndex = 0f,
+                atlas6LiabilityCorporateCreditBalance = 5000f,
+                atlas6LiabilityExtractionCarrierState = 0,
+                atlas6LiabilityBiomatterExposureLevel = 0f,
+                atlas6LiabilityHaldaneLockoutActive = false,
+                atlas6LiabilityPressureSealIntegrity = 1f,
+                atlas6LiabilityBulkheadLocked = false,
                 corporateReceivedOrderIds = new List<string>(),
                 corporatePendingOrderIds = new List<string>(),
                 corporatePendingOrderTimers = new List<float>(),
@@ -410,8 +468,13 @@ namespace Hecton8.SaveSystem
 
         public void RefreshFirstHourDtoMirrors()
         {
+            SaveDataPlayerSurvivalSanitizer.SanitizePlayerStats(ref playerStats);
             playerKinematicState = PlayerKinematicStateDTO.FromPlayerStats(in playerStats);
-            int inventoryShadowPayloadLength = SaveDataInventorySanitizer.ResolveInventoryShadowPayloadLength(this);
+            SaveDataPlayerSurvivalSanitizer.SanitizePlayerKinematicState(ref playerKinematicState);
+            SaveDataInventorySanitizer.ResolveInventoryShadowPayloadMetadata(
+                this,
+                out int inventoryShadowPayloadLength,
+                out uint inventoryShadowPayloadHash);
             inventoryShadow = SaveDataInventorySanitizer.BuildInventoryShadow(
                 in inventory,
                 inventoryShadowPayloadLength,
@@ -430,6 +493,9 @@ namespace Hecton8.SaveSystem
 
         /// <summary>Maximum explicit scanner state records. v66 DISCOVERY.</summary>
         public const int MaxDataArchaeologyScanStates = 1024;
+
+        /// <summary>Maximum persisted Atlas-6 liability worker-tag hashes. v75 ATLAS6-LIABILITY.</summary>
+        public const int MaxAtlas6LiabilityWorkerTags = 1024;
 
         /// <summary>Persisted 1024-bit archaeology discovery mask word count. v64 DISCOVERY.</summary>
         public const int MaxDataArchaeologyDiscoveryWords = MaxDataArchaeologyScanStates / 64;
@@ -458,6 +524,9 @@ namespace Hecton8.SaveSystem
         /// <summary>Maximum persisted RTG decay records. v70 RTG.</summary>
         public const int MaxRtgDecayRecords = 128;
 
+        /// <summary>Persisted RTG flags: active/dead/warned/reprocessed. v70 RTG.</summary>
+        public const byte RtgDecayPersistedFlagMask = 0x0F;
+
         /// <summary>Maximum persisted external scavenger sites. Runtime capacity is clamped to 16.</summary>
         public const int MaxExternalScavengerSites = 16;
 
@@ -475,6 +544,9 @@ namespace Hecton8.SaveSystem
 
         /// <summary>Maximum persisted suit upgrade IDs in each legacy suit list.</summary>
         public const int MaxSuitUpgradeIds = 32;
+
+        /// <summary>Persisted suit upgrade bits supported by current suit resolver.</summary>
+        public const ulong SuitUpgradeSupportedMask = Hecton8.Gameplay.SuitUpgradeResolver.SupportedMask;
 
         /// <summary>Maximum persisted corporate order IDs and pending-order timers.</summary>
         public const int MaxCorporateOrderIds = 16;
@@ -646,6 +718,43 @@ namespace Hecton8.SaveSystem
         {
             return remainingTime > 0f;
         }
+
+        internal static bool TrySanitizeForPersistence(
+            in ExternalScavengerSiteDTO value,
+            out ExternalScavengerSiteDTO sanitized)
+        {
+            sanitized = default;
+            if (float.IsNaN(value.remainingTime) || float.IsInfinity(value.remainingTime) || value.remainingTime <= 0f)
+                return false;
+
+            sanitized.chunkX = value.chunkX;
+            sanitized.chunkY = value.chunkY;
+            sanitized.chunkZ = value.chunkZ;
+            sanitized.offsetX = value.offsetX;
+            sanitized.offsetY = value.offsetY;
+            sanitized.offsetZ = value.offsetZ;
+            sanitized.quantizedRadius = value.quantizedRadius;
+            sanitized.remainingTime = value.remainingTime;
+            sanitized.seed = value.seed;
+            sanitized._pad0 = 0L;
+            return true;
+        }
+
+        internal static bool PersistenceEquals(
+            in ExternalScavengerSiteDTO left,
+            in ExternalScavengerSiteDTO right)
+        {
+            return left.chunkX == right.chunkX &&
+                   left.chunkY == right.chunkY &&
+                   left.chunkZ == right.chunkZ &&
+                   left.offsetX == right.offsetX &&
+                   left.offsetY == right.offsetY &&
+                   left.offsetZ == right.offsetZ &&
+                   left.quantizedRadius == right.quantizedRadius &&
+                   left.remainingTime == right.remainingTime &&
+                   left.seed == right.seed &&
+                   left._pad0 == right._pad0;
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -792,6 +901,30 @@ namespace Hecton8.SaveSystem
         [FieldOffset(12)] public byte flags;
         [FieldOffset(13)] private byte _pad0;
         [FieldOffset(14)] private ushort _pad1;
+
+        internal static ProceduralFaunaStateDTO SanitizeForPersistence(in ProceduralFaunaStateDTO value)
+        {
+            ProceduralFaunaStateDTO dto = value;
+            dto.cooldownUntilPlayTime = SanitizeNonNegativeFinite(dto.cooldownUntilPlayTime);
+            dto.flags = (byte)(dto.flags & (FlagLargeThreatZone | FlagBlocked));
+            dto._pad0 = 0;
+            dto._pad1 = 0;
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in ProceduralFaunaStateDTO left, in ProceduralFaunaStateDTO right)
+        {
+            return left.runtimeKey == right.runtimeKey &&
+                   left.cooldownUntilPlayTime == right.cooldownUntilPlayTime &&
+                   left.flags == right.flags &&
+                   left._pad0 == right._pad0 &&
+                   left._pad1 == right._pad1;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) ? Mathf.Max(0f, value) : 0f;
+        }
     }
 
     [Serializable]
@@ -829,6 +962,110 @@ namespace Hecton8.SaveSystem
         [FieldOffset(108)] public byte flags;
         [FieldOffset(109)] private byte _pad0;
         [FieldOffset(110)] private ushort _pad1;
+
+        internal static HibernatedFaunaStateDTO SanitizeForPersistence(in HibernatedFaunaStateDTO value)
+        {
+            HibernatedFaunaStateDTO dto = value;
+            dto.health = SanitizeNonNegativeFinite(dto.health);
+            SanitizeAup(ref dto.position);
+            SanitizeRotation(ref dto);
+            dto.linearVelocityX = SanitizeFinite(dto.linearVelocityX, 0f);
+            dto.linearVelocityY = SanitizeFinite(dto.linearVelocityY, 0f);
+            dto.linearVelocityZ = SanitizeFinite(dto.linearVelocityZ, 0f);
+            dto.angularVelocityX = SanitizeFinite(dto.angularVelocityX, 0f);
+            dto.angularVelocityY = SanitizeFinite(dto.angularVelocityY, 0f);
+            dto.angularVelocityZ = SanitizeFinite(dto.angularVelocityZ, 0f);
+            dto.flags = (byte)(dto.flags & FlagLargeThreat);
+            dto._pad0 = 0;
+            dto._pad1 = 0;
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in HibernatedFaunaStateDTO left, in HibernatedFaunaStateDTO right)
+        {
+            return left.speciesId == right.speciesId &&
+                   left.biomeIndex == right.biomeIndex &&
+                   left.creatureTypeIndex == right.creatureTypeIndex &&
+                   left.health == right.health &&
+                   left.position.GridX == right.position.GridX &&
+                   left.position.GridY == right.position.GridY &&
+                   left.position.GridZ == right.position.GridZ &&
+                   left.position.Local.x == right.position.Local.x &&
+                   left.position.Local.y == right.position.Local.y &&
+                   left.position.Local.z == right.position.Local.z &&
+                   left.position.Local.w == right.position.Local.w &&
+                   left.position.Reserved == right.position.Reserved &&
+                   left.rotationX == right.rotationX &&
+                   left.rotationY == right.rotationY &&
+                   left.rotationZ == right.rotationZ &&
+                   left.rotationW == right.rotationW &&
+                   left.linearVelocityX == right.linearVelocityX &&
+                   left.linearVelocityY == right.linearVelocityY &&
+                   left.linearVelocityZ == right.linearVelocityZ &&
+                   left.angularVelocityX == right.angularVelocityX &&
+                   left.angularVelocityY == right.angularVelocityY &&
+                   left.angularVelocityZ == right.angularVelocityZ &&
+                   left.uniqueInstanceUid == right.uniqueInstanceUid &&
+                   left.flags == right.flags &&
+                   left._pad0 == right._pad0 &&
+                   left._pad1 == right._pad1;
+        }
+
+        private static void SanitizeAup(ref AbsoluteUniversePositionBlit128 value)
+        {
+            value.Local.x = SanitizeFinite(value.Local.x, 0f);
+            value.Local.y = SanitizeFinite(value.Local.y, 0f);
+            value.Local.z = SanitizeFinite(value.Local.z, 0f);
+            value.Local.w = 0f;
+            value.Reserved = 0UL;
+        }
+
+        private static void SanitizeRotation(ref HibernatedFaunaStateDTO dto)
+        {
+            if (!IsFinite(dto.rotationX) || !IsFinite(dto.rotationY) || !IsFinite(dto.rotationZ) || !IsFinite(dto.rotationW))
+            {
+                dto.rotationX = 0f;
+                dto.rotationY = 0f;
+                dto.rotationZ = 0f;
+                dto.rotationW = 1f;
+                return;
+            }
+
+            float lengthSq =
+                dto.rotationX * dto.rotationX +
+                dto.rotationY * dto.rotationY +
+                dto.rotationZ * dto.rotationZ +
+                dto.rotationW * dto.rotationW;
+            if (!IsFinite(lengthSq) || lengthSq <= 0.000001f)
+            {
+                dto.rotationX = 0f;
+                dto.rotationY = 0f;
+                dto.rotationZ = 0f;
+                dto.rotationW = 1f;
+                return;
+            }
+
+            float invLength = 1f / Mathf.Sqrt(lengthSq);
+            dto.rotationX *= invLength;
+            dto.rotationY *= invLength;
+            dto.rotationZ *= invLength;
+            dto.rotationW *= invLength;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return IsFinite(value) ? Mathf.Max(0f, value) : 0f;
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return IsFinite(value) ? value : fallback;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
     }
 
     [Serializable]
@@ -851,6 +1088,63 @@ namespace Hecton8.SaveSystem
         [FieldOffset(52)] public float absoluteVoxelCenterY;
         [FieldOffset(56)] public float absoluteVoxelCenterZ;
         [FieldOffset(60)] private int _pad0;
+
+        internal static ProceduralGeologySeamStateDTO SanitizeForPersistence(in ProceduralGeologySeamStateDTO value)
+        {
+            ProceduralGeologySeamStateDTO dto = value;
+            dto.absoluteTerrainHeight = SanitizeFinite(dto.absoluteTerrainHeight, 0f);
+            dto.absoluteSeamHeight = SanitizeFinite(dto.absoluteSeamHeight, 0f);
+            dto.seamBlendRadius = SanitizeNonNegativeFinite(dto.seamBlendRadius);
+            dto.terrainBlendWeight = SanitizeUnit01(dto.terrainBlendWeight);
+            dto.caveBlendWeight = SanitizeUnit01(dto.caveBlendWeight);
+            dto.absolutePositionX = SanitizeFinite(dto.absolutePositionX, 0f);
+            dto.absolutePositionY = SanitizeFinite(dto.absolutePositionY, 0f);
+            dto.absolutePositionZ = SanitizeFinite(dto.absolutePositionZ, 0f);
+            dto.absoluteVoxelCenterX = SanitizeFinite(dto.absoluteVoxelCenterX, 0f);
+            dto.absoluteVoxelCenterY = SanitizeFinite(dto.absoluteVoxelCenterY, 0f);
+            dto.absoluteVoxelCenterZ = SanitizeFinite(dto.absoluteVoxelCenterZ, 0f);
+            dto._pad0 = 0;
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in ProceduralGeologySeamStateDTO left, in ProceduralGeologySeamStateDTO right)
+        {
+            return left.runtimeKey == right.runtimeKey &&
+                   left.chunkX == right.chunkX &&
+                   left.chunkZ == right.chunkZ &&
+                   left.absoluteTerrainHeight == right.absoluteTerrainHeight &&
+                   left.absoluteSeamHeight == right.absoluteSeamHeight &&
+                   left.seamBlendRadius == right.seamBlendRadius &&
+                   left.terrainBlendWeight == right.terrainBlendWeight &&
+                   left.caveBlendWeight == right.caveBlendWeight &&
+                   left.absolutePositionX == right.absolutePositionX &&
+                   left.absolutePositionY == right.absolutePositionY &&
+                   left.absolutePositionZ == right.absolutePositionZ &&
+                   left.absoluteVoxelCenterX == right.absoluteVoxelCenterX &&
+                   left.absoluteVoxelCenterY == right.absoluteVoxelCenterY &&
+                   left.absoluteVoxelCenterZ == right.absoluteVoxelCenterZ &&
+                   left._pad0 == right._pad0;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return IsFinite(value) ? Mathf.Max(0f, value) : 0f;
+        }
+
+        private static float SanitizeUnit01(float value)
+        {
+            return IsFinite(value) ? Mathf.Clamp01(value) : 0f;
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return IsFinite(value) ? value : fallback;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
     }
 
     [Serializable]
@@ -869,6 +1163,73 @@ namespace Hecton8.SaveSystem
         [FieldOffset(36)] public float funnelLength;
         [FieldOffset(40)] public float innerRadius;
         [FieldOffset(44)] private int _pad0;
+
+        internal static ProceduralGeologyCaveEntranceDTO SanitizeForPersistence(in ProceduralGeologyCaveEntranceDTO value)
+        {
+            ProceduralGeologyCaveEntranceDTO dto = value;
+            dto.surfacePositionX = SanitizeFinite(dto.surfacePositionX, 0f);
+            dto.surfacePositionY = SanitizeFinite(dto.surfacePositionY, 0f);
+            dto.surfacePositionZ = SanitizeFinite(dto.surfacePositionZ, 0f);
+            SanitizeDirection(ref dto);
+            dto.radius = SanitizeNonNegativeFinite(dto.radius);
+            dto.funnelLength = SanitizeNonNegativeFinite(dto.funnelLength);
+            dto.innerRadius = SanitizeNonNegativeFinite(dto.innerRadius);
+            dto._pad0 = 0;
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in ProceduralGeologyCaveEntranceDTO left, in ProceduralGeologyCaveEntranceDTO right)
+        {
+            return left.runtimeKey == right.runtimeKey &&
+                   left.surfacePositionX == right.surfacePositionX &&
+                   left.surfacePositionY == right.surfacePositionY &&
+                   left.surfacePositionZ == right.surfacePositionZ &&
+                   left.inwardDirectionX == right.inwardDirectionX &&
+                   left.inwardDirectionY == right.inwardDirectionY &&
+                   left.inwardDirectionZ == right.inwardDirectionZ &&
+                   left.radius == right.radius &&
+                   left.funnelLength == right.funnelLength &&
+                   left.innerRadius == right.innerRadius &&
+                   left._pad0 == right._pad0;
+        }
+
+        private static void SanitizeDirection(ref ProceduralGeologyCaveEntranceDTO dto)
+        {
+            dto.inwardDirectionX = SanitizeFinite(dto.inwardDirectionX, 0f);
+            dto.inwardDirectionY = SanitizeFinite(dto.inwardDirectionY, 0f);
+            dto.inwardDirectionZ = SanitizeFinite(dto.inwardDirectionZ, 1f);
+            float lengthSq =
+                dto.inwardDirectionX * dto.inwardDirectionX +
+                dto.inwardDirectionY * dto.inwardDirectionY +
+                dto.inwardDirectionZ * dto.inwardDirectionZ;
+            if (!IsFinite(lengthSq) || lengthSq <= 0.000001f)
+            {
+                dto.inwardDirectionX = 0f;
+                dto.inwardDirectionY = 0f;
+                dto.inwardDirectionZ = 1f;
+                return;
+            }
+
+            float invLength = 1f / Mathf.Sqrt(lengthSq);
+            dto.inwardDirectionX *= invLength;
+            dto.inwardDirectionY *= invLength;
+            dto.inwardDirectionZ *= invLength;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return IsFinite(value) ? Mathf.Max(0f, value) : 0f;
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return IsFinite(value) ? value : fallback;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
     }
 
     [Serializable]
@@ -964,12 +1325,34 @@ namespace Hecton8.SaveSystem
             habitatFloodStateCount = safeCount;
             for (int i = 0; i < safeCount; i++)
             {
-                int moduleHashId = 0;
-                if (moduleBlitRecords != null && i < moduleBlitRecords.Length)
-                    moduleHashId = moduleBlitRecords[i].moduleHashId;
-
+                int moduleHashId = ResolveHabitatFloodStateModuleHashId(i);
                 habitatFloodStates[i] = HabitatFloodStateDTO.FromModule(in modules[i], moduleHashId);
             }
+        }
+
+        internal int ResolveHabitatFloodStateModuleHashId(int moduleIndex)
+        {
+            if (moduleIndex < 0)
+                return 0;
+
+            int safeBlitCount = Math.Clamp(
+                moduleBlitCount,
+                0,
+                moduleBlitRecords != null ? Math.Min(MaxModules, moduleBlitRecords.Length) : 0);
+            if (moduleIndex < safeBlitCount)
+            {
+                int moduleHashId = moduleBlitRecords[moduleIndex].moduleHashId;
+                if (moduleHashId != 0)
+                    return moduleHashId;
+            }
+
+            int safeGraphNodeCount = Math.Clamp(
+                graphNodeCount,
+                0,
+                graphNodes != null ? Math.Min(MaxModules, graphNodes.Length) : 0);
+            return moduleIndex < safeGraphNodeCount
+                ? graphNodes[moduleIndex].moduleHashId
+                : 0;
         }
     }
 
@@ -997,16 +1380,66 @@ namespace Hecton8.SaveSystem
         {
             HabitatFloodStateDTO dto = default;
             dto.moduleHashId = stableModuleHashId;
-            dto.integrity = module.integrity;
-            dto.repairIntegrityCap = module.repairIntegrityCap;
-            dto.airReserveNormalized = module.airReserveNormalized;
-            dto.co2Normalized = module.co2Normalized;
-            dto.floodedReefFloodSeconds = module.floodedReefFloodSeconds;
+            dto.integrity = SanitizeNonNegativeFinite(module.integrity);
+            dto.repairIntegrityCap = SanitizeNonNegativeFinite(module.repairIntegrityCap);
+            dto.airReserveNormalized = SanitizeUnit01(module.airReserveNormalized);
+            dto.co2Normalized = SanitizeUnit01(module.co2Normalized);
+            dto.floodedReefFloodSeconds = SanitizeNonNegativeFinite(module.floodedReefFloodSeconds);
             dto.flags = (byte)((module.isFlooded ? FlagFlooded : 0) |
                                (module.interiorReefInfestationActive ? FlagInfested : 0));
-            dto.failureMode = module.failureMode;
+            dto.failureMode = SanitizeFailureMode(module.failureMode);
             dto.health = module.health;
             return dto;
+        }
+
+        public static HabitatFloodStateDTO Sanitize(in HabitatFloodStateDTO value)
+        {
+            HabitatFloodStateDTO dto = value;
+            dto.integrity = SanitizeNonNegativeFinite(dto.integrity);
+            dto.repairIntegrityCap = SanitizeNonNegativeFinite(dto.repairIntegrityCap);
+            dto.airReserveNormalized = SanitizeUnit01(dto.airReserveNormalized);
+            dto.co2Normalized = SanitizeUnit01(dto.co2Normalized);
+            dto.floodedReefFloodSeconds = SanitizeNonNegativeFinite(dto.floodedReefFloodSeconds);
+            dto.flags = (byte)(dto.flags & (FlagFlooded | FlagInfested));
+            dto.failureMode = SanitizeFailureMode(dto.failureMode);
+            dto.reserved0 = 0;
+            dto._pad0 = 0;
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in HabitatFloodStateDTO left, in HabitatFloodStateDTO right)
+        {
+            return left.moduleHashId == right.moduleHashId &&
+                   left.integrity == right.integrity &&
+                   left.repairIntegrityCap == right.repairIntegrityCap &&
+                   left.airReserveNormalized == right.airReserveNormalized &&
+                   left.co2Normalized == right.co2Normalized &&
+                   left.floodedReefFloodSeconds == right.floodedReefFloodSeconds &&
+                   left.flags == right.flags &&
+                   left.failureMode == right.failureMode &&
+                   left.health == right.health &&
+                   left.reserved0 == right.reserved0 &&
+                   left._pad0 == right._pad0;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return IsFinite(value) ? Mathf.Max(0f, value) : 0f;
+        }
+
+        private static float SanitizeUnit01(float value)
+        {
+            return IsFinite(value) ? Mathf.Clamp01(value) : 0f;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+        private static byte SanitizeFailureMode(byte value)
+        {
+            return value <= SaveData.ModuleFailureModeMaxKnown ? value : SaveData.ModuleFailureModeNone;
         }
     }
 
@@ -1019,6 +1452,9 @@ namespace Hecton8.SaveSystem
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ModuleBlitDTO
     {
+        public const byte FlagFlooded = 1 << 0;
+        public const byte FlagInteriorReef = 1 << 1;
+
         [FieldOffset(0)] public int prefabHashId;
         [FieldOffset(4)] public int moduleHashId;
         [FieldOffset(8)] public long aupGridX;
@@ -1035,6 +1471,82 @@ namespace Hecton8.SaveSystem
         [FieldOffset(61)] public byte flags;
         [FieldOffset(62)] public byte failureMode;
         [FieldOffset(63)] public byte reserved;
+
+        internal static ModuleBlitDTO SanitizeForPersistence(in ModuleBlitDTO value)
+        {
+            ModuleBlitDTO dto = value;
+            dto.aupLocalX = SanitizeFinite(dto.aupLocalX, 0f);
+            dto.aupLocalY = SanitizeFinite(dto.aupLocalY, 0f);
+            dto.aupLocalZ = SanitizeFinite(dto.aupLocalZ, 0f);
+            SanitizeRotation(ref dto);
+            dto.flags = (byte)(dto.flags & (FlagFlooded | FlagInteriorReef));
+            dto.failureMode = SanitizeFailureMode(dto.failureMode);
+            dto.reserved = 0;
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in ModuleBlitDTO left, in ModuleBlitDTO right)
+        {
+            return left.prefabHashId == right.prefabHashId &&
+                   left.moduleHashId == right.moduleHashId &&
+                   left.aupGridX == right.aupGridX &&
+                   left.aupGridY == right.aupGridY &&
+                   left.aupGridZ == right.aupGridZ &&
+                   left.aupLocalX == right.aupLocalX &&
+                   left.aupLocalY == right.aupLocalY &&
+                   left.aupLocalZ == right.aupLocalZ &&
+                   left.rotX == right.rotX &&
+                   left.rotY == right.rotY &&
+                   left.rotZ == right.rotZ &&
+                   left.rotW == right.rotW &&
+                   left.health == right.health &&
+                   left.flags == right.flags &&
+                   left.failureMode == right.failureMode &&
+                   left.reserved == right.reserved;
+        }
+
+        private static void SanitizeRotation(ref ModuleBlitDTO dto)
+        {
+            if (!IsFinite(dto.rotX) || !IsFinite(dto.rotY) || !IsFinite(dto.rotZ) || !IsFinite(dto.rotW))
+            {
+                dto.rotX = 0f;
+                dto.rotY = 0f;
+                dto.rotZ = 0f;
+                dto.rotW = 1f;
+                return;
+            }
+
+            float lengthSq = dto.rotX * dto.rotX + dto.rotY * dto.rotY + dto.rotZ * dto.rotZ + dto.rotW * dto.rotW;
+            if (!IsFinite(lengthSq) || lengthSq <= 0.000001f)
+            {
+                dto.rotX = 0f;
+                dto.rotY = 0f;
+                dto.rotZ = 0f;
+                dto.rotW = 1f;
+                return;
+            }
+
+            float invLength = 1f / Mathf.Sqrt(lengthSq);
+            dto.rotX *= invLength;
+            dto.rotY *= invLength;
+            dto.rotZ *= invLength;
+            dto.rotW *= invLength;
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return IsFinite(value) ? value : fallback;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+        private static byte SanitizeFailureMode(byte value)
+        {
+            return value <= SaveData.ModuleFailureModeMaxKnown ? value : SaveData.ModuleFailureModeNone;
+        }
     }
 
     [Serializable]
@@ -1044,6 +1556,24 @@ namespace Hecton8.SaveSystem
         public string title;
         public string category;
         public string summary;
+
+        internal static ScanEntryDTO SanitizeForPersistence(in ScanEntryDTO value)
+        {
+            ScanEntryDTO dto = value;
+            dto.id ??= string.Empty;
+            dto.title ??= string.Empty;
+            dto.category ??= string.Empty;
+            dto.summary ??= string.Empty;
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in ScanEntryDTO left, in ScanEntryDTO right)
+        {
+            return string.Equals(left.id, right.id, StringComparison.Ordinal) &&
+                   string.Equals(left.title, right.title, StringComparison.Ordinal) &&
+                   string.Equals(left.category, right.category, StringComparison.Ordinal) &&
+                   string.Equals(left.summary, right.summary, StringComparison.Ordinal);
+        }
     }
 
     [Serializable]
@@ -1069,6 +1599,20 @@ namespace Hecton8.SaveSystem
     {
         public string offerId;
         public int executionCount;
+
+        internal static BarterOfferStateDTO SanitizeForPersistence(in BarterOfferStateDTO value)
+        {
+            BarterOfferStateDTO dto = value;
+            dto.offerId ??= string.Empty;
+            dto.executionCount = Math.Max(0, dto.executionCount);
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in BarterOfferStateDTO left, in BarterOfferStateDTO right)
+        {
+            return left.offerId == right.offerId &&
+                   left.executionCount == right.executionCount;
+        }
     }
 
     [Serializable]
@@ -1079,6 +1623,26 @@ namespace Hecton8.SaveSystem
         public string channelName;
         public string costSummary;
         public string rewardSummary;
+
+        internal static BarterTransactionDTO SanitizeForPersistence(in BarterTransactionDTO value)
+        {
+            BarterTransactionDTO dto = value;
+            dto.offerId ??= string.Empty;
+            dto.offerName ??= string.Empty;
+            dto.channelName ??= string.Empty;
+            dto.costSummary ??= string.Empty;
+            dto.rewardSummary ??= string.Empty;
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in BarterTransactionDTO left, in BarterTransactionDTO right)
+        {
+            return string.Equals(left.offerId, right.offerId, StringComparison.Ordinal) &&
+                   string.Equals(left.offerName, right.offerName, StringComparison.Ordinal) &&
+                   string.Equals(left.channelName, right.channelName, StringComparison.Ordinal) &&
+                   string.Equals(left.costSummary, right.costSummary, StringComparison.Ordinal) &&
+                   string.Equals(left.rewardSummary, right.rewardSummary, StringComparison.Ordinal);
+        }
     }
 
     [Serializable]
@@ -1106,6 +1670,24 @@ namespace Hecton8.SaveSystem
         public string title;
         public string summary;
         public string severity;
+
+        internal static FieldOperationEntryDTO SanitizeForPersistence(in FieldOperationEntryDTO value)
+        {
+            FieldOperationEntryDTO dto = value;
+            dto.source ??= string.Empty;
+            dto.title ??= string.Empty;
+            dto.summary ??= string.Empty;
+            dto.severity ??= string.Empty;
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in FieldOperationEntryDTO left, in FieldOperationEntryDTO right)
+        {
+            return string.Equals(left.source, right.source, StringComparison.Ordinal) &&
+                   string.Equals(left.title, right.title, StringComparison.Ordinal) &&
+                   string.Equals(left.summary, right.summary, StringComparison.Ordinal) &&
+                   string.Equals(left.severity, right.severity, StringComparison.Ordinal);
+        }
     }
 
     [Serializable]
@@ -1125,6 +1707,8 @@ namespace Hecton8.SaveSystem
     [Serializable]
     public struct BeaconEntryDTO
     {
+        public const float DefaultLightRange = 4f;
+
         public string id;
         public string label;
         public float posX;
@@ -1144,6 +1728,39 @@ namespace Hecton8.SaveSystem
         public Quaternion GetRotation() => new Quaternion(rotX, rotY, rotZ, rotW);
         public Color GetColor() => new Color(colorR, colorG, colorB, colorA <= 0f ? 1f : colorA);
 
+        internal static BeaconEntryDTO SanitizeForPersistence(in BeaconEntryDTO value)
+        {
+            BeaconEntryDTO dto = value;
+            dto.posX = SanitizeFinite(dto.posX, 0f);
+            dto.posY = SanitizeFinite(dto.posY, 0f);
+            dto.posZ = SanitizeFinite(dto.posZ, 0f);
+            SanitizeRotation(ref dto);
+            dto.colorR = SanitizeUnit01(dto.colorR);
+            dto.colorG = SanitizeUnit01(dto.colorG);
+            dto.colorB = SanitizeUnit01(dto.colorB);
+            dto.colorA = SanitizeAlpha(dto.colorA);
+            dto.lightRange = SanitizePositiveFinite(dto.lightRange, DefaultLightRange);
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in BeaconEntryDTO left, in BeaconEntryDTO right)
+        {
+            return string.Equals(left.id, right.id, StringComparison.Ordinal) &&
+                   string.Equals(left.label, right.label, StringComparison.Ordinal) &&
+                   left.posX == right.posX &&
+                   left.posY == right.posY &&
+                   left.posZ == right.posZ &&
+                   left.rotX == right.rotX &&
+                   left.rotY == right.rotY &&
+                   left.rotZ == right.rotZ &&
+                   left.rotW == right.rotW &&
+                   left.colorR == right.colorR &&
+                   left.colorG == right.colorG &&
+                   left.colorB == right.colorB &&
+                   left.colorA == right.colorA &&
+                   left.lightRange == right.lightRange;
+        }
+
         public void SetPosition(Vector3 pos)
         {
             posX = pos.x; posY = pos.y; posZ = pos.z;
@@ -1152,6 +1769,58 @@ namespace Hecton8.SaveSystem
         public void SetRotation(Quaternion rot)
         {
             rotX = rot.x; rotY = rot.y; rotZ = rot.z; rotW = rot.w;
+        }
+
+        private static void SanitizeRotation(ref BeaconEntryDTO dto)
+        {
+            dto.rotX = SanitizeFinite(dto.rotX, 0f);
+            dto.rotY = SanitizeFinite(dto.rotY, 0f);
+            dto.rotZ = SanitizeFinite(dto.rotZ, 0f);
+            dto.rotW = SanitizeFinite(dto.rotW, 1f);
+            float lengthSq =
+                dto.rotX * dto.rotX +
+                dto.rotY * dto.rotY +
+                dto.rotZ * dto.rotZ +
+                dto.rotW * dto.rotW;
+            if (!IsFinite(lengthSq) || lengthSq <= 0.000001f)
+            {
+                dto.rotX = 0f;
+                dto.rotY = 0f;
+                dto.rotZ = 0f;
+                dto.rotW = 1f;
+                return;
+            }
+
+            float invLength = 1f / Mathf.Sqrt(lengthSq);
+            dto.rotX *= invLength;
+            dto.rotY *= invLength;
+            dto.rotZ *= invLength;
+            dto.rotW *= invLength;
+        }
+
+        private static float SanitizeUnit01(float value)
+        {
+            return IsFinite(value) ? Mathf.Clamp01(value) : 0f;
+        }
+
+        private static float SanitizeAlpha(float value)
+        {
+            return IsFinite(value) && value > 0f ? Mathf.Clamp01(value) : 1f;
+        }
+
+        private static float SanitizePositiveFinite(float value, float fallback)
+        {
+            return IsFinite(value) && value > 0f ? value : fallback;
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return IsFinite(value) ? value : fallback;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
     }
 
@@ -1252,6 +1921,53 @@ namespace Hecton8.SaveSystem
         public string message;
         /// <summary>Legacy string field retained only for v53-and-older migration reads.</summary>
         public string originKey;
+
+        internal static PDALogbookEntryDTO SanitizeForPersistence(in PDALogbookEntryDTO value)
+        {
+            PDALogbookEntryDTO dto = value;
+            dto.sequence = Math.Max(0, dto.sequence);
+            dto.dayIndex = Math.Max(0, dto.dayIndex);
+            dto.dayTimeHours = SanitizeFiniteClamp(dto.dayTimeHours, 0f, 24f);
+            dto.playTimeSeconds = SanitizeNonNegativeFinite(dto.playTimeSeconds);
+            if (dto.titleHash == 0 && !string.IsNullOrWhiteSpace(dto.title))
+                dto.titleHash = LocHash.Compute(dto.title);
+            if (dto.messageHash == 0 && !string.IsNullOrWhiteSpace(dto.message))
+                dto.messageHash = LocHash.Compute(dto.message);
+            if (dto.originHash == 0 && !string.IsNullOrWhiteSpace(dto.originKey))
+                dto.originHash = LocHash.Compute(dto.originKey);
+            dto.title = string.Empty;
+            dto.message = string.Empty;
+            dto.originKey = string.Empty;
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in PDALogbookEntryDTO left, in PDALogbookEntryDTO right)
+        {
+            return left.sequence == right.sequence &&
+                   left.dayIndex == right.dayIndex &&
+                   left.dayTimeHours == right.dayTimeHours &&
+                   left.playTimeSeconds == right.playTimeSeconds &&
+                   left.titleHash == right.titleHash &&
+                   left.messageHash == right.messageHash &&
+                   left.originHash == right.originHash &&
+                   string.Equals(left.title, right.title, StringComparison.Ordinal) &&
+                   string.Equals(left.message, right.message, StringComparison.Ordinal) &&
+                   string.Equals(left.originKey, right.originKey, StringComparison.Ordinal);
+        }
+
+        private static float SanitizeFiniteClamp(float value, float min, float max)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value)
+                ? Mathf.Clamp(value, min, max)
+                : min;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value)
+                ? Mathf.Max(0f, value)
+                : 0f;
+        }
     }
 
     [Serializable]
@@ -1273,6 +1989,69 @@ namespace Hecton8.SaveSystem
             SaveData.EnsureExactArrayCapacity(ref entries, MaxEntries);
             SaveData.EnsureExactArrayCapacity(ref seenOriginKeys, MaxSeenOrigins);
             SaveData.EnsureExactArrayCapacity(ref seenOriginHashes, MaxSeenOrigins);
+        }
+
+        internal bool SanitizeSeenOriginsForPersistence()
+        {
+            int previousCount = seenOriginCount;
+            EnsureCapacity();
+
+            int safeCount = Math.Clamp(previousCount, 0, MaxSeenOrigins);
+            bool changed = safeCount != previousCount;
+            int writeIndex = 0;
+            for (int i = 0; i < safeCount; i++)
+            {
+                int originHash = seenOriginHashes[i];
+                string originKey = seenOriginKeys[i];
+                if (originHash == 0 && !string.IsNullOrWhiteSpace(originKey))
+                    originHash = LocHash.Compute(originKey);
+
+                if (originHash == 0)
+                {
+                    if (originKey != null)
+                    {
+                        seenOriginKeys[i] = string.Empty;
+                        changed = true;
+                    }
+
+                    continue;
+                }
+
+                string safeOriginKey = originKey ?? string.Empty;
+                if (writeIndex != i ||
+                    seenOriginHashes[writeIndex] != originHash ||
+                    !string.Equals(seenOriginKeys[writeIndex], safeOriginKey, StringComparison.Ordinal))
+                {
+                    changed = true;
+                }
+
+                seenOriginHashes[writeIndex] = originHash;
+                seenOriginKeys[writeIndex] = safeOriginKey;
+                writeIndex++;
+            }
+
+            for (int i = writeIndex; i < safeCount; i++)
+            {
+                if (seenOriginHashes[i] != 0)
+                {
+                    seenOriginHashes[i] = 0;
+                    changed = true;
+                }
+
+                if (!string.IsNullOrEmpty(seenOriginKeys[i]))
+                {
+                    seenOriginKeys[i] = string.Empty;
+                    changed = true;
+                }
+            }
+
+            if (seenOriginCount != writeIndex)
+            {
+                seenOriginCount = writeIndex;
+                changed = true;
+            }
+
+            return changed;
         }
     }
 
@@ -1335,6 +2114,55 @@ namespace Hecton8.SaveSystem
             aupLocalY = position.LocalY;
             aupLocalZ = position.LocalZ;
         }
+
+        internal static PDAMarkerEntryDTO SanitizeForPersistence(in PDAMarkerEntryDTO value)
+        {
+            PDAMarkerEntryDTO dto = value;
+            dto.posX = SanitizeFinite(dto.posX, 0f);
+            dto.posY = SanitizeFinite(dto.posY, 0f);
+            dto.posZ = SanitizeFinite(dto.posZ, 0f);
+            if (dto.positionEncodingVersion != AupPositionEncodingVersion)
+            {
+                dto.positionEncodingVersion = 0;
+                dto.aupGridX = 0L;
+                dto.aupGridY = 0L;
+                dto.aupGridZ = 0L;
+                dto.aupLocalX = 0f;
+                dto.aupLocalY = 0f;
+                dto.aupLocalZ = 0f;
+                return dto;
+            }
+
+            dto.aupLocalX = SanitizeFinite(dto.aupLocalX, 0f);
+            dto.aupLocalY = SanitizeFinite(dto.aupLocalY, 0f);
+            dto.aupLocalZ = SanitizeFinite(dto.aupLocalZ, 0f);
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in PDAMarkerEntryDTO left, in PDAMarkerEntryDTO right)
+        {
+            return left.markerHashId == right.markerHashId &&
+                   left.markerId == right.markerId &&
+                   left.titleHashId == right.titleHashId &&
+                   left.title == right.title &&
+                   left.iconType == right.iconType &&
+                   left.posX == right.posX &&
+                   left.posY == right.posY &&
+                   left.posZ == right.posZ &&
+                   left.visibleOnHud == right.visibleOnHud &&
+                   left.positionEncodingVersion == right.positionEncodingVersion &&
+                   left.aupGridX == right.aupGridX &&
+                   left.aupGridY == right.aupGridY &&
+                   left.aupGridZ == right.aupGridZ &&
+                   left.aupLocalX == right.aupLocalX &&
+                   left.aupLocalY == right.aupLocalY &&
+                   left.aupLocalZ == right.aupLocalZ;
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) ? value : fallback;
+        }
     }
 
     [Serializable]
@@ -1369,6 +2197,44 @@ namespace Hecton8.SaveSystem
         [FieldOffset(36)] public float coldStressExposureSeconds;
         [FieldOffset(40)] public float heatStressExposureSeconds;
         [FieldOffset(44)] private int _pad0;
+
+        internal static PDAContextualAdvisoryDTO SanitizeForPersistence(in PDAContextualAdvisoryDTO value)
+        {
+            PDAContextualAdvisoryDTO dto = value;
+            dto.oxygenDeathCount = Math.Max(0, dto.oxygenDeathCount);
+            dto.inventoryFullAttemptCount = Math.Max(0, dto.inventoryFullAttemptCount);
+            dto.pressureDeathCount = Math.Max(0, dto.pressureDeathCount);
+            dto.baseEmergencyCount = Math.Max(0, dto.baseEmergencyCount);
+            dto.staleAirIncidentCount = Math.Max(0, dto.staleAirIncidentCount);
+            dto.coldStressIncidentCount = Math.Max(0, dto.coldStressIncidentCount);
+            dto.heatStressIncidentCount = Math.Max(0, dto.heatStressIncidentCount);
+            dto.deepExposureSeconds = SanitizeNonNegativeFinite(dto.deepExposureSeconds);
+            dto.coldStressExposureSeconds = SanitizeNonNegativeFinite(dto.coldStressExposureSeconds);
+            dto.heatStressExposureSeconds = SanitizeNonNegativeFinite(dto.heatStressExposureSeconds);
+            dto._pad0 = 0;
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in PDAContextualAdvisoryDTO left, in PDAContextualAdvisoryDTO right)
+        {
+            return left.issuedFlags == right.issuedFlags &&
+                   left.oxygenDeathCount == right.oxygenDeathCount &&
+                   left.inventoryFullAttemptCount == right.inventoryFullAttemptCount &&
+                   left.pressureDeathCount == right.pressureDeathCount &&
+                   left.baseEmergencyCount == right.baseEmergencyCount &&
+                   left.staleAirIncidentCount == right.staleAirIncidentCount &&
+                   left.coldStressIncidentCount == right.coldStressIncidentCount &&
+                   left.heatStressIncidentCount == right.heatStressIncidentCount &&
+                   left.deepExposureSeconds == right.deepExposureSeconds &&
+                   left.coldStressExposureSeconds == right.coldStressExposureSeconds &&
+                   left.heatStressExposureSeconds == right.heatStressExposureSeconds &&
+                   left._pad0 == right._pad0;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) ? Mathf.Max(0f, value) : 0f;
+        }
     }
 
     [Serializable]
@@ -1388,6 +2254,32 @@ namespace Hecton8.SaveSystem
             posX = position.x;
             posY = position.y;
             posZ = position.z;
+        }
+
+        internal static ProceduralLorePlacementDTO SanitizeForPersistence(in ProceduralLorePlacementDTO value)
+        {
+            ProceduralLorePlacementDTO dto = value;
+            dto.discoveryId ??= string.Empty;
+            dto.logId ??= string.Empty;
+            dto.posX = SanitizeFinite(dto.posX, 0f);
+            dto.posY = SanitizeFinite(dto.posY, 0f);
+            dto.posZ = SanitizeFinite(dto.posZ, 0f);
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in ProceduralLorePlacementDTO left, in ProceduralLorePlacementDTO right)
+        {
+            return left.discoveryId == right.discoveryId &&
+                   left.logId == right.logId &&
+                   left.chunkKey == right.chunkKey &&
+                   left.posX == right.posX &&
+                   left.posY == right.posY &&
+                   left.posZ == right.posZ;
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) ? value : fallback;
         }
     }
 
@@ -1491,6 +2383,29 @@ namespace Hecton8.SaveSystem
         [FieldOffset(4)] public float generalPollution;
         [FieldOffset(8)] public int recycledPlasticItemCount;
         [FieldOffset(12)] public int discardedItemCount;
+
+        internal static EnvironmentalStrainDTO SanitizeForPersistence(in EnvironmentalStrainDTO value)
+        {
+            EnvironmentalStrainDTO dto = value;
+            dto.microplasticStrain = SanitizeNonNegativeFinite(dto.microplasticStrain);
+            dto.generalPollution = SanitizeNonNegativeFinite(dto.generalPollution);
+            dto.recycledPlasticItemCount = Math.Max(0, dto.recycledPlasticItemCount);
+            dto.discardedItemCount = Math.Max(0, dto.discardedItemCount);
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in EnvironmentalStrainDTO left, in EnvironmentalStrainDTO right)
+        {
+            return left.microplasticStrain == right.microplasticStrain &&
+                   left.generalPollution == right.generalPollution &&
+                   left.recycledPlasticItemCount == right.recycledPlasticItemCount &&
+                   left.discardedItemCount == right.discardedItemCount;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) ? Mathf.Max(0f, value) : 0f;
+        }
     }
 
     [Serializable]
@@ -1516,6 +2431,7 @@ namespace Hecton8.SaveSystem
     {
         public const int MaxSorterBufferedSlots = 8;
         public const int MaxCultivationSlots = 4;
+        public const ulong CultivationGeneticsSupportedMask = 0x000000000000000FUL;
 
         public string prefabId;
         public string slottedToolItemId;
@@ -1625,6 +2541,495 @@ namespace Hecton8.SaveSystem
             rotX = rot.x; rotY = rot.y; rotZ = rot.z; rotW = rot.w;
         }
 
+        internal static ModuleDTO SanitizeForPersistence(in ModuleDTO value)
+        {
+            ModuleDTO dto = SanitizeScalarsForPersistence(in value);
+            SanitizeStringArrayCopyOnWrite(ref dto.sorterBufferedItemIds, dto.sorterBufferedSlotCount, MaxSorterBufferedSlots);
+            SanitizeSorterQuantitiesCopyOnWrite(ref dto);
+            SanitizeStringArrayCopyOnWrite(ref dto.cultivationSeedItemIds, dto.cultivationSlotCount, MaxCultivationSlots);
+            SanitizeCultivationGeneticsCopyOnWrite(ref dto);
+            SanitizeCultivationProgressCopyOnWrite(ref dto);
+            return dto;
+        }
+
+        internal static ModuleDTO SanitizeScalarsForPersistence(in ModuleDTO value)
+        {
+            ModuleDTO dto = value;
+            dto.prefabId ??= string.Empty;
+            dto.slottedToolItemId ??= string.Empty;
+            dto.pipeInFlightItemId ??= string.Empty;
+            dto.pipeInFlightAmount = Math.Max(0, dto.pipeInFlightAmount);
+            dto.pipeTransitProgress = SanitizeUnit01(dto.pipeTransitProgress);
+            dto.pipeExportTimerSeconds = SanitizeNonNegativeFinite(dto.pipeExportTimerSeconds);
+            dto.drillBufferedItemId ??= string.Empty;
+            dto.drillBufferedAmount = Math.Max(0, dto.drillBufferedAmount);
+            dto.drillCycleTimerSeconds = SanitizeNonNegativeFinite(dto.drillCycleTimerSeconds);
+            dto.sorterBufferedSlotCount = Math.Clamp(dto.sorterBufferedSlotCount, 0, MaxSorterBufferedSlots);
+            dto.cultivationSlotCount = Math.Clamp(dto.cultivationSlotCount, 0, MaxCultivationSlots);
+            dto.posX = SanitizeFinite(dto.posX, 0f);
+            dto.posY = SanitizeFinite(dto.posY, 0f);
+            dto.posZ = SanitizeFinite(dto.posZ, 0f);
+            SanitizeRotation(ref dto);
+            dto.integrity = SanitizeNonNegativeFinite(dto.integrity);
+            dto.repairIntegrityCap = SanitizeNonNegativeFinite(dto.repairIntegrityCap);
+            dto.airReserveNormalized = SanitizeUnit01(dto.airReserveNormalized);
+            dto.co2Normalized = SanitizeUnit01(dto.co2Normalized);
+            dto.failureMode = SanitizeFailureMode(dto.failureMode);
+            dto.floodedReefFloodSeconds = SanitizeNonNegativeFinite(dto.floodedReefFloodSeconds);
+            return dto;
+        }
+
+        internal static bool SanitizeForPersistenceInPlace(ref ModuleDTO value)
+        {
+            ModuleDTO safeScalars = SanitizeScalarsForPersistence(in value);
+            bool changed = !PersistenceScalarsEqual(in value, in safeScalars);
+            value = safeScalars;
+            changed |= SanitizeStringArrayInPlace(value.sorterBufferedItemIds, value.sorterBufferedSlotCount, MaxSorterBufferedSlots);
+            changed |= SanitizeSorterQuantitiesInPlace(ref value);
+            changed |= SanitizeStringArrayInPlace(value.cultivationSeedItemIds, value.cultivationSlotCount, MaxCultivationSlots);
+            changed |= SanitizeCultivationGeneticsInPlace(ref value);
+            changed |= SanitizeCultivationProgressInPlace(ref value);
+            return changed;
+        }
+
+        internal static bool PersistenceEquals(in ModuleDTO left, in ModuleDTO right)
+        {
+            int leftSorterSlotCount = ResolveSorterPersistenceSlotCount(in left);
+            int rightSorterSlotCount = ResolveSorterPersistenceSlotCount(in right);
+            int leftCultivationSlotCount = ResolveCultivationPersistenceSlotCount(in left);
+            int rightCultivationSlotCount = ResolveCultivationPersistenceSlotCount(in right);
+
+            return left.prefabId == right.prefabId &&
+                   left.slottedToolItemId == right.slottedToolItemId &&
+                   left.pipeInFlightItemId == right.pipeInFlightItemId &&
+                   left.pipeInFlightAmount == right.pipeInFlightAmount &&
+                   left.pipeTransitProgress == right.pipeTransitProgress &&
+                   left.pipeExportTimerSeconds == right.pipeExportTimerSeconds &&
+                   left.drillBufferedItemId == right.drillBufferedItemId &&
+                   left.drillBufferedAmount == right.drillBufferedAmount &&
+                   left.drillCycleTimerSeconds == right.drillCycleTimerSeconds &&
+                   leftSorterSlotCount == rightSorterSlotCount &&
+                   StringArrayPrefixEquals(left.sorterBufferedItemIds, right.sorterBufferedItemIds, leftSorterSlotCount) &&
+                   IntArrayPrefixEquals(left.sorterBufferedQuantities, right.sorterBufferedQuantities, leftSorterSlotCount) &&
+                   left.posX == right.posX &&
+                   left.posY == right.posY &&
+                   left.posZ == right.posZ &&
+                   left.rotX == right.rotX &&
+                   left.rotY == right.rotY &&
+                   left.rotZ == right.rotZ &&
+                   left.rotW == right.rotW &&
+                   left.integrity == right.integrity &&
+                   left.repairIntegrityCap == right.repairIntegrityCap &&
+                   left.airReserveNormalized == right.airReserveNormalized &&
+                   left.co2Normalized == right.co2Normalized &&
+                   left.isFlooded == right.isFlooded &&
+                   left.failureMode == right.failureMode &&
+                   left.health == right.health &&
+                   left.floodedReefFloodSeconds == right.floodedReefFloodSeconds &&
+                   left.interiorReefInfestationActive == right.interiorReefInfestationActive &&
+                   leftCultivationSlotCount == rightCultivationSlotCount &&
+                   StringArrayPrefixEquals(left.cultivationSeedItemIds, right.cultivationSeedItemIds, leftCultivationSlotCount) &&
+                   ULongArrayPrefixEquals(left.cultivationGeneticsMasks, right.cultivationGeneticsMasks, leftCultivationSlotCount) &&
+                   FloatArrayPrefixEquals(left.cultivationGrowth01, right.cultivationGrowth01, leftCultivationSlotCount) &&
+                   FloatArrayPrefixEquals(left.cultivationQuality01, right.cultivationQuality01, leftCultivationSlotCount);
+        }
+
+        private static bool PersistenceScalarsEqual(in ModuleDTO left, in ModuleDTO right)
+        {
+            return left.prefabId == right.prefabId &&
+                   left.slottedToolItemId == right.slottedToolItemId &&
+                   left.pipeInFlightItemId == right.pipeInFlightItemId &&
+                   left.pipeInFlightAmount == right.pipeInFlightAmount &&
+                   left.pipeTransitProgress == right.pipeTransitProgress &&
+                   left.pipeExportTimerSeconds == right.pipeExportTimerSeconds &&
+                   left.drillBufferedItemId == right.drillBufferedItemId &&
+                   left.drillBufferedAmount == right.drillBufferedAmount &&
+                   left.drillCycleTimerSeconds == right.drillCycleTimerSeconds &&
+                   left.sorterBufferedSlotCount == right.sorterBufferedSlotCount &&
+                   left.posX == right.posX &&
+                   left.posY == right.posY &&
+                   left.posZ == right.posZ &&
+                   left.rotX == right.rotX &&
+                   left.rotY == right.rotY &&
+                   left.rotZ == right.rotZ &&
+                   left.rotW == right.rotW &&
+                   left.integrity == right.integrity &&
+                   left.repairIntegrityCap == right.repairIntegrityCap &&
+                   left.airReserveNormalized == right.airReserveNormalized &&
+                   left.co2Normalized == right.co2Normalized &&
+                   left.failureMode == right.failureMode &&
+                   left.floodedReefFloodSeconds == right.floodedReefFloodSeconds &&
+                   left.cultivationSlotCount == right.cultivationSlotCount;
+        }
+
+        private static int ResolveSorterPersistenceSlotCount(in ModuleDTO value)
+        {
+            int upperBound = MaxSorterBufferedSlots;
+            upperBound = Math.Min(upperBound, value.sorterBufferedItemIds != null ? value.sorterBufferedItemIds.Length : 0);
+            upperBound = Math.Min(upperBound, value.sorterBufferedQuantities != null ? value.sorterBufferedQuantities.Length : 0);
+            return Math.Clamp(value.sorterBufferedSlotCount, 0, upperBound);
+        }
+
+        private static int ResolveCultivationPersistenceSlotCount(in ModuleDTO value)
+        {
+            int upperBound = MaxCultivationSlots;
+            upperBound = Math.Min(upperBound, value.cultivationSeedItemIds != null ? value.cultivationSeedItemIds.Length : 0);
+            upperBound = Math.Min(upperBound, value.cultivationGeneticsMasks != null ? value.cultivationGeneticsMasks.Length : 0);
+            upperBound = Math.Min(upperBound, value.cultivationGrowth01 != null ? value.cultivationGrowth01.Length : 0);
+            upperBound = Math.Min(upperBound, value.cultivationQuality01 != null ? value.cultivationQuality01.Length : 0);
+            return Math.Clamp(value.cultivationSlotCount, 0, upperBound);
+        }
+
+        private static void SanitizeRotation(ref ModuleDTO dto)
+        {
+            if (!IsFinite(dto.rotX) || !IsFinite(dto.rotY) || !IsFinite(dto.rotZ) || !IsFinite(dto.rotW))
+            {
+                dto.rotX = 0f;
+                dto.rotY = 0f;
+                dto.rotZ = 0f;
+                dto.rotW = 1f;
+                return;
+            }
+
+            float lengthSq = dto.rotX * dto.rotX + dto.rotY * dto.rotY + dto.rotZ * dto.rotZ + dto.rotW * dto.rotW;
+            if (!IsFinite(lengthSq) || lengthSq <= 0.000001f)
+            {
+                dto.rotX = 0f;
+                dto.rotY = 0f;
+                dto.rotZ = 0f;
+                dto.rotW = 1f;
+                return;
+            }
+
+            float invLength = 1f / Mathf.Sqrt(lengthSq);
+            dto.rotX *= invLength;
+            dto.rotY *= invLength;
+            dto.rotZ *= invLength;
+            dto.rotW *= invLength;
+        }
+
+        private static void SanitizeSorterQuantitiesCopyOnWrite(ref ModuleDTO dto)
+        {
+            int[] values = dto.sorterBufferedQuantities;
+            if (values == null)
+                return;
+
+            int[] replacement = null;
+            int count = Math.Min(dto.sorterBufferedSlotCount, Math.Min(MaxSorterBufferedSlots, values.Length));
+            for (int i = 0; i < count; i++)
+            {
+                int safeValue = Math.Max(0, values[i]);
+                if (safeValue == values[i])
+                    continue;
+
+                replacement ??= (int[])values.Clone();
+                replacement[i] = safeValue;
+            }
+
+            if (replacement != null)
+                dto.sorterBufferedQuantities = replacement;
+        }
+
+        private static bool SanitizeSorterQuantitiesInPlace(ref ModuleDTO dto)
+        {
+            int[] values = dto.sorterBufferedQuantities;
+            if (values == null)
+                return false;
+
+            bool changed = false;
+            int count = Math.Min(dto.sorterBufferedSlotCount, Math.Min(MaxSorterBufferedSlots, values.Length));
+            for (int i = 0; i < count; i++)
+            {
+                int safeValue = Math.Max(0, values[i]);
+                if (safeValue == values[i])
+                    continue;
+
+                values[i] = safeValue;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static void SanitizeStringArrayCopyOnWrite(ref string[] values, int count, int maxCount)
+        {
+            if (values == null)
+                return;
+
+            string[] replacement = null;
+            int safeCount = Math.Min(count, Math.Min(maxCount, values.Length));
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (values[i] != null)
+                    continue;
+
+                replacement ??= (string[])values.Clone();
+                replacement[i] = string.Empty;
+            }
+
+            if (replacement != null)
+                values = replacement;
+        }
+
+        private static bool SanitizeStringArrayInPlace(string[] values, int count, int maxCount)
+        {
+            if (values == null)
+                return false;
+
+            bool changed = false;
+            int safeCount = Math.Min(count, Math.Min(maxCount, values.Length));
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (values[i] != null)
+                    continue;
+
+                values[i] = string.Empty;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static ulong SanitizeCultivationGeneticsMask(ulong geneticsMask)
+        {
+            return geneticsMask & CultivationGeneticsSupportedMask;
+        }
+
+        private static void SanitizeCultivationGeneticsCopyOnWrite(ref ModuleDTO dto)
+        {
+            ulong[] values = dto.cultivationGeneticsMasks;
+            if (values == null)
+                return;
+
+            ulong[] replacement = null;
+            int count = Math.Min(dto.cultivationSlotCount, Math.Min(MaxCultivationSlots, values.Length));
+            for (int i = 0; i < count; i++)
+            {
+                ulong safeValue = SanitizeCultivationGeneticsMask(values[i]);
+                if (safeValue == values[i])
+                    continue;
+
+                replacement ??= (ulong[])values.Clone();
+                replacement[i] = safeValue;
+            }
+
+            if (replacement != null)
+                dto.cultivationGeneticsMasks = replacement;
+        }
+
+        private static bool SanitizeCultivationGeneticsInPlace(ref ModuleDTO dto)
+        {
+            ulong[] values = dto.cultivationGeneticsMasks;
+            if (values == null)
+                return false;
+
+            bool changed = false;
+            int count = Math.Min(dto.cultivationSlotCount, Math.Min(MaxCultivationSlots, values.Length));
+            for (int i = 0; i < count; i++)
+            {
+                ulong safeValue = SanitizeCultivationGeneticsMask(values[i]);
+                if (safeValue == values[i])
+                    continue;
+
+                values[i] = safeValue;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static void SanitizeCultivationProgressCopyOnWrite(ref ModuleDTO dto)
+        {
+            int count = dto.cultivationSlotCount;
+            float[] growthValues = dto.cultivationGrowth01;
+            if (growthValues != null)
+            {
+                float[] replacement = null;
+                int growthCount = Math.Min(count, Math.Min(MaxCultivationSlots, growthValues.Length));
+                for (int i = 0; i < growthCount; i++)
+                {
+                    float safeValue = SanitizeUnit01(growthValues[i]);
+                    if (safeValue == growthValues[i])
+                        continue;
+
+                    replacement ??= (float[])growthValues.Clone();
+                    replacement[i] = safeValue;
+                }
+
+                if (replacement != null)
+                    dto.cultivationGrowth01 = replacement;
+            }
+
+            float[] qualityValues = dto.cultivationQuality01;
+            if (qualityValues != null)
+            {
+                float[] replacement = null;
+                int qualityCount = Math.Min(count, Math.Min(MaxCultivationSlots, qualityValues.Length));
+                for (int i = 0; i < qualityCount; i++)
+                {
+                    float safeValue = SanitizeUnit01(qualityValues[i]);
+                    if (safeValue == qualityValues[i])
+                        continue;
+
+                    replacement ??= (float[])qualityValues.Clone();
+                    replacement[i] = safeValue;
+                }
+
+                if (replacement != null)
+                    dto.cultivationQuality01 = replacement;
+            }
+        }
+
+        private static bool SanitizeCultivationProgressInPlace(ref ModuleDTO dto)
+        {
+            bool changed = false;
+            int count = dto.cultivationSlotCount;
+            float[] growthValues = dto.cultivationGrowth01;
+            if (growthValues != null)
+            {
+                int growthCount = Math.Min(count, Math.Min(MaxCultivationSlots, growthValues.Length));
+                for (int i = 0; i < growthCount; i++)
+                {
+                    float safeValue = SanitizeUnit01(growthValues[i]);
+                    if (safeValue == growthValues[i])
+                        continue;
+
+                    growthValues[i] = safeValue;
+                    changed = true;
+                }
+            }
+
+            float[] qualityValues = dto.cultivationQuality01;
+            if (qualityValues != null)
+            {
+                int qualityCount = Math.Min(count, Math.Min(MaxCultivationSlots, qualityValues.Length));
+                for (int i = 0; i < qualityCount; i++)
+                {
+                    float safeValue = SanitizeUnit01(qualityValues[i]);
+                    if (safeValue == qualityValues[i])
+                        continue;
+
+                    qualityValues[i] = safeValue;
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
+        private static bool IntArrayPrefixEquals(int[] left, int[] right, int maxCount)
+        {
+            if (maxCount <= 0)
+                return true;
+            if (ReferenceEquals(left, right))
+                return true;
+            if (left == null || right == null)
+                return false;
+
+            int count = Math.Min(maxCount, Math.Min(left.Length, right.Length));
+            if (count != maxCount)
+                return false;
+
+            for (int i = 0; i < count; i++)
+            {
+                if (left[i] != right[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool StringArrayPrefixEquals(string[] left, string[] right, int maxCount)
+        {
+            if (maxCount <= 0)
+                return true;
+            if (ReferenceEquals(left, right))
+                return true;
+            if (left == null || right == null)
+                return false;
+
+            int count = Math.Min(maxCount, Math.Min(left.Length, right.Length));
+            if (count != maxCount)
+                return false;
+
+            for (int i = 0; i < count; i++)
+            {
+                if (left[i] != right[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool ULongArrayPrefixEquals(ulong[] left, ulong[] right, int maxCount)
+        {
+            if (maxCount <= 0)
+                return true;
+            if (ReferenceEquals(left, right))
+                return true;
+            if (left == null || right == null)
+                return false;
+
+            int count = Math.Min(maxCount, Math.Min(left.Length, right.Length));
+            if (count != maxCount)
+                return false;
+
+            for (int i = 0; i < count; i++)
+            {
+                if (left[i] != right[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool FloatArrayPrefixEquals(float[] left, float[] right, int maxCount)
+        {
+            if (maxCount <= 0)
+                return true;
+            if (ReferenceEquals(left, right))
+                return true;
+            if (left == null || right == null)
+                return false;
+
+            int count = Math.Min(maxCount, Math.Min(left.Length, right.Length));
+            if (count != maxCount)
+                return false;
+
+            for (int i = 0; i < count; i++)
+            {
+                if (left[i] != right[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static float SanitizeNonNegativeFinite(float value)
+        {
+            return IsFinite(value) ? Mathf.Max(0f, value) : 0f;
+        }
+
+        private static float SanitizeUnit01(float value)
+        {
+            return IsFinite(value) ? Mathf.Clamp01(value) : 0f;
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return IsFinite(value) ? value : fallback;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+        private static byte SanitizeFailureMode(byte value)
+        {
+            return value <= SaveData.ModuleFailureModeMaxKnown ? value : SaveData.ModuleFailureModeNone;
+        }
+
         private static void ClearArray<T>(T[] values)
         {
             if (values == null || values.Length == 0)
@@ -1682,6 +3087,71 @@ namespace Hecton8.SaveSystem
             rotZ = rot.z;
             rotW = rot.w;
         }
+
+        internal static ModuleGraphNodeDTO SanitizeForPersistence(in ModuleGraphNodeDTO value)
+        {
+            ModuleGraphNodeDTO dto = value;
+            dto.prefabId ??= string.Empty;
+            dto.aupLocalX = SanitizeFinite(dto.aupLocalX, 0f);
+            dto.aupLocalY = SanitizeFinite(dto.aupLocalY, 0f);
+            dto.aupLocalZ = SanitizeFinite(dto.aupLocalZ, 0f);
+            SanitizeRotation(ref dto);
+            return dto;
+        }
+
+        internal static bool PersistenceEquals(in ModuleGraphNodeDTO left, in ModuleGraphNodeDTO right)
+        {
+            return left.prefabId == right.prefabId &&
+                   left.moduleHashId == right.moduleHashId &&
+                   left.aupGridX == right.aupGridX &&
+                   left.aupGridY == right.aupGridY &&
+                   left.aupGridZ == right.aupGridZ &&
+                   left.aupLocalX == right.aupLocalX &&
+                   left.aupLocalY == right.aupLocalY &&
+                   left.aupLocalZ == right.aupLocalZ &&
+                   left.rotX == right.rotX &&
+                   left.rotY == right.rotY &&
+                   left.rotZ == right.rotZ &&
+                   left.rotW == right.rotW;
+        }
+
+        private static void SanitizeRotation(ref ModuleGraphNodeDTO dto)
+        {
+            if (!IsFinite(dto.rotX) || !IsFinite(dto.rotY) || !IsFinite(dto.rotZ) || !IsFinite(dto.rotW))
+            {
+                dto.rotX = 0f;
+                dto.rotY = 0f;
+                dto.rotZ = 0f;
+                dto.rotW = 1f;
+                return;
+            }
+
+            float lengthSq = dto.rotX * dto.rotX + dto.rotY * dto.rotY + dto.rotZ * dto.rotZ + dto.rotW * dto.rotW;
+            if (!IsFinite(lengthSq) || lengthSq <= 0.000001f)
+            {
+                dto.rotX = 0f;
+                dto.rotY = 0f;
+                dto.rotZ = 0f;
+                dto.rotW = 1f;
+                return;
+            }
+
+            float invLength = 1f / Mathf.Sqrt(lengthSq);
+            dto.rotX *= invLength;
+            dto.rotY *= invLength;
+            dto.rotZ *= invLength;
+            dto.rotW *= invLength;
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return IsFinite(value) ? value : fallback;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
     }
 
     [Serializable]
@@ -1692,5 +3162,47 @@ namespace Hecton8.SaveSystem
         [FieldOffset(0)] public int sourceNodeIndex;
         [FieldOffset(4)] public int destinationNodeIndex;
         [FieldOffset(8)] private long _pad0;
+
+        internal static bool TrySanitizeForPersistence(
+            in ModuleGraphEdgeDTO value,
+            int graphNodeCount,
+            out ModuleGraphEdgeDTO sanitized)
+        {
+            sanitized = default;
+            int safeNodeCount = Math.Clamp(graphNodeCount, 0, ConstructionDTO.MaxModules);
+            if (value.sourceNodeIndex < 0 ||
+                value.destinationNodeIndex < 0 ||
+                value.sourceNodeIndex >= safeNodeCount ||
+                value.destinationNodeIndex >= safeNodeCount ||
+                value.sourceNodeIndex == value.destinationNodeIndex)
+            {
+                return false;
+            }
+
+            sanitized.sourceNodeIndex = Math.Min(value.sourceNodeIndex, value.destinationNodeIndex);
+            sanitized.destinationNodeIndex = Math.Max(value.sourceNodeIndex, value.destinationNodeIndex);
+            return true;
+        }
+
+        internal static bool PersistenceEquals(in ModuleGraphEdgeDTO left, in ModuleGraphEdgeDTO right)
+        {
+            return left.sourceNodeIndex == right.sourceNodeIndex &&
+                   left.destinationNodeIndex == right.destinationNodeIndex;
+        }
+
+        internal static bool ContainsPersistenceEdge(ModuleGraphEdgeDTO[] values, int count, in ModuleGraphEdgeDTO edge)
+        {
+            if (values == null || count <= 0)
+                return false;
+
+            int safeCount = Math.Clamp(count, 0, Math.Min(values.Length, ConstructionDTO.MaxGraphEdges));
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (PersistenceEquals(in values[i], in edge))
+                    return true;
+            }
+
+            return false;
+        }
     }
 }

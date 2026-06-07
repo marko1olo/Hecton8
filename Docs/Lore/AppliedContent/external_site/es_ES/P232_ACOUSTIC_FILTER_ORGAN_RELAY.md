@@ -9,32 +9,34 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Acoustic Filter Organ Relay"
+title: "Relé de órgano filtro acústico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Acoustic Filter Organ Relay
+# Relé de órgano filtro acústico
 
-ES LOC HOLD: Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence.
+El relé de órgano filtro acústico es el puente entre el gameplay de sonar y el horror biomecánico de Atlas. Los sistemas abandonados de HECTON-8 no necesitan un monstruo parlante en las paredes. Necesitan infraestructura dañada que haya reclutado filtros acústicos vivos porque carne, tubería y presión a veces resuelven un problema de enrutamiento mejor que la electrónica muerta.
+
+El órgano de relé crece alrededor de las tuberías como una pared branquial húmeda. Amortigua el rugido de bombas, deja pasar pulsos estrechos de pinger y dobla ecos de manera consistente. Esto da al diseño de niveles una regla fuerte: el sonido puede mentir, pero debe mentir con patrón. El jugador puede aprender qué retornos están plegados, qué corredores solo están ocultos por desplazamiento de fase y qué rutas de mantenimiento Atlas mantuvo vivas al aceptar biología como hardware. El horror no es que la sala tenga voz. El horror es que puede escuchar, enrutar y reparar sin entender nunca para qué necesitaba una persona esa sala.
 
 ## Scanner
 
-ES LOC HOLD: Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
+ÓRGANO FILTRO ACÚSTICO // Tejido de pared branquial creció alrededor de tuberías de relé; amortigua el rugido de bombas, deja pasar pulsos estrechos de pinger y pliega el sonar en mentiras repetibles.
 
 ## Terminal
 
-ES LOC HOLD: RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
+NOTA DE RELÉ: la pantalla viva deja pasar pulsos de clase pinger, rechaza el ruido amplio de bombas y desplaza la fase de los ecos de retorno. Marcar mapas aguas abajo como condicionalmente verdaderos.
 
 ## Audio
 
-ES LOC HOLD: The room is listening with meat and pipe.
+La sala escucha con carne y tubería.
 
 ## Field Note
 
-ES LOC HOLD: Atlas does not need language here. It needs filters, pulses and living baffles.
+Atlas no necesita una voz aquí. Necesita un órgano que deje sobrevivir el sonido correcto.
 
 <!-- External Site; generated from P232_ACOUSTIC_FILTER_ORGAN_RELAY/es_ES. -->

@@ -7,6 +7,9 @@ poi_tags: poi.worker_locker;poi.shift_board
 biome_tags: biome.drowned_infrastructure
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "סימן Barnard"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

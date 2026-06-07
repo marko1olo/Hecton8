@@ -90,6 +90,7 @@ namespace Hecton8.Editor.FloraAmbientSway
 
         private void OnEnable()
         {
+            EditorApplication.update -= Tick;
             EditorApplication.update += Tick;
         }
 

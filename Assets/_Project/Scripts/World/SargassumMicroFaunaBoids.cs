@@ -7677,11 +7677,36 @@ namespace Hecton8.World
                 return false;
 
             DisposeParasiteLatchReadbackData();
-            _parasiteLatchReadback.Data = new NativeArray<int>(
-                LatchStatsElementCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_parasiteLatchReadback.Data, nameof(SargassumMicroFaunaBoids), "_parasiteLatchReadbackData", NativeAllocationLifetime.Scene);
+            NativeArray<int> replacement = default;
+            try
+            {
+                replacement = new NativeArray<int>(
+                    LatchStatsElementCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(replacement, nameof(SargassumMicroFaunaBoids), "_parasiteLatchReadbackData", NativeAllocationLifetime.Scene);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("Native memory sentinel registration failed for parasite latch readback data.");
+
+                _parasiteLatchReadback.Data = replacement;
+            }
+            catch
+            {
+                if (replacement.IsCreated)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.UnregisterNativeArray(replacement);
+                    }
+                    finally
+                    {
+                        replacement.Dispose();
+                    }
+                }
+
+                throw;
+            }
+
             _parasiteLatchReadbackRepairRequested = false;
             return true;
         }

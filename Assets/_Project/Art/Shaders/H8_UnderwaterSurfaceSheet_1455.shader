@@ -2,11 +2,11 @@ Shader "Hecton8/World/UnderwaterSurfaceSheet1455"
 {
     Properties
     {
-        _WaterColor ("Water Color", Color) = (0.20, 0.70, 0.66, 0.52)
-        _BrightColor ("Bright Surface Color", Color) = (0.78, 1.0, 0.88, 0.34)
-        _FoamColor ("Soft Foam Color", Color) = (0.86, 1.0, 0.92, 0.28)
+        _WaterColor ("Water Color", Color) = (0.16, 0.50, 0.72, 0.30)
+        _BrightColor ("Bright Surface Color", Color) = (0.72, 0.90, 1.0, 0.22)
+        _FoamColor ("Soft Foam Color", Color) = (0.92, 0.98, 1.0, 0.14)
         _SwellScale ("Swell Scale", Range(0.02, 2.0)) = 0.18
-        _Opacity ("Opacity", Range(0.0, 1.0)) = 0.56
+        _Opacity ("Opacity", Range(0.0, 1.0)) = 0.36
         _SeaLevel ("Sea Level", Float) = 14.02
         _CameraFadeSharpness ("Camera Fade Sharpness", Range(0.5, 16.0)) = 7.0
     }

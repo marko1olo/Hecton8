@@ -7,6 +7,9 @@ poi_tags: poi.spoiler_tier_index;poi.public_wiki_gate
 biome_tags: biome.relay_archive;biome.claim_admin
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Public Spoiler Tiering Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

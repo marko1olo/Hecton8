@@ -7,6 +7,9 @@ poi_tags: poi.evidence_order_card;poi.dossier_route_strip
 biome_tags: biome.dossier;biome.colony_ruins
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Evidence Order Depth Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

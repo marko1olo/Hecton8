@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Glass Grazer Schools"
+title: "Ławice szklanych pasaczy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Glass Grazer Schools
+# Ławice szklanych pasaczy
 
-PL LOC HOLD: Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf.
+Ławice szklanych pasaczy są pierwszą lekcją HECTON-8 o zachowaniu zwierząt jako aparaturze. Pasacze nie są zwierzątkami, workami z łupem ani nieszkodliwą dekoracją. To mali przezroczyści żerowcy w skorupach, którzy czynią płytki shelf czytelnym, zeskrobując film mineralny w jasne pasy. Żywa ławica mówi Marauderowi, gdzie rośnie pressure glass, który szew jest zbyt ciepły, gdzie prąd właśnie skręcił i którędy ostatnio nie przechodziły drapieżniki. Ważnym momentem zwykle jest nieobecność: film zostaje, małe skorupiaste pyski przestają tykać, a czysta droga nagle wydaje się błędna. Ta cisza łączy się wprost z gramatyką płytkowodnego drapieżnika, gdzie zagrożenie przychodzi najpierw jako brakująca fauna, pęknięty szum bloom i cień na wciąż pięknej rafie. Dobre rozmieszczenie powinno uczyć gracza ciałem: płynąć ku bladej linii zeskrobania, usłyszeć, jak tykanie ostrzy się na skorupie, zauważyć czystą strefę wokół ciepłej plamy uszczelniacza, a potem zobaczyć, jak ławica składa się w bok, zanim sonar zrozumie powód. Szklani pasacze sprawiają, że HECTON-8 żyje, bo są użyteczni, krusi i uczciwi. Nie wyjaśniają oceanu. Odsłaniają to, co ocean właśnie zrobił.
 
 ## Scanner
 
-PL LOC HOLD: Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.
+ŁAWICA SZKLANYCH PASACZY // Przezroczyste, skorupiaste żerowce zeskrobują film mineralny z pressure glass i krawędzi mat fotycznych. Ich tykanie otwiera jasne blizny szlakowe; nagła cisza to dane o drapieżniku.
 
 ## Terminal
 
-PL LOC HOLD: FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.
+BAZOWA FAUNA: nieagresywny klaster pasaczy. Śledzić film pressure glass, świeży nalot mineralny, zaburzenie prądu i wyparcie przez drapieżnika. Zniknięcie po aktywnym żerowaniu to ostrzeżenie szlaku, nie pusty punkt odrodzenia.
 
 ## Audio
 
-PL LOC HOLD: Hear the ticking on the shell? That is lunch, map and warning in the same sound.
+Słyszysz tykanie na skorupie? To posiłek, mapa i ostrzeżenie w jednym dźwięku.
 
 ## Field Note
 
-PL LOC HOLD: Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.
+Nie goń ławicy. Czytaj to, co odsłania: świeży film, stare zeskrobanie, omijanie ciepłego uszczelniacza i pusty pas, którego zwierzęta nie chcą przeciąć.
 
 <!-- External Site; generated from P222_GLASS_GRAZER_SCHOOLS/pl_PL. -->

@@ -7,6 +7,9 @@ poi_tags: poi.anchor_name_sheet_b;poi.deep_shift_ledger
 biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Anchor Worker Name Set B"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

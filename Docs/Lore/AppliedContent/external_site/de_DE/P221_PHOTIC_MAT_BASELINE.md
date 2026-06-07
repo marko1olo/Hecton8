@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Photic Mat Baseline"
+title: "Photische Mattenbasis"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Photic Mat Baseline
+# Photische Mattenbasis
 
-DE LOC HOLD: Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered.
+Die photische Mattenbasis verwandelt HECTON-8s Schönheit in eine praktische Regel. Die Matte ist keine Kulisse. Sie ist ein lebendes Messgerät, das den frühen Schelf lesbar macht: Farbe für Sauerstoffaustausch, Randhärte für Druckchemie, Blasenrhythmus für Wasserbewegung und akustische Textur für verborgene Nähte. Darum sollten die ersten hellen Steine zugleich einladend und verdächtig wirken. Ein gestrandeter Marauder kann am Mattenrand Faser, Dichtpasten-Vorstufen oder eine Not-Sauerstoffanzeige gewinnen, aber jeder Schnitt verändert die Tasche. Am sichersten ist lose Franse fern von Metall, Lukennaht und alter Deep-Reach-Verrohrung. Am schlimmsten ist der schöne Kern, denn meist arbeitet gerade er am härtesten. Gute Platzierung lehrt ohne Vortrag: eine gesunde Matte leuchtet auf sauberem Stein; eine gestresste bildet weiße Salzränder um Drucklecks; eine vergiftete wirkt zu glatt und klingt unter dem Werkzeug falsch. Der flache Schelf bleibt hell, weil Leben dort arbeitet. Er bleibt angespannt, weil der Spieler diese Arbeit mit einem gierigen Kratzen zerstören kann.
 
 ## Scanner
 
-DE LOC HOLD: Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.
+PHOTISCHE MATTE // Mineralgenährter lebender Film auf Flachwasserfels. Helle Bänder oxygenieren Wasser; salzharte Ränder markieren gestresste Druckchemie und verborgene Nahtlecks.
 
 ## Terminal
 
-DE LOC HOLD: ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.
+ÖKOLOGIEBASIS: kartiert Sauerstoffhaut, Mineralabfluss, akustische Dämpfung und Salzrandstress. Nur lose Fransen ernten. Reißen nahe Nähten oder versiegelter Ausrüstung kann eine Tasche in Kontamination kollabieren lassen.
 
 ## Audio
 
-DE LOC HOLD: It looks clean because it is working hard. That is not the same as safe.
+Es sieht sauber aus, weil es arbeitet. Das ist nicht dasselbe wie sicher.
 
 ## Field Note
 
-DE LOC HOLD: Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.
+Schabe nicht zuerst die hellste Stelle. Lies Rand, Blasen und Klang; die Matte ist Messgerät, bevor sie Ressource ist.
 
 <!-- External Site; generated from P221_PHOTIC_MAT_BASELINE/de_DE. -->

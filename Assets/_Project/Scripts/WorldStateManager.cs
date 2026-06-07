@@ -77,12 +77,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            WorldStateManager registered = GlobalRegistry.WorldState;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             TryRegisterService();
             GameBootstrapper.PersistRuntimeService(this);
@@ -96,6 +92,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             TryRegisterService();
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
@@ -362,12 +361,34 @@ namespace Hecton8.World
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            WorldStateManager registered = GlobalRegistry.WorldState;
-            if (registered != null && registered != this)
+            if (TryAbortForUsableExistingRuntime())
                 return;
 
             GlobalRegistry.RegisterWorldStateRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.WorldState, this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            WorldStateManager registered = GlobalRegistry.WorldState;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsWorldStateRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterWorldStateRuntime(registered);
+            return false;
+        }
+
+        private static bool IsWorldStateRuntimeUsable(WorldStateManager manager)
+        {
+            return manager != null &&
+                   manager._serviceRegistered &&
+                   manager.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()

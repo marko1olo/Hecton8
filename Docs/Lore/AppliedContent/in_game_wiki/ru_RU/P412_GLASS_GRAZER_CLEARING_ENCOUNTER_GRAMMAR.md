@@ -7,6 +7,9 @@ poi_tags: poi.glass_grazer_clearing;poi.scraped_mineral_path
 biome_tags: biome.photic_shelf;biome.grazer_meadow
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Грамматика поляны стеклянных пастухов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

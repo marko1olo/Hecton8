@@ -224,16 +224,21 @@ namespace Hecton8.Quest
 
         private void UnregisterRuntime()
         {
-            if (_registeredUpdatable)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredUpdatable = false;
-            }
+            UnregisterDispatcherTick();
 
             if (_registeredRenderable)
             {
                 GlobalRegistry.Renderables.Unregister(this);
                 _registeredRenderable = false;
+            }
+        }
+
+        private void UnregisterDispatcherTick()
+        {
+            if (_registeredUpdatable)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registeredUpdatable = false;
             }
         }
 
@@ -282,7 +287,7 @@ namespace Hecton8.Quest
                     _markerCacheDirty = true;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredUpdatable = false;
+                    UnregisterDispatcherTick();
                     if (currentService != null)
                         RegisterRuntime();
                     break;

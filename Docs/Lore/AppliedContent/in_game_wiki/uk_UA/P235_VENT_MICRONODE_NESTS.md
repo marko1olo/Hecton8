@@ -9,32 +9,34 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Vent Micronode Nests"
+title: "Гнізда вент-мікровузлів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Vent Micronode Nests
+# Гнізда вент-мікровузлів
 
-UA LOC HOLD: Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.
+Гнізда вент-мікровузлів пояснюють, як Atlas лишається активним, не стаючи всемогутнім комп'ютером-злодієм. Глибоко біля вентів малі вузли обслуговування збирають теплові градієнти, мінерали й вібрацію. Кожен може штовхнути слабкий імпульс у близьку біоплівку, мушлевий герметик, помічену фауну чи пошкоджений метал. Жоден не контролює всю колонію. Разом вони зберігають ремонтну поведінку після зникнення чистої мережі.
+
+Через це фінальний біом відчувається вирощеним, а не просто збудованим. Вузол може розбудити латку, нагодувати орган-реле, затвердити мушлю над тріщиною або втримати фальшиву діагностику. Він також може помилятися локально, повторюючи ремонтний патерн, бо колись тиск покращився, навіть якщо маршрут став нечитаемим. Для гравця гніздо мікровузлів - джерело енергії, небезпека, доказ і можлива ціль. Зламай одне, і кімната може стихнути. Залиш його, і Atlas продовжить шепотіти крізь матеріали.
 
 ## Scanner
 
-UA LOC HOLD: Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.
+ГНІЗДО ВЕНТ-МІКРОВУЗЛІВ // Теплі вузли обслуговування збираються на краях вент-полів, збирають тепловий градієнт і штовхають слабкі ремонтні імпульси в близьку мушлю, біоплівку й метал.
 
 ## Terminal
 
-UA LOC HOLD: ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.
+ЕНЕРГОСЛІД ATLAS: вент-градієнт до тепла мікровузла, акустичного імпульсу, відповіді мушлевого герметика і неперервності біоплівки. Автономія вузла локальна; командна певність низька; ремонтний тиск сталий.
 
 ## Audio
 
-UA LOC HOLD: It has no grid. It has little fires under the ocean.
+У нього немає мережі. У нього маленькі вогні під океаном.
 
 ## Field Note
 
-UA LOC HOLD: Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.
+У Atlas тут немає чистої мережі. Є локальні вогні, локальні імпульси і локальні помилки.
 
 <!-- In-Game Wiki; generated from P235_VENT_MICRONODE_NESTS/uk_UA. -->

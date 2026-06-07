@@ -126,7 +126,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float impulse = 9f;
         [SerializeField] private float stunDuration = 2.5f;
         [SerializeField] private float shotCooldown = 0.6f;
-        [SerializeField] private LayerMask targetMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask targetMask = Hecton8.Core.HectonLayerMasks.FieldToolSurfaceLayerMask;
         [SerializeField] private float feedbackInterval = 0.35f;
 
         private float _cooldown;
@@ -387,9 +387,14 @@ namespace Hecton8.Gameplay
                 origin,
                 direction,
                 ResolveRuntimeRange(),
-                targetMask.value,
+                ResolveTargetSurfaceMask(),
                 QueryTriggerInteraction.Ignore,
                 out hit);
+        }
+
+        private int ResolveTargetSurfaceMask()
+        {
+            return HectonLayerMasks.ResolveSurfaceInteractionLayerMask(targetMask.value);
         }
 
         private bool TryResolveStunRay(out Vector3 origin, out Vector3 direction)
@@ -728,8 +733,17 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
-                _localization = currentService as ILocalizationTextReadModel;
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    UnregisterFromTickManager();
+                    if (currentService != null && isActiveAndEnabled)
+                        RegisterToTickManager();
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localization = currentService as ILocalizationTextReadModel;
+                    break;
+            }
         }
 
         private void LogRecovery()

@@ -2,6 +2,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using System;
 using System.Collections.Generic;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -345,12 +346,12 @@ namespace Hecton8.Physics
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                        return;
-
                     TryUnregisterFixedTickable();
                     TryUnregisterLateFrameTickable();
                     TryUnregisterSlowTickable();
+                    if (currentService == null)
+                        return;
+
                     TryRegisterSlowTickable();
                     TryRegisterFixedTickable();
                     TryRegisterLateFrameTickable();
@@ -1873,21 +1874,13 @@ namespace Hecton8.Physics
                         capacity,
                         Allocator.Persistent,
                         NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(
-                        _ring,
-                        Owner,
-                        nameof(_ring),
-                        NativeAllocationLifetime.Scene);
+                    RegisterNativeArray(_ring, nameof(_ring));
 
                     _head = new NativeArray<int>(
                         1,
                         Allocator.Persistent,
                         NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(
-                        _head,
-                        Owner,
-                        nameof(_head),
-                        NativeAllocationLifetime.Scene);
+                    RegisterNativeArray(_head, nameof(_head));
                     return true;
                 }
                 catch
@@ -1944,6 +1937,18 @@ namespace Hecton8.Physics
                 NativeMemorySentinel.UnregisterNativeArray(array);
                 array.Dispose();
                 array = default;
+            }
+
+            private static void RegisterNativeArray<T>(NativeArray<T> array, string label)
+                where T : struct
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    array,
+                    Owner,
+                    label,
+                    NativeAllocationLifetime.Scene);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
             }
         }
     }

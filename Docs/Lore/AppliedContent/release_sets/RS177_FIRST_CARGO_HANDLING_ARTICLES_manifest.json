@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS177_FIRST_CARGO_HANDLING_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1160_LOAD_ARROW_RUB_MARK",
+    "P1161_TIE_DOWN_FRAY_COUNT",
+    "P1162_FORK_SLOT_MUD_EDGE",
+    "P1163_WEIGHT_STENCIL_SALT_SPLIT",
+    "P1164_PALLET_PAD_COMPRESS_RING"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1160_LOAD_ARROW_RUB_MARK.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1161_TIE_DOWN_FRAY_COUNT.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1162_FORK_SLOT_MUD_EDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1163_WEIGHT_STENCIL_SALT_SPLIT.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1164_PALLET_PAD_COMPRESS_RING.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

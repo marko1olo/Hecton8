@@ -40,6 +40,7 @@ namespace Hecton8.Gameplay.AirlockPressurization.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;
         }
 

@@ -516,7 +516,7 @@ namespace Hecton8.PDA
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
             _registered = false;
         }
 
@@ -834,6 +834,11 @@ namespace Hecton8.PDA
                     break;
                 case GlobalRegistryServiceSlot.AtmosphereRuntime:
                     _atmosphereManager = currentService as HectonAtmosphereManager;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
+                    if (currentService != null && isActiveAndEnabled)
+                        RefreshLogbookSignalPumpRegistration();
                     break;
             }
         }

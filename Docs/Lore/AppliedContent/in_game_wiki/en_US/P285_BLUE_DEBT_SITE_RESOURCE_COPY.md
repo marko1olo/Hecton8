@@ -7,6 +7,9 @@ poi_tags: poi.blue_debt_public_card;poi.resource_warning_caption
 biome_tags: biome.publication;biome.resource
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Blue Debt Site Resource Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

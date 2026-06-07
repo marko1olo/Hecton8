@@ -83,6 +83,7 @@ namespace Hecton8.Editor
         private const string PackComputePath = "Assets/_Project/Art/Shaders/PackImpostorAtlas.compute";
         private const string DilateComputePath = "Assets/_Project/Art/Shaders/DilateImpostorEdges.compute";
         private const string BakeReportPath = "Docs/Reports/IMPOSTOR_BAKE_REPORT.json";
+        private const string NativeMemoryOwner = nameof(HectonOctahedralImpostorBaker);
 
         private static readonly int SourceAlbedoId = Shader.PropertyToID("_SourceAlbedo");
         private static readonly int SourceNormalDepthId = Shader.PropertyToID("_SourceNormalDepth");
@@ -123,14 +124,16 @@ namespace Hecton8.Editor
         public static void RunMockCaptureBenchmark()
         {
             const int pointCount = 65536;
-            NativeArray<HlodImpostorMockPoint> points = new NativeArray<HlodImpostorMockPoint>(
+            NativeArray<HlodImpostorMockPoint> points = AllocateTrackedNativeArray<HlodImpostorMockPoint>(
                 pointCount,
                 Allocator.TempJob,
-                NativeArrayOptions.UninitializedMemory);
-            NativeArray<HlodImpostorCaptureAngleRecord> records = new NativeArray<HlodImpostorCaptureAngleRecord>(
+                NativeArrayOptions.UninitializedMemory,
+                nameof(points));
+            NativeArray<HlodImpostorCaptureAngleRecord> records = AllocateTrackedNativeArray<HlodImpostorCaptureAngleRecord>(
                 HectonOctahedralImpostorData.ViewCount,
                 Allocator.TempJob,
-                NativeArrayOptions.UninitializedMemory);
+                NativeArrayOptions.UninitializedMemory,
+                nameof(records));
 
             Stopwatch stopwatch = Stopwatch.StartNew();
             try
@@ -158,10 +161,8 @@ namespace Hecton8.Editor
             finally
             {
                 stopwatch.Stop();
-                if (records.IsCreated)
-                    records.Dispose();
-                if (points.IsCreated)
-                    points.Dispose();
+                DisposeTrackedNativeArray(ref records);
+                DisposeTrackedNativeArray(ref points);
             }
 
             Debug.Log("SHINOBU_212 mock capture benchmark: " + pointCount.ToString(CultureInfo.InvariantCulture) +
@@ -238,10 +239,11 @@ namespace Hecton8.Editor
                 if (!TryCalculateRendererBounds(clone, out Bounds bakeBounds))
                     return false;
 
-                records = new NativeArray<HlodImpostorCaptureAngleRecord>(
+                records = AllocateTrackedNativeArray<HlodImpostorCaptureAngleRecord>(
                     settings.ViewCount,
                     Allocator.TempJob,
-                    NativeArrayOptions.UninitializedMemory);
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(records));
                 new CalculateCaptureAnglesJob
                 {
                     OutputRecords = records,
@@ -349,8 +351,7 @@ namespace Hecton8.Editor
             }
             finally
             {
-                if (records.IsCreated)
-                    records.Dispose();
+                DisposeTrackedNativeArray(ref records);
                 if (bakeCamera != null)
                     Object.DestroyImmediate(bakeCamera.gameObject);
                 if (clone != null)
@@ -491,12 +492,12 @@ namespace Hecton8.Editor
                 (uint)height);
             try
             {
+                RegisterTrackedNativeArray(ref png, NativeAllocationLifetime.TempJob, nameof(png));
                 WriteNativeBytes(ToFullPath(assetPath), png);
             }
             finally
             {
-                if (png.IsCreated)
-                    png.Dispose();
+                DisposeTrackedNativeArray(ref png);
             }
         }
 
@@ -994,6 +995,69 @@ namespace Hecton8.Editor
         private static string ToFullPath(string assetOrProjectPath)
         {
             return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), assetOrProjectPath));
+        }
+
+        private static NativeArray<T> AllocateTrackedNativeArray<T>(int length, Allocator allocator, NativeArrayOptions options, string label) where T : struct
+        {
+            if (length <= 0)
+                return default;
+
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[HectonOctahedralImpostorBaker] NativeArray allocation failed for " + label + ".");
+
+            RegisterTrackedNativeArray(ref array, ResolveNativeAllocationLifetime(allocator), label);
+            return array;
+        }
+
+        private static void RegisterTrackedNativeArray<T>(ref NativeArray<T> array, NativeAllocationLifetime lifetime, string label) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("[HectonOctahedralImpostorBaker] NativeMemorySentinel rejected NativeArray registration for " + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                array = default;
+                throw;
+            }
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
+        }
+
+        private static NativeAllocationLifetime ResolveNativeAllocationLifetime(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return NativeAllocationLifetime.Temp;
+                case Allocator.TempJob:
+                    return NativeAllocationLifetime.TempJob;
+                case Allocator.Persistent:
+                    return NativeAllocationLifetime.Session;
+                default:
+                    return NativeAllocationLifetime.Session;
+            }
         }
 
         private static void WriteNativeBytes(string fullPath, NativeArray<byte> bytes)

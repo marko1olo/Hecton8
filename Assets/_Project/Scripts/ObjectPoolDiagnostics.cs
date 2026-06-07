@@ -204,19 +204,7 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ObjectPoolDiagnostics), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ObjectPoolDiagnostics), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseNativeQueues();
 
             for (int i = 0; i < ListenerCapacity; i++)
                 _listeners[i].Clear();
@@ -564,29 +552,66 @@ namespace Hecton8.Core
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
+            try
             {
-                _pendingEvents = new NativeQueue<PoolDiagnosticsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PoolDiagnosticsEventPayload>[4] - deferred pool diagnostics lane flushed by SystemDispatcher LateUpdate - owner: ObjectPoolDiagnostics
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(ObjectPoolDiagnostics),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<PoolDiagnosticsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PoolDiagnosticsEventPayload>[4] - deferred pool diagnostics lane flushed by SystemDispatcher LateUpdate - owner: ObjectPoolDiagnostics
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                }
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<PoolDiagnosticsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PoolDiagnosticsEventPayload>[4] - next-frame pool diagnostics lane prevents same-frame reentrant dispatch - owner: ObjectPoolDiagnostics
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(ObjectPoolDiagnostics),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<PoolDiagnosticsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PoolDiagnosticsEventPayload>[4] - next-frame pool diagnostics lane prevents same-frame reentrant dispatch - owner: ObjectPoolDiagnostics
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                }
             }
+            catch
+            {
+                ReleaseNativeQueues();
+                ClearPoolNameSlots();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(ObjectPoolDiagnostics),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeQueue(ref queue, label);
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
+            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(ObjectPoolDiagnostics), label);
+            queue.Dispose();
+            queue = default;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)

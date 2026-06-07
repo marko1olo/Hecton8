@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "Biometaliczne znaczniki sensorowe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# Biometaliczne znaczniki sensorowe
 
-PL LOC HOLD: Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems.
+Biometaliczne znaczniki sensorowe nie są zwykłymi znajdźkami. Powstają, gdy system naprawczy przestaje dbać, czy nosiciel jest maszyną, naroślą kabla czy zwierzęciem. Znacznik jest cienką biometaliczną łuską, która wrasta w tkankę, pije odrobinę prądu, zapisuje ruch i powtarza przez wodę pewność położenia. Marauder może użyć go do strojenia pingera, zwiększenia zasięgu skanera albo udowodnienia, że trasa była żywa, kiedy Atlas jej dotknął. Ta użyteczność jest problemem. Wyjmij znacznik na zimno, a stanie się dowodem. Wyjmij go gorącego, a sieć może zauważyć brak nosiciela, odpowiedzieć fałszywymi powrotami albo posłać logikę naprawy ku rannemu zwierzęciu, ciętej listownicy lub nurkowi trzymającemu znacznik. Materiał każe traktować łup jak akta sprawy: użyteczny, brudny i nadal raportujący.
 
 ## Scanner
 
-PL LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+BIOMETALICZNE ZNACZNIKI SENSOROWE // Cienkie metalowe łuski wrośnięte w ryby, kablową listownicę i tkankę naprawczą. Ulepszają strojenie pingera; zebrane na gorąco mogą pozwolić Atlas usłyszeć brakującego nosiciela.
 
 ## Terminal
 
-PL LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+KLASA ZASOBU: zmienione przez Atlas / wrażliwe dowodowo. Zastosowania: fokus pingera, siatka skanera, pewność trasy, pakiety dowodowe. Zalecany zimny zbiór. Ryzyka: wzrost uwagi, fałszywe powroty nosiciela, uszkodzona fauna.
 
 ## Audio
 
-PL LOC HOLD: The fish is not a drone. The tag does not know the difference.
+Ryba nie jest dronem. Znacznik i tak dalej raportuje.
 
 ## Field Note
 
-PL LOC HOLD: Make resource extraction feel like evidence handling.
+Jeśli miga pod nożem, zapisz dane przed cięciem.
 
 <!-- External Site; generated from P120_BIOMETAL_SENSOR_TAGS/pl_PL. -->

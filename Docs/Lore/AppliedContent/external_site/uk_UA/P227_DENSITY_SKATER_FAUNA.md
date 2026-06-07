@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Density Skater Fauna"
+title: "Фауна щільнісних ковзанярів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Density Skater Fauna
+# Фауна щільнісних ковзанярів
 
-UA LOC HOLD: Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes.
+Фауна щільнісних ковзанярів перетворює одну з найдивніших hard-sci-fi ідей HECTON-8 на encounter, який гравець розуміє без лекції: всередині води можуть бути поверхні. У розсольному каньйоні солоність, температура і тиск складаються у полиці щільності. Малі тварини використовують ці полиці так, як земні водомірки використовують поверхневий натяг, тільки поверхня похована всередині океану. Результат має бути моторошним, але чесним. Ковзаняр перетинає начебто порожню прогалину; сонар показує брижі; trim костюма тремтить; гравець розуміє, що там є межа. Текст і розміщення мають опиратися фантазійній левітації. Ковзаняр не пливе тому, що світ забув фізику. Він живе тому, що фізика конкретна. Його шлях може вести до розірваних brine vanes, менш солоних кишень, теплих розсольних сходинок або засадних ліній. Він може і ввести в оману: те, що тримає легку тварину, може скинути навантаженого Marauder у чорну шарувату воду. Цінність дизайну не в істоті самій по собі, а в уроці. Каньйон не відкритий простір. Це машина складеної води, і кожне мале тіло, яке йде по ній, малює карту в русі.
 
 ## Scanner
 
-UA LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+ЩІЛЬНІСНИЙ КОВЗАНЯР // Тонконога фауна рухається по межі розсолу як по поверхні, лишаючи брижі там, де сонар очікує відкриту воду.
 
 ## Terminal
 
-UA LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+БАЗОВА ФАУНА: контакт із ковзанярами частішає біля розірваних brine vanes, теплих розсольних сходинок і мертвих країв сонара. Їхній слід позначає полицю щільності, а не безпечну опору. Не женися крізь непрозорі шари.
 
 ## Audio
 
-UA LOC HOLD: Something is walking on the water inside the water.
+Щось іде по воді всередині води.
 
 ## Field Note
 
-UA LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+Вони не левітують. Вони йдуть по межі, крізь яку твій костюм може провалитися.
 
 <!-- External Site; generated from P227_DENSITY_SKATER_FAUNA/uk_UA. -->

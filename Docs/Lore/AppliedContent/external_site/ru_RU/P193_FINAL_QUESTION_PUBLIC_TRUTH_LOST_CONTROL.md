@@ -7,6 +7,9 @@ poi_tags: poi.public_ledger_payload_gate;poi.tau_ceti_notary_burst
 biome_tags: biome.relay_archive;biome.public_archive
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Финальный вопрос публичной правды без контроля"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

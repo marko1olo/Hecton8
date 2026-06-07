@@ -226,7 +226,14 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            if (destinationCapacity < rawLength + PayloadPrefixByteShift)
+            long migratedLengthLong = (long)rawLength + PayloadPrefixByteShift;
+            if (migratedLengthLong > int.MaxValue)
+            {
+                error = "AUP v8 migration expanded payload length exceeds the supported range.";
+                return false;
+            }
+
+            if (destinationCapacity < migratedLengthLong)
             {
                 error = "AUP v8 migration destination capacity is smaller than the expanded payload prefix.";
                 return false;
@@ -275,7 +282,7 @@ namespace Hecton8.SaveSystem
 
             UnsafeUtility.CopyStructureToPtr(ref migratedPrefix, rawPtr);
 
-            migratedLength = rawLength + PayloadPrefixByteShift;
+            migratedLength = (int)migratedLengthLong;
             payloadByteShift = PayloadPrefixByteShift;
             prefix = new PayloadPrefixInfo
             {

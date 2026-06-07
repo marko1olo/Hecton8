@@ -7,6 +7,9 @@ poi_tags: poi.tide_geometry_panel;poi.orbital_timing_core
 biome_tags: biome.surface_relay;biome.tide_pump
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Орбита и приливная геометрия HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

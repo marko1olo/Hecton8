@@ -628,7 +628,7 @@ namespace Hecton8.Atmosphere
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.Audio)
             {
-                _audioRuntime = currentService as IAudioService;
+                CacheAudioService(currentService as IAudioService);
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
             {
@@ -763,7 +763,33 @@ namespace Hecton8.Atmosphere
 
         private void CacheAudioRuntimeCold()
         {
-            _audioRuntime = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioRuntime = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioRuntime;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioRuntime = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void RefreshSceneOwnedReferencesHot()
@@ -2064,7 +2090,7 @@ namespace Hecton8.Atmosphere
             if (thunderClips == null || thunderClips.Length == 0)
                 return;
 
-            IAudioService audioManager = _audioRuntime;
+            IAudioService audioManager = ResolveAudioService();
             if (audioManager == null)
                 return;
 

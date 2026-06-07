@@ -24,6 +24,7 @@ namespace Hecton8.World.VoxelSurfaceNets.Editor
         private const uint FailureLock = 1u << 2;
         private const uint FailureDefrag = 1u << 3;
         private const uint FailureThread = 1u << 4;
+        private const int DefragWorkerJoinMilliseconds = 1000;
 
         static VoxelMemorySovereigntyValidator1304()
         {
@@ -86,7 +87,11 @@ namespace Hecton8.World.VoxelSurfaceNets.Editor
                 });
             worker.IsBackground = true;
             worker.Name = "H8_1304_VoxelVaultFuzzer";
-            worker.Start();
+            if (!TryStartDefragWorkerNoThrow(worker))
+            {
+                failureFlags |= FailureThread;
+                return false;
+            }
 
             try
             {
@@ -169,7 +174,7 @@ namespace Hecton8.World.VoxelSurfaceNets.Editor
             finally
             {
                 Volatile.Write(ref stopThread, 1);
-                if (!worker.Join(1000))
+                if (!TryJoinDefragWorkerNoThrow(worker, DefragWorkerJoinMilliseconds))
                     failureFlags |= FailureThread;
             }
 
@@ -177,6 +182,41 @@ namespace Hecton8.World.VoxelSurfaceNets.Editor
                 failureFlags |= FailureThread;
 
             return failureFlags == 0u;
+        }
+
+        private static bool TryStartDefragWorkerNoThrow(Thread worker)
+        {
+            if (worker == null)
+                return false;
+
+            try
+            {
+                worker.Start();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryJoinDefragWorkerNoThrow(Thread worker, int timeoutMilliseconds)
+        {
+            if (worker == null || !worker.IsAlive)
+                return true;
+
+            if (Thread.CurrentThread.ManagedThreadId == worker.ManagedThreadId)
+                return false;
+
+            try
+            {
+                worker.Join(timeoutMilliseconds);
+                return !worker.IsAlive;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private static void WriteStressCarves(NativeArray<VoxelCarveEvent> carves, int pass)

@@ -96,10 +96,8 @@ namespace Hecton8.Dev
 
             try
             {
-                probes = new NativeArray<IndexedSectorBoundsProbe>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                results = new NativeArray<byte>(probes.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(probes, NativeMemoryOwner, BoundsProbeLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(results, NativeMemoryOwner, BoundsProbeResultsLabel, NativeAllocationLifetime.TempJob);
+                probes = AllocateTrackedTempJobArray<IndexedSectorBoundsProbe>(8, BoundsProbeLabel, NativeArrayOptions.UninitializedMemory);
+                results = AllocateTrackedTempJobArray<byte>(probes.Length, BoundsProbeResultsLabel, NativeArrayOptions.UninitializedMemory);
 
                 probes[0] = new IndexedSectorBoundsProbe { ByteOffset = 128L, CompressedSize = 32, MinimumByteOffset = 64L, FileLength = 160L, ExpectedValid = 1 };
                 probes[1] = new IndexedSectorBoundsProbe { ByteOffset = long.MaxValue - 4L, CompressedSize = 16, MinimumByteOffset = 64L, FileLength = long.MaxValue, ExpectedValid = 0 };
@@ -134,17 +132,8 @@ namespace Hecton8.Dev
             }
             finally
             {
-                if (results.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(results);
-                    results.Dispose();
-                }
-
-                if (probes.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(probes);
-                    probes.Dispose();
-                }
+                DisposeTrackedTempJobArray(ref results);
+                DisposeTrackedTempJobArray(ref probes);
             }
         }
 
@@ -178,10 +167,53 @@ namespace Hecton8.Dev
                        "NativeAllocationLifetime.TransientArena") &&
                    ContainsAll(
                        smokeTester,
-                       "NativeMemorySentinel.RegisterNativeArray(probes",
-                       "NativeMemorySentinel.RegisterNativeArray(results",
-                       "NativeMemorySentinel.UnregisterNativeArray(probes",
-                       "NativeMemorySentinel.UnregisterNativeArray(results");
+                       "AllocateTrackedTempJobArray<IndexedSectorBoundsProbe>(8, BoundsProbeLabel",
+                       "AllocateTrackedTempJobArray<byte>(probes.Length, BoundsProbeResultsLabel",
+                       "NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options)",
+                       "int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)",
+                       "if (sentinelId > 0)",
+                       "DisposeTrackedTempJobArray(ref probes)",
+                       "DisposeTrackedTempJobArray(ref results)",
+                       "NativeMemorySentinel.UnregisterNativeArray(array)");
+        }
+
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, string label, NativeArrayOptions options)
+            where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+
+            array.Dispose();
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void DisposeTrackedTempJobArray<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
         }
 
         private static bool TryRunRuntimeBarrierSourceAudit()

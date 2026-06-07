@@ -7,6 +7,9 @@ poi_tags: poi.route_archive;poi.relay_packet
 biome_tags: biome.deep_archive;biome.service_canyon
 locale: zh_CN
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "无FTL航行计算"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

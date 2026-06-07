@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Atlas-Biofaser-Dichtstoff"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Atlas-Biofaser-Dichtstoff
 
-DE LOC HOLD: Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.
+Atlas-Biofaser-Dichtstoff ist ein nützlicher Irrtum. Er wächst in Reparaturökologie, in der lebendes Gewebe, zerrissener Kabelmantel und undichte Naht als dieselbe Art Wunde klassifiziert wurden. Ein vorbereiteter Streifen kann Überlebensausrüstung oder flexible Druckgelenke unter Wasser abdichten, aber warme Lagerung kann nahtsuchendes Wachstum und falsche Lebenssignaturen wecken.
 
 ## Scanner
 
-DE LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+ATLAS-BIOFASER-DICHTSTOFF // Nasse Reparaturfaser, gewachsen, wo Kabelmantel, Wundgewebe und Rumpfdichtung derselben Fehlerklasse zugeordnet wurden. Bindet unter Druck; kann nach der Ernte weiterwachsen.
 
 ## Terminal
 
-DE LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+RESSOURCENKLASSE: Atlas-veränderte Reparaturökologie. Vor Entnahme kalt klemmen. Nutzung: nasse Nähte, Anzugrisse, Kabelmäntel, druckflexible Gelenke. Risiken: falsche Lebenssignatur, Sensorecho, aktive Nahtsuche im Lager.
 
 ## Audio
 
-DE LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+Er kennt den Unterschied zwischen Leck, Schnitt und Mund nicht. Atlas lehrte ihn, dass alle drei Öffnungen sind, die geschlossen werden müssen.
 
 ## Field Note
 
-DE LOC HOLD: Useful body horror: the player wants it and distrusts it.
+Guter Dichtstoff trocknet. Dieser lauscht auf das nächste Loch.
 
 <!-- In-Game Wiki; generated from P119_ATLAS_BIOFIBER_SEALANT/de_DE. -->

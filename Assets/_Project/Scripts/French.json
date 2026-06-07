@@ -540,6 +540,8 @@
   "ITEM_TOOL_SALVAGE_SAMPLER_NAME": "Echantillonneur de recuperation",
   "ITEM_TOOL_SCANNER_DESCRIPTION": "Long-range analysis tool for fauna, flora, wreck signatures and technology traces.",
   "ITEM_TOOL_SCANNER_NAME": "Scanner hydroacoustique",
+  "ITEM_TOOL_SEAFLOOR_DRILL_DESCRIPTION": "Outil de forage percussif pour ouvrir les noeuds mineraux et les depots compacts du fond marin.",
+  "ITEM_TOOL_SEAFLOOR_DRILL_NAME": "Foreuse de fond marin",
   "ITEM_TOOL_STUN_PISTOL_DESCRIPTION": "Compact electric sidearm for non-lethal control of aggressive fauna and rogue drones.",
   "ITEM_TOOL_STUN_PISTOL_NAME": "Pistolet incapacitant",
   "ITEM_TUNGSTEN_CHUNK_DESCRIPTION": "Heavy tool metal for cutters, launchers, and impact-rated mechanisms.",

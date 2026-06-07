@@ -212,7 +212,7 @@ namespace Hecton8.Power.Generators
                 _startTimeSeconds = (!double.IsNaN(start) && !double.IsInfinity(start) && start > 0d)
                     ? (float)math.min(start, (double)float.MaxValue)
                     : ResolveCurrentTimeSeconds();
-                byte flags = data.rtgDecayFlags[i];
+                byte flags = (byte)(data.rtgDecayFlags[i] & SaveData.RtgDecayPersistedFlagMask);
                 _reprocessed = (flags & FlagReprocessed) != 0;
                 _isDead = (flags & FlagDead) != 0;
                 ResolveLocalDecaySnapshot(ResolveCurrentTimeSeconds());
@@ -904,30 +904,46 @@ namespace Hecton8.Power.Generators
                 return;
 
             Vector3 position = transform.position;
+            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition positionAup))
+            {
+                RadiationHazardGrid.UnregisterSource(_sourceId);
+                return;
+            }
+
             float normalized = math.saturate(_outputNormalized01);
             float radiationIntensity = _isDead
                 ? math.max(0f, deadRadiationIntensity)
                 : math.max(0f, radiationIntensityAtFullOutput * math.max(DeadOutputThreshold01, normalized));
-            RadiationHazardGrid.RegisterSource(
-                _sourceId,
-                position,
-                radiationIntensity,
-                math.max(MinimumRadiationRadiusMeters, radiationRadiusMeters));
+            float radiationRadius = math.isfinite(radiationRadiusMeters) && radiationRadiusMeters > 0f
+                ? math.max(MinimumRadiationRadiusMeters, radiationRadiusMeters)
+                : MinimumRadiationRadiusMeters;
+            if (math.isfinite(radiationIntensity) && radiationIntensity > 0f)
+            {
+                RadiationHazardGrid.RegisterSource(
+                    _sourceId,
+                    in positionAup,
+                    radiationIntensity,
+                    radiationRadius);
+            }
+            else
+            {
+                RadiationHazardGrid.UnregisterSource(_sourceId);
+            }
 
             float heatDelta = math.max(0f, thermalDeltaCelsiusAtFullOutput * math.max(DeadOutputThreshold01, normalized));
-            if (heatDelta <= 0f)
+            if (!math.isfinite(heatDelta) || heatDelta <= 0f)
                 return;
 
+            float thermalRadius = math.isfinite(thermalRadiusMeters) && thermalRadiusMeters > 0f
+                ? math.max(0.25f, thermalRadiusMeters)
+                : 0.25f;
             bool injected = s_thermodynamics != null &&
                             s_thermodynamics.TryInjectTransientHeatSource(
                                 position,
-                                math.max(0.25f, thermalRadiusMeters),
+                                thermalRadius,
                                 heatDelta,
                                 unchecked((uint)_sourceId));
             if (injected)
-                return;
-
-            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition positionAup))
                 return;
 
             TemperatureChangedSignal signal = default;
@@ -1215,13 +1231,22 @@ namespace Hecton8.Power.Generators
 
         private void SanitizeInspectorValues()
         {
-            baseOutputWatts = math.max(0f, baseOutputWatts);
-            halfLifeHours = math.max(MinimumHalfLifeSeconds * math.rcp(SecondsPerHour), halfLifeHours);
-            thermalRadiusMeters = math.max(0.25f, thermalRadiusMeters);
-            radiationRadiusMeters = math.max(MinimumRadiationRadiusMeters, radiationRadiusMeters);
-            radiationIntensityAtFullOutput = math.max(0f, radiationIntensityAtFullOutput);
-            deadRadiationIntensity = math.max(0f, deadRadiationIntensity);
-            thermalDeltaCelsiusAtFullOutput = math.max(0f, thermalDeltaCelsiusAtFullOutput);
+            baseOutputWatts = math.max(0f, math.select(0f, baseOutputWatts, math.isfinite(baseOutputWatts)));
+            float minimumHalfLifeHours = MinimumHalfLifeSeconds * math.rcp(SecondsPerHour);
+            halfLifeHours = math.max(
+                minimumHalfLifeHours,
+                math.select(minimumHalfLifeHours, halfLifeHours, math.isfinite(halfLifeHours)));
+            thermalRadiusMeters = math.max(0.25f, math.select(0.25f, thermalRadiusMeters, math.isfinite(thermalRadiusMeters)));
+            radiationRadiusMeters = math.max(
+                MinimumRadiationRadiusMeters,
+                math.select(MinimumRadiationRadiusMeters, radiationRadiusMeters, math.isfinite(radiationRadiusMeters)));
+            radiationIntensityAtFullOutput = math.max(
+                0f,
+                math.select(0f, radiationIntensityAtFullOutput, math.isfinite(radiationIntensityAtFullOutput)));
+            deadRadiationIntensity = math.max(0f, math.select(0f, deadRadiationIntensity, math.isfinite(deadRadiationIntensity)));
+            thermalDeltaCelsiusAtFullOutput = math.max(
+                0f,
+                math.select(0f, thermalDeltaCelsiusAtFullOutput, math.isfinite(thermalDeltaCelsiusAtFullOutput)));
         }
 
         private static float ResolveCurrentTimeSeconds()

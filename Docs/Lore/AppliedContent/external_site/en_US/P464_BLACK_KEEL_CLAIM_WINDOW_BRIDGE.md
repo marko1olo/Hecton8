@@ -7,6 +7,9 @@ poi_tags: poi.claim_window_panel;poi.aegir_relay_timestamp
 biome_tags: biome.carrier_link;biome.shallow_annex
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Black Keel Claim Window"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

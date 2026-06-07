@@ -86,6 +86,8 @@ namespace Hecton8.Editor
 
     internal sealed class BaseModuleCatalogEditorWindow : EditorWindow
     {
+        private const string NativeMemoryOwner = nameof(BaseModuleCatalogEditorWindow);
+        private const string CsvCostsLabel = "csvCosts";
         private const string DefaultBinaryPath = "Assets/_Project/Data/Construction/BaseModuleCatalog.h8bin";
         private const string DefaultCsvPath = "Data/module_build_costs.csv";
         private readonly List<BaseModuleTemplate> _templates = new List<BaseModuleTemplate>(128);
@@ -234,8 +236,7 @@ namespace Hecton8.Editor
             }
             finally
             {
-                if (csvCosts.IsCreated)
-                    csvCosts.Dispose();
+                DisposeTrackedArray(ref csvCosts);
             }
         }
 
@@ -247,8 +248,45 @@ namespace Hecton8.Editor
                 return;
 
             byte[] bytes = File.ReadAllBytes(path);
-            costs = new NativeArray<ModuleCostDTO>(512, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            costs = AllocateTrackedArray<ModuleCostDTO>(512, Allocator.Temp, NativeArrayOptions.UninitializedMemory, CsvCostsLabel, NativeAllocationLifetime.Temp);
             BaseModuleCatalogRuntime.TryParseBuildCostCsv(bytes, costs, out count);
+        }
+
+        private static NativeArray<T> AllocateTrackedArray<T>(int length, Allocator allocator, NativeArrayOptions options, string label, NativeAllocationLifetime lifetime) where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[BaseModuleCatalogEditorWindow] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("[BaseModuleCatalogEditorWindow] NativeMemorySentinel rejected NativeArray registration for " + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private static void DisposeTrackedArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
         }
 
         private static ModuleCostDTO ResolveCost(BaseModuleTemplate template, NativeArray<ModuleCostDTO> csvCosts, int csvCostCount)

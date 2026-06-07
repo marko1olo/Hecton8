@@ -183,12 +183,9 @@ namespace Hecton8.Dev
 
             try
             {
-                predatorAups = new NativeArray<AbsoluteUniversePositionBlit128>(AupStressPairCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                preyAups = new NativeArray<AbsoluteUniversePositionBlit128>(AupStressPairCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                distanceErrors = new NativeArray<double>(AupStressPairCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(predatorAups, NativeMemoryOwner, nameof(predatorAups), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(preyAups, NativeMemoryOwner, nameof(preyAups), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(distanceErrors, NativeMemoryOwner, nameof(distanceErrors), NativeMemoryLifetime);
+                predatorAups = AllocateTrackedNativeArray<AbsoluteUniversePositionBlit128>(AupStressPairCount, nameof(predatorAups), NativeArrayOptions.UninitializedMemory);
+                preyAups = AllocateTrackedNativeArray<AbsoluteUniversePositionBlit128>(AupStressPairCount, nameof(preyAups), NativeArrayOptions.UninitializedMemory);
+                distanceErrors = AllocateTrackedNativeArray<double>(AupStressPairCount, nameof(distanceErrors), NativeArrayOptions.UninitializedMemory);
 
                 for (int i = 0; i < AupStressPairCount; i++)
                 {
@@ -224,23 +221,48 @@ namespace Hecton8.Dev
             }
             finally
             {
-                if (predatorAups.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(predatorAups);
-                    predatorAups.Dispose();
-                }
+                DisposeTrackedNativeArray(ref predatorAups);
+                DisposeTrackedNativeArray(ref preyAups);
+                DisposeTrackedNativeArray(ref distanceErrors);
+            }
+        }
 
-                if (preyAups.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(preyAups);
-                    preyAups.Dispose();
-                }
+        private static NativeArray<T> AllocateTrackedNativeArray<T>(int length, string label, NativeArrayOptions options)
+            where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
 
-                if (distanceErrors.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(distanceErrors);
-                    distanceErrors.Dispose();
-                }
+                throw;
+            }
+
+            array.Dispose();
+            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
             }
         }
 
@@ -257,10 +279,8 @@ namespace Hecton8.Dev
 
             try
             {
-                inputs = new NativeArray<FaunaParasiteAttachInput>(ParasiteSmokeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                results = new NativeArray<FaunaParasiteAttachResult>(ParasiteSmokeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(inputs, NativeMemoryOwner, nameof(inputs), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(results, NativeMemoryOwner, nameof(results), NativeMemoryLifetime);
+                inputs = AllocateTrackedNativeArray<FaunaParasiteAttachInput>(ParasiteSmokeCount, nameof(inputs), NativeArrayOptions.UninitializedMemory);
+                results = AllocateTrackedNativeArray<FaunaParasiteAttachResult>(ParasiteSmokeCount, nameof(results), NativeArrayOptions.UninitializedMemory);
 
                 for (int i = 0; i < ParasiteSmokeCount; i++)
                 {
@@ -307,17 +327,8 @@ namespace Hecton8.Dev
             }
             finally
             {
-                if (inputs.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(inputs);
-                    inputs.Dispose();
-                }
-
-                if (results.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(results);
-                    results.Dispose();
-                }
+                DisposeTrackedNativeArray(ref inputs);
+                DisposeTrackedNativeArray(ref results);
             }
         }
 

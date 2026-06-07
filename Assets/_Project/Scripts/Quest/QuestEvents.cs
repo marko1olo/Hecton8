@@ -173,19 +173,7 @@ namespace Hecton8.Quest
             UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(QuestEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(QuestEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseNativeQueues();
 
             _listeners.Clear();
             Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
@@ -342,29 +330,65 @@ namespace Hecton8.Quest
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
+            try
             {
-                _pendingEvents = new NativeQueue<QuestEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<QuestEventPayload>[64] - deferred quest event lane flushed by SystemDispatcher LateUpdate - owner: QuestEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(QuestEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<QuestEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<QuestEventPayload>[64] - deferred quest event lane flushed by SystemDispatcher LateUpdate - owner: QuestEvents
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                }
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<QuestEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<QuestEventPayload>[64] - next-frame quest event lane prevents same-frame reentrant dispatch - owner: QuestEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(QuestEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<QuestEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<QuestEventPayload>[64] - next-frame quest event lane prevents same-frame reentrant dispatch - owner: QuestEvents
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                }
             }
+            catch
+            {
+                ReleaseNativeQueues();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(QuestEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeQueue(ref queue, label);
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
+            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(QuestEvents), label);
+            queue.Dispose();
+            queue = default;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)

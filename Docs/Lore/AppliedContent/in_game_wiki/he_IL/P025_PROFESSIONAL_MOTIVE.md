@@ -7,6 +7,9 @@ poi_tags: poi.barnard_mark;poi.personal_object
 biome_tags: biome.crash_shelf;biome.drowned_colony
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "מניע מקצועי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

@@ -7,6 +7,9 @@ poi_tags: poi.worker_locker_row;poi.drowned_hab_module
 biome_tags: biome.drowned_colony;biome.shallow_wreck
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Rangée de casiers ouvriers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

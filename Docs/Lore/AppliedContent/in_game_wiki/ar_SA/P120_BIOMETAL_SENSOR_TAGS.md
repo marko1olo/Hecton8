@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "وسوم استشعار بمعدن حيوي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# وسوم استشعار بمعدن حيوي
 
-AR LOC HOLD: Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.
+وسوم الاستشعار بالمعدن الحيوي قشور قياس صغيرة تظهر في الأحياء، ونمو الكابلات، وبيئة الإصلاح. تستطيع تحسين النابض ومسارات الماسح، لكن كل وسم مفيد هو دليل أيضاً: استخدمت Atlas حاملات حية لتمديد شبكة صيانة تالفة.
 
 ## Scanner
 
-AR LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+وسوم استشعار بمعدن حيوي // قشور معدنية رقيقة نمت داخل السمك، وعشب الكابل، وأنسجة الإصلاح. تحسن ضبط النابض؛ وإذا حُصدت ساخنة فقد تسمع Atlas غياب الحامل.
 
 ## Terminal
 
-AR LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+فئة المورد: معدل بواسطة Atlas / حساس كدليل. الاستخدامات: تركيز النابض، شبكة الماسح، ثقة المسار، حزم الإثبات. يوصى بحصاد بارد. المخاطر: ارتفاع الانتباه، عوائد حامل كاذبة، أحياء متضررة.
 
 ## Audio
 
-AR LOC HOLD: The fish is not a drone. The tag does not know the difference.
+السمكة ليست مسيرة. الوسم يواصل الإبلاغ رغم ذلك.
 
 ## Field Note
 
-AR LOC HOLD: Make resource extraction feel like evidence handling.
+إذا ومض تحت السكين، سجل قبل أن تقطع.
 
 <!-- In-Game Wiki; generated from P120_BIOMETAL_SENSOR_TAGS/ar_SA. -->

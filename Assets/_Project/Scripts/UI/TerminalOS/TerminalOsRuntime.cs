@@ -41,7 +41,7 @@ namespace Hecton8.UI
         private const uint FaultDecryptionBudget = 1u << 4;
         private const uint FaultDecryptionNonFinite = 1u << 5;
         private const uint FaultDecryptionDumpBackpressure = 1u << 6;
-        private const ushort DialogueDecisionSaveFacilityMask = 1 << 0;
+        private const ushort DialogueDecisionSaveFacilityMask = SaveBinaryStorage.PlayerDialogueChoiceSaveFacilityMask;
         private const uint DecryptionDumpBackpressureHash = 0x53483237u; // SH27
         private const uint DecryptionDumpContextHash = 0x54444457u; // TDDW
         private const string NativeOwner = nameof(TerminalOsRuntime);

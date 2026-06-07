@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Glass Grazer Schools"
+title: "Glasgraser-Schwärme"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Glass Grazer Schools
+# Glasgraser-Schwärme
 
-DE LOC HOLD: Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.
+Glasgraser sind die ersten Flachwassertiere, die Schönheit nützlich machen, ohne den Shelf sicher zu machen. Ihre durchsichtigen Schalen und harten Mundkämme schaben Mineralfilm von Pressure Glass, lockeren photischen Matten und alten Kabelmänteln. Ein fressender Schwarm hinterlässt blasse Bahnen, die jüngste Strömung, frisches Wachstum und die ruhigste Linie um eine verschmutzte Naht zeigen. Beobachte den Rand des Schwarms, nicht die Mitte: Sie meiden warmes Dichtmittel, saure Solelecks und Oberflächen mit Atlas-kompatibler Signaldrift. Wenn das Ticken stoppt, obwohl Futter bleibt, hat etwas Größeres das Wasser verändert. Die freie Bahn ist Beweis, keine Erlaubnis zum Sprinten.
 
 ## Scanner
 
-DE LOC HOLD: Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.
+GLASGRASER-SCHWARM // Durchsichtige Schalenfresser schaben Mineralfilm von Pressure Glass und den Rändern photischer Matten. Ihr Ticken öffnet helle Routennarben; plötzliches Schweigen ist Raubtierdokumentation.
 
 ## Terminal
 
-DE LOC HOLD: FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.
+FAUNA-BASIS: nicht feindlicher Grasercluster. Pressure-Glass-Film, frischen Mineralbloom, Strömungsstörung und Verdrängung durch Raubtiere verfolgen. Abwesenheit nach aktivem Fressen ist eine Routenwarnung, kein leerer Spawnpunkt.
 
 ## Audio
 
-DE LOC HOLD: Hear the ticking on the shell? That is lunch, map and warning in the same sound.
+Hörst du das Ticken auf der Schale? Das ist Mahlzeit, Karte und Warnung im selben Klang.
 
 ## Field Note
 
-DE LOC HOLD: Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.
+Jage dem Schwarm nicht nach. Lies, was er freilegt: frischen Film, alte Schabspur, Umgehung von warmem Dichtmittel und die leere Bahn, die die Tiere nicht kreuzen wollen.
 
 <!-- In-Game Wiki; generated from P222_GLASS_GRAZER_SCHOOLS/de_DE. -->

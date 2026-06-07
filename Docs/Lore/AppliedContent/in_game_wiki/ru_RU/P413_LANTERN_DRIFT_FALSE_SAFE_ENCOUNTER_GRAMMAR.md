@@ -7,6 +7,9 @@ poi_tags: poi.lantern_drift_light_lane;poi.false_safe_bloom
 biome_tags: biome.photic_shelf;biome.low_visibility
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Грамматика ложной безопасности фонарных дрейфов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

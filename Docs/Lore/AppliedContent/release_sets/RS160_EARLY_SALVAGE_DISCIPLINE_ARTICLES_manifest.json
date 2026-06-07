@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS160_EARLY_SALVAGE_DISCIPLINE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P930_CRATE_SEAL_CUSTODY_TAB",
+    "P931_CERAMIC_SHARD_SAFE_EDGE",
+    "P932_CABLE_COLLAR_REUSE_WARNING",
+    "P933_INTACT_PLATE_DO_NOT_STRIP",
+    "P934_TAGGED_PERSONAL_POUCH_HOLD"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P930_CRATE_SEAL_CUSTODY_TAB.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P931_CERAMIC_SHARD_SAFE_EDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P932_CABLE_COLLAR_REUSE_WARNING.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P933_INTACT_PLATE_DO_NOT_STRIP.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P934_TAGGED_PERSONAL_POUCH_HOLD.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

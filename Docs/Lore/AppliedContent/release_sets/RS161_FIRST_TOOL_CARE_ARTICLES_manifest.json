@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS161_FIRST_TOOL_CARE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P935_SCANNER_LENS_SALT_FILM",
+    "P936_CONTACT_CUTTER_TIP_PITTING",
+    "P937_PRESSURE_WRENCH_JAW_SLIP",
+    "P938_SEALANT_NOZZLE_COLD_PLUG",
+    "P939_BATTERY_CLIP_GREEN_CRUST"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P935_SCANNER_LENS_SALT_FILM.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P936_CONTACT_CUTTER_TIP_PITTING.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P937_PRESSURE_WRENCH_JAW_SLIP.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P938_SEALANT_NOZZLE_COLD_PLUG.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P939_BATTERY_CLIP_GREEN_CRUST.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

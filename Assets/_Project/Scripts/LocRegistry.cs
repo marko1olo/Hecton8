@@ -538,12 +538,7 @@ namespace Hecton.Localization
         private static uint _csvOverrideRejectedThisFrame;
         private static uint _stagedLocaleGeneration;
         private static uint _languageSignalRevision;
-        private static bool _utf8IndexRegistered;
-        private static bool _utf8BytesRegistered;
-        private static bool _errorUtf8Registered;
-        private static bool _decryptionMaskRegistered;
         private static bool _overrideCsvScratchRegistered;
-        private static bool _telemetryRegistered;
         private static bool _utf8IndexVaultBacked;
         private static bool _utf8BytesVaultBacked;
         private static bool _errorUtf8VaultBacked;
@@ -1862,6 +1857,7 @@ namespace Hecton.Localization
 
         private static void GenerateEmergencyMockLocale()
         {
+            DisposeUtf8State();
             AcquireUtf8IndexBuffer(1);
             AcquireUtf8ByteBuffer(16);
             EnsureErrorUtf8();
@@ -1905,6 +1901,15 @@ namespace Hecton.Localization
 
                 ReleaseBabelVaultHandle(vault, ref _errorUtf8Handle);
             }
+
+            _errorUtf8 = AllocateBabelFallbackBuffer<byte>(
+                16,
+                NativeArrayOptions.ClearMemory);
+            if (!_errorUtf8.IsCreated)
+                return;
+
+            _errorUtf8VaultBacked = false;
+            WriteErrorUtf8Bytes();
         }
 
         private static void WriteErrorUtf8Bytes()
@@ -1927,10 +1932,7 @@ namespace Hecton.Localization
 
         private static void AcquireUtf8IndexBuffer(int entryCapacity)
         {
-            _utf8Index = default;
-            _utf8IndexHandle = default;
-            _utf8IndexRegistered = false;
-            _utf8IndexVaultBacked = false;
+            ReleaseBabelBufferState(ref _utf8Index, ref _utf8IndexHandle, ref _utf8IndexVaultBacked);
 
             if (entryCapacity <= 0)
                 return;
@@ -1953,6 +1955,10 @@ namespace Hecton.Localization
 
                 ReleaseBabelVaultHandle(vault, ref _utf8IndexHandle);
             }
+
+            _utf8Index = AllocateBabelFallbackBuffer<LocalizationEntryDTO>(
+                entryCapacity,
+                NativeArrayOptions.UninitializedMemory);
         }
 
         private static void EnsureDecryptionMaskBuffer()
@@ -1975,7 +1981,14 @@ namespace Hecton.Localization
                     _decryptionMaskVaultBacked = true;
                     return;
                 }
+
+                ReleaseBabelVaultHandle(vault, ref _decryptionMaskHandle);
             }
+
+            _decryptionMask = AllocateBabelFallbackBuffer<byte>(
+                16,
+                NativeArrayOptions.ClearMemory);
+            _decryptionMaskVaultBacked = false;
         }
 
         private static void EnsureOverrideCsvScratch()
@@ -2000,10 +2013,7 @@ namespace Hecton.Localization
 
         private static void AcquireUtf8ByteBuffer(int byteCapacity)
         {
-            _utf8Bytes = default;
-            _utf8BytesHandle = default;
-            _utf8BytesRegistered = false;
-            _utf8BytesVaultBacked = false;
+            ReleaseBabelBufferState(ref _utf8Bytes, ref _utf8BytesHandle, ref _utf8BytesVaultBacked);
 
             if (byteCapacity <= 0)
                 return;
@@ -2026,6 +2036,29 @@ namespace Hecton.Localization
 
                 ReleaseBabelVaultHandle(vault, ref _utf8BytesHandle);
             }
+
+            _utf8Bytes = AllocateBabelFallbackBuffer<byte>(
+                byteCapacity,
+                NativeArrayOptions.UninitializedMemory);
+        }
+
+        private static NativeArray<T> AllocateBabelFallbackBuffer<T>(
+            int length,
+            NativeArrayOptions options) where T : struct
+        {
+            if (length <= 0)
+                return default;
+
+            NativeArray<T> buffer = H8Memory.Allocate<T>(
+                length,
+                SystemID.UI,
+                Allocator.Persistent,
+                options);
+            if (buffer.IsCreated && buffer.Length >= length)
+                return buffer;
+
+            H8Memory.Release(ref buffer, SystemID.UI);
+            return default;
         }
 
         private static bool TryResolveBabelVault(out IDataVault vault)
@@ -2417,7 +2450,7 @@ namespace Hecton.Localization
                 return _utf8Bytes.IsCreated;
 
             if (!_utf8BytesVaultBacked || _babelVault == null)
-                return false;
+                return TryGrowUtf8ByteFallback(requiredLength);
 
             if (!TryAcquireBabelBuffer(
                     _babelVault,
@@ -2432,7 +2465,34 @@ namespace Hecton.Localization
 
             _utf8Bytes = resolved;
             _utf8BytesVaultBacked = true;
-            _utf8BytesRegistered = false;
+            return true;
+        }
+
+        private static unsafe bool TryGrowUtf8ByteFallback(int requiredLength)
+        {
+            NativeArray<byte> grown = AllocateBabelFallbackBuffer<byte>(
+                requiredLength,
+                NativeArrayOptions.UninitializedMemory);
+            if (!grown.IsCreated)
+                return false;
+
+            if (_utf8Bytes.IsCreated && _utf8ByteLength > 0)
+            {
+                byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_utf8Bytes);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(grown);
+                if (source == null || destination == null)
+                {
+                    H8Memory.Release(ref grown, SystemID.UI);
+                    return false;
+                }
+
+                UnsafeUtility.MemCpy(destination, source, math.min(_utf8ByteLength, _utf8Bytes.Length));
+            }
+
+            H8Memory.Release(ref _utf8Bytes, SystemID.UI);
+            _utf8Bytes = grown;
+            _utf8BytesVaultBacked = false;
+            ReleaseBabelVaultHandle(_babelVault, ref _utf8BytesHandle);
             return true;
         }
 
@@ -3053,6 +3113,15 @@ namespace Hecton.Localization
 
             if (TryResolveBabelVault(out IDataVault vault) && TryAcquireTelemetryBuffer(vault))
                 return;
+
+            _telemetryFrames = AllocateBabelFallbackBuffer<BabelTelemetryEntry>(
+                BabelTelemetryFrameCapacity,
+                NativeArrayOptions.ClearMemory);
+            if (_telemetryFrames.IsCreated)
+            {
+                _telemetryVaultBacked = false;
+                _telemetryWriteIndex = 0;
+            }
         }
 
         private static bool TryAcquireTelemetryBuffer(IDataVault vault)
@@ -3074,7 +3143,6 @@ namespace Hecton.Localization
             _babelVault = vault;
             _telemetryFrames = resolved;
             _telemetryVaultBacked = true;
-            _telemetryRegistered = false;
             _telemetryWriteIndex = 0;
             return true;
         }

@@ -54,6 +54,7 @@ namespace Hecton8.Atmosphere.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;
             RefreshFromRuntime();
             PushValues();

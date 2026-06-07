@@ -336,11 +336,26 @@ namespace Hecton8.Celestial
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            TryUnregister();
-            TryRegister();
+            TryUnregisterDispatcherTicks();
+            if (currentService != null && isActiveAndEnabled)
+                TryRegister();
+        }
+
+        private void TryUnregisterDispatcherTicks()
+        {
+            if (!_registeredToTickManager && !_registeredToLateFrame)
+                return;
+
+            if (_registeredToTickManager)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            if (_registeredToLateFrame)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+
+            _registeredToTickManager = false;
+            _registeredToLateFrame = false;
         }
 
         private void TryRegisterHotSwapListener()

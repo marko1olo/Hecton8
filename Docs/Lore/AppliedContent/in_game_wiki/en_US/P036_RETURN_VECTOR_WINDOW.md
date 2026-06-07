@@ -7,6 +7,9 @@ poi_tags: poi.orbital_comm_window;poi.black_keel_signal
 biome_tags: biome.surface_squall;biome.shallow_shelter
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Return Vector Window"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

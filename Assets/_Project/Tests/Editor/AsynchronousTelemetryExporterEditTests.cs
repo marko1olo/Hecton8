@@ -243,6 +243,8 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("TryJoinWorkerNoThrow(thread);", stopWorker);
             StringAssert.Contains("thread.Join(WorkerJoinMilliseconds);", joinWorker);
+            StringAssert.Contains("ReferenceEquals(Thread.CurrentThread, thread)", joinWorker);
+            StringAssert.Contains("return !thread.IsAlive;", joinWorker);
             StringAssert.Contains("catch (Exception)", joinWorker);
             StringAssert.Contains("SetWorkerFlag(WorkerFlagFaulted);", joinWorker);
 

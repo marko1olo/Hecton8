@@ -161,6 +161,8 @@ namespace Hecton8.Editor.GeologyForge
 
     internal static class TopographyForgePreview
     {
+        private const string NativeMemoryOwner = nameof(TopographyForgePreview);
+
         private static Texture2D _texture;
 
         static TopographyForgePreview()
@@ -185,17 +187,17 @@ namespace Hecton8.Editor.GeologyForge
             try
             {
                 recipeList = TopographyBiomeCsv.LoadRecipes(Allocator.Temp);
-                recipes = new NativeArray<TopographyBiomeKernelDTO>(recipeList.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                recipes = GeologyForgeNativeMemory.AllocateArray<TopographyBiomeKernelDTO>(recipeList.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, NativeMemoryOwner, nameof(recipes));
                 for (int i = 0; i < recipeList.Length; i++)
                     recipes[i] = ToKernelRecipe(recipeList[i], settings.GlobalQualityWeight);
 
-                rifts = new NativeArray<TectonicRiftSegmentDTO>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                rifts = GeologyForgeNativeMemory.AllocateArray<TectonicRiftSegmentDTO>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, NativeMemoryOwner, nameof(rifts));
                 rifts[0] = BuildPreviewRift(settings);
-                warped = new NativeArray<double2>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                raw = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                terraced = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                final = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                pixels = new NativeArray<Color32>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                warped = GeologyForgeNativeMemory.AllocateArray<double2>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, NativeMemoryOwner, nameof(warped));
+                raw = GeologyForgeNativeMemory.AllocateArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, NativeMemoryOwner, nameof(raw));
+                terraced = GeologyForgeNativeMemory.AllocateArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, NativeMemoryOwner, nameof(terraced));
+                final = GeologyForgeNativeMemory.AllocateArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, NativeMemoryOwner, nameof(final));
+                pixels = GeologyForgeNativeMemory.AllocateArray<Color32>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, NativeMemoryOwner, nameof(pixels));
 
                 TopographyBakeConfigDTO config = BuildPreviewConfig(settings, resolution);
                 config.RiftCount = rifts.Length;
@@ -234,13 +236,13 @@ namespace Hecton8.Editor.GeologyForge
             finally
             {
                 if (recipeList.IsCreated) recipeList.Dispose();
-                if (recipes.IsCreated) recipes.Dispose();
-                if (rifts.IsCreated) rifts.Dispose();
-                if (warped.IsCreated) warped.Dispose();
-                if (raw.IsCreated) raw.Dispose();
-                if (terraced.IsCreated) terraced.Dispose();
-                if (final.IsCreated) final.Dispose();
-                if (pixels.IsCreated) pixels.Dispose();
+                GeologyForgeNativeMemory.DisposeArray(ref recipes);
+                GeologyForgeNativeMemory.DisposeArray(ref rifts);
+                GeologyForgeNativeMemory.DisposeArray(ref warped);
+                GeologyForgeNativeMemory.DisposeArray(ref raw);
+                GeologyForgeNativeMemory.DisposeArray(ref terraced);
+                GeologyForgeNativeMemory.DisposeArray(ref final);
+                GeologyForgeNativeMemory.DisposeArray(ref pixels);
             }
         }
 

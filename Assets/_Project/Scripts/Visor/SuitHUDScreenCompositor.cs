@@ -139,7 +139,7 @@ namespace NASAPunk.Visor
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            _tickRegistered = false;
+            UnregisterRuntimeTick();
             if (currentService != null && isActiveAndEnabled)
                 TryRegisterRuntimeTick();
         }
@@ -523,7 +523,7 @@ namespace NASAPunk.Visor
 
         private void TryRegisterRuntimeTick()
         {
-            if (!Application.isPlaying || _tickRegistered)
+            if (!Application.isPlaying || _tickRegistered || GlobalRegistry.Dispatcher == null)
                 return;
 
             _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);

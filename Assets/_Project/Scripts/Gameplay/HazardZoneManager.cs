@@ -310,6 +310,7 @@ namespace Hecton8.Gameplay
         private const float RadiationClarityTransferScale = 0.85f;
         private const float ThermalClarityTransferDenominator = 18f;
         private const float ToxicClarityTransferScale = 1.35f;
+        private const float HazardIntensityHardCap = 1000f;
         private const float MinResistance = 0.1f;
         private const float MaxProtectedResistance = 1000f;
         private const float ConservativeAabbSphereFactor = 1.7320508f;
@@ -370,6 +371,7 @@ namespace Hecton8.Gameplay
         private bool _hazardBlackBoxDumpAttempted;
         private bool _hazardBlackBoxUnavailableReported;
         private bool _pendingDataVaultSwap;
+        private bool _lastExposureJobResultNonFinite;
         private int _activeCount;
         private int _telemetryWriteIndex;
         private uint _telemetrySequence;
@@ -480,7 +482,10 @@ namespace Hecton8.Gameplay
         public bool RegisterZone(int id, Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias = 1f)
         {
             if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition positionAup))
+            {
+                UnregisterZone(id, type);
                 return false;
+            }
 
             return RegisterZone(id, in positionAup, intensity, radius, type, visorGlitchBias, null);
         }
@@ -496,7 +501,10 @@ namespace Hecton8.Gameplay
         internal bool RegisterZone(int id, Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias, HazardZoneProfile profile)
         {
             if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition positionAup))
+            {
+                UnregisterZone(id, type);
                 return false;
+            }
 
             return RegisterZone(id, in positionAup, intensity, radius, type, visorGlitchBias, profile);
         }
@@ -504,10 +512,19 @@ namespace Hecton8.Gameplay
         internal bool RegisterZone(int id, in AbsoluteUniversePosition positionAup, float intensity, float radius, HazardType type, float visorGlitchBias, HazardZoneProfile profile)
         {
             if (!IsValidHazardZoneInput(id, in positionAup, intensity, radius, type, visorGlitchBias))
+            {
+                UnregisterZone(id, type);
                 return false;
+            }
 
             if (type == HazardType.Radiation)
             {
+                if (!Application.isPlaying || intensity <= 0f)
+                {
+                    RadiationHazardGrid.UnregisterSource(id);
+                    return false;
+                }
+
                 RadiationHazardGrid.RegisterSource(id, in positionAup, intensity, radius);
                 return true;
             }
@@ -603,6 +620,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void UnregisterZone(int id)
         {
+            if (id <= 0)
+                return;
+
             if (!_volumes.IsCreated)
                 return;
 
@@ -619,9 +639,15 @@ namespace Hecton8.Gameplay
         {
             if (type == HazardType.Radiation)
             {
+                if (id == 0)
+                    return;
+
                 RadiationHazardGrid.UnregisterSource(id);
                 return;
             }
+
+            if (id <= 0)
+                return;
 
             UnregisterZone(id);
         }
@@ -680,7 +706,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Returns the summed hazard intensity at the supplied runtime point.
+        /// Returns the bounded summed hazard intensity at the supplied runtime point.
         /// </summary>
         public float GetHazardIntensity(Vector3 runtimePoint, HazardType type)
         {
@@ -691,7 +717,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Returns the summed hazard intensity at the supplied absolute-universe point.
+        /// Returns the bounded summed hazard intensity at the supplied absolute-universe point.
         /// </summary>
         public float GetHazardIntensity(in AbsoluteUniversePosition pointAup, HazardType type)
         {
@@ -712,13 +738,13 @@ namespace Hecton8.Gameplay
 
             _volumeCurveLutSamples.TryReadOnly(out NativeArray<float>.ReadOnly readCurveLutSamples);
             double3 absolutePoint = pointAup.ToAbsoluteDouble3();
-            return SumHazardIntensityLinear(
+            return ClampExposure(SumHazardIntensityLinear(
                 absolutePoint,
                 in pointAup,
                 type,
                 readVolumes,
                 readVolumeIds,
-                readCurveLutSamples);
+                readCurveLutSamples));
         }
 
         public float GetToxicityIntensity(in AbsoluteUniversePosition pointAup)
@@ -1159,10 +1185,12 @@ namespace Hecton8.Gameplay
             {
                 if (!TryPrepareHazardExposureResultBuffer(out NativeArray<HazardExposureJobResult> jobResult, allowAllocation: false))
                 {
+                    _lastExposureJobResultNonFinite = false;
                     return true;
                 }
 
                 HazardExposureJobResult result = jobResult[0];
+                _lastExposureJobResultNonFinite = HasNonFiniteExposureJobResult(in result);
                 _playerHazardIntensity[(int)HazardType.Radiation] = 0f;
                 _playerHazardIntensity[(int)HazardType.Heat] = ClampExposure(result.PlayerHeat);
                 _playerHazardIntensity[(int)HazardType.Toxicity] = ClampExposure(result.PlayerToxicity);
@@ -1805,6 +1833,8 @@ namespace Hecton8.Gameplay
                 flags |= TelemetryFlagPendingMutation;
             if (_pendingOverflowUnregisterCount > 0)
                 flags |= TelemetryFlagPendingUnregisterOverflow;
+            if (_lastExposureJobResultNonFinite)
+                flags |= TelemetryFlagNonFinite;
 
             return flags;
         }
@@ -2002,6 +2032,26 @@ namespace Hecton8.Gameplay
 
             flags |= TelemetryFlagNonFinite;
             return 0f;
+        }
+
+        private static bool HasNonFiniteExposureJobResult(in HazardExposureJobResult result)
+        {
+            return !math.isfinite(result.PlayerRadiation) ||
+                   !math.isfinite(result.PlayerHeat) ||
+                   !math.isfinite(result.PlayerToxicity) ||
+                   !math.isfinite(result.PlayerBiohazard) ||
+                   !math.isfinite(result.PlayerRadiationGlitchBias) ||
+                   !math.isfinite(result.PlayerHeatGlitchBias) ||
+                   !math.isfinite(result.PlayerToxicityGlitchBias) ||
+                   !math.isfinite(result.PlayerBiohazardGlitchBias) ||
+                   !math.isfinite(result.VehicleRadiation) ||
+                   !math.isfinite(result.VehicleHeat) ||
+                   !math.isfinite(result.VehicleToxicity) ||
+                   !math.isfinite(result.VehicleBiohazard) ||
+                   !math.isfinite(result.VehicleRadiationGlitchBias) ||
+                   !math.isfinite(result.VehicleHeatGlitchBias) ||
+                   !math.isfinite(result.VehicleToxicityGlitchBias) ||
+                   !math.isfinite(result.VehicleBiohazardGlitchBias);
         }
 
         private static string BuildHazardTelemetryDumpRelativePath()
@@ -2719,6 +2769,7 @@ namespace Hecton8.Gameplay
             _toxicityDose = 0f;
             _toxicityPulseAccumulatorSeconds = 0f;
             _publishedExposureMask = 0;
+            _lastExposureJobResultNonFinite = false;
             _activeTransportOwner = null;
             _activeTransportBehaviour = null;
             _activeTransportCollider = null;
@@ -2736,6 +2787,7 @@ namespace Hecton8.Gameplay
 
         private void ClearExposureState()
         {
+            _lastExposureJobResultNonFinite = false;
             for (int i = 0; i < HazardTypeCount; i++)
             {
                 _playerHazardIntensity[i] = 0f;
@@ -2913,7 +2965,7 @@ namespace Hecton8.Gameplay
 
         private static float ClampExposure(float value)
         {
-            return FiniteNonNegativeOrZero(value);
+            return math.isfinite(value) ? math.clamp(value, 0f, HazardIntensityHardCap) : 0f;
         }
 
         private static float ClampGlitchBias(float value)

@@ -467,14 +467,14 @@ MonoBehaviour:
   _overrideGravity: 1
   _gravity: -8.8
   _gravityMultiplier: 1
-  _waterBodyCulling: 1
+  _waterBodyCulling: 0
   _minScale: 8
-  _maxScale: 256
+  _maxScale: 4096
   _dropDetailHeightBasedOnWaves: 0.2
   _lodDataResolution: 256
-  _geometryDownSampleFactor: 2
-  _lodCount: 6
-  _extentsSizeMultiplier: 100
+  _geometryDownSampleFactor: 1
+  _lodCount: 8
+  _extentsSizeMultiplier: 1800
   _renderingLayerMask: 255
   _simSettingsAnimatedWaves: {fileID: 11400000, guid: 2e2bf04fba9811b438fd3258d5625fe9, type: 2}
   _createSeaFloorDepthData: 0
@@ -773,7 +773,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5513631557248329811}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c8f54dfc1dc54c4da9a83c91f1c4b27a, type: 3}
   m_Name:

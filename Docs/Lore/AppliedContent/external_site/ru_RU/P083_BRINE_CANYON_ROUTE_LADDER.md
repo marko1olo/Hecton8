@@ -7,6 +7,9 @@ poi_tags: poi.brine_density_marker;poi.canyon_current_gate
 biome_tags: biome.brine_canyon;biome.drop_zone
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Маршрутная лестница brine canyon"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

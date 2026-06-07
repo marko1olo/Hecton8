@@ -1080,17 +1080,12 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null)
-                {
-                    _registeredSlowTick = false;
-                    _registeredLateFrame = false;
-                    return;
-                }
-
+                UnregisterSlowTickCold();
+                UnregisterLateFrameCold();
                 if (isActiveAndEnabled)
                 {
-                    UnregisterLateFrameCold();
-                    TryRegister();
+                    if (currentService != null)
+                        TryRegister();
                 }
                 return;
             }

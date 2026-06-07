@@ -7,6 +7,9 @@ poi_tags: poi.atlas_argument_core;poi.factory_temple_choice
 biome_tags: biome.factory_temple;biome.atlas_core
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "הטיעון האחרון של Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

@@ -120,12 +120,8 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            ScanLogSystem registered = GlobalRegistry.ScanLog;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             _scanArchivedNotificationHash = NotificationEvents.RegisterMessage(ScanArchivedMessage.AsSpan());
             _signalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
@@ -133,6 +129,9 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             TryRegisterHotSwapListener();
             TryRegisterService();
             TryRegisterSaveParticipant();
@@ -164,10 +163,54 @@ namespace Hecton8.Gameplay
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             GlobalRegistry.RegisterScanLogRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.ScanLog, this);
             if (_serviceRegistered)
                 s_activeRuntimeInstance = this;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            ScanLogSystem active = s_activeRuntimeInstance;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsScanLogRuntimeUsable(active))
+                {
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntimeInstance, active))
+                    s_activeRuntimeInstance = null;
+                if (ReferenceEquals(GlobalRegistry.ScanLog, active))
+                    GlobalRegistry.UnregisterScanLogRuntime(active);
+            }
+
+            ScanLogSystem registered = GlobalRegistry.ScanLog;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsScanLogRuntimeUsable(registered))
+            {
+                s_activeRuntimeInstance = registered;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterScanLogRuntime(registered);
+            if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                s_activeRuntimeInstance = null;
+            return false;
+        }
+
+        private static bool IsScanLogRuntimeUsable(ScanLogSystem system)
+        {
+            return system != null &&
+                   system._serviceRegistered &&
+                   system.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()
@@ -308,6 +351,7 @@ namespace Hecton8.Gameplay
             if (data == null)
                 return;
 
+            FlushPendingScanEventsForSave();
             data.scanLog.EnsureCapacity();
             data.scanLog.entryCount = math.min(_entries.Count, ScanLogDTO.MaxEntries);
 
@@ -340,6 +384,14 @@ namespace Hecton8.Gameplay
             data.scanLog.recentCount = recentCount;
             for (int i = recentCount; i < ScanLogDTO.MaxRecentEntries; i++)
                 data.scanLog.recentEntryIds[i] = string.Empty;
+        }
+
+        private static void FlushPendingScanEventsForSave()
+        {
+            if (ScanEvents.PendingCount <= 0)
+                return;
+
+            ScanEvents.FlushPending();
         }
 
         public void LoadFromSaveData(SaveData data)

@@ -1,0 +1,137 @@
+{
+  "schema": "hecton8.inventory_manual_crop.v1",
+  "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/TX_B30_InventoryIsolatedObjects_Source_20260607_Gemini.png",
+  "contactSheet": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/DRAFT_IsolatedInventory_ManualAlphaContactSheet.png",
+  "items": [
+    {
+      "index": 1,
+      "name": "OxygenMicroTank",
+      "rect": [
+        120,
+        40,
+        520,
+        620
+      ],
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectCropsRaw/RAW_TX_B30_IsolatedInventory_01_OxygenMicroTank.png",
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectAlpha512/DRAFT_TX_B30_IsolatedInventory_01_OxygenMicroTank_Alpha512.png",
+      "status": "STATIC_SOURCE_DRAFT"
+    },
+    {
+      "index": 2,
+      "name": "PressureRegulatorModule",
+      "rect": [
+        690,
+        35,
+        1345,
+        625
+      ],
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectCropsRaw/RAW_TX_B30_IsolatedInventory_02_PressureRegulatorModule.png",
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectAlpha512/DRAFT_TX_B30_IsolatedInventory_02_PressureRegulatorModule_Alpha512.png",
+      "status": "STATIC_SOURCE_DRAFT"
+    },
+    {
+      "index": 3,
+      "name": "PressureSalvageCaseA",
+      "rect": [
+        1450,
+        35,
+        2190,
+        625
+      ],
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectCropsRaw/RAW_TX_B30_IsolatedInventory_03_PressureSalvageCaseA.png",
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectAlpha512/DRAFT_TX_B30_IsolatedInventory_03_PressureSalvageCaseA_Alpha512.png",
+      "status": "STATIC_SOURCE_DRAFT"
+    },
+    {
+      "index": 4,
+      "name": "FoldedMultitoolA",
+      "rect": [
+        2240,
+        55,
+        2760,
+        465
+      ],
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectCropsRaw/RAW_TX_B30_IsolatedInventory_04_FoldedMultitoolA.png",
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectAlpha512/DRAFT_TX_B30_IsolatedInventory_04_FoldedMultitoolA_Alpha512.png",
+      "status": "STATIC_SOURCE_DRAFT"
+    },
+    {
+      "index": 5,
+      "name": "FoldedMultitoolB",
+      "rect": [
+        75,
+        585,
+        735,
+        1035
+      ],
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectCropsRaw/RAW_TX_B30_IsolatedInventory_05_FoldedMultitoolB.png",
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectAlpha512/DRAFT_TX_B30_IsolatedInventory_05_FoldedMultitoolB_Alpha512.png",
+      "status": "STATIC_SOURCE_DRAFT"
+    },
+    {
+      "index": 6,
+      "name": "PowerCoilCartridge",
+      "rect": [
+        1000,
+        545,
+        1715,
+        1065
+      ],
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectCropsRaw/RAW_TX_B30_IsolatedInventory_06_PowerCoilCartridge.png",
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectAlpha512/DRAFT_TX_B30_IsolatedInventory_06_PowerCoilCartridge_Alpha512.png",
+      "status": "STATIC_SOURCE_DRAFT"
+    },
+    {
+      "index": 7,
+      "name": "ThermalControlModule",
+      "rect": [
+        2075,
+        545,
+        2765,
+        1045
+      ],
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectCropsRaw/RAW_TX_B30_IsolatedInventory_07_ThermalControlModule.png",
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectAlpha512/DRAFT_TX_B30_IsolatedInventory_07_ThermalControlModule_Alpha512.png",
+      "status": "STATIC_SOURCE_DRAFT"
+    },
+    {
+      "index": 8,
+      "name": "BeaconPuck",
+      "rect": [
+        70,
+        1050,
+        725,
+        1530
+      ],
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectCropsRaw/RAW_TX_B30_IsolatedInventory_08_BeaconPuck.png",
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectAlpha512/DRAFT_TX_B30_IsolatedInventory_08_BeaconPuck_Alpha512.png",
+      "status": "STATIC_SOURCE_DRAFT"
+    },
+    {
+      "index": 9,
+      "name": "SampleVialRack",
+      "rect": [
+        1160,
+        955,
+        1910,
+        1530
+      ],
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectCropsRaw/RAW_TX_B30_IsolatedInventory_09_SampleVialRack.png",
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectAlpha512/DRAFT_TX_B30_IsolatedInventory_09_SampleVialRack_Alpha512.png",
+      "status": "STATIC_SOURCE_DRAFT"
+    },
+    {
+      "index": 10,
+      "name": "AlloyIngot",
+      "rect": [
+        2140,
+        1085,
+        2735,
+        1505
+      ],
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectCropsRaw/RAW_TX_B30_IsolatedInventory_10_AlloyIngot.png",
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/ManualObjectAlpha512/DRAFT_TX_B30_IsolatedInventory_10_AlloyIngot_Alpha512.png",
+      "status": "STATIC_SOURCE_DRAFT"
+    }
+  ]
+}

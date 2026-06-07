@@ -938,19 +938,24 @@ namespace Hecton8.Gameplay
             }
 
             float intensity = _baseModule.Co2ToxicHazardIntensity;
-            if (intensity <= 0.001f)
+            if (!math.isfinite(intensity) || intensity <= 0.001f)
             {
                 ClearToxicityHazard();
                 return;
             }
 
-            HectonHazardManager.Register(
-                _toxicityHazardId,
-                worldCenter,
-                intensity,
-                Mathf.Max(ToxicHazardMinimumRadius, radius),
-                HazardType.Toxicity);
-            _toxicityHazardRegistered = true;
+            if (HectonHazardManager.Register(
+                    _toxicityHazardId,
+                    worldCenter,
+                    intensity,
+                    Mathf.Max(ToxicHazardMinimumRadius, radius),
+                    HazardType.Toxicity))
+            {
+                _toxicityHazardRegistered = true;
+                return;
+            }
+
+            ClearToxicityHazard();
         }
 
         private void ClearToxicityHazard()

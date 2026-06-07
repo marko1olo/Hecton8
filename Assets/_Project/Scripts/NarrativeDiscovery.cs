@@ -148,11 +148,14 @@ namespace Hecton8.Interaction
 
             if (highlightObject != null)
                 highlightObject.SetActive(false);
+
+            ClearCachedRegistryServices();
         }
 
         private void OnDestroy()
         {
             InteractableRegistry.InvalidateTree(this);
+            ClearCachedRegistryServices();
         }
 
         private void RebuildCache()
@@ -399,7 +402,7 @@ namespace Hecton8.Interaction
                     _narrativeDiscoveryReadModel = currentService as INarrativeDiscoveryReadModel;
                     break;
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
-                    _audioLogs = currentService as IAudioLogRuntime;
+                    CacheAudioLogSystem(currentService as IAudioLogRuntime);
                     break;
                 case GlobalRegistryServiceSlot.LoreDatabaseRuntime:
                     _loreUnlockSink = currentService as ILoreUnlockSink;
@@ -414,9 +417,43 @@ namespace Hecton8.Interaction
         private void CacheRegistryServicesCold()
         {
             _narrativeDiscoveryReadModel = GlobalRegistry.NarrativeDiscoveryReadModel;
-            _audioLogs = GlobalRegistry.AudioLogRuntime;
+            CacheAudioLogSystem(GlobalRegistry.AudioLogRuntime);
             _loreUnlockSink = GlobalRegistry.LoreUnlockSink;
             _localization = GlobalRegistry.LocalizationText;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _narrativeDiscoveryReadModel = null;
+            _audioLogs = null;
+            _loreUnlockSink = null;
+            _localization = null;
+        }
+
+        private void CacheAudioLogSystem(IAudioLogRuntime audioLogSystem)
+        {
+            _audioLogs = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null;
+        }
+
+        private IAudioLogRuntime ResolveAudioLogSystem()
+        {
+            IAudioLogRuntime audioLogSystem = _audioLogs;
+            if (IsAudioLogRuntimeUsable(audioLogSystem))
+                return audioLogSystem;
+
+            _audioLogs = null;
+            return null;
+        }
+
+        private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogSystem)
+        {
+            if (audioLogSystem == null)
+                return false;
+
+            if (audioLogSystem is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -486,7 +523,7 @@ namespace Hecton8.Interaction
 
         private bool TryPlayLinkedAudioLog()
         {
-            IAudioLogRuntime audioLogs = _audioLogs;
+            IAudioLogRuntime audioLogs = ResolveAudioLogSystem();
             uint logHash = _cachedAudioLogHash;
             return audioLogs != null &&
                    logHash != 0u &&

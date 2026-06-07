@@ -332,7 +332,11 @@ namespace Hecton8.Audio
         private IAudioService ResolveAudioService()
         {
             IAudioService audioService = _audioService;
-            return audioService != null && audioService.IsInitialized ? audioService : null;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
         }
 
         private IAcousticZoneMadnessCueSink ResolveAcousticZone()
@@ -354,8 +358,19 @@ namespace Hecton8.Audio
 
         private void CacheAudioService(IAudioService audioService, int frame)
         {
-            _audioService = audioService != null && audioService.IsInitialized ? audioService : null;
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
             _nextAudioServiceRetryFrame = frame + DependencyRetryFrameInterval;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void CacheAcousticZone(IAcousticZoneMadnessCueSink acousticZone, int frame)

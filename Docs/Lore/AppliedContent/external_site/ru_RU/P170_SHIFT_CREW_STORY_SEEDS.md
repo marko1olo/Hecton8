@@ -7,6 +7,9 @@ poi_tags: poi.shift_seed_card;poi.crew_route_seed
 biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Сюжетные seeds сменных команд"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.black_keel_contract_console;poi.claim_acceptance_stamp
 biome_tags: biome.black_keel_orbit
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Black Keel Claim Acceptance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

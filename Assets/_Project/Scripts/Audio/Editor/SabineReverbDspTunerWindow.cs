@@ -33,7 +33,9 @@ namespace Hecton8.Audio.Editor
         private void OnEnable()
         {
             _profileAbsolutePath = ResolveProfileAbsolutePath();
+            EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;
+            SceneView.duringSceneGui -= OnSceneGui;
             SceneView.duringSceneGui += OnSceneGui;
             PullFromRuntime();
             TryReloadCsvProfile(force: true);

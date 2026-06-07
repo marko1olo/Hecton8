@@ -1333,10 +1333,10 @@ namespace Hecton8.World
             }
 
             VolcanicUpdraftSettingsDTO settings = settingsArray[0];
-            settings.MaxThrust = math.max(0.01f, editorMaxThrust);
-            settings.EruptionFrequency = math.max(0.001f, editorEruptionFrequency);
-            settings.CylinderRadius = math.max(0.25f, editorCylinderRadius);
-            settings.HeatOutput = math.max(0f, editorHeatOutput);
+            settings.MaxThrust = ClampFinite(editorMaxThrust, 24f, 0.01f, 240f);
+            settings.EruptionFrequency = ClampFinite(editorEruptionFrequency, 0.18f, 0.001f, 4f);
+            settings.CylinderRadius = ClampFinite(editorCylinderRadius, 18f, 0.25f, 512f);
+            settings.HeatOutput = ClampFinite(editorHeatOutput, 1f, 0f, 25f);
             settings.SourceHash = VolcanicUpdraftVault.SourceHash;
             settingsArray[0] = SanitizeSettings(settings);
             return true;
@@ -1344,7 +1344,7 @@ namespace Hecton8.World
 
         public bool TryUpsertAuthoredVent(uint sourceHash, double3 aup, float radius, float thrustPower, float maxHeight, float heatOutput, float timer01)
         {
-            if (_fixedPipelineScheduled || !ResolveDataVault())
+            if (_fixedPipelineScheduled || !math.all(math.isfinite(aup)) || !ResolveDataVault())
                 return false;
 
             if (!TryResolveVaultBuffer(in _ventHandle, VolcanicUpdraftVault.VentsBuffer, 1, out NativeArray<VentStateDTO> vents) ||
@@ -1356,20 +1356,24 @@ namespace Hecton8.World
             VolcanicUpdraftSettingsDTO settings = SanitizeSettings(settingsArray[0]);
             int ventCount = math.clamp((int)settings.VentCount, 1, math.min(vents.Length, VolcanicUpdraftVault.MaxVents));
             int slot = (int)(sourceHash % (uint)ventCount);
+            float safeRadius = VolcanicUpdraftVault.SafePositive(radius, settings.CylinderRadius);
+            float safeThrust = math.max(0f, math.select(0f, thrustPower, math.isfinite(thrustPower)));
+            float safeMaxHeight = VolcanicUpdraftVault.SafePositive(maxHeight, settings.MaxHeight);
+            float safeHeatOutput = ClampFinite(heatOutput, settings.HeatOutput, 0f, 25f);
             VentStateDTO vent = vents[slot];
             vent.AUP = aup;
             vent.UpVector = new float3(0f, 1f, 0f);
-            vent.Radius = math.max(0.25f, radius);
-            vent.ThrustPower = math.max(0f, thrustPower);
-            vent.EruptionTimer = math.saturate(timer01);
+            vent.Radius = safeRadius;
+            vent.ThrustPower = safeThrust;
+            vent.EruptionTimer = SaturateFinite(timer01, 0f);
             vent._pad0 = 0u;
             vent._pad1 = 0ul;
             vents[slot] = vent;
 
-            settings.MaxThrust = math.max(settings.MaxThrust, math.max(0.01f, thrustPower));
-            settings.CylinderRadius = math.max(settings.CylinderRadius, math.max(0.25f, radius));
-            settings.MaxHeight = math.max(settings.MaxHeight, math.max(1f, maxHeight));
-            settings.HeatOutput = math.max(settings.HeatOutput, math.saturate(heatOutput));
+            settings.MaxThrust = math.max(settings.MaxThrust, math.max(0.01f, safeThrust));
+            settings.CylinderRadius = math.max(settings.CylinderRadius, safeRadius);
+            settings.MaxHeight = math.max(settings.MaxHeight, safeMaxHeight);
+            settings.HeatOutput = math.max(settings.HeatOutput, safeHeatOutput);
             settings.SourceHash = VolcanicUpdraftVault.SourceHash;
             settingsArray[0] = SanitizeSettings(settings);
             return true;
@@ -1668,21 +1672,37 @@ namespace Hecton8.World
 
         private static VolcanicUpdraftSettingsDTO SanitizeSettings(VolcanicUpdraftSettingsDTO settings)
         {
-            settings.MaxThrust = math.clamp(settings.MaxThrust, 0.01f, 240f);
-            settings.EruptionFrequency = math.clamp(settings.EruptionFrequency, 0.001f, 4f);
-            settings.CylinderRadius = math.clamp(settings.CylinderRadius, 0.25f, 512f);
-            settings.MaxHeight = math.clamp(settings.MaxHeight, 1f, 2000f);
-            settings.HeatOutput = math.clamp(settings.HeatOutput, 0f, 25f);
-            settings.GlobalQualityWeight = math.saturate(math.isfinite(settings.GlobalQualityWeight) ? settings.GlobalQualityWeight : 1f);
-            settings.MaxVerticalVelocity = math.clamp(settings.MaxVerticalVelocity, 1f, 140f);
-            settings.EruptionThreshold = math.clamp(settings.EruptionThreshold, 0.01f, 0.95f);
-            settings.EruptionGain = math.clamp(settings.EruptionGain, 0.1f, 24f);
-            settings.AcousticRadius = math.clamp(settings.AcousticRadius, 1f, 4096f);
-            settings.DebrisCommandIntensity = math.saturate(settings.DebrisCommandIntensity);
-            settings.ThermalBlindnessScale = math.clamp(settings.ThermalBlindnessScale, 0f, 8f);
-            settings.VentCount = (uint)math.clamp((int)settings.VentCount, 1, VolcanicUpdraftVault.MaxVents);
+            settings.MaxThrust = ClampFinite(settings.MaxThrust, 24f, 0.01f, 240f);
+            settings.EruptionFrequency = ClampFinite(settings.EruptionFrequency, 0.18f, 0.001f, 4f);
+            settings.CylinderRadius = ClampFinite(settings.CylinderRadius, 18f, 0.25f, 512f);
+            settings.MaxHeight = ClampFinite(settings.MaxHeight, 220f, 1f, 2000f);
+            settings.HeatOutput = ClampFinite(settings.HeatOutput, 1f, 0f, 25f);
+            settings.GlobalQualityWeight = SaturateFinite(settings.GlobalQualityWeight, 1f);
+            settings.MaxVerticalVelocity = ClampFinite(settings.MaxVerticalVelocity, 72f, 1f, 140f);
+            settings.EruptionThreshold = ClampFinite(settings.EruptionThreshold, 0.42f, 0.01f, 0.95f);
+            settings.EruptionGain = ClampFinite(settings.EruptionGain, 2.75f, 0.1f, 24f);
+            settings.AcousticRadius = ClampFinite(settings.AcousticRadius, 360f, 1f, 4096f);
+            settings.DebrisCommandIntensity = SaturateFinite(settings.DebrisCommandIntensity, 1f);
+            settings.ThermalBlindnessScale = ClampFinite(settings.ThermalBlindnessScale, 1f, 0f, 8f);
+            if (settings.VentCount == 0u)
+                settings.VentCount = 1u;
+            else if (settings.VentCount > (uint)VolcanicUpdraftVault.MaxVents)
+                settings.VentCount = (uint)VolcanicUpdraftVault.MaxVents;
             settings.SourceHash = settings.SourceHash == 0u ? VolcanicUpdraftVault.SourceHash : settings.SourceHash;
             return settings;
+        }
+
+        private static float ClampFinite(float value, float fallback, float min, float max)
+        {
+            float safeFallback = math.select(min, fallback, math.isfinite(fallback));
+            float safeValue = math.select(safeFallback, value, math.isfinite(value));
+            return math.clamp(safeValue, min, max);
+        }
+
+        private static float SaturateFinite(float value, float fallback)
+        {
+            float safeFallback = math.select(0f, fallback, math.isfinite(fallback));
+            return math.saturate(math.select(safeFallback, value, math.isfinite(value)));
         }
 
         private float ResolveGlobalQualityWeight()
@@ -1734,9 +1754,12 @@ namespace Hecton8.World
                         ReadFloatLittleEndian(record, 28),
                         ReadFloatLittleEndian(record, 32)),
                         new float3(0f, 1f, 0f));
-                    vent.Radius = math.max(0.25f, ReadFloatLittleEndian(record, 36));
-                    vent.ThrustPower = math.max(0f, ReadFloatLittleEndian(record, 40));
-                    vent.EruptionTimer = math.saturate(ReadFloatLittleEndian(record, 44));
+                    vent.Radius = VolcanicUpdraftVault.SafePositive(
+                        ReadFloatLittleEndian(record, 36),
+                        settings.CylinderRadius);
+                    float readThrustPower = ReadFloatLittleEndian(record, 40);
+                    vent.ThrustPower = math.max(0f, math.select(0f, readThrustPower, math.isfinite(readThrustPower)));
+                    vent.EruptionTimer = SaturateFinite(ReadFloatLittleEndian(record, 44), 0f);
                     vent._pad0 = 0u;
                     vent._pad1 = 0ul;
                     if (!math.all(math.isfinite(vent.AUP)) || !math.all(math.isfinite(vent.UpVector)))
@@ -2140,14 +2163,17 @@ namespace Hecton8.World
             float z = ParseFloat(bytes, length, ref index);
             float radius = ParseFloat(bytes, length, ref index);
             float thrust = ParseFloat(bytes, length, ref index);
-            if ((uint)ventIndex >= (uint)vents.Length)
+            if ((uint)ventIndex >= (uint)vents.Length ||
+                !math.all(math.isfinite(new float3(x, y, z))))
+            {
                 return;
+            }
 
             VentStateDTO vent = vents[ventIndex];
             vent.AUP = new double3(x, y, z);
             vent.UpVector = new float3(0f, 1f, 0f);
-            vent.Radius = radius > 0f ? radius : settings.CylinderRadius;
-            vent.ThrustPower = math.max(0f, thrust);
+            vent.Radius = VolcanicUpdraftVault.SafePositive(radius, settings.CylinderRadius);
+            vent.ThrustPower = math.max(0f, math.select(0f, thrust, math.isfinite(thrust)));
             vents[ventIndex] = vent;
         }
 

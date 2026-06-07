@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Photic Mat Baseline"
+title: "Base des tapis photiques"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Photic Mat Baseline
+# Base des tapis photiques
 
-FR LOC HOLD: Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.
+Les tapis photiques sont la première vie peu profonde qui peut aider le joueur à respirer tout en punissant une récolte brutale. Le film pousse là où lumière, ruissellement minéral et eau lente se rejoignent, couvrant la roche d'une couleur riche en oxygène. Un centre sain est doux et lumineux ; un bord durci au sel signifie que la chimie de pression ou une vieille infrastructure stresse la poche. Le tapis change aussi le son : une bonne croissance étouffe les petits impacts, tandis que les joints contaminés cliquent et pétillent sous le grattoir. Coupe seulement la frange libre si tu as besoin de fibre ou de chimie d'oxygène. Déchirer le centre lumineux près d'une trappe, d'un tuyau ou d'un panneau scellé peut faire chuter l'oxygène local et exposer ce que le tapis maintenait au sol.
 
 ## Scanner
 
-FR LOC HOLD: Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.
+TAPIS PHOTIQUE // Film vivant nourri aux minéraux sur roche peu profonde. Les bandes vives oxygènent l'eau ; les bords durcis au sel signalent chimie de pression stressée et fuites de joint cachées.
 
 ## Terminal
 
-FR LOC HOLD: ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.
+BASE ECOLOGIQUE : cartographie peau d'oxygène, ruissellement minéral, amortissement acoustique et stress des bords salins. Récolter seulement la frange libre. Déchirer près des joints ou d'équipement scellé peut faire tomber une poche en contamination.
 
 ## Audio
 
-FR LOC HOLD: It looks clean because it is working hard. That is not the same as safe.
+Il paraît propre parce qu'il travaille. Ce n'est pas la même chose que sûr.
 
 ## Field Note
 
-FR LOC HOLD: Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.
+Ne gratte pas d'abord la zone la plus vive. Lis le bord, les bulles et le son ; le tapis est une jauge avant d'être une ressource.
 
 <!-- In-Game Wiki; generated from P221_PHOTIC_MAT_BASELINE/fr_FR. -->

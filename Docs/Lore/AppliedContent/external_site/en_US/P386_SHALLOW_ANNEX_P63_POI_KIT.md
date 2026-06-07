@@ -7,6 +7,9 @@ poi_tags: poi.shallow_annex_p63;poi.first_pump_order
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Shallow Annex P-63 POI Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

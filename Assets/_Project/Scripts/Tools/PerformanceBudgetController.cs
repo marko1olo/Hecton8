@@ -119,7 +119,7 @@ namespace Hecton8.Tools
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            _registeredToTickManager = false;
+            TryUnregisterUpdatable();
             if (currentService != null)
                 TryRegisterUpdatable();
         }

@@ -474,10 +474,8 @@ namespace Hecton8.Construction
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                TryUnregisterAllRuntimeLanes();
                 _dispatcherAvailable = currentService != null;
-                _registeredUpdate = false;
-                _registeredFixed = false;
-                _registeredLateFrame = false;
                 if (currentService != null && isActiveAndEnabled)
                     TryRegisterActiveLanes();
 

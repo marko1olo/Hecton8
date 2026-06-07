@@ -59,12 +59,19 @@ namespace Hecton8.Quest
             _onResultsAvailable = onResultsAvailable;
             _pendingSignalsSentinelLabel = nameof(_pendingSignals) + RuntimeHelpers.GetHashCode(this);
             _pendingSignals = new NativeQueue<QuestSignalPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<QuestSignalPayload>[16] — quest signal ingress lane drained on event receipt — owner: QuestGraphEvaluator
-            NativeMemorySentinel.RegisterNativeQueue(
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
                 _pendingSignals,
                 PendingSignalCapacity,
                 nameof(QuestGraphEvaluator),
                 _pendingSignalsSentinelLabel,
                 NativeAllocationLifetime.Session);
+            if (sentinelId <= 0)
+            {
+                _pendingSignals.Dispose();
+                _pendingSignals = default;
+                throw new InvalidOperationException($"Native memory sentinel registration failed for {_pendingSignalsSentinelLabel}.");
+            }
+
             PrewarmQueue(ref _pendingSignals, PendingSignalCapacity);
         }
 
@@ -145,6 +152,9 @@ namespace Hecton8.Quest
 
         public void UpdateDepthContext(float depthMeters, uint zoneHash, bool isThermalZone)
         {
+            if (!math.isfinite(depthMeters) || depthMeters < 0f)
+                return;
+
             QuestSignalContextFlags flags = QuestSignalContextFlags.None;
             if (isThermalZone)
                 flags |= QuestSignalContextFlags.ThermalPhase;
@@ -206,7 +216,7 @@ namespace Hecton8.Quest
 
         public void OnMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
         {
-            if (profile == null)
+            if (profile == null || profile.matrixIndex < 0)
                 return;
 
             EnqueueSignal(new QuestSignalPayload
@@ -219,7 +229,13 @@ namespace Hecton8.Quest
 
         public void OnDepthTierChanged(int depthTier, float depthMeters)
         {
-            UpdateDepth(depthMeters > 0f ? depthMeters : MapDepthTierToMeters(depthTier));
+            float resolvedDepth = math.isfinite(depthMeters) && depthMeters > 0f
+                ? depthMeters
+                : MapDepthTierToMeters(depthTier);
+            if (resolvedDepth <= 0f)
+                return;
+
+            UpdateDepth(resolvedDepth);
         }
 
         public void OnNarrativeEvent(in NarrativeEventPayload payload)
@@ -309,6 +325,8 @@ namespace Hecton8.Quest
         {
             if ((AtlasSignalEventType)payload.EventType != AtlasSignalEventType.Decoded)
                 return;
+            if (payload.MessageHash == 0u)
+                return;
 
             EnqueueSignal(new QuestSignalPayload
             {
@@ -320,17 +338,103 @@ namespace Hecton8.Quest
 
         private void EnqueueSignal(in QuestSignalPayload payload)
         {
+            if (!TrySanitizeSignalPayload(in payload, out QuestSignalPayload safePayload))
+                return;
+
             if (!_pendingSignals.IsCreated)
                 return;
 
             if (_pendingSignalCount >= PendingSignalCapacity)
             {
-                ReportPendingSignalOverflow(payload.EventType);
+                ReportPendingSignalOverflow(safePayload.EventType);
                 return;
             }
 
-            _pendingSignals.Enqueue(payload);
+            _pendingSignals.Enqueue(safePayload);
             _pendingSignalCount++;
+        }
+
+        private static bool TrySanitizeSignalPayload(
+            in QuestSignalPayload payload,
+            out QuestSignalPayload safePayload)
+        {
+            safePayload = default;
+            if (!math.isfinite(payload.Timestamp) || payload.Timestamp < 0d)
+                return false;
+            if (!math.all(math.isfinite(payload.Position)))
+                return false;
+            if (!IsKnownSignalKind(payload.EventType))
+                return false;
+
+            QuestSignalKind kind = (QuestSignalKind)payload.EventType;
+            safePayload.EventType = payload.EventType;
+            safePayload.Timestamp = payload.Timestamp;
+            safePayload.Position = payload.Position;
+            safePayload.Flags = payload.Flags & (uint)(QuestSignalContextFlags.ThermalPhase | QuestSignalContextFlags.AbyssalPhase);
+
+            switch (kind)
+            {
+                case QuestSignalKind.ItemCollected:
+                case QuestSignalKind.CraftCompleted:
+                    if (payload.EntityHash == 0u || !math.isfinite(payload.NumericValue) || payload.NumericValue <= 0f)
+                        return false;
+
+                    safePayload.EntityHash = payload.EntityHash;
+                    safePayload.ItemId = payload.ItemId != 0u ? payload.ItemId : payload.EntityHash;
+                    safePayload.NumericValue = payload.NumericValue;
+                    return true;
+
+                case QuestSignalKind.ItemLost:
+                case QuestSignalKind.DiscoveryMade:
+                case QuestSignalKind.AudioLogFound:
+                case QuestSignalKind.SignalDecoded:
+                    if (payload.EntityHash == 0u)
+                        return false;
+
+                    safePayload.EntityHash = payload.EntityHash;
+                    safePayload.ItemId = payload.ItemId;
+                    safePayload.NumericValue = math.isfinite(payload.NumericValue) ? math.max(0f, payload.NumericValue) : 0f;
+                    return true;
+
+                case QuestSignalKind.DepthReached:
+                    if (!math.isfinite(payload.NumericValue) || payload.NumericValue < 0f)
+                        return false;
+
+                    safePayload.NumericValue = payload.NumericValue;
+                    return true;
+
+                case QuestSignalKind.BiomeEntered:
+                    if (!math.isfinite(payload.NumericValue) || payload.NumericValue < 0f)
+                        return false;
+
+                    safePayload.NumericValue = math.floor(payload.NumericValue);
+                    return true;
+
+                case QuestSignalKind.EclipseStarted:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsKnownSignalKind(ushort eventType)
+        {
+            switch ((QuestSignalKind)eventType)
+            {
+                case QuestSignalKind.ItemCollected:
+                case QuestSignalKind.DepthReached:
+                case QuestSignalKind.BiomeEntered:
+                case QuestSignalKind.DiscoveryMade:
+                case QuestSignalKind.AudioLogFound:
+                case QuestSignalKind.EclipseStarted:
+                case QuestSignalKind.SignalDecoded:
+                case QuestSignalKind.ItemLost:
+                case QuestSignalKind.CraftCompleted:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private bool DrainPendingSignals()

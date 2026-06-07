@@ -286,6 +286,14 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                UnregisterFromTick();
+                if (currentService != null && isActiveAndEnabled)
+                    RegisterToTick();
+                return;
+            }
+
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Player:

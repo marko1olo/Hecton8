@@ -416,7 +416,7 @@ namespace Hecton8.Gameplay
                 ApplyIntactRendererState(_pendingRendererEnabled);
             }
 
-            IAudioService audio = _audioService;
+            IAudioService audio = ResolveAudioService();
             IObjectPoolService pool = _objectPool;
 
             if (_pendingHitAudio)
@@ -627,7 +627,7 @@ namespace Hecton8.Gameplay
                     _persistentWorldRegistry = currentService as IPersistentDroppedItemRegistry;
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _objectPool = currentService as IObjectPoolService;
@@ -660,9 +660,35 @@ namespace Hecton8.Gameplay
         {
             _playerInventoryService = GlobalRegistry.PlayerInventory;
             _persistentWorldRegistry = GlobalRegistry.PersistentDroppedItems;
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _objectPool = GlobalRegistry.ObjectPoolService;
             _localizationManager = GlobalRegistry.LocalizationText;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private static void PublishItemAcquiredSignal(int itemHashId, int quantity, Vector3 runtimePosition)

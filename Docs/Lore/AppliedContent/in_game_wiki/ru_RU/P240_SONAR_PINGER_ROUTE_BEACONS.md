@@ -7,6 +7,9 @@ poi_tags: poi.sonar_pinger_float;poi.route_beacon_line
 biome_tags: biome.photic_shelf;biome.brine_canyon
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Маршрутные сонарные пингеры"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

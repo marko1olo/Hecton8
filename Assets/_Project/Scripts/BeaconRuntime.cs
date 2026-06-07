@@ -27,7 +27,6 @@ namespace Hecton8.Gameplay
         private float _flickerTime;
         private bool _registeredLateFrame;
         private bool _hotSwapListenerRegistered;
-        private IObjectPoolService _cachedObjectPool;
         private IObjectPoolService _pooledOwner;
         private ILocalizationTextReadModel _cachedLocalization;
 
@@ -140,10 +139,9 @@ namespace Hecton8.Gameplay
 
         public void DespawnSelf()
         {
-            IObjectPoolService pool = _pooledOwner != null ? _pooledOwner : _cachedObjectPool;
-            if (_sourcePrefab != null && pool != null)
+            if (_sourcePrefab != null && _pooledOwner != null)
             {
-                pool.Despawn(gameObject);
+                _pooledOwner.Despawn(gameObject);
                 return;
             }
 
@@ -157,9 +155,6 @@ namespace Hecton8.Gameplay
         {
             switch (serviceSlot)
             {
-                case GlobalRegistryServiceSlot.ObjectPool:
-                    _cachedObjectPool = currentService as IObjectPoolService;
-                    break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _cachedLocalization = currentService as ILocalizationTextReadModel;
                     break;
@@ -229,7 +224,6 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _cachedObjectPool = GlobalRegistry.ObjectPoolService;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
         }
 

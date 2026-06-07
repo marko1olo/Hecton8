@@ -7,6 +7,9 @@ poi_tags: poi.mara_venn_pump_badge;poi.pump_cadence_board
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Mara Venn/Pump Chief"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

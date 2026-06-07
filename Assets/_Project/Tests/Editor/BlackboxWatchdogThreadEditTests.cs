@@ -12,6 +12,8 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile("Assets/_Project/Scripts/Core/BlackBoxHeartbeatThread.cs");
             string startBody = ExtractMethodBody(source, "public static void Start()");
 
+            StringAssert.Contains("if (_thread != null && !_thread.IsAlive)", startBody);
+            StringAssert.Contains("if (_thread != null && _thread.IsAlive)", startBody);
             StringAssert.Contains("thread.Start();", startBody);
             StringAssert.Contains("catch (Exception)", startBody);
             StringAssert.Contains("Volatile.Write(ref _running, 0);", startBody);
@@ -23,9 +25,15 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile("Assets/_Project/Scripts/Core/BlackBoxHeartbeatThread.cs");
             string stopBody = ExtractMethodBody(source, "public static void Stop()");
+            string joinBody = ExtractMethodBody(source, "private static bool TryJoinHeartbeatThreadNoThrow(Thread thread)");
 
-            StringAssert.Contains("thread.Join(StopJoinMilliseconds);", stopBody);
-            StringAssert.Contains("catch (Exception)", stopBody);
+            StringAssert.Contains("TryJoinHeartbeatThreadNoThrow(thread)", stopBody);
+            StringAssert.Contains("ReferenceEquals(_thread, thread)", stopBody);
+            Assert.AreEqual(0, CountToken(stopBody, "thread.Join(StopJoinMilliseconds);"));
+            StringAssert.Contains("ReferenceEquals(Thread.CurrentThread, thread)", joinBody);
+            StringAssert.Contains("thread.Join(StopJoinMilliseconds);", joinBody);
+            StringAssert.Contains("return !thread.IsAlive;", joinBody);
+            StringAssert.Contains("catch (Exception)", joinBody);
         }
 
         [Test]
@@ -53,6 +61,26 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("Volatile.Write(ref _blackboxWatchdogStopRequested, 1);", runBody);
             StringAssert.Contains("SetCatastrophicFailure(BlackboxWatchdogFatalHash);", fatalBody);
             AssertFlushBeforeKill(fatalBody, "TryWriteBlackboxDumpFromBackground(BlackboxWatchdogFatalHash);");
+        }
+
+        [Test]
+        public void GlobalTelemetryWatchdogStopUsesBoundedNoThrowJoin()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/Core/GlobalTelemetryBus.Blackbox.cs");
+            string startBody = ExtractMethodBody(source, "private static bool StartBlackboxWatchdogThread()");
+            string stopBody = ExtractMethodBody(source, "private static void StopBlackboxWatchdogThread()");
+            string joinBody = ExtractMethodBody(source, "private static bool TryJoinBlackboxWatchdogThreadNoThrow(Thread thread)");
+
+            StringAssert.Contains("thread.Start();", startBody);
+            StringAssert.Contains("catch (Exception)", startBody);
+            StringAssert.Contains("Volatile.Write(ref _blackboxWatchdogStopRequested, 1);", startBody);
+            StringAssert.Contains("_blackboxWatchdogThread = null;", startBody);
+            StringAssert.Contains("TryJoinBlackboxWatchdogThreadNoThrow(thread);", stopBody);
+            Assert.AreEqual(0, CountToken(source, "thread.Join();"));
+            StringAssert.Contains("thread.Join(BlackboxWatchdogStopJoinMilliseconds);", joinBody);
+            StringAssert.Contains("return !thread.IsAlive;", joinBody);
+            StringAssert.Contains("catch (Exception)", joinBody);
+            StringAssert.Contains("ReferenceEquals(Thread.CurrentThread, thread)", joinBody);
         }
 
         private static void AssertFlushBeforeKill(string body, string flushCall)
@@ -97,6 +125,21 @@ namespace Hecton8.Tests.Editor
 
             Assert.Fail("Could not find method body for " + signature);
             return string.Empty;
+        }
+
+        private static int CountToken(string source, string token)
+        {
+            int count = 0;
+            int index = 0;
+            while (true)
+            {
+                index = source.IndexOf(token, index, StringComparison.Ordinal);
+                if (index < 0)
+                    return count;
+
+                count++;
+                index += token.Length;
+            }
         }
     }
 }

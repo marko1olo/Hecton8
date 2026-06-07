@@ -144,6 +144,23 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RootInputProfileCsvWatcher_UsesFailClosedNoThrowLifecycle()
+        {
+            string dispatcher = Normalize(ReadProjectFile("Assets/_Project/Scripts/Core/InputDispatcher.cs"));
+
+            StringAssert.Contains("FileSystemWatcher watcher = TryCreateInputProfileCsvWatcher(projectRoot);", dispatcher);
+            StringAssert.Contains("if (watcher == null)\n            {\n                CrashTelemetryBuffer.ReportBlackBoxExportFailure();\n                return;\n            }", dispatcher);
+            StringAssert.Contains("_inputProfileCsvWatcher = null;\n            StopInputProfileCsvWatcherNoThrow(watcher);", dispatcher);
+            StringAssert.Contains("private FileSystemWatcher TryCreateInputProfileCsvWatcher(string projectRoot)", dispatcher);
+            StringAssert.Contains("watcher.EnableRaisingEvents = true;\n                return watcher;", dispatcher);
+            StringAssert.Contains("catch (Exception)\n            {\n                return null;\n            }", dispatcher);
+            StringAssert.Contains("private void StopInputProfileCsvWatcherNoThrow(FileSystemWatcher watcher)", dispatcher);
+            StringAssert.Contains("watcher.EnableRaisingEvents = false;", dispatcher);
+            StringAssert.Contains("watcher.Changed -= HandleInputProfileCsvChanged;", dispatcher);
+            StringAssert.Contains("watcher.Dispose();", dispatcher);
+        }
+
+        [Test]
         public void InputPublishAndBlackBoxFaultDump_RunAfterMutationGuardRelease()
         {
             string dispatcher = Normalize(ReadProjectFile("Assets/_Project/Scripts/Core/InputDispatcher.cs"));

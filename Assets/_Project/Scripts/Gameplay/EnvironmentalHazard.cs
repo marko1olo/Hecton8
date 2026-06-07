@@ -777,9 +777,29 @@ namespace Hecton8.Gameplay
             if (hazardType != HazardType.Radiation || _cachedTransform == null)
                 return;
 
-            float intensity = Mathf.Max(0f, baseDamagePerSecond) * 10f;
-            RadiationHazardGrid.RegisterSource(_radiationSourceId, _cachedTransform.position, intensity, hazardRadius);
-            _radiationSourceRegistered = Application.isPlaying;
+            float intensity = baseDamagePerSecond * 10f;
+            if (!TryResolveValidHazardSourcePayload(
+                    _cachedTransform.position,
+                    intensity,
+                    hazardRadius,
+                    out Vector3 position,
+                    out float safeIntensity,
+                    out float safeRadius))
+            {
+                TryUnregisterRadiationSource();
+                return;
+            }
+
+            if (!Application.isPlaying ||
+                _radiationSourceId == 0 ||
+                !TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition sourceAup))
+            {
+                TryUnregisterRadiationSource();
+                return;
+            }
+
+            RadiationHazardGrid.RegisterSource(_radiationSourceId, in sourceAup, safeIntensity, safeRadius);
+            _radiationSourceRegistered = true;
         }
 
         private void TryUnregisterRadiationSource()
@@ -796,9 +816,49 @@ namespace Hecton8.Gameplay
             if (hazardType != HazardType.Heat || _cachedTransform == null)
                 return;
 
+            if (!TryResolveValidHazardSourcePayload(
+                    _cachedTransform.position,
+                    baseDamagePerSecond,
+                    hazardRadius,
+                    out Vector3 position,
+                    out float safeIntensity,
+                    out float safeRadius))
+            {
+                return;
+            }
+
             IThermodynamicsService thermodynamics = _thermodynamicsService;
             if (thermodynamics != null && thermodynamics.IsInitialized)
-                thermodynamics.TryInjectTransientHeatSource(_cachedTransform.position, hazardRadius, baseDamagePerSecond, unchecked((uint)_radiationSourceId));
+                thermodynamics.TryInjectTransientHeatSource(position, safeRadius, safeIntensity, unchecked((uint)_radiationSourceId));
+        }
+
+        private static bool TryResolveValidHazardSourcePayload(
+            Vector3 position,
+            float intensity,
+            float radius,
+            out Vector3 safePosition,
+            out float safeIntensity,
+            out float safeRadius)
+        {
+            safePosition = default;
+            safeIntensity = 0f;
+            safeRadius = 0f;
+
+            if (!math.isfinite(position.x) ||
+                !math.isfinite(position.y) ||
+                !math.isfinite(position.z) ||
+                !math.isfinite(intensity) ||
+                !(intensity > 0f) ||
+                !math.isfinite(radius) ||
+                !(radius > 0f))
+            {
+                return false;
+            }
+
+            safePosition = position;
+            safeIntensity = intensity;
+            safeRadius = radius;
+            return true;
         }
 
         /// <summary>
@@ -823,9 +883,10 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (baseDamagePerSecond < 0.1f) baseDamagePerSecond = 0.1f;
-            if (hazardRadius < fullDamageRadius) hazardRadius = fullDamageRadius + 1f;
-            if (damageInterval < 0.1f) damageInterval = 0.1f;
+            if (!math.isfinite(baseDamagePerSecond) || baseDamagePerSecond < 0.1f) baseDamagePerSecond = 0.1f;
+            if (!math.isfinite(fullDamageRadius) || fullDamageRadius < 0f) fullDamageRadius = 0f;
+            if (!math.isfinite(hazardRadius) || hazardRadius < fullDamageRadius) hazardRadius = fullDamageRadius + 1f;
+            if (!math.isfinite(damageInterval) || damageInterval < 0.1f) damageInterval = 0.1f;
         }
 
         private void OnDrawGizmosSelected()

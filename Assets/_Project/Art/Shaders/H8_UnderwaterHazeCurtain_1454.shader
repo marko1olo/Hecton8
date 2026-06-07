@@ -2,10 +2,10 @@ Shader "Hecton8/World/UnderwaterHazeCurtain1454"
 {
     Properties
     {
-        _TopColor ("Top Color", Color) = (0.09, 0.38, 0.40, 0.68)
-        _BottomColor ("Bottom Color", Color) = (0.18, 0.55, 0.48, 0.36)
-        _Softness ("Softness", Range(0.2, 4.0)) = 1.35
-        _CausticColor ("Surface Caustic Color", Color) = (0.64, 1.0, 0.84, 0.32)
+        _TopColor ("Top Color", Color) = (0.08, 0.28, 0.46, 0.52)
+        _BottomColor ("Bottom Color", Color) = (0.18, 0.42, 0.62, 0.34)
+        _Softness ("Softness", Range(0.2, 4.0)) = 1.55
+        _CausticColor ("Surface Caustic Color", Color) = (0.66, 0.88, 1.0, 0.24)
         _CausticScale ("Caustic Scale", Range(0.05, 4.0)) = 0.42
     }
 

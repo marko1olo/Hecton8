@@ -7,6 +7,9 @@ poi_tags: poi.resource_yield_table_draft;poi.blue_debt_receipt_math
 biome_tags: biome.resource_tables;biome.brine_canyon
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Черновые строки ценности добычи ресурсов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

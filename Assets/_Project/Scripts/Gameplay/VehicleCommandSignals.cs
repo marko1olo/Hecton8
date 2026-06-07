@@ -242,29 +242,49 @@ namespace Hecton8.Core
 
         private static void EnsureInitialized()
         {
-            if (!_pendingCommands.IsCreated)
+            try
             {
-                _pendingCommands = new NativeQueue<VehicleCommandSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<VehicleCommandSignal>[32] - fixed vehicle command ingress lane - owner: VehicleCommandSignalBus
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingCommands,
-                    PendingCommandCapacity,
-                    nameof(VehicleCommandSignalBus),
-                    nameof(_pendingCommands),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingCommands, PendingCommandCapacity);
-            }
+                if (!_pendingCommands.IsCreated)
+                {
+                    _pendingCommands = new NativeQueue<VehicleCommandSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<VehicleCommandSignal>[32] - fixed vehicle command ingress lane - owner: VehicleCommandSignalBus
+                    RegisterNativeQueue(ref _pendingCommands, PendingCommandCapacity, nameof(_pendingCommands));
+                    PrewarmQueue(ref _pendingCommands, PendingCommandCapacity);
+                }
 
-            if (!_nextFrameCommands.IsCreated)
-            {
-                _nextFrameCommands = new NativeQueue<VehicleCommandSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<VehicleCommandSignal>[32] - next-frame command lane for reentrant publishes - owner: VehicleCommandSignalBus
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameCommands,
-                    PendingCommandCapacity,
-                    nameof(VehicleCommandSignalBus),
-                    nameof(_nextFrameCommands),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameCommands, PendingCommandCapacity);
+                if (!_nextFrameCommands.IsCreated)
+                {
+                    _nextFrameCommands = new NativeQueue<VehicleCommandSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<VehicleCommandSignal>[32] - next-frame command lane for reentrant publishes - owner: VehicleCommandSignalBus
+                    RegisterNativeQueue(ref _nextFrameCommands, PendingCommandCapacity, nameof(_nextFrameCommands));
+                    PrewarmQueue(ref _nextFrameCommands, PendingCommandCapacity);
+                }
             }
+            catch
+            {
+                DisposeQueue(ref _pendingCommands, nameof(_pendingCommands));
+                DisposeQueue(ref _nextFrameCommands, nameof(_nextFrameCommands));
+                _pendingCommandCount = 0;
+                _nextFrameCommandCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(VehicleCommandSignalBus),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            DisposeQueue(ref queue, label);
+            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static uint ResolveNextSequence()
@@ -296,7 +316,8 @@ namespace Hecton8.Core
                 queue.TryDequeue(out _);
         }
 
-        private static void DisposeQueue(ref NativeQueue<VehicleCommandSignal> queue, string label)
+        private static void DisposeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
         {
             if (!queue.IsCreated)
                 return;

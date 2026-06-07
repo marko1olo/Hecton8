@@ -9,32 +9,34 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Acoustic Filter Organ Relay"
+title: "ממסר איבר מסנן אקוסטי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Acoustic Filter Organ Relay
+# ממסר איבר מסנן אקוסטי
 
-HE LOC HOLD: Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.
+ממסרי איבר מסנן אקוסטי הופכים את שפת הסונאר של HECTON-8 לאימת גוף בלי לשבור את הטון המדעי. סביב צינורות ממסר ישנים, רקמת דופן זימים גדלה למחיצות, קפלים ותאים רטובים. הרקמה אינה מדברת. היא משנה עכבה. רעש משאבות רחב מת בה. פעימות פינגר צרות עוברות. הדי חזרה חוזרים מוזחים בדרכים שחוזרות מספיק כדי ש-Atlas ישתמש בהן ו-Marauder זהיר ילמד אותן.
+
+זה חשוב מפני ששקר שחוזר על עצמו אינו אקראי. מסדרון במורד האיבר עשוי להיראות קצר יותר, רחב יותר או חסום עד שהשחקן לומד איזה תדר שורד את המסנן החי. Atlas משתמש בממסר מפני שהוא משמר אות תחת לחץ טוב יותר מחומרה שבורה לבדה. השחקן משתמש בו כראיה: אם אותה שגיאת סונאר מופיעה באותו רוחב פעימה, החדר אינו רדוף. הוא מסנן. לכן הממסר שימושי, מגעיל והוגן.
 
 ## Scanner
 
-HE LOC HOLD: Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
+איבר מסנן אקוסטי // רקמת דופן זימים גדלה סביב צינורות ממסר; היא מעמעממת שאגת משאבות, מעבירה פעימות פינגר צרות ומקפלת סונאר לשקרים חוזרים.
 
 ## Terminal
 
-HE LOC HOLD: RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
+הערת ממסר: מחיצה חיה מעבירה פעימות בדרגת פינגר, דוחה רעש משאבה רחב ומסיטה פאזה של הדי חזרה. לסמן מפות במורד הזרם כאמיתיות בתנאי.
 
 ## Audio
 
-HE LOC HOLD: The room is listening with meat and pipe.
+החדר מקשיב בבשר ובצינור.
 
 ## Field Note
 
-HE LOC HOLD: Atlas does not need language here. It needs filters, pulses and living baffles.
+Atlas לא צריך כאן קול. הוא צריך איבר שמשאיר את הצליל הנכון בחיים.
 
 <!-- In-Game Wiki; generated from P232_ACOUSTIC_FILTER_ORGAN_RELAY/he_IL. -->

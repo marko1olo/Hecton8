@@ -7,6 +7,9 @@ poi_tags: poi.contract_risk_schema_card;poi.claim_pool_offer_board
 biome_tags: biome.contract;biome.replay
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Contract Risk Reward Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

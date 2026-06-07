@@ -7,6 +7,9 @@ poi_tags: poi.native_language_backlog;poi.locale_review_stamp
 biome_tags: biome.dossier_archive;biome.localization
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Native Language Release Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

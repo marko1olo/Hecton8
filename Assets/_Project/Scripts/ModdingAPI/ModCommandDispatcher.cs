@@ -356,19 +356,19 @@ namespace Hecton8.Modding
             if (!_modStatesByHash.IsCreated)
             {
                 _modStatesByHash = new NativeHashMap<uint, ModCommandModState>(ModCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeHashMap<uint,ModCommandModState>[32] - O(1) mod command security lookup - owner: ModCommandDispatcher
-                NativeMemorySentinel.RegisterNativeHashMap(_modStatesByHash, nameof(ModCommandDispatcher), nameof(_modStatesByHash), NativeAllocationLifetime.Session);
+                RegisterHashMap(ref _modStatesByHash, nameof(_modStatesByHash));
             }
 
             if (!_modIndexByHash.IsCreated)
             {
                 _modIndexByHash = new NativeHashMap<uint, int>(ModCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeHashMap<uint,int>[32] - O(1) mod hash reverse-index lookup - owner: ModCommandDispatcher
-                NativeMemorySentinel.RegisterNativeHashMap(_modIndexByHash, nameof(ModCommandDispatcher), nameof(_modIndexByHash), NativeAllocationLifetime.Session);
+                RegisterHashMap(ref _modIndexByHash, nameof(_modIndexByHash));
             }
 
             if (!_kernelIndexByCommandKey.IsCreated)
             {
                 _kernelIndexByCommandKey = new NativeHashMap<uint, int>(KernelCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeHashMap<uint,int>[32] - O(1) command kernel lookup - owner: ModCommandDispatcher
-                NativeMemorySentinel.RegisterNativeHashMap(_kernelIndexByCommandKey, nameof(ModCommandDispatcher), nameof(_kernelIndexByCommandKey), NativeAllocationLifetime.Session);
+                RegisterHashMap(ref _kernelIndexByCommandKey, nameof(_kernelIndexByCommandKey));
             }
 
         }
@@ -440,7 +440,7 @@ namespace Hecton8.Modding
         {
             FutureCommandSandboxValidator.BindRegistryServicesCold();
             _abyssalFlowGpu = GlobalRegistry.AbyssalFlowGpu;
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
         }
 
         internal static void OnGlobalRegistryServiceReplaced(
@@ -456,7 +456,33 @@ namespace Hecton8.Modding
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
-                _audioService = currentService as IAudioService;
+                CacheAudioService(currentService as IAudioService);
+        }
+
+        private static void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private static IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         internal static uint ComputeModHash(string modId)
@@ -1145,7 +1171,7 @@ namespace Hecton8.Modding
             }
 
             float normalizedIntensity = math.saturate(intensity01);
-            IAudioService audioManager = _audioService;
+            IAudioService audioManager = ResolveAudioService();
             if (audioManager == null || !audioManager.TryEmitModAcousticPing(runtimePosition, normalizedIntensity))
             {
                 RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.AcousticUnavailable);
@@ -1637,13 +1663,56 @@ namespace Hecton8.Modding
         private static void RegisterQueue<TPayload>(ref NativeQueue<TPayload> queue, int expectedCapacity, string label)
             where TPayload : unmanaged
         {
-            NativeMemorySentinel.RegisterNativeQueue(
-                queue,
-                expectedCapacity,
-                nameof(ModCommandDispatcher),
-                label,
-                NativeAllocationLifetime.Session);
-            PrewarmQueue(ref queue, expectedCapacity);
+            bool registered = false;
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                    queue,
+                    expectedCapacity,
+                    nameof(ModCommandDispatcher),
+                    label,
+                    NativeAllocationLifetime.Session);
+                if (sentinelId <= 0)
+                    throw new System.InvalidOperationException("NativeMemorySentinel rejected ModCommandDispatcher queue registration.");
+
+                registered = true;
+                PrewarmQueue(ref queue, expectedCapacity);
+            }
+            catch
+            {
+                if (registered)
+                    NativeMemorySentinel.UnregisterNativeQueue(nameof(ModCommandDispatcher), label);
+                if (queue.IsCreated)
+                {
+                    queue.Dispose();
+                    queue = default;
+                }
+                throw;
+            }
+        }
+
+        private static void RegisterHashMap<TValue>(ref NativeHashMap<uint, TValue> map, string label)
+            where TValue : unmanaged
+        {
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeHashMap(
+                    map,
+                    nameof(ModCommandDispatcher),
+                    label,
+                    NativeAllocationLifetime.Session);
+                if (sentinelId <= 0)
+                    throw new System.InvalidOperationException("NativeMemorySentinel rejected ModCommandDispatcher hash map registration.");
+            }
+            catch
+            {
+                if (map.IsCreated)
+                {
+                    map.Dispose();
+                    map = default;
+                }
+                throw;
+            }
         }
 
         private static void PrewarmQueue<TPayload>(ref NativeQueue<TPayload> queue, int capacity)

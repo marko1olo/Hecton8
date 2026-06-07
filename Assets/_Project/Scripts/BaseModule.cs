@@ -3748,7 +3748,7 @@ namespace Hecton8.Gameplay
             if (source == null || source.outputAudioMixerGroup != null)
                 return;
 
-            ISpatialAudioSfxMixerRouteReadModel spatialAudioRoute = _cachedSpatialAudioSfxRoute;
+            ISpatialAudioSfxMixerRouteReadModel spatialAudioRoute = ResolveSpatialAudioSfxRoute();
             if (spatialAudioRoute != null)
                 source.outputAudioMixerGroup = spatialAudioRoute.SfxGroup;
         }
@@ -3877,7 +3877,7 @@ namespace Hecton8.Gameplay
             if (_pendingSpatialSfxCount == 0)
                 return;
 
-            Hecton8.Core.IAudioService sam = _cachedAudioService;
+            Hecton8.Core.IAudioService sam = ResolveAudioService();
             Vector3 position = ResolveInteriorHazardWorldPosition();
             byte count = _pendingSpatialSfxCount;
             AudioClip clip0 = _pendingSpatialSfx0;
@@ -4968,20 +4968,62 @@ namespace Hecton8.Gameplay
         {
             _atmosphereRuntime = Hecton8.Core.GlobalRegistry.AtmosphereReadModel;
             _cachedPlayerInventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
-            _cachedAudioService = Hecton8.Core.GlobalRegistry.Audio;
-            _cachedSpatialAudioSfxRoute = _cachedAudioService as ISpatialAudioSfxMixerRouteReadModel;
+            CacheAudioService(Hecton8.Core.GlobalRegistry.Audio);
             _cachedObjectPool = Hecton8.Core.GlobalRegistry.ObjectPoolService;
             _cachedPlayerRuntime = Hecton8.Core.GlobalRegistry.Player;
             _cachedPhysicsService = Hecton8.Core.GlobalRegistry.Physics;
             _constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
         }
 
+        private void CacheAudioService(Hecton8.Core.IAudioService audioService)
+        {
+            if (!IsAudioServiceUsable(audioService))
+            {
+                ClearCachedAudioService();
+                return;
+            }
+
+            _cachedAudioService = audioService;
+            _cachedSpatialAudioSfxRoute = audioService as ISpatialAudioSfxMixerRouteReadModel;
+        }
+
+        private Hecton8.Core.IAudioService ResolveAudioService()
+        {
+            Hecton8.Core.IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            ClearCachedAudioService();
+            return null;
+        }
+
+        private ISpatialAudioSfxMixerRouteReadModel ResolveSpatialAudioSfxRoute()
+        {
+            return ResolveAudioService() != null ? _cachedSpatialAudioSfxRoute : null;
+        }
+
+        private void ClearCachedAudioService()
+        {
+            _cachedAudioService = null;
+            _cachedSpatialAudioSfxRoute = null;
+        }
+
+        private static bool IsAudioServiceUsable(Hecton8.Core.IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
         private void ClearCachedRegistryServices()
         {
             _atmosphereRuntime = null;
             _cachedPlayerInventoryService = null;
-            _cachedAudioService = null;
-            _cachedSpatialAudioSfxRoute = null;
+            ClearCachedAudioService();
             _cachedObjectPool = null;
             _cachedPlayerRuntime = null;
             _cachedPhysicsService = null;
@@ -5038,8 +5080,7 @@ namespace Hecton8.Gameplay
                 _cachedPlayerInventoryService = currentService as IPlayerInventoryService;
             else if (serviceSlot == GlobalRegistryServiceSlot.Audio)
             {
-                _cachedAudioService = currentService as Hecton8.Core.IAudioService;
-                _cachedSpatialAudioSfxRoute = _cachedAudioService as ISpatialAudioSfxMixerRouteReadModel;
+                CacheAudioService(currentService as Hecton8.Core.IAudioService);
                 TryRouteAudioSourceToSfxGroup(audioSource);
                 TryRouteAudioSourceToSfxGroup(oxygenScrubberHumSource);
             }

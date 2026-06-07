@@ -25,6 +25,7 @@ namespace Hecton8.Editor.AITextureControlMaps
         private const uint WarningEncode = 1u << 2;
         private const uint WarningWrite = 1u << 3;
         private const uint WarningUnsupportedFormat = 1u << 4;
+        private const string NativeMemoryOwner = nameof(AITextureControlMapBaker);
 
         private const string NormalShaderPath = "Assets/_Project/Shaders/Editor/AITextureControlMapBaker/Hecton_BakeWorldNormal.shader";
         private const string DepthShaderPath = "Assets/_Project/Shaders/Editor/AITextureControlMapBaker/Hecton_BakeDepth.shader";
@@ -268,7 +269,12 @@ namespace Hecton8.Editor.AITextureControlMaps
                     return;
                 }
 
-                context.ReadbackData = new NativeArray<byte>(resolution * resolution * 4, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                context.ReadbackData = AITextureNativeMemory.AllocateArray<byte>(
+                    resolution * resolution * 4,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory,
+                    NativeMemoryOwner,
+                    nameof(ReadbackContext.ReadbackData));
                 try
                 {
                     RegisterActiveReadback();
@@ -283,8 +289,7 @@ namespace Hecton8.Editor.AITextureControlMaps
                     ReleaseActiveReadback();
                     TryReleaseReloadGuardWhenIdle();
                     rig.Bind(null);
-                    if (context.ReadbackData.IsCreated)
-                        context.ReadbackData.Dispose();
+                    AITextureNativeMemory.DisposeArray(ref context.ReadbackData);
 
                     throw;
                 }
@@ -352,6 +357,7 @@ namespace Hecton8.Editor.AITextureControlMaps
                     }
 
                     pngBytes = ImageConversion.EncodeNativeArrayToPNG(data, GraphicsFormat.R8G8B8A8_UNorm, (uint)context.Resolution, (uint)context.Resolution, 0u);
+                    AITextureNativeMemory.RegisterArray(ref pngBytes, NativeMemoryOwner, nameof(pngBytes), Hecton8.Core.NativeAllocationLifetime.TempJob);
                     if (!pngBytes.IsCreated || pngBytes.Length == 0)
                     {
                         context.WarningFlags |= WarningEncode;
@@ -372,14 +378,12 @@ namespace Hecton8.Editor.AITextureControlMaps
                 encodeStopwatch.Stop();
                 ReleaseContextResources(context);
 
-                if (context.ReadbackData.IsCreated)
-                    context.ReadbackData.Dispose();
+                AITextureNativeMemory.DisposeArray(ref context.ReadbackData);
             }
 
             if (!pngBytes.IsCreated || pngBytes.Length == 0)
             {
-                if (pngBytes.IsCreated)
-                    pngBytes.Dispose();
+                AITextureNativeMemory.DisposeArray(ref pngBytes);
 
                 if (completedWithoutWrite)
                     CompleteWithoutWrite(context, encodeStopwatch.Elapsed.TotalMilliseconds);
@@ -690,15 +694,13 @@ namespace Hecton8.Editor.AITextureControlMaps
                 {
                     ReadbackContext context = PendingReadbackCompletions[i].Context;
                     ReleaseContextResources(context);
-                    if (context.ReadbackData.IsCreated)
-                        context.ReadbackData.Dispose();
+                    AITextureNativeMemory.DisposeArray(ref context.ReadbackData);
                 }
 
                 for (int i = 0; i < PendingWriteCompletions.Count; i++)
                 {
                     WriteCompletion completion = PendingWriteCompletions[i];
-                    if (completion.PngBytes.IsCreated)
-                        completion.PngBytes.Dispose();
+                    AITextureNativeMemory.DisposeArray(ref completion.PngBytes);
                 }
 
                 PendingReadbackCompletions.Clear();
@@ -737,8 +739,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             }
             finally
             {
-                if (completion.PngBytes.IsCreated)
-                    completion.PngBytes.Dispose();
+                AITextureNativeMemory.DisposeArray(ref completion.PngBytes);
             }
         }
 

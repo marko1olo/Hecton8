@@ -7,6 +7,9 @@ poi_tags: poi.atlas_repair_trace_transcript;poi.conductive_biofilm_caption
 biome_tags: biome.atlas_repair_network;biome.deep_ecology
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Atlas Repair Trace Transcript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

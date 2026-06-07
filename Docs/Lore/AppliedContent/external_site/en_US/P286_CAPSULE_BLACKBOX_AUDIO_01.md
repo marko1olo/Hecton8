@@ -7,6 +7,9 @@ poi_tags: poi.capsule_blackbox_audio;poi.flooded_avionics_bus
 biome_tags: biome.first_hour;biome.capsule
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Capsule Blackbox Audio 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

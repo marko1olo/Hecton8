@@ -419,8 +419,7 @@ namespace Hecton8.World
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredTick = false;
-                _registeredLateFrame = false;
+                TryUnregister();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegister();
             }

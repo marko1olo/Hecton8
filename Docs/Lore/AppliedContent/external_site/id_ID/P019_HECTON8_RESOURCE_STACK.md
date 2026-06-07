@@ -7,6 +7,9 @@ poi_tags: poi.resource_casket;poi.salvage_cache
 biome_tags: biome.service_canyons;biome.industrial_descent
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Tumpukan Sumber Daya"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

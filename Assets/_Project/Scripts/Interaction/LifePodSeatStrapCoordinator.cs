@@ -540,6 +540,7 @@ namespace Hecton8.Interaction
             if (!_registeredFixedTick)
                 return;
 
+            SystemDispatcher.Unregister(this as IFixedTickable, PriorityLayer.Player);
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
             _registeredFixedTick = false;
             _fixedTickDormant = false;
@@ -561,6 +562,7 @@ namespace Hecton8.Interaction
             if (!_registeredLateFrame)
                 return;
 
+            SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.Player);
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
             _registeredLateFrame = false;
         }
@@ -597,6 +599,7 @@ namespace Hecton8.Interaction
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     bool shouldRestoreFixedTick = _seatLockActive;
+                    bool shouldRestoreLateFrame = _pendingLatchHaptic || _pendingLockHaptic;
                     TryUnregisterFixedTick();
                     TryUnregisterLateFrame();
                     if (shouldRestoreFixedTick &&
@@ -605,7 +608,6 @@ namespace Hecton8.Interaction
                         ReleaseSeatLockForLostRuntimeRoute();
                     }
 
-                    bool shouldRestoreLateFrame = _pendingLatchHaptic || _pendingLockHaptic;
                     if (shouldRestoreLateFrame &&
                         (currentService == null || !isActiveAndEnabled || !TryRegisterLateFrame()))
                     {

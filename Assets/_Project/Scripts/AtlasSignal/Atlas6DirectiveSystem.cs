@@ -214,19 +214,7 @@ namespace Hecton8.AtlasSignal
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(Atlas6Events), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(Atlas6Events), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseNativeQueues();
 
             _listeners.Clear();
             ClearConflictIds();
@@ -358,6 +346,9 @@ namespace Hecton8.AtlasSignal
 
         public static bool TryRaisePlayerStatusChanged(Atlas6PlayerStatus status)
         {
+            if (!IsKnownPlayerStatus(status))
+                return false;
+
             return Enqueue(new Atlas6EventPayload
             {
                 TransactionCount = 0,
@@ -421,6 +412,9 @@ namespace Hecton8.AtlasSignal
 
         public static bool TryRaiseBarterAccepted(int transactionCount)
         {
+            if (transactionCount <= 0)
+                return false;
+
             return Enqueue(new Atlas6EventPayload
             {
                 TransactionCount = transactionCount,
@@ -474,6 +468,12 @@ namespace Hecton8.AtlasSignal
             return true;
         }
 
+        private static bool IsKnownPlayerStatus(Atlas6PlayerStatus status)
+        {
+            return status >= Atlas6PlayerStatus.Unknown &&
+                   status <= Atlas6PlayerStatus.Anomaly;
+        }
+
         private static bool TryResolveConflictId(uint conflictHash, out string conflictId)
         {
             if (TryFindConflictId(conflictHash, out int index))
@@ -512,29 +512,66 @@ namespace Hecton8.AtlasSignal
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
+            try
             {
-                _pendingEvents = new NativeQueue<Atlas6EventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - deferred Atlas-6 directive lane flushed by SystemDispatcher LateUpdate - owner: Atlas6Events
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(Atlas6Events),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<Atlas6EventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - deferred Atlas-6 directive lane flushed by SystemDispatcher LateUpdate - owner: Atlas6Events
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                }
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<Atlas6EventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - next-frame Atlas-6 directive lane prevents same-frame reentrant dispatch - owner: Atlas6Events
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(Atlas6Events),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<Atlas6EventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - next-frame Atlas-6 directive lane prevents same-frame reentrant dispatch - owner: Atlas6Events
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                }
             }
+            catch
+            {
+                ReleaseNativeQueues();
+                ClearConflictIds();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(Atlas6Events),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeQueue(ref queue, label);
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
+            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(Atlas6Events), label);
+            queue.Dispose();
+            queue = default;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -900,7 +937,7 @@ namespace Hecton8.AtlasSignal
         // ----------------------------------------------------------
 
         public Atlas6PlayerStatus PlayerStatus => _playerStatus;
-        public int BarterTransactionCount => _barterTransactionCount;
+        public int BarterTransactionCount => math.max(0, _barterTransactionCount);
 
         /// <summary>
         /// Uroven doveriya Atlas-6 k igroku [0..1].
@@ -915,7 +952,7 @@ namespace Hecton8.AtlasSignal
                     Atlas6PlayerStatus.Unknown      => 0f,
                     Atlas6PlayerStatus.Detected     => 0.1f,
                     Atlas6PlayerStatus.Neutral      => 0.3f,
-                    Atlas6PlayerStatus.Collaborator => math.min(1f, _barterTransactionCount / (float)collaboratorThreshold),
+                    Atlas6PlayerStatus.Collaborator => math.saturate(BarterTransactionCount / (float)ResolveCollaboratorThreshold()),
                     Atlas6PlayerStatus.Anomaly      => 0.5f,
                     Atlas6PlayerStatus.Threat       => 0f,
                     _                               => 0f
@@ -1040,13 +1077,19 @@ namespace Hecton8.AtlasSignal
 
         private void TryUnregisterLateFrameTick()
         {
+            TryUnregisterLateFrameTick(clearQueuedNotifications: true);
+        }
+
+        private void TryUnregisterLateFrameTick(bool clearQueuedNotifications)
+        {
             if (_lateFrameRegistered)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _lateFrameRegistered = false;
             }
 
-            ClearQueuedNotifications();
+            if (clearQueuedNotifications)
+                ClearQueuedNotifications();
         }
 
         private unsafe bool QueueNotification(ReadOnlySpan<char> message, NotificationEventSeverity severity)
@@ -1190,15 +1233,11 @@ namespace Hecton8.AtlasSignal
                 case GlobalRegistryServiceSlot.Save:
                     TryUnregisterSaveParticipant();
                     _saveService = currentService as ISaveService;
-                    if (_saveService != null)
-                    {
-                        _saveService.Register(this);
-                        _saveRegistered = true;
-                    }
+                    TryRegisterSaveParticipant();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registered = false;
-                    _lateFrameRegistered = false;
+                    TryUnregister();
+                    TryUnregisterLateFrameTick(clearQueuedNotifications: false);
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegister();
@@ -1229,10 +1268,11 @@ namespace Hecton8.AtlasSignal
 
         private void TryRegisterSaveParticipant()
         {
-            if (_saveRegistered)
+            if (_saveRegistered || !Application.isPlaying || !isActiveAndEnabled)
                 return;
 
-            _saveService = GlobalRegistry.Save;
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
             if (_saveService == null)
                 return;
 
@@ -1287,11 +1327,14 @@ namespace Hecton8.AtlasSignal
         /// <summary>Zaregistrirovat barter-tranzaktsiyu.</summary>
         public void RegisterBarterTransaction()
         {
-            _barterTransactionCount++;
+            int safeCount = BarterTransactionCount;
+            _barterTransactionCount = safeCount < int.MaxValue
+                ? safeCount + 1
+                : int.MaxValue;
             Atlas6Events.TryRaiseBarterAccepted(_barterTransactionCount);
 
             // Perehod v Collaborator
-            if (_barterTransactionCount >= collaboratorThreshold &&
+            if (_barterTransactionCount >= ResolveCollaboratorThreshold() &&
                 _playerStatus != Atlas6PlayerStatus.Collaborator &&
                 _playerStatus != Atlas6PlayerStatus.Threat)
             {
@@ -1324,6 +1367,11 @@ namespace Hecton8.AtlasSignal
 
             QueueExternalStatusNotification(newStatus);
             LogPlayerStatusChanged();
+        }
+
+        private int ResolveCollaboratorThreshold()
+        {
+            return math.max(1, collaboratorThreshold);
         }
 
         private void QueueExternalStatusNotification(Atlas6PlayerStatus status)
@@ -1523,18 +1571,26 @@ namespace Hecton8.AtlasSignal
         {
             if (data == null) return;
             data.atlas6PlayerStatus = (int)_playerStatus;
-            data.atlas6BarterCount  = _barterTransactionCount;
+            data.atlas6BarterCount  = BarterTransactionCount;
             data.atlas6DirectiveConflictTriggered = _directiveConflictTriggered;
         }
 
         public void LoadFromSaveData(SaveData data)
         {
             if (data == null) return;
-            _playerStatus = (Atlas6PlayerStatus)data.atlas6PlayerStatus;
-            _barterTransactionCount = data.atlas6BarterCount;
+            _playerStatus = SanitizePlayerStatus(data.atlas6PlayerStatus);
+            _barterTransactionCount = math.max(0, data.atlas6BarterCount);
             _directiveConflictTriggered = data.atlas6DirectiveConflictTriggered;
             _latestScarcityDirectiveQuestHash = 0u;
             _latestScarcityDirectiveResourceHash = 0u;
+        }
+
+        private static Atlas6PlayerStatus SanitizePlayerStatus(int playerStatus)
+        {
+            return playerStatus >= (int)Atlas6PlayerStatus.Unknown &&
+                   playerStatus <= (int)Atlas6PlayerStatus.Anomaly
+                ? (Atlas6PlayerStatus)playerStatus
+                : Atlas6PlayerStatus.Unknown;
         }
     }
 }

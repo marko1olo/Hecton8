@@ -1017,7 +1017,7 @@ namespace Hecton8.Core
 
         private void BeginWorldDroneCrossfade()
         {
-            ISceneTransitionAudioBridge spatialAudio = _sceneTransitionAudioBridge;
+            ISceneTransitionAudioBridge spatialAudio = ResolveSceneTransitionAudioBridge();
             if (spatialAudio == null)
                 return;
 
@@ -1029,7 +1029,7 @@ namespace Hecton8.Core
 
         private void UpdateWorldDroneCrossfade(float normalized)
         {
-            ISceneTransitionAudioBridge spatialAudio = _sceneTransitionAudioBridge;
+            ISceneTransitionAudioBridge spatialAudio = ResolveSceneTransitionAudioBridge();
             if (spatialAudio != null)
                 spatialAudio.SetWorldDroneTransitionProgress(normalized);
         }
@@ -1614,7 +1614,7 @@ namespace Hecton8.Core
                     break;
                 case GlobalRegistryServiceSlot.Audio:
                     _terminalBootAudioService = currentService;
-                    _sceneTransitionAudioBridge = currentService as ISceneTransitionAudioBridge;
+                    CacheSceneTransitionAudioBridge(currentService);
                     break;
                 case GlobalRegistryServiceSlot.CameraJuiceRuntime:
                     _cameraJuiceSystem = currentService as ICameraJuiceSystem;
@@ -1633,7 +1633,7 @@ namespace Hecton8.Core
             _terminalBootPhysicsService = GlobalRegistry.Physics;
             _terminalBootAudioService = GlobalRegistry.Audio;
             _tickDispatcher = GlobalRegistry.TickDispatcher;
-            _sceneTransitionAudioBridge = GlobalRegistry.Audio as ISceneTransitionAudioBridge;
+            CacheSceneTransitionAudioBridge(GlobalRegistry.Audio);
             _cameraJuiceSystem = GlobalRegistry.CameraJuice;
         }
 
@@ -1647,6 +1647,37 @@ namespace Hecton8.Core
             _tickDispatcher = null;
             _sceneTransitionAudioBridge = null;
             _cameraJuiceSystem = null;
+        }
+
+        private void CacheSceneTransitionAudioBridge(object audioRuntime)
+        {
+            _sceneTransitionAudioBridge = IsAudioRuntimeObjectUsable(audioRuntime)
+                ? audioRuntime as ISceneTransitionAudioBridge
+                : null;
+        }
+
+        private ISceneTransitionAudioBridge ResolveSceneTransitionAudioBridge()
+        {
+            ISceneTransitionAudioBridge sceneTransitionAudioBridge = _sceneTransitionAudioBridge;
+            if (IsAudioRuntimeObjectUsable(sceneTransitionAudioBridge))
+                return sceneTransitionAudioBridge;
+
+            _sceneTransitionAudioBridge = null;
+            return null;
+        }
+
+        private static bool IsAudioRuntimeObjectUsable(object runtime)
+        {
+            if (runtime == null)
+                return false;
+
+            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+                return false;
+
+            if (runtime is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()

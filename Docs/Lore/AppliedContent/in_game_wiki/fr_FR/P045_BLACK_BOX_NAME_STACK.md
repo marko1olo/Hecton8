@@ -7,6 +7,9 @@ poi_tags: poi.black_box_stack;poi.evacuation_manifest
 biome_tags: biome.deep_colony;biome.factory_threshold
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Pile de noms boîte noire"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -11,6 +12,7 @@ namespace Hecton8.Core
     public struct JobFenceManager : IDisposable
     {
         private const string BudgetOwner = nameof(JobFenceManager);
+        private const SystemID NativeArrayOwnerSystem = SystemID.JobAdmission;
 
         private NativeArray<JobHandle> Handles;
         public int Capacity;
@@ -23,12 +25,11 @@ namespace Hecton8.Core
             Capacity = capacity <= 0 ? 1 : capacity;
             Count = 0;
             WriteIndex = 0;
-            Handles = new NativeArray<JobHandle>(Capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            SentinelId = NativeMemorySentinel.RegisterNativeArray(
-                Handles,
-                nameof(JobFenceManager),
-                nameof(Handles),
-                NativeAllocationLifetime.Session);
+            Handles = H8Memory.Allocate<JobHandle>(Capacity, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            if (!Handles.IsCreated)
+                throw new InvalidOperationException("JobFenceManager native allocation failed.");
+
+            SentinelId = 0;
 
             long bytes = (long)UnsafeUtility.SizeOf<JobHandle>() * Capacity;
             MemoryBudgetTracker.Register(BudgetOwner, bytes, bytes);
@@ -80,14 +81,11 @@ namespace Hecton8.Core
                 return;
 
             ClearRegisteredSlots(ResolveSafeCount(), NormalizeIndex(WriteIndex));
-            if (SentinelId != 0)
-            {
-                NativeMemorySentinel.Unregister(SentinelId);
+            if (SentinelId > 0)
                 SentinelId = 0;
-            }
 
             MemoryBudgetTracker.Unregister(BudgetOwner);
-            Handles.Dispose();
+            H8Memory.Release(ref Handles, NativeArrayOwnerSystem);
             Capacity = 0;
             Count = 0;
             WriteIndex = 0;
@@ -98,15 +96,11 @@ namespace Hecton8.Core
             if (!Handles.IsCreated)
                 return inputDeps;
 
-            if (SentinelId != 0)
-            {
-                NativeMemorySentinel.Unregister(SentinelId);
+            if (SentinelId > 0)
                 SentinelId = 0;
-            }
 
             MemoryBudgetTracker.Unregister(BudgetOwner);
-            JobHandle disposeHandle = Handles.Dispose(inputDeps);
-            Handles = default;
+            JobHandle disposeHandle = H8Memory.Release(ref Handles, inputDeps, NativeArrayOwnerSystem);
             Capacity = 0;
             Count = 0;
             WriteIndex = 0;

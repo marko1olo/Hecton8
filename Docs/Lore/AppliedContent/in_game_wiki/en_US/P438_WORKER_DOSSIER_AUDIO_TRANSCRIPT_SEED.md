@@ -7,6 +7,9 @@ poi_tags: poi.worker_dossier_transcript;poi.pump_chief_voice_note
 biome_tags: biome.colony_infrastructure;biome.codex
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Worker Dossier Audio Transcript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

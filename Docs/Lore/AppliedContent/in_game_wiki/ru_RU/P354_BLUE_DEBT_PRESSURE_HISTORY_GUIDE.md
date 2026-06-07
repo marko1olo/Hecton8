@@ -7,6 +7,9 @@ poi_tags: poi.blue_debt_sample;poi.xenon_omega_ledger
 biome_tags: biome.resource;biome.deep
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Blue debt pressure history guide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

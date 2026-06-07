@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Brine Vane Forests"
+title: "غابات زعانف المحلول الملحي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Brine Vane Forests
+# غابات زعانف المحلول الملحي
 
-AR LOC HOLD: Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure.
+غابات زعانف المحلول الملحي هي حيث يتوقف HECTON-8 عن السماح للماء بأن يتصرف كفراغ. في الوادي يصبح الماء معمارا: طبقات الكثافة تتراكم كجدران، والسونار ينحني حول رفوف غير مرئية، ويمكن لهبوط مهمل أن يضع البذلة دون طفوها المتوقع قبل أن يبدو مقياس العمق دراميا. زعانف المحلول الملحي تجعل تلك الرياضيات مرئية. ليست نباتات أرضية ولا شعابا غريبة تتكلم. إنها أغشية ملحية-معدنية تنمو حيث تستمر التدرجات الكيميائية في إطعامها، مسطحة بما يكفي لتبدو نباتية، ومادية بما يكفي لتوثق. الصفيحة الحية تقول: لا تعبر هنا. الحافة الممزقة تقول: شيء عبر مؤخرا. الطرف الملتف يقول: الحد يضعف. الضلع الباهت يقول: الغشاء أسقط مادة، ربما نافعة لكيمياء المحلول الملحي أو حبيبات الإحكام أو معايرة حساس الكثافة. يجب أن يجعل تصميم الوادي الجيد اللاعب يبحر بهذه العلامات لا بالأسهم: ينجرف بمحاذاة جدار سليم، يجد الفم الممزق، يرى السونار يتشوه، يشعر بتغير trim البذلة، ويفهم أن المحيط لا يغلق الطريق حقدا. إنه يطيع الضغط. لذلك تبدو غابات زعانف المحلول الملحي جميلة بطريقة أبرد من الرف الضوئي. إنها لا ترحب. إنها تقرأ.
 
 ## Scanner
 
-AR LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+غابة زعانف المحلول الملحي // أغشية ملحية-معدنية تنمو على طول قص الكثافة. تظهر أين يثخن الماء إلى جدار وأين سينحني السونار.
 
 ## Terminal
 
-AR LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+خط أساس الوادي: الصفائح السليمة تحدد حدود كثافة صلبة. الحواف الممزقة والأطراف الملتفة تشير إلى نوافذ قص أو جيوب أقل ملوحة أو حركة حديثة. تجنب الماء الطبقي المعتم؛ يمكن أن يعمي السونار ويجر البذلة دون الطفو المتوقع.
 
 ## Audio
 
-AR LOC HOLD: The canyon has leaves because it has pressure gradients.
+للوادي أوراق لأن له تدرجات ضغط.
 
 ## Field Note
 
-AR LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+ليست أشجارا. إنها أوراق ضغط: أغشية تتغذى على التدرجات الكيميائية، ولا تتمزق إلا حيث شق مسار طريقه مؤخرا.
 
 <!-- External Site; generated from P226_BRINE_VANE_FORESTS/ar_SA. -->

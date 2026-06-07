@@ -103,16 +103,12 @@ namespace Hecton8.Optimization
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
-                currentService == null ||
-                !_registeredService ||
-                !isActiveAndEnabled)
-            {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
-            }
 
             TryUnregister();
-            TryRegister();
+            if (currentService != null && _registeredService && isActiveAndEnabled)
+                TryRegister();
         }
         
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────

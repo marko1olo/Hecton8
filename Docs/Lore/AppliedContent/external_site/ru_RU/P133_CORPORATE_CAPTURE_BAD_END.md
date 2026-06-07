@@ -7,6 +7,9 @@ poi_tags: poi.deep_reach_pickup_contract;poi.clean_room_transfer_tag
 biome_tags: biome.black_keel_orbit;biome.industrial_shelf
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Плохой финал корпоративного захвата"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "Пелетно-термоядерний фрахт"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# Пелетно-термоядерний фрахт
 
-UA LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.
+Важкий міжзоряний переліт можливий без FTL, але він жорстокий. Розгін променевим вітрилом, пелетне термоядерне живлення, маса захисту, довгий дрейф і гальмівна архітектура довели seed-вантажі та пізній колоніальний фрахт до Aegir. Та сама логістика робить порятунок повільним: кожен кілограм, койка, гальмівний слот і місце вцілілого належать розкладу.
 
 ## Scanner
 
-UA LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Пластина двигуна. Пелетно-термоядерний фрахт ішов як інфраструктура: розгін, щит, дрейф, гальмування і рахунок за втрати.
 
 ## Terminal
 
-UA LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+ВАНТАЖНА ДОКТРИНА: seed-вантажі класу Atlas і колоніальний фрахт використовували розгін променевим вітрилом, пелетне термоядерне живлення, магнітопарусне гальмування і довгі інтервали дрейфу. Живий вантаж прибув після того, як машини зробили маршрут оплачуваним.
 
 ## Audio
 
-UA LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+Важкий корабель не диво. Це іпотека з двигунами.
 
 ## Field Note
 
-UA LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+Важкий транзит не героїчний. Це старий маршрутний контракт із тепловими шрамами.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/uk_UA. -->

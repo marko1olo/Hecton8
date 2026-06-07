@@ -530,12 +530,12 @@ namespace Hecton8.Gameplay
         [Header("Scan Parameters")]
         [SerializeField] private float scanRadius = 50f;
         [SerializeField] private float scanCooldown = 3f;
-        [SerializeField] private LayerMask scanLayerMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask scanLayerMask = Hecton8.Core.HectonLayerMasks.FieldToolScanLayerMask;
         [SerializeField, Min(1f)] private float focusedScanRange = 14f;
         [SerializeField, Range(1f, 18f)] private float focusedScanConeAngleDegrees = 5.5f;
         [SerializeField, Range(0.05f, 0.5f)] private float focusedScanResampleInterval = 0.12f;
         [SerializeField, Range(0.01f, 0.5f)] private float focusedScanSurfaceInset = 0.12f;
-        [SerializeField] private LayerMask focusedScanOcclusionMask = ~0;
+        [SerializeField] private LayerMask focusedScanOcclusionMask = Hecton8.Core.HectonLayerMasks.FieldToolScanLayerMask;
         [SerializeField, Range(0f, 1f)] private float sedimentDensityThreshold01 = 0.34f;
         [SerializeField, Range(0f, 1f)] private float basaltDensityThreshold01 = 0.66f;
 
@@ -1011,6 +1011,11 @@ namespace Hecton8.Gameplay
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
                     _cachedSurvivalEnvironment = SelectSurvivalEnvironmentReadModelCold(_cachedPlayerContext);
                     break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    UnregisterScientificTickLanes();
+                    if (currentService != null && IsEquipped)
+                        TryRegisterScientificTickLanes();
+                    break;
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
                     _cachedVoxelSdfReadModel = currentService as Hecton8.Core.Contracts.IVoxelSonarSdfReadModel;
                     break;
@@ -1480,6 +1485,14 @@ namespace Hecton8.Gameplay
 
             TryRegisterLocalizationListener();
             TryRegisterHotSwapListener();
+            TryRegisterScientificTickLanes();
+        }
+
+        private void TryRegisterScientificTickLanes()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredScientificFastTick)
                 _registeredScientificFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Player);
             if (!_registeredScientificLateFrame)
@@ -1487,6 +1500,13 @@ namespace Hecton8.Gameplay
         }
 
         private void UnregisterScientificLanes()
+        {
+            UnregisterScientificTickLanes();
+            TryUnregisterLocalizationListener();
+            TryUnregisterHotSwapListener();
+        }
+
+        private void UnregisterScientificTickLanes()
         {
             if (_registeredScientificFastTick)
             {
@@ -1499,9 +1519,6 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredScientificLateFrame = false;
             }
-
-            TryUnregisterLocalizationListener();
-            TryUnregisterHotSwapListener();
         }
 
         private void TryRegisterLocalizationListener()
@@ -2270,7 +2287,12 @@ namespace Hecton8.Gameplay
 
         private bool MatchesScanLayer(int layer)
         {
-            return (uint)layer < 32u && (scanLayerMask.value & (1 << layer)) != 0;
+            return (uint)layer < 32u && (ResolveScanLayerMask() & (1 << layer)) != 0;
+        }
+
+        private int ResolveScanLayerMask()
+        {
+            return HectonLayerMasks.ResolveFieldToolScanLayerMask(scanLayerMask.value);
         }
 
         private static bool IsResourcePickup(ItemData item)
@@ -2706,7 +2728,7 @@ namespace Hecton8.Gameplay
         {
             if (!math.all(math.isfinite(direction)) ||
                 distance <= inset ||
-                !IncludesAnyLayer(focusedScanOcclusionMask.value, HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask))
+                !IncludesAnyLayer(ResolveFocusedScanOcclusionLayerMask(), HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask))
             {
                 return false;
             }
@@ -2781,7 +2803,12 @@ namespace Hecton8.Gameplay
 
         private bool MatchesFocusedOcclusionLayer(int layer)
         {
-            return (uint)layer < 32u && (focusedScanOcclusionMask.value & (1 << layer)) != 0;
+            return (uint)layer < 32u && (ResolveFocusedScanOcclusionLayerMask() & (1 << layer)) != 0;
+        }
+
+        private int ResolveFocusedScanOcclusionLayerMask()
+        {
+            return HectonLayerMasks.ResolveSurfaceInteractionLayerMask(focusedScanOcclusionMask.value);
         }
 
         private static bool IsScientificTargetHit(in SpatialQueryHit hit, ScannableTarget target)

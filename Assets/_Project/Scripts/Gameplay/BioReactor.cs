@@ -559,7 +559,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryReferences()
         {
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _playerRuntime = GlobalRegistry.Player;
             _localizationRuntime = GlobalRegistry.LocalizationText;
         }
@@ -569,7 +569,7 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntime = currentService as IPlayerRuntimeContext;
@@ -629,7 +629,7 @@ namespace Hecton8.Gameplay
                 UpdateFuelIndicator();
             }
 
-            IAudioService audio = _audioService;
+            IAudioService audio = ResolveAudioService();
             Vector3 audioPosition = _cachedTransform != null ? _cachedTransform.position : transform.position;
             if (_pendingInsertAudio)
             {
@@ -651,6 +651,32 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
 
         /// <summary>
         /// Inserts a fuel item into the reactor.

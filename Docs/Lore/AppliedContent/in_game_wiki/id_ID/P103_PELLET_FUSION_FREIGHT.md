@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "Kargo Fusi Pelet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# Kargo Fusi Pelet
 
-ID LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.
+Perjalanan antarbintang berat mungkin tanpa FTL, tetapi menghukum. Dorongan layar berkas, fusi makan pelet, massa perisai, luncur panjang, dan arsitektur pengereman membawa muatan seed lalu kargo koloni ke Aegir. Logistik yang sama membuat penyelamatan lambat: setiap kilogram, ranjang, slot pengereman, dan kursi penyintas milik jadwal.
 
 ## Scanner
 
-ID LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Pelat penggerak. Kargo fusi makan pelet menyeberang sebagai infrastruktur: dorong, perisai, luncur, rem, dan tagih kerugian.
 
 ## Terminal
 
-ID LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+DOKTRIN KARGO: muatan seed kelas Atlas dan kargo koloni memakai dorongan layar berkas, fusi makan pelet, pengereman magsail, dan interval luncur panjang. Kargo hidup tiba setelah mesin membuat rute bisa ditagih.
 
 ## Audio
 
-ID LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+Kapal berat bukan keajaiban. Itu hipotek dengan mesin.
 
 ## Field Note
 
-ID LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+Transit berat bukan heroik. Itu kontrak rute tua dengan bekas panas.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/id_ID. -->

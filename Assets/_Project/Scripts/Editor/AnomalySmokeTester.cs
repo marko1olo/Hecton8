@@ -72,14 +72,13 @@ namespace Hecton8.Editor
             try
             {
                 // COLD ALLOC: NativeArray smoke buffers[PixelCount] — deterministic editor anomaly stress pass — owner: AnomalySmokeTester
-                heightmap = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                basinMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                candidateMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                basinRecords = new NativeArray<AnomalyBasinRecord>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                floodHeap = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                visitedStamp = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
+                heightmap = AllocateTrackedTempJobArray<float>(PixelCount, NativeArrayOptions.UninitializedMemory, HeightmapLabel);
+                basinMask = AllocateTrackedTempJobArray<byte>(PixelCount, NativeArrayOptions.ClearMemory, BasinMaskLabel);
+                candidateMask = AllocateTrackedTempJobArray<byte>(PixelCount, NativeArrayOptions.ClearMemory, CandidateMaskLabel);
+                basinRecords = AllocateTrackedTempJobArray<AnomalyBasinRecord>(PixelCount, NativeArrayOptions.ClearMemory, BasinRecordsLabel);
+                floodHeap = AllocateTrackedTempJobArray<int>(PixelCount, NativeArrayOptions.UninitializedMemory, FloodHeapLabel);
+                visitedStamp = AllocateTrackedTempJobArray<int>(PixelCount, NativeArrayOptions.ClearMemory, VisitedStampLabel);
+                acceptedCells = AllocateTrackedTempJobArray<int>(PixelCount, NativeArrayOptions.UninitializedMemory, AcceptedCellsLabel);
 
                 RunCase(
                     heightmap,
@@ -186,10 +185,8 @@ namespace Hecton8.Editor
             try
             {
                 // COLD ALLOC: NativeArray pillar seam buffers - editor-only anomaly smoke validation - owner: AnomalySmokeTester
-                terrainHeights = new NativeArray<float>(PillarTerrainCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                sdf = new NativeArray<float>(PillarSdfVoxelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(terrainHeights, NativeMemoryOwner, PillarTerrainHeightsLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(sdf, NativeMemoryOwner, PillarSdfLabel, NativeAllocationLifetime.TempJob);
+                terrainHeights = AllocateTrackedTempJobArray<float>(PillarTerrainCount, NativeArrayOptions.UninitializedMemory, PillarTerrainHeightsLabel);
+                sdf = AllocateTrackedTempJobArray<float>(PillarSdfVoxelCount, NativeArrayOptions.ClearMemory, PillarSdfLabel);
 
                 for (int i = 0; i < terrainHeights.Length; i++)
                     terrainHeights[i] = PillarBaseHeightMeters;
@@ -414,22 +411,25 @@ namespace Hecton8.Editor
             builder.AppendLine(last ? string.Empty : ",");
         }
 
-        private static void RegisterTempJobBuffers(
-            NativeArray<float> heightmap,
-            NativeArray<byte> basinMask,
-            NativeArray<byte> candidateMask,
-            NativeArray<AnomalyBasinRecord> basinRecords,
-            NativeArray<int> floodHeap,
-            NativeArray<int> visitedStamp,
-            NativeArray<int> acceptedCells)
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, NativeArrayOptions options, string label) where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(heightmap, NativeMemoryOwner, HeightmapLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(basinMask, NativeMemoryOwner, BasinMaskLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(candidateMask, NativeMemoryOwner, CandidateMaskLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(basinRecords, NativeMemoryOwner, BasinRecordsLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(floodHeap, NativeMemoryOwner, FloodHeapLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(visitedStamp, NativeMemoryOwner, VisitedStampLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(acceptedCells, NativeMemoryOwner, AcceptedCellsLabel, NativeAllocationLifetime.TempJob);
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            if (!array.IsCreated)
+                throw new System.InvalidOperationException("[AnomalySmokeTester] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId <= 0)
+                    throw new System.InvalidOperationException("[AnomalySmokeTester] NativeMemorySentinel rejected NativeArray registration for " + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
         }
 
         private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
@@ -437,9 +437,15 @@ namespace Hecton8.Editor
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
         }
 
         private enum SmokeCase

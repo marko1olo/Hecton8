@@ -7,6 +7,9 @@ poi_tags: poi.quarantine_handshake_panel;poi.legal_receiver_key
 biome_tags: biome.safe_module;biome.abyssal_machine_field
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Quarantine Legal Handshake Assembly"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -524,8 +524,7 @@ namespace Hecton8.Gameplay
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            _registeredTick = false;
-            _registeredLateFrame = false;
+            TryUnregisterTick();
 
             if (currentService == null || _shortCircuitMask == 0)
                 return;

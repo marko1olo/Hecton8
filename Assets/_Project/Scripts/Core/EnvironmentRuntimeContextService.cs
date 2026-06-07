@@ -166,10 +166,11 @@ namespace Hecton8.Core
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (_isInitialized && currentService != null && isActiveAndEnabled)
+                    if (_isInitialized)
                     {
                         TryUnregisterUpdatable();
-                        TryRegisterUpdatable();
+                        if (currentService != null && isActiveAndEnabled)
+                            TryRegisterUpdatable();
                     }
                     break;
 

@@ -7,6 +7,9 @@ poi_tags: poi.anchor_name_sheet_a;poi.locker_name_strip
 biome_tags: biome.worker_locker;biome.p63_shallows
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Anchor Worker Name Set A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

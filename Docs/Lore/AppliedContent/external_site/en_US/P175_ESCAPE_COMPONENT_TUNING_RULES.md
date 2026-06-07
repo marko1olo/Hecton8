@@ -7,6 +7,9 @@ poi_tags: poi.escape_component_rating;poi.ascent_cradle_manifest
 biome_tags: biome.industrial_shelf;biome.atlas_basin
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Escape Component Tuning Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

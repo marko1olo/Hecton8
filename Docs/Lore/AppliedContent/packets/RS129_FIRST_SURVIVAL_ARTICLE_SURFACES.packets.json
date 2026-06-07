@@ -1,0 +1,1052 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS129_FIRST_SURVIVAL_ARTICLE_SURFACES",
+  "status": "source_candidate_pending_importer_audit_route_card_bake_data_monolith_bake_unity_placement_and_native_localization",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "native_localization_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false,
+    "generated_page_ready": false,
+    "publication_ready": false
+  },
+  "packets": [
+    {
+      "packet_id": "P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE",
+      "release_set_id": "RS129_FIRST_SURVIVAL_ARTICLE_SURFACES",
+      "article_id": "applied_lore.shallow_annex_p63_pump_room_article",
+      "title_key": "LORE_FIRST_SURVIVAL_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE_TITLE",
+      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/HECTON8_Field_Atlas.md",
+        "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md",
+        "Docs/Lore/ContentPacks/CP02_Black_Keel_Aegir_Sky.md",
+        ".agents-skills/QA_Evidence_Text_Filter_Audit.txt",
+        ".agents-skills/UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt",
+        ".agents-skills/DATA_Runtime_Struct_Layout_ARM64.txt",
+        ".agents-skills/TOOL_Designer_Facades_CSV_Binary_Bridge.txt"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "terminal",
+        "audio",
+        "in_game_wiki",
+        "external_site",
+        "field_note"
+      ],
+      "unlock": {
+        "primary": "unlock.shallow_annex_p63_pump_room_article",
+        "secondary": [
+          "unlock.first_manual_bilge_pump",
+          "unlock.first_cold_sealant_clamp",
+          "unlock.first_p63_field_fabricator_authority_stamp"
+        ],
+        "poi_tags": [
+          "poi.shallow_annex_p63_pump_room",
+          "poi.manual_bilge_assembly",
+          "poi.field_fabricator_queue",
+          "poi.cold_sealant_clamp_scar"
+        ],
+        "biome_tags": [
+          "biome.storm_shelf",
+          "biome.drowned_shelf",
+          "biome.first_survival",
+          "biome.annex_p63"
+        ],
+        "first_20_boundary": "Improves the first safe-place route by making pump-room repair a physical survival gate."
+      },
+      "metadata": {
+        "source_voice_by_surface": {
+          "scanner": "P-63 Intake Scan",
+          "terminal": "P-63 Maintenance Work Order",
+          "audio": "Marauder Repair Bark",
+          "in_game_wiki": "PDA First Shelter Note",
+          "external_site": "Public Archive Survival Primer",
+          "field_note": "Marauder Field Note"
+        },
+        "spoiler_tier": "0",
+        "depth_band": "storm_shelf_to_drowned_shelf_40_120m",
+        "route_moment": "first_pump_room_repair_and_tool_locker_access",
+        "truth_payload": "The first shelter is earned by repair: drain the pump room, expose tool access and keep the field fabricator inside safe authority.",
+        "player_question": "What must be repaired before this annex becomes safe enough to use?"
+      },
+      "localized": {
+        "en_US": {
+          "title": "Shallow Annex P-63 Pump Room",
+          "scanner": "PUMP-ROOM INTAKE // Blocked but serviceable. Manual bilge route available. Drain first, cut second.",
+          "terminal": "P-63 MAINTENANCE // Minor water intrusion logged. Manual bilge accepted. Field fabricator locked to gasket, clamp and contact-cutter queue until intake clears.",
+          "audio": "Crank the pump until the floor answers. If you cut first, you flood the tool locker.",
+          "in_game_wiki": "P-63 becomes useful only after the pump room is repaired. Manual pumping lowers the flood, exposes old tool lockers and keeps the field fabricator inside a safe repair authority window.",
+          "external_site": "Shallow Annex P-63 is the first room that can become useful again. The pump room is not a reward chamber. It is a tired machine: manual bilge crank, stuck valve throat, cold-sealant clamp scar and a field fabricator that will only honor low-risk repair work until water drops below the intake line. The old terminal calls the task minor water intrusion. The walls say otherwise.",
+          "field_note": "A dry corner is not home. It is ten minutes of thinking time. Take it."
+        },
+        "ar_SA": {
+          "title": "Draft ar_SA localization pending native pass. Shallow Annex P-63 Pump Room",
+          "scanner": "Draft ar_SA localization pending native pass. Pump-room intake blocked; manual bilge route available.",
+          "terminal": "Draft ar_SA localization pending native pass. P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.",
+          "audio": "Draft ar_SA localization pending native pass. Crank the pump before cutting the locker route.",
+          "in_game_wiki": "Draft ar_SA localization pending native pass. P-63 becomes useful only after the pump room is repaired and the tool access dries.",
+          "external_site": "Draft ar_SA localization pending native pass. Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.",
+          "field_note": "Draft ar_SA localization pending native pass. A dry corner is thinking time, not safety."
+        },
+        "de_DE": {
+          "title": "Draft de_DE localization pending native pass. Shallow Annex P-63 Pump Room",
+          "scanner": "Draft de_DE localization pending native pass. Pump-room intake blocked; manual bilge route available.",
+          "terminal": "Draft de_DE localization pending native pass. P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.",
+          "audio": "Draft de_DE localization pending native pass. Crank the pump before cutting the locker route.",
+          "in_game_wiki": "Draft de_DE localization pending native pass. P-63 becomes useful only after the pump room is repaired and the tool access dries.",
+          "external_site": "Draft de_DE localization pending native pass. Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.",
+          "field_note": "Draft de_DE localization pending native pass. A dry corner is thinking time, not safety."
+        },
+        "es_ES": {
+          "title": "Draft es_ES localization pending native pass. Shallow Annex P-63 Pump Room",
+          "scanner": "Draft es_ES localization pending native pass. Pump-room intake blocked; manual bilge route available.",
+          "terminal": "Draft es_ES localization pending native pass. P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.",
+          "audio": "Draft es_ES localization pending native pass. Crank the pump before cutting the locker route.",
+          "in_game_wiki": "Draft es_ES localization pending native pass. P-63 becomes useful only after the pump room is repaired and the tool access dries.",
+          "external_site": "Draft es_ES localization pending native pass. Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.",
+          "field_note": "Draft es_ES localization pending native pass. A dry corner is thinking time, not safety."
+        },
+        "fr_FR": {
+          "title": "Draft fr_FR localization pending native pass. Shallow Annex P-63 Pump Room",
+          "scanner": "Draft fr_FR localization pending native pass. Pump-room intake blocked; manual bilge route available.",
+          "terminal": "Draft fr_FR localization pending native pass. P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.",
+          "audio": "Draft fr_FR localization pending native pass. Crank the pump before cutting the locker route.",
+          "in_game_wiki": "Draft fr_FR localization pending native pass. P-63 becomes useful only after the pump room is repaired and the tool access dries.",
+          "external_site": "Draft fr_FR localization pending native pass. Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.",
+          "field_note": "Draft fr_FR localization pending native pass. A dry corner is thinking time, not safety."
+        },
+        "he_IL": {
+          "title": "Draft he_IL localization pending native pass. Shallow Annex P-63 Pump Room",
+          "scanner": "Draft he_IL localization pending native pass. Pump-room intake blocked; manual bilge route available.",
+          "terminal": "Draft he_IL localization pending native pass. P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.",
+          "audio": "Draft he_IL localization pending native pass. Crank the pump before cutting the locker route.",
+          "in_game_wiki": "Draft he_IL localization pending native pass. P-63 becomes useful only after the pump room is repaired and the tool access dries.",
+          "external_site": "Draft he_IL localization pending native pass. Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.",
+          "field_note": "Draft he_IL localization pending native pass. A dry corner is thinking time, not safety."
+        },
+        "id_ID": {
+          "title": "Draft id_ID localization pending native pass. Shallow Annex P-63 Pump Room",
+          "scanner": "Draft id_ID localization pending native pass. Pump-room intake blocked; manual bilge route available.",
+          "terminal": "Draft id_ID localization pending native pass. P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.",
+          "audio": "Draft id_ID localization pending native pass. Crank the pump before cutting the locker route.",
+          "in_game_wiki": "Draft id_ID localization pending native pass. P-63 becomes useful only after the pump room is repaired and the tool access dries.",
+          "external_site": "Draft id_ID localization pending native pass. Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.",
+          "field_note": "Draft id_ID localization pending native pass. A dry corner is thinking time, not safety."
+        },
+        "ja_JP": {
+          "title": "Draft ja_JP localization pending native pass. Shallow Annex P-63 Pump Room",
+          "scanner": "Draft ja_JP localization pending native pass. Pump-room intake blocked; manual bilge route available.",
+          "terminal": "Draft ja_JP localization pending native pass. P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.",
+          "audio": "Draft ja_JP localization pending native pass. Crank the pump before cutting the locker route.",
+          "in_game_wiki": "Draft ja_JP localization pending native pass. P-63 becomes useful only after the pump room is repaired and the tool access dries.",
+          "external_site": "Draft ja_JP localization pending native pass. Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.",
+          "field_note": "Draft ja_JP localization pending native pass. A dry corner is thinking time, not safety."
+        },
+        "ko_KR": {
+          "title": "Draft ko_KR localization pending native pass. Shallow Annex P-63 Pump Room",
+          "scanner": "Draft ko_KR localization pending native pass. Pump-room intake blocked; manual bilge route available.",
+          "terminal": "Draft ko_KR localization pending native pass. P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.",
+          "audio": "Draft ko_KR localization pending native pass. Crank the pump before cutting the locker route.",
+          "in_game_wiki": "Draft ko_KR localization pending native pass. P-63 becomes useful only after the pump room is repaired and the tool access dries.",
+          "external_site": "Draft ko_KR localization pending native pass. Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.",
+          "field_note": "Draft ko_KR localization pending native pass. A dry corner is thinking time, not safety."
+        },
+        "nl_NL": {
+          "title": "Draft nl_NL localization pending native pass. Shallow Annex P-63 Pump Room",
+          "scanner": "Draft nl_NL localization pending native pass. Pump-room intake blocked; manual bilge route available.",
+          "terminal": "Draft nl_NL localization pending native pass. P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.",
+          "audio": "Draft nl_NL localization pending native pass. Crank the pump before cutting the locker route.",
+          "in_game_wiki": "Draft nl_NL localization pending native pass. P-63 becomes useful only after the pump room is repaired and the tool access dries.",
+          "external_site": "Draft nl_NL localization pending native pass. Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.",
+          "field_note": "Draft nl_NL localization pending native pass. A dry corner is thinking time, not safety."
+        },
+        "pl_PL": {
+          "title": "Draft pl_PL localization pending native pass. Shallow Annex P-63 Pump Room",
+          "scanner": "Draft pl_PL localization pending native pass. Pump-room intake blocked; manual bilge route available.",
+          "terminal": "Draft pl_PL localization pending native pass. P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.",
+          "audio": "Draft pl_PL localization pending native pass. Crank the pump before cutting the locker route.",
+          "in_game_wiki": "Draft pl_PL localization pending native pass. P-63 becomes useful only after the pump room is repaired and the tool access dries.",
+          "external_site": "Draft pl_PL localization pending native pass. Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.",
+          "field_note": "Draft pl_PL localization pending native pass. A dry corner is thinking time, not safety."
+        },
+        "pt_BR": {
+          "title": "Draft pt_BR localization pending native pass. Shallow Annex P-63 Pump Room",
+          "scanner": "Draft pt_BR localization pending native pass. Pump-room intake blocked; manual bilge route available.",
+          "terminal": "Draft pt_BR localization pending native pass. P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.",
+          "audio": "Draft pt_BR localization pending native pass. Crank the pump before cutting the locker route.",
+          "in_game_wiki": "Draft pt_BR localization pending native pass. P-63 becomes useful only after the pump room is repaired and the tool access dries.",
+          "external_site": "Draft pt_BR localization pending native pass. Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.",
+          "field_note": "Draft pt_BR localization pending native pass. A dry corner is thinking time, not safety."
+        },
+        "ru_RU": {
+          "title": "Draft ru_RU localization pending native pass. Shallow Annex P-63 Pump Room",
+          "scanner": "Draft ru_RU localization pending native pass. Pump-room intake blocked; manual bilge route available.",
+          "terminal": "Draft ru_RU localization pending native pass. P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.",
+          "audio": "Draft ru_RU localization pending native pass. Crank the pump before cutting the locker route.",
+          "in_game_wiki": "Draft ru_RU localization pending native pass. P-63 becomes useful only after the pump room is repaired and the tool access dries.",
+          "external_site": "Draft ru_RU localization pending native pass. Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.",
+          "field_note": "Draft ru_RU localization pending native pass. A dry corner is thinking time, not safety."
+        },
+        "uk_UA": {
+          "title": "Draft uk_UA localization pending native pass. Shallow Annex P-63 Pump Room",
+          "scanner": "Draft uk_UA localization pending native pass. Pump-room intake blocked; manual bilge route available.",
+          "terminal": "Draft uk_UA localization pending native pass. P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.",
+          "audio": "Draft uk_UA localization pending native pass. Crank the pump before cutting the locker route.",
+          "in_game_wiki": "Draft uk_UA localization pending native pass. P-63 becomes useful only after the pump room is repaired and the tool access dries.",
+          "external_site": "Draft uk_UA localization pending native pass. Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.",
+          "field_note": "Draft uk_UA localization pending native pass. A dry corner is thinking time, not safety."
+        },
+        "zh_CN": {
+          "title": "Draft zh_CN localization pending native pass. Shallow Annex P-63 Pump Room",
+          "scanner": "Draft zh_CN localization pending native pass. Pump-room intake blocked; manual bilge route available.",
+          "terminal": "Draft zh_CN localization pending native pass. P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.",
+          "audio": "Draft zh_CN localization pending native pass. Crank the pump before cutting the locker route.",
+          "in_game_wiki": "Draft zh_CN localization pending native pass. P-63 becomes useful only after the pump room is repaired and the tool access dries.",
+          "external_site": "Draft zh_CN localization pending native pass. Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.",
+          "field_note": "Draft zh_CN localization pending native pass. A dry corner is thinking time, not safety."
+        }
+      }
+    },
+    {
+      "packet_id": "P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE",
+      "release_set_id": "RS129_FIRST_SURVIVAL_ARTICLE_SURFACES",
+      "article_id": "applied_lore.black_keel_window_price_article",
+      "title_key": "LORE_CARRIER_BLACK_KEEL_WINDOW_PRICE_ARTICLE_TITLE",
+      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/ContentPacks/CP02_Black_Keel_Aegir_Sky.md",
+        "Docs/Lore/Aegir_System_Game_Texture.md",
+        "Docs/Lore/Ships_Transit_Game_Texture.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "terminal",
+        "audio",
+        "in_game_wiki",
+        "external_site",
+        "field_note"
+      ],
+      "unlock": {
+        "primary": "unlock.black_keel_window_price_article",
+        "secondary": [
+          "unlock.first_relay_mast_alignment",
+          "unlock.first_black_keel_handshake",
+          "unlock.first_orbital_window_clock"
+        ],
+        "poi_tags": [
+          "poi.relay_mast",
+          "poi.orbital_window_clock",
+          "poi.black_keel_packet_buffer",
+          "poi.claim_priority_prompt"
+        ],
+        "biome_tags": [
+          "biome.storm_shelf",
+          "biome.carrier_link",
+          "biome.aegir_sky",
+          "biome.first_contact"
+        ],
+        "first_20_boundary": "Improves the first uplink/contact beat by making orbital rescue physically plausible but contract-gated."
+      },
+      "metadata": {
+        "source_voice_by_surface": {
+          "scanner": "Relay Mast Sky Scan",
+          "terminal": "Black Keel Contact Buffer",
+          "audio": "Carrier Window Bark",
+          "in_game_wiki": "PDA Carrier Contact Note",
+          "external_site": "Public Archive Carrier Primer",
+          "field_note": "Marauder Field Note"
+        },
+        "spoiler_tier": "0",
+        "depth_band": "surface_to_storm_shelf_relay_window",
+        "route_moment": "first_uplink_window_and_one_packet_choice",
+        "truth_payload": "Black Keel is real and close enough to answer, but rescue is gated by orbital windows, claim priority and bandwidth.",
+        "player_question": "Which single packet is worth sending during a short clean window?"
+      },
+      "localized": {
+        "en_US": {
+          "title": "Black Keel Window Price",
+          "scanner": "RELAY MAST // Aligned to weak orbital window. Choose one packet before weather noise climbs.",
+          "terminal": "CONTACT BUFFER // Operator alive; claim open; recovery pending window. Sample state and coordinate confidence requested before extraction scheduling.",
+          "audio": "Window is clean for one burst. Say where you are, or say what you found.",
+          "in_game_wiki": "Black Keel can confirm survival without granting immediate rescue. A strong orbital window carries one useful packet, and the claim ledger decides what that packet is worth.",
+          "external_site": "Black Keel can answer before it can help. The tender is in the Aegir system, but useful action still depends on weather, moon geometry, relay alignment, traffic priority, quarantine slots and a claim ledger that was not written for mercy.",
+          "field_note": "When a carrier prices your breath by the packet, do not waste the packet asking if it cares."
+        },
+        "ar_SA": {
+          "title": "Draft ar_SA localization pending native pass. Black Keel Window Price",
+          "scanner": "Draft ar_SA localization pending native pass. Relay mast aligned to a weak orbital window.",
+          "terminal": "Draft ar_SA localization pending native pass. Black Keel confirms survival but keeps recovery pending window and claim state.",
+          "audio": "Draft ar_SA localization pending native pass. One clean burst; choose what to send.",
+          "in_game_wiki": "Draft ar_SA localization pending native pass. Black Keel can answer without granting immediate rescue.",
+          "external_site": "Draft ar_SA localization pending native pass. The carrier contact is real, priced and limited by orbit, weather and claim priority.",
+          "field_note": "Draft ar_SA localization pending native pass. A priced packet is not mercy."
+        },
+        "de_DE": {
+          "title": "Draft de_DE localization pending native pass. Black Keel Window Price",
+          "scanner": "Draft de_DE localization pending native pass. Relay mast aligned to a weak orbital window.",
+          "terminal": "Draft de_DE localization pending native pass. Black Keel confirms survival but keeps recovery pending window and claim state.",
+          "audio": "Draft de_DE localization pending native pass. One clean burst; choose what to send.",
+          "in_game_wiki": "Draft de_DE localization pending native pass. Black Keel can answer without granting immediate rescue.",
+          "external_site": "Draft de_DE localization pending native pass. The carrier contact is real, priced and limited by orbit, weather and claim priority.",
+          "field_note": "Draft de_DE localization pending native pass. A priced packet is not mercy."
+        },
+        "es_ES": {
+          "title": "Draft es_ES localization pending native pass. Black Keel Window Price",
+          "scanner": "Draft es_ES localization pending native pass. Relay mast aligned to a weak orbital window.",
+          "terminal": "Draft es_ES localization pending native pass. Black Keel confirms survival but keeps recovery pending window and claim state.",
+          "audio": "Draft es_ES localization pending native pass. One clean burst; choose what to send.",
+          "in_game_wiki": "Draft es_ES localization pending native pass. Black Keel can answer without granting immediate rescue.",
+          "external_site": "Draft es_ES localization pending native pass. The carrier contact is real, priced and limited by orbit, weather and claim priority.",
+          "field_note": "Draft es_ES localization pending native pass. A priced packet is not mercy."
+        },
+        "fr_FR": {
+          "title": "Draft fr_FR localization pending native pass. Black Keel Window Price",
+          "scanner": "Draft fr_FR localization pending native pass. Relay mast aligned to a weak orbital window.",
+          "terminal": "Draft fr_FR localization pending native pass. Black Keel confirms survival but keeps recovery pending window and claim state.",
+          "audio": "Draft fr_FR localization pending native pass. One clean burst; choose what to send.",
+          "in_game_wiki": "Draft fr_FR localization pending native pass. Black Keel can answer without granting immediate rescue.",
+          "external_site": "Draft fr_FR localization pending native pass. The carrier contact is real, priced and limited by orbit, weather and claim priority.",
+          "field_note": "Draft fr_FR localization pending native pass. A priced packet is not mercy."
+        },
+        "he_IL": {
+          "title": "Draft he_IL localization pending native pass. Black Keel Window Price",
+          "scanner": "Draft he_IL localization pending native pass. Relay mast aligned to a weak orbital window.",
+          "terminal": "Draft he_IL localization pending native pass. Black Keel confirms survival but keeps recovery pending window and claim state.",
+          "audio": "Draft he_IL localization pending native pass. One clean burst; choose what to send.",
+          "in_game_wiki": "Draft he_IL localization pending native pass. Black Keel can answer without granting immediate rescue.",
+          "external_site": "Draft he_IL localization pending native pass. The carrier contact is real, priced and limited by orbit, weather and claim priority.",
+          "field_note": "Draft he_IL localization pending native pass. A priced packet is not mercy."
+        },
+        "id_ID": {
+          "title": "Draft id_ID localization pending native pass. Black Keel Window Price",
+          "scanner": "Draft id_ID localization pending native pass. Relay mast aligned to a weak orbital window.",
+          "terminal": "Draft id_ID localization pending native pass. Black Keel confirms survival but keeps recovery pending window and claim state.",
+          "audio": "Draft id_ID localization pending native pass. One clean burst; choose what to send.",
+          "in_game_wiki": "Draft id_ID localization pending native pass. Black Keel can answer without granting immediate rescue.",
+          "external_site": "Draft id_ID localization pending native pass. The carrier contact is real, priced and limited by orbit, weather and claim priority.",
+          "field_note": "Draft id_ID localization pending native pass. A priced packet is not mercy."
+        },
+        "ja_JP": {
+          "title": "Draft ja_JP localization pending native pass. Black Keel Window Price",
+          "scanner": "Draft ja_JP localization pending native pass. Relay mast aligned to a weak orbital window.",
+          "terminal": "Draft ja_JP localization pending native pass. Black Keel confirms survival but keeps recovery pending window and claim state.",
+          "audio": "Draft ja_JP localization pending native pass. One clean burst; choose what to send.",
+          "in_game_wiki": "Draft ja_JP localization pending native pass. Black Keel can answer without granting immediate rescue.",
+          "external_site": "Draft ja_JP localization pending native pass. The carrier contact is real, priced and limited by orbit, weather and claim priority.",
+          "field_note": "Draft ja_JP localization pending native pass. A priced packet is not mercy."
+        },
+        "ko_KR": {
+          "title": "Draft ko_KR localization pending native pass. Black Keel Window Price",
+          "scanner": "Draft ko_KR localization pending native pass. Relay mast aligned to a weak orbital window.",
+          "terminal": "Draft ko_KR localization pending native pass. Black Keel confirms survival but keeps recovery pending window and claim state.",
+          "audio": "Draft ko_KR localization pending native pass. One clean burst; choose what to send.",
+          "in_game_wiki": "Draft ko_KR localization pending native pass. Black Keel can answer without granting immediate rescue.",
+          "external_site": "Draft ko_KR localization pending native pass. The carrier contact is real, priced and limited by orbit, weather and claim priority.",
+          "field_note": "Draft ko_KR localization pending native pass. A priced packet is not mercy."
+        },
+        "nl_NL": {
+          "title": "Draft nl_NL localization pending native pass. Black Keel Window Price",
+          "scanner": "Draft nl_NL localization pending native pass. Relay mast aligned to a weak orbital window.",
+          "terminal": "Draft nl_NL localization pending native pass. Black Keel confirms survival but keeps recovery pending window and claim state.",
+          "audio": "Draft nl_NL localization pending native pass. One clean burst; choose what to send.",
+          "in_game_wiki": "Draft nl_NL localization pending native pass. Black Keel can answer without granting immediate rescue.",
+          "external_site": "Draft nl_NL localization pending native pass. The carrier contact is real, priced and limited by orbit, weather and claim priority.",
+          "field_note": "Draft nl_NL localization pending native pass. A priced packet is not mercy."
+        },
+        "pl_PL": {
+          "title": "Draft pl_PL localization pending native pass. Black Keel Window Price",
+          "scanner": "Draft pl_PL localization pending native pass. Relay mast aligned to a weak orbital window.",
+          "terminal": "Draft pl_PL localization pending native pass. Black Keel confirms survival but keeps recovery pending window and claim state.",
+          "audio": "Draft pl_PL localization pending native pass. One clean burst; choose what to send.",
+          "in_game_wiki": "Draft pl_PL localization pending native pass. Black Keel can answer without granting immediate rescue.",
+          "external_site": "Draft pl_PL localization pending native pass. The carrier contact is real, priced and limited by orbit, weather and claim priority.",
+          "field_note": "Draft pl_PL localization pending native pass. A priced packet is not mercy."
+        },
+        "pt_BR": {
+          "title": "Draft pt_BR localization pending native pass. Black Keel Window Price",
+          "scanner": "Draft pt_BR localization pending native pass. Relay mast aligned to a weak orbital window.",
+          "terminal": "Draft pt_BR localization pending native pass. Black Keel confirms survival but keeps recovery pending window and claim state.",
+          "audio": "Draft pt_BR localization pending native pass. One clean burst; choose what to send.",
+          "in_game_wiki": "Draft pt_BR localization pending native pass. Black Keel can answer without granting immediate rescue.",
+          "external_site": "Draft pt_BR localization pending native pass. The carrier contact is real, priced and limited by orbit, weather and claim priority.",
+          "field_note": "Draft pt_BR localization pending native pass. A priced packet is not mercy."
+        },
+        "ru_RU": {
+          "title": "Draft ru_RU localization pending native pass. Black Keel Window Price",
+          "scanner": "Draft ru_RU localization pending native pass. Relay mast aligned to a weak orbital window.",
+          "terminal": "Draft ru_RU localization pending native pass. Black Keel confirms survival but keeps recovery pending window and claim state.",
+          "audio": "Draft ru_RU localization pending native pass. One clean burst; choose what to send.",
+          "in_game_wiki": "Draft ru_RU localization pending native pass. Black Keel can answer without granting immediate rescue.",
+          "external_site": "Draft ru_RU localization pending native pass. The carrier contact is real, priced and limited by orbit, weather and claim priority.",
+          "field_note": "Draft ru_RU localization pending native pass. A priced packet is not mercy."
+        },
+        "uk_UA": {
+          "title": "Draft uk_UA localization pending native pass. Black Keel Window Price",
+          "scanner": "Draft uk_UA localization pending native pass. Relay mast aligned to a weak orbital window.",
+          "terminal": "Draft uk_UA localization pending native pass. Black Keel confirms survival but keeps recovery pending window and claim state.",
+          "audio": "Draft uk_UA localization pending native pass. One clean burst; choose what to send.",
+          "in_game_wiki": "Draft uk_UA localization pending native pass. Black Keel can answer without granting immediate rescue.",
+          "external_site": "Draft uk_UA localization pending native pass. The carrier contact is real, priced and limited by orbit, weather and claim priority.",
+          "field_note": "Draft uk_UA localization pending native pass. A priced packet is not mercy."
+        },
+        "zh_CN": {
+          "title": "Draft zh_CN localization pending native pass. Black Keel Window Price",
+          "scanner": "Draft zh_CN localization pending native pass. Relay mast aligned to a weak orbital window.",
+          "terminal": "Draft zh_CN localization pending native pass. Black Keel confirms survival but keeps recovery pending window and claim state.",
+          "audio": "Draft zh_CN localization pending native pass. One clean burst; choose what to send.",
+          "in_game_wiki": "Draft zh_CN localization pending native pass. Black Keel can answer without granting immediate rescue.",
+          "external_site": "Draft zh_CN localization pending native pass. The carrier contact is real, priced and limited by orbit, weather and claim priority.",
+          "field_note": "Draft zh_CN localization pending native pass. A priced packet is not mercy."
+        }
+      }
+    },
+    {
+      "packet_id": "P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE",
+      "release_set_id": "RS129_FIRST_SURVIVAL_ARTICLE_SURFACES",
+      "article_id": "applied_lore.blue_debt_casket_handling_article",
+      "title_key": "LORE_RESOURCE_BLUE_DEBT_CASKET_HANDLING_ARTICLE_TITLE",
+      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/HECTON8_Resource_Gameplay_Catalog.md",
+        "Docs/Lore/ContentPacks/CP04_Blue_Debt_Industrial_Descent.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "terminal",
+        "audio",
+        "in_game_wiki",
+        "external_site",
+        "field_note"
+      ],
+      "unlock": {
+        "primary": "unlock.blue_debt_casket_handling_article",
+        "secondary": [
+          "unlock.first_pressure_casket_scan",
+          "unlock.first_stabilizer_clamp",
+          "unlock.first_blue_debt_custody_receipt"
+        ],
+        "poi_tags": [
+          "poi.pressure_casket_cache",
+          "poi.stabilizer_clamp_station",
+          "poi.blue_debt_custody_receipt",
+          "poi.sample_telemetry_prompt"
+        ],
+        "biome_tags": [
+          "biome.industrial_descent",
+          "biome.resource_pressure",
+          "biome.blue_debt",
+          "biome.contract_pressure"
+        ],
+        "first_20_boundary": "Not a first-20 unlock. It preserves first-hour pacing while extending the same salvage-condition rule into later material handling."
+      },
+      "metadata": {
+        "source_voice_by_surface": {
+          "scanner": "Material Casket Scan",
+          "terminal": "Deep Reach Material Tag",
+          "audio": "Marauder Sample Warning",
+          "in_game_wiki": "PDA Resource Handling Note",
+          "external_site": "Public Archive Resource Primer",
+          "field_note": "Marauder Field Note"
+        },
+        "spoiler_tier": "1",
+        "depth_band": "industrial_descent_1500_2800m",
+        "route_moment": "first_stable_or_leaking_blue_debt_casket",
+        "truth_payload": "Blue debt value depends on pressure, temperature, custody and silence; handling state changes gameplay value and evidence value.",
+        "player_question": "Should this sample be stabilized, sold, hidden, used or uploaded?"
+      },
+      "localized": {
+        "en_US": {
+          "title": "Blue Debt Casket Handling",
+          "scanner": "PRESSURE CASKET // Stable while cold and sealed. Do not vent. Clamp before transport if seam temperature rises.",
+          "terminal": "XO CONTINUITY SUBSTRATE // Preserve pressure state. Civilian stores prohibited. Route sample telemetry through claim-grade custody only.",
+          "audio": "If the casket starts counting on sonar, it is not yours alone anymore.",
+          "in_game_wiki": "Blue debt is condition-dependent salvage. Keep it sealed, cold and pressure-stable before deciding whether it is tool material, claim value, bait or evidence.",
+          "external_site": "Blue debt does not become useful when it is found. It becomes useful if it stays in the condition that made it valuable. A sealed pressure casket is part container, part warning and part receipt. It keeps Xenon-Omega residue, pressure-grown lattice or contaminated substrate from turning into noise, powder, evidence loss or a signal that the wrong system can hear.",
+          "field_note": "Blue debt pays because it arrives with three owners: the one who found it, the one who wants it and the thing that noticed it moved."
+        },
+        "ar_SA": {
+          "title": "Draft ar_SA localization pending native pass. Blue Debt Casket Handling",
+          "scanner": "Draft ar_SA localization pending native pass. Pressure casket stable while cold and sealed.",
+          "terminal": "Draft ar_SA localization pending native pass. Preserve pressure state and route sample telemetry through custody.",
+          "audio": "Draft ar_SA localization pending native pass. If the casket sings on sonar, somebody else has noticed it.",
+          "in_game_wiki": "Draft ar_SA localization pending native pass. Blue debt is condition-dependent salvage.",
+          "external_site": "Draft ar_SA localization pending native pass. Blue debt value depends on pressure, temperature, custody and silence.",
+          "field_note": "Draft ar_SA localization pending native pass. Stabilize before you spend it."
+        },
+        "de_DE": {
+          "title": "Draft de_DE localization pending native pass. Blue Debt Casket Handling",
+          "scanner": "Draft de_DE localization pending native pass. Pressure casket stable while cold and sealed.",
+          "terminal": "Draft de_DE localization pending native pass. Preserve pressure state and route sample telemetry through custody.",
+          "audio": "Draft de_DE localization pending native pass. If the casket sings on sonar, somebody else has noticed it.",
+          "in_game_wiki": "Draft de_DE localization pending native pass. Blue debt is condition-dependent salvage.",
+          "external_site": "Draft de_DE localization pending native pass. Blue debt value depends on pressure, temperature, custody and silence.",
+          "field_note": "Draft de_DE localization pending native pass. Stabilize before you spend it."
+        },
+        "es_ES": {
+          "title": "Draft es_ES localization pending native pass. Blue Debt Casket Handling",
+          "scanner": "Draft es_ES localization pending native pass. Pressure casket stable while cold and sealed.",
+          "terminal": "Draft es_ES localization pending native pass. Preserve pressure state and route sample telemetry through custody.",
+          "audio": "Draft es_ES localization pending native pass. If the casket sings on sonar, somebody else has noticed it.",
+          "in_game_wiki": "Draft es_ES localization pending native pass. Blue debt is condition-dependent salvage.",
+          "external_site": "Draft es_ES localization pending native pass. Blue debt value depends on pressure, temperature, custody and silence.",
+          "field_note": "Draft es_ES localization pending native pass. Stabilize before you spend it."
+        },
+        "fr_FR": {
+          "title": "Draft fr_FR localization pending native pass. Blue Debt Casket Handling",
+          "scanner": "Draft fr_FR localization pending native pass. Pressure casket stable while cold and sealed.",
+          "terminal": "Draft fr_FR localization pending native pass. Preserve pressure state and route sample telemetry through custody.",
+          "audio": "Draft fr_FR localization pending native pass. If the casket sings on sonar, somebody else has noticed it.",
+          "in_game_wiki": "Draft fr_FR localization pending native pass. Blue debt is condition-dependent salvage.",
+          "external_site": "Draft fr_FR localization pending native pass. Blue debt value depends on pressure, temperature, custody and silence.",
+          "field_note": "Draft fr_FR localization pending native pass. Stabilize before you spend it."
+        },
+        "he_IL": {
+          "title": "Draft he_IL localization pending native pass. Blue Debt Casket Handling",
+          "scanner": "Draft he_IL localization pending native pass. Pressure casket stable while cold and sealed.",
+          "terminal": "Draft he_IL localization pending native pass. Preserve pressure state and route sample telemetry through custody.",
+          "audio": "Draft he_IL localization pending native pass. If the casket sings on sonar, somebody else has noticed it.",
+          "in_game_wiki": "Draft he_IL localization pending native pass. Blue debt is condition-dependent salvage.",
+          "external_site": "Draft he_IL localization pending native pass. Blue debt value depends on pressure, temperature, custody and silence.",
+          "field_note": "Draft he_IL localization pending native pass. Stabilize before you spend it."
+        },
+        "id_ID": {
+          "title": "Draft id_ID localization pending native pass. Blue Debt Casket Handling",
+          "scanner": "Draft id_ID localization pending native pass. Pressure casket stable while cold and sealed.",
+          "terminal": "Draft id_ID localization pending native pass. Preserve pressure state and route sample telemetry through custody.",
+          "audio": "Draft id_ID localization pending native pass. If the casket sings on sonar, somebody else has noticed it.",
+          "in_game_wiki": "Draft id_ID localization pending native pass. Blue debt is condition-dependent salvage.",
+          "external_site": "Draft id_ID localization pending native pass. Blue debt value depends on pressure, temperature, custody and silence.",
+          "field_note": "Draft id_ID localization pending native pass. Stabilize before you spend it."
+        },
+        "ja_JP": {
+          "title": "Draft ja_JP localization pending native pass. Blue Debt Casket Handling",
+          "scanner": "Draft ja_JP localization pending native pass. Pressure casket stable while cold and sealed.",
+          "terminal": "Draft ja_JP localization pending native pass. Preserve pressure state and route sample telemetry through custody.",
+          "audio": "Draft ja_JP localization pending native pass. If the casket sings on sonar, somebody else has noticed it.",
+          "in_game_wiki": "Draft ja_JP localization pending native pass. Blue debt is condition-dependent salvage.",
+          "external_site": "Draft ja_JP localization pending native pass. Blue debt value depends on pressure, temperature, custody and silence.",
+          "field_note": "Draft ja_JP localization pending native pass. Stabilize before you spend it."
+        },
+        "ko_KR": {
+          "title": "Draft ko_KR localization pending native pass. Blue Debt Casket Handling",
+          "scanner": "Draft ko_KR localization pending native pass. Pressure casket stable while cold and sealed.",
+          "terminal": "Draft ko_KR localization pending native pass. Preserve pressure state and route sample telemetry through custody.",
+          "audio": "Draft ko_KR localization pending native pass. If the casket sings on sonar, somebody else has noticed it.",
+          "in_game_wiki": "Draft ko_KR localization pending native pass. Blue debt is condition-dependent salvage.",
+          "external_site": "Draft ko_KR localization pending native pass. Blue debt value depends on pressure, temperature, custody and silence.",
+          "field_note": "Draft ko_KR localization pending native pass. Stabilize before you spend it."
+        },
+        "nl_NL": {
+          "title": "Draft nl_NL localization pending native pass. Blue Debt Casket Handling",
+          "scanner": "Draft nl_NL localization pending native pass. Pressure casket stable while cold and sealed.",
+          "terminal": "Draft nl_NL localization pending native pass. Preserve pressure state and route sample telemetry through custody.",
+          "audio": "Draft nl_NL localization pending native pass. If the casket sings on sonar, somebody else has noticed it.",
+          "in_game_wiki": "Draft nl_NL localization pending native pass. Blue debt is condition-dependent salvage.",
+          "external_site": "Draft nl_NL localization pending native pass. Blue debt value depends on pressure, temperature, custody and silence.",
+          "field_note": "Draft nl_NL localization pending native pass. Stabilize before you spend it."
+        },
+        "pl_PL": {
+          "title": "Draft pl_PL localization pending native pass. Blue Debt Casket Handling",
+          "scanner": "Draft pl_PL localization pending native pass. Pressure casket stable while cold and sealed.",
+          "terminal": "Draft pl_PL localization pending native pass. Preserve pressure state and route sample telemetry through custody.",
+          "audio": "Draft pl_PL localization pending native pass. If the casket sings on sonar, somebody else has noticed it.",
+          "in_game_wiki": "Draft pl_PL localization pending native pass. Blue debt is condition-dependent salvage.",
+          "external_site": "Draft pl_PL localization pending native pass. Blue debt value depends on pressure, temperature, custody and silence.",
+          "field_note": "Draft pl_PL localization pending native pass. Stabilize before you spend it."
+        },
+        "pt_BR": {
+          "title": "Draft pt_BR localization pending native pass. Blue Debt Casket Handling",
+          "scanner": "Draft pt_BR localization pending native pass. Pressure casket stable while cold and sealed.",
+          "terminal": "Draft pt_BR localization pending native pass. Preserve pressure state and route sample telemetry through custody.",
+          "audio": "Draft pt_BR localization pending native pass. If the casket sings on sonar, somebody else has noticed it.",
+          "in_game_wiki": "Draft pt_BR localization pending native pass. Blue debt is condition-dependent salvage.",
+          "external_site": "Draft pt_BR localization pending native pass. Blue debt value depends on pressure, temperature, custody and silence.",
+          "field_note": "Draft pt_BR localization pending native pass. Stabilize before you spend it."
+        },
+        "ru_RU": {
+          "title": "Draft ru_RU localization pending native pass. Blue Debt Casket Handling",
+          "scanner": "Draft ru_RU localization pending native pass. Pressure casket stable while cold and sealed.",
+          "terminal": "Draft ru_RU localization pending native pass. Preserve pressure state and route sample telemetry through custody.",
+          "audio": "Draft ru_RU localization pending native pass. If the casket sings on sonar, somebody else has noticed it.",
+          "in_game_wiki": "Draft ru_RU localization pending native pass. Blue debt is condition-dependent salvage.",
+          "external_site": "Draft ru_RU localization pending native pass. Blue debt value depends on pressure, temperature, custody and silence.",
+          "field_note": "Draft ru_RU localization pending native pass. Stabilize before you spend it."
+        },
+        "uk_UA": {
+          "title": "Draft uk_UA localization pending native pass. Blue Debt Casket Handling",
+          "scanner": "Draft uk_UA localization pending native pass. Pressure casket stable while cold and sealed.",
+          "terminal": "Draft uk_UA localization pending native pass. Preserve pressure state and route sample telemetry through custody.",
+          "audio": "Draft uk_UA localization pending native pass. If the casket sings on sonar, somebody else has noticed it.",
+          "in_game_wiki": "Draft uk_UA localization pending native pass. Blue debt is condition-dependent salvage.",
+          "external_site": "Draft uk_UA localization pending native pass. Blue debt value depends on pressure, temperature, custody and silence.",
+          "field_note": "Draft uk_UA localization pending native pass. Stabilize before you spend it."
+        },
+        "zh_CN": {
+          "title": "Draft zh_CN localization pending native pass. Blue Debt Casket Handling",
+          "scanner": "Draft zh_CN localization pending native pass. Pressure casket stable while cold and sealed.",
+          "terminal": "Draft zh_CN localization pending native pass. Preserve pressure state and route sample telemetry through custody.",
+          "audio": "Draft zh_CN localization pending native pass. If the casket sings on sonar, somebody else has noticed it.",
+          "in_game_wiki": "Draft zh_CN localization pending native pass. Blue debt is condition-dependent salvage.",
+          "external_site": "Draft zh_CN localization pending native pass. Blue debt value depends on pressure, temperature, custody and silence.",
+          "field_note": "Draft zh_CN localization pending native pass. Stabilize before you spend it."
+        }
+      }
+    },
+    {
+      "packet_id": "P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE",
+      "release_set_id": "RS129_FIRST_SURVIVAL_ARTICLE_SURFACES",
+      "article_id": "applied_lore.aegir_moon_ladder_sky_window_article",
+      "title_key": "LORE_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE_TITLE",
+      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/Aegir_System_Game_Texture.md",
+        "Docs/Lore/ContentPacks/CP02_Black_Keel_Aegir_Sky.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "terminal",
+        "audio",
+        "in_game_wiki",
+        "external_site",
+        "field_note"
+      ],
+      "unlock": {
+        "primary": "unlock.aegir_moon_ladder_sky_window_article",
+        "secondary": [
+          "unlock.first_clear_aegir_sky",
+          "unlock.first_moon_tag_scan",
+          "unlock.first_orbital_window_ui"
+        ],
+        "poi_tags": [
+          "poi.sky_window_marker",
+          "poi.ephemeris_strip",
+          "poi.relay_mast_angle_mark",
+          "poi.black_keel_transfer_window_note"
+        ],
+        "biome_tags": [
+          "biome.aegir_sky",
+          "biome.storm_shelf",
+          "biome.relay_window",
+          "biome.public_astronomy"
+        ],
+        "first_20_boundary": "Supports first contact by making visible sky a route-pressure surface rather than decoration."
+      },
+      "metadata": {
+        "source_voice_by_surface": {
+          "scanner": "Sky Tag Scan",
+          "terminal": "Ephemeris Band Note",
+          "audio": "Marauder Sky Bark",
+          "in_game_wiki": "PDA Sky Window Note",
+          "external_site": "Public Archive Aegir Primer",
+          "field_note": "Marauder Field Note"
+        },
+        "spoiler_tier": "0",
+        "depth_band": "surface_visibility_and_relay_window",
+        "route_moment": "first_clear_sky_or_moon_tag_before_uplink",
+        "truth_payload": "The Aegir moon ladder communicates authored signal, tide and transfer-window pressure without requiring live orbital simulation.",
+        "player_question": "Which visible sky state changes the next communication or tide decision?"
+      },
+      "localized": {
+        "en_US": {
+          "title": "Aegir Moon Ladder Sky Window",
+          "scanner": "MOON TAG // Relay noise falling. Window usable if storm band holds.",
+          "terminal": "EPHEMERIS NOTE // HECTON-8 window band favorable. Kestrel relay shadow rising. Strong packet window short.",
+          "audio": "Do not stare at the sky. Read it, then send.",
+          "in_game_wiki": "The Aegir moon ladder is route information. Moon tags teach signal quality, tide pressure, relay shadow and transfer-window risk without requiring live orbital simulation.",
+          "external_site": "Aegir's moons are not calendar decoration. Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8 and Mute mark traffic lanes, relay shadows, tide timing, blackout risk and transfer cost. The player reads sky bands as route pressure, not as exact orbital math.",
+          "field_note": "Pretty moons are still weights on the line."
+        },
+        "ar_SA": {
+          "title": "Draft ar_SA localization pending native pass. Aegir Moon Ladder Sky Window",
+          "scanner": "Draft ar_SA localization pending native pass. Moon tag visible; relay noise falling.",
+          "terminal": "Draft ar_SA localization pending native pass. Ephemeris band favors a short packet window.",
+          "audio": "Draft ar_SA localization pending native pass. Read the sky, then send.",
+          "in_game_wiki": "Draft ar_SA localization pending native pass. Aegir moon tags show signal, tide and transfer-window pressure.",
+          "external_site": "Draft ar_SA localization pending native pass. The Aegir moon ladder is route grammar, not decoration.",
+          "field_note": "Draft ar_SA localization pending native pass. Pretty moons are weights."
+        },
+        "de_DE": {
+          "title": "Draft de_DE localization pending native pass. Aegir Moon Ladder Sky Window",
+          "scanner": "Draft de_DE localization pending native pass. Moon tag visible; relay noise falling.",
+          "terminal": "Draft de_DE localization pending native pass. Ephemeris band favors a short packet window.",
+          "audio": "Draft de_DE localization pending native pass. Read the sky, then send.",
+          "in_game_wiki": "Draft de_DE localization pending native pass. Aegir moon tags show signal, tide and transfer-window pressure.",
+          "external_site": "Draft de_DE localization pending native pass. The Aegir moon ladder is route grammar, not decoration.",
+          "field_note": "Draft de_DE localization pending native pass. Pretty moons are weights."
+        },
+        "es_ES": {
+          "title": "Draft es_ES localization pending native pass. Aegir Moon Ladder Sky Window",
+          "scanner": "Draft es_ES localization pending native pass. Moon tag visible; relay noise falling.",
+          "terminal": "Draft es_ES localization pending native pass. Ephemeris band favors a short packet window.",
+          "audio": "Draft es_ES localization pending native pass. Read the sky, then send.",
+          "in_game_wiki": "Draft es_ES localization pending native pass. Aegir moon tags show signal, tide and transfer-window pressure.",
+          "external_site": "Draft es_ES localization pending native pass. The Aegir moon ladder is route grammar, not decoration.",
+          "field_note": "Draft es_ES localization pending native pass. Pretty moons are weights."
+        },
+        "fr_FR": {
+          "title": "Draft fr_FR localization pending native pass. Aegir Moon Ladder Sky Window",
+          "scanner": "Draft fr_FR localization pending native pass. Moon tag visible; relay noise falling.",
+          "terminal": "Draft fr_FR localization pending native pass. Ephemeris band favors a short packet window.",
+          "audio": "Draft fr_FR localization pending native pass. Read the sky, then send.",
+          "in_game_wiki": "Draft fr_FR localization pending native pass. Aegir moon tags show signal, tide and transfer-window pressure.",
+          "external_site": "Draft fr_FR localization pending native pass. The Aegir moon ladder is route grammar, not decoration.",
+          "field_note": "Draft fr_FR localization pending native pass. Pretty moons are weights."
+        },
+        "he_IL": {
+          "title": "Draft he_IL localization pending native pass. Aegir Moon Ladder Sky Window",
+          "scanner": "Draft he_IL localization pending native pass. Moon tag visible; relay noise falling.",
+          "terminal": "Draft he_IL localization pending native pass. Ephemeris band favors a short packet window.",
+          "audio": "Draft he_IL localization pending native pass. Read the sky, then send.",
+          "in_game_wiki": "Draft he_IL localization pending native pass. Aegir moon tags show signal, tide and transfer-window pressure.",
+          "external_site": "Draft he_IL localization pending native pass. The Aegir moon ladder is route grammar, not decoration.",
+          "field_note": "Draft he_IL localization pending native pass. Pretty moons are weights."
+        },
+        "id_ID": {
+          "title": "Draft id_ID localization pending native pass. Aegir Moon Ladder Sky Window",
+          "scanner": "Draft id_ID localization pending native pass. Moon tag visible; relay noise falling.",
+          "terminal": "Draft id_ID localization pending native pass. Ephemeris band favors a short packet window.",
+          "audio": "Draft id_ID localization pending native pass. Read the sky, then send.",
+          "in_game_wiki": "Draft id_ID localization pending native pass. Aegir moon tags show signal, tide and transfer-window pressure.",
+          "external_site": "Draft id_ID localization pending native pass. The Aegir moon ladder is route grammar, not decoration.",
+          "field_note": "Draft id_ID localization pending native pass. Pretty moons are weights."
+        },
+        "ja_JP": {
+          "title": "Draft ja_JP localization pending native pass. Aegir Moon Ladder Sky Window",
+          "scanner": "Draft ja_JP localization pending native pass. Moon tag visible; relay noise falling.",
+          "terminal": "Draft ja_JP localization pending native pass. Ephemeris band favors a short packet window.",
+          "audio": "Draft ja_JP localization pending native pass. Read the sky, then send.",
+          "in_game_wiki": "Draft ja_JP localization pending native pass. Aegir moon tags show signal, tide and transfer-window pressure.",
+          "external_site": "Draft ja_JP localization pending native pass. The Aegir moon ladder is route grammar, not decoration.",
+          "field_note": "Draft ja_JP localization pending native pass. Pretty moons are weights."
+        },
+        "ko_KR": {
+          "title": "Draft ko_KR localization pending native pass. Aegir Moon Ladder Sky Window",
+          "scanner": "Draft ko_KR localization pending native pass. Moon tag visible; relay noise falling.",
+          "terminal": "Draft ko_KR localization pending native pass. Ephemeris band favors a short packet window.",
+          "audio": "Draft ko_KR localization pending native pass. Read the sky, then send.",
+          "in_game_wiki": "Draft ko_KR localization pending native pass. Aegir moon tags show signal, tide and transfer-window pressure.",
+          "external_site": "Draft ko_KR localization pending native pass. The Aegir moon ladder is route grammar, not decoration.",
+          "field_note": "Draft ko_KR localization pending native pass. Pretty moons are weights."
+        },
+        "nl_NL": {
+          "title": "Draft nl_NL localization pending native pass. Aegir Moon Ladder Sky Window",
+          "scanner": "Draft nl_NL localization pending native pass. Moon tag visible; relay noise falling.",
+          "terminal": "Draft nl_NL localization pending native pass. Ephemeris band favors a short packet window.",
+          "audio": "Draft nl_NL localization pending native pass. Read the sky, then send.",
+          "in_game_wiki": "Draft nl_NL localization pending native pass. Aegir moon tags show signal, tide and transfer-window pressure.",
+          "external_site": "Draft nl_NL localization pending native pass. The Aegir moon ladder is route grammar, not decoration.",
+          "field_note": "Draft nl_NL localization pending native pass. Pretty moons are weights."
+        },
+        "pl_PL": {
+          "title": "Draft pl_PL localization pending native pass. Aegir Moon Ladder Sky Window",
+          "scanner": "Draft pl_PL localization pending native pass. Moon tag visible; relay noise falling.",
+          "terminal": "Draft pl_PL localization pending native pass. Ephemeris band favors a short packet window.",
+          "audio": "Draft pl_PL localization pending native pass. Read the sky, then send.",
+          "in_game_wiki": "Draft pl_PL localization pending native pass. Aegir moon tags show signal, tide and transfer-window pressure.",
+          "external_site": "Draft pl_PL localization pending native pass. The Aegir moon ladder is route grammar, not decoration.",
+          "field_note": "Draft pl_PL localization pending native pass. Pretty moons are weights."
+        },
+        "pt_BR": {
+          "title": "Draft pt_BR localization pending native pass. Aegir Moon Ladder Sky Window",
+          "scanner": "Draft pt_BR localization pending native pass. Moon tag visible; relay noise falling.",
+          "terminal": "Draft pt_BR localization pending native pass. Ephemeris band favors a short packet window.",
+          "audio": "Draft pt_BR localization pending native pass. Read the sky, then send.",
+          "in_game_wiki": "Draft pt_BR localization pending native pass. Aegir moon tags show signal, tide and transfer-window pressure.",
+          "external_site": "Draft pt_BR localization pending native pass. The Aegir moon ladder is route grammar, not decoration.",
+          "field_note": "Draft pt_BR localization pending native pass. Pretty moons are weights."
+        },
+        "ru_RU": {
+          "title": "Draft ru_RU localization pending native pass. Aegir Moon Ladder Sky Window",
+          "scanner": "Draft ru_RU localization pending native pass. Moon tag visible; relay noise falling.",
+          "terminal": "Draft ru_RU localization pending native pass. Ephemeris band favors a short packet window.",
+          "audio": "Draft ru_RU localization pending native pass. Read the sky, then send.",
+          "in_game_wiki": "Draft ru_RU localization pending native pass. Aegir moon tags show signal, tide and transfer-window pressure.",
+          "external_site": "Draft ru_RU localization pending native pass. The Aegir moon ladder is route grammar, not decoration.",
+          "field_note": "Draft ru_RU localization pending native pass. Pretty moons are weights."
+        },
+        "uk_UA": {
+          "title": "Draft uk_UA localization pending native pass. Aegir Moon Ladder Sky Window",
+          "scanner": "Draft uk_UA localization pending native pass. Moon tag visible; relay noise falling.",
+          "terminal": "Draft uk_UA localization pending native pass. Ephemeris band favors a short packet window.",
+          "audio": "Draft uk_UA localization pending native pass. Read the sky, then send.",
+          "in_game_wiki": "Draft uk_UA localization pending native pass. Aegir moon tags show signal, tide and transfer-window pressure.",
+          "external_site": "Draft uk_UA localization pending native pass. The Aegir moon ladder is route grammar, not decoration.",
+          "field_note": "Draft uk_UA localization pending native pass. Pretty moons are weights."
+        },
+        "zh_CN": {
+          "title": "Draft zh_CN localization pending native pass. Aegir Moon Ladder Sky Window",
+          "scanner": "Draft zh_CN localization pending native pass. Moon tag visible; relay noise falling.",
+          "terminal": "Draft zh_CN localization pending native pass. Ephemeris band favors a short packet window.",
+          "audio": "Draft zh_CN localization pending native pass. Read the sky, then send.",
+          "in_game_wiki": "Draft zh_CN localization pending native pass. Aegir moon tags show signal, tide and transfer-window pressure.",
+          "external_site": "Draft zh_CN localization pending native pass. The Aegir moon ladder is route grammar, not decoration.",
+          "field_note": "Draft zh_CN localization pending native pass. Pretty moons are weights."
+        }
+      }
+    },
+    {
+      "packet_id": "P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE",
+      "release_set_id": "RS129_FIRST_SURVIVAL_ARTICLE_SURFACES",
+      "article_id": "applied_lore.deep_reach_variance_memo_contradiction_article",
+      "title_key": "LORE_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE_TITLE",
+      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/ContentPacks/CP01_Arrival_Shallow_Water.md",
+        "Docs/Lore/ContentPacks/CP03_Drowned_Colony_Barnard_Hook.md",
+        "Docs/Lore/Archives/DeepReach_ColonyFailureArchive.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "terminal",
+        "audio",
+        "in_game_wiki",
+        "external_site",
+        "field_note"
+      ],
+      "unlock": {
+        "primary": "unlock.deep_reach_variance_memo_contradiction_article",
+        "secondary": [
+          "unlock.first_sanitized_deep_reach_memo",
+          "unlock.first_pump_room_timestamp",
+          "unlock.first_accepted_margin_stamp"
+        ],
+        "poi_tags": [
+          "poi.deep_reach_variance_memo",
+          "poi.pump_room_timestamp",
+          "poi.accepted_margin_stamp",
+          "poi.cold_sealant_scar"
+        ],
+        "biome_tags": [
+          "biome.drowned_shelf",
+          "biome.deep_reach_evidence",
+          "biome.first_lie",
+          "biome.annex_p63"
+        ],
+        "first_20_boundary": "Improves the first Deep Reach lie beat by making the contradiction physical: memo language versus pump-room evidence."
+      },
+      "metadata": {
+        "source_voice_by_surface": {
+          "scanner": "Contradiction Tag",
+          "terminal": "Deep Reach Variance Memo",
+          "audio": "Marauder Evidence Bark",
+          "in_game_wiki": "PDA Proof-Order Note",
+          "external_site": "Public Archive Evidence Primer",
+          "field_note": "Marauder Field Note"
+        },
+        "spoiler_tier": "1",
+        "depth_band": "drowned_shelf_and_p63_evidence_route",
+        "route_moment": "first_sanitized_memo_compared_to_room_marks",
+        "truth_payload": "Deep Reach office language can be useful precisely because object evidence contradicts it.",
+        "player_question": "Which source voice should the player trust first: the clean memo or the wet room?"
+      },
+      "localized": {
+        "en_US": {
+          "title": "Deep Reach Variance Memo Contradiction",
+          "scanner": "CONTRADICTION TAG // Memo says variance. Pump mark shows late manual intervention.",
+          "terminal": "INCIDENT VARIANCE // Water ingress remains within managed tolerance pending return-action review. Local repair queue may defer noncritical escalation language.",
+          "audio": "Nobody writes variance on a wall that is still dripping.",
+          "in_game_wiki": "The variance memo is not proof by itself. It becomes useful when pump-room marks, timestamps and accepted-margin stamps contradict the clean office language.",
+          "external_site": "The first Deep Reach memo does not need to confess. It only needs to be clean in the wrong place. Variance is the office word where the room shows a pump run past limit, a clamp placed after the alarm, a work order left open and a margin stamp accepted before the water arrived.",
+          "field_note": "When an office word is cleaner than the room, trust the room first."
+        },
+        "ar_SA": {
+          "title": "Draft ar_SA localization pending native pass. Deep Reach Variance Memo Contradiction",
+          "scanner": "Draft ar_SA localization pending native pass. Memo says variance; room marks disagree.",
+          "terminal": "Draft ar_SA localization pending native pass. Deep Reach memo language treats dangerous margin as managed variance.",
+          "audio": "Draft ar_SA localization pending native pass. Trust the room before the clean word.",
+          "in_game_wiki": "Draft ar_SA localization pending native pass. The memo becomes useful when physical evidence contradicts it.",
+          "external_site": "Draft ar_SA localization pending native pass. Clean office language can expose a lie when timestamps and pump marks disagree.",
+          "field_note": "Draft ar_SA localization pending native pass. Trust the wet room first."
+        },
+        "de_DE": {
+          "title": "Draft de_DE localization pending native pass. Deep Reach Variance Memo Contradiction",
+          "scanner": "Draft de_DE localization pending native pass. Memo says variance; room marks disagree.",
+          "terminal": "Draft de_DE localization pending native pass. Deep Reach memo language treats dangerous margin as managed variance.",
+          "audio": "Draft de_DE localization pending native pass. Trust the room before the clean word.",
+          "in_game_wiki": "Draft de_DE localization pending native pass. The memo becomes useful when physical evidence contradicts it.",
+          "external_site": "Draft de_DE localization pending native pass. Clean office language can expose a lie when timestamps and pump marks disagree.",
+          "field_note": "Draft de_DE localization pending native pass. Trust the wet room first."
+        },
+        "es_ES": {
+          "title": "Draft es_ES localization pending native pass. Deep Reach Variance Memo Contradiction",
+          "scanner": "Draft es_ES localization pending native pass. Memo says variance; room marks disagree.",
+          "terminal": "Draft es_ES localization pending native pass. Deep Reach memo language treats dangerous margin as managed variance.",
+          "audio": "Draft es_ES localization pending native pass. Trust the room before the clean word.",
+          "in_game_wiki": "Draft es_ES localization pending native pass. The memo becomes useful when physical evidence contradicts it.",
+          "external_site": "Draft es_ES localization pending native pass. Clean office language can expose a lie when timestamps and pump marks disagree.",
+          "field_note": "Draft es_ES localization pending native pass. Trust the wet room first."
+        },
+        "fr_FR": {
+          "title": "Draft fr_FR localization pending native pass. Deep Reach Variance Memo Contradiction",
+          "scanner": "Draft fr_FR localization pending native pass. Memo says variance; room marks disagree.",
+          "terminal": "Draft fr_FR localization pending native pass. Deep Reach memo language treats dangerous margin as managed variance.",
+          "audio": "Draft fr_FR localization pending native pass. Trust the room before the clean word.",
+          "in_game_wiki": "Draft fr_FR localization pending native pass. The memo becomes useful when physical evidence contradicts it.",
+          "external_site": "Draft fr_FR localization pending native pass. Clean office language can expose a lie when timestamps and pump marks disagree.",
+          "field_note": "Draft fr_FR localization pending native pass. Trust the wet room first."
+        },
+        "he_IL": {
+          "title": "Draft he_IL localization pending native pass. Deep Reach Variance Memo Contradiction",
+          "scanner": "Draft he_IL localization pending native pass. Memo says variance; room marks disagree.",
+          "terminal": "Draft he_IL localization pending native pass. Deep Reach memo language treats dangerous margin as managed variance.",
+          "audio": "Draft he_IL localization pending native pass. Trust the room before the clean word.",
+          "in_game_wiki": "Draft he_IL localization pending native pass. The memo becomes useful when physical evidence contradicts it.",
+          "external_site": "Draft he_IL localization pending native pass. Clean office language can expose a lie when timestamps and pump marks disagree.",
+          "field_note": "Draft he_IL localization pending native pass. Trust the wet room first."
+        },
+        "id_ID": {
+          "title": "Draft id_ID localization pending native pass. Deep Reach Variance Memo Contradiction",
+          "scanner": "Draft id_ID localization pending native pass. Memo says variance; room marks disagree.",
+          "terminal": "Draft id_ID localization pending native pass. Deep Reach memo language treats dangerous margin as managed variance.",
+          "audio": "Draft id_ID localization pending native pass. Trust the room before the clean word.",
+          "in_game_wiki": "Draft id_ID localization pending native pass. The memo becomes useful when physical evidence contradicts it.",
+          "external_site": "Draft id_ID localization pending native pass. Clean office language can expose a lie when timestamps and pump marks disagree.",
+          "field_note": "Draft id_ID localization pending native pass. Trust the wet room first."
+        },
+        "ja_JP": {
+          "title": "Draft ja_JP localization pending native pass. Deep Reach Variance Memo Contradiction",
+          "scanner": "Draft ja_JP localization pending native pass. Memo says variance; room marks disagree.",
+          "terminal": "Draft ja_JP localization pending native pass. Deep Reach memo language treats dangerous margin as managed variance.",
+          "audio": "Draft ja_JP localization pending native pass. Trust the room before the clean word.",
+          "in_game_wiki": "Draft ja_JP localization pending native pass. The memo becomes useful when physical evidence contradicts it.",
+          "external_site": "Draft ja_JP localization pending native pass. Clean office language can expose a lie when timestamps and pump marks disagree.",
+          "field_note": "Draft ja_JP localization pending native pass. Trust the wet room first."
+        },
+        "ko_KR": {
+          "title": "Draft ko_KR localization pending native pass. Deep Reach Variance Memo Contradiction",
+          "scanner": "Draft ko_KR localization pending native pass. Memo says variance; room marks disagree.",
+          "terminal": "Draft ko_KR localization pending native pass. Deep Reach memo language treats dangerous margin as managed variance.",
+          "audio": "Draft ko_KR localization pending native pass. Trust the room before the clean word.",
+          "in_game_wiki": "Draft ko_KR localization pending native pass. The memo becomes useful when physical evidence contradicts it.",
+          "external_site": "Draft ko_KR localization pending native pass. Clean office language can expose a lie when timestamps and pump marks disagree.",
+          "field_note": "Draft ko_KR localization pending native pass. Trust the wet room first."
+        },
+        "nl_NL": {
+          "title": "Draft nl_NL localization pending native pass. Deep Reach Variance Memo Contradiction",
+          "scanner": "Draft nl_NL localization pending native pass. Memo says variance; room marks disagree.",
+          "terminal": "Draft nl_NL localization pending native pass. Deep Reach memo language treats dangerous margin as managed variance.",
+          "audio": "Draft nl_NL localization pending native pass. Trust the room before the clean word.",
+          "in_game_wiki": "Draft nl_NL localization pending native pass. The memo becomes useful when physical evidence contradicts it.",
+          "external_site": "Draft nl_NL localization pending native pass. Clean office language can expose a lie when timestamps and pump marks disagree.",
+          "field_note": "Draft nl_NL localization pending native pass. Trust the wet room first."
+        },
+        "pl_PL": {
+          "title": "Draft pl_PL localization pending native pass. Deep Reach Variance Memo Contradiction",
+          "scanner": "Draft pl_PL localization pending native pass. Memo says variance; room marks disagree.",
+          "terminal": "Draft pl_PL localization pending native pass. Deep Reach memo language treats dangerous margin as managed variance.",
+          "audio": "Draft pl_PL localization pending native pass. Trust the room before the clean word.",
+          "in_game_wiki": "Draft pl_PL localization pending native pass. The memo becomes useful when physical evidence contradicts it.",
+          "external_site": "Draft pl_PL localization pending native pass. Clean office language can expose a lie when timestamps and pump marks disagree.",
+          "field_note": "Draft pl_PL localization pending native pass. Trust the wet room first."
+        },
+        "pt_BR": {
+          "title": "Draft pt_BR localization pending native pass. Deep Reach Variance Memo Contradiction",
+          "scanner": "Draft pt_BR localization pending native pass. Memo says variance; room marks disagree.",
+          "terminal": "Draft pt_BR localization pending native pass. Deep Reach memo language treats dangerous margin as managed variance.",
+          "audio": "Draft pt_BR localization pending native pass. Trust the room before the clean word.",
+          "in_game_wiki": "Draft pt_BR localization pending native pass. The memo becomes useful when physical evidence contradicts it.",
+          "external_site": "Draft pt_BR localization pending native pass. Clean office language can expose a lie when timestamps and pump marks disagree.",
+          "field_note": "Draft pt_BR localization pending native pass. Trust the wet room first."
+        },
+        "ru_RU": {
+          "title": "Draft ru_RU localization pending native pass. Deep Reach Variance Memo Contradiction",
+          "scanner": "Draft ru_RU localization pending native pass. Memo says variance; room marks disagree.",
+          "terminal": "Draft ru_RU localization pending native pass. Deep Reach memo language treats dangerous margin as managed variance.",
+          "audio": "Draft ru_RU localization pending native pass. Trust the room before the clean word.",
+          "in_game_wiki": "Draft ru_RU localization pending native pass. The memo becomes useful when physical evidence contradicts it.",
+          "external_site": "Draft ru_RU localization pending native pass. Clean office language can expose a lie when timestamps and pump marks disagree.",
+          "field_note": "Draft ru_RU localization pending native pass. Trust the wet room first."
+        },
+        "uk_UA": {
+          "title": "Draft uk_UA localization pending native pass. Deep Reach Variance Memo Contradiction",
+          "scanner": "Draft uk_UA localization pending native pass. Memo says variance; room marks disagree.",
+          "terminal": "Draft uk_UA localization pending native pass. Deep Reach memo language treats dangerous margin as managed variance.",
+          "audio": "Draft uk_UA localization pending native pass. Trust the room before the clean word.",
+          "in_game_wiki": "Draft uk_UA localization pending native pass. The memo becomes useful when physical evidence contradicts it.",
+          "external_site": "Draft uk_UA localization pending native pass. Clean office language can expose a lie when timestamps and pump marks disagree.",
+          "field_note": "Draft uk_UA localization pending native pass. Trust the wet room first."
+        },
+        "zh_CN": {
+          "title": "Draft zh_CN localization pending native pass. Deep Reach Variance Memo Contradiction",
+          "scanner": "Draft zh_CN localization pending native pass. Memo says variance; room marks disagree.",
+          "terminal": "Draft zh_CN localization pending native pass. Deep Reach memo language treats dangerous margin as managed variance.",
+          "audio": "Draft zh_CN localization pending native pass. Trust the room before the clean word.",
+          "in_game_wiki": "Draft zh_CN localization pending native pass. The memo becomes useful when physical evidence contradicts it.",
+          "external_site": "Draft zh_CN localization pending native pass. Clean office language can expose a lie when timestamps and pump marks disagree.",
+          "field_note": "Draft zh_CN localization pending native pass. Trust the wet room first."
+        }
+      }
+    }
+  ]
+}

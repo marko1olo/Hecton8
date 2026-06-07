@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -24,6 +25,7 @@ namespace Hecton8.Editor.GeographySanity
         private const string AnomalyTempPath = "Docs/Reports/GEOGRAPHY_SANITY_REPORT.anomalies.tmp";
         private const string ProgressTitle = "World Sanity Checker";
         private const string ProgressInfo = "Validating sectors";
+        private const string NativeMemoryOwner = nameof(GeographySanityPipeline);
         private static readonly UTF8Encoding JsonEncoding = new UTF8Encoding(false);
         private static bool _isRunning;
         private static bool _cancelRequested;
@@ -266,15 +268,15 @@ namespace Hecton8.Editor.GeographySanity
             NativeArray<int> connectivityScratch = default;
             try
             {
-                heights = new NativeArray<float>(heightCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                sdf = new NativeArray<float>(sdfCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                entities = new NativeArray<SpatialEntityDTO>(entityCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                rules = new NativeArray<SpatialAnomalyRuleDTO>(ruleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                navRequests = new NativeArray<NavigationRequestDTO>(math.max(1, navCount), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                materials = new NativeArray<CrushDepthMaterialDTO>(materialCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                entityResults = new NativeArray<SpatialAnomalyResultDTO>(entityCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                navResults = new NativeArray<SpatialAnomalyResultDTO>(math.max(1, navCount), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                connectivityScratch = new NativeArray<int>(math.max(1, navCount * scratchIntsPerRequest), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                heights = AllocateNativeArray<float>(heightCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                sdf = AllocateNativeArray<float>(sdfCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                entities = AllocateNativeArray<SpatialEntityDTO>(entityCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                rules = AllocateNativeArray<SpatialAnomalyRuleDTO>(ruleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                navRequests = AllocateNativeArray<NavigationRequestDTO>(math.max(1, navCount), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                materials = AllocateNativeArray<CrushDepthMaterialDTO>(materialCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                entityResults = AllocateNativeArray<SpatialAnomalyResultDTO>(entityCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                navResults = AllocateNativeArray<SpatialAnomalyResultDTO>(math.max(1, navCount), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                connectivityScratch = AllocateNativeArray<int>(math.max(1, navCount * scratchIntsPerRequest), Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 FillMaterialTable(materials);
 
                 GeographySectorDTO sector = BuildSector(settings, sectorX, sectorZ);
@@ -437,15 +439,15 @@ namespace Hecton8.Editor.GeographySanity
             }
             finally
             {
-                if (connectivityScratch.IsCreated) connectivityScratch.Dispose();
-                if (navResults.IsCreated) navResults.Dispose();
-                if (entityResults.IsCreated) entityResults.Dispose();
-                if (materials.IsCreated) materials.Dispose();
-                if (navRequests.IsCreated) navRequests.Dispose();
-                if (rules.IsCreated) rules.Dispose();
-                if (entities.IsCreated) entities.Dispose();
-                if (sdf.IsCreated) sdf.Dispose();
-                if (heights.IsCreated) heights.Dispose();
+                ReleaseNativeArray(ref connectivityScratch);
+                ReleaseNativeArray(ref navResults);
+                ReleaseNativeArray(ref entityResults);
+                ReleaseNativeArray(ref materials);
+                ReleaseNativeArray(ref navRequests);
+                ReleaseNativeArray(ref rules);
+                ReleaseNativeArray(ref entities);
+                ReleaseNativeArray(ref sdf);
+                ReleaseNativeArray(ref heights);
             }
         }
 
@@ -1237,13 +1239,48 @@ namespace Hecton8.Editor.GeographySanity
             if (!array.IsCreated)
                 throw new InvalidOperationException("World Sanity Checker native allocation failed.");
 
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    array,
+                    NativeMemoryOwner,
+                    typeof(T).Name,
+                    ResolveNativeAllocationLifetime(allocator));
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {typeof(T).Name}.");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
             return array;
         }
 
         private static void ReleaseNativeArray<T>(ref NativeArray<T> array) where T : struct
         {
             if (array.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
                 array.Dispose();
+                array = default;
+            }
+        }
+
+        private static NativeAllocationLifetime ResolveNativeAllocationLifetime(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return NativeAllocationLifetime.Temp;
+                case Allocator.TempJob:
+                    return NativeAllocationLifetime.TempJob;
+                case Allocator.Persistent:
+                    return NativeAllocationLifetime.Session;
+                default:
+                    return NativeAllocationLifetime.Session;
+            }
         }
 
         private static unsafe void DumpBlackBox(NativeArray<GeographySanityTelemetryEntry> blackBox, uint reason)

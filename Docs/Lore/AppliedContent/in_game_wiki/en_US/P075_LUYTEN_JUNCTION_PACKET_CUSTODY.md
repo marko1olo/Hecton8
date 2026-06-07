@@ -7,6 +7,9 @@ poi_tags: poi.packet_custody_spool;poi.relay_tariff_panel
 biome_tags: biome.relay_spine;biome.drowned_comms
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Luyten Junction Packet Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

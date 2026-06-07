@@ -7,6 +7,9 @@ poi_tags: poi.localized_name_policy;poi.rtl_name_strip
 biome_tags: biome.claim_admin;biome.shallow_annex
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Нативная обработка локализованных имен"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

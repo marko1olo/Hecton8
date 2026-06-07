@@ -7,6 +7,9 @@ poi_tags: poi.last_packet_buffer;poi.comms_rack
 biome_tags: biome.relay_spine;biome.drowned_comms
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Lian Torres Last Packet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

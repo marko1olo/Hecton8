@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "תגי חיישן ביומטליים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# תגי חיישן ביומטליים
 
-HE LOC HOLD: Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems.
+תגי חיישן ביומטליים אינם פריטי איסוף רגילים. הם מה שקורה כאשר מערכת תיקון מפסיקה לדאוג אם הנשא הוא מכונה, צמיחת כבל או חיה. התג הוא קשקש ביומטלי דק שגדל לתוך רקמה, שותה מעט זרם, מתעד תנועה וחוזר על ביטחון מיקום דרך המים. Marauder יכול להשתמש בו כדי לכוון פינגר, להאריך טווח סורק או להוכיח שנתיב היה חי כאשר Atlas נגעה בו. השימושיות הזאת היא הבעיה. משוך תג קר והוא הופך לראיה. משוך אותו חם והרשת עלולה לשים לב לנשא החסר, לענות בחזרות כוזבות או לשלוח לוגיקת תיקון אל החיה הפצועה, הקלפ החתוך או הצולל שמחזיק את התג. החומר מכריח להתייחס לשלל כמו לתיק חקירה: שימושי, מלוכלך ועדיין מדווח.
 
 ## Scanner
 
-HE LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+תגי חיישן ביומטליים // קשקשי מתכת דקים שגדלו בתוך דגים, קלפ כבלים ורקמת תיקון. משפרים כוונון פינגר; קציר חם עלול לגרום ל-Atlas לשמוע את הנשא החסר.
 
 ## Terminal
 
-HE LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+מחלקת משאב: שונה בידי Atlas / רגיש כראיה. שימושים: מיקוד פינגר, סריג סורק, ביטחון נתיב, חבילות ראיה. מומלץ קציר קר. סיכונים: עליית תשומת לב, חזרות נשא כוזבות, פאונה פגועה.
 
 ## Audio
 
-HE LOC HOLD: The fish is not a drone. The tag does not know the difference.
+הדג אינו רחפן. התג ממשיך לדווח בכל זאת.
 
 ## Field Note
 
-HE LOC HOLD: Make resource extraction feel like evidence handling.
+אם הוא מהבהב מתחת לסכין, תעד לפני שאתה חותך.
 
 <!-- External Site; generated from P120_BIOMETAL_SENSOR_TAGS/he_IL. -->

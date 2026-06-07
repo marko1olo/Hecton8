@@ -95,12 +95,10 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             EnsureSlots();
-            FieldOperationLogSystem registered = GlobalRegistry.FieldOperations;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
-            }
         }
 
         private void OnEnable()
@@ -133,7 +131,11 @@ namespace Hecton8.Gameplay
 
         public static void RecordOperation(string source, string title, string summary, string severity = "INFO")
         {
-            s_activeRuntime?.Push(
+            FieldOperationLogSystem instance = ResolveActiveRuntime();
+            if (instance == null)
+                return;
+
+            instance.Push(
                 AsSpanOrEmpty(source),
                 AsSpanOrEmpty(title),
                 AsSpanOrEmpty(summary),
@@ -142,7 +144,7 @@ namespace Hecton8.Gameplay
 
         public static void RecordOperation(string source, string title, in FixedCharBuffer summaryBuffer, string severity = "INFO")
         {
-            FieldOperationLogSystem instance = s_activeRuntime;
+            FieldOperationLogSystem instance = ResolveActiveRuntime();
             if (instance == null)
                 return;
 
@@ -155,7 +157,7 @@ namespace Hecton8.Gameplay
 
         public static void RecordOperation(string source, in FixedCharBuffer titleBuffer, in FixedCharBuffer summaryBuffer, string severity = "INFO")
         {
-            FieldOperationLogSystem instance = s_activeRuntime;
+            FieldOperationLogSystem instance = ResolveActiveRuntime();
             if (instance == null)
                 return;
 
@@ -184,18 +186,77 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying)
                 return false;
 
-            FieldOperationLogSystem registered = GlobalRegistry.FieldOperations;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             GlobalRegistry.RegisterFieldOperationLogRuntime(this);
             _runtimeRegistered = ReferenceEquals(GlobalRegistry.FieldOperations, this);
             if (_runtimeRegistered)
                 s_activeRuntime = this;
             return _runtimeRegistered;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            FieldOperationLogSystem active = s_activeRuntime;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsFieldOperationRuntimeUsable(active))
+                {
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntime, active))
+                    s_activeRuntime = null;
+                if (ReferenceEquals(GlobalRegistry.FieldOperations, active))
+                    GlobalRegistry.UnregisterFieldOperationLogRuntime(active);
+            }
+
+            FieldOperationLogSystem registered = GlobalRegistry.FieldOperations;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsFieldOperationRuntimeUsable(registered))
+            {
+                s_activeRuntime = registered;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterFieldOperationLogRuntime(registered);
+            if (ReferenceEquals(s_activeRuntime, registered))
+                s_activeRuntime = null;
+            return false;
+        }
+
+        private static FieldOperationLogSystem ResolveActiveRuntime()
+        {
+            FieldOperationLogSystem active = s_activeRuntime;
+            if (IsFieldOperationRuntimeUsable(active))
+                return active;
+
+            if (!ReferenceEquals(active, null))
+                s_activeRuntime = null;
+
+            FieldOperationLogSystem registered = GlobalRegistry.FieldOperations;
+            if (IsFieldOperationRuntimeUsable(registered))
+            {
+                s_activeRuntime = registered;
+                return registered;
+            }
+
+            if (!ReferenceEquals(registered, null))
+                GlobalRegistry.UnregisterFieldOperationLogRuntime(registered);
+
+            return null;
+        }
+
+        private static bool IsFieldOperationRuntimeUsable(FieldOperationLogSystem system)
+        {
+            return system != null &&
+                   system._runtimeRegistered &&
+                   system.isActiveAndEnabled;
         }
 
         private void TryUnregisterRuntime()

@@ -7,6 +7,9 @@ poi_tags: poi.unit_style_card;poi.depth_label_sample
 biome_tags: biome.localization;biome.hard_scifi_ui
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Unit And Number Style Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

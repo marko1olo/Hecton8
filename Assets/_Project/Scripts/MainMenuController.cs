@@ -267,8 +267,7 @@ namespace Hecton.UI.MainMenu
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredToTickManager = false;
-                _registeredLateFrameTickManager = false;
+                UnregisterFromTickManager();
                 if (currentService != null)
                     TryRegisterToTickManager();
             }

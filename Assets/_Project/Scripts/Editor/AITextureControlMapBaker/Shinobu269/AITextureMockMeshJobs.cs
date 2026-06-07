@@ -137,6 +137,8 @@ namespace Hecton8.Editor.AITextureControlMaps
 
     internal static unsafe class AITextureMockMeshBenchmark
     {
+        private const string NativeMemoryOwner = nameof(AITextureMockMeshBenchmark);
+
         [MenuItem("HECTON-8/AI Texture Control Maps/Generate Mock Complex Mesh Benchmark", false, 2670)]
         internal static void GenerateMockComplexMeshAsset()
         {
@@ -158,14 +160,18 @@ namespace Hecton8.Editor.AITextureControlMaps
 
             int quadCount = config.RingSegments * config.TubeSegments;
             int vertexCount = quadCount * 6;
-            NativeArray<AITextureBakeVertex> vertices = new NativeArray<AITextureBakeVertex>(
+            NativeArray<AITextureBakeVertex> vertices = AITextureNativeMemory.AllocateArray<AITextureBakeVertex>(
                 vertexCount,
                 Allocator.TempJob,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<AITextureBakeVertex>[vertexCount] - editor mock complex mesh vertices - owner: AITextureMockMeshBenchmark
-            NativeArray<uint> indices = new NativeArray<uint>(
+                NativeArrayOptions.UninitializedMemory,
+                NativeMemoryOwner,
+                nameof(vertices)); // COLD ALLOC: NativeArray<AITextureBakeVertex>[vertexCount] - editor mock complex mesh vertices - owner: AITextureMockMeshBenchmark
+            NativeArray<uint> indices = AITextureNativeMemory.AllocateArray<uint>(
                 vertexCount,
                 Allocator.TempJob,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<uint>[vertexCount] - editor mock complex mesh indices - owner: AITextureMockMeshBenchmark
+                NativeArrayOptions.UninitializedMemory,
+                NativeMemoryOwner,
+                nameof(indices)); // COLD ALLOC: NativeArray<uint>[vertexCount] - editor mock complex mesh indices - owner: AITextureMockMeshBenchmark
 
             Stopwatch stopwatch = Stopwatch.StartNew();
             try
@@ -206,10 +212,8 @@ namespace Hecton8.Editor.AITextureControlMaps
             }
             finally
             {
-                if (indices.IsCreated)
-                    indices.Dispose();
-                if (vertices.IsCreated)
-                    vertices.Dispose();
+                AITextureNativeMemory.DisposeArray(ref indices);
+                AITextureNativeMemory.DisposeArray(ref vertices);
             }
         }
 

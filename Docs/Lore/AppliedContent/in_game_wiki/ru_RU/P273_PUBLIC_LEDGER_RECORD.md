@@ -7,6 +7,9 @@ poi_tags: poi.public_ledger_record;poi.tau_packet_witness
 biome_tags: biome.ending;biome.truth
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Запись публичного ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

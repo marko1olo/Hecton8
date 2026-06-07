@@ -7,6 +7,9 @@ poi_tags: poi.response_ledger;poi.liability_seal
 biome_tags: biome.corporate_wreck;biome.return_route
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Corporate Response Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

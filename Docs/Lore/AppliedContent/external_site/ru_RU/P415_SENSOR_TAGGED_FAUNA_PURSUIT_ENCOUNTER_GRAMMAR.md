@@ -7,6 +7,9 @@ poi_tags: poi.sensor_tagged_fin;poi.noisy_tag_echo
 biome_tags: biome.abyssal_machine_field;biome.atlas_repair_network
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Грамматика погони сенсорно-помеченной фауны"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.starfield_nav_plate;poi.ran_spectrum_card
 biome_tags: biome.surface_relay;biome.orbital_window
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Ran / Aegir Anchor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

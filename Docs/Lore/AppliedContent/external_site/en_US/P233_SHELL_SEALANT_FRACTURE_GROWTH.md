@@ -7,6 +7,9 @@ poi_tags: poi.shell_sealant_fracture;poi.crack_growth_lip
 biome_tags: biome.industrial_shelf;biome.abyssal_machine_field
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Shell Sealant Fracture Growth"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -16,15 +19,17 @@ localization_flags: 0
 
 # Shell Sealant Fracture Growth
 
-Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people.
+Shell Sealant Fracture Growth is one of HECTON-8's strongest Atlas images because it does not need a speech, a villain face or a supernatural explanation. A crack in the colony wall is sealed by shell plates and biofiber. The ocean stays outside. The pressure boundary improves. The system can honestly mark the repair as useful.
+
+Then the player notices what was lost under the repair: a hatch label, a handhold, an escape arrow, a worker's scraped route mark. Atlas preserved the room as a pressure object and damaged it as a human space. That distinction is the point. The AI's repair ecology is frightening because it can be competent and wrong at the same time. It protects continuity, not meaning. It saves a wall and erases the door.
 
 ## Scanner
 
-A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.
+SHELL SEALANT GROWTH // A pressure crack is sealed by shell plates and biofiber; the patch holds water back while burying hatch labels, handholds and escape arrows.
 
 ## Terminal
 
-REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.
+REPAIR CONFLICT: hull continuity improved, leak rate reduced, worker egress legibility degraded. Human route markings occluded by sealant shell. Manual removal may reopen pressure boundary.
 
 ## Audio
 
@@ -32,6 +37,6 @@ It fixed the wall by forgetting the door.
 
 ## Field Note
 
-Atlas repaired the pressure boundary and erased the human route at the same time.
+Atlas solved pressure first. Human meaning never entered the equation.
 
 <!-- External Site; generated from P233_SHELL_SEALANT_FRACTURE_GROWTH/en_US. -->

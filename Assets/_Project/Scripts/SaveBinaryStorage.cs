@@ -41,6 +41,8 @@ namespace Hecton8.SaveSystem
         private const int NativeWriteChunkBytes = NativeWriteThreadYieldPageBytes;
         private const int NativeWritePagePaceMilliseconds = 1;
         private const string NativeMemoryOwner = nameof(AsyncWriteManager);
+        private const string NativeMemoryRegistrationFailureMessage = "NativeMemorySentinel registration failed for AsyncWriteManager buffer.";
+        private const string NativeMemoryRestoreFailureMessage = "NativeMemorySentinel restore failed after AsyncWriteManager native disposal fault.";
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
         private const uint NativeGenericRead = 0x80000000u;
@@ -124,6 +126,7 @@ namespace Hecton8.SaveSystem
         {
             public string AbsolutePath;
             public NativeArray<byte> Bytes;
+            public int BytesSentinelId;
             public long WindowOffset;
             public long WindowLength;
             public long FileLength;
@@ -374,12 +377,19 @@ namespace Hecton8.SaveSystem
             if (Interlocked.CompareExchange(ref s_flushThreadStarted, 1, 0) != 0)
                 return;
 
-            Thread thread = new Thread(FlushWorkerLoop)
+            try
             {
-                IsBackground = true,
-                Name = "H8.SaveFlushQueue"
-            };
-            thread.Start();
+                Thread thread = new Thread(FlushWorkerLoop)
+                {
+                    IsBackground = true,
+                    Name = "H8.SaveFlushQueue"
+                };
+                thread.Start();
+            }
+            catch
+            {
+                Volatile.Write(ref s_flushThreadStarted, 0);
+            }
         }
 
         private static void EnsureReadPrefetchWorker()
@@ -387,12 +397,19 @@ namespace Hecton8.SaveSystem
             if (Interlocked.CompareExchange(ref s_readPrefetchWorkerStarted, 1, 0) != 0)
                 return;
 
-            Thread thread = new Thread(ReadPrefetchWorkerLoop)
+            try
             {
-                IsBackground = true,
-                Name = "H8.FileReadPrefetch"
-            };
-            thread.Start();
+                Thread thread = new Thread(ReadPrefetchWorkerLoop)
+                {
+                    IsBackground = true,
+                    Name = "H8.FileReadPrefetch"
+                };
+                thread.Start();
+            }
+            catch
+            {
+                Volatile.Write(ref s_readPrefetchWorkerStarted, 0);
+            }
         }
 
         private static void FlushWorkerLoop()
@@ -620,12 +637,16 @@ namespace Hecton8.SaveSystem
             }
 
             NativeArray<byte> windowBytes = default;
+            int windowBytesSentinelId = 0;
             bool transferredWindowBytes = false;
             try
             {
                 // COLD ALLOC: NativeArray<byte>[windowLength] - cached save read window - owner: AsyncWriteManager
                 windowBytes = new NativeArray<byte>((int)windowLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(windowBytes, NativeMemoryOwner, nameof(CachedReadWindow), NativeMemoryLifetime);
+                int registrationId = NativeMemorySentinel.RegisterNativeArray(windowBytes, NativeMemoryOwner, nameof(CachedReadWindow), NativeMemoryLifetime);
+                if (registrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+                windowBytesSentinelId = registrationId;
                 byte* windowPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(windowBytes);
                 if (!TryReadAbsoluteFileRangeToNativeBuffer(absolutePath, windowOffset, windowPtr, (int)windowLength, out error))
                     return false;
@@ -634,6 +655,7 @@ namespace Hecton8.SaveSystem
                 {
                     AbsolutePath = absolutePath,
                     Bytes = windowBytes,
+                    BytesSentinelId = registrationId,
                     WindowOffset = windowOffset,
                     WindowLength = windowLength,
                     FileLength = fileLength,
@@ -651,7 +673,7 @@ namespace Hecton8.SaveSystem
             finally
             {
                 if (!transferredWindowBytes && windowBytes.IsCreated)
-                    DisposeCachedReadWindowBytes(ref windowBytes);
+                    DisposeCachedReadWindowBytes(ref windowBytes, ref windowBytesSentinelId);
             }
         }
 
@@ -748,14 +770,13 @@ namespace Hecton8.SaveSystem
 
         private static void DisposeCachedReadWindow(ref CachedReadWindow window)
         {
-            NativeArray<byte> bytes = window.Bytes;
-            if (bytes.IsCreated)
-                DisposeCachedReadWindowBytes(ref bytes);
+            if (window.Bytes.IsCreated)
+                DisposeCachedReadWindowBytes(ref window.Bytes, ref window.BytesSentinelId);
 
             window = default;
         }
 
-        private static void DisposeCachedReadWindowBytes(ref NativeArray<byte> bytes)
+        private static void DisposeCachedReadWindowBytes(ref NativeArray<byte> bytes, ref int sentinelId)
         {
             if (!bytes.IsCreated)
                 return;
@@ -763,29 +784,39 @@ namespace Hecton8.SaveSystem
             bool sentinelUnregistered = false;
             try
             {
-                NativeMemorySentinel.UnregisterNativeArray(bytes);
-                sentinelUnregistered = true;
+                if (sentinelId > 0)
+                {
+                    NativeMemorySentinel.Unregister(sentinelId);
+                    sentinelId = 0;
+                    sentinelUnregistered = true;
+                }
+
                 bytes.Dispose();
                 bytes = default;
             }
-            catch
+            catch (Exception disposalException)
             {
-                TryRestoreCachedReadWindowSentinel(bytes, sentinelUnregistered);
+                RestoreCachedReadWindowSentinelOrThrow(bytes, ref sentinelId, sentinelUnregistered, disposalException);
                 throw;
             }
         }
 
-        private static void TryRestoreCachedReadWindowSentinel(NativeArray<byte> bytes, bool sentinelUnregistered)
+        private static void RestoreCachedReadWindowSentinelOrThrow(NativeArray<byte> bytes, ref int sentinelId, bool sentinelUnregistered, Exception disposalException)
         {
             if (!sentinelUnregistered || !bytes.IsCreated)
                 return;
 
             try
             {
-                NativeMemorySentinel.RegisterNativeArray(bytes, NativeMemoryOwner, nameof(CachedReadWindow), NativeMemoryLifetime);
+                int registrationId = NativeMemorySentinel.RegisterNativeArray(bytes, NativeMemoryOwner, nameof(CachedReadWindow), NativeMemoryLifetime);
+                if (registrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
+
+                sentinelId = registrationId;
             }
-            catch
+            catch (Exception restoreException)
             {
+                throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
             }
         }
 
@@ -1579,7 +1610,9 @@ namespace Hecton8.SaveSystem
 
                 // COLD ALLOC: NativeArray<byte>[fileLength] - native read-only save snapshot - owner: AsyncWriteManager
                 fileBytes = new NativeArray<byte>((int)fileLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(fileBytes, NativeMemoryOwner, nameof(ReadOnlyMapping), NativeMemoryLifetime);
+                int registrationId = NativeMemorySentinel.RegisterNativeArray(fileBytes, NativeMemoryOwner, nameof(ReadOnlyMapping), NativeMemoryLifetime);
+                if (registrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
                 byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
                 if (!TryReadAbsoluteFileToNativeBuffer(absolutePath, filePtr, (int)fileLength, out error))
                     return false;
@@ -1764,24 +1797,27 @@ namespace Hecton8.SaveSystem
                 bytes.Dispose();
                 bytes = default;
             }
-            catch
+            catch (Exception disposalException)
             {
-                TryRestoreReadOnlyMappingSentinel(bytes, sentinelUnregistered);
+                RestoreReadOnlyMappingSentinelOrThrow(bytes, sentinelUnregistered, disposalException);
                 throw;
             }
         }
 
-        private static void TryRestoreReadOnlyMappingSentinel(NativeArray<byte> bytes, bool sentinelUnregistered)
+        private static void RestoreReadOnlyMappingSentinelOrThrow(NativeArray<byte> bytes, bool sentinelUnregistered, Exception disposalException)
         {
             if (!sentinelUnregistered || !bytes.IsCreated)
                 return;
 
             try
             {
-                NativeMemorySentinel.RegisterNativeArray(bytes, NativeMemoryOwner, nameof(ReadOnlyMapping), NativeMemoryLifetime);
+                int registrationId = NativeMemorySentinel.RegisterNativeArray(bytes, NativeMemoryOwner, nameof(ReadOnlyMapping), NativeMemoryLifetime);
+                if (registrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
             }
-            catch
+            catch (Exception restoreException)
             {
+                throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
             }
         }
 
@@ -1877,6 +1913,8 @@ namespace Hecton8.SaveSystem
         internal const int LegacyHeaderSize = 44;
         internal const int SavePageSizeBytes = 64 * 1024;
         internal const int DialogueChoiceFlagCapacity = 16;
+        internal const ushort PlayerDialogueChoiceSaveFacilityMask = 1 << 0;
+        internal const ushort PlayerDialogueChoiceKnownFlagsMask = PlayerDialogueChoiceSaveFacilityMask;
         internal const int BlockSizeBytes = 256 * 1024;
         internal const int RawPayloadCapacityBytes = 64 * 1024 * 1024;
         internal const int MaxCompressedPayloadBytes = 68 * 1024 * 1024;
@@ -1940,6 +1978,10 @@ namespace Hecton8.SaveSystem
         internal const int IndexedSectorQuarantineHashCapacity = 16;
         private const string Lz4DllName = "liblz4";
         private const string NativeMemoryOwner = nameof(SaveBinaryStorage);
+        private const string NativeMemoryRegistrationFailureMessage = "NativeMemorySentinel registration failed for SaveBinaryStorage buffer.";
+        private const string NativeMemoryRestoreFailureMessage = "NativeMemorySentinel restore failed after SaveBinaryStorage native disposal fault.";
+        private const string NativeMemoryTransientRegistrationFailureMessage = "NativeMemorySentinel registration failed for transient SaveBinaryStorage buffer.";
+        private const string NativeMemoryTransientRestoreFailureMessage = "NativeMemorySentinel restore failed after SaveBinaryStorage native disposal fault.";
         private const string EntityStateWriteSourceStatesLabel = "indexedSectorEntityStateSourceStates";
         private const string EntityStateWriteSortEntriesLabel = "indexedSectorEntityStateSortEntries";
         private const string EntityStateWriteRadixScratchLabel = "indexedSectorEntityStateRadixScratch";
@@ -1950,6 +1992,25 @@ namespace Hecton8.SaveSystem
         private const string EntityStateWriteRadixOffsetsLabel = "indexedSectorEntityStateRadixOffsets";
         private const string BackupRecoverySourceRecordsLabel = "indexedSectorBackupRecoverySourceRecords";
         private const string BackupRecoverySectorRecordsLabel = "indexedSectorBackupRecoveryRecords";
+        private const string IndexedSectorCompactionBufferLabel = "indexedSectorCompactionBuffer";
+        private const string IndexedSectorCommitBufferLabel = "indexedSectorCommitBuffer";
+        private const string IndexedSectorDirectoryScratchLabel = "indexedSectorDirectoryScratch";
+        private const string IndexedSectorReadRawScratchLabel = "indexedSectorReadRawScratch";
+        private const string IndexedSectorOverrideRawSectionScratchLabel = "indexedSectorOverrideRawSectionScratch";
+        private const string IndexedSectorOverrideFileScratchLabel = "indexedSectorOverrideFileScratch";
+        private const string IndexedSectorModPayloadRawBlockScratchLabel = "indexedSectorModPayloadRawBlockScratch";
+        private const string IndexedSectorOverrideCompressedBlockScratchLabel = "indexedSectorOverrideCompressedBlockScratch";
+        private const string IndexedSectorOverrideVerifyRawBlockScratchLabel = "indexedSectorOverrideVerifyRawBlockScratch";
+        private const string IndexedSectorGroupSlotScratchLabel = "indexedSectorGroupSlotScratch";
+        private const string IndexedSectorRecordGroupScratchLabel = "indexedSectorRecordGroupScratch";
+        private const string IndexedSectorGroupListScratchLabel = "indexedSectorGroupListScratch";
+        private const string IndexedSectorGroupRecordListScratchLabel = "indexedSectorGroupRecordListScratch";
+        private const string IndexedSectorAggregatedWorldDeltasScratchLabel = "indexedSectorAggregatedWorldDeltasScratch";
+        private const string IndexedSectorBackupAppendRecordsScratchLabel = "indexedSectorBackupAppendRecordsScratch";
+        private const string PersistentWorldSectionChunkLookupScratchLabel = "persistentWorldSectionChunkLookupScratch";
+        private const string PersistentWorldSectionChunkTableScratchLabel = "persistentWorldSectionChunkTableScratch";
+        private const string PersistentWorldSectionItemHashLookupScratchLabel = "persistentWorldSectionItemHashLookupScratch";
+        private const string PersistentWorldSectionItemHashTableScratchLabel = "persistentWorldSectionItemHashTableScratch";
         private static readonly WaitCallback s_indexedSectorDefragmentationCallback = RunIndexedPersistentWorldDefragmentation;
         private static string s_indexedSectorDefragmentationPath;
         private static int s_indexedSectorDefragmentationQueued;
@@ -2011,18 +2072,26 @@ namespace Hecton8.SaveSystem
         {
             public NativeList<IndexedSectorGroup> Groups;
             public NativeList<PersistentWorldDeltaRecord> Records;
+            public int GroupsSentinelId;
+            public int RecordsSentinelId;
             public int InvalidRecordCount;
 
             public int Count => Groups.IsCreated ? Groups.Length : 0;
 
             public void Dispose()
             {
-                if (Groups.IsCreated)
-                    Groups.Dispose();
-                if (Records.IsCreated)
-                    Records.Dispose();
+                DisposeRegisteredTransientNativeList(ref Records, ref RecordsSentinelId, IndexedSectorGroupRecordListScratchLabel);
+                DisposeRegisteredTransientNativeList(ref Groups, ref GroupsSentinelId, IndexedSectorGroupListScratchLabel);
                 this = default;
             }
+        }
+
+        private struct PersistentWorldSectionTableSentinelIds
+        {
+            public int ChunkLookup;
+            public int ChunkTable;
+            public int ItemHashLookup;
+            public int ItemHashTable;
         }
 
         private readonly struct IndexedSectorCommitTarget
@@ -2079,7 +2148,9 @@ namespace Hecton8.SaveSystem
                 if (!array.IsCreated)
                     return;
 
-                NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (registrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryTransientRegistrationFailureMessage);
             }
 
             private void UnregisterNativeMemorySentinel()
@@ -2155,6 +2226,350 @@ namespace Hecton8.SaveSystem
 
                 this = default;
                 return disposeHandle;
+            }
+        }
+
+        private static void RegisterPersistentScratchNativeArray<T>(NativeArray<T> array, string label)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Session);
+            if (registrationId <= 0)
+                throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+        }
+
+        private static void DisposeRegisteredPersistentScratchNativeArray<T>(ref NativeArray<T> array, string label)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            bool sentinelUnregistered = false;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+                sentinelUnregistered = true;
+                array.Dispose();
+                array = default;
+            }
+            catch (Exception disposalException)
+            {
+                RestorePersistentScratchNativeArraySentinelOrThrow(array, label, sentinelUnregistered, disposalException);
+                throw;
+            }
+        }
+
+        private static void RestorePersistentScratchNativeArraySentinelOrThrow<T>(
+            NativeArray<T> array,
+            string label,
+            bool sentinelUnregistered,
+            Exception disposalException)
+            where T : struct
+        {
+            if (!sentinelUnregistered || !array.IsCreated)
+                return;
+
+            try
+            {
+                RegisterPersistentScratchNativeArray(array, label);
+            }
+            catch (Exception restoreException)
+            {
+                throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
+            }
+        }
+
+        private struct RegisteredTransientNativeArray<T> : IDisposable
+            where T : struct
+        {
+            private string _label;
+            private NativeAllocationLifetime _lifetime;
+
+            public NativeArray<T> Array;
+
+            public RegisteredTransientNativeArray(
+                int length,
+                NativeArrayOptions options,
+                string label,
+                NativeAllocationLifetime lifetime)
+            {
+                _label = label;
+                _lifetime = lifetime;
+                Array = default;
+                try
+                {
+                    // COLD ALLOC: NativeArray<T>[length] - tracked transient save scratch - owner: SaveBinaryStorage
+                    Array = new NativeArray<T>(length, Allocator.Temp, options);
+                    int registrationId = NativeMemorySentinel.RegisterNativeArray(Array, NativeMemoryOwner, label, lifetime);
+                    if (registrationId <= 0)
+                        throw new InvalidOperationException(NativeMemoryTransientRegistrationFailureMessage);
+                }
+                catch
+                {
+                    if (Array.IsCreated)
+                    {
+                        try
+                        {
+                            NativeMemorySentinel.UnregisterNativeArray(Array);
+                        }
+                        catch
+                        {
+                        }
+
+                        Array.Dispose();
+                    }
+
+                    throw;
+                }
+            }
+
+            public void Dispose()
+            {
+                DisposeRegisteredTransientNativeArray(ref Array, _label, _lifetime);
+                _label = null;
+                _lifetime = default;
+            }
+        }
+
+        private static RegisteredTransientNativeArray<T> CreateRegisteredTransientNativeArray<T>(
+            int length,
+            NativeArrayOptions options,
+            string label,
+            NativeAllocationLifetime lifetime = NativeAllocationLifetime.TransientArena)
+            where T : struct
+        {
+            return new RegisteredTransientNativeArray<T>(length, options, label, lifetime);
+        }
+
+        private static void DisposeRegisteredTransientNativeArray<T>(
+            ref NativeArray<T> array,
+            string label,
+            NativeAllocationLifetime lifetime)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            bool sentinelUnregistered = false;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+                sentinelUnregistered = true;
+                array.Dispose();
+                array = default;
+            }
+            catch (Exception disposalException)
+            {
+                RestoreTransientNativeArraySentinelOrThrow(array, label, lifetime, sentinelUnregistered, disposalException);
+                throw;
+            }
+        }
+
+        private static void RestoreTransientNativeArraySentinelOrThrow<T>(
+            NativeArray<T> array,
+            string label,
+            NativeAllocationLifetime lifetime,
+            bool sentinelUnregistered,
+            Exception disposalException)
+            where T : struct
+        {
+            if (!sentinelUnregistered || !array.IsCreated)
+                return;
+
+            try
+            {
+                int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime);
+                if (registrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryTransientRestoreFailureMessage, disposalException);
+            }
+            catch (Exception restoreException)
+            {
+                throw new AggregateException(NativeMemoryTransientRestoreFailureMessage, disposalException, restoreException);
+            }
+        }
+
+        private static NativeList<T> CreateRegisteredTransientNativeList<T>(
+            int capacity,
+            string label,
+            out int registrationId,
+            NativeAllocationLifetime lifetime = NativeAllocationLifetime.TransientArena)
+            where T : unmanaged
+        {
+            registrationId = 0;
+            NativeList<T> list = default;
+            try
+            {
+                // COLD ALLOC: NativeList<T>[capacity] - tracked transient save scratch - owner: SaveBinaryStorage
+                list = new NativeList<T>(capacity, Allocator.Temp);
+                registrationId = NativeMemorySentinel.RegisterNativeListInstance(list, NativeMemoryOwner, label, lifetime);
+                if (registrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryTransientRegistrationFailureMessage);
+
+                return list;
+            }
+            catch
+            {
+                if (registrationId > 0)
+                    NativeMemorySentinel.Unregister(registrationId);
+                if (list.IsCreated)
+                    list.Dispose();
+
+                registrationId = 0;
+                throw;
+            }
+        }
+
+        private static void DisposeRegisteredTransientNativeList<T>(
+            ref NativeList<T> list,
+            ref int registrationId,
+            string label,
+            NativeAllocationLifetime lifetime = NativeAllocationLifetime.TransientArena)
+            where T : unmanaged
+        {
+            if (!list.IsCreated)
+            {
+                registrationId = 0;
+                return;
+            }
+
+            bool sentinelUnregistered = false;
+            try
+            {
+                if (registrationId > 0)
+                {
+                    NativeMemorySentinel.Unregister(registrationId);
+                    sentinelUnregistered = true;
+                    registrationId = 0;
+                }
+
+                list.Dispose();
+                list = default;
+            }
+            catch (Exception disposalException)
+            {
+                RestoreTransientNativeListSentinelOrThrow(list, label, lifetime, sentinelUnregistered, ref registrationId, disposalException);
+                throw;
+            }
+        }
+
+        private static void RestoreTransientNativeListSentinelOrThrow<T>(
+            NativeList<T> list,
+            string label,
+            NativeAllocationLifetime lifetime,
+            bool sentinelUnregistered,
+            ref int registrationId,
+            Exception disposalException)
+            where T : unmanaged
+        {
+            if (!sentinelUnregistered || !list.IsCreated)
+                return;
+
+            try
+            {
+                int restoredRegistrationId = NativeMemorySentinel.RegisterNativeListInstance(list, NativeMemoryOwner, label, lifetime);
+                if (restoredRegistrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryTransientRestoreFailureMessage, disposalException);
+
+                registrationId = restoredRegistrationId;
+            }
+            catch (Exception restoreException)
+            {
+                throw new AggregateException(NativeMemoryTransientRestoreFailureMessage, disposalException, restoreException);
+            }
+        }
+
+        private static NativeParallelHashMap<TKey, TValue> CreateRegisteredTransientNativeParallelHashMap<TKey, TValue>(
+            int capacity,
+            string label,
+            out int registrationId,
+            NativeAllocationLifetime lifetime = NativeAllocationLifetime.TransientArena)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            registrationId = 0;
+            NativeParallelHashMap<TKey, TValue> map = default;
+            try
+            {
+                // COLD ALLOC: NativeParallelHashMap<TKey,TValue>[capacity] - tracked transient save scratch - owner: SaveBinaryStorage
+                map = new NativeParallelHashMap<TKey, TValue>(capacity, Allocator.Temp);
+                registrationId = NativeMemorySentinel.RegisterNativeParallelHashMapInstance(map, NativeMemoryOwner, label, lifetime);
+                if (registrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryTransientRegistrationFailureMessage);
+
+                return map;
+            }
+            catch
+            {
+                if (registrationId > 0)
+                    NativeMemorySentinel.Unregister(registrationId);
+                if (map.IsCreated)
+                    map.Dispose();
+
+                registrationId = 0;
+                throw;
+            }
+        }
+
+        private static void DisposeRegisteredTransientNativeParallelHashMap<TKey, TValue>(
+            ref NativeParallelHashMap<TKey, TValue> map,
+            ref int registrationId,
+            string label,
+            NativeAllocationLifetime lifetime = NativeAllocationLifetime.TransientArena)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+            {
+                registrationId = 0;
+                return;
+            }
+
+            bool sentinelUnregistered = false;
+            try
+            {
+                if (registrationId > 0)
+                {
+                    NativeMemorySentinel.Unregister(registrationId);
+                    sentinelUnregistered = true;
+                    registrationId = 0;
+                }
+
+                map.Dispose();
+                map = default;
+            }
+            catch (Exception disposalException)
+            {
+                RestoreTransientNativeParallelHashMapSentinelOrThrow(map, label, lifetime, sentinelUnregistered, ref registrationId, disposalException);
+                throw;
+            }
+        }
+
+        private static void RestoreTransientNativeParallelHashMapSentinelOrThrow<TKey, TValue>(
+            NativeParallelHashMap<TKey, TValue> map,
+            string label,
+            NativeAllocationLifetime lifetime,
+            bool sentinelUnregistered,
+            ref int registrationId,
+            Exception disposalException)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!sentinelUnregistered || !map.IsCreated)
+                return;
+
+            try
+            {
+                int restoredRegistrationId = NativeMemorySentinel.RegisterNativeParallelHashMapInstance(map, NativeMemoryOwner, label, lifetime);
+                if (restoredRegistrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryTransientRestoreFailureMessage, disposalException);
+
+                registrationId = restoredRegistrationId;
+            }
+            catch (Exception restoreException)
+            {
+                throw new AggregateException(NativeMemoryTransientRestoreFailureMessage, disposalException, restoreException);
             }
         }
 
@@ -2792,7 +3207,8 @@ namespace Hecton8.SaveSystem
                 packedQuestStateWords.Length <= HeaderDialogueChoiceSourceWordIndex)
                 return 0;
 
-            return (ushort)(packedQuestStateWords[HeaderDialogueChoiceSourceWordIndex] & HeaderPackedQuestWordCountMask);
+            return SanitizePlayerDialogueChoiceFlags(
+                (ushort)(packedQuestStateWords[HeaderDialogueChoiceSourceWordIndex] & HeaderPackedQuestWordCountMask));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2802,7 +3218,8 @@ namespace Hecton8.SaveSystem
                 packedQuestStateWords.Length <= HeaderDialogueChoiceSourceWordIndex)
                 return 0;
 
-            return (ushort)(packedQuestStateWords[HeaderDialogueChoiceSourceWordIndex] & HeaderPackedQuestWordCountMask);
+            return SanitizePlayerDialogueChoiceFlags(
+                (ushort)(packedQuestStateWords[HeaderDialogueChoiceSourceWordIndex] & HeaderPackedQuestWordCountMask));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2811,7 +3228,28 @@ namespace Hecton8.SaveSystem
             if (header.Version < AlignedSectionHeaderVersion)
                 return 0;
 
-            return (ushort)((header.DeltaCount & HeaderDialogueChoiceFlagsMask) >> HeaderDialogueChoiceFlagsShift);
+            return SanitizePlayerDialogueChoiceFlags(
+                (ushort)((header.DeltaCount & HeaderDialogueChoiceFlagsMask) >> HeaderDialogueChoiceFlagsShift));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static ushort SanitizePlayerDialogueChoiceFlags(ushort flags)
+        {
+            return (ushort)(flags & PlayerDialogueChoiceKnownFlagsMask);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static ushort ResolveLoadedPlayerDialogueChoiceFlags(
+            ushort saveFileVersion,
+            ushort decodedHeaderFlags,
+            uint[] packedQuestStateWords)
+        {
+            decodedHeaderFlags = SanitizePlayerDialogueChoiceFlags(decodedHeaderFlags);
+            if (saveFileVersion >= AlignedSectionHeaderVersion)
+                return decodedHeaderFlags;
+
+            return SanitizePlayerDialogueChoiceFlags(
+                (ushort)(decodedHeaderFlags | ExtractPlayerDialogueChoiceFlags(packedQuestStateWords)));
         }
 
         private static bool TryEncodeHeaderDeltaCount(
@@ -2835,6 +3273,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            playerDialogueChoiceFlags = SanitizePlayerDialogueChoiceFlags(playerDialogueChoiceFlags);
             encodedDeltaCount =
                 ((uint)playerDialogueChoiceFlags << HeaderDialogueChoiceFlagsShift) |
                 (uint)packedQuestWordCount;
@@ -2916,6 +3355,8 @@ namespace Hecton8.SaveSystem
             }
 
             int dialogueChoiceFlagCapacity = DialogueChoiceFlagCapacity;
+            uint playerDialogueChoiceSaveFacilityMask = PlayerDialogueChoiceSaveFacilityMask;
+            uint playerDialogueChoiceKnownFlagsMask = PlayerDialogueChoiceKnownFlagsMask;
             int headerPackedQuestWordCountBits = HeaderPackedQuestWordCountBits;
             uint headerPackedQuestWordCountMask = HeaderPackedQuestWordCountMask;
             uint headerDialogueChoiceFlagsMask = HeaderDialogueChoiceFlagsMask;
@@ -2925,6 +3366,9 @@ namespace Hecton8.SaveSystem
             int narrativeWordEnd = narrativeWordStart + QuestRuntimeLayout.NarrativeWordCount;
             int maxPackedQuestStateWordCount = MaxPackedQuestStateWordCount;
             if (dialogueChoiceFlagCapacity != headerPackedQuestWordCountBits ||
+                playerDialogueChoiceSaveFacilityMask != 1u << 0 ||
+                playerDialogueChoiceKnownFlagsMask != playerDialogueChoiceSaveFacilityMask ||
+                (playerDialogueChoiceKnownFlagsMask & ~headerPackedQuestWordCountMask) != 0u ||
                 headerDialogueChoiceFlagsMask != (headerPackedQuestWordCountMask << headerDialogueChoiceFlagsShift) ||
                 headerDialogueChoiceSourceWordIndex < narrativeWordStart ||
                 headerDialogueChoiceSourceWordIndex >= narrativeWordEnd ||
@@ -3034,8 +3478,7 @@ namespace Hecton8.SaveSystem
                 checksum = MixChecksum32(checksum, math.asuint(run.TemperatureCelsius));
             }
 
-            byteCount = checked(safeCount * UnsafeUtility.SizeOf<ThermalGridRleRun>());
-            return true;
+            return TryComputeThermalGridRleByteCount(safeCount, out byteCount);
         }
 
         internal static bool TryStageThermalGridRleDelta(
@@ -3058,7 +3501,20 @@ namespace Hecton8.SaveSystem
                 checksum = MixChecksum32(checksum, math.asuint(run.TemperatureCelsius));
             }
 
-            byteCount = checked(safeCount * UnsafeUtility.SizeOf<ThermalGridRleRun>());
+            return TryComputeThermalGridRleByteCount(safeCount, out byteCount);
+        }
+
+        private static bool TryComputeThermalGridRleByteCount(int runCount, out int byteCount)
+        {
+            byteCount = 0;
+            if (runCount < 0)
+                return false;
+
+            long byteCountLong = (long)runCount * UnsafeUtility.SizeOf<ThermalGridRleRun>();
+            if (byteCountLong > int.MaxValue)
+                return false;
+
+            byteCount = (int)byteCountLong;
             return true;
         }
 
@@ -3500,13 +3956,16 @@ namespace Hecton8.SaveSystem
 
             string sceneName = string.IsNullOrEmpty(metadata.SceneName) ? "Unknown" : metadata.SceneName;
             string gameVersion = string.IsNullOrEmpty(metadata.GameVersion) ? "Unknown" : metadata.GameVersion;
-            int sceneBytesLength = checked(sceneName.Length * sizeof(char));
-            int versionBytesLength = checked(gameVersion.Length * sizeof(char));
-            if (sceneBytesLength > ushort.MaxValue || versionBytesLength > ushort.MaxValue)
+            long sceneBytesLengthLong = (long)sceneName.Length * sizeof(char);
+            long versionBytesLengthLong = (long)gameVersion.Length * sizeof(char);
+            if (sceneBytesLengthLong > ushort.MaxValue || versionBytesLengthLong > ushort.MaxValue)
             {
                 error = "Save metadata strings exceed the payload prefix limits.";
                 return false;
             }
+
+            int sceneBytesLength = (int)sceneBytesLengthLong;
+            int versionBytesLength = (int)versionBytesLengthLong;
 
             byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBuffer);
             byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compressedBuffer);
@@ -3524,7 +3983,11 @@ namespace Hecton8.SaveSystem
             int packedQuestSectionLength = packedQuestWordCount > 0
                 ? PackedQuestStateSectionHeaderSize + (packedQuestWordCount * UnsafeUtility.SizeOf<uint>())
                 : 0;
-            int ecosystemSectionLength = ComputeEcosystemSectionLength(ecosystemSectorCount);
+            if (!TryComputeEcosystemSectionLength(ecosystemSectorCount, CurrentVersion, out int ecosystemSectionLength))
+            {
+                error = "Ecosystem section exceeds supported bounds.";
+                return false;
+            }
 
             int metadataCursor = PayloadPrefixSizeBytes + sceneBytesLength + versionBytesLength;
             if (!SaveBinaryPayloadCodec.TryWrite(data, AddByteOffset(rawPtr, metadataCursor), rawBuffer.Length - metadataCursor, out int saveDataByteLength, out error))
@@ -3550,9 +4013,11 @@ namespace Hecton8.SaveSystem
 
             UnsafeUtility.CopyStructureToPtr(ref prefix, rawPtr);
             metadataCursor = PayloadPrefixSizeBytes;
-            CopyUtf16StringToUnmanaged(sceneName, AddByteOffset(rawPtr, metadataCursor), sceneBytesLength);
+            if (!TryCopyUtf16StringToUnmanaged(sceneName, AddByteOffset(rawPtr, metadataCursor), sceneBytesLength, out error))
+                return false;
             metadataCursor += sceneBytesLength;
-            CopyUtf16StringToUnmanaged(gameVersion, AddByteOffset(rawPtr, metadataCursor), versionBytesLength);
+            if (!TryCopyUtf16StringToUnmanaged(gameVersion, AddByteOffset(rawPtr, metadataCursor), versionBytesLength, out error))
+                return false;
             metadataCursor += versionBytesLength;
             metadataCursor += saveDataByteLength;
             int packedQuestOffsetInMetadataPayload = metadataCursor;
@@ -3579,7 +4044,8 @@ namespace Hecton8.SaveSystem
             }
 
             int ecosystemOffsetInMetadataPayload = metadataCursor;
-            WriteEcosystemSection(AddByteOffset(rawPtr, metadataCursor), ecosystemSectorStates);
+            if (!WriteEcosystemSection(AddByteOffset(rawPtr, metadataCursor), ecosystemSectorStates, out error))
+                return false;
             metadataCursor += ecosystemSectionLength;
 
             if (voxelDeltaByteLength > 0)
@@ -3637,15 +4103,23 @@ namespace Hecton8.SaveSystem
 
             anyTokenSubstitution |= (metadataBlockFlags & FlagTokenSubstitution) != 0;
 
-            using NativeArray<SectorEntry> sectorEntries = new NativeArray<SectorEntry>(
+            using RegisteredTransientNativeArray<SectorEntry> sectorEntriesOwner = CreateRegisteredTransientNativeArray<SectorEntry>(
                 IndexedSectorDirectorySlotCount,
-                Allocator.Temp,
-                NativeArrayOptions.ClearMemory);
-            int totalEntityCount = CountIndexedSectorRecords(sectorGroups, sectorCount);
+                NativeArrayOptions.ClearMemory,
+                IndexedSectorDirectoryScratchLabel);
+            NativeArray<SectorEntry> sectorEntries = sectorEntriesOwner.Array;
+            if (!TryCountIndexedSectorRecords(sectorGroups, sectorCount, out int totalEntityCount))
+            {
+                error = "Indexed persistent-world entity count exceeds supported bounds.";
+                sectorGroups.Dispose();
+                return false;
+            }
+
             NativeParallelHashMap<int3, ushort> persistentWorldChunkLookup = default;
             NativeList<int3> persistentWorldChunkTable = default;
             NativeParallelHashMap<ulong, ushort> persistentWorldItemHashLookup = default;
             NativeList<ulong> persistentWorldItemHashTable = default;
+            PersistentWorldSectionTableSentinelIds persistentWorldSectionTableSentinelIds = default;
 
             try
             {
@@ -3666,22 +4140,37 @@ namespace Hecton8.SaveSystem
                             out persistentWorldChunkTable,
                             out persistentWorldItemHashLookup,
                             out persistentWorldItemHashTable,
+                            out persistentWorldSectionTableSentinelIds,
                             out error))
                     {
                         return false;
                     }
 
-                    int sectorRawLength = ComputePersistentWorldSectionLength(recordCount, persistentWorldChunkTable.Length, persistentWorldItemHashTable.Length);
+                    if (!TryComputePersistentWorldSectionLength(
+                            recordCount,
+                            persistentWorldChunkTable.Length,
+                            persistentWorldItemHashTable.Length,
+                            CurrentVersion,
+                            out int sectorRawLength))
+                    {
+                        error = "Indexed persistent-world sector section exceeds supported bounds.";
+                        return false;
+                    }
+
                     UnsafeUtility.MemClear(rawPtr, sectorRawLength);
-                    WritePersistentWorldSection(
-                        rawPtr,
-                        sectorGroups.Records,
-                        group.StartIndex,
-                        recordCount,
-                        persistentWorldChunkLookup,
-                        persistentWorldChunkTable,
-                        persistentWorldItemHashLookup,
-                        persistentWorldItemHashTable);
+                    if (!WritePersistentWorldSection(
+                            rawPtr,
+                            sectorGroups.Records,
+                            group.StartIndex,
+                            recordCount,
+                            persistentWorldChunkLookup,
+                            persistentWorldChunkTable,
+                            persistentWorldItemHashLookup,
+                            persistentWorldItemHashTable,
+                            out error))
+                    {
+                        return false;
+                    }
 
                     uint sectorChecksum = Hash32(rawPtr, sectorRawLength);
                     long sectorByteOffset = fileCursor;
@@ -3711,31 +4200,22 @@ namespace Hecton8.SaveSystem
                         return false;
                     }
 
-                    if (persistentWorldItemHashTable.IsCreated)
-                        persistentWorldItemHashTable.Dispose();
-                    if (persistentWorldItemHashLookup.IsCreated)
-                        persistentWorldItemHashLookup.Dispose();
-                    if (persistentWorldChunkTable.IsCreated)
-                        persistentWorldChunkTable.Dispose();
-                    if (persistentWorldChunkLookup.IsCreated)
-                        persistentWorldChunkLookup.Dispose();
-
-                    persistentWorldItemHashTable = default;
-                    persistentWorldItemHashLookup = default;
-                    persistentWorldChunkTable = default;
-                    persistentWorldChunkLookup = default;
+                    DisposePersistentWorldSectionTables(
+                        ref persistentWorldChunkLookup,
+                        ref persistentWorldChunkTable,
+                        ref persistentWorldItemHashLookup,
+                        ref persistentWorldItemHashTable,
+                        ref persistentWorldSectionTableSentinelIds);
                 }
             }
             finally
             {
-                if (persistentWorldItemHashTable.IsCreated)
-                    persistentWorldItemHashTable.Dispose();
-                if (persistentWorldItemHashLookup.IsCreated)
-                    persistentWorldItemHashLookup.Dispose();
-                if (persistentWorldChunkTable.IsCreated)
-                    persistentWorldChunkTable.Dispose();
-                if (persistentWorldChunkLookup.IsCreated)
-                    persistentWorldChunkLookup.Dispose();
+                DisposePersistentWorldSectionTables(
+                    ref persistentWorldChunkLookup,
+                    ref persistentWorldChunkTable,
+                    ref persistentWorldItemHashLookup,
+                    ref persistentWorldItemHashTable,
+                    ref persistentWorldSectionTableSentinelIds);
                 sectorGroups.Dispose();
             }
 
@@ -3982,16 +4462,11 @@ namespace Hecton8.SaveSystem
 
             byte* filePtr = (byte*)mapping.View;
             directoryHeader = UnsafeUtility.ReadArrayElement<IndexedSectorDirectoryHeader>(filePtr + directoryOffset, 0);
-            int sectorCount = checked((int)directoryHeader.SectorCount);
+            if (!TryDecodeIndexedSectorCount(in directoryHeader, out int sectorCount, out error))
+                return false;
             if (directoryHeader.ChunkSizeMeters <= 0)
             {
                 error = "Indexed sector directory chunk size is invalid.";
-                return false;
-            }
-
-            if (sectorCount < 0 || sectorCount > IndexedSectorDirectorySlotCount)
-            {
-                error = $"Indexed sector directory count {sectorCount} exceeded slot capacity {IndexedSectorDirectorySlotCount}.";
                 return false;
             }
 
@@ -4044,6 +4519,23 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            return true;
+        }
+
+        private static bool TryDecodeIndexedSectorCount(
+            in IndexedSectorDirectoryHeader directoryHeader,
+            out int sectorCount,
+            out string error)
+        {
+            sectorCount = 0;
+            if (directoryHeader.SectorCount > IndexedSectorDirectorySlotCount)
+            {
+                error = $"Indexed sector directory count {directoryHeader.SectorCount} exceeded slot capacity {IndexedSectorDirectorySlotCount}.";
+                return false;
+            }
+
+            sectorCount = (int)directoryHeader.SectorCount;
+            error = string.Empty;
             return true;
         }
 
@@ -4266,20 +4758,27 @@ namespace Hecton8.SaveSystem
                    length <= totalFileSize - offset;
         }
 
-        private static int CountIndexedSectorRecords(in IndexedSectorGroupBuffer sectorGroups, int sectorCount)
+        private static bool TryCountIndexedSectorRecords(
+            in IndexedSectorGroupBuffer sectorGroups,
+            int sectorCount,
+            out int totalRecords)
         {
+            totalRecords = 0;
             if (!sectorGroups.Groups.IsCreated || sectorCount <= 0)
-                return 0;
+                return true;
 
             int safeCount = math.min(sectorCount, sectorGroups.Count);
-            int total = 0;
+            long total = 0L;
             for (int i = 0; i < safeCount; i++)
             {
                 IndexedSectorGroup group = sectorGroups.Groups[i];
-                total = checked(total + group.Count);
+                total += group.Count;
+                if (total > int.MaxValue)
+                    return false;
             }
 
-            return total;
+            totalRecords = (int)total;
+            return true;
         }
 
         private static void ReportIndexedSectorDirectoryCapacityExceeded(long sectorHash, int attemptedSectorCount)
@@ -4505,13 +5004,15 @@ namespace Hecton8.SaveSystem
             }
 
             bool hasChecksumChain = header.Version >= HeaderChecksumVersion;
+            if (!TryDecodeIndexedSectorCount(in directoryHeader, out int indexedSectorCount, out error))
+                return false;
             if (!TryComputeIndexedChecksumRootFromMappedDirectory(
                     (byte*)mapping.View,
                     directoryEntryCursor,
                     sectorEntrySize,
                     metadataEndOffset,
                     mapping.Length,
-                    checked((int)directoryHeader.SectorCount),
+                    indexedSectorCount,
                     unchecked((uint)metadataHash64),
                     hasChecksumChain,
                     out uint checksumRoot,
@@ -4638,7 +5139,8 @@ namespace Hecton8.SaveSystem
             if (!TryReadUtf16String(rawPtr, metadataRawLength, ref cursor, prefix.GameVersionByteLength, out string gameVersion, out error))
                 return false;
 
-            int saveDataLength = checked((int)prefix.SaveDataByteLength);
+            if (!TryDecodeSaveDataByteLength(in prefix, out int saveDataLength, out error))
+                return false;
             if (!IsByteRangeWithin(cursor, saveDataLength, metadataRawLength))
             {
                 error = "Indexed metadata save-data range is invalid.";
@@ -4654,7 +5156,8 @@ namespace Hecton8.SaveSystem
             }
 
             int payloadCursor = cursor + saveDataLength;
-            int packedQuestWordCount = DecodePackedQuestWordCount(in header);
+            if (!TryDecodePackedQuestWordCount(in header, out int packedQuestWordCount, out error))
+                return false;
             if (packedQuestWordCount > 0)
             {
                 if (!IsByteRangeWithin(payloadCursor, PackedQuestStateSectionHeaderSize, metadataRawLength))
@@ -4701,6 +5204,10 @@ namespace Hecton8.SaveSystem
                 packedQuestHeader = default;
                 packedQuestStateWords = Array.Empty<uint>();
             }
+            playerDialogueChoiceFlags = ResolveLoadedPlayerDialogueChoiceFlags(
+                header.Version,
+                playerDialogueChoiceFlags,
+                packedQuestStateWords);
 
             int ecosystemHeaderSize = ResolveEcosystemSectionHeaderSize(header.Version);
             if (!IsByteRangeWithin(payloadCursor, ecosystemHeaderSize, metadataRawLength))
@@ -4757,7 +5264,10 @@ namespace Hecton8.SaveSystem
                 voxelDeltaSnapshotBytes = voxelByteLength;
             }
 
-            NativeList<PersistentWorldDeltaRecord> aggregatedWorldDeltas = new NativeList<PersistentWorldDeltaRecord>(256, Allocator.Temp);
+            NativeList<PersistentWorldDeltaRecord> aggregatedWorldDeltas = CreateRegisteredTransientNativeList<PersistentWorldDeltaRecord>(
+                256,
+                IndexedSectorAggregatedWorldDeltasScratchLabel,
+                out int aggregatedWorldDeltasSentinelId);
             try
             {
                 if (sectorEntries != null)
@@ -4771,7 +5281,11 @@ namespace Hecton8.SaveSystem
                         if (!IsPersistentWorldPagedSectorWithinLoadWindow(entry.SectorHash, in prefix.PlayerPosition))
                             continue;
 
-                        using NativeArray<byte> sectorRaw = new NativeArray<byte>(entry.DecompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                        using RegisteredTransientNativeArray<byte> sectorRawOwner = CreateRegisteredTransientNativeArray<byte>(
+                            entry.DecompressedSize,
+                            NativeArrayOptions.UninitializedMemory,
+                            IndexedSectorReadRawScratchLabel);
+                        NativeArray<byte> sectorRaw = sectorRawOwner.Array;
                         if (!TryReadIndexedCompressedBlock(ref mapping, entry.ByteOffset, entry.CompressedSize, entry.DecompressedSize, sectorRaw, out _, out error))
                         {
                             string sectorError = error;
@@ -4839,8 +5353,10 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (aggregatedWorldDeltas.IsCreated)
-                    aggregatedWorldDeltas.Dispose();
+                DisposeRegisteredTransientNativeList(
+                    ref aggregatedWorldDeltas,
+                    ref aggregatedWorldDeltasSentinelId,
+                    IndexedSectorAggregatedWorldDeltasScratchLabel);
             }
 
             rawPayloadLength = metadataRawLength;
@@ -5137,7 +5653,11 @@ namespace Hecton8.SaveSystem
         {
             error = string.Empty;
 
-            using NativeArray<byte> sectorRaw = new NativeArray<byte>(entry.DecompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            using RegisteredTransientNativeArray<byte> sectorRawOwner = CreateRegisteredTransientNativeArray<byte>(
+                entry.DecompressedSize,
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorReadRawScratchLabel);
+            NativeArray<byte> sectorRaw = sectorRawOwner.Array;
             if (!TryReadIndexedCompressedBlock(ref mapping, entry.ByteOffset, entry.CompressedSize, entry.DecompressedSize, sectorRaw, out int decompressedLength, out error))
                 return false;
 
@@ -5224,7 +5744,10 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            NativeList<PersistentWorldDeltaRecord> backupRecords = new NativeList<PersistentWorldDeltaRecord>(16, Allocator.Temp);
+            NativeList<PersistentWorldDeltaRecord> backupRecords = CreateRegisteredTransientNativeList<PersistentWorldDeltaRecord>(
+                16,
+                IndexedSectorBackupAppendRecordsScratchLabel,
+                out int backupRecordsSentinelId);
             try
             {
                 if (!TryLoadIndexedPersistentWorldSectorFromBackup(backupPath, desiredSectorHash, backupRecords, out error))
@@ -5237,8 +5760,10 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (backupRecords.IsCreated)
-                    backupRecords.Dispose();
+                DisposeRegisteredTransientNativeList(
+                    ref backupRecords,
+                    ref backupRecordsSentinelId,
+                    IndexedSectorBackupAppendRecordsScratchLabel);
             }
         }
 
@@ -5263,30 +5788,17 @@ namespace Hecton8.SaveSystem
             }
 
             string tempOverridePath = Path.Combine(directory, sectorHash.ToString("X16") + ".reset.sectmp");
-            NativeArray<PersistentWorldDeltaRecord> emptySectorRecords =
-                new NativeArray<PersistentWorldDeltaRecord>(0, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            try
-            {
-                NativeMemorySentinel.RegisterNativeArray(
-                    emptySectorRecords,
-                    NativeMemoryOwner,
-                    PristineResetEmptySectorRecordsLabel,
-                    NativeAllocationLifetime.TransientArena);
+            using RegisteredTransientNativeArray<PersistentWorldDeltaRecord> emptySectorRecordsOwner =
+                CreateRegisteredTransientNativeArray<PersistentWorldDeltaRecord>(
+                    0,
+                    NativeArrayOptions.UninitializedMemory,
+                    PristineResetEmptySectorRecordsLabel);
+            NativeArray<PersistentWorldDeltaRecord> emptySectorRecords = emptySectorRecordsOwner.Array;
+            if (!TryWriteIndexedPersistentWorldSectorOverride(tempOverridePath, sectorHash, emptySectorRecords, chunkSizeMeters, out error))
+                return false;
 
-                if (!TryWriteIndexedPersistentWorldSectorOverride(tempOverridePath, sectorHash, emptySectorRecords, chunkSizeMeters, out error))
-                    return false;
-
-                if (TryCommitIndexedPersistentWorldSectorOverride(absoluteSavePath, tempOverridePath, out error))
-                    return true;
-            }
-            finally
-            {
-                if (emptySectorRecords.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(emptySectorRecords);
-                    emptySectorRecords.Dispose();
-                }
-            }
+            if (TryCommitIndexedPersistentWorldSectorOverride(absoluteSavePath, tempOverridePath, out error))
+                return true;
 
             _ = TryDeleteFileIfExists(tempOverridePath, out _);
 
@@ -5321,32 +5833,22 @@ namespace Hecton8.SaveSystem
             }
 
             string tempOverridePath = Path.Combine(directory, sectorHash.ToString("X16") + ".backup.sectmp");
-            // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[backup sector] - backup recovery source records - owner: SaveBinaryStorage
-            NativeList<PersistentWorldDeltaRecord> backupRecords = new NativeList<PersistentWorldDeltaRecord>(16, Allocator.Temp);
+            NativeList<PersistentWorldDeltaRecord> backupRecords = CreateRegisteredTransientNativeList<PersistentWorldDeltaRecord>(
+                16,
+                BackupRecoverySourceRecordsLabel,
+                out int backupRecordsSentinelId);
             NativeArray<PersistentWorldDeltaRecord> sectorRecords = default;
-            bool backupRecordsRegistered = false;
             try
             {
                 if (!TryLoadIndexedPersistentWorldSectorFromBackup(backupPath, sectorHash, backupRecords, out error))
                     return false;
 
-                NativeMemorySentinel.RegisterNativeList(
-                    backupRecords,
-                    NativeMemoryOwner,
-                    BackupRecoverySourceRecordsLabel,
-                    NativeAllocationLifetime.TransientArena);
-                backupRecordsRegistered = true;
-
-                // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[backup sector] - backup recovery commit payload - owner: SaveBinaryStorage
-                sectorRecords = new NativeArray<PersistentWorldDeltaRecord>(
-                    backupRecords.Length,
-                    Allocator.Temp,
-                    NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    sectorRecords,
-                    NativeMemoryOwner,
-                    BackupRecoverySectorRecordsLabel,
-                    NativeAllocationLifetime.TransientArena);
+                using RegisteredTransientNativeArray<PersistentWorldDeltaRecord> sectorRecordsOwner =
+                    CreateRegisteredTransientNativeArray<PersistentWorldDeltaRecord>(
+                        backupRecords.Length,
+                        NativeArrayOptions.UninitializedMemory,
+                        BackupRecoverySectorRecordsLabel);
+                sectorRecords = sectorRecordsOwner.Array;
 
                 for (int i = 0; i < backupRecords.Length; i++)
                     sectorRecords[i] = backupRecords[i];
@@ -5365,18 +5867,10 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (sectorRecords.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(sectorRecords);
-                    sectorRecords.Dispose();
-                }
-
-                if (backupRecords.IsCreated)
-                {
-                    if (backupRecordsRegistered)
-                        NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, BackupRecoverySourceRecordsLabel);
-                    backupRecords.Dispose();
-                }
+                DisposeRegisteredTransientNativeList(
+                    ref backupRecords,
+                    ref backupRecordsSentinelId,
+                    BackupRecoverySourceRecordsLabel);
             }
 
             _ = TryDeleteFileIfExists(tempOverridePath, out _);
@@ -5419,6 +5913,7 @@ namespace Hecton8.SaveSystem
                     out NativeList<int3> chunkTable,
                     out NativeParallelHashMap<ulong, ushort> itemHashLookup,
                     out NativeList<ulong> itemHashTable,
+                    out PersistentWorldSectionTableSentinelIds tableSentinelIds,
                     out error))
             {
                 return false;
@@ -5426,16 +5921,57 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                int rawSectionLength = ComputePersistentWorldSectionLength(sectorRecords.Length, chunkTable.Length, itemHashTable.Length);
-                int blockCount = ResolveProtectedLz4BlockCount(rawSectionLength);
-                int compressedCapacity = rawSectionLength + (rawSectionLength / 255) + 16 + (blockCount * ProtectedCompressedBlockHeaderBytes) + IndexedSectorBlockHeaderSize + 32;
-                int fileCapacity = UnsafeUtility.SizeOf<SectorOverrideFileHeader>() + compressedCapacity;
+                if (!TryComputePersistentWorldSectionLength(
+                        sectorRecords.Length,
+                        chunkTable.Length,
+                        itemHashTable.Length,
+                        CurrentVersion,
+                        out int rawSectionLength))
+                {
+                    error = "Sector override persistent-world section exceeds supported bounds.";
+                    return false;
+                }
 
-                using NativeArray<byte> rawSectionBytes = new NativeArray<byte>(rawSectionLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                using NativeArray<byte> fileBytes = new NativeArray<byte>(fileCapacity, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                int blockCount = ResolveProtectedLz4BlockCount(rawSectionLength);
+                long compressedCapacityLong =
+                    (long)rawSectionLength +
+                    (rawSectionLength / 255) +
+                    16L +
+                    ((long)blockCount * ProtectedCompressedBlockHeaderBytes) +
+                    IndexedSectorBlockHeaderSize +
+                    32L;
+                long fileCapacityLong = UnsafeUtility.SizeOf<SectorOverrideFileHeader>() + compressedCapacityLong;
+                if (compressedCapacityLong <= 0L || fileCapacityLong > int.MaxValue)
+                {
+                    error = "Sector override compressed buffer exceeds supported bounds.";
+                    return false;
+                }
+
+                int fileCapacity = (int)fileCapacityLong;
+
+                using RegisteredTransientNativeArray<byte> rawSectionBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                    rawSectionLength,
+                    NativeArrayOptions.UninitializedMemory,
+                    IndexedSectorOverrideRawSectionScratchLabel);
+                using RegisteredTransientNativeArray<byte> fileBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                    fileCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    IndexedSectorOverrideFileScratchLabel);
+                NativeArray<byte> rawSectionBytes = rawSectionBytesOwner.Array;
+                NativeArray<byte> fileBytes = fileBytesOwner.Array;
                 byte* rawSectionPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawSectionBytes);
                 byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
-                WritePersistentWorldSection(rawSectionPtr, sectorRecordsReadOnly, chunkLookup, chunkTable, itemHashLookup, itemHashTable);
+                if (!WritePersistentWorldSection(
+                        rawSectionPtr,
+                        sectorRecordsReadOnly,
+                        chunkLookup,
+                        chunkTable,
+                        itemHashLookup,
+                        itemHashTable,
+                        out error))
+                {
+                    return false;
+                }
                 uint rawSectionChecksum = Hash32(rawSectionPtr, rawSectionLength);
 
                 int fileCursor = UnsafeUtility.SizeOf<SectorOverrideFileHeader>();
@@ -5466,14 +6002,12 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (chunkLookup.IsCreated)
-                    chunkLookup.Dispose();
-                if (chunkTable.IsCreated)
-                    chunkTable.Dispose();
-                if (itemHashLookup.IsCreated)
-                    itemHashLookup.Dispose();
-                if (itemHashTable.IsCreated)
-                    itemHashTable.Dispose();
+                DisposePersistentWorldSectionTables(
+                    ref chunkLookup,
+                    ref chunkTable,
+                    ref itemHashLookup,
+                    ref itemHashTable,
+                    ref tableSentinelIds);
             }
         }
 
@@ -5516,7 +6050,11 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                using NativeArray<byte> rawBytes = new NativeArray<byte>(overrideHeader.DecompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                using RegisteredTransientNativeArray<byte> rawBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                    overrideHeader.DecompressedSize,
+                    NativeArrayOptions.UninitializedMemory,
+                    IndexedSectorReadRawScratchLabel);
+                NativeArray<byte> rawBytes = rawBytesOwner.Array;
                 if (!TryReadIndexedCompressedBlock(
                         ref mapping,
                         overrideHeaderSize,
@@ -5624,10 +6162,28 @@ namespace Hecton8.SaveSystem
                 }
             }
 
-            int rawByteLength = checked(recordCount * UnsafeUtility.SizeOf<SectorCompactEntityStateRecord16>());
+            long rawByteLengthLong = (long)recordCount * UnsafeUtility.SizeOf<SectorCompactEntityStateRecord16>();
+            if (rawByteLengthLong <= 0L || rawByteLengthLong > int.MaxValue)
+            {
+                error = "Sector entity-state raw buffer exceeds supported bounds.";
+                return false;
+            }
+
+            int rawByteLength = (int)rawByteLengthLong;
             int blockCount = math.max(1, (rawByteLength + BlockSizeBytes - 1) / BlockSizeBytes);
-            int compressedCapacity = rawByteLength + (rawByteLength / 255) + 16 + (blockCount * StandardCompressedBlockHeaderBytes);
-            int fileCapacity = UnsafeUtility.SizeOf<SectorEntityStateFileHeader>() + compressedCapacity;
+            long compressedCapacityLong =
+                (long)rawByteLength +
+                (rawByteLength / 255) +
+                16L +
+                ((long)blockCount * StandardCompressedBlockHeaderBytes);
+            long fileCapacityLong = UnsafeUtility.SizeOf<SectorEntityStateFileHeader>() + compressedCapacityLong;
+            if (compressedCapacityLong <= 0L || fileCapacityLong > int.MaxValue)
+            {
+                error = "Sector entity-state compressed buffer exceeds supported bounds.";
+                return false;
+            }
+
+            int fileCapacity = (int)fileCapacityLong;
 
             try
             {
@@ -5857,7 +6413,11 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                using NativeArray<byte> rawBytes = new NativeArray<byte>(header.DecompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                using RegisteredTransientNativeArray<byte> rawBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                    header.DecompressedSize,
+                    NativeArrayOptions.UninitializedMemory,
+                    IndexedSectorReadRawScratchLabel);
+                NativeArray<byte> rawBytes = rawBytesOwner.Array;
                 byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBytes);
                 int decompressedLength = Lz4BlockDecompress(
                     (byte*)mapping.View + headerSize,
@@ -6107,10 +6667,18 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            using NativeArray<byte> rawBlockBytes = new NativeArray<byte>(ModPayloadSubBlockSizeBytes, Allocator.Temp, NativeArrayOptions.ClearMemory);
+            using RegisteredTransientNativeArray<byte> rawBlockBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                ModPayloadSubBlockSizeBytes,
+                NativeArrayOptions.ClearMemory,
+                IndexedSectorModPayloadRawBlockScratchLabel);
+            NativeArray<byte> rawBlockBytes = rawBlockBytesOwner.Array;
             int compressedCapacity = ModPayloadSubBlockSizeBytes + (ModPayloadSubBlockSizeBytes / 255) + 16 + ProtectedCompressedBlockHeaderBytes + IndexedSectorBlockHeaderSize + 32;
             int fileCapacity = UnsafeUtility.SizeOf<SectorOverrideFileHeader>() + compressedCapacity;
-            using NativeArray<byte> fileBytes = new NativeArray<byte>(fileCapacity, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            using RegisteredTransientNativeArray<byte> fileBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                fileCapacity,
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorOverrideFileScratchLabel);
+            NativeArray<byte> fileBytes = fileBytesOwner.Array;
 
             byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBlockBytes);
             byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
@@ -6211,8 +6779,14 @@ namespace Hecton8.SaveSystem
 
                 byte* filePtr = (byte*)mapping.View;
                 int sectorEntrySize = ResolveIndexedSectorEntrySize(header.Version);
+                if (!TryDecodeIndexedSectorCount(in directoryHeader, out int indexedSectorCount, out error))
+                    return false;
                 int populatedCount = 0;
-                using NativeArray<byte> rawBlockBytes = new NativeArray<byte>(ModPayloadSubBlockSizeBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                using RegisteredTransientNativeArray<byte> rawBlockBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                    ModPayloadSubBlockSizeBytes,
+                    NativeArrayOptions.UninitializedMemory,
+                    IndexedSectorModPayloadRawBlockScratchLabel);
+                NativeArray<byte> rawBlockBytes = rawBlockBytesOwner.Array;
                 for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
                 {
                     SectorEntry entry = ReadIndexedSectorEntry(filePtr + entryCursor, sectorEntrySize);
@@ -6248,7 +6822,7 @@ namespace Hecton8.SaveSystem
                         payloadHeader.PayloadChecksum));
                 }
 
-                if (populatedCount != (int)directoryHeader.SectorCount)
+                if (populatedCount != indexedSectorCount)
                 {
                     error = "Indexed sector directory count mismatch.";
                     return false;
@@ -6298,9 +6872,15 @@ namespace Hecton8.SaveSystem
 
                 byte* filePtr = (byte*)mapping.View;
                 int sectorEntrySize = ResolveIndexedSectorEntrySize(header.Version);
+                if (!TryDecodeIndexedSectorCount(in directoryHeader, out int indexedSectorCount, out error))
+                    return false;
                 int populatedCount = 0;
                 int skippedModSectorCount = 0;
-                using NativeArray<byte> rawBlockBytes = new NativeArray<byte>(ModPayloadSubBlockSizeBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                using RegisteredTransientNativeArray<byte> rawBlockBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                    ModPayloadSubBlockSizeBytes,
+                    NativeArrayOptions.UninitializedMemory,
+                    IndexedSectorModPayloadRawBlockScratchLabel);
+                NativeArray<byte> rawBlockBytes = rawBlockBytesOwner.Array;
                 for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
                 {
                     SectorEntry entry = ReadIndexedSectorEntry(filePtr + entryCursor, sectorEntrySize);
@@ -6354,7 +6934,7 @@ namespace Hecton8.SaveSystem
                         results.Add(sectorInfo);
                 }
 
-                if (populatedCount != (int)directoryHeader.SectorCount)
+                if (populatedCount != indexedSectorCount)
                 {
                     error = "Indexed sector directory count mismatch.";
                     return false;
@@ -6403,7 +6983,11 @@ namespace Hecton8.SaveSystem
                 }
 
                 SectorEntry entry = sectorEntries[sectorEntryIndex];
-                using NativeArray<byte> rawBlockBytes = new NativeArray<byte>(ModPayloadSubBlockSizeBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                using RegisteredTransientNativeArray<byte> rawBlockBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                    ModPayloadSubBlockSizeBytes,
+                    NativeArrayOptions.UninitializedMemory,
+                    IndexedSectorModPayloadRawBlockScratchLabel);
+                NativeArray<byte> rawBlockBytes = rawBlockBytesOwner.Array;
                 if (!TryReadModPayloadHeaderFromEntry(ref mapping, in entry, rawBlockBytes, out ModPayloadSubSectorHeader payloadHeader, out error))
                     return false;
 
@@ -6575,11 +7159,8 @@ namespace Hecton8.SaveSystem
 
             byte* filePtr = (byte*)mapping.View;
             directoryHeader = UnsafeUtility.ReadArrayElement<IndexedSectorDirectoryHeader>(filePtr + directoryOffset, 0);
-            if (directoryHeader.SectorCount > IndexedSectorDirectorySlotCount)
-            {
-                error = $"Indexed sector directory count {directoryHeader.SectorCount} exceeded slot capacity {IndexedSectorDirectorySlotCount}.";
+            if (!TryDecodeIndexedSectorCount(in directoryHeader, out _, out error))
                 return false;
-            }
 
             if (directoryHeader.ChunkSizeMeters <= 0)
             {
@@ -6649,6 +7230,8 @@ namespace Hecton8.SaveSystem
                 }
 
                 long compactLengthLong = metadataEndOffset;
+                if (!TryDecodeIndexedSectorCount(in directoryHeader, out int indexedSectorCount, out error))
+                    return false;
                 int populatedSectorCount = 0;
                 for (int i = 0; i < sectorEntries.Length; i++)
                 {
@@ -6665,7 +7248,7 @@ namespace Hecton8.SaveSystem
                     }
                 }
 
-                if (populatedSectorCount != (int)directoryHeader.SectorCount)
+                if (populatedSectorCount != indexedSectorCount)
                 {
                     error = "Indexed sector compaction directory count mismatch.";
                     return false;
@@ -6689,6 +7272,7 @@ namespace Hecton8.SaveSystem
 
                 compactLength = (int)compactLengthLong;
                 compactBytes = new NativeArray<byte>(compactLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                RegisterPersistentScratchNativeArray(compactBytes, IndexedSectorCompactionBufferLabel);
                 byte* compactPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compactBytes);
                 if (!UnsafeMemoryCopyGuard.SafeCopy(compactPtr, compactLength, mappedFilePtr, metadataEndOffset))
                 {
@@ -6739,7 +7323,7 @@ namespace Hecton8.SaveSystem
             {
                 AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
                 if (!writePrepared && compactBytes.IsCreated)
-                    compactBytes.Dispose();
+                    DisposeRegisteredPersistentScratchNativeArray(ref compactBytes, IndexedSectorCompactionBufferLabel);
             }
 
             try
@@ -6750,7 +7334,7 @@ namespace Hecton8.SaveSystem
             finally
             {
                 if (compactBytes.IsCreated)
-                    compactBytes.Dispose();
+                    DisposeRegisteredPersistentScratchNativeArray(ref compactBytes, IndexedSectorCompactionBufferLabel);
             }
         }
 
@@ -6811,7 +7395,9 @@ namespace Hecton8.SaveSystem
             int overrideCompressedSize = 0;
             int overrideDecompressedSize = 0;
             uint overrideChecksum = 0u;
+            RegisteredTransientNativeArray<byte> overrideBlockBytesOwner = default;
             NativeArray<byte> overrideBlockBytes = default;
+            bool overrideBlockPrepared = false;
             try
             {
                 int overrideHeaderSize = UnsafeUtility.SizeOf<SectorOverrideFileHeader>();
@@ -6835,7 +7421,11 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                overrideBlockBytes = new NativeArray<byte>(overrideCompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                overrideBlockBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                    overrideCompressedSize,
+                    NativeArrayOptions.UninitializedMemory,
+                    IndexedSectorOverrideCompressedBlockScratchLabel);
+                overrideBlockBytes = overrideBlockBytesOwner.Array;
                 byte* destinationPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(overrideBlockBytes);
                 if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, overrideBlockBytes.Length, (byte*)overrideMapping.View + overrideHeaderSize, overrideCompressedSize))
                 {
@@ -6845,10 +7435,14 @@ namespace Hecton8.SaveSystem
 
                 if (!TryVerifySectorOverrideCompressedBlock(overrideBlockBytes, overrideCompressedSize, overrideDecompressedSize, overrideChecksum, out error))
                     return false;
+
+                overrideBlockPrepared = true;
             }
             finally
             {
                 AsyncWriteManager.CloseReadOnlyMapping(ref overrideMapping);
+                if (!overrideBlockPrepared)
+                    overrideBlockBytesOwner.Dispose();
             }
 
             if (!TryReadValidatedHeader(absoluteSavePath, out AsyncWriteManager.ReadOnlyMapping saveMapping, out SaveFileHeader saveHeader, out _, out error))
@@ -6866,9 +7460,14 @@ namespace Hecton8.SaveSystem
                     return false;
 
                 int headerSizeBytes = ResolveExpectedHeaderSize(saveHeader.Version);
-                int directoryBytes = saveHeader.PlayerOffset > headerSizeBytes
-                    ? checked((int)(saveHeader.PlayerOffset - headerSizeBytes))
-                    : 0;
+                long directoryBytesLong = (long)saveHeader.PlayerOffset - headerSizeBytes;
+                if (directoryBytesLong < 0L || directoryBytesLong > int.MaxValue)
+                {
+                    error = "Indexed sector directory length exceeds the supported range.";
+                    return false;
+                }
+
+                int directoryBytes = (int)directoryBytesLong;
                 byte* directoryPtr = directoryBytes > 0
                     ? (byte*)saveMapping.View + headerSizeBytes
                     : null;
@@ -6916,6 +7515,7 @@ namespace Hecton8.SaveSystem
                 AsyncWriteManager.InvalidateCachedReadWindows(absoluteSavePath);
                 // COLD ALLOC: NativeArray<byte>[newLength] - portable indexed-sector commit buffer - owner: SaveBinaryStorage
                 commitBytes = new NativeArray<byte>((int)newLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                RegisterPersistentScratchNativeArray(commitBytes, IndexedSectorCommitBufferLabel);
                 byte* mappedFilePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(commitBytes);
                 UnsafeUtility.MemClear(mappedFilePtr, newLength);
                 int bytesToCopy = (int)(originalSaveLength < newLength ? originalSaveLength : newLength);
@@ -6955,7 +7555,14 @@ namespace Hecton8.SaveSystem
 
                 if (commitTarget.InsertedNewSlot != 0 && sectorCountDelta != 0)
                 {
-                    directoryHeader.SectorCount = checked((uint)(directoryHeader.SectorCount + sectorCountDelta));
+                    long updatedSectorCount = (long)directoryHeader.SectorCount + sectorCountDelta;
+                    if (updatedSectorCount < 0L || updatedSectorCount > IndexedSectorDirectorySlotCount)
+                    {
+                        error = $"Indexed sector directory count {updatedSectorCount} exceeded slot capacity {IndexedSectorDirectorySlotCount}.";
+                        return false;
+                    }
+
+                    directoryHeader.SectorCount = (uint)updatedSectorCount;
                     UnsafeUtility.CopyStructureToPtr(ref directoryHeader, mappedFilePtr + headerSizeBytes);
                 }
 
@@ -6980,9 +7587,8 @@ namespace Hecton8.SaveSystem
             finally
             {
                 if (commitBytes.IsCreated)
-                    commitBytes.Dispose();
-                if (overrideBlockBytes.IsCreated)
-                    overrideBlockBytes.Dispose();
+                    DisposeRegisteredPersistentScratchNativeArray(ref commitBytes, IndexedSectorCommitBufferLabel);
+                overrideBlockBytesOwner.Dispose();
             }
 
             if (!TryDeleteFileIfExists(sectorOverridePath, out error))
@@ -7095,7 +7701,8 @@ namespace Hecton8.SaveSystem
             }
 
             payloadCursor += prefix.GameVersionByteLength;
-            int saveDataLength = checked((int)prefix.SaveDataByteLength);
+            if (!TryDecodeSaveDataByteLength(in prefix, out int saveDataLength, out error))
+                return false;
             if (!IsByteRangeWithin(payloadCursor, saveDataLength, metadataRawLength))
             {
                 error = "Indexed metadata save-data range is invalid.";
@@ -7103,7 +7710,8 @@ namespace Hecton8.SaveSystem
             }
 
             payloadCursor += saveDataLength;
-            int packedQuestWordCount = DecodePackedQuestWordCount(in header);
+            if (!TryDecodePackedQuestWordCount(in header, out int packedQuestWordCount, out error))
+                return false;
             if (packedQuestWordCount > 0)
             {
                 if (!IsByteRangeWithin(payloadCursor, PackedQuestStateSectionHeaderSize, metadataRawLength))
@@ -7241,7 +7849,8 @@ namespace Hecton8.SaveSystem
             if (!TryReadUtf16String(rawPtr, rawPayloadLength, ref cursor, prefix.GameVersionByteLength, out string gameVersion, out error))
                 return false;
 
-            int saveDataLength = checked((int)prefix.SaveDataByteLength);
+            if (!TryDecodeSaveDataByteLength(in prefix, out int saveDataLength, out error))
+                return false;
             if (!IsByteRangeWithin(cursor, saveDataLength, rawPayloadLength))
             {
                 error = "Save payload byte range is invalid.";
@@ -7268,6 +7877,10 @@ namespace Hecton8.SaveSystem
             {
                 return false;
             }
+            playerDialogueChoiceFlags = ResolveLoadedPlayerDialogueChoiceFlags(
+                header.Version,
+                playerDialogueChoiceFlags,
+                packedQuestStateWords);
 
             if (!TryReadPersistentWorldDeltas(
                     rawPtr,
@@ -7614,7 +8227,11 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            using NativeArray<byte> rawBlock = new NativeArray<byte>(expectedDecompressedLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            using RegisteredTransientNativeArray<byte> rawBlockOwner = CreateRegisteredTransientNativeArray<byte>(
+                expectedDecompressedLength,
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorOverrideVerifyRawBlockScratchLabel);
+            NativeArray<byte> rawBlock = rawBlockOwner.Array;
             byte* compressedPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(compressedBlock);
             byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBlock);
             IndexedSectorBlockHeader blockHeader = UnsafeUtility.ReadArrayElement<IndexedSectorBlockHeader>(compressedPtr, 0);
@@ -7964,11 +8581,25 @@ namespace Hecton8.SaveSystem
         {
             int sourceLength = persistentWorldDeltas.IsCreated ? persistentWorldDeltas.Length : 0;
             int capacity = math.max(4, sourceLength);
-            IndexedSectorGroupBuffer buffer = new IndexedSectorGroupBuffer
+            IndexedSectorGroupBuffer buffer = default;
+            try
             {
-                Groups = new NativeList<IndexedSectorGroup>(math.min(IndexedSectorDirectorySlotCount, capacity), Allocator.Temp),
-                Records = new NativeList<PersistentWorldDeltaRecord>(capacity, Allocator.Temp)
-            };
+                buffer.Groups = CreateRegisteredTransientNativeList<IndexedSectorGroup>(
+                    math.min(IndexedSectorDirectorySlotCount, capacity),
+                    IndexedSectorGroupListScratchLabel,
+                    out int groupsSentinelId);
+                buffer.GroupsSentinelId = groupsSentinelId;
+                buffer.Records = CreateRegisteredTransientNativeList<PersistentWorldDeltaRecord>(
+                    capacity,
+                    IndexedSectorGroupRecordListScratchLabel,
+                    out int recordsSentinelId);
+                buffer.RecordsSentinelId = recordsSentinelId;
+            }
+            catch
+            {
+                buffer.Dispose();
+                throw;
+            }
 
             if (sourceLength <= 0)
                 return buffer;
@@ -7979,14 +8610,16 @@ namespace Hecton8.SaveSystem
                 return buffer;
             }
 
-            NativeArray<short> slotToGroupIndex = new NativeArray<short>(
+            RegisteredTransientNativeArray<short> slotToGroupIndexOwner = CreateRegisteredTransientNativeArray<short>(
                 IndexedSectorDirectorySlotCount,
-                Allocator.Temp,
-                NativeArrayOptions.UninitializedMemory);
-            NativeArray<short> recordGroupIndex = new NativeArray<short>(
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorGroupSlotScratchLabel);
+            RegisteredTransientNativeArray<short> recordGroupIndexOwner = CreateRegisteredTransientNativeArray<short>(
                 sourceLength,
-                Allocator.Temp,
-                NativeArrayOptions.UninitializedMemory);
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorRecordGroupScratchLabel);
+            NativeArray<short> slotToGroupIndex = slotToGroupIndexOwner.Array;
+            NativeArray<short> recordGroupIndex = recordGroupIndexOwner.Array;
 
             try
             {
@@ -8031,7 +8664,7 @@ namespace Hecton8.SaveSystem
                     group.StartIndex = recordOffset;
                     group.WriteCount = 0;
                     buffer.Groups[i] = group;
-                    recordOffset = checked(recordOffset + group.Count);
+                    recordOffset += group.Count;
                 }
 
                 buffer.Records.ResizeUninitialized(recordOffset);
@@ -8051,10 +8684,8 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (slotToGroupIndex.IsCreated)
-                    slotToGroupIndex.Dispose();
-                if (recordGroupIndex.IsCreated)
-                    recordGroupIndex.Dispose();
+                recordGroupIndexOwner.Dispose();
+                slotToGroupIndexOwner.Dispose();
             }
 
             return buffer;
@@ -8423,19 +9054,20 @@ namespace Hecton8.SaveSystem
             if (!TryValidateHeader(header, out error))
                 return false;
 
-            int compressedPayloadLength = checked((int)fileLength - headerSizeBytes);
-            if (compressedPayloadLength <= 0)
+            long compressedPayloadLengthLong = fileLength - headerSizeBytes;
+            if (compressedPayloadLengthLong <= 0L)
             {
                 error = "Save payload is missing.";
                 return false;
             }
 
-            if (compressedPayloadLength > MaxCompressedPayloadBytes || compressedPayloadLength > compressedBuffer.Length)
+            if (compressedPayloadLengthLong > MaxCompressedPayloadBytes || compressedPayloadLengthLong > compressedBuffer.Length)
             {
                 error = "Compressed save payload exceeds the supported decoder budget.";
                 return false;
             }
 
+            int compressedPayloadLength = (int)compressedPayloadLengthLong;
             if (!AsyncWriteManager.TryCopyFileRangeToNativeArray(absolutePath, headerSizeBytes, compressedBuffer, compressedPayloadLength, out error))
                 return false;
 
@@ -8496,8 +9128,14 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                header.DeltaOffset = checked((uint)((int)header.DeltaOffset + payloadByteShift));
-                header.EntityOffset = checked((uint)((int)header.EntityOffset + payloadByteShift));
+                if (!TryShiftPayloadOffset(header.DeltaOffset, payloadByteShift, out uint shiftedDeltaOffset, out error) ||
+                    !TryShiftPayloadOffset(header.EntityOffset, payloadByteShift, out uint shiftedEntityOffset, out error))
+                {
+                    return false;
+                }
+
+                header.DeltaOffset = shiftedDeltaOffset;
+                header.EntityOffset = shiftedEntityOffset;
                 header.HashPayload64 = Hash64(rawPtr, rawPayloadLength);
             }
             else if (!SaveDataMigration_AupV8.TryReadPayloadPrefix(rawPtr, rawPayloadLength, header.Version, out prefix, out error))
@@ -8512,16 +9150,25 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            int playerPayloadLength = metadataBytes + checked((int)prefix.SaveDataByteLength);
+            if (!TryDecodeSaveDataByteLength(in prefix, out int saveDataLength, out error))
+                return false;
+
+            long playerPayloadLengthLong = (long)metadataBytes + saveDataLength;
+            if (playerPayloadLengthLong > int.MaxValue)
+            {
+                error = "Serialized save data exceeds the supported decoder range.";
+                return false;
+            }
+
+            int playerPayloadLength = (int)playerPayloadLengthLong;
             if (playerPayloadLength > rawPayloadLength)
             {
                 error = "Serialized save data exceeds the decompressed payload length.";
                 return false;
             }
 
-            int payloadBaseOffset = ResolvePayloadBaseOffset(in header);
-            int deltaSectionOffset = checked((int)header.DeltaOffset) - payloadBaseOffset;
-            int entitySectionOffset = checked((int)header.EntityOffset) - payloadBaseOffset;
+            if (!TryResolvePayloadOffsets(in header, out _, out int deltaSectionOffset, out int entitySectionOffset, out error))
+                return false;
             if (deltaSectionOffset < playerPayloadLength || deltaSectionOffset > rawPayloadLength)
             {
                 error = "Packed quest-state offset exceeds the decompressed payload bounds.";
@@ -8550,10 +9197,10 @@ namespace Hecton8.SaveSystem
             packedQuestStateWords = null;
             error = string.Empty;
 
-            int packedQuestWordCount = DecodePackedQuestWordCount(in header);
-            int payloadBaseOffset = ResolvePayloadBaseOffset(in header);
-            int packedQuestSectionOffset = checked((int)header.DeltaOffset) - payloadBaseOffset;
-            int entitySectionOffset = checked((int)header.EntityOffset) - payloadBaseOffset;
+            if (!TryDecodePackedQuestWordCount(in header, out int packedQuestWordCount, out error))
+                return false;
+            if (!TryResolvePayloadOffsets(in header, out _, out int packedQuestSectionOffset, out int entitySectionOffset, out error))
+                return false;
             if (packedQuestWordCount <= 0 || packedQuestSectionOffset == entitySectionOffset)
             {
                 if (packedQuestSectionOffset < playerPayloadLength || packedQuestSectionOffset > rawPayloadLength)
@@ -8624,7 +9271,12 @@ namespace Hecton8.SaveSystem
             persistentWorldDeltas = null;
             error = string.Empty;
 
-            int entityCount = checked((int)header.EntityCount);
+            if (!TryConvertSectionCount(header.EntityCount, out int entityCount))
+            {
+                error = "Entity count exceeds supported bounds.";
+                return false;
+            }
+
             if (entityCount <= 0)
                 return true;
 
@@ -8632,7 +9284,8 @@ namespace Hecton8.SaveSystem
                 return TryReadPersistentWorldDeltasV5(rawPtr, rawPayloadLength, header, out persistentWorldDeltas, out error);
 
             int entityRecordSize = UnsafeUtility.SizeOf<PersistentWorldDeltaRecordLegacy64>();
-            int entitySectionOffset = checked((int)header.EntityOffset) - ResolvePayloadBaseOffset(in header);
+            if (!TryResolvePayloadOffsets(in header, out _, out _, out int entitySectionOffset, out error))
+                return false;
 
             long entityBytesLong = (long)entityCount * entityRecordSize;
             if (entityBytesLong > int.MaxValue)
@@ -8760,15 +9413,45 @@ namespace Hecton8.SaveSystem
             out NativeList<int3> chunkTable,
             out NativeParallelHashMap<ulong, ushort> itemHashLookup,
             out NativeList<ulong> itemHashTable,
+            out PersistentWorldSectionTableSentinelIds sentinelIds,
             out string error)
         {
             int recordCount = persistentWorldDeltas.IsCreated ? persistentWorldDeltas.Length : 0;
             int capacity = math.max(recordCount, 1);
-            chunkLookup = new NativeParallelHashMap<int3, ushort>(capacity, Allocator.Temp);
-            chunkTable = new NativeList<int3>(capacity, Allocator.Temp);
-            itemHashLookup = new NativeParallelHashMap<ulong, ushort>(capacity, Allocator.Temp);
-            itemHashTable = new NativeList<ulong>(capacity, Allocator.Temp);
+            chunkLookup = default;
+            chunkTable = default;
+            itemHashLookup = default;
+            itemHashTable = default;
+            sentinelIds = default;
             error = string.Empty;
+            try
+            {
+                chunkLookup = CreateRegisteredTransientNativeParallelHashMap<int3, ushort>(
+                    capacity,
+                    PersistentWorldSectionChunkLookupScratchLabel,
+                    out int chunkLookupSentinelId);
+                sentinelIds.ChunkLookup = chunkLookupSentinelId;
+                chunkTable = CreateRegisteredTransientNativeList<int3>(
+                    capacity,
+                    PersistentWorldSectionChunkTableScratchLabel,
+                    out int chunkTableSentinelId);
+                sentinelIds.ChunkTable = chunkTableSentinelId;
+                itemHashLookup = CreateRegisteredTransientNativeParallelHashMap<ulong, ushort>(
+                    capacity,
+                    PersistentWorldSectionItemHashLookupScratchLabel,
+                    out int itemHashLookupSentinelId);
+                sentinelIds.ItemHashLookup = itemHashLookupSentinelId;
+                itemHashTable = CreateRegisteredTransientNativeList<ulong>(
+                    capacity,
+                    PersistentWorldSectionItemHashTableScratchLabel,
+                    out int itemHashTableSentinelId);
+                sentinelIds.ItemHashTable = itemHashTableSentinelId;
+            }
+            catch
+            {
+                DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable, ref sentinelIds);
+                throw;
+            }
 
             for (int i = 0; i < recordCount; i++)
             {
@@ -8776,7 +9459,7 @@ namespace Hecton8.SaveSystem
                 if (!PersistentWorldDeltaRecord.IsValid(in deltaRecord))
                 {
                     error = "Persistent-world delta table contains an invalid record.";
-                    DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable);
+                    DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable, ref sentinelIds);
                     return false;
                 }
 
@@ -8785,7 +9468,7 @@ namespace Hecton8.SaveSystem
                     if (chunkTable.Length >= ushort.MaxValue)
                     {
                         error = "Persistent-world delta chunk table exceeded 65535 unique chunks.";
-                        DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable);
+                        DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable, ref sentinelIds);
                         return false;
                     }
 
@@ -8802,7 +9485,7 @@ namespace Hecton8.SaveSystem
                     if (itemHashTable.Length >= ushort.MaxValue)
                     {
                         error = "Persistent-world delta item table exceeded 65535 unique item hashes.";
-                        DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable);
+                        DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable, ref sentinelIds);
                         return false;
                     }
 
@@ -8823,12 +9506,14 @@ namespace Hecton8.SaveSystem
             out NativeList<int3> chunkTable,
             out NativeParallelHashMap<ulong, ushort> itemHashLookup,
             out NativeList<ulong> itemHashTable,
+            out PersistentWorldSectionTableSentinelIds sentinelIds,
             out string error)
         {
             chunkLookup = default;
             chunkTable = default;
             itemHashLookup = default;
             itemHashTable = default;
+            sentinelIds = default;
             error = string.Empty;
 
             if (!persistentWorldDeltas.IsCreated ||
@@ -8841,10 +9526,34 @@ namespace Hecton8.SaveSystem
             }
 
             int capacity = math.max(recordCount, 1);
-            chunkLookup = new NativeParallelHashMap<int3, ushort>(capacity, Allocator.Temp);
-            chunkTable = new NativeList<int3>(capacity, Allocator.Temp);
-            itemHashLookup = new NativeParallelHashMap<ulong, ushort>(capacity, Allocator.Temp);
-            itemHashTable = new NativeList<ulong>(capacity, Allocator.Temp);
+            try
+            {
+                chunkLookup = CreateRegisteredTransientNativeParallelHashMap<int3, ushort>(
+                    capacity,
+                    PersistentWorldSectionChunkLookupScratchLabel,
+                    out int chunkLookupSentinelId);
+                sentinelIds.ChunkLookup = chunkLookupSentinelId;
+                chunkTable = CreateRegisteredTransientNativeList<int3>(
+                    capacity,
+                    PersistentWorldSectionChunkTableScratchLabel,
+                    out int chunkTableSentinelId);
+                sentinelIds.ChunkTable = chunkTableSentinelId;
+                itemHashLookup = CreateRegisteredTransientNativeParallelHashMap<ulong, ushort>(
+                    capacity,
+                    PersistentWorldSectionItemHashLookupScratchLabel,
+                    out int itemHashLookupSentinelId);
+                sentinelIds.ItemHashLookup = itemHashLookupSentinelId;
+                itemHashTable = CreateRegisteredTransientNativeList<ulong>(
+                    capacity,
+                    PersistentWorldSectionItemHashTableScratchLabel,
+                    out int itemHashTableSentinelId);
+                sentinelIds.ItemHashTable = itemHashTableSentinelId;
+            }
+            catch
+            {
+                DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable, ref sentinelIds);
+                throw;
+            }
 
             int endIndex = startIndex + recordCount;
             for (int i = startIndex; i < endIndex; i++)
@@ -8853,7 +9562,7 @@ namespace Hecton8.SaveSystem
                 if (!PersistentWorldDeltaRecord.IsValid(in deltaRecord))
                 {
                     error = "Persistent-world delta table contains an invalid record.";
-                    DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable);
+                    DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable, ref sentinelIds);
                     return false;
                 }
 
@@ -8862,7 +9571,7 @@ namespace Hecton8.SaveSystem
                     if (chunkTable.Length >= ushort.MaxValue)
                     {
                         error = "Persistent-world delta chunk table exceeded 65535 unique chunks.";
-                        DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable);
+                        DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable, ref sentinelIds);
                         return false;
                     }
 
@@ -8879,7 +9588,7 @@ namespace Hecton8.SaveSystem
                     if (itemHashTable.Length >= ushort.MaxValue)
                     {
                         error = "Persistent-world delta item table exceeded 65535 unique item hashes.";
-                        DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable);
+                        DisposePersistentWorldSectionTables(ref chunkLookup, ref chunkTable, ref itemHashLookup, ref itemHashTable, ref sentinelIds);
                         return false;
                     }
 
@@ -8896,34 +9605,26 @@ namespace Hecton8.SaveSystem
             ref NativeParallelHashMap<int3, ushort> chunkLookup,
             ref NativeList<int3> chunkTable,
             ref NativeParallelHashMap<ulong, ushort> itemHashLookup,
-            ref NativeList<ulong> itemHashTable)
+            ref NativeList<ulong> itemHashTable,
+            ref PersistentWorldSectionTableSentinelIds sentinelIds)
         {
-            if (itemHashTable.IsCreated)
-                itemHashTable.Dispose();
-            if (itemHashLookup.IsCreated)
-                itemHashLookup.Dispose();
-            if (chunkTable.IsCreated)
-                chunkTable.Dispose();
-            if (chunkLookup.IsCreated)
-                chunkLookup.Dispose();
-
-            itemHashTable = default;
-            itemHashLookup = default;
-            chunkTable = default;
-            chunkLookup = default;
-        }
-
-        private static int ComputePersistentWorldSectionLength(int entityCount, int chunkCount, int itemHashCount)
-        {
-            return ComputePersistentWorldSectionLength(entityCount, chunkCount, itemHashCount, CurrentVersion);
-        }
-
-        private static int ComputePersistentWorldSectionLength(int entityCount, int chunkCount, int itemHashCount, ushort saveVersion)
-        {
-            return ResolvePersistentWorldSectionHeaderSize(saveVersion) +
-                   checked(chunkCount * UnsafeUtility.SizeOf<int3>()) +
-                   checked(itemHashCount * UnsafeUtility.SizeOf<ulong>()) +
-                   checked(entityCount * UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>());
+            DisposeRegisteredTransientNativeList(
+                ref itemHashTable,
+                ref sentinelIds.ItemHashTable,
+                PersistentWorldSectionItemHashTableScratchLabel);
+            DisposeRegisteredTransientNativeParallelHashMap(
+                ref itemHashLookup,
+                ref sentinelIds.ItemHashLookup,
+                PersistentWorldSectionItemHashLookupScratchLabel);
+            DisposeRegisteredTransientNativeList(
+                ref chunkTable,
+                ref sentinelIds.ChunkTable,
+                PersistentWorldSectionChunkTableScratchLabel);
+            DisposeRegisteredTransientNativeParallelHashMap(
+                ref chunkLookup,
+                ref sentinelIds.ChunkLookup,
+                PersistentWorldSectionChunkLookupScratchLabel);
+            sentinelIds = default;
         }
 
         private static bool TryComputePersistentWorldSectionLength(
@@ -8950,17 +9651,6 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static int ComputeEcosystemSectionLength(int recordCount)
-        {
-            return ComputeEcosystemSectionLength(recordCount, CurrentVersion);
-        }
-
-        private static int ComputeEcosystemSectionLength(int recordCount, ushort saveVersion)
-        {
-            return ResolveEcosystemSectionHeaderSize(saveVersion) +
-                   checked(math.max(recordCount, 0) * UnsafeUtility.SizeOf<EcosystemSectorSaveRecord>());
-        }
-
         private static bool TryComputeEcosystemSectionLength(int recordCount, ushort saveVersion, out int sectionLength)
         {
             sectionLength = 0;
@@ -8978,16 +9668,29 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static void WritePersistentWorldSection(
+        private static bool WritePersistentWorldSection(
             byte* destination,
             NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltas,
             NativeParallelHashMap<int3, ushort> chunkLookup,
             NativeList<int3> chunkTable,
             NativeParallelHashMap<ulong, ushort> itemHashLookup,
-            NativeList<ulong> itemHashTable)
+            NativeList<ulong> itemHashTable,
+            out string error)
         {
+            error = string.Empty;
+            if (destination == null)
+            {
+                error = "Persistent-world section destination is null.";
+                return false;
+            }
+
             int recordCount = persistentWorldDeltas.IsCreated ? persistentWorldDeltas.Length : 0;
-            int sectionLength = ComputePersistentWorldSectionLength(recordCount, chunkTable.Length, itemHashTable.Length);
+            if (!TryComputePersistentWorldSectionLength(recordCount, chunkTable.Length, itemHashTable.Length, CurrentVersion, out int sectionLength))
+            {
+                error = "Persistent-world section exceeds supported bounds.";
+                return false;
+            }
+
             PersistentWorldSectionHeader sectionHeader = new PersistentWorldSectionHeader
             {
                 ChunkCount = (uint)chunkTable.Length,
@@ -9006,7 +9709,8 @@ namespace Hecton8.SaveSystem
                 if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, chunkSourcePtr, chunkBytes))
                 {
                     UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
-                    return;
+                    error = "Persistent-world chunk table write exceeded section bounds.";
+                    return false;
                 }
 
                 cursor += chunkBytes;
@@ -9019,7 +9723,8 @@ namespace Hecton8.SaveSystem
                 if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, itemSourcePtr, itemBytes))
                 {
                     UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
-                    return;
+                    error = "Persistent-world item hash table write exceeded section bounds.";
+                    return false;
                 }
 
                 cursor += itemBytes;
@@ -9029,6 +9734,7 @@ namespace Hecton8.SaveSystem
             {
                 PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
                 PersistentWorldSaveRecord16 saveRecord = default;
+                bool wroteRecord = false;
                 if (PersistentWorldDeltaRecord.IsDeleted(in deltaRecord) &&
                     chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort deletedChunkIndex))
                 {
@@ -9042,6 +9748,7 @@ namespace Hecton8.SaveSystem
                         ChunkIndex = deletedChunkIndex,
                         ItemHashIndex = PersistentWorldDeletedItemHashIndex
                     };
+                    wroteRecord = true;
                 }
                 else if (PersistentWorldDeltaRecord.IsValid(in deltaRecord) &&
                          chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort chunkIndex) &&
@@ -9057,14 +9764,23 @@ namespace Hecton8.SaveSystem
                         ChunkIndex = chunkIndex,
                         ItemHashIndex = itemHashIndex
                     };
+                    wroteRecord = true;
+                }
+
+                if (!wroteRecord)
+                {
+                    error = "Persistent-world section record lookup failed.";
+                    return false;
                 }
 
                 UnsafeUtility.CopyStructureToPtr(ref saveRecord, AddByteOffset(destination, cursor));
                 cursor += UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>();
             }
+
+            return true;
         }
 
-        private static void WritePersistentWorldSection(
+        private static bool WritePersistentWorldSection(
             byte* destination,
             NativeList<PersistentWorldDeltaRecord> persistentWorldDeltas,
             int startIndex,
@@ -9072,15 +9788,32 @@ namespace Hecton8.SaveSystem
             NativeParallelHashMap<int3, ushort> chunkLookup,
             NativeList<int3> chunkTable,
             NativeParallelHashMap<ulong, ushort> itemHashLookup,
-            NativeList<ulong> itemHashTable)
+            NativeList<ulong> itemHashTable,
+            out string error)
         {
-            int safeRecordCount = persistentWorldDeltas.IsCreated &&
-                                  startIndex >= 0 &&
-                                  recordCount >= 0 &&
-                                  startIndex <= persistentWorldDeltas.Length - recordCount
-                ? recordCount
-                : 0;
-            int sectionLength = ComputePersistentWorldSectionLength(safeRecordCount, chunkTable.Length, itemHashTable.Length);
+            error = string.Empty;
+            if (destination == null)
+            {
+                error = "Persistent-world section destination is null.";
+                return false;
+            }
+
+            if (!persistentWorldDeltas.IsCreated ||
+                startIndex < 0 ||
+                recordCount < 0 ||
+                startIndex > persistentWorldDeltas.Length - recordCount)
+            {
+                error = "Persistent-world section record range is invalid.";
+                return false;
+            }
+
+            int safeRecordCount = recordCount;
+            if (!TryComputePersistentWorldSectionLength(safeRecordCount, chunkTable.Length, itemHashTable.Length, CurrentVersion, out int sectionLength))
+            {
+                error = "Persistent-world section exceeds supported bounds.";
+                return false;
+            }
+
             PersistentWorldSectionHeader sectionHeader = new PersistentWorldSectionHeader
             {
                 ChunkCount = (uint)chunkTable.Length,
@@ -9099,7 +9832,8 @@ namespace Hecton8.SaveSystem
                 if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, chunkSourcePtr, chunkBytes))
                 {
                     UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
-                    return;
+                    error = "Persistent-world chunk table write exceeded section bounds.";
+                    return false;
                 }
 
                 cursor += chunkBytes;
@@ -9112,7 +9846,8 @@ namespace Hecton8.SaveSystem
                 if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, itemSourcePtr, itemBytes))
                 {
                     UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
-                    return;
+                    error = "Persistent-world item hash table write exceeded section bounds.";
+                    return false;
                 }
 
                 cursor += itemBytes;
@@ -9123,6 +9858,7 @@ namespace Hecton8.SaveSystem
             {
                 PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
                 PersistentWorldSaveRecord16 saveRecord = default;
+                bool wroteRecord = false;
                 if (PersistentWorldDeltaRecord.IsDeleted(in deltaRecord) &&
                     chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort deletedChunkIndex))
                 {
@@ -9136,6 +9872,7 @@ namespace Hecton8.SaveSystem
                         ChunkIndex = deletedChunkIndex,
                         ItemHashIndex = PersistentWorldDeletedItemHashIndex
                     };
+                    wroteRecord = true;
                 }
                 else if (PersistentWorldDeltaRecord.IsValid(in deltaRecord) &&
                          chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort chunkIndex) &&
@@ -9151,11 +9888,20 @@ namespace Hecton8.SaveSystem
                         ChunkIndex = chunkIndex,
                         ItemHashIndex = itemHashIndex
                     };
+                    wroteRecord = true;
+                }
+
+                if (!wroteRecord)
+                {
+                    error = "Persistent-world section record lookup failed.";
+                    return false;
                 }
 
                 UnsafeUtility.CopyStructureToPtr(ref saveRecord, AddByteOffset(destination, cursor));
                 cursor += UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>();
             }
+
+            return true;
         }
 
         private static bool TryReadPersistentWorldDeltasV5(
@@ -9255,9 +10001,10 @@ namespace Hecton8.SaveSystem
             out int entitySectionLength,
             out string error)
         {
-            entitySectionOffset = checked((int)header.EntityOffset) - ResolvePayloadBaseOffset(in header);
             entitySectionLength = 0;
             error = string.Empty;
+            if (!TryResolvePayloadOffsets(in header, out _, out _, out entitySectionOffset, out error))
+                return false;
 
             if (entitySectionOffset < 0 || entitySectionOffset > rawPayloadLength)
             {
@@ -9267,10 +10014,22 @@ namespace Hecton8.SaveSystem
 
             if (header.Version < CompactPersistentWorldSectionVersion)
             {
-                int entityCount = checked((int)header.EntityCount);
-                entitySectionLength = entityCount > 0
-                    ? checked(entityCount * UnsafeUtility.SizeOf<PersistentWorldDeltaRecordLegacy64>())
-                    : 0;
+                if (!TryConvertSectionCount(header.EntityCount, out int entityCount))
+                {
+                    error = "Entity count exceeds supported bounds.";
+                    return false;
+                }
+
+                long entitySectionLengthLong = entityCount > 0
+                    ? (long)entityCount * UnsafeUtility.SizeOf<PersistentWorldDeltaRecordLegacy64>()
+                    : 0L;
+                if (entitySectionLengthLong > int.MaxValue)
+                {
+                    error = "Entity payload length exceeds the supported range.";
+                    return false;
+                }
+
+                entitySectionLength = (int)entitySectionLengthLong;
                 if (!IsByteRangeWithin(entitySectionOffset, entitySectionLength, rawPayloadLength))
                 {
                     error = "Entity payload exceeds the decompressed payload bounds.";
@@ -9319,10 +10078,18 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static void WriteEcosystemSection(
+        private static bool WriteEcosystemSection(
             byte* destination,
-            NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates)
+            NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates,
+            out string error)
         {
+            error = string.Empty;
+            if (destination == null)
+            {
+                error = "Ecosystem section destination is null.";
+                return false;
+            }
+
             int recordCount = ecosystemSectorStates.IsCreated ? ecosystemSectorStates.Length : 0;
             EcosystemSectionHeader sectionHeader = new EcosystemSectionHeader
             {
@@ -9332,15 +10099,21 @@ namespace Hecton8.SaveSystem
             int ecosystemHeaderSize = ResolveEcosystemSectionHeaderSize(CurrentVersion);
             WriteEcosystemSectionHeader(destination, ecosystemHeaderSize, in sectionHeader);
             if (recordCount <= 0)
-                return;
+                return true;
 
             int recordSize = UnsafeUtility.SizeOf<EcosystemSectorSaveRecord>();
-            int recordBytes = recordCount * recordSize;
-            int sectionLength = ComputeEcosystemSectionLength(recordCount);
+            if (!TryComputeEcosystemSectionLength(recordCount, CurrentVersion, out int sectionLength))
+            {
+                error = "Ecosystem section exceeds supported bounds.";
+                return false;
+            }
+
+            long recordBytes = (long)recordCount * recordSize;
             if (recordBytes > sectionLength - ecosystemHeaderSize)
             {
                 UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
-                return;
+                error = "Ecosystem section write exceeded section bounds.";
+                return false;
             }
 
             byte* writePtr = AddByteOffset(destination, ecosystemHeaderSize);
@@ -9349,6 +10122,8 @@ namespace Hecton8.SaveSystem
                 EcosystemSectorSaveRecord record = ecosystemSectorStates[i];
                 UnsafeUtility.CopyStructureToPtr(ref record, writePtr + (i * recordSize));
             }
+
+            return true;
         }
 
         private static bool TryReadEcosystemSectorStates(
@@ -9567,7 +10342,13 @@ namespace Hecton8.SaveSystem
 
             TokenizedPayloadHeader header = UnsafeUtility.ReadArrayElement<TokenizedPayloadHeader>(payloadPtr, 0);
             int tokenCount = header.TokenCount;
-            expandedPayloadLength = checked((int)header.ExpandedPayloadLength);
+            if (header.ExpandedPayloadLength > int.MaxValue)
+            {
+                error = "Tokenized payload declared an unsupported expanded length.";
+                return false;
+            }
+
+            expandedPayloadLength = (int)header.ExpandedPayloadLength;
             if (tokenCount <= 0 || tokenCount > MaxTokenCount)
             {
                 error = "Tokenized payload declared an invalid token count.";
@@ -9674,6 +10455,14 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (header.PlayerOffset > int.MaxValue ||
+                header.DeltaOffset > int.MaxValue ||
+                header.EntityOffset > int.MaxValue)
+            {
+                error = "Save payload offset exceeds the supported decoder range.";
+                return false;
+            }
+
             if (header.Version >= IndexedBlockStorageVersion)
             {
                 if (header.PlayerOffset < expectedHeaderSize)
@@ -9694,13 +10483,14 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            if (header.DeltaOffset > header.PlayerOffset + RawPayloadCapacityBytes)
+            long maxPayloadOffset = (long)header.PlayerOffset + RawPayloadCapacityBytes;
+            if (header.DeltaOffset > maxPayloadOffset)
             {
                 error = "Save packed quest-state offset exceeds the raw payload decoder budget.";
                 return false;
             }
 
-            if (header.EntityOffset > header.PlayerOffset + RawPayloadCapacityBytes)
+            if (header.EntityOffset > maxPayloadOffset)
             {
                 error = "Save entity payload offset exceeds the raw payload decoder budget.";
                 return false;
@@ -9872,9 +10662,61 @@ namespace Hecton8.SaveSystem
             return ResolveHeaderSize(version);
         }
 
-        private static int ResolvePayloadBaseOffset(in SaveFileHeader header)
+        private static bool TryResolvePayloadOffsets(
+            in SaveFileHeader header,
+            out int payloadBaseOffset,
+            out int deltaSectionOffset,
+            out int entitySectionOffset,
+            out string error)
         {
-            return checked((int)header.PlayerOffset);
+            payloadBaseOffset = 0;
+            deltaSectionOffset = 0;
+            entitySectionOffset = 0;
+            if (header.PlayerOffset > int.MaxValue ||
+                header.DeltaOffset > int.MaxValue ||
+                header.EntityOffset > int.MaxValue)
+            {
+                error = "Save payload offset exceeds the supported decoder range.";
+                return false;
+            }
+
+            payloadBaseOffset = (int)header.PlayerOffset;
+            deltaSectionOffset = (int)header.DeltaOffset - payloadBaseOffset;
+            entitySectionOffset = (int)header.EntityOffset - payloadBaseOffset;
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool TryDecodeSaveDataByteLength(
+            in PayloadPrefixInfo prefix,
+            out int saveDataLength,
+            out string error)
+        {
+            saveDataLength = 0;
+            if (prefix.SaveDataByteLength > int.MaxValue)
+            {
+                error = "Serialized save data length exceeds the supported decoder range.";
+                return false;
+            }
+
+            saveDataLength = (int)prefix.SaveDataByteLength;
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool TryShiftPayloadOffset(uint offset, int byteShift, out uint shiftedOffset, out string error)
+        {
+            shiftedOffset = 0u;
+            long shifted = (long)offset + byteShift;
+            if (shifted < 0L || shifted > int.MaxValue)
+            {
+                error = "Migrated save payload offset exceeds the supported decoder range.";
+                return false;
+            }
+
+            shiftedOffset = (uint)shifted;
+            error = string.Empty;
+            return true;
         }
 
         private static string FormatPayloadChecksum(in SaveFileHeader header)
@@ -9959,16 +10801,27 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static void CopyUtf16StringToUnmanaged(string source, byte* destination, int destinationCapacityBytes)
+        private static bool TryCopyUtf16StringToUnmanaged(
+            string source,
+            byte* destination,
+            int destinationCapacityBytes,
+            out string error)
         {
+            error = string.Empty;
             if (string.IsNullOrEmpty(source))
-                return;
+                return true;
 
             fixed (char* sourcePtr = source)
             {
                 if (!UnsafeMemoryCopyGuard.SafeCopy(destination, destinationCapacityBytes, sourcePtr, source.Length * sizeof(char)))
+                {
                     UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
+                    error = "UTF-16 metadata string write exceeded destination bounds.";
+                    return false;
+                }
             }
+
+            return true;
         }
 
         private static int Lz4BlockDecompress(

@@ -14,11 +14,28 @@ namespace Hecton8.Editor
 {
     public sealed class LSystemGenomeLabWindow : EditorWindow
     {
+        private const string NativeMemoryOwner = nameof(LSystemGenomeLabWindow);
+        private const string PreviewExpandedSymbolsLabel = "previewExpandedSymbols";
+        private const string PreviewScratchSymbolsLabel = "previewScratchSymbols";
+        private const string PreviewBranchMatricesLabel = "previewBranchMatrices";
+        private const string PreviewHazardZonesLabel = "previewHazardZones";
+        private const string PreviewTurtleStackLabel = "previewTurtleStack";
+        private const string MockGenomesLabel = "mockGenomes";
+        private const string PreviewSeedLabel = "previewSeed";
+        private const string PreviewStatsLabel = "previewStats";
+        private const string PreviewBlackBoxLabel = "previewBlackBox";
+        private const string PreviewCursorLabel = "previewCursor";
+
         private NativeArray<byte> _previewExpandedSymbols;
         private NativeArray<byte> _previewScratchSymbols;
         private NativeArray<BranchMatrixDTO> _previewBranchMatrices;
         private NativeArray<HazardZoneDTO> _previewHazardZones;
         private NativeArray<TurtleStackFrameDTO> _previewTurtleStack;
+        private int _previewExpandedSymbolsSentinelId;
+        private int _previewScratchSymbolsSentinelId;
+        private int _previewBranchMatricesSentinelId;
+        private int _previewHazardZonesSentinelId;
+        private int _previewTurtleStackSentinelId;
         private int _selectedGenomeIndex;
         private int _previewMatrixCount;
         private bool _previewActive;
@@ -126,9 +143,19 @@ namespace Hecton8.Editor
             _previewRoot = EditorGUILayout.Vector3Field("Preview Root", _previewRoot);
             if (GUILayout.Button("Preview Mock Kelp"))
             {
-                using NativeArray<FloraGenomeDTO> mockGenomes = new NativeArray<FloraGenomeDTO>(FloraGenomeLSystemConstants.MaxMockGenomeCount, Allocator.TempJob);
-                MockGenomeGenerator.Populate(mockGenomes);
-                BuildPreview(mockGenomes, 0);
+                NativeArray<FloraGenomeDTO> mockGenomes = AllocateTrackedTempJobArray<FloraGenomeDTO>(
+                    FloraGenomeLSystemConstants.MaxMockGenomeCount,
+                    MockGenomesLabel,
+                    NativeArrayOptions.ClearMemory);
+                try
+                {
+                    MockGenomeGenerator.Populate(mockGenomes);
+                    BuildPreview(mockGenomes, 0);
+                }
+                finally
+                {
+                    DisposeTrackedNativeArray(ref mockGenomes);
+                }
             }
         }
 
@@ -172,10 +199,12 @@ namespace Hecton8.Editor
 
             FloraGenomeChunkWorkspace previewWorkspace = BuildPreviewWorkspaceView();
 
-            NativeArray<FloraPlantSeedDTO> seed = new NativeArray<FloraPlantSeedDTO>(1, Allocator.TempJob);
-            NativeArray<FloraGenomeJobStats> stats = new NativeArray<FloraGenomeJobStats>(1, Allocator.TempJob);
-            NativeArray<FloraGenomeBlackBoxEntry> blackBox = new NativeArray<FloraGenomeBlackBoxEntry>(FloraGenomeLSystemConstants.BlackBoxFrameCount, Allocator.TempJob);
-            NativeArray<int> cursor = new NativeArray<int>(1, Allocator.TempJob);
+            NativeArray<FloraPlantSeedDTO> seed = AllocateTrackedTempJobArray<FloraPlantSeedDTO>(1, PreviewSeedLabel);
+            NativeArray<FloraGenomeJobStats> stats = AllocateTrackedTempJobArray<FloraGenomeJobStats>(1, PreviewStatsLabel);
+            NativeArray<FloraGenomeBlackBoxEntry> blackBox = AllocateTrackedTempJobArray<FloraGenomeBlackBoxEntry>(
+                FloraGenomeLSystemConstants.BlackBoxFrameCount,
+                PreviewBlackBoxLabel);
+            NativeArray<int> cursor = AllocateTrackedTempJobArray<int>(1, PreviewCursorLabel);
 
             try
             {
@@ -230,14 +259,10 @@ namespace Hecton8.Editor
             }
             finally
             {
-                if (cursor.IsCreated)
-                    cursor.Dispose();
-                if (blackBox.IsCreated)
-                    blackBox.Dispose();
-                if (stats.IsCreated)
-                    stats.Dispose();
-                if (seed.IsCreated)
-                    seed.Dispose();
+                DisposeTrackedNativeArray(ref cursor);
+                DisposeTrackedNativeArray(ref blackBox);
+                DisposeTrackedNativeArray(ref stats);
+                DisposeTrackedNativeArray(ref seed);
             }
         }
 
@@ -285,25 +310,120 @@ namespace Hecton8.Editor
             Allocator allocator)
         {
             DisposePreviewWorkspace();
-            _previewExpandedSymbols = new NativeArray<byte>(math.max(1, symbolCapacity), allocator, NativeArrayOptions.UninitializedMemory);
-            _previewScratchSymbols = new NativeArray<byte>(math.max(1, symbolCapacity), allocator, NativeArrayOptions.UninitializedMemory);
-            _previewBranchMatrices = new NativeArray<BranchMatrixDTO>(math.max(1, matrixCapacity), allocator, NativeArrayOptions.UninitializedMemory);
-            _previewHazardZones = new NativeArray<HazardZoneDTO>(math.max(1, hazardCapacity), allocator, NativeArrayOptions.UninitializedMemory);
-            _previewTurtleStack = new NativeArray<TurtleStackFrameDTO>(math.max(1, turtleStackCapacity), allocator, NativeArrayOptions.UninitializedMemory);
+            try
+            {
+                _previewExpandedSymbols = new NativeArray<byte>(math.max(1, symbolCapacity), allocator, NativeArrayOptions.UninitializedMemory);
+                _previewScratchSymbols = new NativeArray<byte>(math.max(1, symbolCapacity), allocator, NativeArrayOptions.UninitializedMemory);
+                _previewBranchMatrices = new NativeArray<BranchMatrixDTO>(math.max(1, matrixCapacity), allocator, NativeArrayOptions.UninitializedMemory);
+                _previewHazardZones = new NativeArray<HazardZoneDTO>(math.max(1, hazardCapacity), allocator, NativeArrayOptions.UninitializedMemory);
+                _previewTurtleStack = new NativeArray<TurtleStackFrameDTO>(math.max(1, turtleStackCapacity), allocator, NativeArrayOptions.UninitializedMemory);
+                RegisterPreviewWorkspace();
+            }
+            catch
+            {
+                DisposePreviewWorkspace();
+                throw;
+            }
         }
 
         private void DisposePreviewWorkspace()
         {
-            if (_previewExpandedSymbols.IsCreated)
-                _previewExpandedSymbols.Dispose();
-            if (_previewScratchSymbols.IsCreated)
-                _previewScratchSymbols.Dispose();
-            if (_previewBranchMatrices.IsCreated)
-                _previewBranchMatrices.Dispose();
-            if (_previewHazardZones.IsCreated)
-                _previewHazardZones.Dispose();
-            if (_previewTurtleStack.IsCreated)
-                _previewTurtleStack.Dispose();
+            DisposePreviewArray(ref _previewExpandedSymbols, ref _previewExpandedSymbolsSentinelId);
+            DisposePreviewArray(ref _previewScratchSymbols, ref _previewScratchSymbolsSentinelId);
+            DisposePreviewArray(ref _previewBranchMatrices, ref _previewBranchMatricesSentinelId);
+            DisposePreviewArray(ref _previewHazardZones, ref _previewHazardZonesSentinelId);
+            DisposePreviewArray(ref _previewTurtleStack, ref _previewTurtleStackSentinelId);
+        }
+
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(
+            int length,
+            string label,
+            NativeArrayOptions options = NativeArrayOptions.ClearMemory)
+            where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(math.max(1, length), Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private void RegisterPreviewWorkspace()
+        {
+            _previewExpandedSymbolsSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                _previewExpandedSymbols,
+                NativeMemoryOwner,
+                PreviewExpandedSymbolsLabel,
+                NativeAllocationLifetime.Session);
+            if (_previewExpandedSymbolsSentinelId <= 0)
+                throw new InvalidOperationException($"Native memory sentinel registration failed for {PreviewExpandedSymbolsLabel}.");
+            _previewScratchSymbolsSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                _previewScratchSymbols,
+                NativeMemoryOwner,
+                PreviewScratchSymbolsLabel,
+                NativeAllocationLifetime.Session);
+            if (_previewScratchSymbolsSentinelId <= 0)
+                throw new InvalidOperationException($"Native memory sentinel registration failed for {PreviewScratchSymbolsLabel}.");
+            _previewBranchMatricesSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                _previewBranchMatrices,
+                NativeMemoryOwner,
+                PreviewBranchMatricesLabel,
+                NativeAllocationLifetime.Session);
+            if (_previewBranchMatricesSentinelId <= 0)
+                throw new InvalidOperationException($"Native memory sentinel registration failed for {PreviewBranchMatricesLabel}.");
+            _previewHazardZonesSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                _previewHazardZones,
+                NativeMemoryOwner,
+                PreviewHazardZonesLabel,
+                NativeAllocationLifetime.Session);
+            if (_previewHazardZonesSentinelId <= 0)
+                throw new InvalidOperationException($"Native memory sentinel registration failed for {PreviewHazardZonesLabel}.");
+            _previewTurtleStackSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                _previewTurtleStack,
+                NativeMemoryOwner,
+                PreviewTurtleStackLabel,
+                NativeAllocationLifetime.Session);
+            if (_previewTurtleStackSentinelId <= 0)
+                throw new InvalidOperationException($"Native memory sentinel registration failed for {PreviewTurtleStackLabel}.");
+        }
+
+        private static void DisposePreviewArray<T>(ref NativeArray<T> array, ref int sentinelId)
+            where T : struct
+        {
+            if (!array.IsCreated)
+            {
+                NativeMemorySentinel.Unregister(sentinelId);
+                sentinelId = 0;
+                return;
+            }
+
+            if (sentinelId > 0)
+                NativeMemorySentinel.Unregister(sentinelId);
+            else
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            sentinelId = 0;
+            array.Dispose();
+            array = default;
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
 
         private bool EnsurePreviewDrawResources()

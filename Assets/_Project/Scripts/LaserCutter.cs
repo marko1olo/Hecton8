@@ -719,7 +719,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float damagePerSecond = 25f;
 
         [Tooltip("LayerMask for typed surface targets.")]
-        [SerializeField] private LayerMask cuttableLayer = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask cuttableLayer = Hecton8.Core.HectonLayerMasks.FieldToolSurfaceLayerMask;
 
         [Header("── Heat Management ───────────────────────────")]
         [Tooltip("Seconds of continuous firing to reach overheat (heat 0→1).")]
@@ -1042,9 +1042,7 @@ namespace Hecton8.Gameplay
 
         private void CacheColdDependencies()
         {
-            _cachedAudioService = GlobalRegistry.Audio;
-            _cachedAudioResidencyService = _cachedAudioService as IAudioResidencyService;
-            _cachedCutAudioMixerGroup = _cachedAudioService != null ? _cachedAudioService.AmbientGroup : null;
+            CacheAudioService(GlobalRegistry.Audio);
             _cachedInputService = GlobalRegistry.Input;
             _cachedInteractionService = GlobalRegistry.InteractionSignals;
             _cachedHabitatDeconstructionSystem = GlobalRegistry.HabitatDeconstruction;
@@ -1053,11 +1051,55 @@ namespace Hecton8.Gameplay
             CacheLaserLocalizationCold();
         }
 
-        private void ClearColdDependencies()
+        private void CacheAudioService(IAudioService audioService)
+        {
+            if (!IsAudioServiceUsable(audioService))
+            {
+                ClearCachedAudioService();
+                return;
+            }
+
+            _cachedAudioService = audioService;
+            _cachedAudioResidencyService = audioService as IAudioResidencyService;
+            _cachedCutAudioMixerGroup = audioService.AmbientGroup;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            ClearCachedAudioService();
+            return null;
+        }
+
+        private IAudioResidencyService ResolveAudioResidencyService()
+        {
+            return ResolveAudioService() != null ? _cachedAudioResidencyService : null;
+        }
+
+        private void ClearCachedAudioService()
         {
             _cachedAudioService = null;
             _cachedAudioResidencyService = null;
             _cachedCutAudioMixerGroup = null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private void ClearColdDependencies()
+        {
+            ClearCachedAudioService();
             _cachedInputService = null;
             _cachedInteractionService = null;
             _cachedHabitatDeconstructionSystem = null;
@@ -1116,6 +1158,9 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     RefreshLaserLocalizationCacheCold(currentService as IBabelLocalization);
                     break;
+                case GlobalRegistryServiceSlot.Audio:
+                    CacheAudioService(currentService as IAudioService);
+                    break;
                 case GlobalRegistryServiceSlot.SargassumCutRuntime:
                     _cachedSargassumCutWriter = currentService as ISargassumCutWriteService;
                     break;
@@ -1134,6 +1179,9 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.DataVault:
                     EnsureDodRuntimesInitialized(currentService as IDataVault);
                     break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    RebindLaserDispatcherTick(currentService);
+                    break;
             }
         }
 
@@ -1148,7 +1196,7 @@ namespace Hecton8.Gameplay
 
         private void PrewarmEquippedAudio()
         {
-            IAudioResidencyService residency = _cachedAudioResidencyService;
+            IAudioResidencyService residency = ResolveAudioResidencyService();
             if (residency == null)
                 return;
 
@@ -1158,7 +1206,7 @@ namespace Hecton8.Gameplay
 
         private void ReleaseEquippedAudio()
         {
-            IAudioResidencyService residency = _cachedAudioResidencyService;
+            IAudioResidencyService residency = ResolveAudioResidencyService();
             if (residency == null)
                 return;
 
@@ -2263,8 +2311,9 @@ namespace Hecton8.Gameplay
 
         private void ApplyOverheatLockoutCue()
         {
-            if (overheatErrorClip != null && _cachedAudioService != null)
-                _cachedAudioService.PlayStatic2D(overheatErrorClip, 0.5f);
+            IAudioService audioService = ResolveAudioService();
+            if (overheatErrorClip != null && audioService != null)
+                audioService.PlayStatic2D(overheatErrorClip, 0.5f);
         }
 
         private void ApplyAudioState(bool shouldPlay)
@@ -2389,7 +2438,7 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterLateFrameTick()
         {
-            if (_lateFrameRegistered || !Application.isPlaying)
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
@@ -2402,6 +2451,15 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
             _lateFrameRegistered = false;
+        }
+
+        private void RebindLaserDispatcherTick(object currentService)
+        {
+            bool hadLateFrameWork = _lateFrameRegistered;
+            TryUnregisterLateFrameTick();
+
+            if (currentService != null && hadLateFrameWork)
+                TryRegisterLateFrameTick();
         }
 
         private void ClearPendingLaserVisualSync()
@@ -2578,7 +2636,7 @@ namespace Hecton8.Gameplay
 
         private int ResolveCuttableSurfaceMask()
         {
-            int mask = cuttableLayer.value;
+            int mask = HectonLayerMasks.ResolveSurfaceInteractionLayerMask(cuttableLayer.value);
             if (_WaterLayer >= 0)
                 mask &= ~(1 << _WaterLayer);
             if (_TransparentFxLayer >= 0)

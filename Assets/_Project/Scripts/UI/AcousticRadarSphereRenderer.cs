@@ -101,7 +101,7 @@ namespace Hecton8.UI
             if (_resolvedMaterial == null || _resolvedVoxelMesh == null)
                 return;
 
-            ISpatialAudioImpactEmitterReadModel audioManager = _cachedAudioManager;
+            ISpatialAudioImpactEmitterReadModel audioManager = ResolveImpactEmitterReadModel();
             if (audioManager == null)
                 return;
 
@@ -200,7 +200,7 @@ namespace Hecton8.UI
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
-                    _cachedAudioManager = currentService as ISpatialAudioImpactEmitterReadModel;
+                    CacheImpactEmitterReadModel(currentService);
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
@@ -229,13 +229,44 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             RefreshQualityPolicy();
-            _cachedAudioManager = GlobalRegistry.Audio as ISpatialAudioImpactEmitterReadModel;
+            CacheImpactEmitterReadModel(GlobalRegistry.Audio);
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (!ReferenceEquals(_cachedPlayerContext, playerContext))
             {
                 _cachedPlayerContext = playerContext;
                 _viewCamera = null;
             }
+        }
+
+        private void CacheImpactEmitterReadModel(object audioRuntime)
+        {
+            _cachedAudioManager = IsAudioRuntimeObjectUsable(audioRuntime)
+                ? audioRuntime as ISpatialAudioImpactEmitterReadModel
+                : null;
+        }
+
+        private ISpatialAudioImpactEmitterReadModel ResolveImpactEmitterReadModel()
+        {
+            ISpatialAudioImpactEmitterReadModel audioManager = _cachedAudioManager;
+            if (IsAudioRuntimeObjectUsable(audioManager))
+                return audioManager;
+
+            _cachedAudioManager = null;
+            return null;
+        }
+
+        private static bool IsAudioRuntimeObjectUsable(object runtime)
+        {
+            if (runtime == null)
+                return false;
+
+            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+                return false;
+
+            if (runtime is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void RefreshQualityPolicy()

@@ -7,6 +7,9 @@ poi_tags: poi.suboffice_name_seed_card;poi.loss_desk_badge
 biome_tags: biome.claim_admin;biome.relay_archive
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Suboffice Personnel Seeds"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

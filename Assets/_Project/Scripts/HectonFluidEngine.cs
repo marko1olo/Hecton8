@@ -35,6 +35,7 @@
 //   - Frame-time budget claims require profiler proof; target is sub-0.1ms
 // ============================================================================
 
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -416,11 +417,14 @@ namespace Hecton8.Physics
                         requiredCount,
                         Allocator.Persistent,
                         NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(
+                    int sentinelId = NativeMemorySentinel.RegisterNativeArray(
                         array,
                         NativeMemoryOwner,
                         GpuReadbackDataLabel,
                         NativeMemoryLifetime);
+                    if (sentinelId <= 0)
+                        throw new InvalidOperationException("Native memory sentinel registration failed for GPU readback data.");
+
                     _data[slot] = array;
                 }
                 catch

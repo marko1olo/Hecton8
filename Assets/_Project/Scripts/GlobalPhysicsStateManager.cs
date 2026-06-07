@@ -1526,11 +1526,9 @@ namespace Hecton8.Physics
                     RefreshOwnerPhaseCelestialSnapshotCache();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregisterDispatcherTicks();
                     _tickDispatcher = currentService as ITickDispatcher;
-                    _registeredFixedTick = false;
-                    _registeredLateFrameTick = false;
-                    _registeredPostFixedTick = false;
-                    if (currentService != null && _isInitialized)
+                    if (_tickDispatcher != null && _isInitialized)
                     {
                         TryRegisterFixedTick();
                         TryRegisterLateFrameTick();
@@ -1645,6 +1643,27 @@ namespace Hecton8.Physics
             if (ReferenceEquals(s_runtimeManager, this))
                 s_runtimeManager = null;
             _serviceRegistered = false;
+        }
+
+        private void TryUnregisterDispatcherTicks()
+        {
+            if (_registeredFixedTick)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
+                _registeredFixedTick = false;
+            }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _registeredLateFrameTick = false;
+            }
+
+            if (_registeredPostFixedTick)
+            {
+                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Core);
+                _registeredPostFixedTick = false;
+            }
         }
 
         private void TryRegisterFixedTick()

@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Atlas生物纤维密封胶"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Atlas生物纤维密封胶
 
-CN LOC HOLD: Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.
+Atlas生物纤维密封胶是一种有用的错误。它生长在修复生态中，那里活体组织、撕裂的电缆护套和漏水接缝被归为同一种伤口。处理好的条带能在水中封住生存装备或柔性承压接头，但温暖储存可能唤醒寻找缝隙的生长，并产生假生命特征。
 
 ## Scanner
 
-CN LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+ATLAS生物纤维密封胶 // 湿润修复纤维，生长在电缆护套、伤口组织和船体垫圈被划入同一故障类别的地方。在压力下粘合；采收后可能继续生长。
 
 ## Terminal
 
-CN LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+资源类别：Atlas改造修复生态。移除前先冷夹固定。用途：湿缝补片、潜服裂口、电缆护套、承压柔性接头。风险：假生命特征、传感器回声、储存期间主动寻找缝隙。
 
 ## Audio
 
-CN LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+它分不清泄漏、切口和嘴。Atlas教会它，这三者都是需要关闭的开口。
 
 ## Field Note
 
-CN LOC HOLD: Useful body horror: the player wants it and distrusts it.
+好密封胶会变干。这个会聆听下一个洞在哪里。
 
 <!-- In-Game Wiki; generated from P119_ATLAS_BIOFIBER_SEALANT/zh_CN. -->

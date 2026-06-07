@@ -7,6 +7,9 @@ poi_tags: poi.tide_margin_memo;poi.risk_office_console
 biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Iliya Varnek Tide Margin"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

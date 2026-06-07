@@ -137,23 +137,52 @@ namespace Hecton8.World
             }
 
             DisposeNativeArray(ref _vegetationMemoryTelemetryDumpPayload);
-            _vegetationMemoryTelemetryDumpPayload = new NativeArray<byte>(
-                VegetationMemoryDumpPayloadBytes,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            if (!_vegetationMemoryTelemetryDumpPayload.IsCreated ||
-                _vegetationMemoryTelemetryDumpPayload.Length < VegetationMemoryDumpPayloadBytes)
+            NativeArray<byte> replacement = default;
+            try
             {
-                DisposeNativeArray(ref _vegetationMemoryTelemetryDumpPayload);
-                return false;
-            }
+                replacement = new NativeArray<byte>(
+                    VegetationMemoryDumpPayloadBytes,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory);
+                if (!replacement.IsCreated ||
+                    replacement.Length < VegetationMemoryDumpPayloadBytes)
+                {
+                    if (replacement.IsCreated)
+                        replacement.Dispose();
+                    return false;
+                }
 
-            NativeMemorySentinel.RegisterNativeArray(
-                _vegetationMemoryTelemetryDumpPayload,
-                NativeMemoryOwner,
-                nameof(_vegetationMemoryTelemetryDumpPayload),
-                NativeMemoryLifetime);
-            return true;
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    replacement,
+                    NativeMemoryOwner,
+                    nameof(_vegetationMemoryTelemetryDumpPayload),
+                    NativeMemoryLifetime);
+                if (sentinelId <= 0)
+                {
+                    replacement.Dispose();
+                    return false;
+                }
+
+                _vegetationMemoryTelemetryDumpPayload = replacement;
+                replacement = default;
+                return true;
+            }
+            catch
+            {
+                if (replacement.IsCreated)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.UnregisterNativeArray(replacement);
+                    }
+                    finally
+                    {
+                        replacement.Dispose();
+                    }
+                }
+
+                throw;
+            }
         }
 
         private void RecordVegetationMemoryTelemetry(

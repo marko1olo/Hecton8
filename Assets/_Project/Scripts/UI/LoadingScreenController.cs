@@ -551,13 +551,33 @@ namespace Hecton8.UI
             if (!Application.isPlaying || _serviceShuttingDown)
                 return false;
 
-            LoadingScreenController current = GlobalRegistry.LoadingScreen;
-            if (current != null && current != this)
+            if (TryAbortForUsableExistingRuntime())
                 return false;
 
             GlobalRegistry.RegisterLoadingScreenRuntime(this);
             _runtimeRegistered = ReferenceEquals(GlobalRegistry.LoadingScreen, this);
             return _runtimeRegistered;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            LoadingScreenController current = GlobalRegistry.LoadingScreen;
+            if (ReferenceEquals(current, null) || ReferenceEquals(current, this))
+                return false;
+
+            if (IsLoadingScreenRuntimeUsable(current))
+                return true;
+
+            GlobalRegistry.UnregisterLoadingScreenRuntime(current);
+            return false;
+        }
+
+        private static bool IsLoadingScreenRuntimeUsable(LoadingScreenController controller)
+        {
+            return controller != null &&
+                   controller._runtimeRegistered &&
+                   controller.isActiveAndEnabled &&
+                   !controller._serviceShuttingDown;
         }
 
         private void TryUnregisterRuntime()
@@ -583,13 +603,15 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher &&
-                currentService != null &&
-                isActiveAndEnabled &&
-                !_serviceShuttingDown)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 UnregisterFromTickManager();
-                TryRegisterToTickManager();
+                if (currentService != null &&
+                    isActiveAndEnabled &&
+                    !_serviceShuttingDown)
+                {
+                    TryRegisterToTickManager();
+                }
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.SettingsRuntime)

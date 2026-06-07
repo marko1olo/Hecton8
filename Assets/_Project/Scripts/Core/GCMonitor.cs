@@ -115,10 +115,13 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             TryUnregisterPostFixed();
+            if (currentService == null || !isActiveAndEnabled)
+                return;
+
             TryRegisterPostFixed();
         }
 

@@ -7,6 +7,9 @@ poi_tags: poi.black_keel_manifest_plate;poi.tender_remote_console
 biome_tags: biome.carrier_interface;biome.claim_admin
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Black Keel Tender Interior Limits"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.worker_locker;poi.tool_stamp
 biome_tags: biome.crash_shelf;biome.drowned_colony
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Pochodzenie Barnard Yards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

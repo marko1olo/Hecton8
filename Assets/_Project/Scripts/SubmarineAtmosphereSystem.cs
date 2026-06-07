@@ -2878,6 +2878,7 @@ namespace Hecton8.Atmosphere
             TryUnregister();
             TryUnregisterHotSwapListener();
             DisposeNativeStateDeferred();
+            ClearCachedRuntimeServices();
         }
 
         private void OnDestroy()
@@ -2885,6 +2886,7 @@ namespace Hecton8.Atmosphere
             TryUnregister();
             TryUnregisterHotSwapListener();
             DisposeNativeStateDeferred();
+            ClearCachedRuntimeServices();
         }
 
         public void ColdTick()
@@ -3515,13 +3517,72 @@ namespace Hecton8.Atmosphere
             CachePlayerRuntimeContext(GlobalRegistry.Player);
             _dataVault = GlobalRegistry.DataVault;
             _powerGridService = GlobalRegistry.PowerGrid;
-            _audioLogs = GlobalRegistry.AudioLogs;
+            CacheAudioLogSystem(GlobalRegistry.AudioLogs);
             _playerSensoryService = GlobalRegistry.PlayerSensory;
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _physicsService = GlobalRegistry.Physics;
             _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
             CacheComponentReferencesCold();
             RefreshRuntimeContextFromCache();
+        }
+
+        private void ClearCachedRuntimeServices()
+        {
+            ClearPlayerRuntimeContext(_playerRuntimeContext);
+            _playerRuntimeContext = null;
+            _dataVault = null;
+            _powerGridService = null;
+            _audioLogs = null;
+            _playerSensoryService = null;
+            _audioService = null;
+            _physicsService = null;
+            _thermodynamicsService = null;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private void CacheAudioLogSystem(AudioLogSystem audioLogs)
+        {
+            _audioLogs = IsAudioLogSystemUsable(audioLogs) ? audioLogs : null;
+        }
+
+        private AudioLogSystem ResolveAudioLogSystem()
+        {
+            AudioLogSystem audioLogs = _audioLogs;
+            if (IsAudioLogSystemUsable(audioLogs))
+                return audioLogs;
+
+            _audioLogs = null;
+            return null;
+        }
+
+        private static bool IsAudioLogSystemUsable(AudioLogSystem audioLogs)
+        {
+            return audioLogs != null && audioLogs.isActiveAndEnabled;
         }
 
         private void CacheComponentReferencesCold()
@@ -3799,7 +3860,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            AudioLogSystem audioLogs = _audioLogs;
+            AudioLogSystem audioLogs = ResolveAudioLogSystem();
             if (audioLogs == null)
             {
                 _lowOxygenAudioCooldownRemaining = FiniteNonNegativeOrZero(lowOxygenAudioCooldownSeconds);
@@ -4027,7 +4088,7 @@ namespace Hecton8.Atmosphere
             if (_pendingLowOxygenAudioLog)
             {
                 _pendingLowOxygenAudioLog = false;
-                AudioLogSystem audioLogs = _audioLogs;
+                AudioLogSystem audioLogs = ResolveAudioLogSystem();
                 if (audioLogs != null && lowOxygenGaspingAudioLog != null)
                     audioLogs.PlayLog(lowOxygenGaspingAudioLog);
             }
@@ -4036,7 +4097,7 @@ namespace Hecton8.Atmosphere
                 return;
 
             _pendingPressureScreech = false;
-            IAudioService audioService = _audioService;
+            IAudioService audioService = ResolveAudioService();
             if (audioService != null && _pendingPressureScreechClip != null)
             {
                 audioService.PlayAtPoint(
@@ -4262,13 +4323,13 @@ namespace Hecton8.Atmosphere
                     _powerGridService = currentService as IPowerGridService;
                     break;
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
-                    _audioLogs = currentService as AudioLogSystem;
+                    CacheAudioLogSystem(currentService as AudioLogSystem);
                     break;
                 case GlobalRegistryServiceSlot.PlayerSensory:
                     _playerSensoryService = currentService as IPlayerSensoryService;
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.Physics:
                     _physicsService = currentService as IPhysicsService;
@@ -4307,8 +4368,7 @@ namespace Hecton8.Atmosphere
                     _emergencyVentPipesSeeded = false;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registered = false;
-                    _lateFrameRegistered = false;
+                    TryUnregister();
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;

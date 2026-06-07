@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Noble Gas Brine Pockets"
+title: "جيوب محلول ملحي بغازات نبيلة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Noble Gas Brine Pockets
+# جيوب محلول ملحي بغازات نبيلة
 
-AR LOC HOLD: Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process.
+جيوب المحلول الملحي بالغازات النبيلة تحدد الجذر العلمي الصلب للاقتصاد الأزرق في HECTON-8. الجزء الثمين ليس صخرة متوهجة ولا نظيرا سحريا. إنه تاريخ ضغط مختوم: غازات نبيلة عالقة في محلول معدني، ثم محبوسة في آثار كلاثرات وشقوق دقيقة وشبكات عيوب لا تفهم إلا إذا عادت العينة سليمة. قد يسمع طاقم مهمل فحيح الجيب ويظن أنه وجد مالا. غالبا ما يكون قد حول المال إلى طقس. لذلك يستخدم الاستخراج الميداني أجراس الضغط والحماية الحرارية البطيئة وتسجيل الأدلة قبل أي مطالبة من المصفاة. نسبة الغازات مهمة، لكن طريقة نشوئها مهمة أيضا. عينة لا تثبت منحنى ضغطها تبقى لقيما منخفض الدرجة حتى لو بدا عداد الزينون غنيا. هذا المورد يعلم اللاعب أن Xenon-Omega نتيجة عملية، لا معدن يجمع من الأرض. لم تكتشف Deep Reach جوهرة معجزة. تعلمت أي تواريخ مختومة يمكن عصرها إلى مادة دين. صنف Atlas تلك التواريخ لاحقا بأولويات تالفة. أما الجيب نفسه فأقدم وأغرب من كليهما: فقاعة جيولوجيا ما زالت تحاول ألا تصبح طقسا.
 
 ## Scanner
 
-AR LOC HOLD: Natural-to-process resource. Valuable only if pressure history survives extraction.
+جيب محلول ملحي بغازات نبيلة // فقاعة ضغط مختومة داخل محلول معدني. لا تبقى القيمة إلا إذا بقي تاريخ الضغط مختوما؛ افتحها فيصير الحظ طقسا.
 
 ## Terminal
 
-AR LOC HOLD: RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+فئة المورد: مادة أصلية/لقيم معالجة. استخدم الاستخراج بجرس الضغط. لا تنفس العينة ولا تسخنها. الأدلة المطلوبة: منحنى الضغط، نسبة الغازات، خريطة عيوب المعدن.
 
 ## Audio
 
-AR LOC HOLD: Open it wrong and the fortune becomes weather.
+تبدأ Xenon-Omega هنا ككيمياء محبوسة، لا كخام معجزة.
 
 ## Field Note
 
-AR LOC HOLD: This is where Xenon-Omega begins as chemistry, not magic.
+لا تفتح الجيب لترى إن كان غنيا. هكذا تصنع الطواقم الفقيرة فقاعات.
 
 <!-- External Site; generated from P117_NOBLE_GAS_BRINE_POCKETS/ar_SA. -->

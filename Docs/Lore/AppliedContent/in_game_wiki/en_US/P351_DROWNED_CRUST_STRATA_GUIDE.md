@@ -7,6 +7,9 @@ poi_tags: poi.drowned_strata_slate;poi.pressure_glass_shelf
 biome_tags: biome.geology;biome.ocean
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Drowned Crust Strata Guide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

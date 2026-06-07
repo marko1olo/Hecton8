@@ -270,21 +270,13 @@ namespace Hecton8.Dev
             backupRecoveryHashMatched = false;
             loadError = string.Empty;
             // COLD ALLOC: NativeArray<long>[1] - smoke-only requested sector hash scratch - owner: SaveSystemRuntimeSmokeTester
-            NativeArray<long> requestedSectors = new NativeArray<long>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<long> requestedSectors = default;
             // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[16+] - smoke-only restored records scratch - owner: SaveSystemRuntimeSmokeTester
-            NativeList<PersistentWorldDeltaRecord> restoredRecords = new NativeList<PersistentWorldDeltaRecord>(16, Allocator.TempJob);
+            NativeList<PersistentWorldDeltaRecord> restoredRecords = default;
             try
             {
-                NativeMemorySentinel.RegisterNativeArray(
-                    requestedSectors,
-                    NativeMemoryOwner,
-                    RequestedSectorScratchLabel,
-                    NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeList(
-                    restoredRecords,
-                    NativeMemoryOwner,
-                    RestoredRecordsScratchLabel,
-                    NativeAllocationLifetime.TempJob);
+                requestedSectors = AllocateTrackedTempJobArray<long>(1, RequestedSectorScratchLabel, NativeArrayOptions.UninitializedMemory);
+                restoredRecords = AllocateTrackedTempJobList<PersistentWorldDeltaRecord>(16, RestoredRecordsScratchLabel);
 
                 requestedSectors[0] = sectorHash;
                 if (!SaveBinaryStorage.TryLoadIndexedPersistentWorldSectors(primaryAbsolutePath, requestedSectors, restoredRecords, out loadError))
@@ -346,16 +338,94 @@ namespace Hecton8.Dev
             }
             finally
             {
-                if (requestedSectors.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(requestedSectors);
-                    requestedSectors.Dispose();
-                }
-                if (restoredRecords.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, RestoredRecordsScratchLabel);
-                    restoredRecords.Dispose();
-                }
+                DisposeTrackedTempJobArray(ref requestedSectors);
+                DisposeTrackedTempJobList(ref restoredRecords, RestoredRecordsScratchLabel);
+            }
+        }
+
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, string label, NativeArrayOptions options)
+            where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    array,
+                    NativeMemoryOwner,
+                    label,
+                    NativeAllocationLifetime.TempJob);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+
+            array.Dispose();
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static NativeList<T> AllocateTrackedTempJobList<T>(int capacity, string label)
+            where T : unmanaged
+        {
+            NativeList<T> list = new NativeList<T>(capacity, Allocator.TempJob);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeList(
+                    list,
+                    NativeMemoryOwner,
+                    label,
+                    NativeAllocationLifetime.TempJob);
+                if (sentinelId > 0)
+                    return list;
+            }
+            catch
+            {
+                if (list.IsCreated)
+                    list.Dispose();
+
+                throw;
+            }
+
+            list.Dispose();
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void DisposeTrackedTempJobArray<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
+        }
+
+        private static void DisposeTrackedTempJobList<T>(ref NativeList<T> list, string label)
+            where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
+            }
+            finally
+            {
+                list.Dispose();
+                list = default;
             }
         }
 

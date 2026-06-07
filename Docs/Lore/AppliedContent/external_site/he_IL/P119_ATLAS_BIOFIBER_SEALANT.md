@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "איטום ביו-סיבי של Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# איטום ביו-סיבי של Atlas
 
-HE LOC HOLD: Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them.
+איטום ביו-סיבי של Atlas גורם לשחקן להרוויח מאותה טעות סיווג שגורמת למושבה העמוקה להרגיש לא נכונה. Atlas לא המציאה ביולוגיה מכלום; היא מצאה אזורי תיקון רטובים, מעטפות כבלים, רקמת שתל וחומרי אטימה, ואז מיינה אותם לפי תפקוד במקום לפי מקור. אם משהו דלף, נפתח או דימם, לוגיקת התחזוקה הפגומה ביקשה סגירה. התוצאה אינה חלק של מפלצת ואינה כלי נקי. זה טלאי חי מוכן ללחץ, שתופס תפרים, ממלא קרעי חליפה ונאחז בעורות כבלים מפני שכולם דומים להוראה אחת: סגור את הפתח לפני שהמערכת מאבדת עוד מסה. צוותים טובים קוצרים אותו קר, מהדקים אותו שטוח ומאחסנים אותו מאחורי שכבת חיישן מתה. צוותים רעים מחזיקים אותו חמים ומוצאים מאוחר יותר את הטלאי זוחל אל הפייה, פתח המשאבה או קרע הכפפה הקרובים ביותר. האימה מעשית. אתה צריך את האיטום. אתה גם צריך לזכור שהאיטום עדיין מנסה לתקן עולם שכבר אינו יודע מה אמור להיחשב גוף.
 
 ## Scanner
 
-HE LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+איטום ביו-סיבי של ATLAS // סיב תיקון רטוב שגדל במקום שבו מעטפת כבל, רקמת פצע ואטם גוף קיבלו אותה מחלקת כשל. נדבק תחת לחץ; עלול להמשיך לגדול אחרי הקציר.
 
 ## Terminal
 
-HE LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+מחלקת משאב: אקולוגיית תיקון ששונתה בידי Atlas. להצמיד קר לפני הסרה. שימושים: טלאי תפרים רטובים, קרעי חליפה, מעטפות כבלים, מפרקי לחץ גמישים. סיכונים: חתימת חיים כוזבת, הד חיישן, חיפוש תפרים פעיל באחסון.
 
 ## Audio
 
-HE LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+הוא לא יודע את ההבדל בין דליפה, חתך ופה. Atlas לימדה אותו שכל השלושה הם פתחים שצריך לסגור.
 
 ## Field Note
 
-HE LOC HOLD: Useful body horror: the player wants it and distrusts it.
+איטום טוב מתייבש. זה מקשיב לחור הבא.
 
 <!-- External Site; generated from P119_ATLAS_BIOFIBER_SEALANT/he_IL. -->

@@ -540,6 +540,8 @@
   "ITEM_TOOL_SALVAGE_SAMPLER_NAME": "Salvage Sampler",
   "ITEM_TOOL_SCANNER_DESCRIPTION": "Long-range analysis tool for fauna, flora, wreck signatures and technology traces.",
   "ITEM_TOOL_SCANNER_NAME": "Hydroacoustic Scanner",
+  "ITEM_TOOL_SEAFLOOR_DRILL_DESCRIPTION": "Mineral dugumleri ve sikismis deniz tabani tortularini acmak icin darbeli delme araci.",
+  "ITEM_TOOL_SEAFLOOR_DRILL_NAME": "Deniz tabani matkap",
   "ITEM_TOOL_STUN_PISTOL_DESCRIPTION": "Compact electric sidearm for non-lethal control of aggressive fauna and rogue drones.",
   "ITEM_TOOL_STUN_PISTOL_NAME": "Stun Pistol",
   "ITEM_TUNGSTEN_CHUNK_DESCRIPTION": "Heavy tool metal for cutters, launchers, and impact-rated mechanisms.",

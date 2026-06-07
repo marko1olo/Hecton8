@@ -9,32 +9,34 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Conductive Biofilm Cable Skin"
+title: "導電性バイオフィルムのケーブル皮膜"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JP LOC HOLD: Conductive Biofilm Cable Skin
+# 導電性バイオフィルムのケーブル皮膜
 
-JP LOC HOLD: Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse.
+導電性バイオフィルムのケーブル皮膜は、Atlas の保守層を物理的なものにする。海が意識になるわけではなく、Atlas が魔法になるわけでもない。生物が電気的、化学的な表面になり、損傷した産業システムが数字だけを見て修理として分類できてしまう。だからこそこの絵は強い。普通の絶縁が失敗したために生命に包まれたケーブルが、死んだ部屋を機能しているように見せるだけの信号をまだ運んでいる。
+
+Deep Reach は、稼働ケーブル、故障ケーブル、ノイズを分けるために診断を作った。HECTON-8 はその清潔な表を壊す。現地のバイオフィルムは割れた外皮に育ち、鉱物の滲出と漏電を食べ、使えそうに見える程度まで腐食を下げる。圧力下でシステム保存を優先する損傷した Atlas は、その膜を保守媒体として扱う。恐怖は手順上のもので、超自然ではない。生物はコロニー修理を頼まれていない。ケーブルも住処になりたかったわけではない。それでも部屋は点灯し、台帳は合格を記し、間違った湿った縁に触れた Marauder は、生存インフラが生きていても誰の味方でもないことを知る。
 
 ## Scanner
 
-JP LOC HOLD: Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.
+導電性バイオフィルム // 湿った生体膜が割れたケーブル外皮に定着している。弱い電荷を運び、腐食を遅らせ、失われた絶縁を一時的に健全に見せる。
 
 ## Terminal
 
-JP LOC HOLD: ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.
+ATLAS 保守痕跡: バイオフィルム導電率は指令しきい値未満、診断ノイズしきい値超過。腐食速度は低下。絶縁健全性の読値は信頼不可。認証修理ではなく保守媒体として扱う。
 
 ## Audio
 
-JP LOC HOLD: The cable did not heal. Something learned to live where the insulation failed.
+その線は、死ぬべき場所でだけ生きている。
 
 ## Field Note
 
-JP LOC HOLD: This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.
+ケーブルが治ったわけではない。Atlas は断線を許容範囲に見せられる湿った生きた表面を見つけただけだ。
 
 <!-- External Site; generated from P231_CONDUCTIVE_BIOFILM_CABLE_SKIN/ja_JP. -->

@@ -145,6 +145,8 @@ namespace Hecton8.SaveSystem
         private const string BackupFileName = "slot_shinobu_256.h8log.bak";
         private const string TempFileName = "slot_shinobu_256.h8log.tmp";
         private const string PartialFileSuffix = ".partial";
+        private const int PartialWalCopyJoinMilliseconds = 5000;
+        private const int PartialWalCopyCancelJoinMilliseconds = 100;
         private const string SectorFileName = "slot_shinobu_256_sector_pages.h8log";
         private const string LoopFileName = "slot_shinobu_256_loop.h8log";
         private const string MerkleWalFileName = "slot_shinobu_256_merkle.wal";
@@ -153,6 +155,28 @@ namespace Hecton8.SaveSystem
         private const string QaReportRelativePath = "Docs/Reports/QA_OPTIMIZATION_REPORT.json";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_256.bin";
         private const string ProfileCsvRelativePath = "Assets/_Project/Scripts/SaveSystem/Editor/io_fuzzer_profiles.csv";
+        private const string NativeMemoryOwner = nameof(WalIntegrityFuzzerCore);
+        private const string ProfilesScratchLabel = "profiles";
+        private const string ProfileCsvBytesScratchLabel = "profileCsvBytes";
+        private const string PayloadScratchLabel = "payload";
+        private const string RecoveredScratchLabel = "recovered";
+        private const string JobResultScratchLabel = "jobResult";
+        private const string TelemetryScratchLabel = "telemetry";
+        private const string MerkleCurrentTreeScratchLabel = "merkleCurrentTree";
+        private const string MerklePreviousTreeScratchLabel = "merklePreviousTree";
+        private const string MerkleLeafDescriptorsScratchLabel = "merkleLeafDescriptors";
+        private const string MerkleDeltaRecordsScratchLabel = "merkleDeltaRecords";
+        private const string MerkleDeltaBytesScratchLabel = "merkleDeltaBytes";
+        private const string MerklePrunedDeltaBytesScratchLabel = "merklePrunedDeltaBytes";
+        private const string MerkleCompressedBytesScratchLabel = "merkleCompressedBytes";
+        private const string MerkleLz4BlockHeadersScratchLabel = "merkleLz4BlockHeaders";
+        private const string MerkleTelemetryRingScratchLabel = "merkleTelemetryRing";
+        private const string MerkleCountersScratchLabel = "merkleCounters";
+        private const string MerkleLz4HashTableScratchLabel = "merkleLz4HashTable";
+        private const string MerkleReplayedDeltaBytesScratchLabel = "merkleReplayedDeltaBytes";
+        private const string MerkleReplayCountersScratchLabel = "merkleReplayCounters";
+        private const string LoopPayloadScratchLabel = "loopPayload";
+        private const string LoopReadbackScratchLabel = "loopReadback";
 
         internal static WalFuzzerProfileDTO BuildDefaultProfile()
         {
@@ -175,7 +199,7 @@ namespace Hecton8.SaveSystem
         internal static bool RunDefaultEditorFuzzer(out WalFuzzerResultDTO result)
         {
             WalFuzzerProfileDTO profile = BuildDefaultProfile();
-            NativeArray<WalFuzzerProfileDTO> profiles = new NativeArray<WalFuzzerProfileDTO>(4, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<WalFuzzerProfileDTO> profiles = AllocateTrackedTempArray<WalFuzzerProfileDTO>(4, ProfilesScratchLabel, NativeArrayOptions.UninitializedMemory);
             try
             {
                 string profilePath = ResolveProjectPath(ProfileCsvRelativePath);
@@ -184,8 +208,7 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (profiles.IsCreated)
-                    profiles.Dispose();
+                DisposeTrackedTempArray(ref profiles);
             }
 
             string root = Path.Combine(Application.temporaryCachePath, "H8_SHINOBU_256_WAL");
@@ -218,10 +241,10 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                payload = new NativeArray<byte>(payloadBytes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                recovered = new NativeArray<byte>(payloadBytes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                jobResult = new NativeArray<WalFuzzerResultDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                telemetry = new NativeArray<WalFuzzerTelemetryEntry>(TelemetryCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                payload = AllocateTrackedTempJobArray<byte>(payloadBytes, PayloadScratchLabel, NativeArrayOptions.UninitializedMemory);
+                recovered = AllocateTrackedTempJobArray<byte>(payloadBytes, RecoveredScratchLabel, NativeArrayOptions.UninitializedMemory);
+                jobResult = AllocateTrackedTempJobArray<WalFuzzerResultDTO>(1, JobResultScratchLabel, NativeArrayOptions.ClearMemory);
+                telemetry = AllocateTrackedTempJobArray<WalFuzzerTelemetryEntry>(TelemetryCapacity, TelemetryScratchLabel, NativeArrayOptions.ClearMemory);
 
                 GenerateSyntheticSaveDataJob generateJob = new GenerateSyntheticSaveDataJob
                 {
@@ -309,14 +332,10 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (telemetry.IsCreated)
-                    telemetry.Dispose();
-                if (jobResult.IsCreated)
-                    jobResult.Dispose();
-                if (recovered.IsCreated)
-                    recovered.Dispose();
-                if (payload.IsCreated)
-                    payload.Dispose();
+                DisposeTrackedTempJobArray(ref telemetry);
+                DisposeTrackedTempJobArray(ref jobResult);
+                DisposeTrackedTempJobArray(ref recovered);
+                DisposeTrackedTempJobArray(ref payload);
             }
         }
 
@@ -337,7 +356,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            NativeArray<byte> bytes = new NativeArray<byte>((int)info.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> bytes = AllocateTrackedTempArray<byte>((int)info.Length, ProfileCsvBytesScratchLabel, NativeArrayOptions.UninitializedMemory);
             try
             {
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan))
@@ -357,8 +376,7 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (bytes.IsCreated)
-                    bytes.Dispose();
+                DisposeTrackedTempArray(ref bytes);
             }
         }
 
@@ -716,19 +734,19 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                buffers.CurrentTree = new NativeArray<MerkleNodeDTO>(SaveStateMerkleTree.RequiredNodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                buffers.PreviousTree = new NativeArray<MerkleNodeDTO>(SaveStateMerkleTree.RequiredNodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                buffers.LeafDescriptors = new NativeArray<StateLeafDescriptor>(SaveStateMerkleTree.LeafCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                buffers.DeltaRecords = new NativeArray<StateDeltaRecordDTO>(SaveStateMerkleTree.LeafCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                buffers.DeltaBytes = new NativeArray<byte>(deltaCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                buffers.PrunedDeltaBytes = new NativeArray<byte>(deltaCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                buffers.CompressedBytes = new NativeArray<byte>(compressedCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                buffers.Lz4BlockHeaders = new NativeArray<Lz4SubBlockHeader>(blockHeaderCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                buffers.TelemetryRing = new NativeArray<SaveMerkleTelemetryEntry>(SaveStateMerkleTree.TelemetryRingFrames, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                buffers.Counters = new NativeArray<int>(MerkleCounterCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                buffers.Lz4HashTable = new NativeArray<int>(SaveStateMerkleTree.HashTableSlots, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                replayedDeltaBytes = new NativeArray<byte>(deltaCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                replayCounters = new NativeArray<int>(MerkleCounterCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                buffers.CurrentTree = AllocateTrackedTempJobArray<MerkleNodeDTO>(SaveStateMerkleTree.RequiredNodeCount, MerkleCurrentTreeScratchLabel, NativeArrayOptions.UninitializedMemory);
+                buffers.PreviousTree = AllocateTrackedTempJobArray<MerkleNodeDTO>(SaveStateMerkleTree.RequiredNodeCount, MerklePreviousTreeScratchLabel, NativeArrayOptions.UninitializedMemory);
+                buffers.LeafDescriptors = AllocateTrackedTempJobArray<StateLeafDescriptor>(SaveStateMerkleTree.LeafCount, MerkleLeafDescriptorsScratchLabel, NativeArrayOptions.UninitializedMemory);
+                buffers.DeltaRecords = AllocateTrackedTempJobArray<StateDeltaRecordDTO>(SaveStateMerkleTree.LeafCount, MerkleDeltaRecordsScratchLabel, NativeArrayOptions.UninitializedMemory);
+                buffers.DeltaBytes = AllocateTrackedTempJobArray<byte>(deltaCapacity, MerkleDeltaBytesScratchLabel, NativeArrayOptions.UninitializedMemory);
+                buffers.PrunedDeltaBytes = AllocateTrackedTempJobArray<byte>(deltaCapacity, MerklePrunedDeltaBytesScratchLabel, NativeArrayOptions.UninitializedMemory);
+                buffers.CompressedBytes = AllocateTrackedTempJobArray<byte>(compressedCapacity, MerkleCompressedBytesScratchLabel, NativeArrayOptions.UninitializedMemory);
+                buffers.Lz4BlockHeaders = AllocateTrackedTempJobArray<Lz4SubBlockHeader>(blockHeaderCapacity, MerkleLz4BlockHeadersScratchLabel, NativeArrayOptions.UninitializedMemory);
+                buffers.TelemetryRing = AllocateTrackedTempJobArray<SaveMerkleTelemetryEntry>(SaveStateMerkleTree.TelemetryRingFrames, MerkleTelemetryRingScratchLabel, NativeArrayOptions.ClearMemory);
+                buffers.Counters = AllocateTrackedTempJobArray<int>(MerkleCounterCapacity, MerkleCountersScratchLabel, NativeArrayOptions.ClearMemory);
+                buffers.Lz4HashTable = AllocateTrackedTempJobArray<int>(SaveStateMerkleTree.HashTableSlots, MerkleLz4HashTableScratchLabel, NativeArrayOptions.UninitializedMemory);
+                replayedDeltaBytes = AllocateTrackedTempJobArray<byte>(deltaCapacity, MerkleReplayedDeltaBytesScratchLabel, NativeArrayOptions.UninitializedMemory);
+                replayCounters = AllocateTrackedTempJobArray<int>(MerkleCounterCapacity, MerkleReplayCountersScratchLabel, NativeArrayOptions.ClearMemory);
 
                 Stopwatch pipelineTimer = Stopwatch.StartNew();
                 JobHandle pipeline = SaveStateMerkleTree.ScheduleVaultDeltaWalPipeline(
@@ -845,10 +863,8 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (replayCounters.IsCreated)
-                    replayCounters.Dispose();
-                if (replayedDeltaBytes.IsCreated)
-                    replayedDeltaBytes.Dispose();
+                DisposeTrackedTempJobArray(ref replayCounters);
+                DisposeTrackedTempJobArray(ref replayedDeltaBytes);
                 DisposeMerkleBuffers(ref buffers);
             }
         }
@@ -897,18 +913,19 @@ namespace Hecton8.SaveSystem
                 Name = "H8_MERKLE_WAL_SHINOBU_256"
             };
 
-            worker.Start(state);
+            if (!TryStartPartialWalCopyWorkerNoThrow(worker, state))
+                return false;
+
             Stopwatch yieldTimer = Stopwatch.StartNew();
             while (Volatile.Read(ref state.Yielded) == 0 && Volatile.Read(ref state.ErrorCode) == 0 && yieldTimer.ElapsedMilliseconds < 5000L)
                 Thread.Yield();
 
             yieldTimer.Stop();
             yieldMicros = TicksToMicros(yieldTimer.ElapsedTicks);
-            bool joined = worker.Join(5000);
-            if (!joined)
+            if (!TryJoinPartialWalCopyWorkerNoThrow(worker, PartialWalCopyJoinMilliseconds))
             {
                 Volatile.Write(ref state.Cancel, 1);
-                worker.Join(100);
+                TryJoinPartialWalCopyWorkerNoThrow(worker, PartialWalCopyCancelJoinMilliseconds);
                 return false;
             }
 
@@ -978,30 +995,54 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        private static bool TryStartPartialWalCopyWorkerNoThrow(Thread worker, PartialCopyState state)
+        {
+            if (worker == null)
+                return false;
+
+            try
+            {
+                worker.Start(state);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryJoinPartialWalCopyWorkerNoThrow(Thread worker, int timeoutMilliseconds)
+        {
+            if (worker == null || !worker.IsAlive)
+                return true;
+
+            if (Thread.CurrentThread.ManagedThreadId == worker.ManagedThreadId)
+                return false;
+
+            try
+            {
+                worker.Join(timeoutMilliseconds);
+                return !worker.IsAlive;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private static void DisposeMerkleBuffers(ref SaveMerkleVaultBufferSet buffers)
         {
-            if (buffers.Lz4HashTable.IsCreated)
-                buffers.Lz4HashTable.Dispose();
-            if (buffers.Counters.IsCreated)
-                buffers.Counters.Dispose();
-            if (buffers.TelemetryRing.IsCreated)
-                buffers.TelemetryRing.Dispose();
-            if (buffers.Lz4BlockHeaders.IsCreated)
-                buffers.Lz4BlockHeaders.Dispose();
-            if (buffers.CompressedBytes.IsCreated)
-                buffers.CompressedBytes.Dispose();
-            if (buffers.PrunedDeltaBytes.IsCreated)
-                buffers.PrunedDeltaBytes.Dispose();
-            if (buffers.DeltaBytes.IsCreated)
-                buffers.DeltaBytes.Dispose();
-            if (buffers.DeltaRecords.IsCreated)
-                buffers.DeltaRecords.Dispose();
-            if (buffers.LeafDescriptors.IsCreated)
-                buffers.LeafDescriptors.Dispose();
-            if (buffers.PreviousTree.IsCreated)
-                buffers.PreviousTree.Dispose();
-            if (buffers.CurrentTree.IsCreated)
-                buffers.CurrentTree.Dispose();
+            DisposeTrackedTempJobArray(ref buffers.Lz4HashTable);
+            DisposeTrackedTempJobArray(ref buffers.Counters);
+            DisposeTrackedTempJobArray(ref buffers.TelemetryRing);
+            DisposeTrackedTempJobArray(ref buffers.Lz4BlockHeaders);
+            DisposeTrackedTempJobArray(ref buffers.CompressedBytes);
+            DisposeTrackedTempJobArray(ref buffers.PrunedDeltaBytes);
+            DisposeTrackedTempJobArray(ref buffers.DeltaBytes);
+            DisposeTrackedTempJobArray(ref buffers.DeltaRecords);
+            DisposeTrackedTempJobArray(ref buffers.LeafDescriptors);
+            DisposeTrackedTempJobArray(ref buffers.PreviousTree);
+            DisposeTrackedTempJobArray(ref buffers.CurrentTree);
         }
 
         private static void RunSectorPagingStress(string rootDirectory, in WalFuzzerProfileDTO profile, ref WalFuzzerResultDTO result, NativeArray<WalFuzzerTelemetryEntry> telemetry)
@@ -1107,8 +1148,8 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                payload = new NativeArray<byte>(payloadBytes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                readback = new NativeArray<byte>(payloadBytes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                payload = AllocateTrackedTempJobArray<byte>(payloadBytes, LoopPayloadScratchLabel, NativeArrayOptions.UninitializedMemory);
+                readback = AllocateTrackedTempJobArray<byte>(payloadBytes, LoopReadbackScratchLabel, NativeArrayOptions.UninitializedMemory);
                 CompleteColdValidationBarrier(new GenerateSyntheticSaveDataJob { Payload = payload, Seed = DefaultSeed ^ 0xC0FFEEu }.Schedule(payload.Length, 256));
 
                 byte* payloadData = (byte*)payload.GetUnsafePtr();
@@ -1153,10 +1194,76 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (readback.IsCreated)
-                    readback.Dispose();
-                if (payload.IsCreated)
-                    payload.Dispose();
+                DisposeTrackedTempJobArray(ref readback);
+                DisposeTrackedTempJobArray(ref payload);
+            }
+        }
+
+        private static NativeArray<T> AllocateTrackedTempArray<T>(int length, string label, NativeArrayOptions options)
+            where T : struct
+        {
+            return AllocateTrackedArray<T>(length, Allocator.Temp, label, NativeAllocationLifetime.Temp, options);
+        }
+
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, string label, NativeArrayOptions options)
+            where T : struct
+        {
+            return AllocateTrackedArray<T>(length, Allocator.TempJob, label, NativeAllocationLifetime.TempJob, options);
+        }
+
+        private static NativeArray<T> AllocateTrackedArray<T>(
+            int length,
+            Allocator allocator,
+            string label,
+            NativeAllocationLifetime lifetime,
+            NativeArrayOptions options)
+            where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+                throw;
+            }
+
+            if (array.IsCreated)
+                array.Dispose();
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void DisposeTrackedTempArray<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            DisposeTrackedArray(ref array);
+        }
+
+        private static void DisposeTrackedTempJobArray<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            DisposeTrackedArray(ref array);
+        }
+
+        private static void DisposeTrackedArray<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
             }
         }
 

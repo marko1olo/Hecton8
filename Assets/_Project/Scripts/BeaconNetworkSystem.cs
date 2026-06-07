@@ -103,12 +103,8 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            BeaconNetworkSystem registered = s_activeRuntime;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             s_activeRuntime = this;
             CacheRegistryServicesCold();
@@ -116,6 +112,9 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             TryRegisterService();
@@ -167,10 +166,81 @@ namespace Hecton8.Gameplay
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             GlobalRegistry.RegisterBeaconNetworkRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.BeaconNetwork, this);
             if (_serviceRegistered)
                 s_activeRuntime = this;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            BeaconNetworkSystem active = s_activeRuntime;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsBeaconNetworkActiveRuntimeUsable(active))
+                {
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntime, active))
+                    s_activeRuntime = null;
+                if (ReferenceEquals(GlobalRegistry.BeaconNetwork, active))
+                    GlobalRegistry.UnregisterBeaconNetworkRuntime(active);
+            }
+
+            BeaconNetworkSystem registered = GlobalRegistry.BeaconNetwork;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsBeaconNetworkRegisteredRuntimeUsable(registered))
+            {
+                s_activeRuntime = registered;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterBeaconNetworkRuntime(registered);
+            if (ReferenceEquals(s_activeRuntime, registered))
+                s_activeRuntime = null;
+            return false;
+        }
+
+        private static BeaconNetworkSystem ResolveActiveRuntime()
+        {
+            BeaconNetworkSystem active = s_activeRuntime;
+            if (IsBeaconNetworkActiveRuntimeUsable(active))
+                return active;
+
+            if (!ReferenceEquals(active, null))
+                s_activeRuntime = null;
+
+            BeaconNetworkSystem registered = GlobalRegistry.BeaconNetwork;
+            if (IsBeaconNetworkRegisteredRuntimeUsable(registered))
+            {
+                s_activeRuntime = registered;
+                return registered;
+            }
+
+            if (!ReferenceEquals(registered, null))
+                GlobalRegistry.UnregisterBeaconNetworkRuntime(registered);
+
+            return null;
+        }
+
+        private static bool IsBeaconNetworkActiveRuntimeUsable(BeaconNetworkSystem system)
+        {
+            return system != null && system.isActiveAndEnabled;
+        }
+
+        private static bool IsBeaconNetworkRegisteredRuntimeUsable(BeaconNetworkSystem system)
+        {
+            return system != null &&
+                   system._serviceRegistered &&
+                   system.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()
@@ -188,7 +258,7 @@ namespace Hecton8.Gameplay
 
         public static BeaconNetworkSystem GetOrCreate()
         {
-            BeaconNetworkSystem registered = s_activeRuntime;
+            BeaconNetworkSystem registered = ResolveActiveRuntime();
             if (registered != null)
                 return registered;
 
@@ -239,7 +309,7 @@ namespace Hecton8.Gameplay
 
         public static bool TryRetractNearest(Vector3 origin, out BeaconRuntime beacon, out float distance)
         {
-            BeaconNetworkSystem runtime = s_activeRuntime;
+            BeaconNetworkSystem runtime = ResolveActiveRuntime();
             if (runtime == null)
             {
                 beacon = null;
@@ -259,7 +329,7 @@ namespace Hecton8.Gameplay
 
         public static bool TryRetractNearest(in AbsoluteUniversePosition originAup, out BeaconRuntime beacon, out float distance)
         {
-            BeaconNetworkSystem runtime = s_activeRuntime;
+            BeaconNetworkSystem runtime = ResolveActiveRuntime();
             if (runtime == null)
             {
                 beacon = null;
@@ -272,7 +342,7 @@ namespace Hecton8.Gameplay
 
         public static bool TryGetNearest(Vector3 origin, out BeaconSnapshot snapshot, out float distance)
         {
-            BeaconNetworkSystem runtime = s_activeRuntime;
+            BeaconNetworkSystem runtime = ResolveActiveRuntime();
             if (runtime == null)
             {
                 snapshot = default;
@@ -292,7 +362,7 @@ namespace Hecton8.Gameplay
 
         public static bool TryGetNearest(in AbsoluteUniversePosition originAup, out BeaconSnapshot snapshot, out float distance)
         {
-            BeaconNetworkSystem runtime = s_activeRuntime;
+            BeaconNetworkSystem runtime = ResolveActiveRuntime();
             if (runtime == null)
             {
                 snapshot = default;
@@ -505,7 +575,7 @@ namespace Hecton8.Gameplay
 
         internal static void NotifyRuntimeDestroyed(BeaconRuntime beacon)
         {
-            BeaconNetworkSystem runtime = s_activeRuntime;
+            BeaconNetworkSystem runtime = ResolveActiveRuntime();
             if (beacon == null || runtime == null)
                 return;
 
@@ -708,8 +778,11 @@ namespace Hecton8.Gameplay
             _ = lightRange;
             _ = fallbackScale;
 
+            if (worldBeaconPrefab == null)
+                return null;
+
             IObjectPoolService pool = _cachedObjectPool;
-            if (worldBeaconPrefab != null && pool != null)
+            if (pool != null)
             {
                 GameObject instance = pool.Spawn(worldBeaconPrefab, position, rotation);
                 if (instance != null)
@@ -730,7 +803,22 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            return null;
+            GameObject directInstance = Instantiate(worldBeaconPrefab, position, rotation);
+            if (directInstance == null)
+                return null;
+
+            directInstance.TryGetComponent(out BeaconRuntime direct);
+            if (direct == null)
+            {
+                Destroy(directInstance);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (verboseLogging)
+                    Hecton8.Core.H8Debug.LogWarning("[BeaconNetwork] Beacon prefab is missing BeaconRuntime; direct spawn rejected.");
+#endif
+                return null;
+            }
+
+            return direct;
         }
 
         private void UnregisterRuntime(BeaconRuntime beacon)

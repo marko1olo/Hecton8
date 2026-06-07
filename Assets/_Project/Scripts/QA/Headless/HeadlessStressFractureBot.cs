@@ -420,12 +420,9 @@ namespace Hecton8.QA.Headless
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 _dispatcher = currentService as ITickDispatcher;
+                UnregisterRuntimeLanes();
                 if (currentService == null)
                 {
-                    _registeredFast = false;
-                    _registeredCold = false;
-                    _registeredLate = false;
-                    _started = false;
                     return;
                 }
 

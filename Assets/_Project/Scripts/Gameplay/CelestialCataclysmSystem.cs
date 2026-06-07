@@ -100,11 +100,11 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
+                    TryUnregisterLateFrame();
                     if (currentService == null)
                         return;
 
-                    TryUnregister();
-                    TryUnregisterLateFrame();
                     TryRegister();
                     if (_meteorFogShadowsDirty || _solarEmpGlitchDirty)
                         TryRegisterLateFrame();

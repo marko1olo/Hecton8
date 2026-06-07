@@ -7,6 +7,9 @@ poi_tags: poi.marauder_correction_note;poi.crossed_corporate_label
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Слой Marauder corrections"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

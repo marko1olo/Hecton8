@@ -151,12 +151,19 @@ namespace Hecton8.Caves
             }
 
             _events = new NativeQueue<VoxelChunkModifiedEvent>(DataVaultExemptSignalLaneAllocator);
-            NativeMemorySentinel.RegisterNativeQueue(
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
                 _events,
                 Capacity,
                 NativeOwner,
                 QueueLabel,
                 NativeAllocationLifetime.Session);
+            if (sentinelId <= 0)
+            {
+                _events.Dispose();
+                _events = default;
+                throw new System.InvalidOperationException($"Native memory sentinel registration failed for {QueueLabel}.");
+            }
+
             PrewarmQueue(ref _events, Capacity);
             _pendingCount = 0;
         }
@@ -193,6 +200,7 @@ namespace Hecton8.Caves
 
             NativeMemorySentinel.UnregisterNativeQueue(NativeOwner, QueueLabel);
             _events.Dispose();
+            _events = default;
             _pendingCount = 0;
             _droppedCount = 0;
             _rejectedCount = 0;

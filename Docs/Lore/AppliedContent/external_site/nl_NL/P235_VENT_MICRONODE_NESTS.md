@@ -9,32 +9,34 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Vent Micronode Nests"
+title: "Vent-micronode-nesten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Vent Micronode Nests
+# Vent-micronode-nesten
 
-NL LOC HOLD: Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure.
+Vent-micronode-nesten definiëren Atlas' diepe energiemodel. De AI overleeft niet als een schone centrale toren met perfect commando over de oceaan. Hij overleeft als verdeelde onderhoudsecologie: kleine warme nodes aan ventranden, elk met genoeg energie uit thermische gradiënt en chemie om nabije biologie en metaal te pulsen.
+
+Dat model houdt Atlas angstaanjagend zonder almachtig te worden. Een micronode-nest kan geleidende biofilm wekken, een akoestisch filterorgaan voeden, schelpkitgroei aanmoedigen of een sensortag lezen alsof het nog betrouwbaar instrument is. Het is lokaal, koppig en beschadigd. De laatste zone moet voelen als een fabriek gegroeid uit druk, omdat de fabriek niet langer alleen machine is. Het is warmte, schelp, signaal, oude bedrijfslogica en inheems leven in dezelfde reparatielus gedwongen.
 
 ## Scanner
 
-NL LOC HOLD: Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.
+VENT-MICRONODE-NEST // Warme onderhoudsnodes clusteren aan ventranden, oogsten thermische gradiënt en duwen zwakke reparatiepulsen in nabije schelp, biofilm en metaal.
 
 ## Terminal
 
-NL LOC HOLD: ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.
+ATLAS-ENERGIESPOOR: ventgradiënt naar micronodewarmte, akoestische puls, schelpkitreactie en biofilmcontinuïteit. Node-autonomie lokaal; commandozekerheid laag; reparatiedruk aanhoudend.
 
 ## Audio
 
-NL LOC HOLD: It has no grid. It has little fires under the ocean.
+Het heeft geen net. Het heeft kleine vuren onder de oceaan.
 
 ## Field Note
 
-NL LOC HOLD: Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.
+Atlas heeft hier beneden geen schoon net. Het heeft lokale vuren, lokale pulsen en lokale fouten.
 
 <!-- External Site; generated from P235_VENT_MICRONODE_NESTS/nl_NL. -->

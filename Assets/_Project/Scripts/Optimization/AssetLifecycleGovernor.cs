@@ -3677,7 +3677,15 @@ namespace Hecton8.Optimization
                 int entryBytes = UnsafeUtility.SizeOf<AssetHeapTelemetryEntry>();
                 int telemetryBytes = entryBytes * telemetry.Length;
                 int byteCount = headerBytes + telemetryBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = H8Memory.Allocate<byte>(
+                    byteCount,
+                    VaultOwnerSystem,
+                    Allocator.Temp,
+                    NativeArrayOptions.UninitializedMemory);
+                if (!payload.IsCreated)
+                {
+                    return;
+                }
 
                 byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
                 WriteUInt64LittleEndian(bytes, 0, 0x484543544F4E3800UL);
@@ -3699,7 +3707,7 @@ namespace Hecton8.Optimization
             finally
             {
                 if (payload.IsCreated)
-                    payload.Dispose();
+                    H8Memory.Release(ref payload, VaultOwnerSystem);
             }
         }
 

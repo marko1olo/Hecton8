@@ -65,7 +65,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            _cachedAudioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             TryRegisterHotSwapListener();
         }
 
@@ -85,7 +85,7 @@ namespace Hecton8.UI
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
-                _cachedAudioService = currentService as IAudioService;
+                CacheAudioService(currentService as IAudioService);
         }
 
         public void ReceiveCanvasInput(in DiegeticPanelInputEvent inputEvent)
@@ -216,8 +216,8 @@ namespace Hecton8.UI
 
         private void QueuePressAudio()
         {
-            IAudioService audio = _cachedAudioService;
-            if (!emitPressAudio || pressAudioEventId == 0u || audio == null || !audio.IsInitialized)
+            IAudioService audio = ResolveAudioService();
+            if (!emitPressAudio || pressAudioEventId == 0u || audio == null)
                 return;
 
             Vector3 sourcePosition = audioOrigin != null ? audioOrigin.position : transform.position;
@@ -230,6 +230,32 @@ namespace Hecton8.UI
                 ResolveSafePressAudioVolume(),
                 ResolveSafePressAudioPitch());
             audio.QueueAudioEvent(in audioEvent);
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _cachedAudioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private static float SanitizeFinite(float value, float fallback)

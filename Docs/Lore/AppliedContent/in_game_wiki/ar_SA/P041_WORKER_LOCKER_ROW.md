@@ -7,6 +7,9 @@ poi_tags: poi.worker_locker_row;poi.drowned_hab_module
 biome_tags: biome.drowned_colony;biome.shallow_wreck
 locale: ar_SA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "صف خزائن العمال"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

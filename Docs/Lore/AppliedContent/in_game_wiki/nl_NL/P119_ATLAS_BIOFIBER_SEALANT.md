@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Atlas-biovezelkit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Atlas-biovezelkit
 
-NL LOC HOLD: Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.
+Atlas-biovezelkit is een nuttige vergissing. Het groeit in reparatie-ecologie waar levend weefsel, gescheurde kabelmantel en lekkende naad als hetzelfde soort wond werden geclassificeerd. Een voorbereide strip kan overlevingsuitrusting of flexibele drukgewrichten onder water afdichten, maar warme opslag kan naadzoekende groei en valse levenssignaturen wekken.
 
 ## Scanner
 
-NL LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+ATLAS-BIOVEZELKIT // Natte reparatievezel gegroeid waar kabelmantel, wondweefsel en romppakking dezelfde foutklasse kregen. Hecht onder druk; kan na oogst doorgroeien.
 
 ## Terminal
 
-NL LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+GRONDSTOFKLASSE: door Atlas veranderde reparatie-ecologie. Koud vastklemmen voor verwijdering. Gebruik: natte naadpatches, pakinscheuringen, kabelmantels, drukflexibele gewrichten. Risico's: valse levenssignatuur, sensorecho, actieve naadzoeking in opslag.
 
 ## Audio
 
-NL LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+Het kent het verschil niet tussen een lek, een snee en een mond. Atlas leerde het dat alle drie openingen zijn die dicht moeten.
 
 ## Field Note
 
-NL LOC HOLD: Useful body horror: the player wants it and distrusts it.
+Goede kit droogt. Deze luistert naar het volgende gat.
 
 <!-- In-Game Wiki; generated from P119_ATLAS_BIOFIBER_SEALANT/nl_NL. -->

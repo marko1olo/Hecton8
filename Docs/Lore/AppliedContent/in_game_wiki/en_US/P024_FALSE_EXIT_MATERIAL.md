@@ -7,6 +7,9 @@ poi_tags: poi.payload_gantry;poi.carrier_bargain
 biome_tags: biome.deep_launch_route;biome.orbit_window
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Material Exit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

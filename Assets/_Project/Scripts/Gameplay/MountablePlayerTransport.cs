@@ -2280,6 +2280,14 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregister(clearQueuedPresentation: false);
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Input &&
                 serviceSlot != GlobalRegistryServiceSlot.Audio &&
                 serviceSlot != GlobalRegistryServiceSlot.Physics &&
@@ -2294,9 +2302,35 @@ namespace Hecton8.Gameplay
         private void RefreshCachedRegistryServices()
         {
             _cachedInputService = GlobalRegistry.Input;
-            _cachedAudioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _cachedPhysicsService = GlobalRegistry.Physics;
             _cachedPhysicsStateEvents = GlobalRegistry.PhysicsStateEvents;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _cachedAudioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -2316,10 +2350,13 @@ namespace Hecton8.Gameplay
             _registeredHotSwapListener = false;
         }
 
-        private void TryUnregister()
+        private void TryUnregister(bool clearQueuedPresentation = true)
         {
-            ClearQueuedTransportAudio();
-            ClearQueuedEntanglementFeedback();
+            if (clearQueuedPresentation)
+            {
+                ClearQueuedTransportAudio();
+                ClearQueuedEntanglementFeedback();
+            }
 
             if (!_registered)
                 return;
@@ -2499,8 +2536,9 @@ namespace Hecton8.Gameplay
             TransportAudioOneShotRequest request = _pendingTransportOneShotAudio;
             _pendingTransportOneShotAudio = default;
             AudioClip clip = ResolveTransportOneShotClip(request.ClipKind);
-            if (clip != null && _cachedAudioService != null)
-                _cachedAudioService.PlayAtPoint(clip, request.Position, request.Volume);
+            IAudioService audioService = ResolveAudioService();
+            if (clip != null && audioService != null)
+                audioService.PlayAtPoint(clip, request.Position, request.Volume);
         }
 
         private void ClearQueuedTransportAudio()

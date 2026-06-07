@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -98,6 +99,10 @@ namespace Hecton8.Core
 
     public static unsafe class NativeFaultDumpWriter
     {
+        private const string TransientPayloadRegistrationFailureMessage = "NativeMemoryTrackingBridge registration failed for NativeFaultDumpWriter transient payload.";
+        private const string TransientPayloadUnregistrationFailureMessage = "NativeMemoryTrackingBridge unregistration failed for NativeFaultDumpWriter transient payload.";
+        private const string TransientPayloadRestoreFailureMessage = "NativeMemoryTrackingBridge restore failed after NativeFaultDumpWriter native disposal fault.";
+
         public static NativeArray<byte> CreateTransientPayload(
             int byteCount,
             string owner,
@@ -113,13 +118,16 @@ namespace Hecton8.Core
             try
             {
                 payload = new NativeArray<byte>(byteCount, allocator, options);
-                registered = TryRegisterTransientPayload(payload, owner, label, allocator);
+                registered = TryRegisterTransientNativeArrayPayload(payload, owner, label, allocator);
+                if (!registered)
+                    throw new InvalidOperationException(TransientPayloadRegistrationFailureMessage);
+
                 return payload;
             }
             catch
             {
                 if (registered)
-                    TryUnregisterTransientPayload(payload, owner, label);
+                    TryUnregisterTransientNativeArrayPayload(payload, owner, label);
 
                 if (payload.IsCreated)
                     payload.Dispose();
@@ -137,22 +145,29 @@ namespace Hecton8.Core
             if (!payload.IsCreated)
                 return;
 
-            bool unregistered = TryUnregisterTransientPayload(payload, owner, label);
+            bool unregistered = TryUnregisterTransientNativeArrayPayload(payload, owner, label);
+            if (!unregistered)
+                throw new InvalidOperationException(TransientPayloadUnregistrationFailureMessage);
+
             try
             {
                 payload.Dispose();
                 payload = default;
             }
-            catch
+            catch (Exception disposalException)
             {
                 if (unregistered && payload.IsCreated)
-                    TryRegisterTransientPayload(payload, owner, label, allocator);
+                {
+                    bool restored = TryRegisterTransientNativeArrayPayload(payload, owner, label, allocator);
+                    if (!restored)
+                        throw new AggregateException(TransientPayloadRestoreFailureMessage, disposalException);
+                }
 
                 throw;
             }
         }
 
-        private static bool TryRegisterTransientPayload(
+        private static bool TryRegisterTransientNativeArrayPayload(
             NativeArray<byte> payload,
             string owner,
             string label,
@@ -161,15 +176,15 @@ namespace Hecton8.Core
             if (!payload.IsCreated || !Hecton8.Core.Contracts.NativeMemoryTrackingBridge.IsInstalled)
                 return false;
 
-            Hecton8.Core.Contracts.NativeMemoryTrackingBridge.RegisterNativeArray(
+            int registrationId = Hecton8.Core.Contracts.NativeMemoryTrackingBridge.RegisterNativeArray(
                 payload,
                 owner,
                 label,
                 ResolveBridgeLifetime(allocator));
-            return true;
+            return registrationId > 0;
         }
 
-        private static bool TryUnregisterTransientPayload(
+        private static bool TryUnregisterTransientNativeArrayPayload(
             NativeArray<byte> payload,
             string owner,
             string label)
@@ -419,21 +434,22 @@ namespace Hecton8.Core
         private NativeArray<T> _buffer;
         private NativeArray<long> _publishedTickets;
         private NativeArray<MpscSignalRingCursorState> _cursor;
+        private SystemID _ownerSystem;
         private int _mask;
         private int _capacity;
 
         public MpscSignalRingBuffer(int requestedCapacity, Allocator allocator)
-            : this(requestedCapacity, allocator, default)
+            : this(requestedCapacity, allocator, SystemID.CoreDataVault)
         {
         }
 
         public MpscSignalRingBuffer(int requestedCapacity, Allocator allocator, object owner)
         {
-            _ = owner;
+            _ownerSystem = ResolveOwnerSystem(owner);
             int capacity = CeilPowerOfTwo(math.max(2, requestedCapacity));
-            _buffer = new NativeArray<T>(capacity, allocator, NativeArrayOptions.UninitializedMemory);
-            _publishedTickets = new NativeArray<long>(capacity, allocator, NativeArrayOptions.ClearMemory);
-            _cursor = new NativeArray<MpscSignalRingCursorState>(1, allocator, NativeArrayOptions.ClearMemory);
+            _buffer = H8Memory.Allocate<T>(capacity, _ownerSystem, allocator, NativeArrayOptions.UninitializedMemory);
+            _publishedTickets = H8Memory.Allocate<long>(capacity, _ownerSystem, allocator, NativeArrayOptions.ClearMemory);
+            _cursor = H8Memory.Allocate<MpscSignalRingCursorState>(1, _ownerSystem, allocator, NativeArrayOptions.ClearMemory);
             _mask = capacity - 1;
             _capacity = capacity;
 
@@ -506,15 +522,16 @@ namespace Hecton8.Core
         public void Dispose()
         {
             if (_buffer.IsCreated)
-                _buffer.Dispose();
+                H8Memory.Release(ref _buffer, _ownerSystem);
             if (_publishedTickets.IsCreated)
-                _publishedTickets.Dispose();
+                H8Memory.Release(ref _publishedTickets, _ownerSystem);
             if (_cursor.IsCreated)
-                _cursor.Dispose();
+                H8Memory.Release(ref _cursor, _ownerSystem);
 
             _buffer = default;
             _publishedTickets = default;
             _cursor = default;
+            _ownerSystem = default;
             _mask = 0;
             _capacity = 0;
         }
@@ -541,6 +558,13 @@ namespace Hecton8.Core
             value |= value >> 8;
             value |= value >> 16;
             return value + 1;
+        }
+
+        private static SystemID ResolveOwnerSystem(object owner)
+        {
+            return owner is SystemID system && system != SystemID.Unknown
+                ? system
+                : SystemID.CoreDataVault;
         }
 
         private static long ResolveCursorDistance(long head, long tail, int capacity)

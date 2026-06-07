@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -46,6 +47,7 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
         private const double DefaultSectorOriginY = -4200.0d;
         private const double DefaultSectorOriginZ = -50000.0d;
         private const double MaxAcceptedAupMagnitude = 1000000000.0d;
+        private const string NativeMemoryOwner = nameof(BiotaDensityBakePipeline);
 
         [MenuItem("HECTON-8/Ecosystem Density Forge/Bake Mock Biota Density")]
         public static void BakeDefaultMenu()
@@ -199,7 +201,7 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
 
             try
             {
-                telemetry = new NativeArray<BiotaDensityBakeTelemetryEntry>(BiotaDensityBakeConstants.TelemetryFrames, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                telemetry = Allocate<BiotaDensityBakeTelemetryEntry>(BiotaDensityBakeConstants.TelemetryFrames, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 int telemetryCursor = PrimeTelemetry(telemetry, in result, in sourceConfig);
                 ValidateLayoutsOrThrow();
                 BiotaDensityBakeConfigDTO config = SanitizeConfig(sourceConfig, sourceRules.Length);
@@ -214,21 +216,21 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
                 Directory.CreateDirectory("Docs/Reports");
                 Directory.CreateDirectory("Docs/AgentLogs");
 
-                depth = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                silt = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                biome = new NativeArray<uint>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                temperature = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                thermal = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                density = new NativeArray<byte>(result.RawByteCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                nonFinite = new NativeArray<byte>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                depth = Allocate<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                silt = Allocate<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                biome = Allocate<uint>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                temperature = Allocate<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                thermal = Allocate<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                density = Allocate<byte>(result.RawByteCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                nonFinite = Allocate<byte>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 rules = CreateNativeRules(in sourceRules, config.RuleCount);
                 weights = CreateNativeWeights(in sourceWeights, config.RuleCount);
                 vents = CreateDefaultVents(config);
-                edgeWest = new NativeArray<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                edgeEast = new NativeArray<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                edgeSouth = new NativeArray<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                edgeNorth = new NativeArray<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                runCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                edgeWest = Allocate<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                edgeEast = Allocate<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                edgeSouth = Allocate<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                edgeNorth = Allocate<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                runCount = Allocate<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
                 EditorUtility.DisplayProgressBar("Ecosystem Density Forge", "Mock terrain, silt, biome synthesis", 0.10f);
                 timer.Restart();
@@ -311,7 +313,7 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
                 cleanupHandleCompleted = true;
 
                 int runCapacity = math.max(1, runCount[0]);
-                runs = new NativeArray<BiotaDensityRleRunDTO>(runCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                runs = Allocate<BiotaDensityRleRunDTO>(runCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 JobHandle rleHandle = new CompressDensityRleJob
                 {
                     DensityBytes = density,
@@ -444,7 +446,7 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
 
             try
             {
-                telemetry = new NativeArray<BiotaDensityBakeTelemetryEntry>(BiotaDensityBakeConstants.TelemetryFrames, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                telemetry = Allocate<BiotaDensityBakeTelemetryEntry>(BiotaDensityBakeConstants.TelemetryFrames, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 int telemetryCursor = PrimeTelemetry(telemetry, in result, in sourceConfig);
                 ValidateLayoutsOrThrow();
                 BiotaDensityBakeConfigDTO config = SanitizeConfig(sourceConfig, sourceRules.Length);
@@ -459,21 +461,21 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
                 Directory.CreateDirectory("Docs/Reports");
                 Directory.CreateDirectory("Docs/AgentLogs");
 
-                depth = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                silt = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                biome = new NativeArray<uint>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                temperature = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                thermal = new NativeArray<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                density = new NativeArray<byte>(result.RawByteCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                nonFinite = new NativeArray<byte>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                depth = Allocate<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                silt = Allocate<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                biome = Allocate<uint>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                temperature = Allocate<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                thermal = Allocate<float>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                density = Allocate<byte>(result.RawByteCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                nonFinite = Allocate<byte>(result.PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 rules = CreateNativeRules(in sourceRules, config.RuleCount);
                 weights = CreateNativeWeights(in sourceWeights, config.RuleCount);
                 vents = CreateDefaultVents(config);
-                edgeWest = new NativeArray<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                edgeEast = new NativeArray<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                edgeSouth = new NativeArray<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                edgeNorth = new NativeArray<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                runCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                edgeWest = Allocate<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                edgeEast = Allocate<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                edgeSouth = Allocate<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                edgeNorth = Allocate<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                runCount = Allocate<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
                 EditorUtility.DisplayProgressBar("Ecosystem Density Forge", "Mock terrain, silt, biome synthesis", 0.10f);
                 timer.Restart();
@@ -556,7 +558,7 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
                 cleanupHandleCompleted = true;
 
                 int runCapacity = math.max(1, runCount[0]);
-                runs = new NativeArray<BiotaDensityRleRunDTO>(runCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                runs = Allocate<BiotaDensityRleRunDTO>(runCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 JobHandle rleHandle = new CompressDensityRleJob
                 {
                     DensityBytes = density,
@@ -690,20 +692,20 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
 
             try
             {
-                depth = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                silt = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                biome = new NativeArray<uint>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                temperature = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                thermal = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                density = new NativeArray<byte>(rawCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                nonFinite = new NativeArray<byte>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                depth = Allocate<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                silt = Allocate<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                biome = Allocate<uint>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                temperature = Allocate<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                thermal = Allocate<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                density = Allocate<byte>(rawCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                nonFinite = Allocate<byte>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 rules = CreateNativeRules(in sourceRules, config.RuleCount);
                 weights = CreateNativeWeights(in sourceWeights, config.RuleCount);
                 vents = CreateDefaultVents(config);
-                edgeWest = new NativeArray<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                edgeEast = new NativeArray<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                edgeSouth = new NativeArray<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                edgeNorth = new NativeArray<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                edgeWest = Allocate<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                edgeEast = Allocate<float>(config.Height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                edgeSouth = Allocate<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                edgeNorth = Allocate<float>(config.Width, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
                 JobHandle terrainHandle = new GenerateMockTerrainDataJob
                 {
@@ -867,7 +869,7 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
             uint requestedCount)
         {
             int count = math.clamp((int)requestedCount, 1, BiotaDensityBakeConstants.MaxRuleCount);
-            NativeArray<BiotaSpawnRuleDTO> output = new NativeArray<BiotaSpawnRuleDTO>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<BiotaSpawnRuleDTO> output = Allocate<BiotaSpawnRuleDTO>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             FixedList4096Bytes<BiotaSpawnRuleDTO> defaults = default;
             FixedList4096Bytes<BiotaRuleWeightDTO> defaultWeights = default;
             if (source.Length < count)
@@ -889,7 +891,7 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
             uint requestedCount)
         {
             int count = math.clamp((int)requestedCount, 1, BiotaDensityBakeConstants.MaxRuleCount);
-            NativeArray<BiotaRuleWeightDTO> output = new NativeArray<BiotaRuleWeightDTO>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<BiotaRuleWeightDTO> output = Allocate<BiotaRuleWeightDTO>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             FixedList4096Bytes<BiotaSpawnRuleDTO> defaultRules = default;
             FixedList4096Bytes<BiotaRuleWeightDTO> defaults = default;
             if (source.Length < count)
@@ -909,7 +911,7 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
         private static NativeArray<BiotaThermalVentDTO> CreateDefaultVents(BiotaDensityBakeConfigDTO config)
         {
             int count = math.clamp((int)config.VentCount <= 0 ? 3 : (int)config.VentCount, 1, 8);
-            NativeArray<BiotaThermalVentDTO> vents = new NativeArray<BiotaThermalVentDTO>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<BiotaThermalVentDTO> vents = Allocate<BiotaThermalVentDTO>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             double widthMeters = config.Width * math.max(0.001d, config.CellSizeMeters);
             double heightMeters = config.Height * math.max(0.001d, config.CellSizeMeters);
             for (int i = 0; i < count; i++)
@@ -1583,8 +1585,50 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
         {
             if (!array.IsCreated)
                 return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
             array = default;
+        }
+
+        private static NativeArray<T> Allocate<T>(int length, Allocator allocator, NativeArrayOptions options) where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("Biota density native allocation failed.");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    array,
+                    NativeMemoryOwner,
+                    typeof(T).Name,
+                    ResolveNativeAllocationLifetime(allocator));
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {typeof(T).Name}.");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private static NativeAllocationLifetime ResolveNativeAllocationLifetime(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return NativeAllocationLifetime.Temp;
+                case Allocator.TempJob:
+                    return NativeAllocationLifetime.TempJob;
+                case Allocator.Persistent:
+                    return NativeAllocationLifetime.Session;
+                default:
+                    return NativeAllocationLifetime.Session;
+            }
         }
 
         private static void AppendTask(StringBuilder builder, int index, string name, bool passed, string evidence)

@@ -34,7 +34,7 @@ MonoBehaviour:
   maximumDensity: 4.8
   validLayers:
     serializedVersion: 2
-    m_Bits: 1792
+    m_Bits: 2101376
   acousticResonance: 1.35
   debrisPhysicalProfile: 2
   basaltDensityThreshold: 1.25

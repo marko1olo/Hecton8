@@ -7,6 +7,9 @@ poi_tags: poi.black_keel_charter_card;poi.claim_pool_registry_strip
 biome_tags: biome.orbit;biome.contract
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Black Keel Claim-Pool Charter"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

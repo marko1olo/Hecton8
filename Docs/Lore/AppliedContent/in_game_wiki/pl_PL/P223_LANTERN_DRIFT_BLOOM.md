@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Lantern Drift Bloom"
+title: "Bloom latarniowego dryfu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Lantern Drift Bloom
+# Bloom latarniowego dryfu
 
-PL LOC HOLD: Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.
+Bloom latarniowego dryfu to planktonowe zdarzenie widoczności na fotycznym shelfie. Maluje linie prądu, zawieszone szczątki, łuki kabli i zębate drobne zagrożenia, zanim znajdzie je lampa. Dzięki temu bloom pomaga w nawigacji, ale nie jest światłem dla otuchy. Poruszone komórki pulsują i przekazują drgania przez sieć pokarmową; cutter, pompa, pinger lub nieostrożny thruster mogą zostawić za graczem jasny ślad akustyczny. Blask może też spłaszczać kontrast, chowając drobne kolce i złamane shell clamps w nadmiarze piękna. Traktuj bloom jak decyzję trasy: dryfuj z nim, gdy potrzebujesz konturów; przetnij go, gdy liczy się cisza; i nie pracuj głośno w środku, jeśli nie chcesz towarzystwa.
 
 ## Scanner
 
-PL LOC HOLD: A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.
+BLOOM LATARNIOWEGO DRYFU // Bioluminescencyjny plankton pasami znaczy prąd. Obrysowuje bezpieczną wodę i małe zagrożenia, ale hałas narzędzi zmienia bloom w świetlisty ślad.
 
 ## Terminal
 
-PL LOC HOLD: VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.
+ZDARZENIE WIDOCZNOŚCI: bloom poprawia czytanie sylwetek i śledzenie prądu, ale zmniejsza skrytość. Pobudzenie przez cutter, pompę, pinger, thruster lub uderzenie kadłuba może przyciągnąć filtratory, pasaczy i płytkowodne drapieżniki wzdłuż podświetlonego śladu.
 
 ## Audio
 
-PL LOC HOLD: Pretty water is still water. It carries your noise.
+Ładna woda wciąż jest wodą. Niesie twój hałas.
 
 ## Field Note
 
-PL LOC HOLD: Lantern drift is not decoration. It is a visibility event with acoustic consequences.
+Światło tutaj nie pociesza. W wodzie bloom każdy impuls cutter, kaszel pompy i powrót pinger niesie się dalej niż twoja lampa.
 
 <!-- In-Game Wiki; generated from P223_LANTERN_DRIFT_BLOOM/pl_PL. -->

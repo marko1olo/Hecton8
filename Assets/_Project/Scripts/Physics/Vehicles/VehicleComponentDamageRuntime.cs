@@ -157,11 +157,9 @@ namespace Hecton8.Physics.Vehicles
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null || !isActiveAndEnabled)
-                    return;
-
                 TryUnregisterRuntimeLanes();
-                TryRegisterRuntimeLanes();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterRuntimeLanes();
                 return;
             }
 

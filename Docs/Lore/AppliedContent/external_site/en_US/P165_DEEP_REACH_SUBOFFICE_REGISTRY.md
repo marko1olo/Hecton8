@@ -7,6 +7,9 @@ poi_tags: poi.suboffice_registry_stamp;poi.quarantine_review_gate
 biome_tags: biome.claim_admin;biome.relay_archive
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Deep Reach Suboffice Registry"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

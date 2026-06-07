@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "Ceramika ciśnieniowa Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# Ceramika ciśnieniowa Deep Reach
 
-PL LOC HOLD: Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities.
+Ceramika ciśnieniowa Deep Reach wyjaśnia, dlaczego kolonia w ogóle mogła działać i dlaczego jej szczątki wciąż są śmiertelne. Deep Reach nie zbudowało przemysłu dna z niekompetencji. Firma nauczyła się wzmacniać lokalne gliny, topniki siarczkowe i ciepło kuźni kominowych w ceramiczne części, które przeżywały ciśnienia nie do zniesienia dla zwykłego metalu. Pierścienie zaciskowe trzymały szwy habitatów. Gniazda uszczelnień zmuszały pompy do uczciwości. Styki przecinaków niosły ciepło przez solankę, nie zmieniając się w miękki złom. Izolacja kolebek wznoszenia kupowała kilka krytycznych minut, gdy osprzęt startowy powinien był ugotować sam siebie. Ta kompetencja jest częścią grozy, nie jej zaprzeczeniem. Gracz odzyskujący ceramikę ciśnieniową trzyma dowód, że Deep Reach rozumiało ten świat dość dobrze, by utrzymać ludzi przy życiu, a potem wybrało procedury i odpowiedzialność, które uczyniły porzucenie opłacalnym. Materiał pamięta oba fakty. Jest cenny w przepisie ucieczki i niebezpieczny we wraku. Szok termiczny może wywołać rozkwit odłamków: ciche białe pęknięcie otwiera się w nożowe płatki na twarzy pierścienia. Złe zwolnienie ciśnienia może zmienić idealne gniazdo w szrapnel. Ten zasób ma pokazywać prawdę przemysłową, nie zwykłą fakturę złoczyńcy. Kolonia zależała od niego, bo działał. Gracz zależy od niego z tego samego powodu.
 
 ## Scanner
 
-PL LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+CERAMIKA CIŚNIENIOWA DEEP REACH // Lokalna glina, topnik siarczkowy i ciepło kuźni kominowej zmienione w pierścienie zaciskowe i gniazda uszczelnień. Pięknie trzyma ciśnienie; po szoku pęka w noże.
 
 ## Terminal
 
-PL LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+KLASA ZASOBU: wzmocnione przez Deep Reach. Zastosowania: pierścienie zaciskowe, gniazda uszczelnień, styki przecinaków, izolacja kolebki wznoszenia. Tryb awarii: rozkwit odłamków przy szoku termicznym lub złym zwolnieniu ciśnienia.
 
 ## Audio
 
-PL LOC HOLD: The company was good at building things. That is part of the crime.
+Deep Reach umiało budować rzeczy. Dlatego kłamstwo zadziałało.
 
 ## Field Note
 
-PL LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+Stuknij na zimno. Jeśli śpiewa wysoko, nie podgrzewaj.
 
 <!-- External Site; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/pl_PL. -->

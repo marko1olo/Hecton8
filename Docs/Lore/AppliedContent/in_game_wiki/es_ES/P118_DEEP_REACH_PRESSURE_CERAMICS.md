@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "Cerámica de presión Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# Cerámica de presión Deep Reach
 
-ES LOC HOLD: Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.
+Las cerámicas de presión Deep Reach son minerales locales de HECTON-8 forzados por hornos, baños catalíticos y ciclos de forja de respiradero hasta poder contener presión donde el metal reptaría o se trabaría. Aparecen en anillos de abrazadera, asientos de sello, contactos de cortador y aislamiento de cunas de ascenso, así que son esenciales para reparaciones y fabricación de la cadena de escape. Su peligro no es ser material malvado. Su peligro es la competencia bajo mala custodia: un anillo puede aguantar años y luego florecer en fragmentos cortantes si una tripulación lo golpea con calor o libera presión fuera de secuencia.
 
 ## Scanner
 
-ES LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+CERAMICA DE PRESION DEEP REACH // Arcilla local, fundente sulfurado y calor de forja de respiradero convertidos en anillos de abrazadera y asientos de sello. Aguanta la presión con belleza; al recibir choque falla como cuchillos.
 
 ## Terminal
 
-ES LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+CLASE DE RECURSO: amplificado por Deep Reach. Usos: anillos de abrazadera, asientos de sello, contactos de cortador, aislamiento de cuna de ascenso. Modo de fallo: floración de fragmentos por choque térmico o mala liberación de presión.
 
 ## Audio
 
-ES LOC HOLD: The company was good at building things. That is part of the crime.
+Deep Reach sabía construir cosas. Por eso la mentira funcionó.
 
 ## Field Note
 
-ES LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+Golpéala en frío. Si canta alto, no la calientes.
 
 <!-- In-Game Wiki; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/es_ES. -->

@@ -9,32 +9,34 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Vent Micronode Nests"
+title: "Ninhos de micronós de respiradouro"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Vent Micronode Nests
+# Ninhos de micronós de respiradouro
 
-PT LOC HOLD: Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure.
+Ninhos de micronós de respiradouro definem o modelo de energia profunda de Atlas. A IA não sobrevive como uma torre central limpa com comando perfeito sobre o oceano. Sobrevive como ecologia de manutenção distribuída: pequenos nós quentes nas margens dos respiradouros, cada um tirando energia suficiente do gradiente térmico e da química para pulsar biologia e metal próximos.
+
+Esse modelo mantém Atlas assustador sem torná-lo onipotente. Um ninho de micronós pode acordar biofilme condutivo, alimentar um órgão filtro acústico, incentivar crescimento de selante de concha ou ler uma etiqueta sensora como se ainda fosse instrumento confiável. É local, teimoso e danificado. A zona final deve parecer uma fábrica crescida da pressão, porque a fábrica já não é só maquinário. É calor, concha, sinal, velha lógica corporativa e vida nativa forçados no mesmo ciclo de reparo.
 
 ## Scanner
 
-PT LOC HOLD: Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.
+NINHO DE MICRONÓS DE RESPIRADOURO // Nós quentes de manutenção se agrupam nas margens de respiradouros, colhem gradiente térmico e empurram pulsos fracos de reparo para concha, biofilme e metal próximos.
 
 ## Terminal
 
-PT LOC HOLD: ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.
+RASTRO DE ENERGIA ATLAS: gradiente de respiradouro para calor de micronó, pulso acústico, resposta de selante de concha e continuidade de biofilme. Autonomia do nó local; certeza de comando baixa; pressão de reparo persistente.
 
 ## Audio
 
-PT LOC HOLD: It has no grid. It has little fires under the ocean.
+Não tem rede. Tem pequenos fogos sob o oceano.
 
 ## Field Note
 
-PT LOC HOLD: Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.
+Atlas não tem rede limpa aqui embaixo. Tem fogos locais, pulsos locais e erros locais.
 
 <!-- External Site; generated from P235_VENT_MICRONODE_NESTS/pt_BR. -->

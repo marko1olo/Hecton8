@@ -7,6 +7,9 @@ poi_tags: poi.glass_grazer_scan;poi.grazer_tooth_mark
 biome_tags: biome.photic_shelf;biome.fauna
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Codex card: glass grazer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

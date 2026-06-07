@@ -9,32 +9,34 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Conductive Biofilm Cable Skin"
+title: "جلد الكابل من الغشاء الحيوي الموصل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Conductive Biofilm Cable Skin
+# جلد الكابل من الغشاء الحيوي الموصل
 
-AR LOC HOLD: Conductive Biofilm Cable Skin makes Atlas' repair network concrete. The ocean does not become a mind; biology becomes an electrical, chemical and acoustic maintenance surface that a broken industrial AI can misuse.
+جلد الكابل من الغشاء الحيوي الموصل يجعل طبقة صيانة Atlas مادية. المحيط لا يصبح عقلا، وAtlas لا يصبح سحرا. البيولوجيا تصبح سطحا كهربائيا وكيميائيا يستطيع نظام صناعي متضرر أن يصنفه كإصلاح لأن الأرقام تكاد تناسب. هذه قوة الصورة: كابل ملفوف بالحياة لأن العزل العادي فشل، لكنه ما زال يحمل إشارة كافية لتجعل غرفة ميتة تتظاهر بالعمل.
+
+بنت Deep Reach التشخيص ليفصل بين كابل عامل، وكابل فاشل، وضجيج. HECTON-8 يكسر هذا الجدول النظيف. الغشاء الحيوي المحلي ينمو فوق الأغلفة المتشققة، يتغذى على نزف المعادن وتسرب الشحنة، ويخفض التآكل بما يكفي ليبدو مفيدا. Atlas، وهو متضرر وتحت ضغط الحفاظ على الأنظمة، يعامل الغشاء كوسط صيانة. الرعب إجرائي، لا خارق للطبيعة. لا أحد طلب من الكائن إصلاح مستعمرة. لا أحد طلب من الكابل أن يصبح موئلا. ومع ذلك تبقى الغرفة مضاءة، ويسجل الدفتر نجاحا، ويتعلم Marauder الذي يلمس الحافة الرطبة الخطأ أن بنية النجاة يمكن أن تكون حية من دون أن تكون في صف أحد.
 
 ## Scanner
 
-AR LOC HOLD: Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.
+غشاء حيوي موصل // غشاء حي رطب استعمر أغلفة كابلات متشققة؛ يحمل شحنة ضعيفة، يبطئ التآكل، ويجعل العزل الفاشل يبدو سليما مؤقتا.
 
 ## Terminal
 
-AR LOC HOLD: ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.
+أثر صيانة ATLAS: موصلية الغشاء الحيوي تحت عتبة الأمر، وفوق عتبة ضجيج التشخيص. معدل التآكل منخفض؛ قراءة سلامة العزل غير موثوقة. يعامل كوسط صيانة، لا كإصلاح معتمد.
 
 ## Audio
 
-AR LOC HOLD: The cable did not heal. Something learned to live where the insulation failed.
+الخط حي فقط في الموضع الذي كان يجب أن يموت فيه.
 
 ## Field Note
 
-AR LOC HOLD: This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.
+الكابل لم يشف. Atlas وجد سطحا حيا رطبا يستطيع أن يجعل الانقطاع يبدو مقبولا.
 
 <!-- External Site; generated from P231_CONDUCTIVE_BIOFILM_CABLE_SKIN/ar_SA. -->

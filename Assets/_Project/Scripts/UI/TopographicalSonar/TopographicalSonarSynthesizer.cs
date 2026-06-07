@@ -699,8 +699,8 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredLateFrame = 0;
-                _registeredSlowTick = 0;
+                TryUnregisterLateFrameTickable();
+                TryUnregisterSlowTickable();
                 if (currentService == null || !isActiveAndEnabled)
                     return;
 

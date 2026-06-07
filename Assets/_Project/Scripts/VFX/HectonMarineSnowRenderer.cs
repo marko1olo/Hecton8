@@ -85,6 +85,7 @@ namespace Hecton8.Environment
         private const float MockAcousticPulseSpeed = 24f;
         private const float CsvProfilePollIntervalSeconds = 0.5f;
         private const int CsvProfilePollSliceMilliseconds = 50;
+        private const int CsvProfileThreadJoinTimeoutMilliseconds = CsvProfilePollSliceMilliseconds + 10;
         private const float InvTau = 0.15915494f;
         private const float ActiveDensityEpsilon = 0.0001f;
         private const float ShaderVectorPublishEpsilon = 0.0001f;
@@ -1908,13 +1909,22 @@ namespace Hecton8.Environment
             if (string.IsNullOrEmpty(_csvProfilePath) && string.IsNullOrEmpty(_wakeProfilePath))
                 return;
 
-            _csvProfileThreadStopRequested = false;
-            _csvProfileThread = new Thread(CsvProfileBackgroundReadLoop)
+            try
             {
-                IsBackground = true,
-                Name = "H8_VfxCsvReader"
-            };
-            _csvProfileThread.Start();
+                _csvProfileThreadStopRequested = false;
+                Thread reader = new Thread(CsvProfileBackgroundReadLoop)
+                {
+                    IsBackground = true,
+                    Name = "H8_VfxCsvReader"
+                };
+                _csvProfileThread = reader;
+                reader.Start();
+            }
+            catch (Exception)
+            {
+                _csvProfileThreadStopRequested = true;
+                _csvProfileThread = null;
+            }
         }
 
         private static string ResolveVfxSourceCsvPath(string fileName)
@@ -1929,10 +1939,26 @@ namespace Hecton8.Environment
             if (reader == null)
                 return;
 
-            if (reader.IsAlive)
-                reader.Join(CsvProfilePollSliceMilliseconds + 10);
-            if (!reader.IsAlive)
+            if (TryJoinCsvProfileThreadNoThrow(reader))
                 _csvProfileThread = null;
+        }
+
+        private static bool TryJoinCsvProfileThreadNoThrow(Thread reader)
+        {
+            if (reader == null || !reader.IsAlive)
+                return true;
+            if (ReferenceEquals(Thread.CurrentThread, reader))
+                return false;
+
+            try
+            {
+                reader.Join(CsvProfileThreadJoinTimeoutMilliseconds);
+                return !reader.IsAlive;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         private bool EnsureWakeProfileParseScratch()
@@ -1945,12 +1971,39 @@ namespace Hecton8.Environment
 
             DisposeWakeProfileParseScratch();
 
-            _wakeProfileParseScratch = new NativeArray<PropwashWakeProfileDTO>(
-                PropwashWakeProfileCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PropwashWakeProfileDTO>[capacity] - editor CSV parse scratch outside DataVault locks - owner: HectonMarineSnowRenderer
-            NativeMemorySentinel.RegisterNativeArray(_wakeProfileParseScratch, nameof(HectonMarineSnowRenderer), "_wakeProfileParseScratch", NativeAllocationLifetime.Scene);
-            return true;
+            NativeArray<PropwashWakeProfileDTO> replacement = default;
+            try
+            {
+                replacement = new NativeArray<PropwashWakeProfileDTO>(
+                    PropwashWakeProfileCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PropwashWakeProfileDTO>[capacity] - editor CSV parse scratch outside DataVault locks - owner: HectonMarineSnowRenderer
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(replacement, nameof(HectonMarineSnowRenderer), "_wakeProfileParseScratch", NativeAllocationLifetime.Scene);
+                if (sentinelId <= 0)
+                    return false;
+
+                _wakeProfileParseScratch = replacement;
+                replacement = default;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                if (replacement.IsCreated)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.UnregisterNativeArray(replacement);
+                    }
+                    finally
+                    {
+                        replacement.Dispose();
+                    }
+                }
+            }
         }
 
         private void DisposeWakeProfileParseScratch()

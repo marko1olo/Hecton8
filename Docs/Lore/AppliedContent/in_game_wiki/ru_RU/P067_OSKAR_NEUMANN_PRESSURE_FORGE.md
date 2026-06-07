@@ -7,6 +7,9 @@ poi_tags: poi.pressure_forge;poi.clamp_ring_jig
 biome_tags: biome.deep_fabrication;biome.machine_trench
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Кузня давления Оскара Нойманна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

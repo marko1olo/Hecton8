@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Brine Vane Forests"
+title: "Florestas de lâminas de salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Brine Vane Forests
+# Florestas de lâminas de salmoura
 
-PT LOC HOLD: Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.
+Florestas de lâminas de salmoura são a primeira ecologia de meia profundidade que torna visível a física invisível. São membranas planas de sal e mineral estendidas ao longo das fronteiras entre salmoura, temperatura e pressão. De longe parecem folhas pálidas num cânion afogado; de perto são instrumentos de rota. Uma lâmina intacta significa que a água do outro lado não é apenas diferente, mas difícil de entrar, com cisalhamento de densidade suficiente para dobrar o sonar e puxar um corpo para fora do trim. Bordas rasgadas marcam passagem recente. Pontas enroladas mostram onde a fronteira enfraquece em uma janela de cisalhamento. Costelas minerais pálidas podem ser colhidas de tiras soltas, mas cortar a lâmina viva pode fechar a única faixa legível por uma parede de cânion. Siga lâminas rasgadas quando precisar de rota. Evite água preta em camadas que apaga suas bordas.
 
 ## Scanner
 
-PT LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+FLORESTA DE LÂMINAS DE SALMOURA // Membranas de sal e mineral crescem ao longo do cisalhamento de densidade. Mostram onde a água engrossa em parede e onde o sonar vai dobrar.
 
 ## Terminal
 
-PT LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+BASE DE CÂNION: lâminas intactas marcam fronteiras duras de densidade. Bordas rasgadas e pontas enroladas indicam janelas de cisalhamento, bolsões menos salinos ou tráfego recente. Evite água opaca em camadas; ela pode cegar o sonar e puxar um traje abaixo da flutuabilidade esperada.
 
 ## Audio
 
-PT LOC HOLD: The canyon has leaves because it has pressure gradients.
+O cânion tem folhas porque tem gradientes de pressão.
 
 ## Field Note
 
-PT LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+Não são árvores. São folhas de pressão: membranas que se alimentam de gradientes químicos, rasgadas só onde uma rota forçou passagem recentemente.
 
 <!-- In-Game Wiki; generated from P226_BRINE_VANE_FORESTS/pt_BR. -->

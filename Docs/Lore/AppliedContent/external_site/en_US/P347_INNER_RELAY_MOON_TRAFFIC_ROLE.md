@@ -7,6 +7,9 @@ poi_tags: poi.inner_moon_beacon_log;poi.relay_geometry_chart
 biome_tags: biome.orbit;biome.system
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Inner Relay Moon Traffic Role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

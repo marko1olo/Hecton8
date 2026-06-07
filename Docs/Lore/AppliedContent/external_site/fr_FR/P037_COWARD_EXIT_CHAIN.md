@@ -7,6 +7,9 @@ poi_tags: poi.repaired_ascent_cradle;poi.partial_exit_console
 biome_tags: biome.surface_squall;biome.shallow_shelter
 locale: fr_FR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Chaîne de sortie lâche"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

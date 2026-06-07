@@ -242,11 +242,9 @@ namespace Hecton8.Construction
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                        return;
-
                     TryUnregister();
-                    TryRegister();
+                    if (currentService != null)
+                        TryRegister();
                     break;
                 case GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime:
                     _fluidDecals = currentService as IFluidDecalPresentationSink;

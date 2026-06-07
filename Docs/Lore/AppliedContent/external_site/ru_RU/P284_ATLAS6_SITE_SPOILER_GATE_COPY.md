@@ -7,6 +7,9 @@ poi_tags: poi.atlas_spoiler_gate_card;poi.factory_temple_blur_caption
 biome_tags: biome.publication;biome.atlas
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Spoiler gate страницы Atlas-6"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

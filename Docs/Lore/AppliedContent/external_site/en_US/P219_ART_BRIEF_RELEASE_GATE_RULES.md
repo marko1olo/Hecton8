@@ -7,6 +7,9 @@ poi_tags: poi.art_release_gate_card;poi.image_brief_lock
 biome_tags: biome.dossier_archive;biome.external_publication
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Evidence Image Release Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

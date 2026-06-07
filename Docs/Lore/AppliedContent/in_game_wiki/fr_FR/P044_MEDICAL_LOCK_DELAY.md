@@ -7,6 +7,9 @@ poi_tags: poi.medical_lock;poi.triage_airlock
 biome_tags: biome.drowned_colony;biome.quarantine_module
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Délai du sas médical"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

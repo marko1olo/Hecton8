@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Photic Mat Baseline"
+title: "Basislijn van fotische matten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Photic Mat Baseline
+# Basislijn van fotische matten
 
-NL LOC HOLD: Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered.
+De basislijn van fotische matten verandert de schoonheid van HECTON-8 in een praktische regel. De mat is geen decor. Het is een levende meter die het vroege plateau leesbaar maakt: kleur voor zuurstofuitwisseling, randhardheid voor drukchemie, bellenritme voor waterbeweging en akoestische textuur voor verborgen naden. Daarom moeten de eerste heldere rotsen tegelijk uitnodigend en verdacht voelen. Een gestrande Marauder kan een matrands gebruiken voor vezel, voorlopers van afdichtpasta of een noodmeting van zuurstof, maar elke snede verandert de zak. De veiligste oogst is losse franje weg van metaal, luiknaden en oude Deep Reach-leidingen. De slechtste oogst is het mooie centrum, omdat dat meestal het hardst werkt. Goede plaatsing leert zonder les: een gezonde mat gloeit op schone steen; een gestreste mat maakt witte zoutranden rond druklekken; een vergiftigde mat oogt te glad en klinkt verkeerd onder het gereedschap. Het ondiepe plateau blijft helder omdat leven daar werkt. Het blijft gespannen omdat de speler dat werk met één hebzuchtige schraap kan breken.
 
 ## Scanner
 
-NL LOC HOLD: Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.
+FOTISCHE MAT // Mineraalgevoede levende film over ondiepe rots. Heldere banden oxygeneren water; zoutharde randen markeren gestreste drukchemie en verborgen naadlekkage.
 
 ## Terminal
 
-NL LOC HOLD: ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.
+ECOLOGISCHE BASIS: brengt zuurstofhuid, mineraalafvoer, akoestische demping en zout-randstress in kaart. Oogst alleen losse franje. Scheuren bij naden of verzegelde apparatuur kan een zak in besmetting laten instorten.
 
 ## Audio
 
-NL LOC HOLD: It looks clean because it is working hard. That is not the same as safe.
+Het ziet er schoon uit omdat het werkt. Dat is niet hetzelfde als veilig.
 
 ## Field Note
 
-NL LOC HOLD: Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.
+Schraap niet eerst de helderste plek. Lees rand, bellen en geluid; de mat is een meter voordat ze grondstof is.
 
 <!-- External Site; generated from P221_PHOTIC_MAT_BASELINE/nl_NL. -->

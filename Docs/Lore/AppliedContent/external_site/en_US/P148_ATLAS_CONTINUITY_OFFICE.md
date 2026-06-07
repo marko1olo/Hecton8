@@ -7,6 +7,9 @@ poi_tags: poi.atlas_continuity_office_stamp;poi.directive_weighting_memo
 biome_tags: biome.industrial_shelf;biome.abyssal_machine_field
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Atlas Continuity Office"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

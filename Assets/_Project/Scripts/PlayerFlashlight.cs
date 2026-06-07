@@ -1086,9 +1086,9 @@ namespace Hecton8.Gameplay
 
         private void CachePlayerRuntimeContextCold()
         {
-            _playerRuntimeContext = GlobalRegistry.Player;
+            RefreshPlayerRuntimeBindings(GlobalRegistry.Player);
             _modularEquipmentService = GlobalRegistry.ModularEquipment;
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
         }
 
         private void TryRegisterHotSwap()
@@ -1116,25 +1116,68 @@ namespace Hecton8.Gameplay
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
-        private void TryUnregisterLateFrameTick()
+        private void TryUnregisterLateFrameTick(bool clearPendingWork = true)
         {
             if (!_lateFrameRegistered)
                 return;
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
             _lateFrameRegistered = false;
-            _pendingAudioClip = null;
-            _pendingAudioDirty = false;
+            if (clearPendingWork)
+            {
+                _pendingAudioClip = null;
+                _pendingAudioDirty = false;
+            }
         }
 
         private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
-                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                RefreshPlayerRuntimeBindings(currentService as IPlayerRuntimeContext);
             else if (serviceSlot == GlobalRegistryServiceSlot.ModularEquipment)
                 _modularEquipmentService = currentService as IModularEquipmentService;
             else if (serviceSlot == GlobalRegistryServiceSlot.Audio)
-                _audioService = currentService as IAudioService;
+                CacheAudioService(currentService as IAudioService);
+            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterLateFrameTick(clearPendingWork: false);
+                if (currentService != null)
+                    TryRegisterLateFrameTick();
+            }
+        }
+
+        private void RefreshPlayerRuntimeBindings(IPlayerRuntimeContext playerContext)
+        {
+            _playerRuntimeContext = playerContext;
+            _playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            _cachedMainCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            _cachedMainCameraTransform = _cachedMainCamera != null ? _cachedMainCamera.transform : null;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
@@ -1309,7 +1352,7 @@ namespace Hecton8.Gameplay
             _pendingAudioDirty = false;
             if (clip == null) return;
 
-            IAudioService audioService = _audioService;
+            IAudioService audioService = ResolveAudioService();
             if (audioService == null) return;
 
             audioService.PlayStatic2D(clip, audioVolume);

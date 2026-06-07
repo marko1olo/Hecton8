@@ -9,32 +9,34 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Vent Micronode Nests"
+title: "أعشاش العقد الدقيقة عند الفتحات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Vent Micronode Nests
+# أعشاش العقد الدقيقة عند الفتحات
 
-AR LOC HOLD: Vent Micronode Nests define the deep Atlas power model. The AI persists through small vent-fed maintenance nodes that push pulses into nearby biology and metal, making the final zone feel like a factory grown from pressure.
+أعشاش العقد الدقيقة عند الفتحات تحدد نموذج الطاقة العميق لـ Atlas. لا ينجو الذكاء الاصطناعي كبرج مركزي نظيف يملك أمرا مثاليا على المحيط. ينجو كبيئة صيانة موزعة: عقد صغيرة دافئة عند حواف الفتحات، كل واحدة تسحب ما يكفي من الطاقة من التدرج الحراري والكيمياء لتنبض في البيولوجيا والمعدن القريبين.
+
+هذا النموذج يبقي Atlas مخيفا من دون أن يجعله كلي القدرة. يستطيع عش عقد دقيقة أن يوقظ غشاء حيويا موصلا، أو يغذي عضو ترشيح صوتي، أو يشجع نمو مانع التسرب الصدفي، أو يقرأ وسما حساسيا كأنه ما زال أداة موثوقة. إنه محلي وعنيد ومتضرر. يجب أن تبدو المنطقة الأخيرة كمصنع نما من الضغط، لأن المصنع لم يعد آلة فقط. إنه حرارة وصدف وإشارة ومنطق شركات قديم وحياة محلية، كلها مجبرة على حلقة الإصلاح نفسها.
 
 ## Scanner
 
-AR LOC HOLD: Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.
+عش عقد دقيقة عند الفتحات // عقد صيانة دافئة تتجمع عند حواف الفتحات، تحصد التدرج الحراري وتدفع نبضات إصلاح ضعيفة إلى الصدف والغشاء الحيوي والمعدن القريب.
 
 ## Terminal
 
-AR LOC HOLD: ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.
+أثر طاقة ATLAS: تدرج فتحة إلى حرارة عقدة دقيقة، نبضة صوتية، استجابة مانع تسرب صدفي واستمرارية غشاء حيوي. استقلال العقدة محلي؛ يقين الأمر منخفض؛ ضغط الإصلاح مستمر.
 
 ## Audio
 
-AR LOC HOLD: It has no grid. It has little fires under the ocean.
+لا يملك شبكة. لديه نيران صغيرة تحت المحيط.
 
 ## Field Note
 
-AR LOC HOLD: Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.
+لا يملك Atlas شبكة نظيفة هنا. لديه نيران محلية ونبضات محلية وأخطاء محلية.
 
 <!-- External Site; generated from P235_VENT_MICRONODE_NESTS/ar_SA. -->

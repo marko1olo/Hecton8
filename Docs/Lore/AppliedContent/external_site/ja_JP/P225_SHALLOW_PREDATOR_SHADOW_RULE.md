@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Shallow Predator Shadow Rule"
+title: "浅瀬捕食者の影ルール"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JP LOC HOLD: Shallow Predator Shadow Rule
+# 浅瀬捕食者の影ルール
 
-JP LOC HOLD: Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact.
+浅瀬捕食者の影ルールは、種のプロフィールではなく、ロアと遭遇の規則である。その役目はフォティックシェルフの調子を守ることだ。美しく、読めて、生きていて、それでも殺すことができる場所にする。捕食者は証人を通じてやって来る。グラスグレイザーは餌を残して消える。ランタン漂流 bloom は光り続けるが、柔らかな粒子音を失う。シェルクランプ礁は、まるで経路全体が息を吸ったかのようにケーブルを締める。それから初めて、影が光の中を動く。この順序が重要なのは、海を劇場ではなくシステムに感じさせるからだ。プレイヤーはどこからともなく現れた怪物に罰されるのではない。読めるようになれたはずの徴候の組に圧をかけられる。よい実装は、警告が異なる表示、言語、アクセシビリティ要件を越えて残るように、音、視覚、生態の手掛かりを重ねるべきだ。消えた刻み音、切れた bloom 音、広いシルエット、ずれた航跡、位相のずれた経路動物。直接攻撃は一番面白くない部分である。より強い瞬間は、修理目標がまだ届く場所にあり、水がまだ美しく、すべての生きた計器がその経路は高くつくと告げているときだ。
 
 ## Scanner
 
-JP LOC HOLD: A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.
+浅瀬捕食者の影 // グレイザーの刻み音の消失、裂けた bloom 音、広く動く影が初接触である。戦闘接触より先に経路圧が来る。
 
 ## Terminal
 
-JP LOC HOLD: CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.
+接触ルール: 捕食者の証拠は、ダメージを強制する前に経路選択を変えなければならない。不在、沈黙、シルエット、航跡として段階化し、直接攻撃はプレイヤーが少なくとも二つの手掛かりを無視または誤読した後に限る。
 
 ## Audio
 
-JP LOC HOLD: When the little mouths stop ticking, stop moving.
+小さな口が刻むのをやめたら、動くのをやめろ。
 
 ## Field Note
 
-JP LOC HOLD: Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.
+捕食者に最初から顔を与えるな。棚をおかしくさせろ。餌は残り、水は明るくなり、小さな命が去り、その後で影が作業を横切る。
 
 <!-- External Site; generated from P225_SHALLOW_PREDATOR_SHADOW_RULE/ja_JP. -->

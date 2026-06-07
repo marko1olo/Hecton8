@@ -37,6 +37,7 @@ namespace Hecton8.Narrative
         public const int PaddedBitCount = 64;
         public const int WordCount = 1;
         public const int RuntimeWordCount = 2;
+        private const ulong ValidWordMask = (1UL << RecordCount) - 1UL;
 
         public static bool IsValidIndex(int index)
         {
@@ -55,6 +56,24 @@ namespace Hecton8.Narrative
 
             // COLD ALLOC: long[WordCount] - packed industrial lore discovery persistence - owner: IndustrialLoreBitMask
             words = new long[WordCount];
+        }
+
+        public static long SanitizeWord(long word)
+        {
+            return (long)(((ulong)word) & ValidWordMask);
+        }
+
+        public static bool SanitizeWords(long[] words)
+        {
+            if (!HasExpectedCapacity(words))
+                return false;
+
+            long sanitizedWord = SanitizeWord(words[0]);
+            if (sanitizedWord == words[0])
+                return false;
+
+            words[0] = sanitizedWord;
+            return true;
         }
     }
 

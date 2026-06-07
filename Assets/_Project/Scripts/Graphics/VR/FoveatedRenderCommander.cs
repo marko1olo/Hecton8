@@ -419,12 +419,9 @@ namespace Hecton8.Graphics.VR
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null)
-                {
-                    TryUnregisterTick();
-                    TryUnregisterSlowTick();
-                }
-                else
+                TryUnregisterTick();
+                TryUnregisterSlowTick();
+                if (currentService != null)
                 {
                     TryRegisterTick();
                     TryRegisterSlowTick();

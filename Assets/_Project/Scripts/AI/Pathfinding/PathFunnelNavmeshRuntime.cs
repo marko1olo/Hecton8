@@ -239,9 +239,7 @@ namespace Hecton8.AI.Pathfinding
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredColdTick = false;
-                    _registeredFastTick = false;
-                    _registeredLateFrame = false;
+                    TryUnregisterDispatcherTicks();
                     if (currentService != null && isActiveAndEnabled)
                         TryRegisterDispatcherTicks();
                     break;
