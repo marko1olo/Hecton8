@@ -554,12 +554,28 @@ namespace Hecton8.Systems.AI
             if (!forceComplete && !_activeJobHandle.IsCompleted)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _activeJobHandle, forceComplete))
+            if (!TryCompleteEncounterJobInPostSimulationWindow(ref _activeJobHandle, forceComplete))
                 return;
 
             _jobScheduled = false;
             _frontState[0] = _backState[0];
             ApplyCompletedOutput(faunaDirector, bridge);
+        }
+
+        private static bool TryCompleteEncounterJobInPostSimulationWindow(ref JobHandle handle, bool forceComplete)
+        {
+            if (!forceComplete)
+                return DispatcherJobSwap.TryComplete(ref handle, forceComplete: false);
+
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
         }
 
         internal void ForceStopAndReset()
@@ -679,9 +695,22 @@ namespace Hecton8.Systems.AI
             DisposeNativeArray(ref _blackBox, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _blackBoxHead, ref disposeHandle, ref hasDependency);
             if (hasDependency)
-                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+                CompleteEncounterDisposeDependencyInPostSimulationWindow(ref disposeHandle);
 
             ReleasePredatorAupBuffer();
+        }
+
+        private static void CompleteEncounterDisposeDependencyInPostSimulationWindow(ref JobHandle handle)
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private void RegisterNativeMemorySentinel()
@@ -737,7 +766,9 @@ namespace Hecton8.Systems.AI
             if (!_jobScheduled)
                 return;
 
-            DispatcherJobSwap.TryComplete(ref _activeJobHandle, true);
+            if (!TryCompleteEncounterJobInPostSimulationWindow(ref _activeJobHandle, forceComplete: true))
+                return;
+
             _jobScheduled = false;
             if (_frontState.IsCreated && _backState.IsCreated)
                 _frontState[0] = _backState[0];
