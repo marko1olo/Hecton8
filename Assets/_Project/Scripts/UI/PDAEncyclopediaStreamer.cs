@@ -190,6 +190,7 @@ namespace Hecton8.UI
         private const uint FaultMetadataFull = 0x4D455441u;
         private const uint FaultMetadataCollision = 0x434F4C4Cu;
         private const uint FaultInvalidHash = 0x494E5648u;
+        private const uint FaultH8lrOpenFailed = 0x48384C52u; // H8LR
         private const string BlackBoxDumpFileName = "Dump_PDAEncyclopediaStreamer_BlackBox.bin";
         private const uint DefaultEntryHash = 0xAEC57EACu;
         private const uint H8lrSourceId = PdaH8lrLoreStore.MagicH8lr;
@@ -267,6 +268,9 @@ namespace Hecton8.UI
         [Header("Diagnostics")]
         [SerializeField] private bool drawDebugGizmo;
         [SerializeField] private float debugGizmoScale = 0.14f;
+#if UNITY_EDITOR
+        [SerializeField] private bool allowMockLoreFallbackInEditor;
+#endif
 
         private CharBufferPool.Lease _titleLease;
         private CharBufferPool.Lease _metaLease;
@@ -295,6 +299,8 @@ namespace Hecton8.UI
         private bool _vaultReady;
         private bool _mockSeeded;
         private bool _h8lrMetadataSeeded;
+        private bool _h8lrOpenAttempted;
+        private bool _h8lrOpenFailed;
         private bool _dataMonolithMetadataSeeded;
 #pragma warning disable CS0414
         private bool _coldBootstrapAttempted;
@@ -322,6 +328,7 @@ namespace Hecton8.UI
         private uint _activeUtf8SourceFlags;
         private bool _hasActiveAppliedLoreRecord;
         private bool _blackBoxDumpQueued;
+        private uint _queuedBlackBoxFaultHash;
         private bool _forceRevealDecodedTextNextVisualSync;
         private bool _titleBaseFontSizeCaptured;
         private bool _bodyBaseFontSizeCaptured;
@@ -393,6 +400,8 @@ namespace Hecton8.UI
                 _h8lrLoreStore = null;
                 _h8lrMetadataSeeded = false;
             }
+            _h8lrOpenAttempted = false;
+            _h8lrOpenFailed = false;
 
             if (_ownsBabelStore && _babelStore != null)
             {
@@ -794,8 +803,11 @@ namespace Hecton8.UI
 
             if (source.Length == 0)
             {
-                SeedMockLoreDatabase();
-                TryGetMockUtf8(hash, out source);
+                if (CanUseMockLoreFallback())
+                {
+                    SeedMockLoreDatabase();
+                    TryGetMockUtf8(hash, out source);
+                }
             }
 
             if (source.Length == 0)
@@ -1452,7 +1464,9 @@ namespace Hecton8.UI
                     return true;
             }
 
-            return TryGetMockUtf8(hash, out ReadOnlySpan<byte> mockUtf8) && mockUtf8.Length > 0;
+            return CanUseMockLoreFallback() &&
+                   TryGetMockUtf8(hash, out ReadOnlySpan<byte> mockUtf8) &&
+                   mockUtf8.Length > 0;
         }
 
         private void RejectLoreHash(uint hash)
@@ -1499,13 +1513,26 @@ namespace Hecton8.UI
                 }
             }
 
-            if (TryGetMockUtf8(_activeEntryHash, out ReadOnlySpan<byte> mockUtf8))
+            if (CanUseMockLoreFallback() && TryGetMockUtf8(_activeEntryHash, out ReadOnlySpan<byte> mockUtf8))
             {
                 CacheActiveSource(mockUtf8, TextSourceVaultMock);
                 return mockUtf8;
             }
 
             return ReadOnlySpan<byte>.Empty;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool CanUseMockLoreFallback()
+        {
+            if (!_h8lrOpenFailed || !openDefaultH8lrOnEnable)
+                return true;
+
+#if UNITY_EDITOR
+            return allowMockLoreFallbackInEditor;
+#else
+            return false;
+#endif
         }
 
         private bool TryGetH8lrUtf8(uint hash, out ReadOnlySpan<byte> utf8)
@@ -2800,6 +2827,8 @@ namespace Hecton8.UI
             _vaultReady = false;
             _mockSeeded = false;
             _h8lrMetadataSeeded = false;
+            _h8lrOpenAttempted = false;
+            _h8lrOpenFailed = false;
             ResetDataMonolithMetadataSeed(ResolveActiveDataMonolithLocaleHash());
             _coldBootstrapAttempted = false;
             ResetActiveSourceCache();
@@ -2843,7 +2872,8 @@ namespace Hecton8.UI
             EnsureH8lrLoreStore();
             EnsureBabelStore();
             SeedDataMonolithAppliedLoreMetadata();
-            SeedMockLoreDatabase();
+            if (CanUseMockLoreFallback())
+                SeedMockLoreDatabase();
         }
 
         private bool EnsureVaultBuffersCold()
@@ -2974,9 +3004,14 @@ namespace Hecton8.UI
 
             if (_h8lrLoreStore != null && _h8lrLoreStore.IsOpen)
             {
+                _h8lrOpenAttempted = true;
+                _h8lrOpenFailed = false;
                 SeedH8lrMetadata();
                 return;
             }
+
+            if (_h8lrOpenAttempted && _h8lrOpenFailed)
+                return;
 
             if (_h8lrLoreStore == null)
                 _h8lrLoreStore = new PdaH8lrLoreStore();
@@ -2985,8 +3020,19 @@ namespace Hecton8.UI
                 ? _h8lrLoreStore.Open(Path.GetFullPath(h8lrPathOverride), _vault, in _h8lrMirrorHandle)
                 : _h8lrLoreStore.OpenDefault(_vault, in _h8lrMirrorHandle);
 
+            _h8lrOpenAttempted = true;
+            _h8lrOpenFailed = !opened;
             if (opened)
+            {
                 SeedH8lrMetadata();
+                return;
+            }
+
+            _h8lrLoreStore.Dispose();
+            _h8lrLoreStore = null;
+            _h8lrMetadataSeeded = false;
+            _lastFaultHash = FaultH8lrOpenFailed;
+            QueueBlackBoxDump(FaultH8lrOpenFailed);
         }
 
         private void EnsureBabelStore()
@@ -3191,7 +3237,7 @@ namespace Hecton8.UI
 
         private void SeedMockLoreDatabase()
         {
-            if (_mockSeeded || !EnsureVaultBuffers())
+            if (_mockSeeded || !CanUseMockLoreFallback() || !EnsureVaultBuffers())
                 return;
 
             if (!TryReadVaultBuffer(in _mockIndexHandle, MockIndexBufferId, out NativeArray<BabelIndexDTO>.ReadOnly index) ||
@@ -3356,7 +3402,7 @@ namespace Hecton8.UI
         private bool TryGetMockUtf8(uint hash, out ReadOnlySpan<byte> utf8)
         {
             utf8 = default;
-            if (!EnsureVaultBuffers() || !_mockSeeded)
+            if (!CanUseMockLoreFallback() || !EnsureVaultBuffers() || !_mockSeeded)
                 return false;
 
             if (!TryReadVaultBuffer(in _mockIndexHandle, MockIndexBufferId, out NativeArray<BabelIndexDTO>.ReadOnly index))
@@ -3815,6 +3861,17 @@ namespace Hecton8.UI
 
         private void QueueBlackBoxDump()
         {
+            if (_lastFaultHash != 0u)
+                _queuedBlackBoxFaultHash = _lastFaultHash;
+
+            _blackBoxDumpQueued = true;
+        }
+
+        private void QueueBlackBoxDump(uint faultHash)
+        {
+            if (faultHash != 0u)
+                _queuedBlackBoxFaultHash = faultHash;
+
             _blackBoxDumpQueued = true;
         }
 
@@ -3840,6 +3897,7 @@ namespace Hecton8.UI
             try
             {
                 WriteBlackBoxDump(Path.Combine(directory, BlackBoxDumpFileName));
+                _queuedBlackBoxFaultHash = 0u;
             }
             catch (IOException)
             {
@@ -3885,7 +3943,8 @@ namespace Hecton8.UI
                 Span<byte> header = buffer.Slice(0, headerBytes);
                 WriteUIntLittleEndian(header.Slice(0, 4), StateMagic);
                 WriteUIntLittleEndian(header.Slice(4, 4), ResolvePdaFrame());
-                WriteUIntLittleEndian(header.Slice(8, 4), _lastFaultHash);
+                uint faultHash = _queuedBlackBoxFaultHash != 0u ? _queuedBlackBoxFaultHash : _lastFaultHash;
+                WriteUIntLittleEndian(header.Slice(8, 4), faultHash);
                 WriteUIntLittleEndian(header.Slice(12, 4), (uint)TelemetryFrameCount);
                 WriteUIntLittleEndian(header.Slice(16, 4), (uint)UnsafeUtility.SizeOf<PdaEncyclopediaTelemetryEntry>());
                 WriteUIntLittleEndian(header.Slice(20, 4), _activeEntryHash);
