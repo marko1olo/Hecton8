@@ -17,7 +17,9 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("File.Replace(tempPath, invalidPath, null, true);", source);
             StringAssert.Contains("File.Move(tempPath, invalidPath);", source);
+            StringAssert.Contains("session._stream = new FileStream(session.TempPath, FileMode.CreateNew", source);
             StringAssert.DoesNotContain("File.Delete(invalidPath);", source);
+            StringAssert.DoesNotContain("session._stream = new FileStream(session.TempPath, FileMode.Create,", source);
         }
     }
 }

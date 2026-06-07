@@ -900,7 +900,9 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
                 AsyncPayloadWriteSession session = new AsyncPayloadWriteSession(parts);
                 session.FinalPath = path;
                 session.TempPath = path + ".tmp";
-                session._stream = new FileStream(session.TempPath, FileMode.Create, FileAccess.Write, FileShare.Read, 131072, true);
+                if (File.Exists(session.TempPath))
+                    File.Delete(session.TempPath);
+                session._stream = new FileStream(session.TempPath, FileMode.CreateNew, FileAccess.Write, FileShare.Read, 131072, true);
                 session.BeginNextWrite();
                 return session;
             }
