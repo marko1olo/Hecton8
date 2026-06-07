@@ -83,6 +83,7 @@ namespace Hecton8.Equipment.Auxiliary
         private bool _profilesLoaded;
         private bool _vfxUploadValid;
         private bool _runtimeGuardHeld;
+        private IDataVault _runtimeGuardVault;
         private AuxiliaryProfileLoadResult _lastProfileLoadResult;
 
         private static ulong MutationGuardBit(BufferID bufferId)
@@ -1317,6 +1318,7 @@ namespace Hecton8.Equipment.Auxiliary
                 return false;
 
             _runtimeGuardHeld = true;
+            _runtimeGuardVault = vault;
             return true;
         }
 
@@ -1337,19 +1339,23 @@ namespace Hecton8.Equipment.Auxiliary
 
         private void UnlockRuntimeBuffers()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || !_runtimeGuardHeld)
+            if (!_runtimeGuardHeld)
                 return;
 
-            vault.ReleaseMutationGuard(RuntimeMutationGuardMask);
+            IDataVault vault = _runtimeGuardVault;
             _runtimeGuardHeld = false;
+            _runtimeGuardVault = null;
+            vault?.ReleaseMutationGuard(RuntimeMutationGuardMask);
         }
 
         private void ReleaseOwnedVaultHandles()
         {
             IDataVault vault = _dataVault;
             if (vault == null)
+            {
+                _runtimeGuardVault = null;
                 return;
+            }
 
             ReleaseHandle(vault, ref _deploymentsHandle);
             ReleaseHandle(vault, ref _statesHandle);
@@ -1362,6 +1368,7 @@ namespace Hecton8.Equipment.Auxiliary
             ReleaseHandle(vault, ref _telemetryCursorHandle);
             ReleaseHandle(vault, ref _profilesHandle);
             ReleaseHandle(vault, ref _activeEquipmentHandle);
+            _runtimeGuardVault = null;
         }
 
         private static void ReleaseHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)

@@ -1119,13 +1119,18 @@ namespace Hecton8.Tests.Editor
             string finish = ExtractMethodBody(text, "FinalizeCompletedPendingJob");
 
             Assert.That(text, Does.Contain("RuntimeMutationGuardMask"));
+            Assert.That(text, Does.Contain("_runtimeGuardVault"));
             Assert.That(text, Does.Contain("TuningMutationGuardMask"));
             Assert.That(text, Does.Contain("unchecked((int)(uint)(int)bufferId) & 31"));
             Assert.That(tick, Does.Contain("keepRuntimeGuard"));
             Assert.That(tick, Does.Contain("finally"));
             Assert.That(tick, Does.Contain("UnlockRuntimeBuffers()"));
             Assert.That(acquire, Does.Contain("TryAcquireMutationGuard(RuntimeMutationGuardMask)"));
-            Assert.That(release, Does.Contain("ReleaseMutationGuard(RuntimeMutationGuardMask)"));
+            Assert.That(acquire, Does.Contain("_runtimeGuardVault = vault"));
+            Assert.That(release, Does.Contain("IDataVault vault = _runtimeGuardVault"));
+            Assert.That(release, Does.Contain("_runtimeGuardVault = null"));
+            Assert.That(release, Does.Contain("vault?.ReleaseMutationGuard(RuntimeMutationGuardMask)"));
+            Assert.That(release, Does.Not.Contain("IDataVault vault = _dataVault"));
             Assert.That(tuningAcquire, Does.Contain("TryAcquireMutationGuard(TuningMutationGuardMask)"));
             Assert.That(tuningRelease, Does.Contain("ReleaseMutationGuard(TuningMutationGuardMask)"));
             Assert.That(force, Does.Contain("DispatcherJobFence.BeginPostSimulationSwapWindow()"));
