@@ -108,9 +108,11 @@ namespace Hecton8.Gameplay
         {
             RefreshColdRegistryReferences();
             TryRegisterHotSwapListener();
-            if (spawnOnEnable)
+            if (spawnOnEnable && Application.isPlaying)
             {
+                QueueBubbleRelease();
                 _releaseTimer = 0f;
+                CalculateNextReleaseTime();
             }
 
             RegisterToTick();
