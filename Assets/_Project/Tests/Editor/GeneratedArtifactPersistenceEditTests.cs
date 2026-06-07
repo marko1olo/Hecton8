@@ -184,6 +184,20 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("new FileStream(thumbnailPath, FileMode.Create", writer);
         }
 
+        [Test]
+        public void SdfFontAtlasAssetsWriteThroughDurableAtomicTempPromotion()
+        {
+            string source = ReadProjectSource("_Project/Scripts/Editor/SdfFontAtlasBaker.cs");
+            string writer = ExtractMethodBody(source, "private static bool TryWriteBytesAtomicAsset(");
+
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", writer);
+            StringAssert.Contains("stream.Flush(true);", writer);
+            StringAssert.Contains("File.Replace(tempPath, absolutePath, null, true);", writer);
+            StringAssert.Contains("File.Move(tempPath, absolutePath);", writer);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", writer);
+            StringAssert.DoesNotContain("File.WriteAllBytes(tempPath, bytes);", writer);
+        }
+
         private static string ReadProjectSource(string assetRelativePath)
         {
             return File.ReadAllText(Path.Combine(Application.dataPath, assetRelativePath)).Replace("\r\n", "\n");
