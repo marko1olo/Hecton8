@@ -5,13 +5,13 @@ using UnityEngine;
 
 namespace Hecton8.Tests.Editor
 {
-    public sealed class VehicleEditorUpdateSubscriptionLifecycleEditTests
+    public sealed class CoreEditorUpdateSubscriptionLifecycleEditTests
     {
-        [TestCase("Assets/_Project/Scripts/Physics/Vehicles/Editor/SubmarineInertiaTunerWindow.cs", "OnEditorPulse")]
-        [TestCase("Assets/_Project/Scripts/Physics/Vehicles/Editor/SubmarineBallastTunerWindow.cs", "OnEditorUpdate")]
-        [TestCase("Assets/_Project/Scripts/Physics/Vehicles/Editor/SubmarineAutoLevelTunerWindow.cs", "OnEditorPulse")]
-        [TestCase("Assets/_Project/Scripts/Physics/Vehicles/Automation/Editor/SubmarineAutopilotTunerWindow.cs", "OnEditorPulse")]
-        public void VehicleEditorWindows_DefensivelyDeduplicateEditorUpdateSubscription(string relativePath, string callback)
+        [TestCase("Assets/_Project/Scripts/Graphics/Culling/Editor/TBDRPipelineTunerWindow.cs", "OnEditorUpdate")]
+        [TestCase("Assets/_Project/Scripts/Core/Editor/TactileSynthesisTunerWindow.cs", "OnEditorUpdate")]
+        [TestCase("Assets/_Project/Scripts/Core/Editor/InputCurveHapticsTunerWindow.cs", "Repaint")]
+        [TestCase("Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsEditor.cs", "OnEditorUpdate")]
+        public void CoreEditorWindows_DefensivelyDeduplicateEditorUpdateSubscription(string relativePath, string callback)
         {
             string source = ReadProjectFile(relativePath);
             string onEnable = ExtractMethodBody(source, "private void OnEnable()");
@@ -21,17 +21,6 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains(remove, onEnable);
             StringAssert.Contains(add, onEnable);
             AssertOrder(onEnable, remove, add);
-        }
-
-        [Test]
-        public void SubmarineAutopilotTuner_DefensivelyDeduplicatesSceneGuiSubscription()
-        {
-            string source = ReadProjectFile("Assets/_Project/Scripts/Physics/Vehicles/Automation/Editor/SubmarineAutopilotTunerWindow.cs");
-            string onEnable = ExtractMethodBody(source, "private void OnEnable()");
-
-            StringAssert.Contains("SceneView.duringSceneGui -= OnSceneGui;", onEnable);
-            StringAssert.Contains("SceneView.duringSceneGui += OnSceneGui;", onEnable);
-            AssertOrder(onEnable, "SceneView.duringSceneGui -= OnSceneGui;", "SceneView.duringSceneGui += OnSceneGui;");
         }
 
         private static string ReadProjectFile(string relativePath)
