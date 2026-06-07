@@ -1525,9 +1525,6 @@ namespace Hecton8.UI
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool CanUseMockLoreFallback()
         {
-            if (!_h8lrOpenFailed || !openDefaultH8lrOnEnable)
-                return true;
-
 #if UNITY_EDITOR
             return allowMockLoreFallbackInEditor;
 #else
