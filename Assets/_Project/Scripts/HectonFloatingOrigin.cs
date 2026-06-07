@@ -2154,8 +2154,11 @@ namespace Hecton8.Core
             if (_sceneEventsSubscribed)
                 return;
 
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
             SceneManager.sceneUnloaded += HandleSceneUnloaded;
+            SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
             SceneManager.activeSceneChanged += HandleActiveSceneChanged;
             _sceneEventsSubscribed = true;
         }

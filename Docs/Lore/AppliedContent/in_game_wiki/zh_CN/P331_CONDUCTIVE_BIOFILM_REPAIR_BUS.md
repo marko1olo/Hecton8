@@ -9,32 +9,34 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Conductive Biofilm Repair Bus"
+title: "导电生物膜维修总线"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Conductive Biofilm Repair Bus
+# 导电生物膜维修总线
 
-ZH LOC HOLD: Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.
+导电生物膜出现在 Deep Reach 电缆、温热盐卤和破损绝缘层长期接触的地方。菌毯把弱电流带过铜线断口，让 Atlas 诊断抵达本该彻底断电的房间。
+
+危险来自分类失败。Atlas 看见连续性，就分配维修优先级。生物只看见热、矿物流和表面积。Marauder 切开菌毯，可能会断掉一扇门，唤醒无人机审计，或暴露足以吸引猎场闪烁的掠食者的新鲜电荷。
 
 ## Scanner
 
-ZH LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
+生物膜鞘桥接断裂铜线与活体菌毯。检测到弱电流。盐壳中有 Atlas 维修标签。
 
 ## Terminal
 
-ZH LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+ATLAS 维修总线 // 导电微生物膜跨过 C-18 至 C-22 电缆断点。铜线消失后，诊断脉冲改由潮湿生长层传递。不得归类为认知。按受污染维护基质处理。
 
 ## Audio
 
-ZH LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
+那层膜在传脉冲。这不代表它聪明，只代表电线学会了活着腐烂。
 
 ## Field Note
 
-ZH LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+湿电缆有皮的话，先顺着查再切。死的一侧通常更安全。通常。
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/zh_CN. -->

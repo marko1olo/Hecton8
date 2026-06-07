@@ -9,32 +9,34 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Acoustic Filter Organ Relay"
+title: "声学滤器官中继"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Acoustic Filter Organ Relay
+# 声学滤器官中继
 
-ZH LOC HOLD: Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.
+有些礁区动物会长出足够致密、可以塑造声音的滤器官。中继外壳开裂后，Atlas 维修节点学会把这种组织当作声学挡板。
+
+这种帮助周围有牙。携带路线 ping 的同一器官，也可能把振动通报给觅食者，唤醒带标签的动物，或把 Marauder 的动作沿礁体反射下去。清晰回应不代表安全走廊。它代表走廊里有听众。
 
 ## Scanner
 
-ZH LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
+滤器官共振与受损中继节律一致。穿过组织后的回波更干净。外壳有咬痕。
 
 ## Terminal
 
-ZH LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
+声学中继 // 本地滤器官组织会削弱风暴噪声，并在电缆礁内重复服务 ping。压力突增时信号增益不稳定。生物中继既是路线辅助，也是掠食者诱饵。
 
 ## Audio
 
-ZH LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
+它像设备一样回应，是因为设备在借它的喉咙。
 
 ## Field Note
 
-ZH LOC HOLD: Use with sonar, scanner and route-warning UI.
+如果回声后面有脉搏，让工具安静，先查水再动。
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/zh_CN. -->

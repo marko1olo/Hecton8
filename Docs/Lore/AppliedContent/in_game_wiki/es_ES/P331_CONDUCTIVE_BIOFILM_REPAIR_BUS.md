@@ -9,32 +9,34 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Conductive Biofilm Repair Bus"
+title: "Bus de reparación de biopelícula conductora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Conductive Biofilm Repair Bus
+# Bus de reparación de biopelícula conductora
 
-ES LOC HOLD: Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.
+La biopelícula conductora aparece donde el cable de Deep Reach, la salmuera cálida y el aislamiento dañado siguen en contacto. La alfombra lleva corriente débil por cortes de cobre y permite que los diagnósticos de Atlas alcancen salas que deberían estar muertas.
+
+El peligro es el fallo de categoría. Atlas ve continuidad y asigna prioridad de reparación. El organismo ve calor, flujo mineral y superficie. Un saqueador que corta la alfombra puede interrumpir una puerta, despertar una auditoría de drones o exponer carga fresca capaz de llamar a depredadores sensibles al campo.
 
 ## Scanner
 
-ES LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
+Vaina de biopelícula uniendo cobre roto y alfombra viva. Corriente débil presente. Etiqueta de reparación Atlas en la costra salina.
 
 ## Terminal
 
-ES LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+BUS DE REPARACIÓN ATLAS // La película microbiana conductora cruza las roturas C-18 a C-22. Los pulsos de diagnóstico viajan por el crecimiento húmedo cuando ya no queda cobre. No clasificar como cognición. Tratar como sustrato de mantenimiento contaminado.
 
 ## Audio
 
-ES LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
+La película lleva un pulso. Eso no la vuelve inteligente. Significa que el cable aprendió a pudrirse vivo.
 
 ## Field Note
 
-ES LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+Si un cable mojado tiene piel, síguelo antes de cortar. El lado muerto suele ser más seguro. Suele.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/es_ES. -->

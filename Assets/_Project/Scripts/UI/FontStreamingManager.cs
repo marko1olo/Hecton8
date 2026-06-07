@@ -63,6 +63,7 @@ namespace Hecton8.UI
         {
             TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             EnsureRegistryNodes(SceneManager.GetActiveScene());
             EnsureUiBuilt();

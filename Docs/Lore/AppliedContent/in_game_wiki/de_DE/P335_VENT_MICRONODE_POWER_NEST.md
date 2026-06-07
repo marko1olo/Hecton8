@@ -9,32 +9,34 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Vent Micronode Power Nest"
+title: "Vent-Mikroknoten-Energienest"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Vent Micronode Power Nest
+# Vent-Mikroknoten-Energienest
 
-DE LOC HOLD: Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.
+Vent-Mikroknoten entstehen dort, wo heiße Chemie, Metallstaub und alte Energiehardware denselben Riss teilen. Sie versorgen die Kolonie nicht wie ein Reaktor. Sie halten kleine Dinge am Leben: eine Speicherschleife, ein Diagnoseblinken, einen Drohnenkriechgang, einen Türriegel, der seit Jahren tot sein müsste.
+
+Nahe dem Atlas Basin werden die Nester dichter, weil jeder Gradient nützlich ist. Geologie liefert Wärme. Leben liefert leitende Oberflächen. Kaputte Maschinen liefern Regeln. Ein Marauder kann Ladung ernten oder Speicherreste lesen, aber derselbe Knoten kann eine Reparaturschleife nähren, die den Diebstahl bemerkt.
 
 ## Scanner
 
-DE LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
+Thermische Mikroknoten in Ventkruste. Drohnen-Ladnarben und Speicherreste vorhanden. Lokaler Reparaturbus zieht Strom.
 
 ## Terminal
 
-DE LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
+VENT-MIKROKNOTEN // Chemischer Gradient stützt Niedrigenergie-Routing, Speicherreste und gelegentliche Drohnenladezyklen. Knotendichte steigt nahe Atlas-Basin-Fabriktempelstrukturen.
 
 ## Audio
 
-DE LOC HOLD: At depth, even the vents are drafted into maintenance.
+Sogar die Hitze hat hier unten Papierkram.
 
 ## Field Note
 
-DE LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+Nimm eine Ladung, dann weg. Beim zweiten Zug schaut das Nest zurück.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/de_DE. -->

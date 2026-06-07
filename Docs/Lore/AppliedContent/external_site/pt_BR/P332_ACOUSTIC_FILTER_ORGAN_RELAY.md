@@ -9,32 +9,18 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Acoustic Filter Organ Relay"
+title: "Relé de órgão filtrante acústico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Acoustic Filter Organ Relay
+# Relé de órgão filtrante acústico
 
-PT LOC HOLD: HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.
+Abaixo da profundidade de rádio, som é o instrumento principal. O recife de cabos complica isso: carcaças quebradas ressoam, metal espalha retornos, tempestades borram distância e tecido vivo fica entre fonte e volta.
 
-## Scanner
-
-PT LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
-
-## Terminal
-
-PT LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
-
-## Audio
-
-PT LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
-
-## Field Note
-
-PT LOC HOLD: Use with sonar, scanner and route-warning UI.
+O sonar não vira uma verdade limpa. O relé pode revelar uma porta, alimentar predadores, repetir avisos velhos ou fazer o mesmo corredor aparecer duas vezes.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/pt_BR. -->

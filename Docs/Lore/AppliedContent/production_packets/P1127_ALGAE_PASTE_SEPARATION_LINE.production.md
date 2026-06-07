@@ -17,7 +17,7 @@
 | Location / route | Aquaculture intake shelf, emergency crate, or first shelter cold box |
 | Unlock context | Player scans an algae paste sleeve with a visible separation line |
 | Evidence object | Algae paste sleeve, separation line, squeezed corner, printed harvest band |
-| Connected packets | P810_AQUACULTURE_INTAKE_ROUTE_ARTICLES; P1126_NUTRIENT_GEL_COLD_LAYER; P1115_SAMPLE_BAG_AIR_BUBBLE |
+| Connected packets | P810_AQUACULTURE_INTAKE_FILTER_BLOOM; P1126_NUTRIENT_GEL_COLD_LAYER; P1115_SAMPLE_BAG_AIR_BUBBLE |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: links early aquaculture evidence to ration inspection without making a food-system claim |
 | Content status | source_complete_unimported |
 

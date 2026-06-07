@@ -17,7 +17,7 @@
 | Location / route | First shelter power corner, wet console backplate, or pump relay panel |
 | Unlock context | Player scans a ground strap with white salt bloom around the lug |
 | Evidence object | Ground strap, salt bloom, lug screw, scraped contact patch |
-| Connected packets | P867_BATTERY_CLIP_GREEN_DUST; P1121_HOSE_CLAMP_TORQUE_TICK; P1112_DIRTY_TOOL_WRAP_QUARANTINE |
+| Connected packets | P939_BATTERY_CLIP_GREEN_CRUST; P1121_HOSE_CLAMP_TORQUE_TICK; P1112_DIRTY_TOOL_WRAP_QUARANTINE |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: makes early power repair respect wet-contact evidence |
 | Content status | source_complete_unimported |
 

@@ -3,38 +3,24 @@ packet_id: P333_SHELL_SEALANT_PRESSURE_GROWTH
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.shell_sealant_pressure_growth
 unlock_id: unlock.shell_sealant_pressure_growth
-poi_tags: poi.shell_sealant_growth;poi.fracture_lip_biomatter
-biome_tags: biome.atlas;biome.hardware
+poi_tags: poi.shell_sealant_breach;poi.pressure_growth_wall
+biome_tags: biome.atlas;biome.pressure
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Shell Sealant Pressure Growth"
+title: "Croissance sous pression du scellant coquille"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Shell Sealant Pressure Growth
+# Croissance sous pression du scellant coquille
 
-FR LOC HOLD: The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.
+Réparer n'est pas toujours restaurer. Les scellants d'urgence Deep Reach sauvaient la pression avant le confort. Dans la chimie de HECTON-8, une mousse peut devenir coquille minérale porteuse.
 
-## Scanner
-
-FR LOC HOLD: Sealant growth over fracture. Pressure rating unknown. Cut only after scan.
-
-## Terminal
-
-FR LOC HOLD: SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.
-
-## Audio
-
-FR LOC HOLD: A sealed wound can still kill the room.
-
-## Field Note
-
-FR LOC HOLD: Useful for crafting, route gating and false-confidence moments.
+Vu du registre, c'est excellent. Pour un maraudeur, le même succès peut ruiner une route : patch épaissi vers l'intérieur, sas coincé, cache d'outils enterrée, dernier compartiment isolé derrière un mur qui fait son travail.
 
 <!-- External Site; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/fr_FR. -->

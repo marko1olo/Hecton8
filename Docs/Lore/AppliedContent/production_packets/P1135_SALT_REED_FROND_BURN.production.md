@@ -17,7 +17,7 @@
 | Location / route | Photic shallows, shelter shoreline, or wet intake shelf |
 | Unlock context | Player scans a reed-like frond with white burned tips and darker base tissue |
 | Evidence object | Salt reed frond, white tips, dark base, wet root line |
-| Connected packets | P810_AQUACULTURE_INTAKE_ROUTE_ARTICLES; P1127_ALGAE_PASTE_SEPARATION_LINE; P1115_SAMPLE_BAG_AIR_BUBBLE |
+| Connected packets | P810_AQUACULTURE_INTAKE_FILTER_BLOOM; P1127_ALGAE_PASTE_SEPARATION_LINE; P1115_SAMPLE_BAG_AIR_BUBBLE |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: gives early flora scans a condition read without claiming harvest or flora runtime systems |
 | Content status | source_complete_unimported |
 

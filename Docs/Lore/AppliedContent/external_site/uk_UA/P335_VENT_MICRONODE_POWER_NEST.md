@@ -9,32 +9,18 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Vent Micronode Power Nest"
+title: "Енергогніздо жерлових мікровузлів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Vent Micronode Power Nest
+# Енергогніздо жерлових мікровузлів
 
-UK LOC HOLD: The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.
+Нижній океан повний малої енергії, не щедрої. Жерла сочаться теплом крізь металеву кору; хімічні градієнти збираються на мінеральній шкірі; старе обладнання лишило контакти й котушки.
 
-## Scanner
-
-UK LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
-
-## Terminal
-
-UK LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
-
-## Audio
-
-UK LOC HOLD: At depth, even the vents are drafted into maintenance.
-
-## Field Note
-
-UK LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+Один вузол може тримати реле в роботі, зарядити дрона на один повзок або зберегти пам'ять. Він дає причину підходити до жерл, але не робить їх безпечними: тепло, тиск, токсини й логіка Atlas сидять в одному гнізді.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/uk_UA. -->

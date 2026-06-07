@@ -17,7 +17,7 @@
 | Location / route | Service post, shoreline crate lid, or first shelter route board |
 | Unlock context | Player scans a bearing card with a swollen corner and intact ink notch |
 | Evidence object | Bearing card, swollen corner, ink notch, brass pin |
-| Connected packets | P943_NAV_COMPASS_BRINE_DRIFT; P905_STORM_SHELF_TAG_LINE; P1132_TETHER_KNOT_WET_SET |
+| Connected packets | P1134_SIGNAL_MAST_SHADOW_MARK; P905_ANCHOR_PAINT_CURRENT_SIDE; P1132_TETHER_KNOT_WET_SET |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: gives the player a local bearing check without claiming map or compass readiness |
 | Content status | source_complete_unimported |
 

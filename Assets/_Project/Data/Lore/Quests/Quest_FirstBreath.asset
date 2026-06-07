@@ -24,10 +24,18 @@ MonoBehaviour:
     fallbackText: "\u0414\u043e\u0441\u0442\u0438\u0447\u044c 150 \u043c \u0438 \u0432\u044b\u0439\u0442\u0438 \u0434\u0430\u043b\u044c\u0448\u0435 \u0432 \u0441\u043b\u0435\u0434\u0443\u044e\u0449\u0438\u0439 \u0441\u043b\u043e\u0439 \u0434\u0430\u0432\u043b\u0435\u043d\u0438\u044f."
     variants: []
   triggerType: 1
-  triggerId: 
+  triggerId:
   triggerValue: 150
   completionType: 1
-  completionId: 
+  completionId:
   completionValue: 300
+  prerequisiteQuestIds:
+  - quest_copper_sample
+  criticalItemId:
+  respawnEventId:
+  phaseGate: 0
+  markerTargetId:
+  markerWorldPosition: {x: 0, y: 0, z: 0}
+  markerHeightOffset: 6
   autoActivateOnStart: 0
   oneTimeOnly: 1

@@ -1746,6 +1746,7 @@ namespace Hecton8.Core
             if (_registeredSceneCallbacks)
                 return;
 
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
             SceneManager.sceneUnloaded += HandleSceneUnloaded;
             _registeredSceneCallbacks = true;
         }

@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS183_FIRST_TOOL_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1190_PRY_BAR_PAINT_SMEAR",
+    "P1191_WRENCH_JAW_POLISH_STRIPE",
+    "P1192_CUTTER_GUARD_NICK_LINE",
+    "P1193_SPOOL_TAG_SLACK_LOOP",
+    "P1194_FILE_TOOTH_RUST_LINE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1190_PRY_BAR_PAINT_SMEAR.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1191_WRENCH_JAW_POLISH_STRIPE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1192_CUTTER_GUARD_NICK_LINE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1193_SPOOL_TAG_SLACK_LOOP.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1194_FILE_TOOTH_RUST_LINE.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

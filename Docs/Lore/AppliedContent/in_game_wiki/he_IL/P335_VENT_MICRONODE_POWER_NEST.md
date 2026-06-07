@@ -9,32 +9,34 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Vent Micronode Power Nest"
+title: "קן כוח של מיקרו-צמתי פתח"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Vent Micronode Power Nest
+# קן כוח של מיקרו-צמתי פתח
 
-HE LOC HOLD: Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.
+מיקרו-צמתי פתח נוצרים במקום שבו כימיה חמה, אבק מתכתי וחומרת כוח ישנה חולקים אותו סדק. הם לא מזינים את הקולוניה כמו כור. הם מחזיקים דברים קטנים בחיים: לולאת זיכרון, הבהוב אבחון, זחילת רחפן, בריח דלת שהיה אמור למות מזמן.
+
+ליד אגן Atlas הקנים צפופים יותר כי כל גרדיאנט מועיל. הגיאולוגיה מספקת חום. החיים מספקים משטחים מוליכים. מכונות שבורות מספקות כללים. בוזז יכול לקצור מטען או לקרוא זיכרון, אבל אותו צומת עלול להזין לולאת תיקון שמבחינה בגניבה.
 
 ## Scanner
 
-HE LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
+מיקרו-צמתים תרמיים בקרום פתח. צלקות טעינת רחפנים ושאריות זיכרון נוכחות. אוטובוס תיקון מקומי מושך זרם.
 
 ## Terminal
 
-HE LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
+מיקרו-צומת פתח // גרדיאנט כימי תומך בניתוב הספק נמוך, שאריות זיכרון ומחזורי טעינת רחפנים מקוטעים. צפיפות הצמתים עולה ליד מבני מפעל-מקדש של אגן Atlas.
 
 ## Audio
 
-HE LOC HOLD: At depth, even the vents are drafted into maintenance.
+אפילו לחום יש ניירת כאן למטה.
 
 ## Field Note
 
-HE LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+קח מטען אחד ואז זוז. משיכה שנייה גורמת לקן להביט בחזרה.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/he_IL. -->

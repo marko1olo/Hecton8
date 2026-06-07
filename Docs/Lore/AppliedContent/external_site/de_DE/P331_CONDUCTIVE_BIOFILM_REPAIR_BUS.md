@@ -9,32 +9,18 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Conductive Biofilm Repair Bus"
+title: "Leitender Biofilm-Reparaturbus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Conductive Biofilm Repair Bus
+# Leitender Biofilm-Reparaturbus
 
-DE LOC HOLD: Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.
+In den Kabelriffen bleibt kaputte Infrastruktur selten sauber. Warme Sole ernährt Mikrobenmatten über aufgerissener Isolierung; Eisen und Kupfer werden zum Gerüst; alte Diagnosepulse geben dem Wachstum Rhythmus.
 
-## Scanner
-
-DE LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
-
-## Terminal
-
-DE LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
-
-## Audio
-
-DE LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
-
-## Field Note
-
-DE LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+Für Marauder ist das wertvoll. Lebende Kabelhaut kann Serviceleitungen, Niedrigstromtüren, Drohnennester oder Datenwege verraten. Jeder Schnitt bleibt unsicher, weil Atlas die lebende Brücke als gültiges Reparaturinventar lesen kann.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/de_DE. -->

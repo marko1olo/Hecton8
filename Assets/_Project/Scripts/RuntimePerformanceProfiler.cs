@@ -461,6 +461,7 @@ namespace Hecton8.Dev
             if (!IsActiveRuntimeOwner())
                 return;
 
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
@@ -1608,10 +1609,15 @@ namespace Hecton8.Dev
             if (_editorHooksRegistered)
                 return;
 
+            CompilationPipeline.compilationStarted -= HandleEditorCompilationStarted;
             CompilationPipeline.compilationStarted += HandleEditorCompilationStarted;
+            CompilationPipeline.compilationFinished -= HandleEditorCompilationFinished;
             CompilationPipeline.compilationFinished += HandleEditorCompilationFinished;
+            AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
             AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
             EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
+            EditorApplication.update -= HandleEditorUpdate;
             EditorApplication.update += HandleEditorUpdate;
             _editorHooksRegistered = true;
         }

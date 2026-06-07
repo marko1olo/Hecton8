@@ -98,6 +98,7 @@ namespace Hecton8.Dev
             if (!IsAutoStartSupported())
                 return;
 
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             LogVerbose("OnEnable");
             TryScheduleAutoStart();

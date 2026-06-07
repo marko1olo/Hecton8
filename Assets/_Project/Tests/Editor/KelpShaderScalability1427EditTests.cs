@@ -2255,6 +2255,83 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void HectonVoxelEngine_SeamJobsFailClosedOnInvalidTerrainInputs()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "HectonVoxelEngine.cs");
+            string snapJob = ExtractTypeBody(source, "public struct VoxelTerrainSeamSnapJob");
+            string snapExecuteBody = ExtractMethodBody(snapJob, "public void Execute(");
+            string snapSampleBody = ExtractMethodBody(snapJob, "float SampleTerrainHeight(");
+            string normalJob = ExtractTypeBody(source, "public struct VoxelSeamNormalBlendJob");
+            string normalExecuteBody = ExtractMethodBody(normalJob, "public void Execute(");
+            string gridNormalBody = ExtractMethodBody(normalJob, "float3 ResolveTerrainGridNormal(");
+            string normalizeBody = ExtractMethodBody(normalJob, "static float3 NormalizeFastOrDefault(");
+
+            Assert.That(snapJob, Does.Contain("static bool IsFinite(float3 value)"));
+            Assert.That(normalJob, Does.Contain("static bool IsFinite(float3 value)"));
+            Assert.That(snapExecuteBody, Does.Contain("terrainHeights.Length < ptsX * ptsZ"));
+            Assert.That(snapExecuteBody, Does.Contain("!math.isfinite(voxelStep)"));
+            Assert.That(snapExecuteBody, Does.Contain("!math.isfinite(seamTransitionBand)"));
+            Assert.That(snapExecuteBody, Does.Contain("!IsFinite(volumeOrigin)"));
+            Assert.That(snapExecuteBody, Does.Contain("if (!IsFinite(position))"));
+            Assert.That(snapExecuteBody, Does.Contain("if (!math.isfinite(boundaryDistance) || boundaryDistance > seamTransitionBand)"));
+            Assert.That(snapExecuteBody, Does.Contain("if (!math.isfinite(terrainHeight))"));
+            Assert.That(snapExecuteBody, Does.Contain("if (!math.isfinite(targetHeight) || !math.isfinite(snappedY))"));
+            Assert.That(snapSampleBody, Does.Contain("return float.NaN;"));
+
+            Assert.That(normalExecuteBody, Does.Contain("!normals.IsCreated"));
+            Assert.That(normalExecuteBody, Does.Contain("idx >= normals.Length"));
+            Assert.That(normalExecuteBody, Does.Contain("terrainHeights.Length < ptsX * ptsZ"));
+            Assert.That(normalExecuteBody, Does.Contain("if (!IsFinite(position))"));
+            Assert.That(normalExecuteBody, Does.Contain("if (!IsFinite(terrainNormal))"));
+            Assert.That(normalExecuteBody, Does.Contain("if (!math.isfinite(blendToTerrain))"));
+            Assert.That(normalExecuteBody, Does.Contain("if (!IsFinite(blendedNormal))"));
+            Assert.That(gridNormalBody, Does.Contain("return new float3(0f, 1f, 0f);"));
+            Assert.That(normalizeBody, Does.Contain("if (!IsFinite(value))"));
+            Assert.That(normalizeBody, Does.Contain("math.isfinite(lengthSq) && lengthSq > 0.0001f"));
+
+            Assert.That(snapExecuteBody, Does.Not.Contain("if (!terrainHeights.IsCreated || ptsX <= 1 || ptsZ <= 1 || seamTransitionBand <= 0f)"));
+            Assert.That(normalExecuteBody, Does.Not.Contain("if (!terrainHeights.IsCreated || ptsX <= 1 || ptsZ <= 1 || seamTransitionBand <= 0f)"));
+        }
+
+        [Test]
+        public void HectonVoxelEngine_BiomeSampleJobFailsClosedOnInvalidInputs()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "HectonVoxelEngine.cs");
+            string biomeJob = ExtractTypeBody(source, "public struct VoxelBiomeSampleJob");
+            string executeBody = ExtractMethodBody(biomeJob, "public void Execute(");
+
+            Assert.That(biomeJob, Does.Contain("static float SaturateFinite(float value)"));
+            Assert.That(biomeJob, Does.Contain("static bool IsFinite(float3 value)"));
+            Assert.That(executeBody, Does.Contain("!biomeValues.IsCreated"));
+            Assert.That(executeBody, Does.Contain("!gridBiome.IsCreated"));
+            Assert.That(executeBody, Does.Contain("gridBiome.Length < ptsX * ptsZ"));
+            Assert.That(executeBody, Does.Contain("!math.isfinite(voxelStep)"));
+            Assert.That(executeBody, Does.Contain("!IsFinite(volumeOrigin)"));
+            Assert.That(executeBody, Does.Contain("if (!IsFinite(wp))"));
+            Assert.That(executeBody, Does.Contain("float v00=SaturateFinite(gridBiome[x0+z0*ptsX]);"));
+            Assert.That(executeBody, Does.Contain("biomeValues[idx]=SaturateFinite("));
+            Assert.That(executeBody, Does.Not.Contain("biomeValues[idx]=math.lerp("));
+        }
+
+        [Test]
+        public void HectonVoxelEngine_DirtyBlendJobFailsClosedOnInvalidCells()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "HectonVoxelEngine.cs");
+            string dirtyJob = ExtractTypeBody(source, "public struct VoxelDirtyBlendJob");
+            string executeBody = ExtractMethodBody(dirtyJob, "public void Execute(");
+
+            Assert.That(dirtyJob, Does.Contain("static bool IsFinite(float3 value)"));
+            Assert.That(executeBody, Does.Contain("!math.isfinite(voxelStep)"));
+            Assert.That(executeBody, Does.Contain("!math.all(math.isfinite(absoluteCellOffset))"));
+            Assert.That(executeBody, Does.Contain("if (!IsFinite(position))"));
+            Assert.That(executeBody, Does.Contain("double3 absolutePosition = new double3(position.x, position.y, position.z) + absoluteCellOffset;"));
+            Assert.That(executeBody, Does.Contain("if (!math.all(math.isfinite(absolutePosition)))"));
+            Assert.That(executeBody, Does.Contain("dirtyBlendValues[index] = 0f;"));
+
+            Assert.That(executeBody, Does.Not.Contain("!positions.IsCreated || index >= positions.Length || voxelStep <= 0.0001f)"));
+        }
+
+        [Test]
         public void HectonVoxelEngine_SpawnPointRouteFailsClosedOnInvalidInputs()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "HectonVoxelEngine.cs");

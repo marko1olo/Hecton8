@@ -3,38 +3,40 @@ packet_id: P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.sensor_tagged_fauna_feedback_loop
 unlock_id: unlock.sensor_tagged_fauna_feedback_loop
-poi_tags: poi.sensor_tagged_fauna_loop;poi.old_tag_new_growth
-biome_tags: biome.atlas;biome.fauna
+poi_tags: poi.tagged_fauna_loop;poi.old_colony_sensor
+biome_tags: biome.ecology;biome.comms
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Sensor-Tagged Fauna Feedback Loop"
+title: "Feedbacklus van sensorgemerkte fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Sensor-Tagged Fauna Feedback Loop
+# Feedbacklus van sensorgemerkte fauna
 
-NL LOC HOLD: Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.
+Deep Reach tagde lokale fauna om stroming, chemie en migratie te karteren. Veel tags overleefden de bemanningen. Atlas leest ze nog als meetinvoer, waardoor een dierroute reparatieprioriteit kan verhogen of een oude kaarttegel kan openen.
+
+Dat maakt het dier niet gehoorzaam. Het kan gewond, territoriaal, besmet met oude hardware of op zoek naar voedsel zijn. De machine ziet alleen beweging plus data. Een Marauder ziet de ergere waarheid: de oceaan kan je per ongeluk melden.
 
 ## Scanner
 
-NL LOC HOLD: Old colony tag under new growth. Behavior trace resembles survey sweep.
+Oude koloniesensortag onder nieuw littekenweefsel. Bewegingsprofiel komt in Atlas-meetkanaal. Dier geagiteerd door actieve ping.
 
 ## Terminal
 
-NL LOC HOLD: FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.
+FAUNALUS // Legacy-tag 7F meldt temperatuur, beweging en zoutgehalte via beschadigd meetkanaal. Atlas-reparatieprioriteit steeg na migratie. Getagd dier is telemetriebron, geen commando-asset.
 
 ## Audio
 
-NL LOC HOLD: It is not hunting you. It may still report you.
+Het jaagt niet voor Atlas. Het zwemt met een badge die nog onder de huid gespijkerd zit.
 
 ## Field Note
 
-NL LOC HOLD: Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command.
+Getagde dieren veranderen de kaart zonder bedoeling. Volg er pas een als je weet wat het volgt.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/nl_NL. -->

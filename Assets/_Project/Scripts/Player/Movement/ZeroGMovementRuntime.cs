@@ -1449,14 +1449,17 @@ namespace Hecton8.Player.Movement
             if (!isActiveAndEnabled)
                 return;
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 TryUnregisterPostFixed();
                 TryUnregisterFixed();
                 TryUnregisterLateFrame();
-                TryRegisterFixed();
-                TryRegisterPostFixed();
-                TryRegisterLateFrame();
+                if (currentService != null && _runtimeActive)
+                {
+                    TryRegisterFixed();
+                    TryRegisterPostFixed();
+                    TryRegisterLateFrame();
+                }
                 return;
             }
 

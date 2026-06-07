@@ -19,22 +19,24 @@ localization_flags: 0
 
 # Conductive Biofilm Repair Bus
 
-Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.
+Conductive biofilm appears where Deep Reach cable, warm brine and damaged insulation stay in contact. The mat carries weak current across copper breaks and lets Atlas diagnostics reach rooms that should be electrically dead. It is useful evidence: a living patch can mark a hidden line, a drone route or a service door still tied to old logic.
+
+The danger is category failure. Atlas sees continuity and assigns repair priority. The organism sees heat, mineral flow and surface area. A Marauder who cuts the mat may interrupt a door, wake a drone audit or expose enough fresh charge to call predators that hunt by field shimmer.
 
 ## Scanner
 
-Biofilm carries weak current across fractured cable and living mat.
+Biofilm sheath bridging broken copper and living mat. Weak current present. Atlas repair tag found in salt crust.
 
 ## Terminal
 
-ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+ATLAS REPAIR BUS // Conductive microbial film has crossed cable breaks C-18 through C-22. Diagnostic pulses route through wet growth when copper is gone. Do not classify as cognition. Treat as contaminated maintenance substrate.
 
 ## Audio
 
-The ocean did not learn to speak. Atlas learned where the wet wires grow.
+The film is carrying a pulse. That doesn't make it smart. It means the wire learned to rot alive.
 
 ## Field Note
 
-Good first visual bridge from beautiful shallows to mechanical contamination.
+If a wet cable has a skin, trace it before cutting. The dead side is usually safer. Usually.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/en_US. -->

@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Conductive Biofilm Repair Bus
 
-Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.
+In the cable reefs, broken infrastructure rarely stays clean. Warm brine feeds microbial mats over split insulation; iron and copper become scaffold; old diagnostic pulses give the growth a rhythm. Conductive biofilm can bridge a gap no technician would sign off, keeping a pump sensor alive long after the cable jacket has dissolved.
 
-## Scanner
-
-Biofilm carries weak current across fractured cable and living mat.
-
-## Terminal
-
-ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
-
-## Audio
-
-The ocean did not learn to speak. Atlas learned where the wet wires grow.
-
-## Field Note
-
-Good first visual bridge from beautiful shallows to mechanical contamination.
+That makes it valuable to Marauders. A scanner return from living cable skin can point toward hidden service trunks, low-power doors, drone nests or a surviving data route. It also makes every cut uncertain. Atlas may treat the living bridge as valid repair inventory. Interrupting it can move a route from quiet salvage to maintenance incident in one pulse cycle.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/en_US. -->

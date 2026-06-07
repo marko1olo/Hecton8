@@ -197,7 +197,9 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
         {
             SceneView.duringSceneGui -= OnSceneGui;
             SceneView.duringSceneGui += OnSceneGui;
+            AssemblyReloadEvents.beforeAssemblyReload -= Dispose;
             AssemblyReloadEvents.beforeAssemblyReload += Dispose;
+            EditorApplication.quitting -= Dispose;
             EditorApplication.quitting += Dispose;
         }
 
@@ -263,7 +265,9 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
 
         static HadalTrenchPreviewStore()
         {
+            AssemblyReloadEvents.beforeAssemblyReload -= Dispose;
             AssemblyReloadEvents.beforeAssemblyReload += Dispose;
+            EditorApplication.quitting -= Dispose;
             EditorApplication.quitting += Dispose;
         }
 

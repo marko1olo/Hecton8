@@ -9,32 +9,18 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Vent Micronode Power Nest"
+title: "קן כוח של מיקרו-צמתי פתח"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Vent Micronode Power Nest
+# קן כוח של מיקרו-צמתי פתח
 
-HE LOC HOLD: The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.
+האוקיינוס התחתון מלא כוח קטן, לא כוח נדיב. פתחים מדממים חום דרך קרום עשיר מתכות; גרדיאנטים כימיים נאספים על עור מינרלי; חומרה ישנה השאירה מגעים וסלילים.
 
-## Scanner
-
-HE LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
-
-## Terminal
-
-HE LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
-
-## Audio
-
-HE LOC HOLD: At depth, even the vents are drafted into maintenance.
-
-## Field Note
-
-HE LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+צומת אחד יכול להשאיר ממסר מתקתק, לטעון רחפן לזחילה אחת או לשמר זיכרון. הוא מושך אל הפתחים בלי להפוך אותם לבטוחים: חום, לחץ, רעלים ולוגיקת Atlas באותו קן.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/he_IL. -->

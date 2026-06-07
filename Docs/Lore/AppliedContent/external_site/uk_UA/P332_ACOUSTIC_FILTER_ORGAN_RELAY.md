@@ -9,32 +9,18 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Acoustic Filter Organ Relay"
+title: "Акустичне реле фільтр-органа"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Acoustic Filter Organ Relay
+# Акустичне реле фільтр-органа
 
-UK LOC HOLD: HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.
+Нижче радіоглибини звук стає головним інструментом. Кабельний риф ускладнює його: тріснуті корпуси дзвенять, металеві мати розсіюють, шторми розмивають відстань, а жива тканина сидить між джерелом і поверненням.
 
-## Scanner
-
-UK LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
-
-## Terminal
-
-UK LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
-
-## Audio
-
-UK LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
-
-## Field Note
-
-UK LOC HOLD: Use with sonar, scanner and route-warning UI.
+Тому сонар не є чистою правдою. Реле може показати двері, нагодувати хижаків, повторити старе попередження або зробити той самий коридор видимим двічі.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/uk_UA. -->

@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Acoustic Filter Organ Relay"
+title: "مرحل عضو ترشيح صوتي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Acoustic Filter Organ Relay
+# مرحل عضو ترشيح صوتي
 
-AR LOC HOLD: HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.
+تحت عمق الراديو يصبح الصوت الأداة الأساسية. شعاب الكابلات تكسر البساطة: المعدن يرن، العواصف تطمس المسافة، والنسيج الحي قد يجلس بين المصدر والعودة.
 
-## Scanner
-
-AR LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
-
-## Terminal
-
-AR LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
-
-## Audio
-
-AR LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
-
-## Field Note
-
-AR LOC HOLD: Use with sonar, scanner and route-warning UI.
+لذلك لا يكون السونار حقيقة نظيفة. قد يكشف المرحل بابا، وقد يطعم مفترسا أو يكرر تحذيرا قديما أو يجعل الممر نفسه يظهر مرتين.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/ar_SA. -->

@@ -17,7 +17,7 @@
 | Location / route | Ladder well, flooded service shaft, or first shelter exterior rail |
 | Unlock context | Player scans a ladder rung with a missing band of route paint |
 | Evidence object | Ladder rung, paint gap, worn glove marks, wet rail |
-| Connected packets | P1131_DEPTH_TAB_FOGGED_WINDOW; P1123_GROUND_STRAP_SALT_BLOOM; P905_STORM_SHELF_TAG_LINE |
+| Connected packets | P1131_DEPTH_TAB_FOGGED_WINDOW; P1123_GROUND_STRAP_SALT_BLOOM; P905_ANCHOR_PAINT_CURRENT_SIDE |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: helps the player read climb route wear and missing marker paint |
 | Content status | source_complete_unimported |
 

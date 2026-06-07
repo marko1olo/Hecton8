@@ -34,8 +34,11 @@ namespace Hecton8.Tools
 
         private void OnEnable()
         {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
             SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
             SceneManager.sceneUnloaded += OnSceneUnloaded;
+            SceneManager.activeSceneChanged -= OnActiveSceneChanged;
             SceneManager.activeSceneChanged += OnActiveSceneChanged;
         }
 

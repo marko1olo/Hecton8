@@ -39,6 +39,7 @@ namespace Hecton8.Editor.GeographySanity
 
         static GeographySanityPipeline()
         {
+            AssemblyReloadEvents.beforeAssemblyReload -= Cancel;
             AssemblyReloadEvents.beforeAssemblyReload += Cancel;
         }
 

@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Conductive Biofilm Repair Bus"
+title: "ناقل إصلاح من غشاء حيوي موصل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Conductive Biofilm Repair Bus
+# ناقل إصلاح من غشاء حيوي موصل
 
-AR LOC HOLD: Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.
+في شعاب الكابلات لا تبقى البنية المحطمة نظيفة طويلا. يغذي المحلول الدافئ طبقات ميكروبية فوق العزل المشقوق، ويصير الحديد والنحاس هيكلا لها، وتعطيها نبضات التشخيص القديمة إيقاعا.
 
-## Scanner
-
-AR LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
-
-## Terminal
-
-AR LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
-
-## Audio
-
-AR LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
-
-## Field Note
-
-AR LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+هذا يفيد المغيرين، لكنه يجعل كل قطع مخاطرة. جلد الكابل الحي قد يدل على باب خدمة أو عش طائرات أو مسار بيانات، وقد يحول اللمسة نفسها إلى حادث صيانة.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/ar_SA. -->

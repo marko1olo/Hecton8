@@ -9,32 +9,18 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Vent Micronode Power Nest"
+title: "Ninho de energia de micronodo de fonte"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Vent Micronode Power Nest
+# Ninho de energia de micronodo de fonte
 
-PT LOC HOLD: The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.
+O oceano inferior é cheio de energia pequena, não energia generosa. Fontes sangram calor pela crosta metálica; gradientes químicos se juntam na pele mineral; hardware velho deixou contatos e bobinas.
 
-## Scanner
-
-PT LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
-
-## Terminal
-
-PT LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
-
-## Audio
-
-PT LOC HOLD: At depth, even the vents are drafted into maintenance.
-
-## Field Note
-
-PT LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+Um nó pode manter um relé batendo, carregar um drone para um rastejo ou preservar memória. Dá motivo para chegar perto das fontes sem torná-las seguras: calor, pressão, toxinas e lógica Atlas dividem o mesmo ninho.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/pt_BR. -->

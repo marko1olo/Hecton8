@@ -9,32 +9,18 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Acoustic Filter Organ Relay"
+title: "音響フィルター器官リレー"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Acoustic Filter Organ Relay
+# 音響フィルター器官リレー
 
-JA LOC HOLD: HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.
+電波の届かない深度では音が主な計器になる。ケーブル礁はそれを複雑にする。割れた筐体は鳴り、金属マットは散乱し、嵐のパルスは距離をぼかし、生きた組織が発信源と戻りの間に座る。
 
-## Scanner
-
-JA LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
-
-## Terminal
-
-JA LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
-
-## Audio
-
-JA LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
-
-## Field Note
-
-JA LOC HOLD: Use with sonar, scanner and route-warning UI.
+そのためソナーは清潔な真実ではない。リレーは扉を示すことも、捕食者へ餌を渡すことも、古い警告を繰り返すことも、同じ廊下を二重に見せることもある。
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/ja_JP. -->

@@ -9,32 +9,34 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Conductive Biofilm Repair Bus"
+title: "Провідна біоплівкова ремонтна шина"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Conductive Biofilm Repair Bus
+# Провідна біоплівкова ремонтна шина
 
-UK LOC HOLD: Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.
+Провідна біоплівка з'являється там, де кабель Deep Reach, тепла ропа й пошкоджена ізоляція лишаються в контакті. Мат проводить слабкий струм через розриви міді й дозволяє діагностиці Atlas діставатися кімнат, які мали бути електрично мертвими.
+
+Небезпека в помилці класифікації. Atlas бачить неперервність і ставить ремонтний пріоритет. Організм бачить тепло, мінеральний потік і площу поверхні. Мародер, який ріже мат, може обірвати двері, розбудити аудит дрона або відкрити свіжий заряд, що привабить хижаків за мерехтінням поля.
 
 ## Scanner
 
-UK LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
+Оболонка біоплівки з'єднує розірвану мідь і живий мат. Є слабкий струм. Ремонтний тег Atlas у соляній кірці.
 
 ## Terminal
 
-UK LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+РЕМОНТНА ШИНА ATLAS // Провідна мікробна плівка перетнула розриви кабелю C-18-C-22. Діагностичні імпульси йдуть через мокрий ріст там, де міді вже немає. Не класифікувати як свідомість. Вважати забрудненим субстратом обслуговування.
 
 ## Audio
 
-UK LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
+Плівка несе імпульс. Це не робить її розумною. Це означає, що дріт навчився гнити живцем.
 
 ## Field Note
 
-UK LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+Якщо мокрий кабель має шкіру, спершу простеж її. Мертва сторона зазвичай безпечніша. Зазвичай.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/uk_UA. -->

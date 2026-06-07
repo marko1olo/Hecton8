@@ -9,32 +9,34 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Acoustic Filter Organ Relay"
+title: "Akustisches Filterorgan-Relais"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Acoustic Filter Organ Relay
+# Akustisches Filterorgan-Relais
 
-DE LOC HOLD: Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.
+Manche Rifftiere bilden Filterorgane, die dicht genug sind, um Schall zu formen. Atlas-Reparaturknoten nutzen dieses Gewebe als akustische Blende, seit die Relaisgehäuse gerissen sind.
+
+Diese Hilfe hat Zähne. Dasselbe Organ, das einen Routenping trägt, kann Fressern Vibration melden, markierte Fauna wecken oder die Bewegung eines Marauders durch das Riff zurückwerfen. Eine saubere Antwort bedeutet keinen sicheren Korridor. Sie bedeutet, dass der Korridor einen Zuhörer hat.
 
 ## Scanner
 
-DE LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
+Filterorganresonanz passt zur Kadenz eines beschädigten Relais. Rücklauf nach Gewebe sauberer. Bissspuren am Gehäuse.
 
 ## Terminal
 
-DE LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
+AKUSTISCHES RELAIS // Lokales Filterorgangewebe dämpft Sturmrauschen und wiederholt Servicepings im Kabelriff. Signalgewinn bei Druckstößen instabil. Biologisches Relais ist Routenhilfe und Räuberköder.
 
 ## Audio
 
-DE LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
+Es antwortet wie Ausrüstung, weil die Ausrüstung seine Kehle benutzt.
 
 ## Field Note
 
-DE LOC HOLD: Use with sonar, scanner and route-warning UI.
+Wenn hinter dem Echo ein Puls sitzt, Werkzeug leise halten und Wasser prüfen.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/de_DE. -->

@@ -204,7 +204,9 @@ namespace Hecton8.Modding
             }
 
             GameBootstrapper.Register(_bootstrapEventListener);
+            Application.quitting -= HandleApplicationQuitting;
             Application.quitting += HandleApplicationQuitting;
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             _hooksInstalled = true;
         }

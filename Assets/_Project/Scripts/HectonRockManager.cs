@@ -104,12 +104,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            HectonRockManager registered = GlobalRegistry.RockManager;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             // COLD ALLOC: Dictionary<int,Dictionary<Vector2Int,Matrix4x4[]>>[8] - rock chunk maps by layer - owner: HectonRockManager
             _chunkData = new Dictionary<int, Dictionary<Vector2Int, Matrix4x4[]>>(8);
@@ -207,6 +203,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             ApplyVendorGpuiManagerAdmission();
             TryRegisterToGlobalRegistry();
             if (Application.isPlaying)
@@ -217,6 +216,9 @@ namespace Hecton8.World
 
         private void Start()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             ApplyVendorGpuiManagerAdmission();
             TryRegisterToGlobalRegistry();
             TryRegisterToTickManager();
@@ -246,17 +248,54 @@ namespace Hecton8.World
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            HectonRockManager registered = GlobalRegistry.RockManager;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterRockManagerRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.RockManager, this);
             if (_serviceRegistered)
                 s_activeRuntime = this;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            HectonRockManager active = s_activeRuntime;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsRockManagerRuntimeUsable(active))
+                {
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntime, active))
+                    s_activeRuntime = null;
+
+                if (ReferenceEquals(GlobalRegistry.RockManager, active))
+                    GlobalRegistry.UnregisterRockManagerRuntime(active);
+            }
+
+            HectonRockManager registered = GlobalRegistry.RockManager;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsRockManagerRuntimeUsable(registered))
+            {
+                s_activeRuntime = registered;
+                Destroy(gameObject);
+                return true;
+            }
+
+            if (ReferenceEquals(s_activeRuntime, registered))
+                s_activeRuntime = null;
+
+            GlobalRegistry.UnregisterRockManagerRuntime(registered);
+            return false;
+        }
+
+        private static bool IsRockManagerRuntimeUsable(HectonRockManager manager)
+        {
+            return manager != null && manager._serviceRegistered && manager.isActiveAndEnabled;
         }
 
         private void TryUnregisterFromGlobalRegistry()

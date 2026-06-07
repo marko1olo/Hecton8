@@ -3,38 +3,24 @@ packet_id: P333_SHELL_SEALANT_PRESSURE_GROWTH
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.shell_sealant_pressure_growth
 unlock_id: unlock.shell_sealant_pressure_growth
-poi_tags: poi.shell_sealant_growth;poi.fracture_lip_biomatter
-biome_tags: biome.atlas;biome.hardware
+poi_tags: poi.shell_sealant_breach;poi.pressure_growth_wall
+biome_tags: biome.atlas;biome.pressure
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Shell Sealant Pressure Growth"
+title: "Тисковий ріст мушлевого герметика"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Shell Sealant Pressure Growth
+# Тисковий ріст мушлевого герметика
 
-UK LOC HOLD: The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.
+Ремонт не завжди є відновленням. Аварійні герметики Deep Reach спершу рятували тиск. У хімії HECTON-8 піна може стати несучою мінеральною мушлею.
 
-## Scanner
-
-UK LOC HOLD: Sealant growth over fracture. Pressure rating unknown. Cut only after scan.
-
-## Terminal
-
-UK LOC HOLD: SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.
-
-## Audio
-
-UK LOC HOLD: A sealed wound can still kill the room.
-
-## Field Note
-
-UK LOC HOLD: Useful for crafting, route gating and false-confidence moments.
+Для реєстру це чудово. Для мародера той самий успіх може зіпсувати маршрут: латка товстішає всередину, клинить люк, ховає інструменти або ізолює останній відсік за стіною, що технічно працює.
 
 <!-- External Site; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/uk_UA. -->

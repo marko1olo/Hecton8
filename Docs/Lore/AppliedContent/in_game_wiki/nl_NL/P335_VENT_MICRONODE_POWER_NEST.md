@@ -9,32 +9,34 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Vent Micronode Power Nest"
+title: "Vent-micronode energienest"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Vent Micronode Power Nest
+# Vent-micronode energienest
 
-NL LOC HOLD: Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.
+Vent-micronodes vormen waar hete chemie, metaalstof en oude stroomhardware dezelfde scheur delen. Ze voeden de kolonie niet als een reactor. Ze houden kleine dingen levend: een geheugenlus, een diagnoseknipper, een dronekruip, een deurslot dat jaren geleden dood had moeten zijn.
+
+Nabij het Atlas Basin worden de nesten dichter omdat elke gradiënt bruikbaar is. Geologie levert warmte. Leven levert geleidende oppervlakken. Kapotte machines leveren regels. Een Marauder kan lading oogsten of geheugenresidu lezen, maar dezelfde node kan een reparatielus voeden die de diefstal opmerkt.
 
 ## Scanner
 
-NL LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
+Thermische micronodes in ventkorst. Drone-laadlittekens en geheugenresidu aanwezig. Lokale reparatiebus trekt stroom.
 
 ## Terminal
 
-NL LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
+VENT-MICRONODE // Chemische gradiënt ondersteunt laagvermogenrouting, geheugenresidu en onregelmatige drone-laadcycli. Nodedichtheid stijgt bij Atlas Basin-fabriekstempelstructuren.
 
 ## Audio
 
-NL LOC HOLD: At depth, even the vents are drafted into maintenance.
+Zelfs de hitte heeft papierwerk hier beneden.
 
 ## Field Note
 
-NL LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+Pak één lading en ga weg. Een tweede trek laat het nest terugkijken.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/nl_NL. -->

@@ -108,6 +108,8 @@ Localization status:
 
 No field may be filled with vibes. If the answer is unknown, write `UNKNOWN - DO NOT INVENT` and either stop or make discovery the task.
 
+A source brief is an input or blocker, not the final artifact, unless the user explicitly asked only for a source brief.
+
 ## Production Writing Loop
 
 Use this order for real work:
@@ -123,6 +125,8 @@ Use this order for real work:
 9. Provide a proof packet: sources used, IDs, surfaces, locale roster, native-review status, forbidden facts avoided.
 
 The loop must produce content, not a proposal about content. A task asking for a diary should end with a diary. A task asking for a technical article should end with a readable technical article, not notes about the future article.
+
+If the same content problem repeats after one rewrite pass, stop polishing phrasing and change the source route: revise the scene/evidence/knowledge boundary, choose a different surface or speaker, or report the exact missing canon/source blocker.
 
 Localization lock: AppliedContent and major in-world content should be prepared for all 15 supported locales immediately. Non-native or machine-assisted text must be labeled honestly through status/frontmatter/index fields, never as player-visible disclaimers and never as native-final without proof.
 
@@ -446,6 +450,19 @@ Required packet style:
 - field note reads like a Marauder/technician annotation, not writer instructions.
 
 If writer instructions are needed, put them in source comments or authoring notes, not player-facing text.
+
+## AppliedContent Production Handoff
+
+For production AppliedContent, prose is not done until it is materialized into the content pipeline:
+
+- packet/source JSON or production packet file exists with stable packet ID, Article ID, unlock ID, surface text, and locale status;
+- all 15 locale rows contain actual draft text or `BLOCKED_TRANSLATION_DRAFT`;
+- target surface files and indexes are updated for `in_game_wiki` and/or `external_site` when those surfaces are in scope;
+- `Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv` and generated hash constants are refreshed when the packet targets runtime;
+- route cards or binding maps exist when the packet is meant to unlock from a POI, scanner, terminal, quest, or scene object;
+- exporter/importer/audit output is reported with its real proof class.
+
+A loose markdown article, source brief, future integration note, or English-only packet is not production AppliedContent unless the task explicitly requested draft-only work.
 
 ## Multilingual Requirement
 

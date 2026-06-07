@@ -167,7 +167,9 @@ namespace Hecton8.Editor.GeologyForge
 
         static TopographyForgePreview()
         {
+            AssemblyReloadEvents.beforeAssemblyReload -= Shutdown;
             AssemblyReloadEvents.beforeAssemblyReload += Shutdown;
+            EditorApplication.quitting -= Shutdown;
             EditorApplication.quitting += Shutdown;
         }
 

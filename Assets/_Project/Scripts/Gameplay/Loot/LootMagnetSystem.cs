@@ -153,6 +153,7 @@ namespace Hecton8.Gameplay.Loot
             if (_sceneLoadedHooked)
                 return;
 
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             _sceneLoadedHooked = true;
         }

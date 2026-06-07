@@ -9,32 +9,34 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Conductive Biofilm Repair Bus"
+title: "ناقل إصلاح من غشاء حيوي موصل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Conductive Biofilm Repair Bus
+# ناقل إصلاح من غشاء حيوي موصل
 
-AR LOC HOLD: Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.
+يظهر الغشاء الحيوي الموصل حيث يبقى كابل Deep Reach والمحلول الملحي الدافئ والعزل التالف على تماس. يحمل البساط تيارا ضعيفا عبر انقطاعات النحاس، ويسمح لتشخيص أطلس بالوصول إلى غرف كان يجب أن تكون ميتة كهربائيا.
+
+الخطر في فشل التصنيف. أطلس يرى الاستمرارية ويمنح أولوية إصلاح. الكائن يرى حرارة وتدفق معادن ومساحة سطح. إذا قطعه المغير فقد يعطل بابا، أو يوقظ تدقيق طائرة صيانة، أو يطلق شحنة تجذب مفترسات تتبع وميض المجال.
 
 ## Scanner
 
-AR LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
+غلاف حيوي يصل النحاس المكسور بالبساط الحي. تيار ضعيف حاضر. وسم إصلاح من أطلس داخل قشرة الملح.
 
 ## Terminal
 
-AR LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+ناقل إصلاح أطلس // عبر الغشاء الميكروبي الموصل كسور الكابل C-18 حتى C-22. تمر نبضات التشخيص عبر النمو الرطب عندما يختفي النحاس. لا تصنفه كإدراك. عامله كركيزة صيانة ملوثة.
 
 ## Audio
 
-AR LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
+الغشاء يحمل نبضة. هذا لا يجعله ذكيا. معناه أن السلك تعلم أن يتعفن وهو حي.
 
 ## Field Note
 
-AR LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+إذا كان للكابل الرطب جلد، اتبعه قبل القطع. الجانب الميت أأمن غالبا. غالبا.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/ar_SA. -->

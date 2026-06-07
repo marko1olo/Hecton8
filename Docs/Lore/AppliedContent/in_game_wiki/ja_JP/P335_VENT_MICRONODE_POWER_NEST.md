@@ -9,32 +9,34 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Vent Micronode Power Nest"
+title: "噴出口マイクロノード電力巣"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Vent Micronode Power Nest
+# 噴出口マイクロノード電力巣
 
-JA LOC HOLD: Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.
+噴出口マイクロノードは、熱い化学、金属粉、古い電力ハードが同じ亀裂を共有する場所にできる。コロニーを炉のように動かすものではない。小さなものを生かす。記憶ループ、診断の点滅、ドローンの一歩、何年も前に死ぬべきだったドアラッチ。
+
+Atlas Basin近くでは巣が濃くなる。どの勾配も使えるからだ。地質は熱を出す。生命は導電面を出す。壊れた機械は規則を出す。Marauderは電荷や記憶残滓を取れるが、同じノードが盗みに気づく修理ループを養っているかもしれない。
 
 ## Scanner
 
-JA LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
+噴出口クラスト内に熱マイクロノード。ドローン充電痕と記憶残滓あり。局所修理バスが電流を引いている。
 
 ## Terminal
 
-JA LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
+噴出口マイクロノード // 化学勾配が低電力ルーティング、記憶残滓、断続的ドローン充電サイクルを支える。Atlas Basinの工場神殿構造近くでノード密度上昇。
 
 ## Audio
 
-JA LOC HOLD: At depth, even the vents are drafted into maintenance.
+ここまで来ると、熱にまで書類がある。
 
 ## Field Note
 
-JA LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+充電は一回だけ取って動け。二回目で巣が見返してくる。
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/ja_JP. -->

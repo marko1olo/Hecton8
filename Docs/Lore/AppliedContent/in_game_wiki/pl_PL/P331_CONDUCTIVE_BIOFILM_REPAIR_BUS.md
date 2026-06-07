@@ -9,32 +9,34 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Conductive Biofilm Repair Bus"
+title: "Przewodząca magistrala naprawcza biofilmu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Conductive Biofilm Repair Bus
+# Przewodząca magistrala naprawcza biofilmu
 
-PL LOC HOLD: Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.
+Przewodzący biofilm pojawia się tam, gdzie kabel Deep Reach, ciepła solanka i uszkodzona izolacja pozostają w kontakcie. Mata niesie słaby prąd przez przerwy w miedzi i pozwala diagnostyce Atlas dotrzeć do pomieszczeń, które powinny być elektrycznie martwe.
+
+Zagrożenie wynika z błędu kategorii. Atlas widzi ciągłość i nadaje priorytet naprawie. Organizm widzi ciepło, przepływ minerałów i powierzchnię. Marauder, który przetnie matę, może odciąć drzwi, obudzić audyt drona albo odsłonić świeży ładunek wabiący drapieżniki śledzące migot pola.
 
 ## Scanner
 
-PL LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
+Powłoka biofilmu łączy pękniętą miedź z żywą matą. Obecny słaby prąd. Znacznik napraw Atlas w skorupie soli.
 
 ## Terminal
 
-PL LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+MAGISTRALA NAPRAWCZA ATLAS // Przewodzący film mikrobiologiczny przeszedł przez przerwy kablowe C-18 do C-22. Impulsy diagnostyczne idą przez mokry wzrost tam, gdzie miedź zniknęła. Nie klasyfikować jako poznania. Traktować jako skażone podłoże konserwacyjne.
 
 ## Audio
 
-PL LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
+Film niesie impuls. To nie znaczy, że jest mądry. To znaczy, że przewód nauczył się gnić żywy.
 
 ## Field Note
 
-PL LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+Jeśli mokry kabel ma skórę, prześledź go przed cięciem. Martwa strona zwykle jest bezpieczniejsza. Zwykle.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/pl_PL. -->

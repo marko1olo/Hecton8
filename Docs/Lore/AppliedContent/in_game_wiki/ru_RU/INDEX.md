@@ -4,9 +4,9 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localized_pages: 444
-draft_machine_or_llm_pages: 444
-draft_marker_pages: 27
+localized_pages: 446
+draft_machine_or_llm_pages: 446
+draft_marker_pages: 34
 ---
 
 # Индекс кодекса HECTON-8
@@ -120,6 +120,8 @@ draft_marker_pages: 27
 - [Selene Arendt: вес Atlas](P107_SELENE_ARENDT_ATLAS_WEIGHTING.md) `P107_SELENE_ARENDT_ATLAS_WEIGHTING`
 - [Noor Haldane: evac cert](P108_NOOR_HALDANE_EVAC_CERT.md) `P108_NOOR_HALDANE_EVAC_CERT`
 - [Журнал квитанций Тихой орбиты](P1090_SILENT_ORBIT_RECEIPT_LEDGER.md) `P1090_SILENT_ORBIT_RECEIPT_LEDGER`
+- [Журнал торможения пеллетного следа](P1091_PELLET_WAKE_BRAKING_LEDGER.md) `P1091_PELLET_WAKE_BRAKING_LEDGER`
+- [Акустическая карта лестницы давления](P1092_PRESSURE_LADDER_ACOUSTIC_CHART.md) `P1092_PRESSURE_LADDER_ACOUSTIC_CHART`
 - [Marek Ibarra: loss conversion](P109_MAREK_IBARRA_LOSS_CONVERSION.md) `P109_MAREK_IBARRA_LOSS_CONVERSION`
 - [Vera Sato-Ren: return action](P110_VERA_SATO_REN_RETURN_ACTION.md) `P110_VERA_SATO_REN_RETURN_ACTION`
 - [Ручной bilge pump kit](P111_MANUAL_BILGE_PUMP_KIT.md) `P111_MANUAL_BILGE_PUMP_KIT`
@@ -327,11 +329,11 @@ draft_marker_pages: 27
 - [Требование координат Recovery Compliance](P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND.md) `P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND`
 - [Раскол сообщений Deep Reach](P329_DEEP_REACH_FACTION_MESSAGE_SPLIT.md) `P329_DEEP_REACH_FACTION_MESSAGE_SPLIT`
 - [Распад сигнала в blackout window](P330_BLACKOUT_WINDOW_SIGNAL_DECAY.md) `P330_BLACKOUT_WINDOW_SIGNAL_DECAY`
-- [Проводящая biofilm repair bus](P331_CONDUCTIVE_BIOFILM_REPAIR_BUS.md) `P331_CONDUCTIVE_BIOFILM_REPAIR_BUS`
-- [Acoustic filter organ relay](P332_ACOUSTIC_FILTER_ORGAN_RELAY.md) `P332_ACOUSTIC_FILTER_ORGAN_RELAY`
-- [Shell sealant pressure growth](P333_SHELL_SEALANT_PRESSURE_GROWTH.md) `P333_SHELL_SEALANT_PRESSURE_GROWTH`
-- [Feedback loop sensor-tagged fauna](P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP.md) `P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP`
-- [Vent micronode power nest](P335_VENT_MICRONODE_POWER_NEST.md) `P335_VENT_MICRONODE_POWER_NEST`
+- [Проводящая биопленочная ремонтная шина](P331_CONDUCTIVE_BIOFILM_REPAIR_BUS.md) `P331_CONDUCTIVE_BIOFILM_REPAIR_BUS`
+- [Акустический релейный фильтр-орган](P332_ACOUSTIC_FILTER_ORGAN_RELAY.md) `P332_ACOUSTIC_FILTER_ORGAN_RELAY`
+- [Давленческий рост раковинного герметика](P333_SHELL_SEALANT_PRESSURE_GROWTH.md) `P333_SHELL_SEALANT_PRESSURE_GROWTH`
+- [Петля обратной связи меченой фауны](P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP.md) `P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP`
+- [Энергогнездо жерловых микроузлов](P335_VENT_MICRONODE_POWER_NEST.md) `P335_VENT_MICRONODE_POWER_NEST`
 - [RU LOC HOLD: Material Exit Receipt Audit](P336_MATERIAL_EXIT_RECEIPT_AUDIT.md) `P336_MATERIAL_EXIT_RECEIPT_AUDIT`
 - [RU LOC HOLD: Partial Return Lien Extension](P337_PARTIAL_RETURN_LIEN_EXTENSION.md) `P337_PARTIAL_RETURN_LIEN_EXTENSION`
 - [RU LOC HOLD: Quarantine Hold Interrogation Record](P338_QUARANTINE_HOLD_INTERROGATION_RECORD.md) `P338_QUARANTINE_HOLD_INTERROGATION_RECORD`

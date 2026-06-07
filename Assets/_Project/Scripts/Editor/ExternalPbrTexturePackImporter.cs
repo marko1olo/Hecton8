@@ -8,6 +8,7 @@ namespace Hecton8.EditorTools
     public static class ExternalPbrTexturePackImporter
     {
         private const string PolyHavenManifestPath = "Assets/_Project/Art/TEXTURES/Generated/ExternalPBR_20260607/PolyHaven/PolyHavenExternalPBR_Manifest.json";
+        private const string GeminiAtlasRoot = "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases";
         private const string MaterialRoot = "Assets/_Project/Art/Materials/Generated/ExternalPBR_20260607";
 
         [MenuItem("Hecton8/Art/Import External PBR Texture Packs")]
@@ -24,10 +25,30 @@ namespace Hecton8.EditorTools
             int materials = 0;
 
             imported += ImportManifest(PolyHavenManifestPath, "PolyHaven", ref materials);
+            imported += ImportGeminiAtlases(ref materials);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"[ExternalPbrTexturePackImporter] Imported textures={imported}, materials={materials}, root={MaterialRoot}");
+        }
+
+        private static int ImportGeminiAtlases(ref int materials)
+        {
+            if (!Directory.Exists(GeminiAtlasRoot))
+                return 0;
+
+            int imported = 0;
+            string[] manifests = Directory.GetFiles(GeminiAtlasRoot, "GeminiMaterialAtlas_Manifest.json", SearchOption.AllDirectories);
+            Array.Sort(manifests, StringComparer.Ordinal);
+            for (int i = 0; i < manifests.Length; i++)
+            {
+                string manifestPath = manifests[i].Replace("\\", "/");
+                string batchName = Path.GetFileName(Path.GetDirectoryName(manifestPath));
+                string providerName = "Gemini_" + SanitizeProviderName(batchName);
+                imported += ImportManifest(manifestPath, providerName, ref materials);
+            }
+
+            return imported;
         }
 
         private static int ImportManifest(string manifestPath, string providerName, ref int materials)
@@ -251,6 +272,22 @@ namespace Hecton8.EditorTools
 
             EnsureFolder(parent);
             AssetDatabase.CreateFolder(parent, name);
+        }
+
+        private static string SanitizeProviderName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return "Atlas";
+
+            char[] chars = value.ToCharArray();
+            for (int i = 0; i < chars.Length; i++)
+            {
+                char c = chars[i];
+                if (!char.IsLetterOrDigit(c) && c != '_' && c != '-')
+                    chars[i] = '_';
+            }
+
+            return new string(chars);
         }
 
         [Serializable]

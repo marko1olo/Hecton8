@@ -9,32 +9,34 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Vent Micronode Power Nest"
+title: "Ninho de energia de micronodo de fonte"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Vent Micronode Power Nest
+# Ninho de energia de micronodo de fonte
 
-PT LOC HOLD: Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.
+Micronodos de fonte se formam onde química quente, pó metálico e hardware velho de energia dividem a mesma rachadura. Eles não alimentam a colônia como reator. Mantêm coisas pequenas vivas: loop de memória, piscar diagnóstico, rastejo de drone, trinco de porta que deveria ter morrido anos atrás.
+
+Perto da Bacia Atlas os ninhos ficam mais densos porque todo gradiente serve. Geologia dá calor. Vida dá superfícies condutoras. Máquina quebrada dá regras. Um Marauder pode colher carga ou ler resíduo de memória, mas o mesmo nó pode alimentar um loop de reparo que nota o furto.
 
 ## Scanner
 
-PT LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
+Micronodos térmicos na crosta da fonte. Cicatrizes de carga de drones e resíduo de memória presentes. Barramento local de reparo puxando corrente.
 
 ## Terminal
 
-PT LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
+MICRONODO DE FONTE // Gradiente químico sustenta roteamento de baixa potência, resíduo de memória e ciclos intermitentes de carga de drones. Densidade de nós aumenta perto de estruturas fábrica-templo da Bacia Atlas.
 
 ## Audio
 
-PT LOC HOLD: At depth, even the vents are drafted into maintenance.
+Até o calor tem papelada aqui embaixo.
 
 ## Field Note
 
-PT LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+Pegue uma carga e saia. A segunda puxada faz o ninho olhar de volta.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/pt_BR. -->

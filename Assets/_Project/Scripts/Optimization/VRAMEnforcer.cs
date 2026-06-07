@@ -163,6 +163,7 @@ namespace Hecton8.Optimization
             if (_editorRestoreHookRegistered)
                 return;
 
+            EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
             EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
             _editorRestoreHookRegistered = true;
         }

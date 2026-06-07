@@ -9,32 +9,34 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Acoustic Filter Organ Relay"
+title: "مرحل عضو ترشيح صوتي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Acoustic Filter Organ Relay
+# مرحل عضو ترشيح صوتي
 
-AR LOC HOLD: Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.
+بعض حيوانات الشعاب تنمي أعضاء ترشيح كثيفة تشكل الصوت. تعلمت عقد إصلاح Atlas استعمال ذلك النسيج كحاجز صوتي بعد تشقق أغلفة المرحلات.
+
+الفائدة محاطة بالأسنان. العضو نفسه الذي يحمل نبضة طريق قد يعلن الاهتزاز للمقتاتين، أو يوقظ حيوانا موسوما، أو يعيد حركة المغير عبر الشعاب. الرد النظيف لا يعني ممرا آمنا. يعني أن للممر مستمعا.
 
 ## Scanner
 
-AR LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
+رنين عضو الترشيح يطابق إيقاع مرحل تالف. العودة أنظف بعد مرورها عبر النسيج. آثار عض على الغلاف.
 
 ## Terminal
 
-AR LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
+مرحل صوتي // نسيج عضو الترشيح المحلي يخمد ضجيج العاصفة ويكرر نبضات الخدمة داخل شعاب الكابلات. كسب الإشارة غير مستقر عند اندفاعات الضغط. المرحل الحيوي يساعد الطريق ويجذب المفترسات.
 
 ## Audio
 
-AR LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
+يجيب كالمعدة لأن المعدة تستخدم حلقه.
 
 ## Field Note
 
-AR LOC HOLD: Use with sonar, scanner and route-warning UI.
+إذا كان خلف الصدى نبض، أخفت الأداة وافحص الماء قبل الحركة.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/ar_SA. -->

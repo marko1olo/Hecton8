@@ -582,7 +582,7 @@ namespace Hecton8.Core
         {
             get
             {
-                PerformanceMonitor runtime = s_currentRuntime;
+                PerformanceMonitor runtime = ResolveActiveRuntime();
                 return runtime != null && runtime._sampleCountTotal > 0;
             }
         }
@@ -695,12 +695,8 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            PerformanceMonitor registered = GlobalRegistry.PerformanceMonitor;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             // COLD ALLOC: Stopwatch[1] - sampled performance timing state - owner: PerformanceMonitor
             _frameStopwatch = new System.Diagnostics.Stopwatch();
@@ -721,6 +717,9 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             TryRegisterService();
             if (Application.isPlaying && !_serviceRegistered)
                 return;
@@ -785,15 +784,13 @@ namespace Hecton8.Core
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            PerformanceMonitor registered = GlobalRegistry.PerformanceMonitor;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterPerformanceMonitorRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PerformanceMonitor, this);
+            if (_serviceRegistered)
+                s_currentRuntime = this;
         }
 
         private void TryUnregisterService()
@@ -803,6 +800,70 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterPerformanceMonitorRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            PerformanceMonitor active = s_currentRuntime;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsPerformanceMonitorRuntimeUsable(active))
+                {
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                GlobalRegistry.UnregisterPerformanceMonitorRuntime(active);
+                if (ReferenceEquals(s_currentRuntime, active))
+                    s_currentRuntime = null;
+            }
+
+            PerformanceMonitor registered = GlobalRegistry.PerformanceMonitor;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsPerformanceMonitorRuntimeUsable(registered))
+            {
+                s_currentRuntime = registered;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterPerformanceMonitorRuntime(registered);
+            if (ReferenceEquals(s_currentRuntime, registered))
+                s_currentRuntime = null;
+
+            return false;
+        }
+
+        private static PerformanceMonitor ResolveActiveRuntime()
+        {
+            PerformanceMonitor active = s_currentRuntime;
+            if (IsPerformanceMonitorRuntimeUsable(active))
+                return active;
+
+            if (!ReferenceEquals(active, null) && ReferenceEquals(s_currentRuntime, active))
+                s_currentRuntime = null;
+
+            PerformanceMonitor registered = GlobalRegistry.PerformanceMonitor;
+            if (IsPerformanceMonitorRuntimeUsable(registered))
+            {
+                s_currentRuntime = registered;
+                return registered;
+            }
+
+            if (!ReferenceEquals(registered, null))
+                GlobalRegistry.UnregisterPerformanceMonitorRuntime(registered);
+
+            if (ReferenceEquals(s_currentRuntime, registered))
+                s_currentRuntime = null;
+
+            return null;
+        }
+
+        private static bool IsPerformanceMonitorRuntimeUsable(PerformanceMonitor monitor)
+        {
+            return monitor != null && monitor._serviceRegistered && monitor.isActiveAndEnabled;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -978,9 +1039,9 @@ namespace Hecton8.Core
         {
             get
             {
-            PerformanceMonitor runtime = s_currentRuntime;
-            if (runtime == null)
-                return default;
+                PerformanceMonitor runtime = ResolveActiveRuntime();
+                if (runtime == null)
+                    return default;
 
                 int targetFps = RuntimeWatchdog.ActiveTargetFPS;
 
@@ -1004,7 +1065,7 @@ namespace Hecton8.Core
         public static string DescribeStatus()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            PerformanceMonitor runtime = s_currentRuntime;
+            PerformanceMonitor runtime = ResolveActiveRuntime();
             if (runtime == null)
                 return "PerformanceMonitor: Not initialized";
 

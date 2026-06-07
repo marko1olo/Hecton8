@@ -9,32 +9,18 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Vent Micronode Power Nest"
+title: "Vent-micronode energienest"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Vent Micronode Power Nest
+# Vent-micronode energienest
 
-NL LOC HOLD: The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.
+De lagere oceaan zit vol kleine energie, geen royale energie. Vents bloeden warmte door metaalrijke korst; chemische gradiënten verzamelen zich op minerale huid; oude hardware liet contacten en spoelen achter.
 
-## Scanner
-
-NL LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
-
-## Terminal
-
-NL LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
-
-## Audio
-
-NL LOC HOLD: At depth, even the vents are drafted into maintenance.
-
-## Field Note
-
-NL LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+Eén node kan een relais laten tikken, een drone voor één kruip laden of geheugen bewaren. Hij geeft reden om vents te benaderen zonder ze veilig te maken: warmte, druk, gif en Atlas-logica delen hetzelfde nest.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/nl_NL. -->

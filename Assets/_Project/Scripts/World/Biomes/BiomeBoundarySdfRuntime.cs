@@ -626,35 +626,13 @@ namespace Hecton8.World.Biomes
                 return true;
 
             DisposeSampleScratchCold();
-            NativeArray<BiomeBoundarySdfResult> replacement = default;
-            try
-            {
-                replacement = new NativeArray<BiomeBoundarySdfResult>(
-                    1,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory);
-                int sentinelId = NativeMemorySentinel.RegisterNativeArray(replacement, nameof(BiomeBoundarySdfRuntime), "_sampleResultScratch", NativeAllocationLifetime.Scene);
-                if (sentinelId <= 0)
-                    throw new InvalidOperationException("Native memory sentinel registration failed for biome sample scratch.");
-
-                _sampleScratch.Result = replacement;
-            }
-            catch
-            {
-                if (replacement.IsCreated)
-                {
-                    try
-                    {
-                        NativeMemorySentinel.UnregisterNativeArray(replacement);
-                    }
-                    finally
-                    {
-                        replacement.Dispose();
-                    }
-                }
-
-                throw;
-            }
+            _sampleScratch.Result = H8Memory.Allocate<BiomeBoundarySdfResult>(
+                1,
+                VaultOwnerSystemId,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            if (!_sampleScratch.Result.IsCreated)
+                throw new InvalidOperationException("H8Memory allocation failed for biome sample scratch.");
 
             return _sampleScratch.Result.IsCreated && _sampleScratch.Result.Length >= 1;
         }
@@ -664,9 +642,7 @@ namespace Hecton8.World.Biomes
             if (!_sampleScratch.Result.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(_sampleScratch.Result);
-            _sampleScratch.Result.Dispose();
-            _sampleScratch.Result = default;
+            H8Memory.Release(ref _sampleScratch.Result, VaultOwnerSystemId);
         }
 
         private void ReleaseBiomeVaultHandle<T>(ref VaultGenerationHandle<T> handle) where T : struct

@@ -64,6 +64,15 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("private readonly ushort[] _wfcDirtyCellIndexScratch", source);
             StringAssert.Contains("private readonly byte[] _wfcDirtyCellFlagScratch", source);
             StringAssert.Contains("_wfcDirtySectorScratch.AsSpan(0, signals.Length)", source);
+            StringAssert.Contains("out bool writeOverflow", source);
+            int overflowIndex = source.IndexOf("if (writeOverflow)", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(overflowIndex, 0, source);
+            int acquireIndex = source.IndexOf("if (!TryAcquireWfcOutpostGridWrite", overflowIndex, StringComparison.Ordinal);
+            Assert.Greater(acquireIndex, overflowIndex, source);
+            string overflowBlock = source.Substring(overflowIndex, acquireIndex - overflowIndex);
+            StringAssert.Contains("RecordWfcOutpostEventBlackBox", overflowBlock);
+            StringAssert.Contains("PublishWfcWriteFailureWarning();", overflowBlock);
+            StringAssert.Contains("continue;", overflowBlock);
             Assert.IsFalse(source.Contains("stackalloc ulong[MaxWfcDirtySectorStackEntries]"));
             Assert.IsFalse(source.Contains("stackalloc ushort[MaxWfcDirtySectorStackEntries]"));
             Assert.IsFalse(source.Contains("stackalloc byte[MaxWfcDirtySectorStackEntries]"));
@@ -667,17 +676,17 @@ namespace Hecton8.Tests.Editor
         {
             ModuleDTO module = new ModuleDTO
             {
-                prefabId = null,
-                slottedToolItemId = null,
+                prefabId = " ",
+                slottedToolItemId = "\t",
                 pipeInFlightItemId = null,
                 pipeInFlightAmount = -3,
                 pipeTransitProgress = float.NaN,
                 pipeExportTimerSeconds = float.PositiveInfinity,
-                drillBufferedItemId = null,
+                drillBufferedItemId = " ",
                 drillBufferedAmount = -2,
                 drillCycleTimerSeconds = -10f,
                 sorterBufferedSlotCount = 1,
-                sorterBufferedItemIds = new[] { null, "sorter.kept" },
+                sorterBufferedItemIds = new[] { " ", "sorter.kept" },
                 sorterBufferedQuantities = new[] { -5, 9 },
                 posX = float.NaN,
                 posY = 12f,
@@ -693,7 +702,7 @@ namespace Hecton8.Tests.Editor
                 failureMode = 9,
                 floodedReefFloodSeconds = float.PositiveInfinity,
                 cultivationSlotCount = 1,
-                cultivationSeedItemIds = new[] { null, "seed.kept" },
+                cultivationSeedItemIds = new[] { "\t", "seed.kept" },
                 cultivationGeneticsMasks = new[] { 0xFFFFUL, 0x2UL },
                 cultivationGrowth01 = new[] { float.NaN, 0.5f },
                 cultivationQuality01 = new[] { 2f, 0.5f }
@@ -729,10 +738,10 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(ModuleDTO.CultivationGeneticsSupportedMask, sanitized.cultivationGeneticsMasks[0]);
             Assert.AreEqual(0f, sanitized.cultivationGrowth01[0]);
             Assert.AreEqual(1f, sanitized.cultivationQuality01[0]);
-            Assert.IsNull(module.sorterBufferedItemIds[0]);
+            Assert.AreEqual(" ", module.sorterBufferedItemIds[0]);
             Assert.AreEqual(-5, module.sorterBufferedQuantities[0]);
             Assert.AreEqual(9, module.failureMode);
-            Assert.IsNull(module.cultivationSeedItemIds[0]);
+            Assert.AreEqual("\t", module.cultivationSeedItemIds[0]);
             Assert.AreEqual(0xFFFFUL, module.cultivationGeneticsMasks[0]);
             Assert.IsTrue(float.IsNaN(module.cultivationGrowth01[0]));
             Assert.AreEqual(2f, module.cultivationQuality01[0]);
@@ -3901,6 +3910,7 @@ namespace Hecton8.Tests.Editor
             data.audioLogDiscoveredIds.Add(null);
             data.questActiveIds.Add(null);
             data.suitInstalledUpgradeIds.Add(null);
+            data.playerExpressionProfileId = " ";
             data.corporateReceivedOrderIds.Add(null);
             data.missionActiveIds.Add(null);
             data.CustomModData["custom.null"] = null;
@@ -3932,6 +3942,7 @@ namespace Hecton8.Tests.Editor
                 Assert.AreEqual(0, restored.audioLogDiscoveredIds.Count);
                 Assert.AreEqual(0, restored.questActiveIds.Count);
                 Assert.AreEqual(0, restored.suitInstalledUpgradeIds.Count);
+                Assert.AreEqual(string.Empty, restored.playerExpressionProfileId);
                 Assert.AreEqual(0, restored.corporateReceivedOrderIds.Count);
                 Assert.AreEqual(0, restored.missionActiveIds.Count);
                 Assert.AreEqual(string.Empty, restored.CustomModData["custom.null"]);
@@ -3939,14 +3950,62 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void SaveRootRuntime_WriteSkipsEmptyDictionaryKeys()
+        public void SaveRootRuntime_ReadRepairsBlankPlayerExpressionProfileId()
+        {
+            const string profileId = "profile.read.blank.probe";
+
+            SaveData data = SaveData.CreateNew(0.0);
+            data.playerExpressionProfileId = profileId;
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out int bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+
+                byte[] profileMarker = BuildPayloadString(profileId);
+                int profileOffset = FindLittleEndianByteSequenceOffset(payload, bytesWritten, profileMarker);
+                Assert.GreaterOrEqual(profileOffset, 0);
+
+                for (int i = 0; i < profileId.Length; i++)
+                {
+                    int characterOffset = profileOffset + sizeof(int) + (i * sizeof(char));
+                    payload[characterOffset] = 0x20;
+                    payload[characterOffset + 1] = 0x00;
+                }
+
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restored,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
+                Assert.AreEqual(string.Empty, restored.playerExpressionProfileId);
+            }
+        }
+
+        [Test]
+        public void SaveRootRuntime_WriteSkipsBlankDictionaryKeys()
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.toolDurabilityMap[string.Empty] = 99f;
+            data.toolDurabilityMap[" "] = 88f;
             data.toolDurabilityMap["tool.valid.key"] = 7.5f;
             data.toolBrokenMap[string.Empty] = true;
+            data.toolBrokenMap[" "] = true;
             data.toolBrokenMap["tool.valid.key"] = false;
             data.CustomModData[string.Empty] = "discard";
+            data.CustomModData[" "] = "discard";
             data.CustomModData["custom.valid.key"] = "keep";
 
             byte[] payload = new byte[BinaryPayloadScratchBytes];
@@ -3972,8 +4031,11 @@ namespace Hecton8.Tests.Editor
                 Assert.IsTrue(read, readError);
                 Assert.AreEqual(bytesWritten, bytesRead);
                 Assert.IsFalse(restored.toolDurabilityMap.ContainsKey(string.Empty));
+                Assert.IsFalse(restored.toolDurabilityMap.ContainsKey(" "));
                 Assert.IsFalse(restored.toolBrokenMap.ContainsKey(string.Empty));
+                Assert.IsFalse(restored.toolBrokenMap.ContainsKey(" "));
                 Assert.IsFalse(restored.CustomModData.ContainsKey(string.Empty));
+                Assert.IsFalse(restored.CustomModData.ContainsKey(" "));
                 Assert.AreEqual(7.5f, restored.toolDurabilityMap["tool.valid.key"]);
                 Assert.IsFalse(restored.toolBrokenMap["tool.valid.key"]);
                 Assert.AreEqual("keep", restored.CustomModData["custom.valid.key"]);
@@ -3981,7 +4043,7 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void SaveRootRuntime_ReadSkipsEmptyDictionaryKeys()
+        public void SaveRootRuntime_ReadSkipsBlankDictionaryKeys()
         {
             SaveData data = SaveData.CreateNew(0.0);
             const string durabilityKey = "tool.empty.key.read.probe";
@@ -4003,6 +4065,31 @@ namespace Hecton8.Tests.Editor
                 byte[] keyMarker = BuildPayloadString(durabilityKey);
                 int keyOffset = FindLittleEndianByteSequenceOffset(payload, bytesWritten, keyMarker);
                 Assert.GreaterOrEqual(keyOffset, 0);
+
+                byte[] whitespacePayload = new byte[bytesWritten];
+                Buffer.BlockCopy(payload, 0, whitespacePayload, 0, bytesWritten);
+                for (int i = 0; i < durabilityKey.Length; i++)
+                {
+                    int characterOffset = keyOffset + sizeof(int) + (i * sizeof(char));
+                    whitespacePayload[characterOffset] = 0x20;
+                    whitespacePayload[characterOffset + 1] = 0x00;
+                }
+
+                fixed (byte* whitespacePtr = whitespacePayload)
+                {
+                    bool read = SaveBinaryPayloadCodec.TryRead(
+                        whitespacePtr,
+                        bytesWritten,
+                        out SaveData restored,
+                        out int bytesRead,
+                        out string readError);
+
+                    Assert.IsTrue(read, readError);
+                    Assert.AreEqual(bytesWritten, bytesRead);
+                    Assert.IsFalse(restored.toolDurabilityMap.ContainsKey(durabilityKey));
+                    Assert.AreEqual(0, restored.toolDurabilityMap.Count);
+                }
+
                 PatchPayloadInt(payload, keyOffset, 0);
 
                 int keyPayloadByteCount = durabilityKey.Length * sizeof(char);
@@ -5131,6 +5218,7 @@ namespace Hecton8.Tests.Editor
             data.suitInstalledUpgradeIds.Add(null);
             data.suitUnlockedBlueprintIds.Add(null);
             data.suitBrokenUpgradeIds.Add(null);
+            data.playerExpressionProfileId = " ";
             data.corporateReceivedOrderIds.Add(null);
             data.corporatePendingOrderIds.Add(null);
             data.corporatePendingOrderTimers.Add(1f);
@@ -5151,6 +5239,7 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0, data.suitInstalledUpgradeIds.Count);
             Assert.AreEqual(0, data.suitUnlockedBlueprintIds.Count);
             Assert.AreEqual(0, data.suitBrokenUpgradeIds.Count);
+            Assert.AreEqual(string.Empty, data.playerExpressionProfileId);
             Assert.AreEqual(0, data.corporateReceivedOrderIds.Count);
             Assert.AreEqual(0, data.corporatePendingOrderIds.Count);
             Assert.AreEqual(0, data.corporatePendingOrderTimers.Count);
@@ -5159,20 +5248,24 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(string.Empty, data.CustomModData["custom.null"]);
             StringAssert.Contains("narrative discovery ids repaired", summary);
             StringAssert.Contains("audioLog ids repaired", summary);
+            StringAssert.Contains("player expression profile repaired", summary);
             StringAssert.Contains("custom mod data values repaired", summary);
             StringAssert.Contains("mission active ids repaired", summary);
         }
 
         [Test]
-        public void SaveRootRuntimeMigration_CurrentRemovesEmptyDictionaryKeys()
+        public void SaveRootRuntimeMigration_CurrentRemovesBlankDictionaryKeys()
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.version = SaveData.CurrentVersion;
             data.toolDurabilityMap[string.Empty] = 99f;
+            data.toolDurabilityMap[" "] = 88f;
             data.toolDurabilityMap["tool.valid.key"] = 6.25f;
             data.toolBrokenMap[string.Empty] = true;
+            data.toolBrokenMap[" "] = true;
             data.toolBrokenMap["tool.valid.key"] = false;
             data.CustomModData[string.Empty] = "discard";
+            data.CustomModData[" "] = "discard";
             data.CustomModData["custom.valid.key"] = "keep";
             data.CustomModData["custom.null"] = null;
 
@@ -5181,8 +5274,11 @@ namespace Hecton8.Tests.Editor
             Assert.IsTrue(changed, summary);
             Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
             Assert.IsFalse(data.toolDurabilityMap.ContainsKey(string.Empty));
+            Assert.IsFalse(data.toolDurabilityMap.ContainsKey(" "));
             Assert.IsFalse(data.toolBrokenMap.ContainsKey(string.Empty));
+            Assert.IsFalse(data.toolBrokenMap.ContainsKey(" "));
             Assert.IsFalse(data.CustomModData.ContainsKey(string.Empty));
+            Assert.IsFalse(data.CustomModData.ContainsKey(" "));
             Assert.AreEqual(6.25f, data.toolDurabilityMap["tool.valid.key"]);
             Assert.IsFalse(data.toolBrokenMap["tool.valid.key"]);
             Assert.AreEqual("keep", data.CustomModData["custom.valid.key"]);
@@ -7157,17 +7253,17 @@ namespace Hecton8.Tests.Editor
             data.construction.moduleCount = 1;
             data.construction.modules[0] = new ModuleDTO
             {
-                prefabId = null,
-                slottedToolItemId = null,
+                prefabId = " ",
+                slottedToolItemId = "\t",
                 pipeInFlightItemId = null,
                 pipeInFlightAmount = -1,
                 pipeTransitProgress = float.PositiveInfinity,
                 pipeExportTimerSeconds = -5f,
-                drillBufferedItemId = null,
+                drillBufferedItemId = " ",
                 drillBufferedAmount = -7,
                 drillCycleTimerSeconds = float.NaN,
                 sorterBufferedSlotCount = 1,
-                sorterBufferedItemIds = new[] { null, "CopperOre" },
+                sorterBufferedItemIds = new[] { " ", "CopperOre" },
                 sorterBufferedQuantities = new[] { -3, 8 },
                 posX = float.NaN,
                 posY = 2f,
@@ -7183,7 +7279,7 @@ namespace Hecton8.Tests.Editor
                 failureMode = 9,
                 floodedReefFloodSeconds = float.PositiveInfinity,
                 cultivationSlotCount = 1,
-                cultivationSeedItemIds = new[] { null, "CreepvineSeed" },
+                cultivationSeedItemIds = new[] { "\t", "CreepvineSeed" },
                 cultivationGeneticsMasks = new[] { ModuleDTO.CultivationGeneticsSupportedMask | (1UL << 32), 0UL },
                 cultivationGrowth01 = new[] { -2f, 0.5f },
                 cultivationQuality01 = new[] { float.NaN, 0.5f }
@@ -7235,18 +7331,18 @@ namespace Hecton8.Tests.Editor
 
             ModuleDTO module = new ModuleDTO
             {
-                prefabId = null,
-                slottedToolItemId = null,
+                prefabId = " ",
+                slottedToolItemId = "\t",
                 pipeInFlightItemId = null,
-                drillBufferedItemId = null,
+                drillBufferedItemId = " ",
                 sorterBufferedSlotCount = 1,
                 cultivationSlotCount = 1,
                 rotW = 1f
             };
             module.EnsureNestedArrayCapacity();
-            module.sorterBufferedItemIds[0] = null;
+            module.sorterBufferedItemIds[0] = " ";
             module.sorterBufferedQuantities[0] = 2;
-            module.cultivationSeedItemIds[0] = null;
+            module.cultivationSeedItemIds[0] = "\t";
             module.cultivationGeneticsMasks[0] = 7UL;
             module.cultivationGrowth01[0] = 0.5f;
             module.cultivationQuality01[0] = 0.75f;
@@ -7387,17 +7483,17 @@ namespace Hecton8.Tests.Editor
             data.construction.moduleCount = 1;
             data.construction.modules[0] = new ModuleDTO
             {
-                prefabId = null,
-                slottedToolItemId = null,
+                prefabId = " ",
+                slottedToolItemId = "\t",
                 pipeInFlightItemId = null,
                 pipeInFlightAmount = -5,
                 pipeTransitProgress = float.NaN,
                 pipeExportTimerSeconds = float.PositiveInfinity,
-                drillBufferedItemId = null,
+                drillBufferedItemId = " ",
                 drillBufferedAmount = -9,
                 drillCycleTimerSeconds = -1f,
                 sorterBufferedSlotCount = 1,
-                sorterBufferedItemIds = new[] { null, string.Empty },
+                sorterBufferedItemIds = new[] { " ", string.Empty },
                 sorterBufferedQuantities = new[] { -4, 2 },
                 posX = float.NegativeInfinity,
                 posY = 5f,
@@ -7413,7 +7509,7 @@ namespace Hecton8.Tests.Editor
                 failureMode = 9,
                 floodedReefFloodSeconds = -5f,
                 cultivationSlotCount = 1,
-                cultivationSeedItemIds = new[] { null, string.Empty },
+                cultivationSeedItemIds = new[] { "\t", string.Empty },
                 cultivationGeneticsMasks = new[] { ModuleDTO.CultivationGeneticsSupportedMask | (1UL << 32), 0UL },
                 cultivationGrowth01 = new[] { float.PositiveInfinity, 0.5f },
                 cultivationQuality01 = new[] { -1f, 0.5f }
@@ -9178,6 +9274,25 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RunModifiersRuntimeMigration_CurrentRepairsBlankDailySeedId()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.runModifiers = new RunModifiersDTO
+            {
+                isDailySeed = true,
+                dailySeedId = " "
+            };
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(string.Empty, data.runModifiers.dailySeedId);
+            StringAssert.Contains("run modifiers daily-seed id repaired", summary);
+        }
+
+        [Test]
         public void RunModifiersRuntime_WriteSanitizesInconsistentFlags()
         {
             SaveData data = SaveData.CreateNew(0.0);
@@ -9212,6 +9327,42 @@ namespace Hecton8.Tests.Editor
                 Assert.IsTrue(read, readError);
                 Assert.AreEqual(bytesWritten, bytesRead);
                 Assert.IsFalse(restoredData.runModifiers.runMarkedDead);
+                Assert.AreEqual(string.Empty, restoredData.runModifiers.dailySeedId);
+            }
+        }
+
+        [Test]
+        public void RunModifiersRuntime_WriteSanitizesBlankDailySeedId()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.runModifiers = new RunModifiersDTO
+            {
+                isDailySeed = true,
+                dailySeedId = " "
+            };
+
+            byte[] payload = new byte[BinaryPayloadScratchBytes];
+            fixed (byte* payloadPtr = payload)
+            {
+                bool wrote = SaveBinaryPayloadCodec.TryWrite(
+                    data,
+                    payloadPtr,
+                    payload.Length,
+                    out int bytesWritten,
+                    out string writeError);
+
+                Assert.IsTrue(wrote, writeError);
+                Assert.Greater(bytesWritten, 0);
+
+                bool read = SaveBinaryPayloadCodec.TryRead(
+                    payloadPtr,
+                    bytesWritten,
+                    out SaveData restoredData,
+                    out int bytesRead,
+                    out string readError);
+
+                Assert.IsTrue(read, readError);
+                Assert.AreEqual(bytesWritten, bytesRead);
                 Assert.AreEqual(string.Empty, restoredData.runModifiers.dailySeedId);
             }
         }

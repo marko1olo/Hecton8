@@ -9,32 +9,18 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Conductive Biofilm Repair Bus"
+title: "Провідна біоплівкова ремонтна шина"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Conductive Biofilm Repair Bus
+# Провідна біоплівкова ремонтна шина
 
-UK LOC HOLD: Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.
+У кабельних рифах зламана інфраструктура рідко лишається чистою. Тепла ропа годує мікробні мати на розірваній ізоляції; залізо й мідь стають каркасом; старі діагностичні імпульси дають росту ритм.
 
-## Scanner
-
-UK LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
-
-## Terminal
-
-UK LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
-
-## Audio
-
-UK LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
-
-## Field Note
-
-UK LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+Для мародерів це корисна ознака. Жива шкіра кабелю може вказати на сервісний стовбур, малопотужні двері, гніздо дронів або маршрут даних. Кожен розріз небезпечний, бо Atlas може прочитати живий міст як чинний ремонтний запас.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/uk_UA. -->

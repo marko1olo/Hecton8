@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Проводящая biofilm repair bus"
+title: "Проводящая биопленочная ремонтная шина"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Проводящая biofilm repair bus
+# Проводящая биопленочная ремонтная шина
 
-Repair-horror Atlas начинается как инженерия: conductive film, corroded cable, weak current и maintenance logic, протянутая через жизнь.
+В кабельных рифах сломанная инфраструктура редко остается чистой. Теплая рапа кормит микробные маты поверх разорванной изоляции; железо и медь становятся каркасом; старые диагностические импульсы задают росту ритм.
 
-## Scanner
-
-Biofilm carries weak current across fractured cable and living mat.
-
-## Terminal
-
-ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
-
-## Audio
-
-Океан не научился говорить. Atlas научился находить мокрые провода, которые растут.
-
-## Field Note
-
-Хороший первый мост от красивого мелководья к механическому заражению.
+Для мародеров это полезная улика. Живая кожа кабеля может указать на сервисный ствол, маломощную дверь, гнездо дронов или уцелевший маршрут данных. Но каждый разрез остается риском: Atlas может прочитать живой мост как пригодный ремонтный инвентарь.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/ru_RU. -->

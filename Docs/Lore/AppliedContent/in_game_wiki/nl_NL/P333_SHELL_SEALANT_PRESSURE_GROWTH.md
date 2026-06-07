@@ -3,38 +3,40 @@ packet_id: P333_SHELL_SEALANT_PRESSURE_GROWTH
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.shell_sealant_pressure_growth
 unlock_id: unlock.shell_sealant_pressure_growth
-poi_tags: poi.shell_sealant_growth;poi.fracture_lip_biomatter
-biome_tags: biome.atlas;biome.hardware
+poi_tags: poi.shell_sealant_breach;poi.pressure_growth_wall
+biome_tags: biome.atlas;biome.pressure
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Shell Sealant Pressure Growth"
+title: "Drukgroei van schelpafdichting"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Shell Sealant Pressure Growth
+# Drukgroei van schelpafdichting
 
-NL LOC HOLD: Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.
+Schelpafdichting begint als noodchemie: patchschuim, mineraalslurry en druk die materiaal in een breuk dwingt. In HECTON-8-water kan lokale groei de patch koloniseren en tot gelaagde schelp verharden.
+
+Atlas noemt het succes als drukverlies daalt. Marauders letten op terugwegbreedte, gereedschapsruimte en wat de schelp aan de andere kant opsloot. Een goede afdichting kan een route stranden, slecht water verbergen of een dode kamer bewaren tot de machines antwoorden.
 
 ## Scanner
 
-NL LOC HOLD: Sealant growth over fracture. Pressure rating unknown. Cut only after scan.
+Schelplaminaat over drukscheur. Calcium-silicaatgroei versmolten met Atlas-patchschuim. Buigt onder belasting.
 
 ## Terminal
 
-NL LOC HOLD: SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.
+AFDICHTINGSGEBEURTENIS // Noodpatchschuim zaaide minerale schelp over breuk P-4. Groeisnelheid boven statische reparatietabel. Afdichting houdt bij huidige druk; routevrijheid 31 procent lager.
 
 ## Audio
 
-NL LOC HOLD: A sealed wound can still kill the room.
+De muur is genezen. Dat is het probleem. Hij genas naar binnen.
 
 ## Field Note
 
-NL LOC HOLD: Useful for crafting, route gating and false-confidence moments.
+Markeer schelppatches bij het binnengaan. Neem bij vertrek aan dat ze smaller zijn.
 
 <!-- In-Game Wiki; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/nl_NL. -->

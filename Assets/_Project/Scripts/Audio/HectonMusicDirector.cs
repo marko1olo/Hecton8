@@ -567,6 +567,7 @@ namespace Hecton8.Audio
 
             TryRegisterHotSwapListener();
             TryRegisterTickHandlers();
+            SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
             SceneManager.activeSceneChanged += HandleActiveSceneChanged;
             _pendingImmediateSelection = true;
         }

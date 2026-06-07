@@ -17,7 +17,7 @@
 | Location / route | Shallow anchor point, route tether post, or storm-bent frond bed |
 | Unlock context | Player scans a vine-like anchor stem with a tension scar facing current |
 | Evidence object | Anchor vine, tension scar, current-facing side, root bite |
-| Connected packets | P1132_TETHER_KNOT_WET_SET; P905_STORM_SHELF_TAG_LINE; P1135_SALT_REED_FROND_BURN |
+| Connected packets | P1132_TETHER_KNOT_WET_SET; P905_ANCHOR_PAINT_CURRENT_SIDE; P1135_SALT_REED_FROND_BURN |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: links living material stress to storm/current route reading |
 | Content status | source_complete_unimported |
 

@@ -278,6 +278,72 @@ def main() -> int:
     assert parsed_bus["sourceDescriptors"][0]["sourceHash"] == 0xABC00001
     assert parsed_bus["sourceDescriptors"][1]["sourceName"] == "survival"
 
+    data_monolith = bytearray(
+        server.DATA_MONOLITH_TELEMETRY_HEADER.pack(
+            server.DATA_MONOLITH_TELEMETRY_MAGIC,
+            1,
+            2,
+            server.DATA_MONOLITH_TELEMETRY_RING_CAPACITY,
+            server.DATA_MONOLITH_TELEMETRY_ENTRY_BYTES,
+        )
+        + bytes(server.DATA_MONOLITH_TELEMETRY_RING_CAPACITY * server.DATA_MONOLITH_TELEMETRY_ENTRY_BYTES)
+    )
+    server.DATA_MONOLITH_TELEMETRY_ENTRY.pack_into(
+        data_monolith,
+        server.DATA_MONOLITH_TELEMETRY_HEADER_BYTES,
+        0x1111222233334444,
+        1200,
+        700,
+        41,
+        0,
+        0,
+        8,
+        (1 << 0) | (1 << 2),
+        0x10101010,
+        1,
+        8,
+        4,
+        0,
+    )
+    server.DATA_MONOLITH_TELEMETRY_ENTRY.pack_into(
+        data_monolith,
+        server.DATA_MONOLITH_TELEMETRY_HEADER_BYTES + server.DATA_MONOLITH_TELEMETRY_ENTRY_BYTES,
+        0x5555666677778888,
+        2400,
+        900,
+        42,
+        12345678,
+        28,
+        1,
+        (1 << 1) | (1 << 2) | (1 << 4),
+        0x20202020,
+        0,
+        0,
+        0,
+        0,
+    )
+    data_monolith_path = root / "Dump_H8StaticDataArena_Telemetry.bin"
+    data_monolith_path.write_bytes(data_monolith)
+    parsed_data_monolith = server.parse_dump_file(data_monolith_path)
+    assert parsed_data_monolith["type"] == "data_monolith_telemetry_blackbox"
+    assert parsed_data_monolith["entrySize"] == server.DATA_MONOLITH_TELEMETRY_ENTRY_BYTES
+    assert parsed_data_monolith["declaredEntryCount"] == server.DATA_MONOLITH_TELEMETRY_RING_CAPACITY
+    assert parsed_data_monolith["nonEmptyEntryCount"] == 2
+    assert parsed_data_monolith["latest"]["frame"] == 42
+    assert parsed_data_monolith["latest"]["loadStatusLabel"] == "loaded"
+    assert parsed_data_monolith["latest"]["pathFlagLabels"] == [
+        "memory-mapped-file",
+        "vault-backed",
+        "native-file",
+    ]
+    assert parsed_data_monolith["latest"]["checksum64Hex"] == "0x5555666677778888"
+    assert parsed_data_monolith["latest"]["stateHashHex"] == "0x20202020"
+    assert "load_failures" in parsed_data_monolith["warnings"]
+    assert "failure_details" in parsed_data_monolith["warnings"]
+    renamed_data_monolith_path = root / "Renamed_DataMonolithTelemetry.bin"
+    renamed_data_monolith_path.write_bytes(data_monolith)
+    assert server.parse_dump_file(renamed_data_monolith_path)["type"] == "data_monolith_telemetry_blackbox"
+
     foveated = server.FOVEATED_SIMULATION_HEADER.pack(server.FOVEATED_SIMULATION_MAGIC, 3, 2)
     foveated_hash_0 = server.compute_foveated_simulation_state_hash(5, 1, 2, 2, 1)
     foveated_hash_1 = server.compute_foveated_simulation_state_hash(8, 2, 3, 2, 3)
@@ -3420,6 +3486,7 @@ def main() -> int:
     assert "terrain_streaming_pager" in parsed_types
     assert "world_chunk_residency_blackbox" in parsed_types
     assert "global_telemetry_bus_blackbox" in parsed_types
+    assert "data_monolith_telemetry_blackbox" in parsed_types
     assert "foveated_simulation_blackbox" in parsed_types
     assert "input_determinism_blackbox" in parsed_types
     assert "origin_shift_blackbox" in parsed_types
@@ -3449,6 +3516,8 @@ def main() -> int:
     assert "sensory_impairment_blackbox" in parsed_types
     assert "suit_integrity_blackbox" in parsed_types
     assert "radiation_mutation_blackbox" in parsed_types
+    assert "reactor_thermal_blackbox" in parsed_types
+    assert "nuclear_reactor_thermal_blackbox" in parsed_types
     assert "respawn_reconciliation_blackbox" in parsed_types
     assert "pda_frequency_tuning_blackbox" in parsed_types
     assert "compass_gyro_blackbox" in parsed_types
@@ -3483,6 +3552,7 @@ def main() -> int:
         "terrain_streaming_pager",
         "world_chunk_residency_blackbox",
         "global_telemetry_bus_blackbox",
+        "data_monolith_telemetry_blackbox",
         "foveated_simulation_blackbox",
         "input_determinism_blackbox",
         "origin_shift_blackbox",
@@ -3512,6 +3582,8 @@ def main() -> int:
         "sensory_impairment_blackbox",
         "suit_integrity_blackbox",
         "radiation_mutation_blackbox",
+        "reactor_thermal_blackbox",
+        "nuclear_reactor_thermal_blackbox",
         "respawn_reconciliation_blackbox",
         "pda_frequency_tuning_blackbox",
         "compass_gyro_blackbox",

@@ -423,37 +423,13 @@ namespace Hecton8.World
                     return;
 
                 Dispose();
-                NativeArray<PressureMetamorphismSample> replacement = default;
-                try
-                {
-                    replacement = new NativeArray<PressureMetamorphismSample>(
-                        capacity,
-                        Allocator.Persistent,
-                        NativeArrayOptions.ClearMemory);
-                    int sentinelId = NativeMemorySentinel.RegisterNativeArray(replacement, nameof(ResourceDistributionDirector), nameof(Workspace), NativeAllocationLifetime.Scene);
-                    if (sentinelId <= 0)
-                        throw new InvalidOperationException("Native memory sentinel registration failed for pressure metamorphism workspace.");
-
-                    Workspace = replacement;
-                    replacement = default;
-                }
-                catch
-                {
-                    if (replacement.IsCreated)
-                    {
-                        try
-                        {
-                            NativeMemorySentinel.UnregisterNativeArray(replacement);
-                        }
-                        finally
-                        {
-                            replacement.Dispose();
-                        }
-                    }
-
-                    Dispose();
-                    throw;
-                }
+                Workspace = H8Memory.Allocate<PressureMetamorphismSample>(
+                    capacity,
+                    MetamorphismJobOwnerSystemId,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+                if (!Workspace.IsCreated)
+                    throw new InvalidOperationException("H8Memory allocation failed for pressure metamorphism workspace.");
             }
 
             public void Dispose()
@@ -461,9 +437,7 @@ namespace Hecton8.World
                 if (!Workspace.IsCreated)
                     return;
 
-                NativeMemorySentinel.UnregisterNativeArray(Workspace);
-                Workspace.Dispose();
-                Workspace = default;
+                H8Memory.Release(ref Workspace, MetamorphismJobOwnerSystemId);
             }
         }
 

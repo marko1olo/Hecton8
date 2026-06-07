@@ -9,32 +9,34 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Vent Micronode Power Nest"
+title: "Nid d'énergie de micronœuds de cheminée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Vent Micronode Power Nest
+# Nid d'énergie de micronœuds de cheminée
 
-FR LOC HOLD: Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.
+Les micronœuds de cheminée se forment là où chimie chaude, poussière métallique et ancien matériel de puissance partagent la même fissure. Ils n'alimentent pas la colonie comme un réacteur. Ils gardent de petites choses vivantes : boucle mémoire, clignement de diagnostic, reptation de drone, verrou de porte censé être mort.
+
+Près du Bassin Atlas, les nids deviennent plus denses parce que chaque gradient sert. La géologie donne la chaleur. La vie donne des surfaces conductrices. Les machines brisées donnent les règles. Un maraudeur peut récolter une charge ou lire des résidus, mais le même nœud peut nourrir une boucle de réparation qui remarque le vol.
 
 ## Scanner
 
-FR LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
+Micronœuds thermiques dans croûte de cheminée. Cicatrices de charge de drones et résidus mémoire présents. Bus local de réparation tire du courant.
 
 ## Terminal
 
-FR LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
+MICRONŒUD DE CHEMINÉE // Gradient chimique soutient routage basse puissance, résidus mémoire et cycles intermittents de charge de drones. Densité accrue près des structures temple-usine du Bassin Atlas.
 
 ## Audio
 
-FR LOC HOLD: At depth, even the vents are drafted into maintenance.
+Même la chaleur a de la paperasse ici-bas.
 
 ## Field Note
 
-FR LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+Prends une charge, puis bouge. La seconde traction fait regarder le nid.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/fr_FR. -->

@@ -17,7 +17,7 @@
 | Location / route | Emergency basin, first shelter bench, or photic shallows sample kit |
 | Unlock context | Player scans a sample bag with trapped air above the fill line |
 | Evidence object | Sample bag, trapped bubble, fill line, folded date tab |
-| Connected packets | P1110_DRY_POUCH_SALT_CHECK; P861_CONDENSER_CUP_FIRST_DRIP; P905_STORM_SHELF_TAG_LINE |
+| Connected packets | P1110_DRY_POUCH_SALT_CHECK; P861_CONDENSER_CUP_FIRST_DRIP; P905_ANCHOR_PAINT_CURRENT_SIDE |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: teaches early sample reliability before the player trusts wet evidence |
 | Content status | source_complete_unimported |
 

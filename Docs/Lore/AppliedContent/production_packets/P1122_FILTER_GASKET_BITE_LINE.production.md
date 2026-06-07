@@ -17,7 +17,7 @@
 | Location / route | Intake filter housing, first shelter water loop, or utility crate |
 | Unlock context | Player scans a filter gasket with a visible bite line |
 | Evidence object | Filter gasket, bite line, housing lip, grit smear |
-| Connected packets | P812_ALGAE_INTAKE_SCRAPE; P1116_TEST_STRIP_EXPIRED_EDGE; P1121_HOSE_CLAMP_TORQUE_TICK |
+| Connected packets | P810_AQUACULTURE_INTAKE_FILTER_BLOOM; P1116_TEST_STRIP_EXPIRED_EDGE; P1121_HOSE_CLAMP_TORQUE_TICK |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: helps the player distinguish reseatable parts from fouled parts |
 | Content status | source_complete_unimported |
 

@@ -32,6 +32,7 @@ namespace Hecton8.Physiology.Editor
         private void OnEnable()
         {
             BuildUi();
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 

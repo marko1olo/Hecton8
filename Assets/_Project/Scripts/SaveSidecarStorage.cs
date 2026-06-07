@@ -121,17 +121,26 @@ namespace Hecton8.SaveSystem
                     return false;
 
                 SidecarReader reader = new SidecarReader(bufferPtr, (int)fileLength);
-                metadata = new SaveMetadata();
-                return reader.ReadString(out metadata.SlotName)
-                    && reader.ReadString(out metadata.GameVersion)
-                    && reader.ReadLong(out metadata.Timestamp)
-                    && reader.ReadFloat(out metadata.PlayTimeSeconds)
-                    && reader.ReadString(out metadata.SceneName)
-                    && reader.ReadFloat(out float playerPosX)
-                    && reader.ReadFloat(out float playerPosY)
-                    && reader.ReadFloat(out float playerPosZ)
-                    && reader.ReadString(out metadata.Checksum)
-                    && FinalizeMetadata(ref metadata, playerPosX, playerPosY, playerPosZ, reader, out error);
+                SaveMetadata loaded = new SaveMetadata();
+                if (!reader.ReadString(out loaded.SlotName)
+                    || !reader.ReadString(out loaded.GameVersion)
+                    || !reader.ReadLong(out loaded.Timestamp)
+                    || !reader.ReadFloat(out loaded.PlayTimeSeconds)
+                    || !reader.ReadString(out loaded.SceneName)
+                    || !reader.ReadFloat(out float playerPosX)
+                    || !reader.ReadFloat(out float playerPosY)
+                    || !reader.ReadFloat(out float playerPosZ)
+                    || !reader.ReadString(out loaded.Checksum)
+                    || !FinalizeMetadata(ref loaded, playerPosX, playerPosY, playerPosZ, reader, out error))
+                {
+                    if (string.IsNullOrEmpty(error))
+                        error = reader.Error;
+                    metadata = null;
+                    return false;
+                }
+
+                metadata = loaded;
+                return true;
             }
             finally
             {
@@ -247,27 +256,28 @@ namespace Hecton8.SaveSystem
         private static bool TryReadCurrentMaintenanceRecord(byte* bufferPtr, int fileLength, out SaveSlotMaintenanceRecord record, out string error)
         {
             SidecarReader reader = new SidecarReader(bufferPtr, fileLength);
-            record = new SaveSlotMaintenanceRecord();
+            SaveSlotMaintenanceRecord loaded = new SaveSlotMaintenanceRecord();
+            record = null;
             error = string.Empty;
-            if (!reader.ReadString(out record.SlotName)
-                || !reader.ReadLong(out record.LastSuccessfulSaveTicksUtc)
-                || !reader.ReadLong(out record.LastSuccessfulLoadTicksUtc)
-                || !reader.ReadLong(out record.LastAuditTicksUtc)
-                || !reader.ReadLong(out record.LastRepairTicksUtc)
-                || !reader.ReadLong(out record.LastFailureTicksUtc)
-                || !reader.ReadInt(out record.SuccessfulSaveCount)
-                || !reader.ReadInt(out record.SuccessfulLoadCount)
-                || !reader.ReadInt(out record.AuditCount)
-                || !reader.ReadInt(out record.RepairCount)
-                || !reader.ReadInt(out record.FailureCount)
+            if (!reader.ReadString(out loaded.SlotName)
+                || !reader.ReadLong(out loaded.LastSuccessfulSaveTicksUtc)
+                || !reader.ReadLong(out loaded.LastSuccessfulLoadTicksUtc)
+                || !reader.ReadLong(out loaded.LastAuditTicksUtc)
+                || !reader.ReadLong(out loaded.LastRepairTicksUtc)
+                || !reader.ReadLong(out loaded.LastFailureTicksUtc)
+                || !reader.ReadInt(out loaded.SuccessfulSaveCount)
+                || !reader.ReadInt(out loaded.SuccessfulLoadCount)
+                || !reader.ReadInt(out loaded.AuditCount)
+                || !reader.ReadInt(out loaded.RepairCount)
+                || !reader.ReadInt(out loaded.FailureCount)
                 || !reader.ReadByte(out byte stateFlags)
-                || !reader.ReadInt(out record.LastLoadBackupGeneration)
-                || !reader.ReadInt(out record.LastKnownSaveVersion)
-                || !reader.ReadString(out record.LastKnownIntegrityState)
-                || !reader.ReadString(out record.LastFailureContext)
-                || !reader.ReadString(out record.LastFailureMessage)
-                || !reader.ReadString(out record.LastAuditMessage)
-                || !reader.ReadString(out record.LastRepairMessage)
+                || !reader.ReadInt(out loaded.LastLoadBackupGeneration)
+                || !reader.ReadInt(out loaded.LastKnownSaveVersion)
+                || !reader.ReadString(out loaded.LastKnownIntegrityState)
+                || !reader.ReadString(out loaded.LastFailureContext)
+                || !reader.ReadString(out loaded.LastFailureMessage)
+                || !reader.ReadString(out loaded.LastAuditMessage)
+                || !reader.ReadString(out loaded.LastRepairMessage)
                 || !FinalizeSidecar(reader, out error))
             {
                 if (string.IsNullOrEmpty(error))
@@ -275,38 +285,40 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            record.ApplyStateFlags(stateFlags);
+            loaded.ApplyStateFlags(stateFlags);
+            record = loaded;
             return true;
         }
 
         private static bool TryReadLegacyMaintenanceRecord(byte* bufferPtr, int fileLength, out SaveSlotMaintenanceRecord record, out string error)
         {
             SidecarReader reader = new SidecarReader(bufferPtr, fileLength);
-            record = new SaveSlotMaintenanceRecord();
+            SaveSlotMaintenanceRecord loaded = new SaveSlotMaintenanceRecord();
+            record = null;
             error = string.Empty;
-            if (!reader.ReadString(out record.SlotName)
-                || !reader.ReadLong(out record.LastSuccessfulSaveTicksUtc)
-                || !reader.ReadLong(out record.LastSuccessfulLoadTicksUtc)
-                || !reader.ReadLong(out record.LastAuditTicksUtc)
-                || !reader.ReadLong(out record.LastRepairTicksUtc)
-                || !reader.ReadLong(out record.LastFailureTicksUtc)
-                || !reader.ReadInt(out record.SuccessfulSaveCount)
-                || !reader.ReadInt(out record.SuccessfulLoadCount)
-                || !reader.ReadInt(out record.AuditCount)
-                || !reader.ReadInt(out record.RepairCount)
-                || !reader.ReadInt(out record.FailureCount)
-                || !reader.ReadBool(out record.LastAuditReadable)
-                || !reader.ReadBool(out record.LastAuditRecommendedRepair)
-                || !reader.ReadBool(out record.LastLoadUsedBackup)
-                || !reader.ReadInt(out record.LastLoadBackupGeneration)
-                || !reader.ReadBool(out record.LastLoadUsedLegacyCompression)
-                || !reader.ReadBool(out record.LastLoadSelfRepaired)
-                || !reader.ReadInt(out record.LastKnownSaveVersion)
-                || !reader.ReadString(out record.LastKnownIntegrityState)
-                || !reader.ReadString(out record.LastFailureContext)
-                || !reader.ReadString(out record.LastFailureMessage)
-                || !reader.ReadString(out record.LastAuditMessage)
-                || !reader.ReadString(out record.LastRepairMessage)
+            if (!reader.ReadString(out loaded.SlotName)
+                || !reader.ReadLong(out loaded.LastSuccessfulSaveTicksUtc)
+                || !reader.ReadLong(out loaded.LastSuccessfulLoadTicksUtc)
+                || !reader.ReadLong(out loaded.LastAuditTicksUtc)
+                || !reader.ReadLong(out loaded.LastRepairTicksUtc)
+                || !reader.ReadLong(out loaded.LastFailureTicksUtc)
+                || !reader.ReadInt(out loaded.SuccessfulSaveCount)
+                || !reader.ReadInt(out loaded.SuccessfulLoadCount)
+                || !reader.ReadInt(out loaded.AuditCount)
+                || !reader.ReadInt(out loaded.RepairCount)
+                || !reader.ReadInt(out loaded.FailureCount)
+                || !reader.ReadBool(out loaded.LastAuditReadable)
+                || !reader.ReadBool(out loaded.LastAuditRecommendedRepair)
+                || !reader.ReadBool(out loaded.LastLoadUsedBackup)
+                || !reader.ReadInt(out loaded.LastLoadBackupGeneration)
+                || !reader.ReadBool(out loaded.LastLoadUsedLegacyCompression)
+                || !reader.ReadBool(out loaded.LastLoadSelfRepaired)
+                || !reader.ReadInt(out loaded.LastKnownSaveVersion)
+                || !reader.ReadString(out loaded.LastKnownIntegrityState)
+                || !reader.ReadString(out loaded.LastFailureContext)
+                || !reader.ReadString(out loaded.LastFailureMessage)
+                || !reader.ReadString(out loaded.LastAuditMessage)
+                || !reader.ReadString(out loaded.LastRepairMessage)
                 || !FinalizeSidecar(reader, out error))
             {
                 if (string.IsNullOrEmpty(error))
@@ -314,6 +326,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            record = loaded;
             return true;
         }
 

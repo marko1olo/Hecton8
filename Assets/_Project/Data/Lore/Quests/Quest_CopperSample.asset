@@ -29,5 +29,13 @@ MonoBehaviour:
   completionType: 0
   completionId: Data_Copper
   completionValue: 1
+  prerequisiteQuestIds:
+  - quest_starter_drill
+  criticalItemId: Data_Copper
+  respawnEventId: respawn_first_hour_copper_sample
+  phaseGate: 0
+  markerTargetId:
+  markerWorldPosition: {x: 0, y: 0, z: 0}
+  markerHeightOffset: 6
   autoActivateOnStart: 0
   oneTimeOnly: 1

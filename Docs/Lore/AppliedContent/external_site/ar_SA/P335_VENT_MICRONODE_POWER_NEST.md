@@ -9,32 +9,18 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Vent Micronode Power Nest"
+title: "عش طاقة لعقد فتحات حرارية دقيقة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Vent Micronode Power Nest
+# عش طاقة لعقد فتحات حرارية دقيقة
 
-AR LOC HOLD: The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.
+المحيط السفلي مليء بطاقة صغيرة لا بطاقة كريمة. الفتحات تنزف حرارة عبر قشرة غنية بالمعادن، وتتجمع التدرجات الكيميائية فوق جلد معدني.
 
-## Scanner
-
-AR LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
-
-## Terminal
-
-AR LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
-
-## Audio
-
-AR LOC HOLD: At depth, even the vents are drafted into maintenance.
-
-## Field Note
-
-AR LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+قد تبقي عقدة واحدة مرحلا يعمل، أو تشحن درونا لزحفة واحدة، أو تحفظ ذاكرة في جزء كان يجب أن يكون خاملا. لكنها ليست صندوق كنز آمن: الحرارة والضغط والسموم ومنطق Atlas في العش نفسه.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/ar_SA. -->

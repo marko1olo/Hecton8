@@ -30,6 +30,8 @@ Authority files, route bibles, mandate files, and important task documents must 
 
 Technical report means an audit, policy review, architecture review, proof review, route review, or durable technical artifact. It does not mean the ordinary final chat summary after a code, asset, content, or docs task.
 
+After intake, every non-trivial task must name one primary deliverable class: `SOURCE_CHANGE`, `ASSET_CHANGE`, `CONTENT_ARTIFACT`, `FRESH_PROOF`, `BLOCKER`, or explicit `POLICY_DOC`. Routing, scanning, checklist filling, validator output, and report synthesis are support work only unless the user directly requested that class.
+
 Subagent use by an ordinary implementation, content, QA, or docs agent is governed by root `AGENTS.md` `Delegation And Subagents`. It does not require `HECTON8_ORCHESTRATOR.md`, `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`, `AgentGuiOps.ps1`, or `ProbeAgents.ps1`.
 
 Read `HECTON8_ORCHESTRATOR.md` only when the agent is actually creating/judging standalone agent batches, writing `taskslocal` files, controlling external IDE/browser/GUI sessions, operating local external-agent processes, or acting as the explicit controller for a multi-agent wave. Internal subagent spawning for bounded review, evidence gathering, synthesis, or disjoint implementation remains ordinary delegation, not local orchestration.
@@ -120,3 +122,5 @@ Forbidden split behavior:
 Routing is a read discipline, not a paperwork mandate. Ordinary agents should improve code, assets, data, scenes, or concise docs for the current request. Status files, rationale logs, route cards, broad audits, and historical cleanup require explicit batch/logging/orchestration scope or a direct owner-route need.
 
 Verification loops are rejected. Once static review identifies a blocker or `PENDING VERIFICATION`, the next action is proof execution, source/asset/root-route repair, or a concrete blocker report. Do not keep reading, scanning, or writing reports over unchanged state to simulate progress.
+
+Same-failure loops are rejected across domains. After two matching failures, route recovery must change the owner path: restore/replace/revert/fix the real source route, write the requested content artifact or source blocker, run the missing proof, or stop with the exact external gate. Do not add another wrapper, validator, packet, or summary over the same failed path.

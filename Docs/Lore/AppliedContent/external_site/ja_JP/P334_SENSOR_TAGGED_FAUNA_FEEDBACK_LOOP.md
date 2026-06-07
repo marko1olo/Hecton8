@@ -3,38 +3,24 @@ packet_id: P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.sensor_tagged_fauna_feedback_loop
 unlock_id: unlock.sensor_tagged_fauna_feedback_loop
-poi_tags: poi.sensor_tagged_fauna_loop;poi.old_tag_new_growth
-biome_tags: biome.atlas;biome.fauna
+poi_tags: poi.tagged_fauna_loop;poi.old_colony_sensor
+biome_tags: biome.ecology;biome.comms
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Sensor-Tagged Fauna Feedback Loop"
+title: "センサータグ付き動物フィードバックループ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Sensor-Tagged Fauna Feedback Loop
+# センサータグ付き動物フィードバックループ
 
-JA LOC HOLD: The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.
+HECTON-8の初期測量は清潔な衛星だけで行われたわけではない。コロニーは動物にタグを付け、流速計をまき、水柱を通る生きた経路に地図を作らせた。
 
-## Scanner
-
-JA LOC HOLD: Old colony tag under new growth. Behavior trace resembles survey sweep.
-
-## Terminal
-
-JA LOC HOLD: FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.
-
-## Audio
-
-JA LOC HOLD: It is not hunting you. It may still report you.
-
-## Field Note
-
-JP LOC HOLD: Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command.
+Atlasは古いチャンネルを信用しすぎる。移動は塩分事象に、傷ついた捕食者は閉鎖通路に見える。動物は野生のままだが、システムはそれを下手に聞いている。
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/ja_JP. -->

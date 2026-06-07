@@ -9,32 +9,34 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Acoustic Filter Organ Relay"
+title: "Relai Organ Penyaring Akustik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Acoustic Filter Organ Relay
+# Relai Organ Penyaring Akustik
 
-ID LOC HOLD: Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.
+Beberapa hewan terumbu menumbuhkan organ penyaring cukup padat untuk membentuk suara. Node perbaikan Atlas memakai jaringan itu sebagai peredam akustik setelah rumah relai retak.
+
+Bantuan itu punya gigi. Organ yang membawa ping rute juga bisa memberi tahu getaran pada pemakan, membangunkan fauna bertag, atau memantulkan gerak Marauder turun ke terumbu. Jawaban bersih bukan koridor aman. Itu berarti koridor punya pendengar.
 
 ## Scanner
 
-ID LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
+Resonansi organ penyaring cocok dengan irama relai rusak. Pantulan lebih bersih setelah melewati jaringan. Bekas gigitan pada rumah relai.
 
 ## Terminal
 
-ID LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
+RELAI AKUSTIK // Jaringan organ penyaring lokal meredam derau badai dan mengulang ping layanan di dalam terumbu kabel. Penguatan sinyal tidak stabil saat lonjakan tekanan. Relai biologis adalah bantuan rute sekaligus umpan predator.
 
 ## Audio
 
-ID LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
+Ia menjawab seperti peralatan karena peralatan memakai tenggorokannya.
 
 ## Field Note
 
-ID LOC HOLD: Use with sonar, scanner and route-warning UI.
+Jika gema punya pulsa di belakangnya, diamkan alat dan periksa air sebelum bergerak.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/id_ID. -->

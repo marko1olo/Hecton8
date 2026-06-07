@@ -715,7 +715,8 @@ namespace Hecton8.Gameplay
             FirstReturnLoreHintIssued = 1 << 7,
             DeeperRouteZoneHintIssued = 1 << 8,
             ModuleRouteHintIssued = 1 << 9,
-            HasLoreRouteContact = 1 << 10
+            HasLoreRouteContact = 1 << 10,
+            StarterToolReminderIssued = 1 << 11
         }
 
         // ----------------------------------------------------------
@@ -735,10 +736,16 @@ namespace Hecton8.Gameplay
         [Tooltip("Quest that represents successful arrival/orientation.")]
         [SerializeField] private string arrivalQuestId = "quest_arrival";
 
-        [Tooltip("Quest that should become the next clear early-game material goal.")]
+        [Tooltip("Quest that opens the starter drill route before copper becomes a valid first-hour target.")]
+        [SerializeField] private string starterToolQuestId = "quest_starter_drill";
+
+        [Tooltip("Item ID that proves the starter drill route was solved in an older save.")]
+        [SerializeField] private string starterToolItemId = "Item_Tool_SeafloorDrill";
+
+        [Tooltip("Quest that should become the next clear early-game material goal after the starter drill.")]
         [SerializeField] private string firstResourceQuestId = "quest_copper_sample";
 
-        [Tooltip("Item ID that proves the first resource goal was already solved in an older save.")]
+        [Tooltip("Item ID that proves the first post-drill resource goal was already solved in an older save.")]
         [SerializeField] private string firstResourceItemId = "Data_Copper";
 
         [Tooltip("Quest that should take over once the player secures the first core material.")]
@@ -802,6 +809,7 @@ namespace Hecton8.Gameplay
         private bool  _firstReturnLoreHintIssued;
         private bool  _deeperRouteZoneHintIssued;
         private bool  _moduleRouteHintIssued;
+        private bool  _starterToolReminderIssued;
         private bool  _hasLoreRouteContact;
         private float _nextContextualGuidanceTime;
         private WorldZoneDirector _worldZoneDirector;
@@ -813,6 +821,7 @@ namespace Hecton8.Gameplay
         private IPlayerRuntimeContext _cachedPlayerContext;
         private ILocalizationTextReadModel _cachedLocalization;
         private WorldZoneAnchor _lastObservedZone;
+        private bool _lastContextStarterToolCompleted;
         private bool _lastContextResourceCompleted;
         private bool _lastContextDepthCompleted;
         private bool _lastContextLoreContact;
@@ -820,8 +829,10 @@ namespace Hecton8.Gameplay
         private HectonSurvivalSystem _survivalSystem;
         private uint _firstModuleZoneDiscoveryHash;
         private uint _arrivalQuestHash;
+        private uint _starterToolQuestHash;
         private uint _firstResourceQuestHash;
         private uint _firstDepthQuestHash;
+        private int _starterToolItemHash;
         private int _firstResourceItemHash;
         private bool _firstResourceIsCopper;
         private int _firstCraftResultItemHash0;
@@ -862,9 +873,13 @@ namespace Hecton8.Gameplay
         private static readonly uint _shadowEventDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(ShadowEventDiscoveryId);
         private static readonly uint _firstColonyModuleDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(FirstColonyModuleDiscoveryId);
         private const string MsgResourceShelfRead =
-            "HOLD THE READABLE EDGE. THE FIRST COPPER NORMALLY SITS LOWER AND OFF TO THE SIDE OF THE SAFEST SHELF.";
+            "HOLD THE READABLE EDGE. COPPER VEINS SIT LOWER AND OFF TO THE SIDE OF THE SAFEST SHELF.";
+        private const string MsgStarterResourceShelfRead =
+            "HOLD THE READABLE EDGE. SHALLOW GLASS AND KELP BUILD THE DRILL; COPPER COMES AFTER THE VEIN OPENS.";
+        private const string MsgStarterToolReminder =
+            "SCAN A RESOURCE NODE, FABRICATE THE SEAFLOOR DRILL, THEN OPEN COPPER VEINS.";
         private const string MsgFabricationFallback =
-            "THE NODE BUYS BREATHING ROOM, NOT ANSWERS. MOVE OUT AGAIN - THE STRONG EARLY EXIT SITS A LITTLE DEEPER.";
+            "THE FABRICATOR CAN BUILD THE DRILL FROM SHALLOW GLASS AND FIBER. COPPER IS THE NEXT STEP, NOT THE FIRST COST.";
         private const string MsgReturnLoreRelay =
             "SERVICE NODES MAY STILL HOLD LOGS AND MARKERS. CHECK TERMINALS AND SIDE RACKS, NOT JUST RESOURCES.";
         private const string MsgDeeperRouteRead =
@@ -1363,7 +1378,8 @@ namespace Hecton8.Gameplay
             {
                 case FirstHourMilestone.Orientation:
                     CompleteQuest(_arrivalQuestHash);
-                    ActivateQuest(_firstResourceQuestHash);
+                    ActivateQuest(_starterToolQuestHash);
+                    TryAdvanceStarterToolGoalFromRuntimeInventory();
                     TryAdvanceFirstResourceGoalFromRuntimeInventory();
                     break;
 
@@ -1384,7 +1400,17 @@ namespace Hecton8.Gameplay
 
         private void HandleCraftCompleted(ItemData resultItem)
         {
-            if (resultItem == null || !IsAcceptedFirstCraftResultItem(resultItem))
+            if (resultItem == null)
+                return;
+
+            if (resultItem.MatchesPersistentHash(_starterToolItemHash))
+            {
+                CompleteQuest(_starterToolQuestHash);
+                _starterToolReminderIssued = true;
+                ActivateQuest(_firstResourceQuestHash);
+            }
+
+            if (!IsAcceptedFirstCraftResultItem(resultItem))
                 return;
 
             CheckMilestone(FirstHourMilestone.FirstCraft,
@@ -1474,6 +1500,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            if (payload.QuestHashID == _starterToolQuestHash)
+            {
+                _starterToolReminderIssued = true;
+                ActivateQuest(_firstResourceQuestHash);
+                return;
+            }
+
             if (payload.QuestHashID != _firstResourceQuestHash)
                 return;
 
@@ -1512,12 +1545,21 @@ namespace Hecton8.Gameplay
 
         private void HandleItemCollected(ItemData item, int quantity, Transform interactor)
         {
-            if (!IsMilestoneComplete(FirstHourMilestone.Orientation) ||
-                item == null ||
-                !item.MatchesPersistentHash(_firstResourceItemHash))
+            if (!IsMilestoneComplete(FirstHourMilestone.Orientation) || item == null)
             {
                 return;
             }
+
+            if (item.MatchesPersistentHash(_starterToolItemHash))
+            {
+                CompleteQuest(_starterToolQuestHash);
+                _starterToolReminderIssued = true;
+                ActivateQuest(_firstResourceQuestHash);
+                return;
+            }
+
+            if (!item.MatchesPersistentHash(_firstResourceItemHash))
+                return;
 
             CompleteQuest(_firstResourceQuestHash);
             _firstResourceReminderIssued = true;
@@ -1607,6 +1649,7 @@ namespace Hecton8.Gameplay
                                       IsMilestoneComplete(FirstHourMilestone.FirstModule);
             _nextContextualGuidanceTime = 0f;
             _lastObservedZone = null;
+            _lastContextStarterToolCompleted = false;
             _lastContextResourceCompleted = false;
             _lastContextDepthCompleted = false;
             _lastContextLoreContact = false;
@@ -1614,7 +1657,7 @@ namespace Hecton8.Gameplay
             SynchronizeContextFromRuntimeSystems();
             SynchronizeAtlasMilestonesFromRuntime();
             SynchronizeEarlyQuestState();
-            SynchronizeFirstResourceQuestFromSaveData(data);
+            SynchronizeFirstHourRouteQuestStateFromSaveData(data);
         }
 
         private int BuildGuidanceStateFlags()
@@ -1642,6 +1685,8 @@ namespace Hecton8.Gameplay
                 flags |= GuidanceStateFlags.ModuleRouteHintIssued;
             if (_hasLoreRouteContact)
                 flags |= GuidanceStateFlags.HasLoreRouteContact;
+            if (_starterToolReminderIssued)
+                flags |= GuidanceStateFlags.StarterToolReminderIssued;
 
             return (int)flags;
         }
@@ -1660,6 +1705,7 @@ namespace Hecton8.Gameplay
             _deeperRouteZoneHintIssued = (flags & GuidanceStateFlags.DeeperRouteZoneHintIssued) != 0;
             _moduleRouteHintIssued = (flags & GuidanceStateFlags.ModuleRouteHintIssued) != 0;
             _hasLoreRouteContact = (flags & GuidanceStateFlags.HasLoreRouteContact) != 0;
+            _starterToolReminderIssued = (flags & GuidanceStateFlags.StarterToolReminderIssued) != 0;
         }
 
         private void ActivateQuest(uint questHash)
@@ -1697,10 +1743,17 @@ namespace Hecton8.Gameplay
                 return;
 
             CompleteQuest(_arrivalQuestHash);
-            ActivateQuest(_firstResourceQuestHash);
+            ActivateQuest(_starterToolQuestHash);
+            TryAdvanceStarterToolGoalFromRuntimeInventory();
             TryAdvanceFirstResourceGoalFromRuntimeInventory();
 
             IQuestSystem questManager = _cachedQuestManager;
+            if (questManager != null && questManager.IsCompleted(_starterToolQuestHash))
+            {
+                _starterToolReminderIssued = true;
+                ActivateQuest(_firstResourceQuestHash);
+            }
+
             if (questManager != null && questManager.IsCompleted(_firstResourceQuestHash))
             {
                 _firstResourceReminderIssued = true;
@@ -1743,19 +1796,25 @@ namespace Hecton8.Gameplay
             return atlasRevealStage >= 2;
         }
 
-        private void SynchronizeFirstResourceQuestFromSaveData(SaveData data)
+        private void SynchronizeFirstHourRouteQuestStateFromSaveData(SaveData data)
         {
-            if (data == null ||
-                !IsMilestoneComplete(FirstHourMilestone.Orientation) ||
-                !SaveInventoryContainsItem(data.inventory, _firstResourceItemHash))
-            {
+            if (data == null || !IsMilestoneComplete(FirstHourMilestone.Orientation))
                 return;
+
+            if (SaveInventoryContainsItem(data.inventory, _starterToolItemHash))
+            {
+                CompleteQuest(_starterToolQuestHash);
+                _starterToolReminderIssued = true;
+                ActivateQuest(_firstResourceQuestHash);
             }
 
-            CompleteQuest(_firstResourceQuestHash);
-            _firstResourceReminderIssued = true;
-            ActivateQuest(_firstDepthQuestHash);
-            _firstDepthReminderIssued = false;
+            if (SaveInventoryContainsItem(data.inventory, _firstResourceItemHash))
+            {
+                CompleteQuest(_firstResourceQuestHash);
+                _firstResourceReminderIssued = true;
+                ActivateQuest(_firstDepthQuestHash);
+                _firstDepthReminderIssued = false;
+            }
         }
 
         private static bool SaveInventoryContainsItem(InventoryDTO inventory, int itemHashId)
@@ -1777,18 +1836,48 @@ namespace Hecton8.Gameplay
             return false;
         }
 
+        private void TryAdvanceStarterToolGoalFromRuntimeInventory()
+        {
+            if (!RuntimeInventoryContainsItem(_starterToolItemHash))
+                return;
+
+            CompleteQuest(_starterToolQuestHash);
+            _starterToolReminderIssued = true;
+            ActivateQuest(_firstResourceQuestHash);
+        }
+
         private void TryAdvanceFirstResourceGoalFromRuntimeInventory()
         {
-            if (_firstResourceItemHash == 0 ||
-                !TryGetRuntimeInventory(out PlayerInventory inventory) ||
-                inventory == null)
+            IQuestSystem questManager = _cachedQuestManager;
+            if (questManager != null &&
+                _starterToolQuestHash != 0u &&
+                !questManager.IsCompleted(_starterToolQuestHash) &&
+                !RuntimeInventoryContainsItem(_firstResourceItemHash))
             {
                 return;
             }
 
+            if (!RuntimeInventoryContainsItem(_firstResourceItemHash))
+                return;
+
+            CompleteQuest(_firstResourceQuestHash);
+            _firstResourceReminderIssued = true;
+            ActivateQuest(_firstDepthQuestHash);
+            _firstDepthReminderIssued = false;
+        }
+
+        private bool RuntimeInventoryContainsItem(int itemHashId)
+        {
+            if (itemHashId == 0 ||
+                !TryGetRuntimeInventory(out PlayerInventory inventory) ||
+                inventory == null)
+            {
+                return false;
+            }
+
             InventoryGrid grid = inventory.Grid;
             if (grid == null)
-                return;
+                return false;
 
             int columns = grid.Columns;
             int rows = grid.Rows;
@@ -1796,17 +1885,15 @@ namespace Hecton8.Gameplay
             {
                 for (int x = 0; x < columns; x++)
                 {
-                    int itemHashId = inventory.GetItemHashAt(x, y);
-                    if (itemHashId != _firstResourceItemHash)
+                    int cellItemHashId = inventory.GetItemHashAt(x, y);
+                    if (cellItemHashId != itemHashId)
                         continue;
 
-                    CompleteQuest(_firstResourceQuestHash);
-                    _firstResourceReminderIssued = true;
-                    ActivateQuest(_firstDepthQuestHash);
-                    _firstDepthReminderIssued = false;
-                    return;
+                    return true;
                 }
             }
+
+            return false;
         }
 
         private void TryIssueRetentionNudges()
@@ -1818,7 +1905,18 @@ namespace Hecton8.Gameplay
             if (questManager == null)
                 return;
 
+            bool starterToolCompleted = questManager.IsCompleted(_starterToolQuestHash);
+            if (!_starterToolReminderIssued &&
+                !starterToolCompleted &&
+                _sessionTime >= firstResourceReminderTime)
+            {
+                _starterToolReminderIssued = true;
+                QueueNotification(MsgStarterToolReminder.AsSpan(), NotificationEventSeverity.Info);
+                return;
+            }
+
             if (!_firstResourceReminderIssued &&
+                starterToolCompleted &&
                 !questManager.IsCompleted(_firstResourceQuestHash) &&
                 _sessionTime >= firstResourceReminderTime)
             {
@@ -1886,17 +1984,20 @@ namespace Hecton8.Gameplay
 
             int currentDepthTier = _biomeMatrixDirector != null ? _biomeMatrixDirector.CurrentDepthTier : 1;
             HectonBiomeMatrixProfile currentBiome = ResolveCurrentBiomeProfile(currentZone);
+            bool starterToolCompleted = questManager.IsCompleted(_starterToolQuestHash);
             bool resourceCompleted = questManager.IsCompleted(_firstResourceQuestHash);
             bool depthCompleted = questManager.IsCompleted(_firstDepthQuestHash);
             bool loreRouteContact = _hasLoreRouteContact;
 
             bool zoneChanged = !ReferenceEquals(currentZone, _lastObservedZone);
             bool stageChanged =
+                starterToolCompleted != _lastContextStarterToolCompleted ||
                 resourceCompleted != _lastContextResourceCompleted ||
                 depthCompleted != _lastContextDepthCompleted ||
                 loreRouteContact != _lastContextLoreContact;
 
             _lastObservedZone = currentZone;
+            _lastContextStarterToolCompleted = starterToolCompleted;
             _lastContextResourceCompleted = resourceCompleted;
             _lastContextDepthCompleted = depthCompleted;
             _lastContextLoreContact = loreRouteContact;
@@ -1950,14 +2051,17 @@ namespace Hecton8.Gameplay
             HectonBiomeMatrixProfile currentBiome)
         {
             if (_starterResourcesZoneHintIssued ||
-                questManager.IsCompleted(_firstResourceQuestHash) ||
+                (questManager.IsCompleted(_starterToolQuestHash) && questManager.IsCompleted(_firstResourceQuestHash)) ||
                 currentZone.Kind != WorldZoneAnchor.ZoneKind.Resources)
             {
                 return false;
             }
 
             _starterResourcesZoneHintIssued = true;
-            PublishContextualInfo(ResolveResourceZoneGuidanceMessage(currentZone, currentBiome));
+            PublishContextualInfo(
+                questManager.IsCompleted(_starterToolQuestHash)
+                    ? ResolveResourceZoneGuidanceMessage(currentZone, currentBiome)
+                    : MsgStarterResourceShelfRead.AsSpan());
             return true;
         }
 
@@ -1968,6 +2072,14 @@ namespace Hecton8.Gameplay
         {
             if (currentZone.Kind != WorldZoneAnchor.ZoneKind.Fabrication)
                 return false;
+
+            if (!_starterFabricationFallbackHintIssued &&
+                !questManager.IsCompleted(_starterToolQuestHash))
+            {
+                _starterFabricationFallbackHintIssued = true;
+                PublishContextualInfo(MsgFabricationFallback.AsSpan());
+                return true;
+            }
 
             if (!_starterFabricationFallbackHintIssued &&
                 !questManager.IsCompleted(_firstResourceQuestHash))
@@ -2239,8 +2351,12 @@ namespace Hecton8.Gameplay
         {
             _firstModuleZoneDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(firstModuleZoneDiscoveryId);
             _arrivalQuestHash = QuestFlagHashKernel.ComputeStableHash(arrivalQuestId);
+            _starterToolQuestHash = QuestFlagHashKernel.ComputeStableHash(starterToolQuestId);
             _firstResourceQuestHash = QuestFlagHashKernel.ComputeStableHash(firstResourceQuestId);
             _firstDepthQuestHash = QuestFlagHashKernel.ComputeStableHash(firstDepthQuestId);
+            _starterToolItemHash = string.IsNullOrWhiteSpace(starterToolItemId)
+                ? 0
+                : LocHash.Compute(starterToolItemId);
             _firstResourceItemHash = string.IsNullOrWhiteSpace(firstResourceItemId)
                 ? 0
                 : LocHash.Compute(firstResourceItemId);

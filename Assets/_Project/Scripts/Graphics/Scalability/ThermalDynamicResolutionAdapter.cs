@@ -1676,6 +1676,7 @@ namespace Hecton8.Graphics.Scalability
             if (_sceneLoadedRepairRegistered || !Application.isPlaying)
                 return;
 
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoadedRepairCold;
             UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedRepairCold;
             _sceneLoadedRepairRegistered = true;
         }

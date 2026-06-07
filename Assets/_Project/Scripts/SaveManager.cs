@@ -2180,6 +2180,8 @@ namespace Hecton8.SaveSystem
                         signalSourceHash: WfcOutpostPersistenceSourceHash,
                         flags: WfcOutpostBlackBoxSignalFlagOverflow,
                         frame: dirtyFrame);
+                    PublishWfcWriteFailureWarning();
+                    continue;
                 }
 
                 if (!TryAcquireWfcOutpostGridWrite(

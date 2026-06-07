@@ -7677,35 +7677,13 @@ namespace Hecton8.World
                 return false;
 
             DisposeParasiteLatchReadbackData();
-            NativeArray<int> replacement = default;
-            try
-            {
-                replacement = new NativeArray<int>(
-                    LatchStatsElementCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory);
-                int sentinelId = NativeMemorySentinel.RegisterNativeArray(replacement, nameof(SargassumMicroFaunaBoids), "_parasiteLatchReadbackData", NativeAllocationLifetime.Scene);
-                if (sentinelId <= 0)
-                    throw new InvalidOperationException("Native memory sentinel registration failed for parasite latch readback data.");
-
-                _parasiteLatchReadback.Data = replacement;
-            }
-            catch
-            {
-                if (replacement.IsCreated)
-                {
-                    try
-                    {
-                        NativeMemorySentinel.UnregisterNativeArray(replacement);
-                    }
-                    finally
-                    {
-                        replacement.Dispose();
-                    }
-                }
-
-                throw;
-            }
+            _parasiteLatchReadback.Data = H8Memory.Allocate<int>(
+                LatchStatsElementCount,
+                SystemID.WorldSargassum,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            if (!_parasiteLatchReadback.Data.IsCreated)
+                throw new InvalidOperationException("H8Memory allocation failed for parasite latch readback data.");
 
             _parasiteLatchReadbackRepairRequested = false;
             return true;
@@ -7754,11 +7732,7 @@ namespace Hecton8.World
         private void ReleaseParasiteLatchReadbackNativeData()
         {
             if (_parasiteLatchReadback.Data.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_parasiteLatchReadback.Data);
-                _parasiteLatchReadback.Data.Dispose();
-                _parasiteLatchReadback.Data = default;
-            }
+                H8Memory.Release(ref _parasiteLatchReadback.Data, SystemID.WorldSargassum);
         }
 
         private void ApplyParasiteEnvironmentalDrag()

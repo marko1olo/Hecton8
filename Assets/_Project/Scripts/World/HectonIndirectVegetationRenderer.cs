@@ -4598,35 +4598,13 @@ namespace Hecton8.World
                 return;
 
             DisposeCullTelemetryReadbackData();
-            NativeArray<uint> replacement = default;
-            try
-            {
-                replacement = new NativeArray<uint>(
-                    ScatterCullTelemetryCounterCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[4] - async GPU cull telemetry readback target - owner: HectonIndirectVegetationRenderer
-                int sentinelId = NativeMemorySentinel.RegisterNativeArray(replacement, nameof(HectonIndirectVegetationRenderer), "_cullTelemetryReadbackData", NativeAllocationLifetime.Scene);
-                if (sentinelId <= 0)
-                    throw new InvalidOperationException("Native memory sentinel registration failed for cull telemetry readback data.");
-
-                _cullTelemetryReadback.Data = replacement;
-            }
-            catch
-            {
-                if (replacement.IsCreated)
-                {
-                    try
-                    {
-                        NativeMemorySentinel.UnregisterNativeArray(replacement);
-                    }
-                    finally
-                    {
-                        replacement.Dispose();
-                    }
-                }
-
-                throw;
-            }
+            _cullTelemetryReadback.Data = H8Memory.Allocate<uint>(
+                ScatterCullTelemetryCounterCount,
+                VaultOwnerSystemId,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[4] - async GPU cull telemetry readback target - owner: HectonIndirectVegetationRenderer
+            if (!_cullTelemetryReadback.Data.IsCreated)
+                throw new InvalidOperationException("H8Memory allocation failed for cull telemetry readback data.");
 
             _scatterCullTelemetryReadbackRepairRequested = false;
         }
@@ -4715,11 +4693,7 @@ namespace Hecton8.World
         private void ReleaseCullTelemetryReadbackNativeData()
         {
             if (_cullTelemetryReadback.Data.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_cullTelemetryReadback.Data);
-                _cullTelemetryReadback.Data.Dispose();
-                _cullTelemetryReadback.Data = default;
-            }
+                H8Memory.Release(ref _cullTelemetryReadback.Data, VaultOwnerSystemId);
         }
 
         private void ResetCullComputeBindingStates()

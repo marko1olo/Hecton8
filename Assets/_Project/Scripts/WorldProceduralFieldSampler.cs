@@ -2237,7 +2237,9 @@ namespace Hecton8.World
             if (_assemblyReloadHookRegistered)
                 return;
 
+            AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
             AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+            EditorApplication.quitting -= HandleEditorQuitting;
             EditorApplication.quitting += HandleEditorQuitting;
             _assemblyReloadHookRegistered = true;
         }

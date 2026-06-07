@@ -115,6 +115,8 @@ namespace Hecton8.Core.Generated
         public const uint P107_SELENE_ARENDT_ATLAS_WEIGHTING = 0xF1B339F0u;
         public const uint P108_NOOR_HALDANE_EVAC_CERT = 0x939CBB9Cu;
         public const uint P1090_SILENT_ORBIT_RECEIPT_LEDGER = 0x526B68EBu;
+        public const uint P1091_PELLET_WAKE_BRAKING_LEDGER = 0x34BD4C69u;
+        public const uint P1092_PRESSURE_LADDER_ACOUSTIC_CHART = 0x266376A7u;
         public const uint P109_MAREK_IBARRA_LOSS_CONVERSION = 0x278195EDu;
         public const uint P110_VERA_SATO_REN_RETURN_ACTION = 0xF66E6A74u;
         public const uint P111_MANUAL_BILGE_PUMP_KIT = 0x2118B231u;

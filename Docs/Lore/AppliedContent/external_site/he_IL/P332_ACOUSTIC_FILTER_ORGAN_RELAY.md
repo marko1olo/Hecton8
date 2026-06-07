@@ -9,32 +9,18 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Acoustic Filter Organ Relay"
+title: "ממסר איבר סינון אקוסטי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Acoustic Filter Organ Relay
+# ממסר איבר סינון אקוסטי
 
-HE LOC HOLD: HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.
+מתחת לעומק הרדיו, קול הוא הכלי העיקרי. שונית הכבלים מסבכת אותו: מארזים שבורים מצלצלים, מחצלות מתכת מפזרות, סערות מטשטשות מרחק ורקמה חיה יושבת בין מקור לחזרה.
 
-## Scanner
-
-HE LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
-
-## Terminal
-
-HE LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
-
-## Audio
-
-HE LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
-
-## Field Note
-
-HE LOC HOLD: Use with sonar, scanner and route-warning UI.
+לכן סונאר אינו אמת נקייה. הממסר עשוי לחשוף דלת, להאכיל טורפים, לחזור על אזהרות ישנות או לגרום לאותו מעבר להופיע פעמיים.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/he_IL. -->

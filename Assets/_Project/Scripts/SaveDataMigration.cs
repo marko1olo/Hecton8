@@ -1910,7 +1910,7 @@ namespace Hecton8.SaveSystem
                 steps.Add("run modifiers daily-seed id cleared");
             }
 
-            if (dto.isDailySeed && dto.dailySeedId == null)
+            if (dto.isDailySeed && string.IsNullOrWhiteSpace(dto.dailySeedId))
             {
                 dto.dailySeedId = string.Empty;
                 changed = true;
@@ -2217,11 +2217,18 @@ namespace Hecton8.SaveSystem
 
         private static bool EnsurePlayerExpression(ref SaveData data, List<string> steps)
         {
-            if (data.playerExpressionProfileId != null)
+            if (data.playerExpressionProfileId == null)
+            {
+                data.playerExpressionProfileId = string.Empty;
+                steps.Add("player expression profile initialized");
+                return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(data.playerExpressionProfileId))
                 return false;
 
             data.playerExpressionProfileId = string.Empty;
-            steps.Add("player expression profile initialized");
+            steps.Add("player expression profile repaired");
             return true;
         }
 

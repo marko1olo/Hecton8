@@ -542,7 +542,9 @@ namespace Hecton8.Core
             if (_assemblyReloadHookRegistered)
                 return;
 
+            AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
             AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+            EditorApplication.quitting -= HandleEditorQuitting;
             EditorApplication.quitting += HandleEditorQuitting;
             _assemblyReloadHookRegistered = true;
         }

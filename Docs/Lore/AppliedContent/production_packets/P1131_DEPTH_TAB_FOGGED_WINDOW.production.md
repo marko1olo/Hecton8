@@ -17,7 +17,7 @@
 | Location / route | Ladder well, flooded service board, or shallow descent marker |
 | Unlock context | Player scans a depth tab behind a fogged plastic window |
 | Evidence object | Depth tab, fogged window, tick groove, salt bead |
-| Connected packets | P905_STORM_SHELF_TAG_LINE; P1133_LADDER_RUNG_PAINT_GAP; P1120_PUMP_FLOW_ARROW_SCAR |
+| Connected packets | P905_ANCHOR_PAINT_CURRENT_SIDE; P1133_LADDER_RUNG_PAINT_GAP; P1120_PUMP_FLOW_ARROW_SCAR |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: gives early descent markers a physical reliability check |
 | Content status | source_complete_unimported |
 

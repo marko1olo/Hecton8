@@ -47,7 +47,9 @@ public static class SceneViewSkyboxEnforcer
             return;
 
         EditorApplication.update += ApplySceneViewDefaults;
+        AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
         AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+        EditorApplication.quitting -= HandleEditorQuitting;
         EditorApplication.quitting += HandleEditorQuitting;
         _callbacksRegistered = true;
     }

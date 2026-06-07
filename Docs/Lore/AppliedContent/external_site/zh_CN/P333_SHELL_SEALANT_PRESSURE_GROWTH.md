@@ -3,38 +3,24 @@ packet_id: P333_SHELL_SEALANT_PRESSURE_GROWTH
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.shell_sealant_pressure_growth
 unlock_id: unlock.shell_sealant_pressure_growth
-poi_tags: poi.shell_sealant_growth;poi.fracture_lip_biomatter
-biome_tags: biome.atlas;biome.hardware
+poi_tags: poi.shell_sealant_breach;poi.pressure_growth_wall
+biome_tags: biome.atlas;biome.pressure
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Shell Sealant Pressure Growth"
+title: "壳质密封剂压力生长"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Shell Sealant Pressure Growth
+# 壳质密封剂压力生长
 
-ZH LOC HOLD: The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.
+维修不总是复原。Deep Reach 的应急密封剂首先保护压力，而不是舒适度。在 HECTON-8 化学环境下，泡沫补丁可能变成承重矿物壳。
 
-## Scanner
-
-ZH LOC HOLD: Sealant growth over fracture. Pressure rating unknown. Cut only after scan.
-
-## Terminal
-
-ZH LOC HOLD: SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.
-
-## Audio
-
-ZH LOC HOLD: A sealed wound can still kill the room.
-
-## Field Note
-
-ZH LOC HOLD: Useful for crafting, route gating and false-confidence moments.
+从账本看结果很好。对 Marauder 来说，同样的成功会毁掉路线：补丁向内增厚，卡住舱口，埋掉工具，或把最后的隔间隔在一堵技术上仍在工作的墙后。
 
 <!-- External Site; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/zh_CN. -->

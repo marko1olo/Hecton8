@@ -455,6 +455,23 @@
         : `latest frame ${latest.frame} events ${latest.eventHashCount || 0} sources ${latest.sourceNonZeroCount || 0}${survivalText}`;
       return warnings ? `${count} | ${fatal} | ${frame} | ${warnings}` : `${count} | ${fatal} | ${frame}`;
     }
+    if (file.type === "data_monolith_telemetry_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const path = asArray(latest.pathFlagLabels).join("+") || "none";
+      const status = latest.loadStatusLabel || file.headerStatusLabel || "unknown";
+      const blob = latest.blobMiB === undefined ? "--" : `${fmtNumber(latest.blobMiB, 3)} MiB`;
+      const ticks = latest.loadTicks === undefined ? "--/--" : `${latest.loadTicks}/${latest.ioTicks || 0}`;
+      const hash = latest.stateHashHex || "--";
+      const checksum = latest.checksum64Hex || "--";
+      const failure = latest.failureStageLabel && latest.failureStageLabel !== "none"
+        ? ` failure ${latest.failureStageLabel}:${latest.failureDetail0 || 0}/${latest.failureDetail1 || 0}/${latest.failureDetail2 || 0}`
+        : "";
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} ${status} blob ${blob} sections ${latest.sectionCount || 0} path ${path} ticks ${ticks} state ${hash} checksum ${checksum}${failure}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
     if (file.type === "toxic_outgassing_blackbox") {
       const latest = asObject(file.latest);
       const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;

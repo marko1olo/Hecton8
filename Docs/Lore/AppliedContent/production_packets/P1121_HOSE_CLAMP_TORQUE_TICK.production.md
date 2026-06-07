@@ -17,7 +17,7 @@
 | Location / route | Utility hose run, first shelter pump branch, or drowned service locker |
 | Unlock context | Player scans a clamp with misaligned torque paint |
 | Evidence object | Hose clamp, torque tick paint, screw head, damp rubber |
-| Connected packets | P806_HATCH_SEAL_TORQUE_DUST; P1120_PUMP_FLOW_ARROW_SCAR; P1112_DIRTY_TOOL_WRAP_QUARANTINE |
+| Connected packets | P807_COLD_SEALANT_CLAMP_SCAR; P1120_PUMP_FLOW_ARROW_SCAR; P1112_DIRTY_TOOL_WRAP_QUARANTINE |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: makes early clamp state readable before the player tightens or trusts it |
 | Content status | source_complete_unimported |
 
