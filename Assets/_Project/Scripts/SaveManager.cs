@@ -6238,7 +6238,7 @@ namespace Hecton8.SaveSystem
             try
             {
                 DeleteFileIfExists(tempSavePath);
-                File.Copy(absoluteBackupPath, absoluteTempPath, true);
+                File.Copy(absoluteBackupPath, absoluteTempPath, false);
 
                 if (File.Exists(absolutePrimaryPath))
                 {

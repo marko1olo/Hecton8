@@ -112,10 +112,11 @@ namespace Hecton8.Tests.Editor
             string source = File.ReadAllText(path);
 
             StringAssert.Contains("string restoreTempPath = walPath + \".restore.tmp\";", source);
-            StringAssert.Contains("File.Copy(backupPath, restoreTempPath, true);", source);
+            StringAssert.Contains("File.Copy(backupPath, restoreTempPath, false);", source);
             StringAssert.Contains("File.Replace(restoreTempPath, walPath, null, true);", source);
             StringAssert.Contains("DeleteRestoreTempIfExists(restoreTempPath);", source);
             StringAssert.DoesNotContain("File.Copy(backupPath, walPath, true);", source);
+            StringAssert.DoesNotContain("File.Copy(backupPath, restoreTempPath, true);", source);
         }
 
         [Test]
@@ -131,6 +132,20 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("File.Replace(tempPath, absolutePath, null, true);", source);
             StringAssert.Contains("AsyncWriteManager.OverwriteAllAtomic(absolutePath, compactPtr, compactLength, \".compact.tmp\", out error)", source);
             StringAssert.Contains("AsyncWriteManager.OverwriteAllAtomic(absoluteSavePath, mappedFilePtr, (int)newLength, \".sector-commit.tmp\", out error)", source);
+            StringAssert.Contains("File.Copy(absolutePath, backupTempPath, false);", source);
+            StringAssert.DoesNotContain("File.Copy(absolutePath, backupTempPath, true);", source);
+        }
+
+        [Test]
+        public void CriticalRecoveryPromotionCopiesBackupIntoFreshTemp()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/SaveManager.cs");
+            string source = File.ReadAllText(path);
+
+            StringAssert.Contains("DeleteFileIfExists(tempSavePath);", source);
+            StringAssert.Contains("File.Copy(absoluteBackupPath, absoluteTempPath, false);", source);
+            StringAssert.Contains("File.Replace(absoluteTempPath, absolutePrimaryPath, null, true);", source);
+            StringAssert.DoesNotContain("File.Copy(absoluteBackupPath, absoluteTempPath, true);", source);
         }
 
         [Test]

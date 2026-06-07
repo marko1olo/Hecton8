@@ -1305,7 +1305,7 @@ namespace Hecton8.SaveSystem
                         Directory.CreateDirectory(directory);
 
                     DeleteRestoreTempIfExists(restoreTempPath);
-                    File.Copy(backupPath, restoreTempPath, true);
+                    File.Copy(backupPath, restoreTempPath, false);
                     if (File.Exists(walPath))
                         File.Replace(restoreTempPath, walPath, null, true);
                     else

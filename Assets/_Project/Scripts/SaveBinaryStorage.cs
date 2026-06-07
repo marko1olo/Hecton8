@@ -8518,7 +8518,7 @@ namespace Hecton8.SaveSystem
                 if (!TryDeleteFileIfExists(backupTempPath, out error))
                     return false;
 
-                File.Copy(absolutePath, backupTempPath, true);
+                File.Copy(absolutePath, backupTempPath, false);
                 if (File.Exists(backupPath))
                 {
                     File.Replace(backupTempPath, backupPath, null);
