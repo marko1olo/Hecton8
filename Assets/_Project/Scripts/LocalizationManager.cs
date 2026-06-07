@@ -953,7 +953,16 @@ namespace Hecton.Localization
             }
 
             await Awaitable.MainThreadAsync();
-            if (cancellationToken.IsCancellationRequested || fault != BabelLocaleReadFaultNone)
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _pendingBabelReadFault = BabelLocaleReadFaultNone;
+                LocRegistry.AbortBabelDictionaryStage(in stage);
+                _pendingBabelStage = default;
+                Volatile.Write(ref _pendingBabelSwapState, BabelLocaleSwapIdle);
+                return;
+            }
+
+            if (fault != BabelLocaleReadFaultNone)
             {
                 _pendingBabelReadFault = fault;
                 Volatile.Write(ref _pendingBabelSwapState, BabelLocaleSwapFailed);
