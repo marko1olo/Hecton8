@@ -48,6 +48,9 @@ namespace Hecton8.Editor.Validation
         private const string PdaLoadoutPresetPathPrefix = "Assets/_Project/Data/Tools/Presets/";
         private const string RuntimeOrePrefabPath = "Assets/_Project/Prefabs/Resources/Nodes/PFB_Ore_Generic.prefab";
         private const string RuntimeMagmaVentPrefabPath = "Assets/_Project/Prefabs/Resources/Nodes/PFB_Ore_MagmaVentMarker.prefab";
+        private const string LoreSystemsRootScriptPath = "Assets/_Project/Scripts/Bootstrap/HectonLoreSystemsRoot.cs";
+        private const string QuestManagerScriptPath = "Assets/_Project/Scripts/Quest/QuestManager.cs";
+        private const string FirstHourDirectorScriptPath = "Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs";
         private const string ToolHeldPrefabRoot = "Assets/_Project/Prefabs/Tools/Held";
         private const string GenericResourceScanEntryId = "scan.resource_node";
         private const string ScannerToolItemId = "Item_Tool_Scanner";
@@ -163,6 +166,7 @@ namespace Hecton8.Editor.Validation
             ValidateFirstHourDrillRoute(result);
             ValidateFirstHourQuestSpine(result);
             ValidateFirstHourFabricatorSceneRoute(result);
+            ValidateFirstHourRuntimeSceneOwners(result);
             ValidateBaseModuleTemplates(result);
             ValidatePlayerPdaShell(result);
             ValidatePdaLoadoutPresetReferences(result);
