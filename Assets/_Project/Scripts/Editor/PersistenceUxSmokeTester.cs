@@ -269,6 +269,16 @@ namespace Hecton8.Dev
                 SourceIndex(radioisotopeThermalGenerator, "RtgLowOutputContextHash") == int.MaxValue &&
                 SourceIndex(radioisotopeThermalGenerator, "HUDNotificationSignal signal") == int.MaxValue;
 
+            bool equipmentFailingNotificationPass =
+                ContainsAll(playerInventory, "using Hecton8.UI;", "EquipmentFailingMessage", "NotificationEvents.TryPushCritical(EquipmentFailingMessage.AsSpan())") &&
+                SourceIndex(playerInventory, "_equipmentFailingHudLatched = 1;") <
+                SourceIndex(playerInventory, "NotificationEvents.TryPushCritical(EquipmentFailingMessage.AsSpan())") &&
+                SourceIndex(playerInventory, "_averageEquipmentDurability01 >= EquipmentFailingResetThreshold01") >
+                SourceIndex(playerInventory, "NotificationEvents.TryPushCritical(EquipmentFailingMessage.AsSpan())") &&
+                SourceIndex(playerInventory, "_EquipmentFailingMessageHash") == int.MaxValue &&
+                SourceIndex(playerInventory, "_EquipmentFailingContextHash") == int.MaxValue &&
+                SourceIndex(playerInventory, "SignalBus<HUDNotificationSignal>.TryPushTracked(new HUDNotificationSignal") == int.MaxValue;
+
             bool pass = asyncThumbnailPass &&
                         loadingStagePass &&
                         safeAupSnapPass &&
@@ -297,7 +307,8 @@ namespace Hecton8.Dev
                         saveSlotPathGuardPass &&
                         saveThumbnailSidecarGuardPass &&
                         residencyDataLinkNotificationPass &&
-                        rtgLowOutputNotificationPass;
+                        rtgLowOutputNotificationPass &&
+                        equipmentFailingNotificationPass;
 
             WriteArtifact(
                 pass,
@@ -330,6 +341,7 @@ namespace Hecton8.Dev
                 saveThumbnailSidecarGuardPass,
                 residencyDataLinkNotificationPass,
                 rtgLowOutputNotificationPass,
+                equipmentFailingNotificationPass,
                 rewrittenOffset,
                 rewrittenLength);
 
@@ -521,6 +533,7 @@ namespace Hecton8.Dev
             bool saveThumbnailSidecarGuardPass,
             bool residencyDataLinkNotificationPass,
             bool rtgLowOutputNotificationPass,
+            bool equipmentFailingNotificationPass,
             int inventoryRewriteOffset,
             int inventoryRewriteLength)
         {
@@ -562,6 +575,7 @@ namespace Hecton8.Dev
                 .Append("\"saveThumbnailSidecarGuardPass\":").Append(saveThumbnailSidecarGuardPass ? "true" : "false").Append(',')
                 .Append("\"residencyDataLinkNotificationPass\":").Append(residencyDataLinkNotificationPass ? "true" : "false").Append(',')
                 .Append("\"rtgLowOutputNotificationPass\":").Append(rtgLowOutputNotificationPass ? "true" : "false").Append(',')
+                .Append("\"equipmentFailingNotificationPass\":").Append(equipmentFailingNotificationPass ? "true" : "false").Append(',')
                 .Append("\"inventoryRewriteOffset\":").Append(inventoryRewriteOffset).Append(',')
                 .Append("\"inventoryRewriteLength\":").Append(inventoryRewriteLength)
                 .Append('}');

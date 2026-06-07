@@ -21,6 +21,7 @@ namespace Hecton8.Inventory
     using Hecton8.Inventory.Corrosion.Contracts;
     using Hecton8.Items;
     using Hecton8.SaveSystem;
+    using Hecton8.UI;
     using Hecton8.World;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
@@ -103,8 +104,7 @@ namespace Hecton8.Inventory
         private static readonly uint _InventoryDefragContextHash = unchecked((uint)LocHash.Compute("PlayerInventoryDefrag"));
         private static readonly uint _EquipmentCorrosionToolHash = unchecked((uint)LocHash.Compute("EquipmentCorrosion"));
         private static readonly uint _EquipmentBreakTargetHash = unchecked((uint)LocHash.Compute("EquipmentBreak"));
-        private static readonly uint _EquipmentFailingMessageHash = unchecked((uint)LocHash.Compute("Equipment Failing"));
-        private static readonly uint _EquipmentFailingContextHash = unchecked((uint)LocHash.Compute("SalinityCorrosion"));
+        private const string EquipmentFailingMessage = "EQUIPMENT FAILING";
         private static readonly uint _TitaniumScrapHashId = unchecked((uint)LocHash.Compute("Data_TitaniumScrap"));
         private static readonly uint _BrineFamilyLocHash = unchecked((uint)LocHash.Compute("biome.family.chemosynthetic_brine"));
         private static readonly uint _BrineFamilyDataHash = Hecton8.Data.H8DataHash.ComputeFnv1A32("biome.family.chemosynthetic_brine");
@@ -5755,15 +5755,7 @@ namespace Hecton8.Inventory
                     return;
 
                 _equipmentFailingHudLatched = 1;
-                SignalBus<HUDNotificationSignal>.TryPushTracked(new HUDNotificationSignal
-                {
-                    MessageHash = _EquipmentFailingMessageHash,
-                    ContextHash = _EquipmentFailingContextHash,
-                    SourceId = ResolveInventorySignalHash(),
-                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                    Severity = 2,
-                    Flags = 0
-                }, ref _signalPushDropCount);
+                NotificationEvents.TryPushCritical(EquipmentFailingMessage.AsSpan());
                 return;
             }
 
