@@ -1165,7 +1165,12 @@ namespace Hecton8.Core.Hardware
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.ToolHapticsRuntime)
+            {
                 _haptics = currentService as ToolHapticsRuntime;
+                ToolHapticsRuntime haptics = _haptics;
+                if (haptics != null)
+                    haptics.SetPowerSaveMute(_policyInitialized && _hapticMuteApplied);
+            }
         }
 
         private void TryRegisterHotSwap()

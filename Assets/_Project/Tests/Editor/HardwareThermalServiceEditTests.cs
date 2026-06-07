@@ -31,6 +31,22 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("private bool ReleaseThermalBlackBoxWriteView()\n        {\n            IDataVault vault = _dataVault;", normalized);
         }
 
+        [Test]
+        public void HardwareThermal_ReplaysHapticMuteOnRuntimeRebind()
+        {
+            string source = Normalize(ReadProjectFile("Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs"));
+
+            int rebindIndex = source.IndexOf("private void RebindCachedService(GlobalRegistryServiceSlot serviceSlot, object currentService)", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(rebindIndex, 0, "RebindCachedService");
+            int hapticsSlotIndex = source.IndexOf("if (serviceSlot == GlobalRegistryServiceSlot.ToolHapticsRuntime)", rebindIndex, StringComparison.Ordinal);
+            Assert.Greater(hapticsSlotIndex, rebindIndex, "ToolHapticsRuntime rebind block");
+            string hapticsWindow = source.Substring(hapticsSlotIndex, Math.Min(384, source.Length - hapticsSlotIndex));
+
+            StringAssert.Contains("_haptics = currentService as ToolHapticsRuntime;", hapticsWindow);
+            StringAssert.Contains("ToolHapticsRuntime haptics = _haptics;", hapticsWindow);
+            StringAssert.Contains("haptics.SetPowerSaveMute(_policyInitialized && _hapticMuteApplied);", hapticsWindow);
+        }
+
         private static string ReadProjectFile(string relativePath)
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
