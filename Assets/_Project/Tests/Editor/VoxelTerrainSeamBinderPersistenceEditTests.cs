@@ -15,8 +15,14 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("File.Replace(temp, path, null, true);", scanner);
             StringAssert.Contains("File.Replace(temp, fullPath, null, true);", pipeline);
+            StringAssert.Contains("new FileStream(temp, FileMode.CreateNew", pipeline);
+            StringAssert.Contains("stream.Flush(true);", pipeline);
+            StringAssert.Contains("PromoteTempFileAtomic(temp, fullPath);", pipeline);
+            StringAssert.Contains("TryDeleteTempFileNoThrow(temp);", pipeline);
             StringAssert.DoesNotContain("File.Delete(path);", scanner);
             StringAssert.DoesNotContain("File.Delete(fullPath);", pipeline);
+            StringAssert.DoesNotContain("File.WriteAllText(temp, text, TextEncoding);", pipeline);
+            StringAssert.DoesNotContain("new FileStream(temp, FileMode.Create, FileAccess.Write", pipeline);
         }
     }
 }
