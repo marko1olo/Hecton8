@@ -1268,6 +1268,33 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void PdaAtlasSignalDirection_RejectsNonFiniteAupMetrics()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/PDAAtlasSignalTab.cs"));
+            string resolveDirection = ExtractMethodBody(source, "private Vector3 ResolveAtlasDirection(");
+            string resolveDistance = ExtractMethodBody(source, "private bool TryResolveAtlasCoreDistanceMeters(");
+            string estimate = ExtractMethodBody(source, "private static int EstimateCinematicDistanceMeters(");
+            string compass = ExtractMethodBody(source, "private static int GetCompassDirectionIndex(");
+
+            StringAssert.Contains("if (!playerAup.IsFinite())", resolveDirection);
+            StringAssert.Contains("return IsFiniteVector(direction) ? direction : Vector3.down;", resolveDirection);
+            StringAssert.Contains("if (!playerAup.IsFinite())", resolveDistance);
+            StringAssert.Contains("if (!coreAup.IsFinite())", resolveDistance);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceSq(distanceSq)", resolveDistance);
+            StringAssert.Contains("return false;", resolveDistance);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceSq(distanceSq)", estimate);
+            StringAssert.Contains("!math.all(math.isfinite(delta))", estimate);
+            StringAssert.Contains("double.IsNaN(estimatedMeters)", estimate);
+            StringAssert.Contains("return DirectionDistanceMaxDisplayMeters;", estimate);
+            StringAssert.Contains("if (!IsFiniteVector(dir))", compass);
+            StringAssert.Contains("private static bool IsFiniteVector(Vector3 value)", source);
+            StringAssert.Contains("private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)", source);
+            StringAssert.Contains("!double.IsNaN(distanceSq)", source);
+            StringAssert.Contains("!double.IsInfinity(distanceSq)", source);
+            StringAssert.Contains("distanceSq >= 0d", source);
+        }
+
+        [Test]
         public void InteractionPromptLocalizationPresentation_QueuesLateFrameRefresh()
         {
             string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/InteractionUI.cs"));

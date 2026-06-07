@@ -798,13 +798,17 @@ namespace Hecton8.UI
                 return Vector3.down;
 
             AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
+            if (!playerAup.IsFinite())
+                return Vector3.down;
+
             if (!sys.TryReadAtlasSignalSnapshot(in playerAup, out AtlasSignalReadSnapshot snapshot))
                 return Vector3.down;
 
-            return new Vector3(
+            Vector3 direction = new Vector3(
                 snapshot.DirectionToCore.x,
                 snapshot.DirectionToCore.y,
                 snapshot.DirectionToCore.z);
+            return IsFiniteVector(direction) ? direction : Vector3.down;
         }
 
         private bool TryResolveAtlasCoreDistanceMeters(IAtlasSignalReadModel sys, out int distanceMeters)
@@ -819,10 +823,18 @@ namespace Hecton8.UI
                 return false;
 
             AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
+            if (!playerAup.IsFinite())
+                return false;
+
             if (!sys.TryReadAtlasSignalCoreAup(out AbsoluteUniversePosition coreAup))
+                return false;
+            if (!coreAup.IsFinite())
                 return false;
 
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in coreAup);
+            if (!IsFiniteNonNegativeDistanceSq(distanceSq))
+                return false;
+
             distanceMeters = EstimateCinematicDistanceMeters(in playerAup, in coreAup, distanceSq);
             return true;
         }
@@ -849,12 +861,15 @@ namespace Hecton8.UI
             in AbsoluteUniversePosition coreAup,
             double distanceSq)
         {
-            if (distanceSq <= 0d || double.IsNaN(distanceSq))
-                return 0;
-            if (double.IsInfinity(distanceSq))
+            if (!IsFiniteNonNegativeDistanceSq(distanceSq))
                 return DirectionDistanceMaxDisplayMeters;
+            if (distanceSq <= 0d)
+                return 0;
 
             double3 delta = AbsoluteUniversePosition.DeltaMetersClamped(in coreAup, in playerAup);
+            if (!math.all(math.isfinite(delta)))
+                return DirectionDistanceMaxDisplayMeters;
+
             double ax = Math.Abs(delta.x);
             double ay = Math.Abs(delta.y);
             double az = Math.Abs(delta.z);
@@ -862,8 +877,13 @@ namespace Hecton8.UI
             double min = Math.Min(ax, Math.Min(ay, az));
             double mid = ax + ay + az - max - min;
             double estimatedMeters = max + (mid * 0.375d) + (min * 0.25d);
-            if (estimatedMeters >= DirectionDistanceMaxDisplayMeters)
+            if (double.IsNaN(estimatedMeters) ||
+                double.IsInfinity(estimatedMeters) ||
+                estimatedMeters < 0d ||
+                estimatedMeters >= DirectionDistanceMaxDisplayMeters)
+            {
                 return DirectionDistanceMaxDisplayMeters;
+            }
 
             int roundedMeters = (int)(estimatedMeters + 0.5d);
             int step = roundedMeters < DirectionDistanceNearThresholdMeters
@@ -880,6 +900,9 @@ namespace Hecton8.UI
 
         private static int GetCompassDirectionIndex(Vector3 dir)
         {
+            if (!IsFiniteVector(dir))
+                return 1;
+
             float x = dir.x;
             float z = dir.z;
             float horizontalSq = (x * x) + (z * z);
@@ -900,6 +923,20 @@ namespace Hecton8.UI
             return north
                 ? east ? 3 : 9
                 : east ? 5 : 7;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
+        private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)
+        {
+            return !double.IsNaN(distanceSq) &&
+                   !double.IsInfinity(distanceSq) &&
+                   distanceSq >= 0d;
         }
 
         // ----------------------------------------------------------
