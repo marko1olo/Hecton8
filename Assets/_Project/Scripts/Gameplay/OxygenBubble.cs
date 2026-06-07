@@ -65,7 +65,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Lifetime ───────────────────────────────────")]
-        [Tooltip("Maximum lifetime in seconds before auto-destroy.")]
+        [Tooltip("Maximum lifetime in seconds before auto-despawn.")]
         [SerializeField, Range(1f, 30f)] private float maxLifetime = 10f;
 
         // ══════════════════════════════════════════════════════════
@@ -127,6 +127,7 @@ namespace Hecton8.Gameplay
         private bool _pendingCollectEffects;
         private bool _pendingDespawn;
         private Vector3 _pendingCollectPosition;
+        private static bool s_PoolDespawnUnavailableLogged;
 
         // Pre-cached player tag for CompareTag
         private const string PlayerTag = "Player";
@@ -372,13 +373,31 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // Fallback: destroy
-            Destroy(gameObject);
+            // Fail closed: hide the bubble instead of destroying outside the pool route.
+            ClearPendingLifecycleWork();
+            LogPoolDespawnUnavailableOnce(this);
+            if (gameObject.activeSelf)
+                gameObject.SetActive(false);
         }
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogPoolDespawnUnavailableOnce(UnityEngine.Object context)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (s_PoolDespawnUnavailableLogged)
+                return;
+
+            s_PoolDespawnUnavailableLogged = true;
+            Hecton8.Core.H8Debug.LogWarning(
+                "[OxygenBubble] Pool reclaim unavailable. Bubble deactivated to avoid runtime Destroy.",
+                context);
+#endif
+        }
 
         /// <summary>
         /// Sets the oxygen amount (for runtime configuration).
