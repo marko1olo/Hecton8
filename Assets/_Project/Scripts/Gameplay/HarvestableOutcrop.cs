@@ -104,6 +104,7 @@ namespace Hecton8.Gameplay
         private const int InteractTextBufferCapacity = 96;
         private readonly char[] _cachedInteractTextBuffer = new char[InteractTextBufferCapacity];
         private int _cachedInteractTextLength;
+        private string _cachedInteractTextLegacy = DefaultInteractText;
         private float _currentHealth;
         private bool _isBroken;
         private IPlayerInventoryService _playerInventoryService;
@@ -214,7 +215,7 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         string IInteractable.GetInteractText()
         {
-            return allowDirectInteract ? ResolveLegacyConfigured(interactText, DefaultInteractText) : null;
+            return allowDirectInteract ? _cachedInteractTextLegacy : null;
         }
 
         public bool TryCopyInteractText(System.Span<char> destination, out int length)
@@ -589,14 +590,15 @@ namespace Hecton8.Gameplay
                 LocalizationKeys.INTERACT_BREAK_ROCK,
                 _localizationManager,
                 _cachedInteractTextBuffer);
+            _cachedInteractTextLegacy = CopyCachedLegacyText(_cachedInteractTextBuffer, _cachedInteractTextLength, DefaultInteractText);
         }
 
-        private static string ResolveLegacyConfigured(string configuredText, string defaultText)
+        private static string CopyCachedLegacyText(char[] buffer, int length, string fallback)
         {
-            return !string.IsNullOrWhiteSpace(configuredText) &&
-                   !string.Equals(configuredText, defaultText, StringComparison.Ordinal)
-                ? configuredText
-                : defaultText;
+            if (buffer == null || length <= 0)
+                return fallback;
+
+            return new string(buffer, 0, Math.Min(length, buffer.Length));
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)

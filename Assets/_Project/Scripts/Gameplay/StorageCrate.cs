@@ -192,6 +192,9 @@ namespace Hecton8.Gameplay
         private int _cachedOpenTextLength;
         private int _cachedAccessTextLength;
         private int _cachedLockedTextLength;
+        private string _cachedOpenTextLegacy = DefaultOpenText;
+        private string _cachedAccessTextLegacy = DefaultAccessText;
+        private string _cachedLockedTextLegacy = DefaultLockedText;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -446,13 +449,13 @@ namespace Hecton8.Gameplay
             switch (_state)
             {
                 case CrateState.Closed:
-                    return canBeOpened ? ResolveLegacyConfigured(openText, DefaultOpenText) : ResolveLegacyConfigured(lockedText, DefaultLockedText);
+                    return canBeOpened ? _cachedOpenTextLegacy : _cachedLockedTextLegacy;
 
                 case CrateState.Open:
-                    return ResolveLegacyConfigured(accessText, DefaultAccessText);
+                    return _cachedAccessTextLegacy;
 
                 case CrateState.Locked:
-                    return ResolveLegacyConfigured(lockedText, DefaultLockedText);
+                    return _cachedLockedTextLegacy;
 
                 default:
                     return null;
@@ -474,14 +477,6 @@ namespace Hecton8.Gameplay
                 default:
                     return ReadOnlySpan<char>.Empty;
             }
-        }
-
-        private static string ResolveLegacyConfigured(string configuredValue, string legacyDefault)
-        {
-            return !string.IsNullOrWhiteSpace(configuredValue) &&
-                   !string.Equals(configuredValue, legacyDefault, StringComparison.Ordinal)
-                ? configuredValue
-                : legacyDefault;
         }
 
         public bool TryCopyInteractText(System.Span<char> destination, out int length)
@@ -576,6 +571,17 @@ namespace Hecton8.Gameplay
             _cachedOpenTextLength = InteractableTextCopy.CopyConfiguredOrLocalizedTruncated(openText, DefaultOpenText, LocalizationKeys.INTERACT_OPEN_CRATE, _localizationManager, _cachedOpenTextBuffer);
             _cachedAccessTextLength = InteractableTextCopy.CopyConfiguredOrLocalizedTruncated(accessText, DefaultAccessText, LocalizationKeys.INTERACT_ACCESS_CRATE, _localizationManager, _cachedAccessTextBuffer);
             _cachedLockedTextLength = InteractableTextCopy.CopyConfiguredOrLocalizedTruncated(lockedText, DefaultLockedText, LocalizationKeys.INTERACT_LOCKED, _localizationManager, _cachedLockedTextBuffer);
+            _cachedOpenTextLegacy = CopyCachedLegacyText(_cachedOpenTextBuffer, _cachedOpenTextLength, DefaultOpenText);
+            _cachedAccessTextLegacy = CopyCachedLegacyText(_cachedAccessTextBuffer, _cachedAccessTextLength, DefaultAccessText);
+            _cachedLockedTextLegacy = CopyCachedLegacyText(_cachedLockedTextBuffer, _cachedLockedTextLength, DefaultLockedText);
+        }
+
+        private static string CopyCachedLegacyText(char[] buffer, int length, string fallback)
+        {
+            if (buffer == null || length <= 0)
+                return fallback;
+
+            return new string(buffer, 0, Math.Min(length, buffer.Length));
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)

@@ -218,9 +218,18 @@ namespace Hecton8.Interaction
 
         private void ShowPrompt(IInteractable target)
         {
+            ReadOnlySpan<char> interactText = ResolveInteractTextSpan(target);
+            if (interactText.IsEmpty)
+            {
+                if (promptLabel != null)
+                    promptLabel.SetCharArray(_charBuffer, 0, 0);
+
+                SetPromptVisible(false);
+                return;
+            }
+
             if (promptLabel != null)
             {
-                ReadOnlySpan<char> interactText = ResolveInteractTextSpan(target);
                 int totalLength = WriteToBuffer(_prefixBuffer.AsSpan(0, _cachedInteractPrefixLength), interactText);
                 promptLabel.SetCharArray(_charBuffer, 0, totalLength);
             }

@@ -207,6 +207,7 @@ namespace Hecton8.Gameplay
         private const int InteractTextBufferCapacity = 96;
         private readonly char[] _cachedInteractTextBuffer = new char[InteractTextBufferCapacity];
         private int _cachedInteractTextLength;
+        private string _cachedInteractTextLegacy = DefaultInteractText;
         private uint _discoveryHash;
 
         // ══════════════════════════════════════════════════════════
@@ -355,7 +356,7 @@ namespace Hecton8.Gameplay
 
         string IInteractable.GetInteractText()
         {
-            return CanBeScanned ? ResolveLegacyConfigured(interactText, DefaultInteractText) : null;
+            return CanBeScanned ? _cachedInteractTextLegacy : null;
         }
 
         public bool TryCopyInteractText(System.Span<char> destination, out int length)
@@ -863,6 +864,7 @@ namespace Hecton8.Gameplay
                 LocalizationKeys.INTERACT_SCAN_FRAGMENT,
                 _localization,
                 _cachedInteractTextBuffer);
+            _cachedInteractTextLegacy = CopyCachedLegacyText(_cachedInteractTextBuffer, _cachedInteractTextLength, DefaultInteractText);
         }
 
         private bool HasCustomInteractText()
@@ -871,12 +873,12 @@ namespace Hecton8.Gameplay
                    !string.Equals(interactText, DefaultInteractText, System.StringComparison.Ordinal);
         }
 
-        private static string ResolveLegacyConfigured(string configuredText, string defaultText)
+        private static string CopyCachedLegacyText(char[] buffer, int length, string fallback)
         {
-            return !string.IsNullOrWhiteSpace(configuredText) &&
-                   !string.Equals(configuredText, defaultText, StringComparison.Ordinal)
-                ? configuredText
-                : defaultText;
+            if (buffer == null || length <= 0)
+                return fallback;
+
+            return new string(buffer, 0, Math.Min(length, buffer.Length));
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)

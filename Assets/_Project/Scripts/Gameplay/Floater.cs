@@ -174,6 +174,8 @@ namespace Hecton8.Gameplay
         private readonly char[] _cachedAttachTextBuffer = new char[InteractTextBufferCapacity];
         private int _cachedPickupTextLength;
         private int _cachedAttachTextLength;
+        private string _cachedPickupTextLegacy = DefaultPickupText;
+        private string _cachedAttachTextLegacy = DefaultAttachText;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -277,8 +279,8 @@ namespace Hecton8.Gameplay
         {
             return _state switch
             {
-                FloaterState.Idle => ResolveLegacyConfigured(pickupText, DefaultPickupText),
-                FloaterState.Held => ResolveLegacyConfigured(attachText, DefaultAttachText),
+                FloaterState.Idle => _cachedPickupTextLegacy,
+                FloaterState.Held => _cachedAttachTextLegacy,
                 _ => null
             };
         }
@@ -308,14 +310,16 @@ namespace Hecton8.Gameplay
                 LocalizationKeys.INTERACT_ATTACH_TO_OBJECT,
                 _localizationManager,
                 _cachedAttachTextBuffer);
+            _cachedPickupTextLegacy = CopyCachedLegacyText(_cachedPickupTextBuffer, _cachedPickupTextLength, DefaultPickupText);
+            _cachedAttachTextLegacy = CopyCachedLegacyText(_cachedAttachTextBuffer, _cachedAttachTextLength, DefaultAttachText);
         }
 
-        private static string ResolveLegacyConfigured(string configuredText, string defaultText)
+        private static string CopyCachedLegacyText(char[] buffer, int length, string fallback)
         {
-            return !string.IsNullOrWhiteSpace(configuredText) &&
-                   !string.Equals(configuredText, defaultText, StringComparison.Ordinal)
-                ? configuredText
-                : defaultText;
+            if (buffer == null || length <= 0)
+                return fallback;
+
+            return new string(buffer, 0, Math.Min(length, buffer.Length));
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)

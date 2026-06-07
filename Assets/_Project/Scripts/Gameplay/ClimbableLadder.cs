@@ -60,6 +60,7 @@ namespace Hecton8.Gameplay
         private const int InteractTextBufferCapacity = 96;
         private readonly char[] _cachedInteractTextBuffer = new char[InteractTextBufferCapacity];
         private int _cachedInteractTextLength;
+        private string _cachedInteractTextLegacy = DefaultInteractText;
 
         public bool IsTransitioning => _isTransitioning;
         public Transform EntryPoint => entryPoint;
@@ -216,10 +217,7 @@ namespace Hecton8.Gameplay
 
         string IInteractable.GetInteractText()
         {
-            return !string.IsNullOrWhiteSpace(interactText) &&
-                   !string.Equals(interactText, DefaultInteractText, System.StringComparison.Ordinal)
-                ? interactText
-                : DefaultInteractText;
+            return _cachedInteractTextLegacy;
         }
 
         public bool TryCopyInteractText(System.Span<char> destination, out int length)
@@ -260,6 +258,15 @@ namespace Hecton8.Gameplay
                 LocalizationKeys.INTERACT_CLIMB_LADDER,
                 _localizationManager,
                 _cachedInteractTextBuffer);
+            _cachedInteractTextLegacy = CopyCachedLegacyText(_cachedInteractTextBuffer, _cachedInteractTextLength, DefaultInteractText);
+        }
+
+        private static string CopyCachedLegacyText(char[] buffer, int length, string fallback)
+        {
+            if (buffer == null || length <= 0)
+                return fallback;
+
+            return new string(buffer, 0, Math.Min(length, buffer.Length));
         }
 
         private bool RequestProceduralClimb(Transform player, bool goingUp)
