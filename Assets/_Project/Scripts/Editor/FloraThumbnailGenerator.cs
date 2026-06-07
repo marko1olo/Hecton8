@@ -303,9 +303,49 @@ namespace Hecton8.EditorTools
 
         private static void WritePngBytes(string thumbnailPath, byte[] pngBytes)
         {
-            using FileStream stream = new FileStream(thumbnailPath, FileMode.Create, FileAccess.Write, FileShare.None);
-            stream.Write(pngBytes, 0, pngBytes.Length);
-            stream.Flush(true);
+            string tempPath = thumbnailPath + ".tmp";
+
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    stream.Write(pngBytes, 0, pngBytes.Length);
+                    stream.Flush(true);
+                }
+
+                PromoteTempFileAtomic(tempPath, thumbnailPath);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void PromoteTempFileAtomic(string tempPath, string path)
+        {
+            if (File.Exists(path))
+            {
+                File.Replace(tempPath, path, null, true);
+                return;
+            }
+
+            File.Move(tempPath, path);
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+            }
         }
     }
 }

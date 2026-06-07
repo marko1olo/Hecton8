@@ -168,6 +168,22 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("new FileStream(context.OutputPath, FileMode.Create", writePngAsync);
         }
 
+        [Test]
+        public void FloraTemplateThumbnailsWriteThroughAtomicTempPromotion()
+        {
+            string source = ReadProjectSource("_Project/Scripts/Editor/FloraThumbnailGenerator.cs");
+            string writer = ExtractMethodBody(source, "private static void WritePngBytes(");
+            string promote = ExtractMethodBody(source, "private static void PromoteTempFileAtomic(");
+
+            StringAssert.Contains("string tempPath = thumbnailPath + \".tmp\";", writer);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", writer);
+            StringAssert.Contains("PromoteTempFileAtomic(tempPath, thumbnailPath);", writer);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", writer);
+            StringAssert.Contains("File.Replace(tempPath, path, null, true);", promote);
+            StringAssert.Contains("File.Move(tempPath, path);", promote);
+            StringAssert.DoesNotContain("new FileStream(thumbnailPath, FileMode.Create", writer);
+        }
+
         private static string ReadProjectSource(string assetRelativePath)
         {
             return File.ReadAllText(Path.Combine(Application.dataPath, assetRelativePath)).Replace("\r\n", "\n");
