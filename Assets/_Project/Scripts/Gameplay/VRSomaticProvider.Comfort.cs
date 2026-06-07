@@ -1024,10 +1024,17 @@ namespace Hecton8.Gameplay
             if (!_somaticComfortJobScheduled)
                 return;
 
-            if (!_somaticComfortHandle.IsCompleted)
-                return;
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                if (!DispatcherJobFence.TryComplete(ref _somaticComfortHandle, forceComplete: true))
+                    return;
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
 
-            _somaticComfortHandle = default;
             PublishSomaticComfortStateFromWrite();
         }
 
