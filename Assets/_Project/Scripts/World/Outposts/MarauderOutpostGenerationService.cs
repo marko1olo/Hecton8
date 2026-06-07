@@ -2645,7 +2645,17 @@ namespace Hecton8.World.Outposts
         private void CompleteCurrentOutpostJobForTeardown()
         {
             if (_jobPhase != JobPhase.None)
-                DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);
+            {
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
+            }
 
             _jobHandle = default;
             _jobPhase = JobPhase.None;
