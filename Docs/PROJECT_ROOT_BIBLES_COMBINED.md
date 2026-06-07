@@ -1612,6 +1612,24 @@ Every accepted system must document:
 
 If the ownership record is missing, the system is not accepted.
 
+## Integration Handoff Lock
+
+A runtime system is not integrated merely because the class, manager, prefab, or validator exists.
+
+New or changed systems that claim integration must name and prove:
+
+- producer route: what event, owner phase, authoring data, scene object, or player action feeds it;
+- consumer route: which gameplay/UI/audio/VFX/save/telemetry owners read the result;
+- scene/prefab/asset binding route, or explicit reason no Unity binding is required;
+- configuration/data source and generated/baked artifact if data-driven;
+- dispatcher phase and registration/unregistration path;
+- failure path, fallback, and black-box/telemetry fields;
+- save/load identity when state persists;
+- Compact/Middle/High/Ultra behavior when presentation, cadence, or capacity changes;
+- proof command or Unity/player artifact for the claimed integration level.
+
+If any route is unknown, the system remains `PENDING VERIFICATION` or `BLOCKER`; do not fill the gap with a new wrapper, fallback manager, global lookup, or report.
+
 ## Data Access Law
 
 Read accessors named `Get*`, `TryGet*`, `Resolve*`, or `Read*` must be pure. They must not allocate, publish events, complete jobs, mutate state, search the scene, sync GameObjects, load assets, or grow buffers.
@@ -2940,6 +2958,8 @@ Accepted localization statuses:
 For production lore/content, every required locale row must contain draft text or an explicit `BLOCKED_TRANSLATION_DRAFT` blocker. Do not omit locales silently and do not write "same as English" as a translation.
 
 Do not claim `native_reviewed` or `runtime_ready` without the review/proof artifact.
+
+Production AppliedContent localization is file-backed. Locale text must be present in the packet/source data that feeds export/import, not only in chat or a planning note. When `in_game_wiki`, `external_site`, scanner, terminal, audio, or field-note surfaces are in scope, the matching surface text must exist per required locale or carry an explicit `BLOCKED_TRANSLATION_DRAFT` row.
 
 ## Proof Artifacts
 
@@ -5113,6 +5133,7 @@ Minimum proof by domain:
 - Networking/rollback (`networking.md`): authority class, packet layout, AUP wire proof, loopback/reconciliation proof, rollback/Merkle/desync proof before any multiplayer claim.
 - Bootstrap/startup (`bootstrap.md`): boot state list, dependency route table, data monolith readiness if touched, non-reload transition proof, native allocation/disposal proof, startup fault behavior.
 - Authoring/data bridge (`authoring.md`): source path, schema hash, validation report, h8bin output, atomic write/readback proof, explicit runtime parser absence.
+- AppliedContent production: packet/source JSON or production source, all 15 locale rows or explicit `BLOCKED_TRANSLATION_DRAFT`, generated surface pages/indexes for in-scope surfaces, refreshed `applied_lore_packets.csv`, refreshed `H8AppliedLoreHashes.cs` when runtime-bound, route cards/binding maps for gameplay unlocks, exporter/importer/audit output, and explicit runtime readiness boundary.
 - Inventory/economy (`inventory.md`): item id/schema list, recipe/source table, storage rules, save/load proof if persistent, UI snapshot, compact readability, no string/hot allocation route.
 - Streaming/persistence/data: memory/save artifact, schema/version, checksum or ledger, leak/load proof.
 - Math/determinism/AUP (`math.md`): coordinate representation, shift generation/fence proof, deterministic seed route, replay proof, CI suppression artifact if banned tokens remain.
@@ -5125,6 +5146,7 @@ Minimum proof by domain:
 - Cinematics/capture (`cinematics.md`): sequence purpose, truth label, owner state list, entry/exit/interrupt rules, compact capture, control-loss duration, public-claim review if used externally.
 - Accessibility: low-tier readability capture, remapping/subtitle/flash/motion checks.
 - In-world writing (`writing.md`): canon sources, speaker/source, surface type, unlock context, evidence object, LocID/runtime layer, English authority text, 15-locale draft rows with status or explicit English-only scope, anti-AI prose scan, forbidden facts avoided, and native-review/runtime status.
+- Runtime system integration (`systems.md`): producer route, consumer route, scene/prefab/asset binding or no-binding reason, dispatcher registration, config/data source, telemetry/failure path, save/load identity where persistent, quality-scaling behavior, and proof artifact for the claimed integration level.
 - Public writing: attached proof asset or explicit no-asset housekeeping reason, unsupported claims removed, channel target, owner approval state for Steam/demo/release/platform/access claims.
 
 If the domain has no matching proof artifact, it remains pending.
@@ -7670,6 +7692,8 @@ Preferred bridge order:
 
 Runtime text parsing is not an authoring bridge. It is a bug unless explicitly isolated as dev/editor diagnostics.
 
+Content bridge outputs are product data, not decoration. AppliedContent, localization, route-card, binding-map, and Data Monolith changes must travel through their importer/exporter/audit route before any runtime or publication-readiness claim. Hand-written markdown or CSV edits alone are authoring changes, not integration proof.
+
 ## Schema And Validation
 
 Every authoring source must define:
@@ -7757,6 +7781,7 @@ Authoring work must provide:
 - generated binary or asset path;
 - schema version and hash;
 - validation report;
+- exporter/importer/audit command when the bridge has one;
 - DTO layout proof;
 - import/bake command or editor menu path;
 - runtime owner and DataVault/generation behavior;

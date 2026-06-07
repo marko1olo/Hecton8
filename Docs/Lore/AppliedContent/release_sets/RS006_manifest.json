@@ -1,7 +1,7 @@
 {
   "schema": "H8.RELEASE_SET_MANIFEST.V0",
   "release_set_id": "RS006_HUMANITY_TRANSIT_SEED_LOGISTICS",
-  "status": "production_facing_draft",
+  "status": "production_facing_draft_pending_native_localization",
   "packet_sources": [
     "Docs/Lore/AppliedContent/packets/RS006_HUMANITY_TRANSIT_SEED_LOGISTICS.packets.json"
   ],

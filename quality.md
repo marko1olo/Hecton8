@@ -326,6 +326,7 @@ Minimum proof by domain:
 - Networking/rollback (`networking.md`): authority class, packet layout, AUP wire proof, loopback/reconciliation proof, rollback/Merkle/desync proof before any multiplayer claim.
 - Bootstrap/startup (`bootstrap.md`): boot state list, dependency route table, data monolith readiness if touched, non-reload transition proof, native allocation/disposal proof, startup fault behavior.
 - Authoring/data bridge (`authoring.md`): source path, schema hash, validation report, h8bin output, atomic write/readback proof, explicit runtime parser absence.
+- AppliedContent production: packet/source JSON or production source, all 15 locale rows or explicit `BLOCKED_TRANSLATION_DRAFT`, generated surface pages/indexes for in-scope surfaces, refreshed `applied_lore_packets.csv`, refreshed `H8AppliedLoreHashes.cs` when runtime-bound, route cards/binding maps for gameplay unlocks, exporter/importer/audit output, and explicit runtime readiness boundary.
 - Inventory/economy (`inventory.md`): item id/schema list, recipe/source table, storage rules, save/load proof if persistent, UI snapshot, compact readability, no string/hot allocation route.
 - Streaming/persistence/data: memory/save artifact, schema/version, checksum or ledger, leak/load proof.
 - Math/determinism/AUP (`math.md`): coordinate representation, shift generation/fence proof, deterministic seed route, replay proof, CI suppression artifact if banned tokens remain.
@@ -338,6 +339,7 @@ Minimum proof by domain:
 - Cinematics/capture (`cinematics.md`): sequence purpose, truth label, owner state list, entry/exit/interrupt rules, compact capture, control-loss duration, public-claim review if used externally.
 - Accessibility: low-tier readability capture, remapping/subtitle/flash/motion checks.
 - In-world writing (`writing.md`): canon sources, speaker/source, surface type, unlock context, evidence object, LocID/runtime layer, English authority text, 15-locale draft rows with status or explicit English-only scope, anti-AI prose scan, forbidden facts avoided, and native-review/runtime status.
+- Runtime system integration (`systems.md`): producer route, consumer route, scene/prefab/asset binding or no-binding reason, dispatcher registration, config/data source, telemetry/failure path, save/load identity where persistent, quality-scaling behavior, and proof artifact for the claimed integration level.
 - Public writing: attached proof asset or explicit no-asset housekeeping reason, unsupported claims removed, channel target, owner approval state for Steam/demo/release/platform/access claims.
 
 If the domain has no matching proof artifact, it remains pending.

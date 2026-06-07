@@ -160,6 +160,30 @@ Scatter:
 | breadth control | net-new systems not needed by the route are parked | Yes |
 | marketing send | no public send-ready state without real screenshot/clip/demo proof | Yes |
 
+## AppliedContent Production Gate
+
+| Gate | Command / proof | Blocks production claim |
+|---|---|---|
+| useful surface text | actual article/scanner/terminal/audio/field-note text exists for each in-scope surface, not writer instructions | Yes |
+| 15-locale rows | every required locale has draft text or `BLOCKED_TRANSLATION_DRAFT` | Yes |
+| surface export | `python -B Tools\AppliedLoreTargetedExporter.py --packet-id <ID> --refresh-indexes` | Yes for publication/export claim |
+| runtime authoring import | `python -B Tools\AppliedLoreImporter.py --root .` updates `applied_lore_packets.csv` and `H8AppliedLoreHashes.cs` | Yes for runtime-bound packet |
+| source/runtime audit | `python -B Tools\AppliedLoreRuntimeAudit.py --source-only` for authoring/export coverage; full audit plus Data Monolith/Unity proof for runtime readiness | Yes |
+| unlock binding | route card, binding map, scene placement plan, or explicit no-runtime-binding reason | Yes for gameplay unlock claim |
+
+## Runtime Integration Gate
+
+| Gate | Required proof | Blocks integration claim |
+|---|---|---|
+| producer route | source event/action/data/phase that feeds the system | Yes |
+| consumer route | systems/UI/audio/VFX/save/telemetry owners that read the result | Yes |
+| binding route | scene, prefab, asset, generated data, or explicit no-binding reason | Yes |
+| dispatcher route | phase, registration, unregistration, shutdown/failure path | Yes |
+| persistence | save/load identity and migration/fallback when state persists | Yes |
+| telemetry | black-box fields or explicit noncritical no-telemetry reason | Yes |
+| tier behavior | Compact/Middle/High/Ultra impact when cadence/capacity/presentation changes | Yes |
+| runtime proof | Unity/player/profiler/GC artifact for runtime claims | Yes |
+
 ## Tasklocal Lane Contract Gate
 
 Run only for new or materially rewritten serious `taskslocal` batches before user distribution or controller dispatch. Do not run strict mode across all historical `taskslocal` folders by default.

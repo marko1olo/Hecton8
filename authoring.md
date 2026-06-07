@@ -40,6 +40,8 @@ Preferred bridge order:
 
 Runtime text parsing is not an authoring bridge. It is a bug unless explicitly isolated as dev/editor diagnostics.
 
+Content bridge outputs are product data, not decoration. AppliedContent, localization, route-card, binding-map, and Data Monolith changes must travel through their importer/exporter/audit route before any runtime or publication-readiness claim. Hand-written markdown or CSV edits alone are authoring changes, not integration proof.
+
 ## Schema And Validation
 
 Every authoring source must define:
@@ -127,6 +129,7 @@ Authoring work must provide:
 - generated binary or asset path;
 - schema version and hash;
 - validation report;
+- exporter/importer/audit command when the bridge has one;
 - DTO layout proof;
 - import/bake command or editor menu path;
 - runtime owner and DataVault/generation behavior;
