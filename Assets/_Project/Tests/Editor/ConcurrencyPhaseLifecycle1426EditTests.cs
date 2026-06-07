@@ -685,24 +685,18 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void ShinobuMetabolismBlackBoxDumpFallbackKeepsBackupUntilCopySucceeds()
+        public void ShinobuMetabolismBlackBoxDumpUsesNativeFaultDumpWriter()
         {
             string text = File.ReadAllText(ShinobuMetabolismRuntimePath());
-            string replaceBody = ExtractMethodBody(text, "ReplaceBlackBoxDump");
-            string fallbackBody = ExtractMethodBody(text, "ReplaceBlackBoxDumpByBackupCopy");
-            string restoreBody = ExtractMethodBody(text, "TryRestoreBlackBoxDumpBackup");
+            string dumpBody = ExtractMethodBody(text, "DumpBlackBox");
 
-            Assert.That(replaceBody, Does.Contain("File.Replace(tempPath, path, null, true);"));
-            Assert.That(replaceBody, Does.Contain("ReplaceBlackBoxDumpByBackupCopy(tempPath, path);"));
-            Assert.That(fallbackBody, Does.Contain("File.Copy(path, backupPath, true);"));
-            Assert.That(fallbackBody, Does.Contain("File.Copy(tempPath, path, true);"));
-            Assert.That(fallbackBody, Does.Contain("TryDeleteBlackBoxDumpPath(tempPath);"));
-            Assert.That(restoreBody, Does.Contain("File.Copy(backupPath, path, true);"));
-            Assert.That(fallbackBody, Does.Not.Contain("File.Delete(backupPath);"));
-            Assert.That(fallbackBody, Does.Not.Contain("File.Move(path, backupPath);"));
-            Assert.That(fallbackBody, Does.Not.Contain("File.Move(tempPath, path);"));
-            Assert.That(text, Does.Not.Contain("File.Delete(backupPath);\r\n\r\n            File.Move(path, backupPath);"));
-            Assert.That(text, Does.Not.Contain("File.Delete(backupPath);\n\n            File.Move(path, backupPath);"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.TryWriteAll(_dumpPath, payload, byteCount);"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(text, Does.Not.Contain("ReplaceBlackBoxDump("));
+            Assert.That(text, Does.Not.Contain("ReplaceBlackBoxDumpByBackupCopy"));
+            Assert.That(text, Does.Not.Contain("TryRestoreBlackBoxDumpBackup"));
+            Assert.That(text, Does.Not.Contain("File.Copy(tempPath, path, true);"));
         }
 
         [Test]

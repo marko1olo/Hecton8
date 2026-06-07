@@ -2476,69 +2476,6 @@ namespace Hecton8.Physiology
             }
         }
 
-        private static void ReplaceBlackBoxDump(string tempPath, string path)
-        {
-            if (!File.Exists(path))
-            {
-                File.Move(tempPath, path);
-                return;
-            }
-
-            try
-            {
-                File.Replace(tempPath, path, null, true);
-            }
-            catch (PlatformNotSupportedException)
-            {
-                ReplaceBlackBoxDumpByBackupCopy(tempPath, path);
-            }
-            catch (IOException)
-            {
-                ReplaceBlackBoxDumpByBackupCopy(tempPath, path);
-            }
-        }
-
-        private static void ReplaceBlackBoxDumpByBackupCopy(string tempPath, string path)
-        {
-            string backupPath = path + ".bak";
-            File.Copy(path, backupPath, true);
-            try
-            {
-                File.Copy(tempPath, path, true);
-                TryDeleteBlackBoxDumpPath(tempPath);
-                TryDeleteBlackBoxDumpPath(backupPath);
-            }
-            catch (Exception)
-            {
-                TryRestoreBlackBoxDumpBackup(backupPath, path);
-                throw;
-            }
-        }
-
-        private static void TryRestoreBlackBoxDumpBackup(string backupPath, string path)
-        {
-            try
-            {
-                if (File.Exists(backupPath))
-                    File.Copy(backupPath, path, true);
-            }
-            catch (Exception)
-            {
-            }
-        }
-
-        private static void TryDeleteBlackBoxDumpPath(string targetPath)
-        {
-            try
-            {
-                if (File.Exists(targetPath))
-                    File.Delete(targetPath);
-            }
-            catch (Exception)
-            {
-            }
-        }
-
         private static void WriteUInt32LittleEndian(Span<byte> destination, uint value)
         {
             destination[0] = (byte)value;
