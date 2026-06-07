@@ -1241,9 +1241,13 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonVisorFluidDistortionFeature.cs");
             string entryBody = ExtractTypeBody(source, "private struct VisorRefractionTelemetryEntry");
             string writeBody = ExtractMethodBody(source, "private void WriteBlackBoxFrame");
+            string dumpBody = ExtractMethodBody(source, "private unsafe void DumpBlackBoxOnce(");
             string hashBody = ExtractMethodBody(source, "private static uint BuildBlackBoxHash");
             string serializeBody = ExtractMethodBody(source, "private static void WriteTelemetryEntry");
 
+            Assert.That(source, Does.Contain("BlackBoxDumpRelativePath = \"Docs/AgentLogs/Dump_13KRA.bin\""));
+            Assert.That(source, Does.Not.Contain("Dump_1335_VisorFluidRefraction.bin"));
+            Assert.That(source, Does.Contain("private const string BlackBoxDumpPayloadLabel = \"visorFluidBlackBoxDumpPayload\";"));
             Assert.That(source, Does.Not.Contain("BlackBoxFlagQualityPressure"));
             Assert.That(source, Does.Not.Contain("BlackBoxFlagHomeostasisFallback"));
             Assert.That(source, Does.Not.Contain("BlackBoxFlagThermalMotionCull"));
@@ -1263,6 +1267,13 @@ namespace Hecton8.Tests.Editor
             Assert.That(hashBody, Does.Contain("Sanitize01(runtimeState.ThermalMotionCull01)"));
             Assert.That(serializeBody, Does.Contain("destination[48] = entry.QualityPressureQ8;"));
             Assert.That(serializeBody, Does.Contain("destination[51] = entry.VisualOverkillQ8;"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("nameof(HectonVisorFluidDistortionFeature)"));
+            Assert.That(dumpBody, Does.Contain("BlackBoxDumpPayloadLabel"));
+            Assert.That(dumpBody, Does.Contain("NativeArrayOptions.UninitializedMemory"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBody, Does.Not.Contain("new NativeArray<byte>(totalBytes"));
+            Assert.That(dumpBody, Does.Not.Contain("payload.Dispose()"));
         }
 
         [Test]

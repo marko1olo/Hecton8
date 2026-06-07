@@ -42,7 +42,8 @@ namespace Hecton8.Visor
         private const uint BlackBoxFlagPlayerCamera = 1u << 0;
         private const uint BlackBoxFlagVisualActive = 1u << 1;
         private const uint BlackBoxFlagNonFiniteInput = 1u << 4;
-        private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1335_VisorFluidRefraction.bin";
+        private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_13KRA.bin";
+        private const string BlackBoxDumpPayloadLabel = "visorFluidBlackBoxDumpPayload";
 
         [Serializable]
         private sealed class FeatureSettings
@@ -1702,7 +1703,11 @@ namespace Hecton8.Visor
             {
                 string path = Path.Combine(Application.dataPath, "..", BlackBoxDumpRelativePath);
                 int totalBytes = 20 + blackBoxLength * BlackBoxEntrySizeBytes;
-                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(HectonVisorFluidDistortionFeature),
+                    BlackBoxDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
                 Span<byte> header = new Span<byte>(payloadPtr, 20);
@@ -1746,8 +1751,10 @@ namespace Hecton8.Visor
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonVisorFluidDistortionFeature),
+                    BlackBoxDumpPayloadLabel);
             }
         }
 

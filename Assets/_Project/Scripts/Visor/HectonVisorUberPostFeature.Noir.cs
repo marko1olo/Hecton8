@@ -28,7 +28,8 @@ namespace Hecton8.Visor
         private const int NoirTelemetryCapacity = 300;
         private const int NoirColorProfileCapacity = 32;
         private const int NoirCsvScratchBytes = 16 * 1024;
-        private const string NoirDumpFileName = "Dump_1335_VisorNoir.bin";
+        private const string NoirDumpFileName = "Dump_13KRA.bin";
+        private const string NoirDumpPayloadLabel = "visorNoirDumpPayload";
         private const string NoirColorCsvFileName = "noir_color_grading_profiles.csv";
         private const BufferID NoirConstantsVaultId = BufferID.Shinobu235NoirConstants;
         private const BufferID NoirInputVaultId = BufferID.Shinobu235NoirInput;
@@ -1062,7 +1063,11 @@ namespace Hecton8.Visor
                 string path = Path.Combine(directory, NoirDumpFileName);
                 int stride = DrsContractLayout.NoirTelemetryEntryStrideBytes;
                 int totalBytes = entryCount * stride;
-                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(HectonVisorUberPostFeature),
+                    NoirDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
                 int offset = 0;
@@ -1104,8 +1109,10 @@ namespace Hecton8.Visor
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonVisorUberPostFeature),
+                    NoirDumpPayloadLabel);
             }
         }
 

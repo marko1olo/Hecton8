@@ -48,7 +48,8 @@ namespace Hecton8.Visor
         private const BufferID ReconstructionProfileVaultId = (BufferID)UberNoirReconstructionVaultIds.AestheticProfiles;
         private const BufferID ReconstructionCsvScratchVaultId = (BufferID)UberNoirReconstructionVaultIds.CsvScratch;
         private const BufferID ReconstructionMockSignalVaultId = (BufferID)UberNoirReconstructionVaultIds.MockSignal;
-        private const string ReconstructionDumpFileName = "Dump_1335_UberNoirReconstruction.bin";
+        private const string ReconstructionDumpFileName = "Dump_13KRA.bin";
+        private const string ReconstructionDumpPayloadLabel = "uberNoirReconstructionDumpPayload";
         private const string AestheticCsvFileName = "noir_aesthetic_profiles.csv";
         private static readonly ICameraHistoryReadAccess.HistoryRequestDelegate s_requestRawColorHistory =
             RequestRawColorHistory;
@@ -1766,7 +1767,11 @@ namespace Hecton8.Visor
                 string path = Path.Combine(directory, ReconstructionDumpFileName);
                 int stride = DrsContractLayout.ReconstructionTelemetryEntryStrideBytes;
                 int totalBytes = entryCount * stride;
-                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(HectonVisorUberPostFeature),
+                    ReconstructionDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
                 int offset = 0;
@@ -1808,8 +1813,10 @@ namespace Hecton8.Visor
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonVisorUberPostFeature),
+                    ReconstructionDumpPayloadLabel);
             }
         }
 
