@@ -41,6 +41,72 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void SaveManagerBackupRecoveryAndLoadFailure_ReachHudNotificationLink()
+        {
+            string saveManager = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveManager.cs"));
+            string hudLink = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/UI/HUDSaveNotificationLink.cs"));
+
+            int recordLoadIndex = saveManager.IndexOf(
+                "RecordSuccessfulLoad(slotName",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(recordLoadIndex, 0, saveManager);
+
+            int backupGateIndex = saveManager.IndexOf(
+                "if (LastLoadUsedBackup)",
+                recordLoadIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(backupGateIndex, recordLoadIndex, saveManager);
+
+            int emergencyRaiseIndex = saveManager.IndexOf(
+                "SaveEvents.TryRaiseEmergencyBackupRestoreRequested(SaveEvents.ComputeSlotHash(slotName));",
+                backupGateIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(emergencyRaiseIndex, backupGateIndex, saveManager);
+
+            int recoveredSignalIndex = saveManager.IndexOf(
+                "PublishSaveRecoveredNotification(slotName);",
+                emergencyRaiseIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(recoveredSignalIndex, emergencyRaiseIndex, saveManager);
+
+            StringAssert.Contains("LoadFailedKeyHash", hudLink);
+            StringAssert.Contains("BackupRestoreKeyHash", hudLink);
+            StringAssert.Contains("LocalizationKeys.ERROR_LOAD_FAILED_TITLE", hudLink);
+            StringAssert.Contains("LocalizationKeys.WARNING_BACKUP_USED_TITLE", hudLink);
+
+            int loadFailedCaseIndex = hudLink.IndexOf(
+                "case SaveEventType.LoadFailed:",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(loadFailedCaseIndex, 0, hudLink);
+
+            int criticalIndex = hudLink.IndexOf(
+                "notificationSystem.ShowCritical(in _messageBuffer);",
+                loadFailedCaseIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(criticalIndex, loadFailedCaseIndex, hudLink);
+
+            int backupCaseIndex = hudLink.IndexOf(
+                "case SaveEventType.EmergencyBackupRestoreRequested:",
+                StringComparison.Ordinal);
+            Assert.Greater(backupCaseIndex, criticalIndex, hudLink);
+
+            int warningIndex = hudLink.IndexOf(
+                "notificationSystem.ShowWarning(in _messageBuffer);",
+                backupCaseIndex,
+                StringComparison.Ordinal);
+            Assert.Greater(warningIndex, backupCaseIndex, hudLink);
+
+            int backupMessageIndex = hudLink.IndexOf(
+                "\"BACKUP RESTORE ACTIVE\".AsSpan()",
+                StringComparison.Ordinal);
+            Assert.Greater(backupMessageIndex, warningIndex, hudLink);
+        }
+
+        [Test]
         public void SaveDeltaCompression_SuitUpgradeMaskMatchesRuntimeResolver()
         {
             const ulong supportedMask = SaveData.SuitUpgradeSupportedMask;

@@ -5174,6 +5174,8 @@ namespace Hecton8.SaveSystem
                 SaveSlotInfo postLoadInfo = BuildSaveSlotInfoInternal(slotName);
                 SaveSlotIntegrityState postLoadIntegrity = postLoadInfo != null ? postLoadInfo.IntegrityState : SaveSlotIntegrityState.Empty;
                 RecordSuccessfulLoad(slotName, data.version, postLoadIntegrity, LastLoadUsedBackup, LastLoadBackupGeneration, LastLoadUsedLegacyCompression, LastLoadSelfRepaired);
+                if (LastLoadUsedBackup)
+                    SaveEvents.TryRaiseEmergencyBackupRestoreRequested(SaveEvents.ComputeSlotHash(slotName));
                 if (LastLoadUsedBackup || LastLoadSelfRepaired)
                     PublishSaveRecoveredNotification(slotName);
 

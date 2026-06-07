@@ -22,6 +22,8 @@ namespace Hecton8.UI
         private const int MessageCharCapacity = 160;
         private static readonly int SaveSynchronizedKeyHash = LocHash.Compute(LocalizationKeys.SAVE_NOTIFICATION_SYNCHRONIZED);
         private static readonly int SaveFailedKeyHash = LocHash.Compute(LocalizationKeys.ERROR_SAVE_FAILED_TITLE);
+        private static readonly int LoadFailedKeyHash = LocHash.Compute(LocalizationKeys.ERROR_LOAD_FAILED_TITLE);
+        private static readonly int BackupRestoreKeyHash = LocHash.Compute(LocalizationKeys.WARNING_BACKUP_USED_TITLE);
         private static readonly int SlotPrefixKeyHash = LocHash.Compute(LocalizationKeys.SLOT_PREFIX);
 
         [SerializeField] private HUDNotification notificationSystem;
@@ -69,7 +71,12 @@ namespace Hecton8.UI
                     return;
 
                 case SaveEventType.SaveFailed:
+                case SaveEventType.LoadFailed:
                     notificationSystem.ShowCritical(in _messageBuffer);
+                    return;
+
+                case SaveEventType.EmergencyBackupRestoreRequested:
+                    notificationSystem.ShowWarning(in _messageBuffer);
                     return;
             }
         }
@@ -98,6 +105,10 @@ namespace Hecton8.UI
                 AppendLocalized(ref _messageBuffer, SaveSynchronizedKeyHash, "GAME DATA SYNCHRONIZED - SECURE".AsSpan());
             else if (payload.Type == SaveEventType.SaveFailed)
                 AppendLocalized(ref _messageBuffer, SaveFailedKeyHash, "SAVE FAILED".AsSpan());
+            else if (payload.Type == SaveEventType.LoadFailed)
+                AppendLocalized(ref _messageBuffer, LoadFailedKeyHash, "LOAD FAILED".AsSpan());
+            else if (payload.Type == SaveEventType.EmergencyBackupRestoreRequested)
+                AppendLocalized(ref _messageBuffer, BackupRestoreKeyHash, "BACKUP RESTORE ACTIVE".AsSpan());
             else
                 return false;
 
