@@ -162,6 +162,7 @@ namespace Hecton.UI.MainMenu
         // COLD ALLOC: active scene camera search scratch - owner: MainMenuController setup.
         private readonly List<Camera> _cameraSearchBuffer = new List<Camera>(4);
         private string _pendingStartSlotName = string.Empty;
+        private uint _pendingBackupRestoreSlotHash;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
 
@@ -336,6 +337,10 @@ namespace Hecton.UI.MainMenu
 
                 case SaveEventType.LoadFailed:
                     OnLoadFailed(SaveEvents.ResolveSlotName(payload.SlotHash), SaveEvents.ResolveMessage(in payload));
+                    return;
+
+                case SaveEventType.EmergencyBackupRestoreRequested:
+                    OnEmergencyBackupRestoreRequested(in payload);
                     return;
             }
         }
@@ -2211,6 +2216,7 @@ namespace Hecton.UI.MainMenu
         private void OnLoadStarted(in SaveEventPayload payload)
         {
             _isSaveLoadBusy = true;
+            _pendingBackupRestoreSlotHash = 0u;
             SetSaveLoadButtonsInteractable(false);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -2226,8 +2232,11 @@ namespace Hecton.UI.MainMenu
         {
             _isSaveLoadBusy = false;
 
-            // Check if backup was used (SaveManager should set this flag)
-            if (_saveManager != null && _saveManager.LastLoadUsedBackup)
+            bool backupRestoreRaisedForSlot = _pendingBackupRestoreSlotHash != 0u &&
+                                              _pendingBackupRestoreSlotHash == payload.SlotHash;
+            _pendingBackupRestoreSlotHash = 0u;
+
+            if (backupRestoreRaisedForSlot || (_saveManager != null && _saveManager.LastLoadUsedBackup))
             {
                 string slotName = SaveEvents.ResolveSlotName(payload.SlotHash);
                 int messageLength = BuildSlotModalMessage(
@@ -2261,6 +2270,7 @@ namespace Hecton.UI.MainMenu
         private void OnLoadFailed(string slotName, string error)
         {
             _isSaveLoadBusy = false;
+            _pendingBackupRestoreSlotHash = 0u;
             SetSaveLoadButtonsInteractable(true);
 
             string errorText = ResolveSaveEventError(error);
@@ -2293,6 +2303,14 @@ namespace Hecton.UI.MainMenu
 #endif
 
             RequestSelectionRefresh();
+        }
+
+        private void OnEmergencyBackupRestoreRequested(in SaveEventPayload payload)
+        {
+            if (payload.SlotHash == 0u)
+                return;
+
+            _pendingBackupRestoreSlotHash = payload.SlotHash;
         }
 
         private static string ResolveSaveEventError(string error)

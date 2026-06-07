@@ -174,7 +174,9 @@ namespace Hecton8.Dev
                 ContainsAll(hudSaveNotificationLink, "LoadFailedKeyHash", "BackupRestoreKeyHash", "LocalizationKeys.ERROR_LOAD_FAILED_TITLE", "LocalizationKeys.WARNING_BACKUP_USED_TITLE") &&
                 ContainsAll(hudSaveNotificationLink, "TryResolveNotificationSystem(out HUDNotification targetNotification)", "TryGetComponent(out resolved)", "HUDNotification.TryGetActive(out resolved)", "resolved.isActiveAndEnabled") &&
                 ContainsAll(hudSaveNotificationLink, "case SaveEventType.LoadFailed:", "targetNotification.ShowCritical(in _messageBuffer);") &&
-                ContainsAll(hudSaveNotificationLink, "case SaveEventType.EmergencyBackupRestoreRequested:", "targetNotification.ShowWarning(in _messageBuffer);", "\"BACKUP RESTORE ACTIVE\".AsSpan()");
+                ContainsAll(hudSaveNotificationLink, "case SaveEventType.EmergencyBackupRestoreRequested:", "targetNotification.ShowWarning(in _messageBuffer);", "\"BACKUP RESTORE ACTIVE\".AsSpan()") &&
+                ContainsAll(mainMenuController, "private uint _pendingBackupRestoreSlotHash;", "case SaveEventType.EmergencyBackupRestoreRequested:", "OnEmergencyBackupRestoreRequested(in payload);") &&
+                ContainsAll(mainMenuController, "backupRestoreRaisedForSlot || (_saveManager != null && _saveManager.LastLoadUsedBackup)", "_pendingBackupRestoreSlotHash = payload.SlotHash;");
 
             bool saveEventDispatchMutationPass =
                 ContainsAll(saveEvents, "ListenerCapacity = 16", "_deferredRegisterListeners", "_deferredUnregisterListeners") &&

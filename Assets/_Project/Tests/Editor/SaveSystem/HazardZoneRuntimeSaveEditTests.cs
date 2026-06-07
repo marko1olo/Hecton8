@@ -49,6 +49,9 @@ namespace Hecton8.Tests.Editor
             string hudLink = File.ReadAllText(Path.Combine(
                 Directory.GetCurrentDirectory(),
                 "Assets/_Project/Scripts/UI/HUDSaveNotificationLink.cs"));
+            string mainMenu = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/MainMenuController.cs"));
 
             int recordLoadIndex = saveManager.IndexOf(
                 "RecordSuccessfulLoad(slotName",
@@ -108,6 +111,13 @@ namespace Hecton8.Tests.Editor
                 "\"BACKUP RESTORE ACTIVE\".AsSpan()",
                 StringComparison.Ordinal);
             Assert.Greater(backupMessageIndex, warningIndex, hudLink);
+
+            StringAssert.Contains("private uint _pendingBackupRestoreSlotHash;", mainMenu);
+            StringAssert.Contains("case SaveEventType.EmergencyBackupRestoreRequested:", mainMenu);
+            StringAssert.Contains("OnEmergencyBackupRestoreRequested(in payload);", mainMenu);
+            StringAssert.Contains("_pendingBackupRestoreSlotHash = 0u;", mainMenu);
+            StringAssert.Contains("_pendingBackupRestoreSlotHash = payload.SlotHash;", mainMenu);
+            StringAssert.Contains("backupRestoreRaisedForSlot || (_saveManager != null && _saveManager.LastLoadUsedBackup)", mainMenu);
         }
 
         [Test]
