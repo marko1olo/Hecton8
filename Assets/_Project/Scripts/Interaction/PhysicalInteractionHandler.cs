@@ -819,6 +819,7 @@ namespace Hecton8.Interaction
             _activeBody = carryBody;
             _activeCollider = null;
             _activeHeavyCarry = heavyCarry;
+            _activeHeavyCarry.SetDraggedState(true);
             _activeCablePlug = null;
             _activeOriginalLocalScale = _activeTargetTransform.localScale;
             _activeTargetLocalScale = _activeOriginalLocalScale;
@@ -1061,6 +1062,8 @@ namespace Hecton8.Interaction
             _activeTargetTransform = null;
             _activeBody = null;
             _activeCollider = null;
+            if (_activeHeavyCarry != null)
+                _activeHeavyCarry.SetDraggedState(false);
             _activeHeavyCarry = null;
             _activeCablePlug = null;
             _activeBodyLinearVelocity = Vector3.zero;

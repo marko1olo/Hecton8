@@ -687,18 +687,22 @@ namespace Hecton8.Interaction
             signal.ColliderHash = hit.Collider != null ? unchecked((uint)EntityId.ToULong(hit.Collider.GetEntityId())) : 0u;
 
             ReadOnlySpan<char> promptSpan = ResolvePromptSpan(target);
-            signal.PromptHash = ComputePromptHash(promptSpan);
-            PlayerLookTargetPromptCache.Store(signal.PromptHash, promptSpan);
+            if (!promptSpan.IsEmpty)
+            {
+                signal.PromptHash = ComputePromptHash(promptSpan);
+                PlayerLookTargetPromptCache.Store(signal.PromptHash, promptSpan);
+            }
+
             SignalBus<PlayerLookTargetSignal>.TryPushTracked(in signal, ref s_x001PlayerInteractionSignalPushDropCount);
         }
 
         private static ReadOnlySpan<char> ResolvePromptSpan(IInteractable target)
         {
-            if (target is IInteractableTextProvider textProvider &&
-                textProvider.TryCopyInteractText(s_promptScratch, out int length) &&
-                length > 0)
+            if (target is IInteractableTextProvider textProvider)
             {
-                return s_promptScratch.AsSpan(0, math.min(length, s_promptScratch.Length));
+                return textProvider.TryCopyInteractText(s_promptScratch, out int length) && length > 0
+                    ? s_promptScratch.AsSpan(0, math.min(length, s_promptScratch.Length))
+                    : ReadOnlySpan<char>.Empty;
             }
 
             return DefaultLookTargetPrompt.AsSpan();

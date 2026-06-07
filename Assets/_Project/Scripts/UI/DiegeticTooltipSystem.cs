@@ -519,6 +519,12 @@ namespace Hecton8.UI
 
         private void StagePromptFromHash(uint promptHash)
         {
+            if (promptHash == 0u)
+            {
+                ClearPromptPayload();
+                return;
+            }
+
             if (!PlayerLookTargetPromptCache.TryCopyTo(promptHash, _promptBuffer, PromptBufferCapacity, out int sourceLength) || sourceLength <= 0)
             {
                 StageDefaultPrompt();
@@ -599,6 +605,14 @@ namespace Hecton8.UI
             _textSinkHasPayload = false;
         }
 
+        private void ClearPromptPayload()
+        {
+            _promptLength = 0;
+            _textGlyphCount = 0;
+            _iconCount = 0;
+            ClearTextSink();
+        }
+
         private void RebuildActiveTooltipLayout()
         {
             RebuildActiveTooltipLayout(refreshScheme: true);
@@ -607,7 +621,15 @@ namespace Hecton8.UI
         private void RebuildActiveTooltipLayout(bool refreshScheme)
         {
             if (_promptLength <= 0)
+            {
+                if (_activePromptHash == 0u && !_diagnosticActive)
+                {
+                    ClearPromptPayload();
+                    return;
+                }
+
                 StageDefaultPrompt();
+            }
 
             if (refreshScheme)
                 RefreshActiveSchemeHash();
