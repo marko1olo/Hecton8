@@ -1071,9 +1071,10 @@ namespace Hecton8.Meta
                 File.WriteAllText(tempPath, json);
 
                 if (File.Exists(path))
-                    File.Delete(path);
+                    File.Replace(tempPath, path, null, true);
+                else
+                    File.Move(tempPath, path);
 
-                File.Move(tempPath, path);
                 return true;
             }
             catch (Exception ex)
