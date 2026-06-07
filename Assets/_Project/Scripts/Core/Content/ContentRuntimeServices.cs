@@ -711,6 +711,7 @@ namespace Hecton8.Core.Content
         private bool _registeredSlowTick;
         private bool _registeredColdTick;
         private bool _pendingContentVisualSyncTick;
+        private bool _blackBoxDumpRequested;
         private bool _pendingAupCleanup;
         private bool _pendingVramIntercept;
         private bool _registeredHotSwap;
@@ -813,6 +814,7 @@ namespace Hecton8.Core.Content
         public void ColdTick()
         {
             TickVfxPrewarm();
+            FlushPendingBlackBoxDump();
         }
 
         public bool RegisterBundleAcquire(uint hash)
@@ -1634,7 +1636,7 @@ namespace Hecton8.Core.Content
             }
 
             if (nonFinite)
-                DumpBlackBox();
+                _blackBoxDumpRequested = true;
         }
 
         private unsafe bool OpenOrAcquireTelemetryWritePointer(
@@ -2058,6 +2060,16 @@ namespace Hecton8.Core.Content
 
             if (TryWriteBlackBox(fallbackPath, telemetry, cursor))
                 _blackBoxDumpedThisSession = true;
+        }
+
+        private void FlushPendingBlackBoxDump()
+        {
+            if (!_blackBoxDumpRequested)
+                return;
+
+            DumpBlackBox();
+            if (_blackBoxDumpedThisSession)
+                _blackBoxDumpRequested = false;
         }
 
         private static bool TryWriteBlackBox(

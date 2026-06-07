@@ -494,9 +494,9 @@ namespace Hecton8.Core.Data
                 return;
             }
 
-            string resolvedPath = string.IsNullOrEmpty(path)
-                ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", BlackBoxDumpFileName))
-                : path;
+            if (!TryResolveDumpPath(path, BlackBoxDumpFileName, out string resolvedPath))
+                return;
+
             H8StaticDataTelemetryEntry* ringPtr = (H8StaticDataTelemetryEntry*)ring.GetUnsafeReadOnlyPtr();
             H8StaticDataBlackBoxDump.Write(
                 resolvedPath,
@@ -517,9 +517,9 @@ namespace Hecton8.Core.Data
                 return;
             }
 
-            string resolvedPath = string.IsNullOrEmpty(path)
-                ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", BTreeTelemetryDumpFileName))
-                : path;
+            if (!TryResolveDumpPath(path, BTreeTelemetryDumpFileName, out string resolvedPath))
+                return;
+
             BTreeTelemetryEntry* ringPtr = (BTreeTelemetryEntry*)ring.GetUnsafeReadOnlyPtr();
             H8BTreeTelemetryDump.Write(
                 resolvedPath,
@@ -578,6 +578,94 @@ namespace Hecton8.Core.Data
             if (ns >= long.MaxValue)
                 return long.MaxValue;
             return (long)ns;
+        }
+
+        private static bool TryResolveDumpPath(string requestedPath, string defaultFileName, out string resolvedPath)
+        {
+            resolvedPath = null;
+            if (!TryResolveDumpRoot(out string dumpRoot))
+                return false;
+
+            string candidatePath = string.IsNullOrWhiteSpace(requestedPath)
+                ? Path.Combine(dumpRoot, defaultFileName)
+                : requestedPath;
+
+            try
+            {
+                string fullPath = Path.IsPathRooted(candidatePath)
+                    ? Path.GetFullPath(candidatePath)
+                    : Path.GetFullPath(Path.Combine(dumpRoot, candidatePath));
+                if (!IsPathUnderRoot(fullPath, dumpRoot))
+                    return false;
+
+                resolvedPath = fullPath;
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+        }
+
+        private static bool TryResolveDumpRoot(out string dumpRoot)
+        {
+            dumpRoot = null;
+            string dataPath = Application.dataPath;
+            if (string.IsNullOrEmpty(dataPath))
+                return false;
+
+            try
+            {
+                dumpRoot = Path.GetFullPath(Path.Combine(dataPath, "..", "Docs", "AgentLogs"));
+                return !string.IsNullOrEmpty(dumpRoot);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+        }
+
+        private static bool IsPathUnderRoot(string fullPath, string rootPath)
+        {
+            if (string.IsNullOrEmpty(fullPath) || string.IsNullOrEmpty(rootPath))
+                return false;
+
+            string normalizedRoot = Path.GetFullPath(rootPath);
+            if (!normalizedRoot.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) &&
+                !normalizedRoot.EndsWith(Path.AltDirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+            {
+                normalizedRoot += Path.DirectorySeparatorChar;
+            }
+
+            string normalizedPath = Path.GetFullPath(fullPath);
+            StringComparison comparison = Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            return normalizedPath.StartsWith(normalizedRoot, comparison);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
