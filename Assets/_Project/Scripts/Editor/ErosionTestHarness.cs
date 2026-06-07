@@ -666,16 +666,63 @@ namespace Hecton8.Editor
         private static void WritePng(NativeArray<Color32> pixels, string path)
         {
             Texture2D texture = new Texture2D(Resolution, Resolution, TextureFormat.RGBA32, false, true);
-            texture.SetPixelData(pixels, 0);
-            texture.Apply(false, false);
-            byte[] pngBytes = texture.EncodeToPNG(); // COLD ALLOC: byte[] - editor-only PNG encode output - owner: ErosionTestHarness
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+            try
             {
-                stream.Write(pngBytes, 0, pngBytes.Length);
-                stream.Flush(true);
+                texture.SetPixelData(pixels, 0);
+                texture.Apply(false, false);
+                byte[] pngBytes = texture.EncodeToPNG(); // COLD ALLOC: byte[] - editor-only PNG encode output - owner: ErosionTestHarness
+                WritePngBytesAtomic(path, pngBytes);
+            }
+            finally
+            {
+                Object.DestroyImmediate(texture);
+            }
+        }
+
+        private static void WritePngBytesAtomic(string path, byte[] pngBytes)
+        {
+            string tempPath = path + ".tmp";
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    stream.Write(pngBytes, 0, pngBytes.Length);
+                    stream.Flush(true);
+                }
+
+                PromoteTempFileAtomic(tempPath, path);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void PromoteTempFileAtomic(string tempPath, string path)
+        {
+            if (File.Exists(path))
+            {
+                File.Replace(tempPath, path, null, true);
+                return;
             }
 
-            Object.DestroyImmediate(texture);
+            File.Move(tempPath, path);
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+            }
         }
 
         private static void Swap(ref NativeArray<float> current, ref NativeArray<float> next)

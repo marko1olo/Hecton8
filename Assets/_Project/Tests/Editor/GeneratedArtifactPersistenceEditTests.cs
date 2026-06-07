@@ -276,6 +276,25 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("new FileStream(tempPath, FileMode.Create, FileAccess.Write", writer);
         }
 
+        [Test]
+        public void ErosionHarnessPngsWriteThroughAtomicTempPromotion()
+        {
+            string source = ReadProjectSource("_Project/Scripts/Editor/ErosionTestHarness.cs");
+            string writePng = ExtractMethodBody(source, "private static void WritePng(");
+            string writer = ExtractMethodBody(source, "private static void WritePngBytesAtomic(");
+            string promote = ExtractMethodBody(source, "private static void PromoteTempFileAtomic(");
+
+            StringAssert.Contains("WritePngBytesAtomic(path, pngBytes);", writePng);
+            StringAssert.Contains("Object.DestroyImmediate(texture);", writePng);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", writer);
+            StringAssert.Contains("stream.Flush(true);", writer);
+            StringAssert.Contains("PromoteTempFileAtomic(tempPath, path);", writer);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", writer);
+            StringAssert.Contains("File.Replace(tempPath, path, null, true);", promote);
+            StringAssert.Contains("File.Move(tempPath, path);", promote);
+            StringAssert.DoesNotContain("new FileStream(path, FileMode.Create", writePng);
+        }
+
         private static string ReadProjectSource(string assetRelativePath)
         {
             return File.ReadAllText(Path.Combine(Application.dataPath, assetRelativePath)).Replace("\r\n", "\n");
