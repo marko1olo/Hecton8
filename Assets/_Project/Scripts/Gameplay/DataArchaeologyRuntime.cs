@@ -365,6 +365,8 @@ namespace Hecton8.Gameplay
         private const int MmfPartialRecordBytes = 8;
         private const float MmfPartialFlushCadenceSeconds = 4f;
         private const float MmfUrgentFlushDelaySeconds = 0.25f;
+        private const float MmfFailureRetrySeconds = 8f;
+        private const int MmfFileStreamBufferBytes = 4096;
         private const uint MmfMagic = 0x41443848u; // H8DA
         private const uint MmfVersion = 1u;
         private const byte NotificationKindDiscovery = 1;
@@ -803,7 +805,7 @@ namespace Hecton8.Gameplay
                 RemoveNonScanningPartials(markDirty: false);
             }
 
-            TryLoadMmfCold();
+            TryLoadMmfCold(data != null);
         }
 
         /// <inheritdoc />
@@ -880,7 +882,7 @@ namespace Hecton8.Gameplay
             TryRegisterHotSwapListener();
             RegisterOriginShiftListener();
             TryRegisterRuntime();
-            TryLoadMmfCold();
+            TryLoadMmfCold(requireExistingSaveState: false);
         }
 
         private void Start()
@@ -1807,7 +1809,7 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void TryLoadMmfCold()
+        private void TryLoadMmfCold(bool requireExistingSaveState)
         {
 #if !UNITY_WEBGL
             if (!enableMmfPersistence)
@@ -1819,6 +1821,7 @@ namespace Hecton8.Gameplay
 
             try
             {
+                bool shouldRewriteMmf = false;
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 using (BinaryReader reader = new BinaryReader(stream))
                 {
@@ -1839,7 +1842,6 @@ namespace Hecton8.Gameplay
                     int safeFragmentCount = fragmentCount;
                     int safePartialCount = partialCount;
 
-                    ClearFragmentPositions();
                     for (int i = 0; i < MaxDiscoveryCount; i++)
                     {
                         if (stream.Position + MmfFragmentRecordBytes > stream.Length)
@@ -1850,15 +1852,33 @@ namespace Hecton8.Gameplay
                         float y = reader.ReadSingle();
                         float z = reader.ReadSingle();
 
-                        if (i >= safeFragmentCount || hash == 0u)
+                        if (i >= safeFragmentCount)
                             continue;
 
-                        RegisterFragmentPosition(hash, new float3(x, y, z));
+                        if (hash == 0u)
+                        {
+                            shouldRewriteMmf = true;
+                            continue;
+                        }
+
+                        float3 position = new float3(x, y, z);
+                        if (!math.all(math.isfinite(new float4(position, 1f))))
+                        {
+                            shouldRewriteMmf = true;
+                            continue;
+                        }
+
+                        if (!CanApplyMmfFragment(hash, requireExistingSaveState))
+                        {
+                            shouldRewriteMmf = true;
+                            continue;
+                        }
+
+                        RegisterFragmentPosition(hash, position);
                         SetNativeLoreBit(DataArchaeologyDiscoveryBitMask.ResolveBitIndex(hash));
                         SetScanState(hash, ScanStateScanned);
                     }
 
-                    _partialCount = 0;
                     for (int i = 0; i < MaxPartialScanCount; i++)
                     {
                         if (stream.Position + MmfPartialRecordBytes > stream.Length)
@@ -1868,24 +1888,82 @@ namespace Hecton8.Gameplay
                         ushort progress = reader.ReadUInt16();
                         reader.ReadUInt16();
 
-                        if (i >= safePartialCount || hash == 0u || progress >= 1000)
+                        if (i >= safePartialCount)
                             continue;
 
-                        if (TryGetScanState(hash, out byte state) && state == ScanStateScanned)
+                        if (hash == 0u || progress >= 1000)
+                        {
+                            shouldRewriteMmf = true;
                             continue;
+                        }
+
+                        if (!CanApplyMmfPartial(hash, requireExistingSaveState))
+                        {
+                            shouldRewriteMmf = true;
+                            continue;
+                        }
+
+                        if (TryGetScanState(hash, out byte state) && state == ScanStateScanned)
+                        {
+                            shouldRewriteMmf = true;
+                            continue;
+                        }
+
+                        if (TryFindPartial(hash, out int partialIndex) && progress < _partialProgressPermille[partialIndex])
+                            shouldRewriteMmf = true;
 
                         InsertOrUpgradePartialCold(hash, progress);
                         SetScanState(hash, ScanStateScanning);
                     }
                 }
 
-                ClearMmfDirty();
+                if (shouldRewriteMmf)
+                    MarkMmfDirty(false);
+                else
+                    ClearMmfDirty();
             }
-            catch (Exception)
+            catch (IOException)
             {
-                ClearMmfDirty();
+                if (_mmfDirty)
+                    ScheduleMmfPersistenceRetry();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                if (_mmfDirty)
+                    ScheduleMmfPersistenceRetry();
+            }
+            catch (NotSupportedException)
+            {
+                if (_mmfDirty)
+                    ScheduleMmfPersistenceRetry();
+            }
+            catch (ArgumentException)
+            {
+                if (_mmfDirty)
+                    ScheduleMmfPersistenceRetry();
+            }
+            catch (ObjectDisposedException)
+            {
+                if (_mmfDirty)
+                    ScheduleMmfPersistenceRetry();
             }
 #endif
+        }
+
+        private bool CanApplyMmfFragment(uint hash, bool requireExistingSaveState)
+        {
+            if (!requireExistingSaveState)
+                return true;
+
+            return TryGetScanState(hash, out byte state) && state == ScanStateScanned;
+        }
+
+        private bool CanApplyMmfPartial(uint hash, bool requireExistingSaveState)
+        {
+            if (!requireExistingSaveState)
+                return true;
+
+            return TryGetScanState(hash, out byte state) && state == ScanStateScanning;
         }
 
         private void PersistMmfCold()
@@ -1909,14 +1987,14 @@ namespace Hecton8.Gameplay
 
             try
             {
-                long byteCount = MmfHeaderBytes +
-                                 ((long)MaxDiscoveryCount * MmfFragmentRecordBytes) +
-                                 ((long)MaxPartialScanCount * MmfPartialRecordBytes);
+                long byteCount = ResolveExpectedMmfByteCount();
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                string tempPath = path + ".tmp";
+                long writtenLength;
+                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, MmfFileStreamBufferBytes, FileOptions.WriteThrough))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(MmfMagic);
@@ -1944,13 +2022,38 @@ namespace Hecton8.Gameplay
                     }
 
                     stream.SetLength(byteCount);
+                    stream.Flush(true);
+                    writtenLength = stream.Length;
                 }
 
+                if (writtenLength != byteCount)
+                {
+                    ScheduleMmfPersistenceRetry();
+                    return;
+                }
+
+                PromoteMmfTempFileCold(tempPath, path);
                 ClearMmfDirty();
             }
-            catch (Exception)
+            catch (IOException)
             {
-                ClearMmfDirty();
+                ScheduleMmfPersistenceRetry();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                ScheduleMmfPersistenceRetry();
+            }
+            catch (NotSupportedException)
+            {
+                ScheduleMmfPersistenceRetry();
+            }
+            catch (ArgumentException)
+            {
+                ScheduleMmfPersistenceRetry();
+            }
+            catch (ObjectDisposedException)
+            {
+                ScheduleMmfPersistenceRetry();
             }
 #else
             ClearMmfDirty();
@@ -1964,10 +2067,25 @@ namespace Hecton8.Gameplay
                    ((long)MaxPartialScanCount * MmfPartialRecordBytes);
         }
 
+        private static void PromoteMmfTempFileCold(string tempPath, string path)
+        {
+            if (File.Exists(path))
+                File.Replace(tempPath, path, null, true);
+            else
+                File.Move(tempPath, path);
+        }
+
         private void ClearMmfDirty()
         {
             _mmfDirty = false;
             _nextMmfFlushTime = float.PositiveInfinity;
+        }
+
+        private void ScheduleMmfPersistenceRetry()
+        {
+            _mmfDirty = true;
+            float now = Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
+            _nextMmfFlushTime = now + MmfFailureRetrySeconds;
         }
 
         private string ResolveMmfPath()
