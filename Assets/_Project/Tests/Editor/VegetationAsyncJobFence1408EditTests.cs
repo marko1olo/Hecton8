@@ -389,6 +389,33 @@ namespace Hecton8.Tests.Editor
             Assert.That(completeBody, Does.Contain("TryCompleteVegetationNavJob(ref _hlodCullHandle, forceComplete)"));
         }
 
+        [Test]
+        public void NativePoolDefragCompletion_ForceCompletesInsidePostSimulationWindowBeforePoolSwap()
+        {
+            string source = ReadProjectScript("World/VegetationMemoryPool.cs");
+            string completeBody = ExtractMethodBody(source, "CompleteNativePoolDefragIfReady");
+            string helperBody = ExtractMethodBody(source, "TryCompleteNativePoolDefragJob");
+
+            AssertOrdered(
+                completeBody,
+                "TryCompleteNativePoolDefragJob(ref _surfacePoolDefragHandle, forceComplete)",
+                "SwapChunkPools(ref _surfaceChunkPool, ref _surfaceDefragScratchPool)");
+            AssertOrdered(
+                completeBody,
+                "TryCompleteNativePoolDefragJob(ref _underwaterPoolDefragHandle, forceComplete)",
+                "SwapChunkPools(ref _underwaterChunkPool, ref _underwaterDefragScratchPool)");
+            Assert.That(
+                completeBody,
+                Does.Not.Contain("DispatcherJobSwap.TryComplete(ref _surfacePoolDefragHandle, forceComplete)"));
+            Assert.That(
+                completeBody,
+                Does.Not.Contain("DispatcherJobSwap.TryComplete(ref _underwaterPoolDefragHandle, forceComplete)"));
+            Assert.That(helperBody, Does.Contain("DispatcherJobSwap.TryComplete(ref handle, forceComplete: false)"));
+            AssertCompleteInsidePostSimulationWindow(
+                helperBody,
+                "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true)");
+        }
+
         private static void AssertCompleteInsidePostSimulationWindow(string method, string completeCall)
         {
             const string beginWindow = "BeginPostSimulationSwapWindow();";
