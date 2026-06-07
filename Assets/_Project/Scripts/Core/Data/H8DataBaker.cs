@@ -781,12 +781,28 @@ namespace Hecton8.Core.Data
                 Directory.CreateDirectory(directory);
 
             string tempPath = path + ".tmp";
-            using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            try
             {
-                stream.Write(bytes, 0, bytes.Length);
-                stream.Flush(true);
-            }
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
 
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    stream.Write(bytes, 0, bytes.Length);
+                    stream.Flush(true);
+                }
+
+                PromoteTempFileAtomic(tempPath, path);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void PromoteTempFileAtomic(string tempPath, string path)
+        {
             if (File.Exists(path))
             {
                 string backupPath = path + ".bak";
@@ -794,10 +810,21 @@ namespace Hecton8.Core.Data
                     File.Delete(backupPath);
 
                 File.Replace(tempPath, path, backupPath, true);
+                return;
             }
-            else
+
+            File.Move(tempPath, path);
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
             {
-                File.Move(tempPath, path);
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
             }
         }
 

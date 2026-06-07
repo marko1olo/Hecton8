@@ -260,6 +260,22 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("new FileStream(tempPath, FileMode.Create, FileAccess.Write", textWriter);
         }
 
+        [Test]
+        public void H8DataBakerWritesStaticDataThroughDurableAtomicTempPromotion()
+        {
+            string source = ReadProjectSource("_Project/Scripts/Core/Data/H8DataBaker.cs");
+            string writer = ExtractMethodBody(source, "private static void AtomicWrite(");
+            string promote = ExtractMethodBody(source, "private static void PromoteTempFileAtomic(");
+
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", writer);
+            StringAssert.Contains("stream.Flush(true);", writer);
+            StringAssert.Contains("PromoteTempFileAtomic(tempPath, path);", writer);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", writer);
+            StringAssert.Contains("File.Replace(tempPath, path, backupPath, true);", promote);
+            StringAssert.Contains("File.Move(tempPath, path);", promote);
+            StringAssert.DoesNotContain("new FileStream(tempPath, FileMode.Create, FileAccess.Write", writer);
+        }
+
         private static string ReadProjectSource(string assetRelativePath)
         {
             return File.ReadAllText(Path.Combine(Application.dataPath, assetRelativePath)).Replace("\r\n", "\n");
