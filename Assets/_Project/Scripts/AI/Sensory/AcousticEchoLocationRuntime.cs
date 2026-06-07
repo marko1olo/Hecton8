@@ -443,7 +443,7 @@ namespace Hecton8.AI.Sensory
             {
                 try
                 {
-                    DispatcherJobFence.TryComplete(ref _trackingHandle, forceComplete: true);
+                    ForceCompleteTrackingInPostSimulationWindow();
                 }
                 finally
                 {
@@ -474,6 +474,19 @@ namespace Hecton8.AI.Sensory
             _pendingProducerFaultAup = default;
             _sequence = 0u;
             _initialized = 0;
+        }
+
+        private static bool ForceCompleteTrackingInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobFence.TryComplete(ref _trackingHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         public static bool TryEnqueueEchoTap(in EchoTap tap)
