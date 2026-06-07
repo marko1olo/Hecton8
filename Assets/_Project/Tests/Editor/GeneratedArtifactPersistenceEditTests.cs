@@ -94,6 +94,22 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("File.WriteAllText(resultPath, builder.ToString(), Encoding.UTF8);", source);
         }
 
+        [Test]
+        public void HectonArtOptimizationPngsWriteThroughAtomicTempPromotion()
+        {
+            string source = ReadProjectSource("_Project/Scripts/Editor/HectonArtOptimizationTools.cs");
+            string writer = ExtractMethodBody(source, "private static void WriteBytesAtomic(");
+
+            StringAssert.Contains("WriteBytesAtomic(writePath, readable.EncodeToPNG());", source);
+            StringAssert.Contains("WriteBytesAtomic(atlasPath, atlas.EncodeToPNG());", source);
+            StringAssert.Contains("File.WriteAllBytes(tempPath, bytes);", writer);
+            StringAssert.Contains("File.Replace(tempPath, path, null, true);", writer);
+            StringAssert.Contains("File.Move(tempPath, path);", writer);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", writer);
+            StringAssert.DoesNotContain("File.WriteAllBytes(writePath, readable.EncodeToPNG());", source);
+            StringAssert.DoesNotContain("File.WriteAllBytes(atlasPath, atlas.EncodeToPNG());", source);
+        }
+
         private static string ReadProjectSource(string assetRelativePath)
         {
             return File.ReadAllText(Path.Combine(Application.dataPath, assetRelativePath)).Replace("\r\n", "\n");
