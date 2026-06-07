@@ -35,7 +35,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             if (notificationSystem == null)
-                TryGetComponent(out notificationSystem);
+                TryResolveNotificationSystem(out _);
 
             _localization = GlobalRegistry.LocalizationText;
             TryRegisterHotSwapListener();
@@ -58,7 +58,7 @@ namespace Hecton8.UI
         /// </summary>
         public void OnSaveEvent(in SaveEventPayload payload)
         {
-            if (notificationSystem == null)
+            if (!TryResolveNotificationSystem(out HUDNotification targetNotification))
                 return;
 
             if (!TryBuildMessage(in payload))
@@ -67,16 +67,16 @@ namespace Hecton8.UI
             switch (payload.Type)
             {
                 case SaveEventType.SaveCompleted:
-                    notificationSystem.ShowInfo(in _messageBuffer);
+                    targetNotification.ShowInfo(in _messageBuffer);
                     return;
 
                 case SaveEventType.SaveFailed:
                 case SaveEventType.LoadFailed:
-                    notificationSystem.ShowCritical(in _messageBuffer);
+                    targetNotification.ShowCritical(in _messageBuffer);
                     return;
 
                 case SaveEventType.EmergencyBackupRestoreRequested:
-                    notificationSystem.ShowWarning(in _messageBuffer);
+                    targetNotification.ShowWarning(in _messageBuffer);
                     return;
             }
         }
@@ -119,6 +119,27 @@ namespace Hecton8.UI
         private void ClearMessageCache()
         {
             _messageBuffer.Clear();
+        }
+
+        private bool TryResolveNotificationSystem(out HUDNotification resolved)
+        {
+            resolved = notificationSystem;
+            if (resolved != null && resolved.isActiveAndEnabled)
+                return true;
+
+            if (TryGetComponent(out resolved) && resolved != null && resolved.isActiveAndEnabled)
+            {
+                notificationSystem = resolved;
+                return true;
+            }
+
+            if (HUDNotification.TryGetActive(out resolved))
+            {
+                notificationSystem = resolved;
+                return true;
+            }
+
+            return false;
         }
 
         public void OnGlobalRegistryServiceReplaced(

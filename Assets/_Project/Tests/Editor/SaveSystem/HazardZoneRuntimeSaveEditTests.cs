@@ -77,6 +77,10 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("BackupRestoreKeyHash", hudLink);
             StringAssert.Contains("LocalizationKeys.ERROR_LOAD_FAILED_TITLE", hudLink);
             StringAssert.Contains("LocalizationKeys.WARNING_BACKUP_USED_TITLE", hudLink);
+            StringAssert.Contains("TryResolveNotificationSystem(out HUDNotification targetNotification)", hudLink);
+            StringAssert.Contains("TryGetComponent(out resolved)", hudLink);
+            StringAssert.Contains("HUDNotification.TryGetActive(out resolved)", hudLink);
+            StringAssert.Contains("resolved.isActiveAndEnabled", hudLink);
 
             int loadFailedCaseIndex = hudLink.IndexOf(
                 "case SaveEventType.LoadFailed:",
@@ -84,7 +88,7 @@ namespace Hecton8.Tests.Editor
             Assert.GreaterOrEqual(loadFailedCaseIndex, 0, hudLink);
 
             int criticalIndex = hudLink.IndexOf(
-                "notificationSystem.ShowCritical(in _messageBuffer);",
+                "targetNotification.ShowCritical(in _messageBuffer);",
                 loadFailedCaseIndex,
                 StringComparison.Ordinal);
             Assert.Greater(criticalIndex, loadFailedCaseIndex, hudLink);
@@ -95,7 +99,7 @@ namespace Hecton8.Tests.Editor
             Assert.Greater(backupCaseIndex, criticalIndex, hudLink);
 
             int warningIndex = hudLink.IndexOf(
-                "notificationSystem.ShowWarning(in _messageBuffer);",
+                "targetNotification.ShowWarning(in _messageBuffer);",
                 backupCaseIndex,
                 StringComparison.Ordinal);
             Assert.Greater(warningIndex, backupCaseIndex, hudLink);

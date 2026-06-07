@@ -172,8 +172,9 @@ namespace Hecton8.Dev
                 SourceIndex(saveManager, "RecordSuccessfulLoad(slotName") < SourceIndex(saveManager, "SaveEvents.TryRaiseEmergencyBackupRestoreRequested(SaveEvents.ComputeSlotHash(slotName));") &&
                 SourceIndex(saveManager, "SaveEvents.TryRaiseEmergencyBackupRestoreRequested(SaveEvents.ComputeSlotHash(slotName));") < SourceIndex(saveManager, "PublishSaveRecoveredNotification(slotName);") &&
                 ContainsAll(hudSaveNotificationLink, "LoadFailedKeyHash", "BackupRestoreKeyHash", "LocalizationKeys.ERROR_LOAD_FAILED_TITLE", "LocalizationKeys.WARNING_BACKUP_USED_TITLE") &&
-                ContainsAll(hudSaveNotificationLink, "case SaveEventType.LoadFailed:", "notificationSystem.ShowCritical(in _messageBuffer);") &&
-                ContainsAll(hudSaveNotificationLink, "case SaveEventType.EmergencyBackupRestoreRequested:", "notificationSystem.ShowWarning(in _messageBuffer);", "\"BACKUP RESTORE ACTIVE\".AsSpan()");
+                ContainsAll(hudSaveNotificationLink, "TryResolveNotificationSystem(out HUDNotification targetNotification)", "TryGetComponent(out resolved)", "HUDNotification.TryGetActive(out resolved)", "resolved.isActiveAndEnabled") &&
+                ContainsAll(hudSaveNotificationLink, "case SaveEventType.LoadFailed:", "targetNotification.ShowCritical(in _messageBuffer);") &&
+                ContainsAll(hudSaveNotificationLink, "case SaveEventType.EmergencyBackupRestoreRequested:", "targetNotification.ShowWarning(in _messageBuffer);", "\"BACKUP RESTORE ACTIVE\".AsSpan()");
 
             bool saveEventDispatchMutationPass =
                 ContainsAll(saveEvents, "ListenerCapacity = 16", "_deferredRegisterListeners", "_deferredUnregisterListeners") &&
