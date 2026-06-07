@@ -48,6 +48,18 @@ namespace Hecton8.EditorTools
         private const int SimulationBucketDumpHeaderBytes = 32;
         private const int SimulationBucketDumpEntrySizeBytes = 64;
         private const uint SimulationBucketDumpVersion = 1u;
+        private const ulong TerrainStreamingDumpMagic = 0x00384E4F54434548UL; // HECTON8\0
+        private const int TerrainStreamingPagerDumpHeaderBytes = 24;
+        private const int TerrainStreamingDumpEntrySizeBytes = 64;
+        private const uint TerrainStreamingPagerDumpVersion = 1305u;
+        private const int WorldChunkResidencyDumpHeaderBytes = 32;
+        private const uint WorldChunkResidencyDumpVersion = 1u;
+        private const uint WorldChunkResidencyDumpLayoutHash = 0x44524357u; // WCRD
+        private const string TerrainStreamingLegacyDumpFileName = "Dump_1305_Streaming.bin";
+        private const string TerrainStreamingPagerDumpFileName = "Dump_1305_TerrainChunkPager.bin";
+        private const string WorldChunkResidencyDumpFileName = "Dump_1305_WorldChunkResidency.bin";
+        private const string WorldChunkResidencyBackpressureDumpFileName = "Dump_1305_WorldChunkResidency_Backpressure.bin";
+        private const string WorldChunkResidencyHlodDumpFileName = "Dump_1305_WorldChunkResidency_HLOD.bin";
         private readonly List<string> _rows = new List<string>(MaxDisplayedFrames);
         private TextField _pathField;
         private Label _summaryLabel;
@@ -166,6 +178,8 @@ namespace Hecton8.EditorTools
             if (TryParseJobAdmissionDump(path, bytes, span))
                 return;
             if (TryParseSimulationBucketDump(path, bytes, span))
+                return;
+            if (TryParseTerrainStreamingDump(path, bytes, span))
                 return;
 
             uint metadataMagic = bytes.Length >= GlobalTelemetryMetadataOffset + 4
@@ -819,6 +833,476 @@ namespace Hecton8.EditorTools
                 SimulationBucketPacingFlags.SurvivalStaticDistribution |
                 SimulationBucketPacingFlags.HomeostasisKillRequested |
                 SimulationBucketPacingFlags.VisualOverkillBudgetAvailable;
+            uint unknownFlags = flags & ~knownFlags;
+            if (unknownFlags != 0u)
+            {
+                if (builder.Length != 0)
+                    builder.Append('|');
+
+                builder.Append("unknown=0x");
+                builder.Append(unknownFlags.ToString("X8", CultureInfo.InvariantCulture));
+            }
+
+            return builder.Length == 0 ? "unknown" : builder.ToString();
+        }
+
+        private bool TryParseTerrainStreamingDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
+        {
+            string fileName = Path.GetFileName(path) ?? string.Empty;
+            bool pagerFile = IsTerrainStreamingPagerDumpFileName(fileName);
+            bool rawResidencyFile = IsWorldChunkResidencyDumpFileName(fileName);
+            bool legacyFile = string.Equals(
+                fileName,
+                TerrainStreamingLegacyDumpFileName,
+                StringComparison.OrdinalIgnoreCase);
+            if (!pagerFile && !rawResidencyFile && !legacyFile)
+            {
+                return false;
+            }
+
+            if (span.Length >= TerrainStreamingPagerDumpHeaderBytes &&
+                ReadU64(span, 0) == TerrainStreamingDumpMagic)
+            {
+                uint version = ReadU32(span, 8);
+                uint layoutHash = span.Length >= WorldChunkResidencyDumpHeaderBytes
+                    ? ReadU32(span, 24)
+                    : 0u;
+                if (rawResidencyFile ||
+                    (legacyFile &&
+                     version == WorldChunkResidencyDumpVersion &&
+                     layoutHash == WorldChunkResidencyDumpLayoutHash))
+                {
+                    return ParseWorldChunkResidencyHeaderDump(path, bytes, span);
+                }
+
+                if (pagerFile || legacyFile)
+                    return ParseTerrainStreamingPagerDump(path, bytes, span);
+            }
+
+            if ((rawResidencyFile || legacyFile) &&
+                span.Length > 0 &&
+                span.Length % TerrainStreamingDumpEntrySizeBytes == 0)
+            {
+                return ParseWorldChunkResidencyRawDump(path, bytes, span);
+            }
+
+            SetSummary(BuildInvalidTerrainStreamingHeaderSummary(
+                path,
+                span.Length,
+                0u,
+                0,
+                0,
+                0u));
+            return true;
+        }
+
+        private bool ParseTerrainStreamingPagerDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
+        {
+            uint version = ReadU32(span, 8);
+            int entryCount = ReadI32(span, 12);
+            int entrySize = ReadI32(span, 16);
+            uint faultFlags = ReadU32(span, 20);
+            bool valid =
+                version == TerrainStreamingPagerDumpVersion &&
+                entryCount > 0 &&
+                entryCount <= 100000 &&
+                entrySize == TerrainStreamingDumpEntrySizeBytes &&
+                TerrainStreamingPagerDumpHeaderBytes + (long)entryCount * entrySize <= span.Length;
+
+            if (!valid)
+            {
+                SetSummary(BuildInvalidTerrainStreamingHeaderSummary(
+                    path,
+                    span.Length,
+                    version,
+                    entryCount,
+                    entrySize,
+                    faultFlags));
+                return true;
+            }
+
+            int nonEmptyEntryCount = CountTerrainStreamingEntriesWithPayload(
+                span,
+                TerrainStreamingPagerDumpHeaderBytes,
+                entryCount);
+            int payloadBytes = entryCount * entrySize;
+            ulong payloadHash = ComputeXxHash64(bytes, TerrainStreamingPagerDumpHeaderBytes, payloadBytes);
+            StringBuilder builder = new StringBuilder(300);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | bytes=");
+            builder.Append(span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | magic=HECTON8");
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | layout=terrain-chunk-pager-blackbox");
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | displayed=");
+            builder.Append(math.min(nonEmptyEntryCount, MaxDisplayedFrames).ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(nonEmptyEntryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | faults=0x");
+            builder.Append(faultFlags.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(' ');
+            builder.Append(ResolveTerrainStreamingPagerFaultLabels(faultFlags));
+            builder.Append(" | xxHash3[payload]=0x");
+            builder.Append(payloadHash.ToString("X16", CultureInfo.InvariantCulture));
+            SetSummary(builder.ToString());
+
+            int skip = math.max(0, nonEmptyEntryCount - MaxDisplayedFrames);
+            int seen = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = TerrainStreamingPagerDumpHeaderBytes + i * entrySize;
+                ReadOnlySpan<byte> entry = span.Slice(offset, entrySize);
+                if (IsEmptyTerrainStreamingEntry(entry))
+                    continue;
+
+                if (seen++ < skip)
+                    continue;
+
+                _rows.Add(BuildTerrainStreamingPagerEntryLine(seen - 1, i, offset, entry));
+            }
+
+            return true;
+        }
+
+        private bool ParseWorldChunkResidencyRawDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
+        {
+            int entryCount = span.Length / TerrainStreamingDumpEntrySizeBytes;
+            int nonEmptyEntryCount = CountTerrainStreamingEntriesWithPayload(span, 0, entryCount);
+            ulong payloadHash = ComputeXxHash64(bytes, 0, span.Length);
+            StringBuilder builder = new StringBuilder(256);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | bytes=");
+            builder.Append(span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | layout=world-chunk-residency-blackbox");
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | displayed=");
+            builder.Append(math.min(nonEmptyEntryCount, MaxDisplayedFrames).ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(nonEmptyEntryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(TerrainStreamingDumpEntrySizeBytes.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | xxHash3[payload]=0x");
+            builder.Append(payloadHash.ToString("X16", CultureInfo.InvariantCulture));
+            SetSummary(builder.ToString());
+
+            int skip = math.max(0, nonEmptyEntryCount - MaxDisplayedFrames);
+            int seen = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = i * TerrainStreamingDumpEntrySizeBytes;
+                ReadOnlySpan<byte> entry = span.Slice(offset, TerrainStreamingDumpEntrySizeBytes);
+                if (IsEmptyTerrainStreamingEntry(entry))
+                    continue;
+
+                if (seen++ < skip)
+                    continue;
+
+                _rows.Add(BuildWorldChunkResidencyEntryLine(seen - 1, i, offset, entry));
+            }
+
+            return true;
+        }
+
+        private static string BuildInvalidTerrainStreamingHeaderSummary(
+            string path,
+            int byteCount,
+            uint version,
+            int entryCount,
+            int entrySize,
+            uint faultFlags)
+        {
+            StringBuilder builder = new StringBuilder(192);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | invalid terrain-streaming blackbox header");
+            builder.Append(" | bytes=");
+            builder.Append(byteCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | faults=0x");
+            builder.Append(faultFlags.ToString("X8", CultureInfo.InvariantCulture));
+            return builder.ToString();
+        }
+
+        private static bool IsTerrainStreamingDumpPath(string path)
+        {
+            string fileName = Path.GetFileName(path) ?? string.Empty;
+            return IsTerrainStreamingPagerDumpFileName(fileName) ||
+                   IsWorldChunkResidencyDumpFileName(fileName) ||
+                   string.Equals(
+                       fileName,
+                       TerrainStreamingLegacyDumpFileName,
+                       StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsTerrainStreamingPagerDumpFileName(string fileName)
+        {
+            return string.Equals(
+                       fileName,
+                       TerrainStreamingPagerDumpFileName,
+                       StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsWorldChunkResidencyDumpFileName(string fileName)
+        {
+            return string.Equals(
+                       fileName,
+                       WorldChunkResidencyDumpFileName,
+                       StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(
+                       fileName,
+                       WorldChunkResidencyBackpressureDumpFileName,
+                       StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(
+                       fileName,
+                       WorldChunkResidencyHlodDumpFileName,
+                       StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int CountTerrainStreamingEntriesWithPayload(
+            ReadOnlySpan<byte> bytes,
+            int headerBytes,
+            int entryCount)
+        {
+            int count = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = headerBytes + i * TerrainStreamingDumpEntrySizeBytes;
+                if (offset < 0 || offset + TerrainStreamingDumpEntrySizeBytes > bytes.Length)
+                    break;
+
+                if (!IsEmptyTerrainStreamingEntry(bytes.Slice(offset, TerrainStreamingDumpEntrySizeBytes)))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static bool IsEmptyTerrainStreamingEntry(ReadOnlySpan<byte> entry)
+        {
+            int scanned = math.min(TerrainStreamingDumpEntrySizeBytes, entry.Length);
+            for (int i = 0; i < scanned; i++)
+            {
+                if (entry[i] != 0)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static string BuildTerrainStreamingPagerEntryLine(
+            int displayIndex,
+            int sourceIndex,
+            int offset,
+            ReadOnlySpan<byte> entry)
+        {
+            double cameraX = ReadF64(entry, 0);
+            double cameraY = ReadF64(entry, 8);
+            double cameraZ = ReadF64(entry, 16);
+            uint frame = ReadU32(entry, 24);
+            uint stateHash = ReadU32(entry, 28);
+            ushort activeChunks = ReadU16(entry, 32);
+            ushort loadingChunks = ReadU16(entry, 34);
+            ushort staleChunks = ReadU16(entry, 36);
+            ushort pendingLoads = ReadU16(entry, 38);
+            float latencyEwmaMs = ReadF32(entry, 40);
+            uint residencyEvalMicros = ReadU32(entry, 44);
+            float effectiveRingRadius = ReadF32(entry, 48);
+            uint flags = ReadU32(entry, 52);
+            uint missingFileCount = ReadU32(entry, 56);
+            uint workerSequence = ReadU32(entry, 60);
+
+            StringBuilder builder = new StringBuilder(300);
+            builder.Append('#');
+            builder.Append(displayIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" slot=");
+            builder.Append(sourceIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" @");
+            builder.Append(offset.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" frame=");
+            builder.Append(frame.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" chunks=");
+            builder.Append(activeChunks.ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(loadingChunks.ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(staleChunks.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" pending=");
+            builder.Append(pendingLoads.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" latency=");
+            builder.Append(latencyEwmaMs.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" evalUs=");
+            builder.Append(residencyEvalMicros.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" ring=");
+            builder.Append(effectiveRingRadius.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" faults=0x");
+            builder.Append(flags.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(' ');
+            builder.Append(ResolveTerrainStreamingPagerFaultLabels(flags));
+            builder.Append(" missing=");
+            builder.Append(missingFileCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" worker=");
+            builder.Append(workerSequence.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" aup=");
+            builder.Append(cameraX.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(cameraY.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(cameraZ.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" state=0x");
+            builder.Append(stateHash.ToString("X8", CultureInfo.InvariantCulture));
+            return builder.ToString();
+        }
+
+        private static string BuildWorldChunkResidencyEntryLine(
+            int displayIndex,
+            int sourceIndex,
+            int offset,
+            ReadOnlySpan<byte> entry)
+        {
+            long focusChunkId = ReadI64(entry, 0);
+            long gridX = ReadI64(entry, 8);
+            long gridY = ReadI64(entry, 16);
+            long gridZ = ReadI64(entry, 24);
+            float localX = ReadF32(entry, 32);
+            float localY = ReadF32(entry, 36);
+            float localZ = ReadF32(entry, 40);
+            uint frame = ReadU32(entry, 44);
+            uint packedFlags = ReadU32(entry, 48);
+            uint flags = packedFlags & 0x0000FFFFu;
+            uint activeImpostorCount = packedFlags >> 16;
+            uint stateHash = ReadU32(entry, 52);
+            ushort pendingLoads = ReadU16(entry, 56);
+            ushort residentCount = ReadU16(entry, 58);
+            ushort loadingCount = ReadU16(entry, 60);
+            ushort evictingCount = ReadU16(entry, 62);
+
+            StringBuilder builder = new StringBuilder(300);
+            builder.Append('#');
+            builder.Append(displayIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" slot=");
+            builder.Append(sourceIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" @");
+            builder.Append(offset.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" frame=");
+            builder.Append(frame.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" focus=");
+            builder.Append(focusChunkId.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" grid=");
+            builder.Append(gridX.ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(gridY.ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(gridZ.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" local=");
+            builder.Append(localX.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(localY.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(localZ.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" pending=");
+            builder.Append(pendingLoads.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" counts=");
+            builder.Append(residentCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(loadingCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(evictingCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" impostors=");
+            builder.Append(activeImpostorCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" flags=0x");
+            builder.Append(flags.ToString("X4", CultureInfo.InvariantCulture));
+            builder.Append(' ');
+            builder.Append(ResolveWorldChunkResidencyFlagsLabel(flags));
+            builder.Append(" state=0x");
+            builder.Append(stateHash.ToString("X8", CultureInfo.InvariantCulture));
+            return builder.ToString();
+        }
+
+        private static string ResolveTerrainStreamingPagerFaultLabels(uint flags)
+        {
+            if (flags == 0u)
+                return "none";
+
+            StringBuilder builder = new StringBuilder(160);
+            AppendFlagLabel(builder, (flags & (1u << 0)) != 0u, "missing-file");
+            AppendFlagLabel(builder, (flags & (1u << 1)) != 0u, "io");
+            AppendFlagLabel(builder, (flags & (1u << 2)) != 0u, "queue-overflow");
+            AppendFlagLabel(builder, (flags & (1u << 3)) != 0u, "lz4");
+            AppendFlagLabel(builder, (flags & (1u << 4)) != 0u, "layout");
+            AppendFlagLabel(builder, (flags & (1u << 5)) != 0u, "nonfinite-aup");
+            AppendFlagLabel(builder, (flags & (1u << 6)) != 0u, "vault");
+            AppendFlagLabel(builder, (flags & (1u << 7)) != 0u, "invalid-header");
+            AppendFlagLabel(builder, (flags & (1u << 8)) != 0u, "checksum");
+            AppendFlagLabel(builder, (flags & (1u << 9)) != 0u, "capacity");
+
+            const uint knownFlags =
+                (1u << 0) |
+                (1u << 1) |
+                (1u << 2) |
+                (1u << 3) |
+                (1u << 4) |
+                (1u << 5) |
+                (1u << 6) |
+                (1u << 7) |
+                (1u << 8) |
+                (1u << 9);
+            uint unknownFlags = flags & ~knownFlags;
+            if (unknownFlags != 0u)
+            {
+                if (builder.Length != 0)
+                    builder.Append('|');
+
+                builder.Append("unknown=0x");
+                builder.Append(unknownFlags.ToString("X8", CultureInfo.InvariantCulture));
+            }
+
+            return builder.Length == 0 ? "unknown" : builder.ToString();
+        }
+
+        private static string ResolveWorldChunkResidencyFlagsLabel(uint flags)
+        {
+            if (flags == 0u)
+                return "none";
+
+            StringBuilder builder = new StringBuilder(192);
+            AppendFlagLabel(builder, (flags & (1u << 0)) != 0u, "invalid-aup");
+            AppendFlagLabel(builder, (flags & (1u << 1)) != 0u, "shift");
+            AppendFlagLabel(builder, (flags & (1u << 2)) != 0u, "memory-breach");
+            AppendFlagLabel(builder, (flags & (1u << 3)) != 0u, "teleport");
+            AppendFlagLabel(builder, (flags & (1u << 4)) != 0u, "predictive-suspended");
+            AppendFlagLabel(builder, (flags & (1u << 5)) != 0u, "predictive-prewarm-fault");
+            AppendFlagLabel(builder, (flags & (1u << 6)) != 0u, "activation-overflow");
+            AppendFlagLabel(builder, (flags & (1u << 7)) != 0u, "duplicate-chunk");
+            AppendFlagLabel(builder, (flags & (1u << 8)) != 0u, "additive-scene-fault");
+            AppendFlagLabel(builder, (flags & (1u << 9)) != 0u, "release-all-reset");
+            AppendFlagLabel(builder, (flags & (1u << 10)) != 0u, "addressables-fault");
+            AppendFlagLabel(builder, (flags & (1u << 11)) != 0u, "activation-fault");
+            AppendFlagLabel(builder, (flags & (1u << 12)) != 0u, "hydration-copy-spike");
+
+            const uint knownFlags =
+                (1u << 0) |
+                (1u << 1) |
+                (1u << 2) |
+                (1u << 3) |
+                (1u << 4) |
+                (1u << 5) |
+                (1u << 6) |
+                (1u << 7) |
+                (1u << 8) |
+                (1u << 9) |
+                (1u << 10) |
+                (1u << 11) |
+                (1u << 12);
             uint unknownFlags = flags & ~knownFlags;
             if (unknownFlags != 0u)
             {
@@ -1659,6 +2143,13 @@ namespace Hecton8.EditorTools
             return BinaryPrimitives.ReadUInt64LittleEndian(bytes.Slice(offset, 8));
         }
 
+        private static long ReadI64(ReadOnlySpan<byte> bytes, int offset)
+        {
+            if (offset < 0 || offset + 8 > bytes.Length)
+                return 0L;
+            return BinaryPrimitives.ReadInt64LittleEndian(bytes.Slice(offset, 8));
+        }
+
         private static int ReadI32(ReadOnlySpan<byte> bytes, int offset)
         {
             if (offset < 0 || offset + 4 > bytes.Length)
@@ -1669,6 +2160,11 @@ namespace Hecton8.EditorTools
         private static float ReadF32(ReadOnlySpan<byte> bytes, int offset)
         {
             return BitConverter.Int32BitsToSingle(ReadI32(bytes, offset));
+        }
+
+        private static double ReadF64(ReadOnlySpan<byte> bytes, int offset)
+        {
+            return BitConverter.Int64BitsToDouble(ReadI64(bytes, offset));
         }
 
         private static unsafe ulong ComputeXxHash64(byte[] bytes, int offset, int length)
