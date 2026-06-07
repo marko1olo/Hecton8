@@ -49,6 +49,21 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("File.WriteAllBytes(_savePath, output);", source);
         }
 
+        [Test]
+        public void BaseModuleCatalogBinaryWritesThroughAtomicTempPromotion()
+        {
+            string source = ReadProjectSource("_Project/Scripts/Editor/BaseModuleCatalogEditorTools.cs");
+            string writeBinary = ExtractMethodBody(source, "private static unsafe void WriteBinary(");
+            string writer = ExtractMethodBody(source, "private static void WriteBytesAtomic(");
+
+            StringAssert.Contains("WriteBytesAtomic(fullPath, bytes);", writeBinary);
+            StringAssert.Contains("File.WriteAllBytes(tempPath, bytes);", writer);
+            StringAssert.Contains("File.Replace(tempPath, path, null, true);", writer);
+            StringAssert.Contains("File.Move(tempPath, path);", writer);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", writer);
+            StringAssert.DoesNotContain("File.WriteAllBytes(fullPath, bytes);", writeBinary);
+        }
+
         private static string ReadProjectSource(string assetRelativePath)
         {
             return File.ReadAllText(Path.Combine(Application.dataPath, assetRelativePath)).Replace("\r\n", "\n");
