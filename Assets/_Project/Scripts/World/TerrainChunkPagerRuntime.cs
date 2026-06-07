@@ -1165,7 +1165,16 @@ namespace Hecton8.World
         {
             if (_pendingResidency != 0)
             {
-                DispatcherJobFence.TryComplete(ref _pendingResidencyHandle, forceComplete: true);
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _pendingResidencyHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
+
                 _pendingResidency = 0;
                 if (_pendingResidencyStartTimestamp > 0L)
                     _lastEvalMicros = ElapsedMicroseconds(_pendingResidencyStartTimestamp);
@@ -1174,7 +1183,16 @@ namespace Hecton8.World
 
             if (_pendingEviction != 0)
             {
-                DispatcherJobFence.TryComplete(ref _pendingEvictionHandle, forceComplete: true);
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _pendingEvictionHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
+
                 _pendingEviction = 0;
             }
         }

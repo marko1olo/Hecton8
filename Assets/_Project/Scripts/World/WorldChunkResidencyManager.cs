@@ -2875,7 +2875,16 @@ namespace Hecton8.World
             if (!_residencyJobScheduled)
                 return;
 
-            DispatcherJobFence.TryComplete(ref _residencyJobHandle, forceComplete: true);
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _residencyJobHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+
             _residencyJobScheduled = false;
         }
 
