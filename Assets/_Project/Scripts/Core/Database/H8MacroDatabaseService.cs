@@ -303,6 +303,10 @@ namespace Hecton8.Core.Database
                         Directory.CreateDirectory(directory);
 
                     _path = path;
+                    string createTempPath = ResolveCreateTempPath(path);
+                    if (string.IsNullOrEmpty(createTempPath))
+                        return false;
+
                     long safeLength = H8MacroDatabaseFileFormat.AlignUp(
                         math.max((long)MinimumFileBytes, math.max(initialSizeBytes, _config.InitialFileBytes)),
                         H8MacroDatabaseFileFormat.NodeSizeBytes);
@@ -313,11 +317,15 @@ namespace Hecton8.Core.Database
                         return false;
                     }
 
-                    _fileStream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+                    if (File.Exists(createTempPath))
+                        File.Delete(createTempPath);
+
+                    _fileStream = new FileStream(createTempPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read);
                     _fileStream.SetLength(safeLength);
                     if (!MapFile(safeLength))
                     {
                         CloseFileHandles();
+                        TryDeleteFileNoThrow(createTempPath);
                         return false;
                     }
 
@@ -328,17 +336,20 @@ namespace Hecton8.Core.Database
                     if (root == null)
                     {
                         CloseFileHandles();
+                        TryDeleteFileNoThrow(createTempPath);
                         return false;
                     }
 
                     ClearNode(root, true);
                     Flush();
-                    RecordBlackBox(0UL, (MacroDatabaseTier)_config.DefaultTier, 0);
-                    return true;
+                    CloseFileHandles();
+                    PromoteTempFileAtomic(createTempPath, path);
+                    return TryOpenExistingFile(path, requireDatabaseExtension);
                 }
                 catch
                 {
                     CloseFileHandles();
+                    TryDeleteFileNoThrow(ResolveCreateTempPath(path));
                     return false;
                 }
             }
@@ -1541,6 +1552,34 @@ namespace Hecton8.Core.Database
             _compactionTempPath = null;
             _compactionTier = (MacroDatabaseTier)_config.DefaultTier;
             _compactionFlags = 0;
+        }
+
+        private static string ResolveCreateTempPath(string destinationPath)
+        {
+            if (string.IsNullOrEmpty(destinationPath))
+                return null;
+
+            return destinationPath + ".tmp";
+        }
+
+        private static void PromoteTempFileAtomic(string tempPath, string destinationPath)
+        {
+            if (File.Exists(destinationPath))
+                File.Replace(tempPath, destinationPath, null, true);
+            else
+                File.Move(tempPath, destinationPath);
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+            }
         }
 
         private static string ResolveCompactionTempPath(string activePath)
