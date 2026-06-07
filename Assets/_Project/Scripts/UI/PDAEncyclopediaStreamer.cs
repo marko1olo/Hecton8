@@ -3016,9 +3016,7 @@ namespace Hecton8.UI
             if (_h8lrLoreStore == null)
                 _h8lrLoreStore = new PdaH8lrLoreStore();
 
-            bool opened = !string.IsNullOrEmpty(h8lrPathOverride)
-                ? _h8lrLoreStore.Open(Path.GetFullPath(h8lrPathOverride), _vault, in _h8lrMirrorHandle)
-                : _h8lrLoreStore.OpenDefault(_vault, in _h8lrMirrorHandle);
+            bool opened = TryOpenConfiguredH8lrStore();
 
             _h8lrOpenAttempted = true;
             _h8lrOpenFailed = !opened;
@@ -3033,6 +3031,18 @@ namespace Hecton8.UI
             _h8lrMetadataSeeded = false;
             _lastFaultHash = FaultH8lrOpenFailed;
             QueueBlackBoxDump(FaultH8lrOpenFailed);
+        }
+
+        private bool TryOpenConfiguredH8lrStore()
+        {
+            if (_h8lrLoreStore == null)
+                return false;
+
+            if (string.IsNullOrEmpty(h8lrPathOverride))
+                return _h8lrLoreStore.OpenDefault(_vault, in _h8lrMirrorHandle);
+
+            return TryResolveConfiguredPath(h8lrPathOverride, out string resolvedPath) &&
+                _h8lrLoreStore.Open(resolvedPath, _vault, in _h8lrMirrorHandle);
         }
 
         private void EnsureBabelStore()
@@ -3051,11 +3061,42 @@ namespace Hecton8.UI
 
             if (!string.IsNullOrEmpty(dictionaryPathOverride))
             {
-                _babelStore.Open(Path.GetFullPath(dictionaryPathOverride));
+                if (TryResolveConfiguredPath(dictionaryPathOverride, out string resolvedPath))
+                    _babelStore.Open(resolvedPath);
+
                 return;
             }
 
             _babelStore.OpenDefault();
+        }
+
+        private static bool TryResolveConfiguredPath(string configuredPath, out string resolvedPath)
+        {
+            resolvedPath = null;
+            if (string.IsNullOrEmpty(configuredPath))
+                return false;
+
+            try
+            {
+                resolvedPath = Path.GetFullPath(configuredPath);
+                return !string.IsNullOrEmpty(resolvedPath);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
         }
 
         private void SeedDataMonolithAppliedLoreMetadata()
