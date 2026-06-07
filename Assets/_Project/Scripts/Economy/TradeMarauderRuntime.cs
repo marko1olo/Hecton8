@@ -7,6 +7,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.UI;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -48,7 +49,7 @@ namespace Hecton8.Economy
         public const double AupQuantizeMeters = 0.001d;
         public const double InvAupQuantizeMeters = 1d / AupQuantizeMeters;
         public const float AStarIterationTelemetryMs = 0.000018f;
-        public const uint MessageBaseRaidedHash = 0x52414944u; // RAID
+        public const string BaseRaidedMessage = "BASE RAIDED // MARAUDER LOOT LOST";
         public const uint TradeMarauderSourceHash = 0x53483633u; // SH63
     }
 
@@ -2273,7 +2274,6 @@ namespace Hecton8.Economy
             SignalBus<MockInventoryTransactionSignal>.Configure(32, maxFrameSignals: 128, lowTierFrameSignals: 16, laneHash: TradeMarauderConstants.TradeMarauderSourceHash ^ 0x54584E31u);
             SignalBus<MockInventoryTransactionSignal>.EnsureInitialized();
             SignalBus<AcousticPingSignal>.EnsureInitialized();
-            SignalBus<HUDNotificationSignal>.EnsureInitialized();
         }
 
         private void TryRegisterRuntimeLanes()
@@ -2611,20 +2611,16 @@ namespace Hecton8.Economy
             bool hasTransactions = TryOpenVaultView(_vault, in _transactionScratchHandle, TradeMarauderConstants.SignalScratchCapacity, out NativeArray<MockInventoryTransactionSignal> transactions);
             bool hasAcoustic = TryOpenVaultView(_vault, in _acousticScratchHandle, TradeMarauderConstants.SignalScratchCapacity, out NativeArray<MarauderAcousticSignatureDTO> acoustic);
             int transactionCount = ReadCounter(counters, MarauderCounterIndex.TransactionSignalCount);
+            bool baseRaidNotificationQueued = false;
             for (int i = 0; hasTransactions && i < transactionCount && i < transactions.Length; i++)
             {
                 MockInventoryTransactionSignal signal = transactions[i];
                 SignalBus<MockInventoryTransactionSignal>.TryPushTracked(in signal, ref s_x001TradeMarauderRuntimeSignalPushDropCount);
-                HUDNotificationSignal hud = new HUDNotificationSignal
+                if (!baseRaidNotificationQueued)
                 {
-                    MessageHash = TradeMarauderConstants.MessageBaseRaidedHash,
-                    ContextHash = signal.ItemHash,
-                    SourceId = TradeMarauderConstants.TradeMarauderSourceHash + (uint)signal.MarauderIndex,
-                    Frame = signal.Frame,
-                    Severity = 2,
-                    Flags = 0
-                };
-                SignalBus<HUDNotificationSignal>.TryPushTracked(in hud, ref s_x001TradeMarauderRuntimeSignalPushDropCount);
+                    NotificationEvents.TryPushCritical(TradeMarauderConstants.BaseRaidedMessage.AsSpan());
+                    baseRaidNotificationQueued = true;
+                }
             }
 
             int acousticCount = ReadCounter(counters, MarauderCounterIndex.AcousticSignalCount);
