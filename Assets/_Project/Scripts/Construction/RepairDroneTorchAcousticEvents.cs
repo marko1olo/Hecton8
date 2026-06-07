@@ -1,4 +1,3 @@
-using System;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
@@ -589,17 +588,6 @@ namespace Hecton8.Construction
                     handle.BufferID == unchecked((uint)(int)NextFrameEventBufferId)) &&
                    handle.SystemID == (uint)SystemID.Construction &&
                    handle.Generation != 0u;
-        }
-    }
-
-    /// <summary>
-    /// Retired source-name marker. Runtime drones now live exclusively in DroneFleetManager native state.
-    /// </summary>
-    [Obsolete("RepairDroneEntity MonoBehaviour is retired. Use DroneFleetManager headless native state.", true)]
-    public sealed class RepairDroneEntity
-    {
-        private RepairDroneEntity()
-        {
         }
     }
 }

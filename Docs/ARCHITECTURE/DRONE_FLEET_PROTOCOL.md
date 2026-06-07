@@ -55,7 +55,7 @@ Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove curre
 
 - `Assets/_Project/Scripts/Construction/RepairDroneHub.cs`
 
-- `Assets/_Project/Scripts/Construction/RepairDroneEntity.cs`
+- `Assets/_Project/Scripts/Construction/RepairDroneTorchAcousticEvents.cs`
 
 - `Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs`
 
@@ -95,7 +95,7 @@ Runtime owners:
 
 - `RepairDroneHub.cs`: powered dock, logistics intake, integer drone-slot lease owner. It no longer spawns per-drone GameObjects for sorties.
 
-- `RepairDroneEntity.cs`: retired source-name marker plus shared torch-audio event structs. It is not a `MonoBehaviour` and cannot be spawned as a drone body.
+- `RepairDroneTorchAcousticEvents.cs`: shared vault-backed torch-audio event structs and dispatch bridge. It is not a `MonoBehaviour` and cannot be spawned as a drone body.
 
 - `BaseLogisticsNetwork.cs`: two-phase storage reservation and nearest supply endpoint resolver.
 
