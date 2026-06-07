@@ -1165,6 +1165,11 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("Math.Max(questArrayLength * 6, 16)", initialize);
             StringAssert.DoesNotContain("Math.Max(questArrayLength * 3, 8)", initialize);
             StringAssert.DoesNotContain("Math.Max(questArrayLength * 2, 8)", initialize);
+            StringAssert.Contains("long nodeCapacityLong = (long)nodeBuilder.Count + ProceduralQuestCapacity;", initialize);
+            StringAssert.Contains("long runtimeResultCapacityLong = (long)nodeCapacity + revertBuilder.Count;", initialize);
+            StringAssert.Contains("int runtimeResultCapacity = (int)runtimeResultCapacityLong;", initialize);
+            StringAssert.DoesNotContain("if (_runtimeResults.Capacity < nodeCapacity + revertBuilder.Count)", initialize);
+            StringAssert.DoesNotContain("_runtimeResults.Capacity = nodeCapacity + revertBuilder.Count;", initialize);
             int uncreatedSnapshotIndex = snapshot.IndexOf("if (!_globalPrerequisites.IsCreated)", StringComparison.Ordinal);
             int uncreatedReturnFalseIndex = snapshot.IndexOf("return false;", uncreatedSnapshotIndex, StringComparison.Ordinal);
             Assert.GreaterOrEqual(uncreatedSnapshotIndex, 0, snapshot);
