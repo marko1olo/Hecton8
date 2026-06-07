@@ -191,6 +191,7 @@ namespace Hecton8.UI
         private const uint FaultMetadataCollision = 0x434F4C4Cu;
         private const uint FaultInvalidHash = 0x494E5648u;
         private const uint FaultH8lrOpenFailed = 0x48384C52u; // H8LR
+        private const uint FaultBabelOpenFailed = 0x4241424Cu; // BABL
         private const string BlackBoxDumpFileName = "Dump_PDAEncyclopediaStreamer_BlackBox.bin";
         private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/" + BlackBoxDumpFileName;
         private const uint DefaultEntryHash = 0xAEC57EACu;
@@ -328,6 +329,7 @@ namespace Hecton8.UI
         private uint _lastFaultHash;
         private uint _activeUtf8SourceFlags;
         private bool _hasActiveAppliedLoreRecord;
+        private bool _activeBabelLookupTracked;
         private bool _blackBoxDumpQueued;
         private uint _queuedBlackBoxFaultHash;
         private bool _forceRevealDecodedTextNextVisualSync;
@@ -1460,7 +1462,7 @@ namespace Hecton8.UI
 
             if (_babelStore != null && _babelStore.IsOpen)
             {
-                ReadOnlySpan<byte> mappedUtf8 = _babelStore.FetchUtf8(hash);
+                ReadOnlySpan<byte> mappedUtf8 = _babelStore.TrackUtf8Lookup(hash);
                 if (mappedUtf8.Length > 0 && !IsBabelErrorSentinel(mappedUtf8))
                     return true;
             }
@@ -1506,7 +1508,10 @@ namespace Hecton8.UI
 
             if (_babelStore != null && _babelStore.IsOpen)
             {
-                ReadOnlySpan<byte> mappedUtf8 = _babelStore.FetchUtf8(_activeEntryHash);
+                ReadOnlySpan<byte> mappedUtf8 = _activeBabelLookupTracked
+                    ? _babelStore.FetchUtf8(_activeEntryHash)
+                    : _babelStore.TrackUtf8Lookup(_activeEntryHash);
+                _activeBabelLookupTracked = true;
                 if (mappedUtf8.Length > 0 && !IsBabelErrorSentinel(mappedUtf8))
                 {
                     CacheActiveSource(mappedUtf8, TextSourceBabel);
@@ -1617,6 +1622,7 @@ namespace Hecton8.UI
             _activeAppliedLoreRecordHash = 0u;
             _activeAppliedLoreLocaleHash = 0u;
             _hasActiveAppliedLoreRecord = false;
+            _activeBabelLookupTracked = false;
         }
 
         private void RefreshAppliedLoreLocaleHash(GameLanguage language)
@@ -3051,24 +3057,36 @@ namespace Hecton8.UI
             if (_babelStore != null)
             {
                 _babelStore.BindDataVault(_vault);
-                return;
+                if (_babelStore.IsOpen)
+                    return;
             }
-
-            _babelStore = new BabelDictionaryStore(_vault);
-            _ownsBabelStore = true;
+            else
+            {
+                _babelStore = new BabelDictionaryStore(_vault);
+                _ownsBabelStore = true;
+            }
 
             if (!openDefaultBabelOnEnable)
                 return;
 
+            if (!TryOpenConfiguredBabelStore())
+                QueueBlackBoxDump(FaultBabelOpenFailed);
+        }
+
+        private bool TryOpenConfiguredBabelStore()
+        {
+            if (_babelStore == null)
+                return false;
+
             if (!string.IsNullOrEmpty(dictionaryPathOverride))
             {
                 if (TryResolveConfiguredPath(dictionaryPathOverride, out string resolvedPath))
-                    _babelStore.Open(resolvedPath);
+                    return _babelStore.Open(resolvedPath);
 
-                return;
+                return false;
             }
 
-            _babelStore.OpenDefault();
+            return _babelStore.OpenDefault();
         }
 
         private static bool TryResolveConfiguredPath(string configuredPath, out string resolvedPath)
