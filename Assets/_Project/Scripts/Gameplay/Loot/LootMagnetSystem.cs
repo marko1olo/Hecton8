@@ -2209,7 +2209,16 @@ namespace Hecton8.Gameplay.Loot
             if (!_pullScheduled)
                 return false;
 
-            DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: true);
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
+
             _pullScheduled = false;
             return true;
         }
