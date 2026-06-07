@@ -1743,7 +1743,6 @@ namespace Hecton8.Graphics.Culling
     {
         private const int RingCapacity = 300;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_TBDR_PIPELINE.bin";
-        private const string NativeOwner = "SHINOBU_45_TBDR_TELEMETRY";
 
         public NativeArray<TBDRPipelineTelemetryEntry> Ring;
         public int WriteIndex;
@@ -1757,8 +1756,7 @@ namespace Hecton8.Graphics.Culling
 
             if (Ring.IsCreated && UsesExternalRingFlag == 0)
             {
-                NativeMemoryTrackingBridge.UnregisterNativeArray(Ring, NativeOwner, nameof(Ring));
-                Ring.Dispose();
+                H8Memory.Release(ref Ring, SystemID.GraphicsScalability);
             }
 
             Ring = ring;
@@ -1774,13 +1772,15 @@ namespace Hecton8.Graphics.Culling
             if (Ring.IsCreated)
                 return;
 
-            Ring = new NativeArray<TBDRPipelineTelemetryEntry>(RingCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<TBDRPipelineTelemetryEntry>[300] - TBDR black-box ring - owner: SHINOBU_45_TBDR_TELEMETRY
-            int ringRegistrationId = NativeMemoryTrackingBridge.RegisterNativeArray(Ring, NativeOwner, nameof(Ring), NativeMemoryBridgeLifetime.Session);
-            if (ringRegistrationId <= 0)
+            Ring = H8Memory.Allocate<TBDRPipelineTelemetryEntry>(
+                RingCapacity,
+                SystemID.GraphicsScalability,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+            if (!Ring.IsCreated || Ring.Length < RingCapacity)
             {
-                Ring.Dispose();
-                Ring = default;
-                throw new InvalidOperationException($"Native memory tracking bridge registration failed for {NativeOwner}.{nameof(Ring)}.");
+                H8Memory.Release(ref Ring, SystemID.GraphicsScalability);
+                throw new InvalidOperationException("H8Memory allocation failed for TBDR telemetry recorder ring.");
             }
 
             UsesExternalRingFlag = TBDRByteFlags.False;
@@ -1895,10 +1895,8 @@ namespace Hecton8.Graphics.Culling
 
         public void Dispose()
         {
-            if (UsesExternalRingFlag == 0)
-                NativeMemoryTrackingBridge.UnregisterNativeArray(Ring, NativeOwner, nameof(Ring));
             if (UsesExternalRingFlag == 0 && Ring.IsCreated)
-                Ring.Dispose();
+                H8Memory.Release(ref Ring, SystemID.GraphicsScalability);
             Ring = default;
             WriteIndex = 0;
             DumpedFlag = TBDRByteFlags.False;

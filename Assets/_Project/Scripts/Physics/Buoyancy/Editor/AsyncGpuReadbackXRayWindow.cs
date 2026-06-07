@@ -46,6 +46,7 @@ namespace Hecton8.Physics.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= Refresh;
             EditorApplication.update += Refresh;
         }
 

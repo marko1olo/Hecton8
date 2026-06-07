@@ -67,6 +67,7 @@ namespace Hecton8.Gameplay.Editor
 
         private void OnEnable()
         {
+            SceneView.duringSceneGui -= DrawHandIkGizmos;
             SceneView.duringSceneGui += DrawHandIkGizmos;
         }
 

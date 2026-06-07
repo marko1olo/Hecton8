@@ -17,7 +17,7 @@
 | Location / route | Shelter wall sensor, shoreline probe box, or wet service cabinet |
 | Unlock context | Player scans a sensor window with a biofilm smear across the lower edge |
 | Evidence object | Sensor window, biofilm smear, lower edge, clean reference corner |
-| Connected packets | P1152_STATUS_LENS_WATERLINE; P1139_ALGAE_THREAD_ON_ROPE; P1172_PRESSURE_PORT_SALT_NEEDLE |
+| Connected packets | P1152_STATUS_LENS_WATERLINE; P1138_GLASS_ALGAE_CUT_EDGE; P1172_PRESSURE_PORT_SALT_NEEDLE |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: teaches instrument-surface condition before reading trust |
 | Content status | source_complete_unimported |
 

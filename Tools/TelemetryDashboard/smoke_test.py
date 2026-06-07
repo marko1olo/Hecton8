@@ -2662,6 +2662,188 @@ def main() -> int:
     thermo_surgeon_raw_path.write_bytes(abyssal)
     assert server.parse_dump_file(thermo_surgeon_raw_path)["type"] == "abyssal_thermodynamics_blackbox"
 
+    reactor_flags = (
+        (1 << 0)
+        | (1 << 1)
+        | (1 << 2)
+        | (1 << 3)
+        | (1 << 4)
+        | (1 << 5)
+        | (1 << 6)
+    )
+    reactor_thermal = bytearray(
+        bytes(server.REACTOR_THERMAL_TELEMETRY_CAPACITY * server.REACTOR_THERMAL_ENTRY_BYTES)
+    )
+    server.REACTOR_THERMAL_ENTRY.pack_into(
+        reactor_thermal,
+        0,
+        1.0,
+        2.0,
+        3.0,
+        100000.0,
+        750.0,
+        1600.0,
+        18.5,
+        240.0,
+        3,
+        1,
+        1 << 6,
+        8001,
+        0x11111111,
+        0x22222222,
+        9,
+        0,
+        5,
+        4,
+        0,
+        0x33333333,
+        0x44444444,
+    )
+    server.REACTOR_THERMAL_ENTRY.pack_into(
+        reactor_thermal,
+        server.REACTOR_THERMAL_ENTRY_BYTES,
+        4.0,
+        5.0,
+        6.0,
+        250000.0,
+        900.0,
+        2200.0,
+        25.0,
+        310.0,
+        4,
+        2,
+        reactor_flags,
+        8002,
+        0x55555555,
+        0x66666666,
+        17,
+        1,
+        7,
+        6,
+        1,
+        0x77777777,
+        0x88888888,
+    )
+    reactor_path = root / "Dump_SHINOBU_337.bin"
+    reactor_path.write_bytes(reactor_thermal)
+    parsed_reactor = server.parse_dump_file(reactor_path)
+    assert parsed_reactor["type"] == "reactor_thermal_blackbox"
+    assert parsed_reactor["entrySize"] == server.REACTOR_THERMAL_ENTRY_BYTES
+    assert parsed_reactor["declaredEntryCount"] == server.REACTOR_THERMAL_TELEMETRY_CAPACITY
+    assert parsed_reactor["nonEmptyEntryCount"] == 2
+    assert parsed_reactor["latest"]["frame"] == 8002
+    assert parsed_reactor["latest"]["flagLabels"] == [
+        "nonfinite",
+        "out-of-grid",
+        "meltdown",
+        "mock-load",
+        "cost-over-budget",
+        "signal-overflow-risk",
+        "timing-proxy",
+    ]
+    assert parsed_reactor["latest"]["hotReactorHashHex"] == "0x77777777"
+    assert parsed_reactor["latest"]["hotEntityHashHex"] == "0x88888888"
+    assert parsed_reactor["latest"]["injectionCellWrites"] == 17
+    assert "nonfinite" in parsed_reactor["warnings"]
+    assert "out_of_grid" in parsed_reactor["warnings"]
+    assert "meltdown" in parsed_reactor["warnings"]
+    assert "mock_load" in parsed_reactor["warnings"]
+    assert "cost_over_budget" in parsed_reactor["warnings"]
+    assert "signal_overflow_risk" in parsed_reactor["warnings"]
+
+    nuclear_flags = (
+        (1 << 0)
+        | (1 << 2)
+        | (1 << 3)
+        | (1 << 4)
+        | (1 << 5)
+        | (1 << 6)
+        | (1 << 7)
+        | (1 << 8)
+    )
+    nuclear_reactor = bytearray(
+        bytes(server.REACTOR_THERMAL_TELEMETRY_CAPACITY * server.NUCLEAR_REACTOR_THERMAL_ENTRY_BYTES)
+    )
+    server.NUCLEAR_REACTOR_THERMAL_ENTRY.pack_into(
+        nuclear_reactor,
+        0,
+        7.0,
+        8.0,
+        9.0,
+        42000000.0,
+        12.5,
+        940.0,
+        2100.0,
+        180.0,
+        0.42,
+        2,
+        1,
+        1 << 6,
+        9001,
+        0x10101010,
+        0x20202020,
+        0x30303030,
+        2,
+        1,
+        0,
+        0,
+        0,
+    )
+    server.NUCLEAR_REACTOR_THERMAL_ENTRY.pack_into(
+        nuclear_reactor,
+        server.NUCLEAR_REACTOR_THERMAL_ENTRY_BYTES,
+        10.0,
+        11.0,
+        12.0,
+        84000000.0,
+        25.0,
+        1250.0,
+        2600.0,
+        275.0,
+        0.55,
+        3,
+        2,
+        nuclear_flags,
+        9002,
+        0x40404040,
+        0x50505050,
+        0x60606060,
+        4,
+        3,
+        1,
+        1,
+        1,
+    )
+    nuclear_path = root / "Dump_SHINOBU_342.bin"
+    nuclear_path.write_bytes(nuclear_reactor)
+    parsed_nuclear = server.parse_dump_file(nuclear_path)
+    assert parsed_nuclear["type"] == "nuclear_reactor_thermal_blackbox"
+    assert parsed_nuclear["entrySize"] == server.NUCLEAR_REACTOR_THERMAL_ENTRY_BYTES
+    assert parsed_nuclear["declaredEntryCount"] == server.REACTOR_THERMAL_TELEMETRY_CAPACITY
+    assert parsed_nuclear["nonEmptyEntryCount"] == 2
+    assert parsed_nuclear["latest"]["frame"] == 9002
+    assert parsed_nuclear["latest"]["flagLabels"] == [
+        "nonfinite",
+        "meltdown",
+        "mock-load",
+        "cost-over-budget",
+        "signal-overflow-risk",
+        "timing-proxy",
+        "no-coolant",
+        "atomic-abort",
+    ]
+    assert parsed_nuclear["latest"]["powerNodeHashHex"] == "0x50505050"
+    assert parsed_nuclear["latest"]["fluidRoomHashHex"] == "0x60606060"
+    assert parsed_nuclear["latest"]["radiationSignalCount"] == 4
+    assert parsed_nuclear["latest"]["baseCompromiseSignalCount"] == 3
+    assert "nonfinite" in parsed_nuclear["warnings"]
+    assert "meltdown" in parsed_nuclear["warnings"]
+    assert "mock_load" in parsed_nuclear["warnings"]
+    assert "cost_over_budget" in parsed_nuclear["warnings"]
+    assert "signal_overflow_risk" in parsed_nuclear["warnings"]
+    assert "no_coolant" in parsed_nuclear["warnings"]
+    assert "atomic_abort" in parsed_nuclear["warnings"]
+
     respawn_flags = (
         (1 << 0)
         | (1 << 2)

@@ -98,6 +98,7 @@ namespace Hecton8.SaveSystem.Editor
         private void OnEnable()
         {
             _dataVault = GlobalRegistry.DataVault;
+            SceneView.duringSceneGui -= DrawFailureGizmo;
             SceneView.duringSceneGui += DrawFailureGizmo;
         }
 

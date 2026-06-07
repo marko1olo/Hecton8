@@ -27,6 +27,7 @@ namespace Hecton8.Lighting.Editor
 
         private void OnEnable()
         {
+            SceneView.duringSceneGui -= OnSceneGUI;
             SceneView.duringSceneGui += OnSceneGUI;
             ResolveTarget();
         }

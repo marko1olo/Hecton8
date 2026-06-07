@@ -86,8 +86,8 @@ namespace Hecton8.Narrative
 
         private void Awake()
         {
-            CorporateOrderSystem registered = GlobalRegistry.CorporateOrders;
-            if (registered != null && registered != this) { Destroy(gameObject); return; }
+            if (TryAbortForUsableExistingRuntime())
+                return;
         }
 
         private void OnEnable()
@@ -167,16 +167,33 @@ namespace Hecton8.Narrative
             if (!Application.isPlaying)
                 return false;
 
-            CorporateOrderSystem registered = GlobalRegistry.CorporateOrders;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             GlobalRegistry.RegisterCorporateOrderRuntime(this);
             _runtimeRegistered = ReferenceEquals(GlobalRegistry.CorporateOrders, this);
             return _runtimeRegistered;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            CorporateOrderSystem registered = GlobalRegistry.CorporateOrders;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsCorporateOrderRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterCorporateOrderRuntime(registered);
+            return false;
+        }
+
+        private static bool IsCorporateOrderRuntimeUsable(CorporateOrderSystem system)
+        {
+            return system != null && system._runtimeRegistered && system.isActiveAndEnabled;
         }
 
         private void TryUnregisterRuntime()

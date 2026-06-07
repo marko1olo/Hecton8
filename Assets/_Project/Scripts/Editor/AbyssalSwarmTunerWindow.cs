@@ -59,6 +59,7 @@ namespace Hecton8.Editor
 
         private void OnEnable()
         {
+            SceneView.duringSceneGui -= DrawHashGridSceneView;
             SceneView.duringSceneGui += DrawHashGridSceneView;
             EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;

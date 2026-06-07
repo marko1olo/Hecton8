@@ -32,6 +32,7 @@ namespace Hecton8.Power
         private void OnEnable()
         {
             BuildUi();
+            EditorApplication.update -= Refresh;
             EditorApplication.update += Refresh;
         }
 

@@ -42,6 +42,7 @@ namespace Hecton8.EditorTools
         private void OnEnable()
         {
             FutureCommandSandboxValidator.Initialize();
+            EditorApplication.update -= Repaint;
             EditorApplication.update += Repaint;
         }
 

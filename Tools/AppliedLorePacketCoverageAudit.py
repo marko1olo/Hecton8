@@ -15,6 +15,7 @@ from AppliedLoreRouteCardExporter import INPUT_HEADERS as ROUTE_CARD_HEADERS
 from AppliedLoreRouteCardExporter import OUTPUT_HEADERS as ROUTE_CARD_SOURCE_HEADERS
 from AppliedLoreRouteCardExporter import SURFACE_MASKS
 from AppliedLoreTargetedExporter import (
+    AppliedLoreTargetedError,
     applied_content_base,
     load_packet_sources,
     select_packets,
@@ -513,7 +514,7 @@ def main() -> int:
             include_all=args.all,
             explicit_packet_sources=explicit_sources,
         )
-    except AppliedLoreCoverageError as exc:
+    except (AppliedLoreCoverageError, AppliedLoreTargetedError) as exc:
         print(str(exc))
         return 1
     if args.json:

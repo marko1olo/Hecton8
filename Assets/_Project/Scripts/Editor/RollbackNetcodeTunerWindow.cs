@@ -126,6 +126,7 @@ namespace Hecton8.Editor
         {
             EditorApplication.update -= EditorTick;
             EditorApplication.update += EditorTick;
+            SceneView.duringSceneGui -= DrawSceneGizmos;
             SceneView.duringSceneGui += DrawSceneGizmos;
         }
 

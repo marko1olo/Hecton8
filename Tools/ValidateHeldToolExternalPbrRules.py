@@ -27,15 +27,19 @@ def project_path(raw: str) -> Path:
     return path if path.is_absolute() else ROOT / path
 
 
-def load_material_ids(manifest_path: Path) -> set[str]:
+def load_material_assets(manifest_path: Path) -> dict[str, dict]:
     payload = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
-    return {str(asset.get("id", "")).strip() for asset in payload.get("assets", []) or [] if asset.get("id")}
+    return {
+        str(asset.get("id", "")).strip(): asset
+        for asset in payload.get("assets", []) or []
+        if asset.get("id")
+    }
 
 
 def validate(args: argparse.Namespace) -> int:
     applier_path = project_path(args.applier).resolve()
     manifest_path = project_path(args.manifest).resolve()
-    material_ids = load_material_ids(manifest_path)
+    material_assets = load_material_assets(manifest_path)
     text = applier_path.read_text(encoding="utf-8-sig")
     rules = list(RULE_PATTERN.finditer(text))
     errors: list[str] = []
@@ -52,8 +56,10 @@ def validate(args: argparse.Namespace) -> int:
         prefab_path = project_path(prefab)
         touched_prefabs.add(prefab)
 
-        if material not in material_ids:
+        if material not in material_assets:
             errors.append(f"rule[{index}] material id not in manifest: {material}")
+        elif not bool(material_assets[material].get("heldToolAllowed", False)):
+            errors.append(f"rule[{index}] material is not allowed for held tools: {material}")
 
         if not prefab_path.exists():
             errors.append(f"rule[{index}] missing prefab: {prefab}")

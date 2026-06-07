@@ -1399,6 +1399,22 @@ namespace Hecton8.SaveSystem
             return latency >= threshold && TryDumpTelemetryRing(telemetryRing, telemetryCursor, TelemetryFlagDiskLatencySpike, path);
         }
 
+        private static NativeArray<byte> AllocateTempNativeArrayBuffer(int length, string label, NativeArrayOptions options)
+        {
+            NativeArray<byte> buffer = new NativeArray<byte>(length, Allocator.Temp, options);
+            try
+            {
+                RegisterTempNativeArrayBuffer(buffer, label);
+                return buffer;
+            }
+            catch
+            {
+                if (buffer.IsCreated)
+                    buffer.Dispose();
+                throw;
+            }
+        }
+
         private static void RegisterTempNativeArrayBuffer(NativeArray<byte> buffer, string label)
         {
             if (!buffer.IsCreated)

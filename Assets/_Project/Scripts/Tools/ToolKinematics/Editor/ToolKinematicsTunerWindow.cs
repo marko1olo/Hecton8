@@ -29,6 +29,7 @@ namespace Hecton8.Tools.ToolKinematics.Editor
 
         private void OnEnable()
         {
+            SceneView.duringSceneGui -= DrawRaymarchGizmos;
             SceneView.duringSceneGui += DrawRaymarchGizmos;
         }
 

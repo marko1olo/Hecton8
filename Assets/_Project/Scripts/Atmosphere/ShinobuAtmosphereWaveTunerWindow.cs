@@ -38,6 +38,7 @@ namespace Hecton8.Atmosphere.Editor
 
         private void OnEnable()
         {
+            SceneView.duringSceneGui -= DrawSceneGizmos;
             SceneView.duringSceneGui += DrawSceneGizmos;
             RefreshFromVault();
             PushValuesToControls();

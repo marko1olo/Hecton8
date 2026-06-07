@@ -241,12 +241,8 @@ namespace Hecton8.Tools
 
         private void Awake()
         {
-            ToolDurabilitySystem registered = GlobalRegistry.ToolDurability;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             CacheRegistryDependenciesCold();
             EnsureNativeStateCold();
@@ -254,6 +250,9 @@ namespace Hecton8.Tools
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             CacheRegistryDependenciesCold();
             EnsureNativeStateCold();
             TryRegisterHotSwap();
@@ -266,6 +265,9 @@ namespace Hecton8.Tools
 
         private void Start()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             CacheRegistryDependenciesCold();
             EnsureNativeStateCold();
             TryRegisterHotSwap();
@@ -1923,8 +1925,32 @@ namespace Hecton8.Tools
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             GlobalRegistry.RegisterToolDurabilityRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.ToolDurability, this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            ToolDurabilitySystem registered = GlobalRegistry.ToolDurability;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsToolDurabilityRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterToolDurabilityRuntime(registered);
+            return false;
+        }
+
+        private static bool IsToolDurabilityRuntimeUsable(ToolDurabilitySystem system)
+        {
+            return system != null && system._serviceRegistered && system.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()

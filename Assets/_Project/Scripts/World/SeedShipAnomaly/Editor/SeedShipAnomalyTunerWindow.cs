@@ -25,6 +25,7 @@ namespace Hecton8.World.SeedShipAnomaly.Editor
 
         private void OnEnable()
         {
+            SceneView.duringSceneGui -= DrawSceneGizmos;
             SceneView.duringSceneGui += DrawSceneGizmos;
         }
 

@@ -14,6 +14,10 @@ namespace Hecton8.SaveSystem
         private const string NativeMemoryRegistrationFailureMessage = "NativeMemorySentinel registration failed for SaveSidecarStorage temp buffer.";
         private const string NativeMemoryRestoreFailureMessage = "NativeMemorySentinel restore failed after SaveSidecarStorage native disposal fault.";
         private const NativeAllocationLifetime NativeTempMemoryLifetime = NativeAllocationLifetime.Temp;
+        private const string MetadataWriteBufferLabel = "metadataWriteBuffer";
+        private const string MetadataReadBufferLabel = "metadataReadBuffer";
+        private const string MaintenanceWriteBufferLabel = "maintenanceWriteBuffer";
+        private const string MaintenanceReadBufferLabel = "maintenanceReadBuffer";
         private static string s_persistentDataPathRoot;
 
         internal static void SetPersistentDataPathRoot(string path)
@@ -45,18 +49,18 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            string absolutePath = ToAbsolutePath(relativePath);
-            int byteCount = GetStringByteCount(metadata.SlotName)
-                + GetStringByteCount(metadata.GameVersion)
-                + sizeof(long)
-                + sizeof(float)
-                + GetStringByteCount(metadata.SceneName)
-                + (sizeof(float) * 3)
-                + (sizeof(int) * 2)
-                + GetStringByteCount(metadata.Checksum);
+            if (string.IsNullOrEmpty(relativePath))
+            {
+                error = "Metadata sidecar path is empty.";
+                return false;
+            }
 
-            NativeArray<byte> buffer = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[byteCount] — metadata sidecar write staging buffer — owner: SaveSidecarStorage
-            RegisterTempNativeArrayBuffer(buffer, "metadataWriteBuffer");
+            if (!TryResolveMetadataByteCount(metadata, out int byteCount, out error))
+                return false;
+
+            string absolutePath = ToAbsolutePath(relativePath);
+
+            NativeArray<byte> buffer = AllocateTempNativeArrayBuffer(byteCount, MetadataWriteBufferLabel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[byteCount] — metadata sidecar write staging buffer — owner: SaveSidecarStorage
             try
             {
                 byte* bufferPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
@@ -85,7 +89,7 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                DisposeTempNativeArrayBuffer(ref buffer, "metadataWriteBuffer");
+                DisposeTempNativeArrayBuffer(ref buffer, MetadataWriteBufferLabel);
             }
         }
 
@@ -109,8 +113,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            NativeArray<byte> buffer = new NativeArray<byte>((int)fileLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[fileLength] — metadata sidecar read staging buffer — owner: SaveSidecarStorage
-            RegisterTempNativeArrayBuffer(buffer, "metadataReadBuffer");
+            NativeArray<byte> buffer = AllocateTempNativeArrayBuffer((int)fileLength, MetadataReadBufferLabel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[fileLength] — metadata sidecar read staging buffer — owner: SaveSidecarStorage
             try
             {
                 byte* bufferPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
@@ -132,7 +135,7 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                DisposeTempNativeArrayBuffer(ref buffer, "metadataReadBuffer");
+                DisposeTempNativeArrayBuffer(ref buffer, MetadataReadBufferLabel);
             }
         }
 
@@ -145,20 +148,12 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            string absolutePath = ToAbsolutePath(SaveSlotMaintenanceRecord.GetPath(record.SlotName));
-            int byteCount =
-                GetStringByteCount(record.SlotName) +
-                (sizeof(long) * 5) +
-                (sizeof(int) * 7) +
-                sizeof(byte) +
-                GetStringByteCount(record.LastKnownIntegrityState) +
-                GetStringByteCount(record.LastFailureContext) +
-                GetStringByteCount(record.LastFailureMessage) +
-                GetStringByteCount(record.LastAuditMessage) +
-                GetStringByteCount(record.LastRepairMessage);
+            if (!TryResolveMaintenanceByteCount(record, out int byteCount, out error))
+                return false;
 
-            NativeArray<byte> buffer = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[byteCount] — maintenance sidecar write staging buffer — owner: SaveSidecarStorage
-            RegisterTempNativeArrayBuffer(buffer, "maintenanceWriteBuffer");
+            string absolutePath = ToAbsolutePath(SaveSlotMaintenanceRecord.GetPath(record.SlotName));
+
+            NativeArray<byte> buffer = AllocateTempNativeArrayBuffer(byteCount, MaintenanceWriteBufferLabel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[byteCount] — maintenance sidecar write staging buffer — owner: SaveSidecarStorage
             try
             {
                 byte* bufferPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
@@ -195,7 +190,7 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                DisposeTempNativeArrayBuffer(ref buffer, "maintenanceWriteBuffer");
+                DisposeTempNativeArrayBuffer(ref buffer, MaintenanceWriteBufferLabel);
             }
         }
 
@@ -226,8 +221,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            NativeArray<byte> buffer = new NativeArray<byte>((int)fileLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[fileLength] — maintenance sidecar read staging buffer — owner: SaveSidecarStorage
-            RegisterTempNativeArrayBuffer(buffer, "maintenanceReadBuffer");
+            NativeArray<byte> buffer = AllocateTempNativeArrayBuffer((int)fileLength, MaintenanceReadBufferLabel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[fileLength] — maintenance sidecar read staging buffer — owner: SaveSidecarStorage
             try
             {
                 byte* bufferPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
@@ -246,7 +240,7 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                DisposeTempNativeArrayBuffer(ref buffer, "maintenanceReadBuffer");
+                DisposeTempNativeArrayBuffer(ref buffer, MaintenanceReadBufferLabel);
             }
         }
 
@@ -321,6 +315,22 @@ namespace Hecton8.SaveSystem
             }
 
             return true;
+        }
+
+        private static NativeArray<byte> AllocateTempNativeArrayBuffer(int length, string label, NativeArrayOptions options)
+        {
+            NativeArray<byte> buffer = new NativeArray<byte>(length, Allocator.Temp, options);
+            try
+            {
+                RegisterTempNativeArrayBuffer(buffer, label);
+                return buffer;
+            }
+            catch
+            {
+                if (buffer.IsCreated)
+                    buffer.Dispose();
+                throw;
+            }
         }
 
         private static void RegisterTempNativeArrayBuffer(NativeArray<byte> buffer, string label)
@@ -409,10 +419,98 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static int GetStringByteCount(string value)
+        private static bool TryResolveMetadataByteCount(SaveMetadata metadata, out int byteCount, out string error)
         {
-            int charBytes = value != null ? checked(value.Length * sizeof(char)) : 0;
-            return sizeof(int) + charBytes;
+            byteCount = 0;
+            error = string.Empty;
+            long total =
+                sizeof(long) +
+                sizeof(float) +
+                (sizeof(float) * 3) +
+                (sizeof(int) * 2);
+
+            return TryAddStringByteCount(ref total, metadata.SlotName, out error)
+                && TryAddStringByteCount(ref total, metadata.GameVersion, out error)
+                && TryAddStringByteCount(ref total, metadata.SceneName, out error)
+                && TryAddStringByteCount(ref total, metadata.Checksum, out error)
+                && TryFinalizeSidecarByteCount(
+                    total,
+                    "Metadata sidecar payload exceeds the supported range.",
+                    out byteCount,
+                    out error);
+        }
+
+        private static bool TryResolveMaintenanceByteCount(SaveSlotMaintenanceRecord record, out int byteCount, out string error)
+        {
+            byteCount = 0;
+            error = string.Empty;
+            long total =
+                (sizeof(long) * 5L) +
+                (sizeof(int) * 7L) +
+                sizeof(byte);
+
+            return TryAddStringByteCount(ref total, record.SlotName, out error)
+                && TryAddStringByteCount(ref total, record.LastKnownIntegrityState, out error)
+                && TryAddStringByteCount(ref total, record.LastFailureContext, out error)
+                && TryAddStringByteCount(ref total, record.LastFailureMessage, out error)
+                && TryAddStringByteCount(ref total, record.LastAuditMessage, out error)
+                && TryAddStringByteCount(ref total, record.LastRepairMessage, out error)
+                && TryFinalizeSidecarByteCount(
+                    total,
+                    "Maintenance sidecar payload exceeds the supported range.",
+                    out byteCount,
+                    out error);
+        }
+
+        private static bool TryAddStringByteCount(ref long total, string value, out string error)
+        {
+            error = string.Empty;
+            int charCount = value != null ? value.Length : 0;
+            if (!TryResolveUtf16ByteCount(charCount, out int charBytes))
+            {
+                error = "Sidecar string byte length exceeds the supported range.";
+                return false;
+            }
+
+            long entryBytes = sizeof(int) + (value != null ? charBytes : 0);
+            return TryAddByteCount(ref total, entryBytes, "Sidecar payload exceeds the supported range.", out error);
+        }
+
+        private static bool TryResolveUtf16ByteCount(int charCount, out int byteCount)
+        {
+            byteCount = 0;
+            if (charCount < 0 || charCount > int.MaxValue / sizeof(char))
+                return false;
+
+            byteCount = charCount * sizeof(char);
+            return true;
+        }
+
+        private static bool TryAddByteCount(ref long total, long byteCount, string errorMessage, out string error)
+        {
+            error = string.Empty;
+            if (byteCount < 0 || total < 0 || total > int.MaxValue - byteCount)
+            {
+                error = errorMessage;
+                return false;
+            }
+
+            total += byteCount;
+            return true;
+        }
+
+        private static bool TryFinalizeSidecarByteCount(long total, string errorMessage, out int byteCount, out string error)
+        {
+            byteCount = 0;
+            error = string.Empty;
+            if (total < 0 || total > int.MaxValue)
+            {
+                error = errorMessage;
+                return false;
+            }
+
+            byteCount = (int)total;
+            return true;
         }
 
         private static string ToAbsolutePath(string relativePath)
@@ -485,7 +583,12 @@ namespace Hecton8.SaveSystem
                 if (value.Length == 0)
                     return true;
 
-                int byteCount = checked(value.Length * sizeof(char));
+                if (!TryResolveUtf16ByteCount(value.Length, out int byteCount))
+                {
+                    Error = "Sidecar string byte length exceeds the supported range.";
+                    return false;
+                }
+
                 if (!TryReserve(byteCount))
                     return false;
 
@@ -602,7 +705,12 @@ namespace Hecton8.SaveSystem
                 if (charCount == 0)
                     return true;
 
-                int byteCount = checked(charCount * sizeof(char));
+                if (!TryResolveUtf16ByteCount(charCount, out int byteCount))
+                {
+                    Error = "Sidecar string byte length exceeds the supported range.";
+                    return false;
+                }
+
                 if (!TryConsume(byteCount))
                     return false;
 

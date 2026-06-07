@@ -573,6 +573,34 @@
         : `latest frame ${latest.frame} temp ${temp} energy delta ${energy} solver ${solver} src ${latest.activeSourceCount || 0} jacobi ${latest.jacobiIterations || 0} res ${latest.activeResolution || 0} nanCell ${latest.nanCellIndex || 0} flags ${labels}`;
       return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
     }
+    if (file.type === "reactor_thermal_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const joules = latest.totalJoulesInjected === undefined ? "--" : fmtNumber(latest.totalJoulesInjected, 2);
+      const core = latest.maxCoreTempCelsius === undefined ? "--" : `${fmtNumber(latest.maxCoreTempCelsius, 2)} C`;
+      const inject = latest.lastInjectionMicroseconds === undefined ? "--" : `${fmtNumber(latest.lastInjectionMicroseconds, 1)} us`;
+      const hot = latest.hotReactorHashHex || "--";
+      const entity = latest.hotEntityHashHex || "--";
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} core ${core} joules ${joules} inject ${inject} active/melt ${latest.activeReactorCount || 0}/${latest.meltdownCount || 0} writes ${latest.injectionCellWrites || 0} signals ${latest.thermalSignalCount || 0}/${latest.damageSignalCount || 0} hot ${hot}/${entity} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
+    if (file.type === "nuclear_reactor_thermal_blackbox") {
+      const latest = asObject(file.latest);
+      const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;
+      const labels = asArray(latest.flagLabels).join("+") || "none";
+      const watts = latest.totalGeneratedWatts === undefined ? "--" : fmtNumber(latest.totalGeneratedWatts, 2);
+      const core = latest.maxCoreTempCelsius === undefined ? "--" : `${fmtNumber(latest.maxCoreTempCelsius, 2)} C`;
+      const exec = latest.lastExecutionMicroseconds === undefined ? "--" : `${fmtNumber(latest.lastExecutionMicroseconds, 1)} us`;
+      const power = latest.powerNodeHashHex || "--";
+      const room = latest.fluidRoomHashHex || "--";
+      const frame = latest.frame === undefined
+        ? "no latest"
+        : `latest frame ${latest.frame} core ${core} watts ${watts} boil ${fmtNumber(latest.totalBoiledLiters || 0, 3)} L carnot ${fmtNumber(latest.averageCarnotEfficiency01 || 0, 3)} exec ${exec} active/melt ${latest.activeReactorCount || 0}/${latest.meltdownCount || 0} signals ${latest.radiationSignalCount || 0}/${latest.baseCompromiseSignalCount || 0} node/room ${power}/${room} flags ${labels}`;
+      return warnings ? `${count} | ${frame} | ${warnings}` : `${count} | ${frame}`;
+    }
     if (file.type === "foveated_simulation_blackbox") {
       const latest = asObject(file.latest);
       const count = `${file.returnedEntryCount || 0}/${file.declaredEntryCount || 0} entries`;

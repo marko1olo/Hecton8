@@ -67,6 +67,7 @@ namespace Hecton8.Editor
         {
             EditorApplication.update -= TickEditor;
             EditorApplication.update += TickEditor;
+            SceneView.duringSceneGui -= DrawSceneGrid;
             SceneView.duringSceneGui += DrawSceneGrid;
         }
 

@@ -49,6 +49,7 @@ namespace Hecton8.Visor.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;
             SceneView.duringSceneGui -= DrawSceneGizmos;
             SceneView.duringSceneGui += DrawSceneGizmos;

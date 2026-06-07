@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS181_FIRST_SERVICE_LABEL_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1180_RED_STENCIL_WIPE_GAP",
+    "P1181_HANDWRITTEN_ARROW_OVERSPRAY",
+    "P1182_EMERGENCY_PULL_TAG_FADE",
+    "P1183_BOX_LID_DATE_SCRAPE",
+    "P1184_QUARANTINE_STRIPE_PEEL_EDGE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1180_RED_STENCIL_WIPE_GAP.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1181_HANDWRITTEN_ARROW_OVERSPRAY.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1182_EMERGENCY_PULL_TAG_FADE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1183_BOX_LID_DATE_SCRAPE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1184_QUARANTINE_STRIPE_PEEL_EDGE.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

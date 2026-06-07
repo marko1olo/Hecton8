@@ -27,6 +27,7 @@ namespace Hecton8.Lighting.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= RefreshStatus;
             EditorApplication.update += RefreshStatus;
         }
 

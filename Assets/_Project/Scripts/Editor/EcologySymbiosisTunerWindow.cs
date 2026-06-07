@@ -51,6 +51,7 @@ namespace Hecton8.Editor
 
         private void OnEnable()
         {
+            SceneView.duringSceneGui -= DrawSceneGizmos;
             SceneView.duringSceneGui += DrawSceneGizmos;
         }
 

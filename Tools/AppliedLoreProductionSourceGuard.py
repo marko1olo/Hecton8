@@ -61,6 +61,7 @@ EXPECTED_DRAFT_STATUS = "draft_machine_or_llm"
 PACKET_ID_RE = re.compile(r"^P\d+_[A-Z0-9_]+$")
 RELEASE_ID_RE = re.compile(r"^(RS\d{3})_[A-Z0-9_]+$")
 PACKET_ID_ROW_RE = re.compile(r"^\| Packet ID \| (?P<packet_id>[^|]+) \|$", re.MULTILINE)
+CONNECTED_PACKETS_ROW_RE = re.compile(r"^\| Connected packets \| (?P<packet_ids>[^|]+) \|$", re.MULTILINE)
 LOCALE_ROW_RE = re.compile(r"^\| (?P<locale>[a-z]{2}_[A-Z]{2}) \| (?P<status>[^|]+?) \|", re.MULTILINE)
 
 
@@ -151,6 +152,28 @@ def collect_manifest_records(root: Path) -> list[tuple[Path, dict[str, Any]]]:
     return records
 
 
+def packet_id_from_production_source(path: Path) -> str:
+    return path.name[: -len(PRODUCTION_SUFFIX)]
+
+
+def collect_known_packet_ids(root: Path) -> set[str]:
+    known: set[str] = set()
+    packet_dir = root / "Docs" / "Lore" / "AppliedContent" / "production_packets"
+    if packet_dir.exists():
+        for path in packet_dir.glob(f"*{PRODUCTION_SUFFIX}"):
+            packet_id = packet_id_from_production_source(path)
+            if PACKET_ID_RE.match(packet_id):
+                known.add(packet_id)
+
+    bundle_dir = root / "Docs" / "Lore" / "AppliedContent" / "packets"
+    if bundle_dir.exists():
+        for path in bundle_dir.glob("*.json"):
+            if PACKET_ID_RE.match(path.stem):
+                known.add(path.stem)
+
+    return known
+
+
 def selected_records(
     records: list[tuple[Path, dict[str, Any]]],
     release_globs: tuple[str, ...],
@@ -227,6 +250,7 @@ def validate_manifest(
     packet_globs: tuple[str, ...],
     seen_release_ids: set[str],
     seen_packet_ids: dict[str, Path],
+    known_packet_ids: set[str],
 ) -> None:
     result.counters.manifests += 1
     release_set_id = str(data.get("release_set_id", "")).strip()
@@ -260,7 +284,7 @@ def validate_manifest(
         if not source_path.exists():
             result.fail(f"{location}: missing packet source {rel(root, source_path)}")
             continue
-        validate_packet(result, root, source_path, seen_packet_ids)
+        validate_packet(result, root, source_path, seen_packet_ids, known_packet_ids)
 
 
 def validate_packet(
@@ -268,11 +292,12 @@ def validate_packet(
     root: Path,
     path: Path,
     seen_packet_ids: dict[str, Path],
+    known_packet_ids: set[str],
 ) -> None:
     result.counters.production_packets += 1
     location = rel(root, path)
     text = read_text(path)
-    expected_packet_id = path.name[: -len(PRODUCTION_SUFFIX)]
+    expected_packet_id = packet_id_from_production_source(path)
 
     if not PACKET_ID_RE.match(expected_packet_id):
         result.fail(f"{location}: packet filename is not canonical P####_NAME.production.md")
@@ -294,6 +319,19 @@ def validate_packet(
 
     if "## Locale Rows" not in text:
         result.fail(f"{location}: missing Locale Rows section")
+
+    connected_match = CONNECTED_PACKETS_ROW_RE.search(text)
+    if connected_match is not None:
+        connected_packet_ids = [
+            packet_id.strip()
+            for packet_id in re.split(r"[;,]", connected_match.group("packet_ids"))
+            if packet_id.strip()
+        ]
+        for connected_packet_id in connected_packet_ids:
+            if not PACKET_ID_RE.match(connected_packet_id):
+                result.fail(f"{location}: connected packet id is not canonical: {connected_packet_id}")
+            elif connected_packet_id not in known_packet_ids:
+                result.fail(f"{location}: connected packet id is not present in AppliedContent sources: {connected_packet_id}")
 
     locale_rows = [(item.group("locale"), item.group("status").strip()) for item in LOCALE_ROW_RE.finditer(text)]
     locales = [locale for locale, _status in locale_rows]
@@ -352,8 +390,9 @@ def run_guard(root: Path, release_glob: str, packet_glob: str, json_output: bool
 
     seen_release_ids: set[str] = set()
     seen_packet_ids: dict[str, Path] = {}
+    known_packet_ids = collect_known_packet_ids(root)
     for path, data in selected:
-        validate_manifest(result, root, path, data, packet_globs, seen_release_ids, seen_packet_ids)
+        validate_manifest(result, root, path, data, packet_globs, seen_release_ids, seen_packet_ids, known_packet_ids)
 
     if json_output:
         print(

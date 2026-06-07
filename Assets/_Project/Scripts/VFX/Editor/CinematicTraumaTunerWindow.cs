@@ -35,6 +35,7 @@ namespace Hecton8.VFX.EditorTools
 
         private void OnEnable()
         {
+            EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;
         }
 

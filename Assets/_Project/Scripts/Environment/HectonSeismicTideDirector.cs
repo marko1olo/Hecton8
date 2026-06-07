@@ -5293,7 +5293,8 @@ namespace Hecton8.Environment
 
         private void OnEnable()
         {
-            SceneView.duringSceneGui += OnSceneGui;
+                SceneView.duringSceneGui -= OnSceneGui;
+                SceneView.duringSceneGui += OnSceneGui;
         }
 
         private void OnDisable()

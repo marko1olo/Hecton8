@@ -2966,8 +2966,10 @@ namespace Hecton8.World
                 RebuildMockData();
             }
 
-            SceneView.duringSceneGui += OnSceneGui;
-            EditorApplication.update += OnEditorUpdate;
+                SceneView.duringSceneGui -= OnSceneGui;
+                SceneView.duringSceneGui += OnSceneGui;
+                EditorApplication.update -= OnEditorUpdate;
+                EditorApplication.update += OnEditorUpdate;
         }
 
         private void OnDisable()

@@ -32,6 +32,7 @@ namespace Hecton8.Thermodynamics
         private void OnEnable()
         {
             BuildUi();
+            EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;
         }
 

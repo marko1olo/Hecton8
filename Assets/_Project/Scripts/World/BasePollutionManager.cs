@@ -85,7 +85,7 @@ namespace Hecton8.World
         {
             get
             {
-                BasePollutionManager runtime = s_activeRuntime;
+                BasePollutionManager runtime = ResolveActiveRuntime();
                 return runtime != null ? runtime._currentNoiseLevel : 0f;
             }
         }
@@ -95,7 +95,7 @@ namespace Hecton8.World
         {
             get
             {
-                BasePollutionManager runtime = s_activeRuntime;
+                BasePollutionManager runtime = ResolveActiveRuntime();
                 return runtime != null ? runtime._currentMicroplasticLevel : 0f;
             }
         }
@@ -108,16 +108,15 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            BasePollutionManager registered = GlobalRegistry.BasePollution;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
         }
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             TryRegisterService();
             if (Application.isPlaying && !_serviceRegistered)
                 return;
@@ -151,17 +150,87 @@ namespace Hecton8.World
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            BasePollutionManager registered = GlobalRegistry.BasePollution;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterBasePollutionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.BasePollution, this);
             if (_serviceRegistered)
                 s_activeRuntime = this;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            BasePollutionManager active = s_activeRuntime;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsBasePollutionRuntimeUsable(active))
+                {
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntime, active))
+                    s_activeRuntime = null;
+
+                if (ReferenceEquals(GlobalRegistry.BasePollution, active))
+                    GlobalRegistry.UnregisterBasePollutionRuntime(active);
+            }
+
+            BasePollutionManager registered = GlobalRegistry.BasePollution;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsBasePollutionRuntimeUsable(registered))
+            {
+                s_activeRuntime = registered;
+                Destroy(gameObject);
+                return true;
+            }
+
+            if (ReferenceEquals(s_activeRuntime, registered))
+                s_activeRuntime = null;
+
+            GlobalRegistry.UnregisterBasePollutionRuntime(registered);
+            return false;
+        }
+
+        private static BasePollutionManager ResolveActiveRuntime()
+        {
+            BasePollutionManager active = s_activeRuntime;
+            if (IsBasePollutionRuntimeUsable(active))
+                return active;
+
+            if (!ReferenceEquals(active, null))
+            {
+                if (ReferenceEquals(s_activeRuntime, active))
+                    s_activeRuntime = null;
+
+                if (ReferenceEquals(GlobalRegistry.BasePollution, active))
+                    GlobalRegistry.UnregisterBasePollutionRuntime(active);
+            }
+
+            BasePollutionManager registered = GlobalRegistry.BasePollution;
+            if (IsBasePollutionRuntimeUsable(registered))
+            {
+                s_activeRuntime = registered;
+                return registered;
+            }
+
+            if (!ReferenceEquals(registered, null))
+            {
+                if (ReferenceEquals(s_activeRuntime, registered))
+                    s_activeRuntime = null;
+
+                GlobalRegistry.UnregisterBasePollutionRuntime(registered);
+            }
+
+            return null;
+        }
+
+        private static bool IsBasePollutionRuntimeUsable(BasePollutionManager manager)
+        {
+            return manager != null && manager._serviceRegistered && manager.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()

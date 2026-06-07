@@ -17,7 +17,7 @@
 | Location / route | Shoreline survey case, shelter range post, or salvage tripod head |
 | Unlock context | Player scans a range-finder lens with a diagonal scratch through center |
 | Evidence object | Range lens, diagonal scratch, fixed mark, lens rim |
-| Connected packets | P1132_HANDRAIL_COMPASS_SCRATCH; P1170_SENSOR_WINDOW_BIOFILM_SMEAR; P1174_CALIBRATION_STICKER_EDGE_LIFT |
+| Connected packets | P1130_BEARING_CARD_SWELL_MARK; P1170_SENSOR_WINDOW_BIOFILM_SMEAR; P1174_CALIBRATION_STICKER_EDGE_LIFT |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: teaches damaged optical evidence without navigation-system claims |
 | Content status | source_complete_unimported |
 

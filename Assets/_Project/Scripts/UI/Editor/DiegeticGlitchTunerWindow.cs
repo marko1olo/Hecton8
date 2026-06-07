@@ -25,6 +25,7 @@ namespace Hecton8.UI.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= PollCsvOverride;
             EditorApplication.update += PollCsvOverride;
         }
 

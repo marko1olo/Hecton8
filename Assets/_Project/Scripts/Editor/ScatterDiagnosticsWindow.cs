@@ -48,6 +48,7 @@ namespace Hecton8.EditorTools
 
         private void OnEnable()
         {
+            SceneView.duringSceneGui -= OnSceneGui;
             SceneView.duringSceneGui += OnSceneGui;
             EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;

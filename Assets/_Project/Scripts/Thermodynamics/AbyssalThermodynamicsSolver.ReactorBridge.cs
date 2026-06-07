@@ -37,6 +37,8 @@ namespace Hecton8.Thermodynamics
         private VaultGenerationHandle<int> _baseReactorDumpLatch;
         private VaultGenerationHandle<NuclearReactorProfileDTO> _baseReactorProfiles;
         private VaultGenerationHandle<int> _baseReactorProfileCount;
+        private const string ReactorDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_337.bin";
+        private const string NuclearReactorDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_342.bin";
         private static readonly int ReactorThermalVisualMetaId = Shader.PropertyToID("_H8SubmarineReactorThermalMeta");
         private static readonly int ReactorThermalVisualPointId = Shader.PropertyToID("_H8SubmarineReactorThermalPoint");
         private static readonly int ReactorThermalStructuredBufferId = Shader.PropertyToID("_H8SubmarineReactorThermalStates");
@@ -134,8 +136,8 @@ namespace Hecton8.Thermodynamics
             baseTuningArray[0] = BuildDefaultNuclearReactorTuning();
             SeedDefaultReactorProfiles(profileArray, profileCountArray);
             SeedDefaultNuclearReactorProfiles(nuclearProfileArray, nuclearProfileCountArray);
-            _reactorDumpPath = string.Empty;
-            _baseReactorDumpPath = string.Empty;
+            _reactorDumpPath = ReactorDumpRelativePath;
+            _baseReactorDumpPath = NuclearReactorDumpRelativePath;
             TryLoadReactorProfilesCold();
             TryLoadNuclearReactorProfilesCold();
 

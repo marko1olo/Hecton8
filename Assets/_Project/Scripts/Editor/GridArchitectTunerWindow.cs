@@ -112,6 +112,7 @@ namespace Hecton8.Editor
 
         private void OnEnable()
         {
+            SceneView.duringSceneGui -= OnSceneGUI;
             SceneView.duringSceneGui += OnSceneGUI;
             EditorApplication.update -= RefreshUi;
             EditorApplication.update += RefreshUi;

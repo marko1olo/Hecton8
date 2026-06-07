@@ -1971,39 +1971,13 @@ namespace Hecton8.Environment
 
             DisposeWakeProfileParseScratch();
 
-            NativeArray<PropwashWakeProfileDTO> replacement = default;
-            try
-            {
-                replacement = new NativeArray<PropwashWakeProfileDTO>(
-                    PropwashWakeProfileCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PropwashWakeProfileDTO>[capacity] - editor CSV parse scratch outside DataVault locks - owner: HectonMarineSnowRenderer
-                int sentinelId = NativeMemorySentinel.RegisterNativeArray(replacement, nameof(HectonMarineSnowRenderer), "_wakeProfileParseScratch", NativeAllocationLifetime.Scene);
-                if (sentinelId <= 0)
-                    return false;
-
-                _wakeProfileParseScratch = replacement;
-                replacement = default;
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-            finally
-            {
-                if (replacement.IsCreated)
-                {
-                    try
-                    {
-                        NativeMemorySentinel.UnregisterNativeArray(replacement);
-                    }
-                    finally
-                    {
-                        replacement.Dispose();
-                    }
-                }
-            }
+            _wakeProfileParseScratch = H8Memory.Allocate<PropwashWakeProfileDTO>(
+                PropwashWakeProfileCapacity,
+                VaultOwnerSystem,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            return _wakeProfileParseScratch.IsCreated &&
+                   _wakeProfileParseScratch.Length >= PropwashWakeProfileCapacity;
         }
 
         private void DisposeWakeProfileParseScratch()
@@ -2011,9 +1985,7 @@ namespace Hecton8.Environment
             if (!_wakeProfileParseScratch.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(_wakeProfileParseScratch);
-            _wakeProfileParseScratch.Dispose();
-            _wakeProfileParseScratch = default;
+            H8Memory.Release(ref _wakeProfileParseScratch, VaultOwnerSystem);
         }
 
         private void CsvProfileBackgroundReadLoop()
