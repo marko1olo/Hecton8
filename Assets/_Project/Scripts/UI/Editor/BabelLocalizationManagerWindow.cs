@@ -295,8 +295,41 @@ namespace Hecton8.UI.Editor
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            File.WriteAllBytes(_savePath, output);
+            WriteBytesAtomic(_savePath, output);
             _status = "Saved override copy: " + _savePath + " bytes=" + output.Length + " alignment=" + ((output.Length & 15) == 0 ? "OK" : "BROKEN") + ".";
+        }
+
+        private static void WriteBytesAtomic(string path, byte[] bytes)
+        {
+            string tempPath = path + ".tmp";
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                File.WriteAllBytes(tempPath, bytes);
+                if (File.Exists(path))
+                    File.Replace(tempPath, path, null, true);
+                else
+                    File.Move(tempPath, path);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+            }
         }
 
         private string ResolvePreviewText(in EditorBabelEntry entry)

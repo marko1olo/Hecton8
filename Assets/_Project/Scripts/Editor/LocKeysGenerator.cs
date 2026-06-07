@@ -89,7 +89,40 @@ namespace Hecton8.Editor
 
             builder.AppendLine("    }");
             builder.AppendLine("}");
-            File.WriteAllText(outputPath, builder.ToString(), Encoding.UTF8);
+            WriteTextAtomic(outputPath, builder.ToString(), Encoding.UTF8);
+        }
+
+        private static void WriteTextAtomic(string path, string text, Encoding encoding)
+        {
+            string tempPath = path + ".tmp";
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                File.WriteAllText(tempPath, text, encoding);
+                if (File.Exists(path))
+                    File.Replace(tempPath, path, null, true);
+                else
+                    File.Move(tempPath, path);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+            }
         }
 
         private static string ToSymbol(string key)
