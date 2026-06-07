@@ -777,9 +777,7 @@ namespace Hecton8.World
             UnregisterHotSwapDependency();
             if (_spawnJobScheduled)
             {
-                DispatcherJobFence.TryComplete(ref _spawnJob, forceComplete: true);
-                _spawnJobScheduled = false;
-                UnlockVaultWriteBuffers();
+                ForceCompleteSpawnJobForTeardownInPostSimulationWindow();
             }
 
             CompletePendingOreReadDependencyForTeardown();
@@ -819,9 +817,7 @@ namespace Hecton8.World
             if (!TryCompleteFinishedSpawnJob())
             {
                 // [BLOCKING_SYNC_POINT] Lifecycle teardown only. Disabled ore spawners must not keep Vault rows locked or remain registered for hot ticks.
-                DispatcherJobFence.TryComplete(ref _spawnJob, forceComplete: true);
-                _spawnJobScheduled = false;
-                UnlockVaultWriteBuffers();
+                ForceCompleteSpawnJobForTeardownInPostSimulationWindow();
             }
 
             DiscardSpawnJobOutput();
@@ -1061,9 +1057,7 @@ namespace Hecton8.World
             {
                 _discardSpawnJobOutput = true;
                 // [BLOCKING_SYNC_POINT] DataVault service replacement only. Hot ticks fail closed; the owner swap window fences the outgoing generation.
-                DispatcherJobFence.TryComplete(ref _spawnJob, forceComplete: true);
-                _spawnJobScheduled = false;
-                UnlockVaultWriteBuffers();
+                ForceCompleteSpawnJobForTeardownInPostSimulationWindow();
                 DiscardSpawnJobOutput();
             }
 
@@ -1367,7 +1361,17 @@ namespace Hecton8.World
             if (_pendingOreReadDependency.IsCompleted)
                 DispatcherJobFence.TryFinalizeCompleted(ref _pendingOreReadDependency);
             else
-                DispatcherJobFence.TryComplete(ref _pendingOreReadDependency, forceComplete: true);
+            {
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _pendingOreReadDependency, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
+            }
 
             _pendingOreReadDependency = default;
             _pendingOreReadDependencyValid = false;
@@ -2373,6 +2377,22 @@ namespace Hecton8.World
             _spawnJobScheduled = false;
             UnlockVaultWriteBuffers();
             return true;
+        }
+
+        private void ForceCompleteSpawnJobForTeardownInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _spawnJob, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+
+            _spawnJobScheduled = false;
+            UnlockVaultWriteBuffers();
         }
 
         private void CommitCompletedSpawnJobIfReady()
