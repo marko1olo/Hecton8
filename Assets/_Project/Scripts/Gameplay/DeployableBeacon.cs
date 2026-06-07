@@ -135,6 +135,7 @@ namespace Hecton8.Gameplay
         private const int InteractTextBufferCapacity = 96;
         private readonly char[] _cachedInteractTextBuffer = new char[InteractTextBufferCapacity];
         private int _cachedInteractTextLength;
+        private string _cachedInteractTextLegacy = DefaultInteractText;
 
         // ==========================================================
         //  PUBLIC PROPERTIES
@@ -419,7 +420,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public string GetInteractText()
         {
-            return DefaultInteractText;
+            return _cachedInteractTextLegacy;
         }
 
         public bool TryCopyInteractText(System.Span<char> destination, out int length)
@@ -748,6 +749,15 @@ namespace Hecton8.Gameplay
                 LocalizationKeys.INTERACT_CONFIGURE_BEACON,
                 DefaultInteractText,
                 _cachedInteractTextBuffer);
+            _cachedInteractTextLegacy = CopyCachedLegacyText(_cachedInteractTextBuffer, _cachedInteractTextLength, DefaultInteractText);
+        }
+
+        private static string CopyCachedLegacyText(char[] buffer, int length, string fallback)
+        {
+            if (buffer == null || length <= 0)
+                return fallback;
+
+            return new string(buffer, 0, Math.Min(length, buffer.Length));
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)

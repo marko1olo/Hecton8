@@ -172,6 +172,8 @@ namespace Hecton8.Gameplay
         private readonly char[] _cachedInteractFullTextBuffer = new char[InteractTextBufferCapacity];
         private int _cachedInteractTextLength;
         private int _cachedInteractFullTextLength;
+        private string _cachedInteractTextLegacy = DefaultInteractText;
+        private string _cachedInteractFullTextLegacy = DefaultInteractFullText;
 
         // ══════════════════════════════════════════════════════════
         //  IInteractable IMPLEMENTATION
@@ -201,7 +203,7 @@ namespace Hecton8.Gameplay
 
         string IInteractable.GetInteractText()
         {
-            return ActiveFuelCount >= maxFuelSlots ? DefaultInteractFullText : DefaultInteractText;
+            return ActiveFuelCount >= maxFuelSlots ? _cachedInteractFullTextLegacy : _cachedInteractTextLegacy;
         }
 
         public bool TryCopyInteractText(System.Span<char> destination, out int length)
@@ -1206,6 +1208,16 @@ namespace Hecton8.Gameplay
         {
             _cachedInteractTextLength = InteractableTextCopy.CopyLocalizedTruncated(_localizationRuntime, LocalizationKeys.INTERACT_DEPOSIT_FUEL, DefaultInteractText, _cachedInteractTextBuffer);
             _cachedInteractFullTextLength = InteractableTextCopy.CopyLocalizedTruncated(_localizationRuntime, LocalizationKeys.INTERACT_REACTOR_FULL, DefaultInteractFullText, _cachedInteractFullTextBuffer);
+            _cachedInteractTextLegacy = CopyCachedLegacyText(_cachedInteractTextBuffer, _cachedInteractTextLength, DefaultInteractText);
+            _cachedInteractFullTextLegacy = CopyCachedLegacyText(_cachedInteractFullTextBuffer, _cachedInteractFullTextLength, DefaultInteractFullText);
+        }
+
+        private static string CopyCachedLegacyText(char[] buffer, int length, string fallback)
+        {
+            if (buffer == null || length <= 0)
+                return fallback;
+
+            return new string(buffer, 0, Math.Min(length, buffer.Length));
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)

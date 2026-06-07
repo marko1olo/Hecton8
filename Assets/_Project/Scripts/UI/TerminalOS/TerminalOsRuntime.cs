@@ -792,10 +792,10 @@ namespace Hecton8.UI
             if (H8AppliedLoreRuntime.TryGetUtf8(packetHash, resolvedLocale, surface, out utf8Bytes) &&
                 utf8Bytes.Length > 0)
             {
-                return true;
+                if (resolvedIsDefault || IsTerminalPreviewAsciiCompatible(utf8Bytes))
+                    return true;
             }
-
-            if (resolvedIsDefault)
+            else if (resolvedIsDefault)
             {
                 return false;
             }
@@ -980,6 +980,22 @@ namespace Hecton8.UI
         {
             if (line.Length < TerminalOsConstants.MaxFixedStringPayloadBytes)
                 line.Add(value);
+        }
+
+        private static bool IsTerminalPreviewAsciiCompatible(ReadOnlySpan<byte> utf8Bytes)
+        {
+            for (int i = 0; i < utf8Bytes.Length; i++)
+            {
+                byte value = utf8Bytes[i];
+                if (value == 0u)
+                    return true;
+                if (value == (byte)'\r' || value == (byte)'\n' || value == (byte)'\t')
+                    continue;
+                if (value < 0x20 || value >= 0x7F)
+                    return false;
+            }
+
+            return utf8Bytes.Length > 0;
         }
 
         private void ForceAllDirty()

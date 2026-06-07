@@ -248,6 +248,10 @@ namespace Hecton8.Gameplay
         private int _cachedExitTextLength;
         private int _cachedCyclingTextLength;
         private int _cachedLockedTextLength;
+        private string _cachedEnterTextLegacy = DefaultEnterText;
+        private string _cachedExitTextLegacy = DefaultExitText;
+        private string _cachedCyclingTextLegacy = DefaultCyclingText;
+        private string _cachedLockedTextLegacy = DefaultLockedText;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -565,10 +569,10 @@ namespace Hecton8.Gameplay
             {
                 case AirlockState.Ready:
                     if (_emergencyLockedDown)
-                        return DefaultLockedText;
-                    return _isPlayerInside ? DefaultExitText : DefaultEnterText;
+                        return _cachedLockedTextLegacy;
+                    return _isPlayerInside ? _cachedExitTextLegacy : _cachedEnterTextLegacy;
                 case AirlockState.Cycling:
-                    return DefaultCyclingText;
+                    return _cachedCyclingTextLegacy;
                 default:
                     return string.Empty;
             }
@@ -1941,6 +1945,18 @@ namespace Hecton8.Gameplay
             _cachedExitTextLength = InteractableTextCopy.CopyLocalizedTruncated(manager, LocalizationKeys.INTERACT_EXIT_BASE, DefaultExitText, _cachedExitTextBuffer);
             _cachedCyclingTextLength = InteractableTextCopy.CopyLocalizedTruncated(manager, LocalizationKeys.INTERACT_CYCLING, DefaultCyclingText, _cachedCyclingTextBuffer);
             _cachedLockedTextLength = InteractableTextCopy.CopyLocalizedTruncated(manager, LocalizationKeys.INTERACT_LOCKED, DefaultLockedText, _cachedLockedTextBuffer);
+            _cachedEnterTextLegacy = CopyCachedLegacyText(_cachedEnterTextBuffer, _cachedEnterTextLength, DefaultEnterText);
+            _cachedExitTextLegacy = CopyCachedLegacyText(_cachedExitTextBuffer, _cachedExitTextLength, DefaultExitText);
+            _cachedCyclingTextLegacy = CopyCachedLegacyText(_cachedCyclingTextBuffer, _cachedCyclingTextLength, DefaultCyclingText);
+            _cachedLockedTextLegacy = CopyCachedLegacyText(_cachedLockedTextBuffer, _cachedLockedTextLength, DefaultLockedText);
+        }
+
+        private static string CopyCachedLegacyText(char[] buffer, int length, string fallback)
+        {
+            if (buffer == null || length <= 0)
+                return fallback;
+
+            return new string(buffer, 0, Math.Min(length, buffer.Length));
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)

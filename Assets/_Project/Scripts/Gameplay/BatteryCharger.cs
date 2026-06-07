@@ -156,6 +156,8 @@ namespace Hecton8.Gameplay
         private readonly char[] _cachedSwapBatteryTextBuffer = new char[InteractTextBufferCapacity];
         private int _cachedInteractTextLength;
         private int _cachedSwapBatteryTextLength;
+        private string _cachedInteractTextLegacy = DefaultInteractText;
+        private string _cachedSwapBatteryTextLegacy = DefaultSwapBatteryText;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private IAudioService _cachedAudioService;
         private PlayerToolManager _cachedToolManager;
@@ -205,9 +207,9 @@ namespace Hecton8.Gameplay
             PlayerToolManager toolManager = _cachedToolManager;
             if (toolManager != null && toolManager.CurrentTool != null)
             {
-                return DefaultSwapBatteryText;
+                return _cachedSwapBatteryTextLegacy;
             }
-            return DefaultInteractText;
+            return _cachedInteractTextLegacy;
         }
 
         public bool TryCopyInteractText(System.Span<char> destination, out int length)
@@ -936,6 +938,16 @@ namespace Hecton8.Gameplay
             ILocalizationTextReadModel manager = Hecton8.Core.GlobalRegistry.LocalizationText;
             _cachedInteractTextLength = InteractableTextCopy.CopyLocalizedTruncated(manager, LocalizationKeys.INTERACT_ACCESS_CHARGER, DefaultInteractText, _cachedInteractTextBuffer);
             _cachedSwapBatteryTextLength = InteractableTextCopy.CopyLocalizedTruncated(manager, LocalizationKeys.INTERACT_SWAP_BATTERY, DefaultSwapBatteryText, _cachedSwapBatteryTextBuffer);
+            _cachedInteractTextLegacy = CopyCachedLegacyText(_cachedInteractTextBuffer, _cachedInteractTextLength, DefaultInteractText);
+            _cachedSwapBatteryTextLegacy = CopyCachedLegacyText(_cachedSwapBatteryTextBuffer, _cachedSwapBatteryTextLength, DefaultSwapBatteryText);
+        }
+
+        private static string CopyCachedLegacyText(char[] buffer, int length, string fallback)
+        {
+            if (buffer == null || length <= 0)
+                return fallback;
+
+            return new string(buffer, 0, Math.Min(length, buffer.Length));
         }
 
         private void CacheRegistryServicesCold()
