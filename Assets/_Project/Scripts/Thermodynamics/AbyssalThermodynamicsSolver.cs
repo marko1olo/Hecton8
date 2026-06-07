@@ -937,15 +937,32 @@ namespace Hecton8.Thermodynamics
 
         private bool CompleteThermalJobsForLifecycle()
         {
-            if (_hasPendingJob &&
-                !DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
+            if (_hasPendingJob)
             {
-                return false;
+                DispatcherJobFence.BeginLateFrameSwapWindow();
+                try
+                {
+                    if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
+                        return false;
+                }
+                finally
+                {
+                    DispatcherJobFence.EndLateFrameSwapWindow();
+                }
             }
 
             _hasPendingJob = false;
             ReleaseReactorSharedLocks();
-            DispatcherJobFence.TryComplete(ref _sampleReadHandle, forceComplete: true);
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _sampleReadHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndLateFrameSwapWindow();
+            }
+
             H8Memory.RegisterActiveJob(SystemID.Thermodynamics, default);
             return true;
         }
