@@ -1586,6 +1586,9 @@ namespace Hecton8.Construction
 
         private void ReleaseOwnedBuffers()
         {
+            ReleaseDrainageSolverBufferPins();
+            ReleaseDrainageMutationGuard();
+
             if (_vault == null)
             {
                 ResetHandles();
