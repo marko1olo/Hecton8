@@ -628,6 +628,7 @@ namespace Hecton8.Cartography
         private const string ScannerProfilesFileName = "cartography_sonar_profiles.csv";
         private const string LegacyScannerProfilesFileName = "scanner_hardware_profiles.csv";
         private const string DumpFileName = "Dump_1321_Cartography.bin";
+        private const string TelemetryDumpPayloadLabel = "cartographyTelemetryDumpPayload";
         private static readonly WaitCallback TelemetryDumpCallback = WriteTelemetryDump;
         private static readonly CartographyTelemetryEntry[] TelemetryDumpSnapshot = new CartographyTelemetryEntry[CartographyGridConstants.BlackBoxFrameCount];
         private static int telemetryDumpPending;
@@ -1154,7 +1155,12 @@ namespace Hecton8.Cartography
                 int rowBytes = UnsafeUtility.SizeOf<CartographyTelemetryEntry>();
                 int safeLength = math.clamp(length, 0, TelemetryDumpSnapshot.Length);
                 int byteCount = headerBytes + safeLength * rowBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(CartographyVault),
+                    TelemetryDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory,
+                    Allocator.TempJob);
 
                 unsafe
                 {
@@ -1203,8 +1209,10 @@ namespace Hecton8.Cartography
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(CartographyVault),
+                    TelemetryDumpPayloadLabel);
 
                 Volatile.Write(ref telemetryDumpPending, 0);
             }

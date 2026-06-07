@@ -3133,6 +3133,23 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void CartographyGridTelemetryDumpUsesTrackedTempJobPayload()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "PDA", "CartographyGridJobs.cs");
+            string dumpBody = ExtractMethodBody(source, "private static void WriteTelemetryDump(");
+
+            Assert.That(source, Does.Contain("private const string TelemetryDumpPayloadLabel = \"cartographyTelemetryDumpPayload\";"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("nameof(CartographyVault)"));
+            Assert.That(dumpBody, Does.Contain("TelemetryDumpPayloadLabel"));
+            Assert.That(dumpBody, Does.Contain("NativeArrayOptions.UninitializedMemory"));
+            Assert.That(dumpBody, Does.Contain("Allocator.TempJob"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBody, Does.Not.Contain("new NativeArray<byte>(byteCount"));
+            Assert.That(dumpBody, Does.Not.Contain("payload.Dispose()"));
+        }
+
+        [Test]
         public void DiegeticPanelController_ColorFormatIsHardwareRouteNotQualityFork()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "DiegeticPanelController.cs");
