@@ -181,18 +181,8 @@ namespace Hecton8.Input
                         vault.ReleaseWriteLock(in ringHandle, SystemID.UI);
                 }
 
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
                 void* snapshotSource = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(snapshot);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, FileStreamBufferBytes, FileOptions.WriteThrough))
-                {
-                    stream.Write(new ReadOnlySpan<byte>(snapshotSource, byteCount));
-                    stream.Flush(true);
-                }
-
-                return true;
+                return NativeFaultDumpWriter.TryWriteAll(path, new ReadOnlySpan<byte>(snapshotSource, byteCount), byteCount);
             }
             catch (UnauthorizedAccessException)
             {

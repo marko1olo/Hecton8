@@ -849,8 +849,7 @@ namespace Hecton8.Input
             if (!_telemetryBootstrapped)
                 TryColdBootstrapTelemetry();
 
-            string path = Path.Combine(Directory.GetCurrentDirectory(), AgentTelemetryDumpRelativePath);
-            ControlRemapper.TryDumpTelemetry(_dataVault, in _telemetryRingHandle, path);
+            ControlRemapper.TryDumpTelemetry(_dataVault, in _telemetryRingHandle, AgentTelemetryDumpRelativePath);
         }
 
         private void ClearActiveRebindContext()

@@ -192,6 +192,7 @@ namespace Hecton8.UI
         private const uint FaultInvalidHash = 0x494E5648u;
         private const uint FaultH8lrOpenFailed = 0x48384C52u; // H8LR
         private const string BlackBoxDumpFileName = "Dump_PDAEncyclopediaStreamer_BlackBox.bin";
+        private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/" + BlackBoxDumpFileName;
         private const uint DefaultEntryHash = 0xAEC57EACu;
         private const uint H8lrSourceId = PdaH8lrLoreStore.MagicH8lr;
         private const uint StateFlagEditorBulkUnlock = 1u;
@@ -3921,24 +3922,23 @@ namespace Hecton8.UI
             if (!_blackBoxDumpQueued)
                 return;
 
-            _blackBoxDumpQueued = false;
-            DumpBlackBox();
+            if (DumpBlackBox())
+            {
+                _blackBoxDumpQueued = false;
+                _queuedBlackBoxFaultHash = 0u;
+            }
         }
 
-        private void DumpBlackBox()
+        private bool DumpBlackBox()
         {
             if (!EnsureVaultBuffers())
             {
-                _blackBoxDumpQueued = true;
-                return;
+                return false;
             }
 
-            string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string directory = Path.Combine(root, "Docs", "AgentLogs");
             try
             {
-                WriteBlackBoxDump(Path.Combine(directory, BlackBoxDumpFileName));
-                _queuedBlackBoxFaultHash = 0u;
+                return WriteBlackBoxDump(BlackBoxDumpRelativePath);
             }
             catch (IOException)
             {
@@ -3958,9 +3958,11 @@ namespace Hecton8.UI
             catch (NotSupportedException)
             {
             }
+
+            return false;
         }
 
-        private void WriteBlackBoxDump(string path)
+        private bool WriteBlackBoxDump(string path)
         {
             const int headerBytes = 32;
             const int telemetryEntryBytes = 64;
@@ -4000,7 +4002,7 @@ namespace Hecton8.UI
                     WriteTelemetryDumpEntry(row, in entry);
                 }
 
-                NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
             finally
             {
