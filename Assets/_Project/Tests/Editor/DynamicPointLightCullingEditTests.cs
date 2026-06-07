@@ -235,6 +235,41 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void MockAndManifestMutationGuardsReleaseThroughAcquiredVault()
+        {
+            string path = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs");
+            string source = File.ReadAllText(path);
+
+            Assert.That(source, Does.Contain("private IDataVault _mockSeedGuardVault;"));
+            Assert.That(source, Does.Contain("private IDataVault _mockSdfGuardVault;"));
+            Assert.That(source, Does.Contain("private IDataVault _sourceManifestGuardVault;"));
+
+            string seedLock = ExtractMethodBlock(source, "private bool TryLockMockSeedBuffers()");
+            string seedUnlock = ExtractMethodBlock(source, "private void UnlockMockSeedBuffers()");
+            string sdfLock = ExtractMethodBlock(source, "private bool TryLockMockSdfBuffer()");
+            string sdfUnlock = ExtractMethodBlock(source, "private void UnlockMockSdfBuffer()");
+            string manifestLock = ExtractMethodBlock(source, "private bool TryLockSourceManifestBuffer()");
+            string manifestUnlock = ExtractMethodBlock(source, "private void UnlockSourceManifestBuffer()");
+
+            Assert.That(seedLock, Does.Contain("_mockSeedGuardVault = vault;"));
+            Assert.That(seedUnlock, Does.Contain("IDataVault vault = _mockSeedGuardVault;"));
+            Assert.That(seedUnlock, Does.Contain("_mockSeedGuardVault = null;"));
+            Assert.That(seedUnlock, Does.Not.Contain("IDataVault vault = _vault;"));
+
+            Assert.That(sdfLock, Does.Contain("_mockSdfGuardVault = vault;"));
+            Assert.That(sdfUnlock, Does.Contain("IDataVault vault = _mockSdfGuardVault;"));
+            Assert.That(sdfUnlock, Does.Contain("_mockSdfGuardVault = null;"));
+            Assert.That(sdfUnlock, Does.Not.Contain("IDataVault vault = _vault;"));
+
+            Assert.That(manifestLock, Does.Contain("_sourceManifestGuardVault = vault;"));
+            Assert.That(manifestUnlock, Does.Contain("IDataVault vault = _sourceManifestGuardVault;"));
+            Assert.That(manifestUnlock, Does.Contain("_sourceManifestGuardVault = null;"));
+            Assert.That(manifestUnlock, Does.Not.Contain("IDataVault vault = _vault;"));
+        }
+
+        [Test]
         public void RollbackMerkleSourceDoesNotHashDynamicLightPresentationBuffers()
         {
             string path = Path.Combine(Application.dataPath, "_Project/Scripts/Networking/RollbackNetcodeContracts.cs");

@@ -150,6 +150,9 @@ namespace Hecton8.Lighting
         private bool _mockSdfSeeded;
         private bool _timeoutFaultPending;
         private IDataVault _jobPinVault;
+        private IDataVault _mockSeedGuardVault;
+        private IDataVault _mockSdfGuardVault;
+        private IDataVault _sourceManifestGuardVault;
         private uint _jobPinMask;
         private bool _jobPinsHeld;
         private bool _mockSeedGuardHeld;
@@ -1373,16 +1376,18 @@ namespace Hecton8.Lighting
             if (!vault.TryAcquireMutationGuard(MockSeedMutationGuardMask))
                 return false;
 
+            _mockSeedGuardVault = vault;
             _mockSeedGuardHeld = true;
             return true;
         }
 
         private void UnlockMockSeedBuffers()
         {
-            IDataVault vault = _vault;
+            IDataVault vault = _mockSeedGuardVault;
             if (vault != null && _mockSeedGuardHeld)
                 vault.ReleaseMutationGuard(MockSeedMutationGuardMask);
 
+            _mockSeedGuardVault = null;
             _mockSeedGuardHeld = false;
         }
 
@@ -1397,16 +1402,18 @@ namespace Hecton8.Lighting
             if (!vault.TryAcquireMutationGuard(MockSdfMutationGuardMask))
                 return false;
 
+            _mockSdfGuardVault = vault;
             _mockSdfGuardHeld = true;
             return true;
         }
 
         private void UnlockMockSdfBuffer()
         {
-            IDataVault vault = _vault;
+            IDataVault vault = _mockSdfGuardVault;
             if (vault != null && _mockSdfGuardHeld)
                 vault.ReleaseMutationGuard(MockSdfMutationGuardMask);
 
+            _mockSdfGuardVault = null;
             _mockSdfGuardHeld = false;
         }
 
@@ -1421,16 +1428,18 @@ namespace Hecton8.Lighting
             if (!vault.TryAcquireMutationGuard(SourceManifestMutationGuardMask))
                 return false;
 
+            _sourceManifestGuardVault = vault;
             _sourceManifestGuardHeld = true;
             return true;
         }
 
         private void UnlockSourceManifestBuffer()
         {
-            IDataVault vault = _vault;
+            IDataVault vault = _sourceManifestGuardVault;
             if (vault != null && _sourceManifestGuardHeld)
                 vault.ReleaseMutationGuard(SourceManifestMutationGuardMask);
 
+            _sourceManifestGuardVault = null;
             _sourceManifestGuardHeld = false;
         }
 
