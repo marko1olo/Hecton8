@@ -1193,6 +1193,32 @@ namespace Hecton8.UI
             return false;
         }
 
+        private bool IsMetadataTableFullForHash(uint hash)
+        {
+            return TryReadVaultBuffer(in _metadataHandle, MetadataBufferId, out NativeArray<PdaEncyclopediaEntryMetaDTO>.ReadOnly metadata) &&
+                   metadata.Length >= MaxMetadataEntries &&
+                   IsMetadataTableFullForHash(hash, metadata);
+        }
+
+        private static bool IsMetadataTableFullForHash(
+            uint hash,
+            NativeArray<PdaEncyclopediaEntryMetaDTO>.ReadOnly metadata)
+        {
+            if (hash == 0u || metadata.Length < MaxMetadataEntries)
+                return false;
+
+            int start = (int)(hash & (UnlockBitCount - 1));
+            for (int probe = 0; probe < UnlockBitCount; probe++)
+            {
+                int index = (start + probe) & (UnlockBitCount - 1);
+                PdaEncyclopediaEntryMetaDTO meta = metadata[index];
+                if (meta.EntryHash == 0u || meta.EntryHash == hash)
+                    return false;
+            }
+
+            return true;
+        }
+
         private static bool TryFindBitIndexSnapshot(
             NativeArray<PdaEncyclopediaEntryMetaDTO> metadata,
             uint hash,
@@ -3199,7 +3225,11 @@ namespace Hecton8.UI
 
                 if (!TryEnsureBitIndex(record.PacketHash, out ushort bitIndex))
                 {
-                    SetFault(FaultMetadataFull);
+                    if (!IsMetadataTableFullForHash(record.PacketHash))
+                        cursor = i;
+                    else
+                        cursor = records.Length;
+
                     break;
                 }
 
@@ -3261,7 +3291,9 @@ namespace Hecton8.UI
 
                 if (!TryEnsureBitIndex(record.Hash, out ushort bitIndex))
                 {
-                    SetFault(FaultMetadataFull);
+                    if (!IsMetadataTableFullForHash(record.Hash))
+                        return;
+
                     break;
                 }
 
