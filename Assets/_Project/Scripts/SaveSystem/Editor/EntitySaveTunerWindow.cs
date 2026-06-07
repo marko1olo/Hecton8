@@ -91,6 +91,7 @@ namespace Hecton8.SaveSystem.Editor
         private void OnEnable()
         {
             _dataVault = GlobalRegistry.DataVault;
+            SceneView.duringSceneGui -= DrawEntityHeatmap;
             SceneView.duringSceneGui += DrawEntityHeatmap;
         }
 

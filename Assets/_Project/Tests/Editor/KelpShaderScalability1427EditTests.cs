@@ -2164,8 +2164,10 @@ namespace Hecton8.Tests.Editor
             string safeEntranceBody = ExtractMethodBody(densityJob, "bool TryResolveSafeEntrance(");
             string maskPayloadBody = ExtractMethodBody(densityJob, "bool TryResolveSafeEntranceMouthMask(");
             string colorJob = ExtractTypeBody(source, "public struct VoxelColorJob");
+            string colorExecuteBody = ExtractMethodBody(colorJob, "public void Execute(");
             string colorBody = ExtractMethodBody(colorJob, "bool TryResolveCaveMouthTerrainColor(");
             string colorPayloadBody = ExtractMethodBody(colorJob, "bool TryResolveCaveMouthTerrainColorPayload(");
+            string modifiedCellBody = ExtractMethodBody(colorJob, "bool IsModifiedSdfCell(");
             string terrainHoleBody = ExtractMethodBody(source, "void RegisterEntranceTerrainHoles(");
             string terrainHoleHelperBody = ExtractMethodBody(source, "private static bool TryResolveSafeEntranceTerrainHole(");
 
@@ -2200,8 +2202,19 @@ namespace Hecton8.Tests.Editor
             Assert.That(colorJob, Does.Contain("bool TryResolveCaveMouthTerrainColorPayload("));
             Assert.That(colorJob, Does.Contain("float ResolveSafeVoxelStep()"));
             Assert.That(colorJob, Does.Contain("static float SaturateFinite(float value)"));
+            Assert.That(colorJob, Does.Contain("static float ClampFinite(float value, float fallback, float minimum, float maximum)"));
             Assert.That(colorJob, Does.Contain("static float4 SaturateFinite(float4 value)"));
             Assert.That(colorJob, Does.Contain("static bool IsFinite(float4 value)"));
+            Assert.That(colorExecuteBody, Does.Contain("if (!IsFinite(p))"));
+            Assert.That(colorExecuteBody, Does.Contain("colors[idx] = Color.clear;"));
+            Assert.That(colorExecuteBody, Does.Contain("float3 safeVolumeCenter = IsFinite(volumeCenter) ? volumeCenter : p;"));
+            Assert.That(colorExecuteBody, Does.Contain("float safeHalfExtent = ClampFinite(volumeHalfExtent"));
+            Assert.That(colorExecuteBody, Does.Contain("SaturateFinite(ambientOcclusionValues[idx])"));
+            Assert.That(colorExecuteBody, Does.Contain("terrainHeights.Length >= ptsX * ptsZ"));
+            Assert.That(colorExecuteBody, Does.Contain("IsFinite(volumeOrigin)"));
+            Assert.That(colorExecuteBody, Does.Contain("float seamBand = ClampFinite(seamTransitionBand"));
+            Assert.That(colorExecuteBody, Does.Contain("float lodBand = math.max(ClampFinite(lodTransitionBand"));
+            Assert.That(colorExecuteBody, Does.Contain("float skirtAlpha = SaturateFinite(math.max(terrainSkirt, lodEdgeSkirt));"));
             Assert.That(colorBody, Does.Contain("TryResolveCaveMouthTerrainColorPayload("));
             Assert.That(colorBody, Does.Contain("float safeVoxelStep = ResolveSafeVoxelStep();"));
             Assert.That(colorBody, Does.Contain("float distanceSq = math.lengthsq(position - surfacePosition);"));
@@ -2212,6 +2225,9 @@ namespace Hecton8.Tests.Editor
             Assert.That(colorPayloadBody, Does.Contain("math.clamp(entrance.radius, MinSafeCaveMouthColorRadius, MaxSafeCaveMouthColorRadius)"));
             Assert.That(colorPayloadBody, Does.Contain("terrainColor = SaturateFinite(entrance.terrainSplatColor);"));
             Assert.That(colorPayloadBody, Does.Contain("terrainColor.w = blend;"));
+            Assert.That(modifiedCellBody, Does.Contain("!IsFinite(position)"));
+            Assert.That(modifiedCellBody, Does.Contain("!math.all(math.isfinite(absoluteCellOffset))"));
+            Assert.That(modifiedCellBody, Does.Contain("!math.isfinite(voxelStep)"));
 
             Assert.That(source, Does.Contain("private const float MaxRuntimeCaveEntranceHoleRadius = 96f;"));
             Assert.That(source, Does.Contain("private static bool TryResolveSafeEntranceTerrainHole("));
@@ -2232,6 +2248,8 @@ namespace Hecton8.Tests.Editor
             Assert.That(colorBody, Does.Not.Contain("float radius = math.max(entrance.radius, voxelStep);"));
             Assert.That(colorBody, Does.Not.Contain("position - entrance.surfacePosition"));
             Assert.That(colorBody, Does.Not.Contain("terrainColor = math.saturate(entrance.terrainSplatColor);"));
+            Assert.That(colorExecuteBody, Does.Not.Contain("float safeHalfExtent = math.max(volumeHalfExtent, 1f);"));
+            Assert.That(colorExecuteBody, Does.Not.Contain("math.saturate(ambientOcclusionValues[idx])"));
             Assert.That(terrainHoleBody, Does.Not.Contain("float radius = math.max(entrance.radius, entrance.innerRadius) + holePadding;"));
             Assert.That(terrainHoleBody, Does.Not.Contain("ToDouble3(entrance.surfacePosition) + capturedTotalOffset"));
         }

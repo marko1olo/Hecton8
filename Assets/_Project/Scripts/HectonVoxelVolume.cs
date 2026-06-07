@@ -4042,6 +4042,12 @@ namespace Hecton8.Caves
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                VoxelVolumeLeakSentinel.RebindDispatcher(previousService, currentService);
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Physics)
             {
                 _physicsService = currentService as IPhysicsService;
@@ -5093,6 +5099,7 @@ namespace Hecton8.World
 
         private static readonly LeakSentinelLateFrameDriver s_driver = new LeakSentinelLateFrameDriver();
         private static Hecton8.Caves.HectonVoxelVolume s_head;
+        private static Hecton8.Core.SystemDispatcher s_registeredDispatcher;
         private static bool s_driverRegistered;
         private static int s_pendingDestroyCount;
         private static int s_trackedVolumeCount;
@@ -5126,6 +5133,31 @@ namespace Hecton8.World
             volume._leakDestroyRequestedFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             volume._leakSentinelState = StateDestroyPending;
             EnsureDriverRegistered();
+        }
+
+        internal static void RebindDispatcher(object previousService, object currentService)
+        {
+            if (!s_driverRegistered)
+            {
+                if (s_pendingDestroyCount > 0 && currentService != null)
+                    EnsureDriverRegistered();
+                return;
+            }
+
+            if (ReferenceEquals(currentService, s_registeredDispatcher))
+                return;
+
+            if (previousService != null && !ReferenceEquals(previousService, s_registeredDispatcher))
+                return;
+
+            Hecton8.Core.SystemDispatcher.UnregisterLateFrameTickableDirect(
+                s_driver,
+                Hecton8.Core.PriorityLayer.Environment);
+            s_registeredDispatcher = null;
+            s_driverRegistered = false;
+
+            if (s_pendingDestroyCount > 0 && currentService != null)
+                EnsureDriverRegistered();
         }
 
         internal static void MarkReleasedToPool(Hecton8.Caves.HectonVoxelVolume volume)
@@ -5224,9 +5256,10 @@ namespace Hecton8.World
 
         private static void EnsureDriverRegistered()
         {
+            Hecton8.Core.SystemDispatcher dispatcher = Hecton8.Core.GlobalRegistry.Dispatcher;
             if (s_driverRegistered ||
                 !UnityEngine.Application.isPlaying ||
-                Hecton8.Core.GlobalRegistry.Dispatcher == null)
+                dispatcher == null)
             {
                 return;
             }
@@ -5234,18 +5267,22 @@ namespace Hecton8.World
             s_driverRegistered = Hecton8.Core.GlobalRegistry.TryRegisterLateFrameTickable(
                 s_driver,
                 Hecton8.Core.PriorityLayer.Environment);
+            if (s_driverRegistered)
+                s_registeredDispatcher = dispatcher;
         }
 
         private static void TryUnregisterDriver()
         {
             if (!s_driverRegistered ||
-                s_pendingDestroyCount > 0 ||
-                Hecton8.Core.GlobalRegistry.Dispatcher == null)
+                s_pendingDestroyCount > 0)
             {
                 return;
             }
 
-            Hecton8.Core.GlobalRegistry.UnregisterLateFrameTickable(s_driver, Hecton8.Core.PriorityLayer.Environment);
+            Hecton8.Core.SystemDispatcher.UnregisterLateFrameTickableDirect(
+                s_driver,
+                Hecton8.Core.PriorityLayer.Environment);
+            s_registeredDispatcher = null;
             s_driverRegistered = false;
         }
 

@@ -70,6 +70,7 @@ namespace Hecton8.SaveSystem.Editor
 
         private void OnEnable()
         {
+            SceneView.duringSceneGui -= DrawVoxelHeatmap;
             SceneView.duringSceneGui += DrawVoxelHeatmap;
         }
 

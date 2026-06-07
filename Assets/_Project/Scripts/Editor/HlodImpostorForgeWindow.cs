@@ -52,6 +52,7 @@ namespace Hecton8.Editor
         {
             _profiles = new HlodImpostorProfileRecord[MaxProfiles]; // COLD EDITOR ALLOC: profile cache for UI Toolkit choices - owner: HlodImpostorForgeWindow
             _previewRecords = new HlodImpostorCaptureAngleRecord[MaxPreviewViews]; // COLD EDITOR ALLOC: SceneView preview cache - owner: HlodImpostorForgeWindow
+            SceneView.duringSceneGui -= OnSceneGui;
             SceneView.duringSceneGui += OnSceneGui;
             LoadProfiles(DefaultProfilePath);
         }

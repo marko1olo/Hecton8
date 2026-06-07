@@ -33,6 +33,7 @@ namespace Hecton8.Physics.Editor
         private void OnEnable()
         {
             BuildUi();
+            EditorApplication.update -= Tick;
             EditorApplication.update += Tick;
         }
 

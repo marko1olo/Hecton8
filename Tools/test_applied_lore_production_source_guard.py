@@ -155,6 +155,33 @@ class TestAppliedLoreProductionSourceGuard(unittest.TestCase):
             self.assertEqual(ret, 1)
             self.assertIn("release number prefix RS903 is reused", out.getvalue())
 
+    def test_unknown_connected_packet_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_release(root, "RS904_TEST_PRODUCTION_SOURCE", ["P9005_TEST_PACKET"])
+            packet_path = (
+                root
+                / "Docs"
+                / "Lore"
+                / "AppliedContent"
+                / "production_packets"
+                / "P9005_TEST_PACKET.production.md"
+            )
+            packet_path.write_text(
+                packet_markdown("P9005_TEST_PACKET").replace(
+                    "| Packet ID | P9005_TEST_PACKET |\n",
+                    "| Packet ID | P9005_TEST_PACKET |\n"
+                    "| Connected packets | P9999_MISSING_PACKET |\n",
+                ),
+                encoding="utf-8",
+            )
+
+            with patch("sys.stdout", new=StringIO()) as out:
+                ret = run_guard(root, "RS904_*", "", False)
+
+            self.assertEqual(ret, 1)
+            self.assertIn("connected packet id is not present", out.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

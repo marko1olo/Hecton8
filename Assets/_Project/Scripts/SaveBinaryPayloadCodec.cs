@@ -505,7 +505,7 @@ namespace Hecton8.SaveSystem
                 data.narrativeDiscoveryIds,
                 narrativeDiscoverySourceCount,
                 SaveData.MaxNarrativeDiscoveries);
-            int corporatePendingOrderCount = CountNonBlankStringFloatPairs(
+            int corporatePendingOrderSourceCount = ClampPairedListCount(
                 data.corporatePendingOrderIds,
                 data.corporatePendingOrderTimers,
                 SaveData.MaxCorporateOrderIds);
@@ -582,18 +582,16 @@ namespace Hecton8.SaveSystem
                 && writer.WriteBool(data.atlas6DirectiveConflictTriggered)
                 && WriteAtlas6Liability(ref writer, data)
                 && WriteNonBlankStringList(ref writer, data.corporateReceivedOrderIds, SaveData.MaxCorporateOrderIds)
-                && WriteNonBlankStringFloatPairIds(
+                && WritePairedNonBlankStringList(
                     ref writer,
                     data.corporatePendingOrderIds,
                     data.corporatePendingOrderTimers,
-                    corporatePendingOrderCount,
-                    SaveData.MaxCorporateOrderIds)
-                && WriteNonBlankStringFloatPairValues(
+                    corporatePendingOrderSourceCount)
+                && WritePairedNonBlankFloatList(
                     ref writer,
                     data.corporatePendingOrderIds,
                     data.corporatePendingOrderTimers,
-                    corporatePendingOrderCount,
-                    SaveData.MaxCorporateOrderIds)
+                    corporatePendingOrderSourceCount)
                 && writer.WriteFloat(firstHourSessionTime)
                 && writer.WriteInt(SanitizeFirstHourMilestones(data.firstHourMilestones))
                 && writer.WriteInt(SanitizeFirstHourGuidanceFlags(data.firstHourGuidanceFlags))
@@ -5729,7 +5727,7 @@ namespace Hecton8.SaveSystem
                 : 0;
         }
 
-        private static int CountValidStringKeyDictionaryEntries<TValue>(
+        private static int CountNonBlankStringKeyDictionaryEntries<TValue>(
             Dictionary<string, TValue> values,
             int maxCount)
         {
@@ -5744,7 +5742,7 @@ namespace Hecton8.SaveSystem
             Dictionary<string, TValue>.Enumerator enumerator = values.GetEnumerator();
             while (count < safeMax && enumerator.MoveNext())
             {
-                if (string.IsNullOrEmpty(enumerator.Current.Key))
+                if (string.IsNullOrWhiteSpace(enumerator.Current.Key))
                     continue;
 
                 count++;
@@ -5782,27 +5780,9 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool WriteStringList(ref BufferWriter writer, List<string> values, int maxCount)
-        {
-            int count = ClampListCount(values, maxCount);
-            if (!writer.WriteInt(count))
-                return false;
-
-            if (values == null)
-                return true;
-
-            for (int i = 0; i < count; i++)
-            {
-                if (!writer.WriteString(values[i] ?? string.Empty))
-                    return false;
-            }
-
-            return true;
-        }
-
         private static bool WriteNonBlankStringList(ref BufferWriter writer, List<string> values, int maxCount)
         {
-            int count = CountNonBlankStringList(values, maxCount);
+            int count = CountNonBlankStringListEntries(values, maxCount);
             if (!writer.WriteInt(count))
                 return false;
 
@@ -5826,49 +5806,22 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static int CountNonBlankStringList(List<string> values, int maxCount)
-        {
-            int bound = ClampListCount(values, maxCount);
-            int nonBlankCount = 0;
-            for (int i = 0; i < bound; i++)
-            {
-                if (!string.IsNullOrWhiteSpace(values[i]))
-                    nonBlankCount++;
-            }
-
-            return nonBlankCount;
-        }
-
-        private static int CountNonBlankStringFloatPairs(List<string> ids, List<float> values, int maxCount)
-        {
-            int bound = ClampPairedListCount(ids, values, maxCount);
-            int nonBlankCount = 0;
-            for (int i = 0; i < bound; i++)
-            {
-                if (!string.IsNullOrWhiteSpace(ids[i]))
-                    nonBlankCount++;
-            }
-
-            return nonBlankCount;
-        }
-
-        private static bool WriteNonBlankStringFloatPairIds(
+        private static bool WritePairedNonBlankStringList(
             ref BufferWriter writer,
             List<string> ids,
             List<float> values,
-            int count,
-            int maxCount)
+            int sourceCount)
         {
-            int safeCount = Math.Clamp(count, 0, CountNonBlankStringFloatPairs(ids, values, maxCount));
-            if (!writer.WriteInt(safeCount))
+            int count = CountNonBlankPairedStringListEntries(ids, values, sourceCount);
+            if (!writer.WriteInt(count))
                 return false;
 
-            if (safeCount == 0)
+            if (count == 0)
                 return true;
 
-            int bound = ClampPairedListCount(ids, values, maxCount);
+            int bound = ClampPairedListCount(ids, values, sourceCount);
             int written = 0;
-            for (int i = 0; i < bound && written < safeCount; i++)
+            for (int i = 0; i < bound && written < count; i++)
             {
                 string id = ids[i];
                 if (string.IsNullOrWhiteSpace(id))
@@ -5883,23 +5836,22 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool WriteNonBlankStringFloatPairValues(
+        private static bool WritePairedNonBlankFloatList(
             ref BufferWriter writer,
             List<string> ids,
             List<float> values,
-            int count,
-            int maxCount)
+            int sourceCount)
         {
-            int safeCount = Math.Clamp(count, 0, CountNonBlankStringFloatPairs(ids, values, maxCount));
-            if (!writer.WriteInt(safeCount))
+            int count = CountNonBlankPairedStringListEntries(ids, values, sourceCount);
+            if (!writer.WriteInt(count))
                 return false;
 
-            if (safeCount == 0)
+            if (count == 0)
                 return true;
 
-            int bound = ClampPairedListCount(ids, values, maxCount);
+            int bound = ClampPairedListCount(ids, values, sourceCount);
             int written = 0;
-            for (int i = 0; i < bound && written < safeCount; i++)
+            for (int i = 0; i < bound && written < count; i++)
             {
                 if (string.IsNullOrWhiteSpace(ids[i]))
                     continue;
@@ -5911,6 +5863,35 @@ namespace Hecton8.SaveSystem
             }
 
             return true;
+        }
+
+        private static int CountNonBlankStringListEntries(List<string> values, int maxCount)
+        {
+            int bound = ClampListCount(values, maxCount);
+            int count = 0;
+            for (int i = 0; i < bound; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(values[i]))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static int CountNonBlankPairedStringListEntries(
+            List<string> ids,
+            List<float> values,
+            int sourceCount)
+        {
+            int bound = ClampPairedListCount(ids, values, sourceCount);
+            int count = 0;
+            for (int i = 0; i < bound; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(ids[i]))
+                    count++;
+            }
+
+            return count;
         }
 
         private static bool ReadStringList(
@@ -5936,24 +5917,6 @@ namespace Hecton8.SaveSystem
                     return false;
 
                 values.Add(item ?? string.Empty);
-            }
-
-            return true;
-        }
-
-        private static bool WriteFloatList(ref BufferWriter writer, List<float> values, int maxCount)
-        {
-            int count = ClampListCount(values, maxCount);
-            if (!writer.WriteInt(count))
-                return false;
-
-            if (values == null)
-                return true;
-
-            for (int i = 0; i < count; i++)
-            {
-                if (!writer.WriteFloat(SanitizeNonNegativeFinite(values[i])))
-                    return false;
             }
 
             return true;
@@ -5992,7 +5955,7 @@ namespace Hecton8.SaveSystem
             Dictionary<string, float> values,
             int maxCount)
         {
-            int count = CountValidStringKeyDictionaryEntries(values, maxCount);
+            int count = CountNonBlankStringKeyDictionaryEntries(values, maxCount);
             if (!writer.WriteInt(count))
                 return false;
 
@@ -6004,7 +5967,7 @@ namespace Hecton8.SaveSystem
             while (written < count && enumerator.MoveNext())
             {
                 KeyValuePair<string, float> pair = enumerator.Current;
-                if (string.IsNullOrEmpty(pair.Key))
+                if (string.IsNullOrWhiteSpace(pair.Key))
                     continue;
 
                 if (!writer.WriteString(pair.Key) || !writer.WriteFloat(SanitizeNonNegativeFinite(pair.Value)))
@@ -6039,7 +6002,7 @@ namespace Hecton8.SaveSystem
                 if (!reader.ReadString(out string key) || !reader.ReadFloat(out float entryValue))
                     return false;
 
-                if (!string.IsNullOrEmpty(key))
+                if (!string.IsNullOrWhiteSpace(key))
                     values[key] = SanitizeNonNegativeFinite(entryValue);
             }
 
@@ -6051,7 +6014,7 @@ namespace Hecton8.SaveSystem
             Dictionary<string, bool> values,
             int maxCount)
         {
-            int count = CountValidStringKeyDictionaryEntries(values, maxCount);
+            int count = CountNonBlankStringKeyDictionaryEntries(values, maxCount);
             if (!writer.WriteInt(count))
                 return false;
 
@@ -6063,7 +6026,7 @@ namespace Hecton8.SaveSystem
             while (written < count && enumerator.MoveNext())
             {
                 KeyValuePair<string, bool> pair = enumerator.Current;
-                if (string.IsNullOrEmpty(pair.Key))
+                if (string.IsNullOrWhiteSpace(pair.Key))
                     continue;
 
                 if (!writer.WriteString(pair.Key) || !writer.WriteBool(pair.Value))
@@ -6098,7 +6061,7 @@ namespace Hecton8.SaveSystem
                 if (!reader.ReadString(out string key) || !reader.ReadBool(out bool entryValue))
                     return false;
 
-                if (!string.IsNullOrEmpty(key))
+                if (!string.IsNullOrWhiteSpace(key))
                     values[key] = entryValue;
             }
 
@@ -6110,7 +6073,7 @@ namespace Hecton8.SaveSystem
             Dictionary<string, string> values,
             int maxCount)
         {
-            int count = CountValidStringKeyDictionaryEntries(values, maxCount);
+            int count = CountNonBlankStringKeyDictionaryEntries(values, maxCount);
             if (!writer.WriteInt(count))
                 return false;
 
@@ -6122,7 +6085,7 @@ namespace Hecton8.SaveSystem
             while (written < count && enumerator.MoveNext())
             {
                 KeyValuePair<string, string> pair = enumerator.Current;
-                if (string.IsNullOrEmpty(pair.Key))
+                if (string.IsNullOrWhiteSpace(pair.Key))
                     continue;
 
                 if (!writer.WriteString(pair.Key) || !writer.WriteString(pair.Value ?? string.Empty))
@@ -6157,7 +6120,7 @@ namespace Hecton8.SaveSystem
                 if (!reader.ReadString(out string key) || !reader.ReadString(out string entryValue))
                     return false;
 
-                if (!string.IsNullOrEmpty(key))
+                if (!string.IsNullOrWhiteSpace(key))
                     values[key] = entryValue ?? string.Empty;
             }
 

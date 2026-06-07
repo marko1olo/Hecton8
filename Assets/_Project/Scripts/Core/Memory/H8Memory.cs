@@ -3242,17 +3242,22 @@ namespace Hecton8.Core.Memory
         /// </summary>
         public static void FreeRaw(void* pointer, Allocator allocator, SystemID requester)
         {
+            TryFreeRaw(pointer, allocator, requester);
+        }
+
+        internal static bool TryFreeRaw(void* pointer, Allocator allocator, SystemID requester)
+        {
             if (pointer == null)
-                return;
+                return true;
             if (requester == SystemID.Unknown)
             {
                 RecordBlackBox(requester, H8MemoryTelemetryFlags.Fault);
-                return;
+                return false;
             }
             if (!_initialized)
             {
                 RecordBlackBox(requester, H8MemoryTelemetryFlags.Fault);
-                return;
+                return false;
             }
 
             IntPtr pointerValue = (IntPtr)pointer;
@@ -3261,10 +3266,11 @@ namespace Hecton8.Core.Memory
             if (canRestoreTracking)
                 record = _records[recordIndex];
             if (!UnregisterPointer(pointer, requester))
-                return;
+                return false;
             try
             {
                 UnsafeUtility.Free(pointer, allocator);
+                return true;
             }
             catch (Exception freeException)
             {

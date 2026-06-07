@@ -18,6 +18,7 @@ namespace Hecton8.EditorTools
 
         public static void ImportExternalPbrTexturePacks()
         {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             EnsureFolder(MaterialRoot);
             int imported = 0;
             int materials = 0;
@@ -133,12 +134,18 @@ namespace Hecton8.EditorTools
             SetTextureIfPresent(material, "_MetallicGlossMap", maskMap);
             SetTextureIfPresent(material, "_OcclusionMap", arm);
             SetTextureIfPresent(material, "_ParallaxMap", height);
-            SetFloatIfPresent(material, "_BumpScale", 0.85f);
-            SetFloatIfPresent(material, "_Metallic", DefaultMetallic(asset.id));
-            SetFloatIfPresent(material, "_Smoothness", DefaultSmoothness(asset.id));
+            SetTextureScaleIfPresent(material, "_BaseMap", TilingScale(asset));
+            SetTextureScaleIfPresent(material, "_MainTex", TilingScale(asset));
+            SetTextureScaleIfPresent(material, "_BumpMap", TilingScale(asset));
+            SetTextureScaleIfPresent(material, "_MetallicGlossMap", TilingScale(asset));
+            SetTextureScaleIfPresent(material, "_OcclusionMap", TilingScale(asset));
+            SetTextureScaleIfPresent(material, "_ParallaxMap", TilingScale(asset));
+            SetFloatIfPresent(material, "_BumpScale", NormalScale(asset));
+            SetFloatIfPresent(material, "_Metallic", Metallic(asset));
+            SetFloatIfPresent(material, "_Smoothness", Smoothness(asset));
             SetFloatIfPresent(material, "_SmoothnessTextureChannel", 0f);
             SetFloatIfPresent(material, "_OcclusionStrength", 1f);
-            SetFloatIfPresent(material, "_Parallax", 0.012f);
+            SetFloatIfPresent(material, "_Parallax", HeightScale(asset));
             SetKeyword(material, "_NORMALMAP", normal != null);
             SetKeyword(material, "_METALLICSPECGLOSSMAP", maskMap != null);
             SetKeyword(material, "_OCCLUSIONMAP", arm != null);
@@ -171,12 +178,43 @@ namespace Hecton8.EditorTools
                 material.SetFloat(property, value);
         }
 
+        private static void SetTextureScaleIfPresent(Material material, string property, float scale)
+        {
+            if (material.HasProperty(property))
+                material.SetTextureScale(property, new Vector2(scale, scale));
+        }
+
         private static void SetKeyword(Material material, string keyword, bool enabled)
         {
             if (enabled)
                 material.EnableKeyword(keyword);
             else
                 material.DisableKeyword(keyword);
+        }
+
+        private static float TilingScale(ExternalPbrAsset asset)
+        {
+            return asset.catalogVersion > 0 ? Mathf.Clamp(asset.tilingScale, 0.25f, 16f) : 1f;
+        }
+
+        private static float Metallic(ExternalPbrAsset asset)
+        {
+            return asset.catalogVersion > 0 ? Mathf.Clamp01(asset.metallic) : DefaultMetallic(asset.id);
+        }
+
+        private static float Smoothness(ExternalPbrAsset asset)
+        {
+            return asset.catalogVersion > 0 ? Mathf.Clamp01(asset.smoothness) : DefaultSmoothness(asset.id);
+        }
+
+        private static float NormalScale(ExternalPbrAsset asset)
+        {
+            return asset.catalogVersion > 0 ? Mathf.Clamp(asset.normalScale, 0f, 2f) : 0.85f;
+        }
+
+        private static float HeightScale(ExternalPbrAsset asset)
+        {
+            return asset.catalogVersion > 0 ? Mathf.Clamp(asset.heightScale, 0f, 0.05f) : 0.012f;
         }
 
         private static float DefaultMetallic(string id)
@@ -229,6 +267,17 @@ namespace Hecton8.EditorTools
             public string source;
             public string license;
             public string role;
+            public int catalogVersion;
+            public string surfaceClass;
+            public bool heldToolAllowed;
+            public bool stationPropAllowed;
+            public bool salvageAllowed;
+            public bool worldPanelAllowed;
+            public float tilingScale;
+            public float metallic;
+            public float smoothness;
+            public float normalScale;
+            public float heightScale;
             public ExternalPbrMaps maps;
         }
 

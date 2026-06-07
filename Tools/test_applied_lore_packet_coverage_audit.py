@@ -1,14 +1,16 @@
 import csv
+import io
 import json
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from AppliedLoreImporter import TARGET_LOCALES, fnv1a32
-from AppliedLorePacketCoverageAudit import AppliedLoreCoverageError, audit_selected_packets
+from AppliedLorePacketCoverageAudit import AppliedLoreCoverageError, audit_selected_packets, inventory_sources, main
 from AppliedLorePageExporter import PUBLICATION_INDEX_HEADERS, publication_surface_rows
 from AppliedLoreRouteCardExporter import INPUT_HEADERS as ROUTE_CARD_HEADERS
 from AppliedLoreRouteCardExporter import export_route_cards
@@ -215,6 +217,65 @@ class TestAppliedLorePacketCoverageAudit(unittest.TestCase):
 
             with self.assertRaises(AppliedLoreCoverageError):
                 audit_selected_packets(root, ("P_TEST_COVERAGE",))
+
+    def test_main_reports_missing_selector_without_traceback(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            make_repo(root)
+            output = io.StringIO()
+
+            with patch(
+                "sys.argv",
+                [
+                    "AppliedLorePacketCoverageAudit.py",
+                    "--root",
+                    str(root),
+                    "--packet-id",
+                    "P_DOES_NOT_EXIST",
+                ],
+            ), patch("sys.stdout", output):
+                code = main()
+
+            self.assertEqual(code, 1)
+            self.assertIn("Selected packet ids not found: P_DOES_NOT_EXIST", output.getvalue())
+            self.assertNotIn("Traceback", output.getvalue())
+
+    def test_inventory_counts_canonical_ready_unbaked_packets(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            make_repo(root)
+            base = root / "Docs" / "Lore" / "AppliedContent"
+            packet = {
+                "packet_id": "P_TEST_UNBAKED",
+                "release_set_id": "RS_UNBAKED",
+                "article_id": "test.unbaked",
+                "localized": {locale: localized_row() for locale in TARGET_LOCALES},
+            }
+            packet_path = base / "packets" / "RS_UNBAKED.packets.json"
+            packet_path.write_text(
+                json.dumps({"release_set_id": "RS_UNBAKED", "packets": [packet]}),
+                encoding="utf-8",
+            )
+            manifest_path = base / "release_sets" / "RS_UNBAKED_manifest.json"
+            manifest_path.parent.mkdir(parents=True, exist_ok=True)
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "release_set_id": "RS_UNBAKED",
+                        "packets": ["P_TEST_UNBAKED"],
+                        "packet_sources": [packet_path.as_posix()],
+                        "canonical_importer_ready": True,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            stats = inventory_sources(root)
+
+            self.assertEqual(stats.source_packets, 2)
+            self.assertEqual(stats.baked_packets, 1)
+            self.assertEqual(stats.canonical_ready_unbaked_packets, 1)
+            self.assertEqual(stats.sample_canonical_ready_unbaked, ("P_TEST_UNBAKED",))
 
 
 if __name__ == "__main__":

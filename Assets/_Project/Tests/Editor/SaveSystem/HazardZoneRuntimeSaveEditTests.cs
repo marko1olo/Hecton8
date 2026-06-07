@@ -3892,7 +3892,7 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void SaveRootRuntime_WriteCanonicalizesNullRootStrings()
+        public void SaveRootRuntime_WriteSkipsBlankRootStringListIds()
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.timestamp = null;
@@ -4458,7 +4458,7 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void SaveRootTimeMigration_CurrentRepairsNonFiniteSessionValues()
+        public void SaveRootRuntimeMigration_CurrentRepairsNonFiniteSessionValues()
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.version = SaveData.CurrentVersion;
@@ -4482,6 +4482,33 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("total play time repaired", summary);
             StringAssert.Contains("first hour session time repaired", summary);
             StringAssert.Contains("corporate order timers repaired", summary);
+        }
+
+        [Test]
+        public void SaveRootRuntimeMigration_CurrentCompactsCorporatePendingOrdersWithTimers()
+        {
+            SaveData data = SaveData.CreateNew(0.0);
+            data.version = SaveData.CurrentVersion;
+            data.corporatePendingOrderIds.Clear();
+            data.corporatePendingOrderTimers.Clear();
+            data.corporatePendingOrderIds.Add("order.alpha");
+            data.corporatePendingOrderTimers.Add(1.25f);
+            data.corporatePendingOrderIds.Add(" ");
+            data.corporatePendingOrderTimers.Add(99f);
+            data.corporatePendingOrderIds.Add("order.beta");
+            data.corporatePendingOrderTimers.Add(2.5f);
+
+            bool changed = SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary);
+
+            Assert.IsTrue(changed, summary);
+            Assert.AreEqual(SaveData.CurrentVersion, originalVersion);
+            Assert.AreEqual(2, data.corporatePendingOrderIds.Count);
+            Assert.AreEqual(2, data.corporatePendingOrderTimers.Count);
+            Assert.AreEqual("order.alpha", data.corporatePendingOrderIds[0]);
+            Assert.AreEqual(1.25f, data.corporatePendingOrderTimers[0]);
+            Assert.AreEqual("order.beta", data.corporatePendingOrderIds[1]);
+            Assert.AreEqual(2.5f, data.corporatePendingOrderTimers[1]);
+            StringAssert.Contains("corporate pending order ids repaired", summary);
         }
 
         [Test]
@@ -5091,7 +5118,7 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void SaveRootRuntimeMigration_CurrentCanonicalizesNullRootStrings()
+        public void SaveRootRuntimeMigration_CurrentPrunesBlankRootStringListIds()
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.version = SaveData.CurrentVersion;

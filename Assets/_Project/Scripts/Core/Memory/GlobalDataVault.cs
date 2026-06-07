@@ -3665,8 +3665,14 @@ namespace Hecton8.Core.Memory
             {
                 try
                 {
-                    if (existing.Pointer != IntPtr.Zero)
-                        H8Memory.FreeRaw(existing.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault);
+                    if (existing.Pointer != IntPtr.Zero &&
+                        !H8Memory.TryFreeRaw(existing.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault))
+                    {
+                        FreeMacroDatabasePayloadRollbackOrThrow(payloadPointer, null);
+                        handle = default;
+                        return false;
+                    }
+
                     SubtractMacroDatabasePayloadBytes(existing.Handle.ByteLength);
                     _macroDatabasePayloadCache[sectorHash] = entry;
                     TouchMacroDatabasePayload(sectorHash);
@@ -3710,7 +3716,8 @@ namespace Hecton8.Core.Memory
 
             try
             {
-                H8Memory.FreeRaw(payloadPointer, Allocator.Persistent, SystemID.CoreDataVault);
+                if (H8Memory.TryFreeRaw(payloadPointer, Allocator.Persistent, SystemID.CoreDataVault))
+                    return;
             }
             catch (Exception rollbackException)
             {
@@ -3719,6 +3726,12 @@ namespace Hecton8.Core.Memory
 
                 throw;
             }
+
+            Exception cleanupFailure = new InvalidOperationException("GlobalDataVault macro database payload rollback could not free the allocated pointer.");
+            if (rootException != null)
+                throw new AggregateException("GlobalDataVault macro database payload replacement rollback failed.", rootException, cleanupFailure);
+
+            throw cleanupFailure;
         }
 
         /// <inheritdoc />
@@ -3831,8 +3844,12 @@ namespace Hecton8.Core.Memory
             }
 
             removed = entry.Handle;
-            if (entry.Pointer != IntPtr.Zero)
-                H8Memory.FreeRaw(entry.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault);
+            if (entry.Pointer != IntPtr.Zero &&
+                !H8Memory.TryFreeRaw(entry.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault))
+            {
+                removed = default;
+                return false;
+            }
 
             _macroDatabasePayloadCache.Remove(sectorHash);
             if (_macroDatabasePayloadAccessTicks.IsCreated)
@@ -3912,7 +3929,9 @@ namespace Hecton8.Core.Memory
             ClearNativeStorageBeforeDispose();
             if (_arenaBase != null)
             {
-                H8Memory.FreeRaw(_arenaBase, Allocator.Persistent, SystemID.CoreDataVault);
+                if (!H8Memory.TryFreeRaw(_arenaBase, Allocator.Persistent, SystemID.CoreDataVault))
+                    throw new InvalidOperationException("GlobalDataVault arena root dispose could not free the allocated pointer.");
+
                 _arenaBase = null;
             }
             if (_keys.IsCreated)
@@ -4048,7 +4067,8 @@ namespace Hecton8.Core.Memory
                     if (_macroDatabasePayloadCache.TryGetValue(sectorHash, out MacroDatabasePayloadCacheEntry entry) &&
                         entry.Pointer != IntPtr.Zero)
                     {
-                        H8Memory.FreeRaw(entry.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault);
+                        if (!H8Memory.TryFreeRaw(entry.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault))
+                            throw new InvalidOperationException("GlobalDataVault macro database payload dispose could not free the allocated pointer.");
                     }
                 }
             }

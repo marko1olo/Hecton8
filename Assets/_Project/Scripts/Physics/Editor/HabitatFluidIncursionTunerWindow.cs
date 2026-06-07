@@ -36,6 +36,7 @@ namespace Hecton8.Physics.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;
         }
 

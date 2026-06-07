@@ -216,7 +216,7 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool EnsureNonEmptyStringDictionaryKeys<TValue>(
+        private static bool EnsureNonBlankStringDictionaryKeys<TValue>(
             Dictionary<string, TValue> values,
             string step,
             List<string> steps)
@@ -229,7 +229,7 @@ namespace Hecton8.SaveSystem
             while (enumerator.MoveNext())
             {
                 string key = enumerator.Current.Key;
-                if (!string.IsNullOrEmpty(key))
+                if (!string.IsNullOrWhiteSpace(key))
                     continue;
 
                 keysToRemove ??= new List<string>(1);
@@ -442,7 +442,7 @@ namespace Hecton8.SaveSystem
                 SaveData.MaxToolDurabilityRecords,
                 "tool durability map capped",
                 steps);
-            changed |= EnsureNonEmptyStringDictionaryKeys(
+            changed |= EnsureNonBlankStringDictionaryKeys(
                 data.toolDurabilityMap,
                 "tool durability keys repaired",
                 steps);
@@ -462,7 +462,7 @@ namespace Hecton8.SaveSystem
                 SaveData.MaxToolDurabilityRecords,
                 "tool broken map capped",
                 steps);
-            changed |= EnsureNonEmptyStringDictionaryKeys(
+            changed |= EnsureNonBlankStringDictionaryKeys(
                 data.toolBrokenMap,
                 "tool broken keys repaired",
                 steps);
@@ -478,7 +478,7 @@ namespace Hecton8.SaveSystem
                 SaveData.MaxCustomModDataEntries,
                 "custom mod data capped",
                 steps);
-            changed |= EnsureNonEmptyStringDictionaryKeys(
+            changed |= EnsureNonBlankStringDictionaryKeys(
                 data.CustomModData,
                 "custom mod data keys repaired",
                 steps);

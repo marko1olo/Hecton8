@@ -26,6 +26,7 @@ namespace Hecton8.Editor
 
         private void OnEnable()
         {
+            SceneView.duringSceneGui -= DrawSceneGrid;
             SceneView.duringSceneGui += DrawSceneGrid;
             EditorApplication.update -= PollCsvOverride;
             EditorApplication.update += PollCsvOverride;

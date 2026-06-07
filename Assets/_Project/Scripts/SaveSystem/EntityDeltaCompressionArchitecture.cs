@@ -1351,11 +1351,10 @@ namespace Hecton8.SaveSystem
                     last);
 
                 int byteCount = headerBytes + entryCount * stride;
-                NativeArray<byte> payload = new NativeArray<byte>(
+                NativeArray<byte> payload = AllocateTempNativeArrayBuffer(
                     byteCount,
-                    Allocator.Temp,
+                    TelemetryDumpPayloadLabel,
                     NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[byteCount] - telemetry dump staging payload - owner: EntityDeltaCompressionArchitecture
-                RegisterTempNativeArrayBuffer(payload, TelemetryDumpPayloadLabel);
                 try
                 {
                     byte* payloadPtr = (byte*)payload.GetUnsafePtr();
@@ -1393,6 +1392,22 @@ namespace Hecton8.SaveSystem
             float latency = math.isfinite(diskWriteLatencyMs) ? diskWriteLatencyMs : 0f;
             float threshold = math.max(0f, math.isfinite(thresholdMs) ? thresholdMs : 50f);
             return latency >= threshold && TryDumpTelemetryRing(telemetryRing, telemetryCursor, TelemetryFlagDiskLatencySpike, path);
+        }
+
+        private static NativeArray<byte> AllocateTempNativeArrayBuffer(int length, string label, NativeArrayOptions options)
+        {
+            NativeArray<byte> buffer = new NativeArray<byte>(length, Allocator.Temp, options);
+            try
+            {
+                RegisterTempNativeArrayBuffer(buffer, label);
+                return buffer;
+            }
+            catch
+            {
+                if (buffer.IsCreated)
+                    buffer.Dispose();
+                throw;
+            }
         }
 
         private static void RegisterTempNativeArrayBuffer(NativeArray<byte> buffer, string label)

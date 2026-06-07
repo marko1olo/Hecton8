@@ -3003,6 +3003,7 @@ public struct VoxelColorJob : IJobParallelFor
 {
     private const float MinSafeCaveMouthColorRadius = 0.1f;
     private const float MaxSafeCaveMouthColorRadius = 32f;
+    private const float MaxSafeColorVolumeExtent = 1048576f;
 
     public float maxDepth;
     public float caveEdgeWidth;
@@ -3038,38 +3039,61 @@ public struct VoxelColorJob : IJobParallelFor
     public void Execute(int idx)
     {
         float3 p = positions[idx];
+        if (!IsFinite(p))
+        {
+            if (skirtAlphaValues.IsCreated && idx < skirtAlphaValues.Length)
+                skirtAlphaValues[idx] = 0f;
 
-        float safeHalfExtent = math.max(volumeHalfExtent, 1f);
-        float distFromCenterSq01 = math.saturate(math.lengthsq(p - volumeCenter) / (safeHalfExtent * safeHalfExtent));
-        float localizedAo = ambientOcclusionValues.IsCreated && idx < ambientOcclusionValues.Length
-            ? math.saturate(ambientOcclusionValues[idx])
+            colors[idx] = Color.clear;
+            return;
+        }
+
+        float3 safeVolumeCenter = IsFinite(volumeCenter) ? volumeCenter : p;
+        float safeHalfExtent = ClampFinite(volumeHalfExtent, 1f, 1f, MaxSafeColorVolumeExtent);
+        float distFromCenterSq = math.lengthsq(p - safeVolumeCenter);
+        float distFromCenterSq01 = math.isfinite(distFromCenterSq)
+            ? SaturateFinite(distFromCenterSq / (safeHalfExtent * safeHalfExtent))
             : 1f;
-        float caveCenterAo = math.saturate(0.52f + distFromCenterSq01 * 0.48f) * localizedAo;
+        float localizedAo = ambientOcclusionValues.IsCreated && idx < ambientOcclusionValues.Length
+            ? SaturateFinite(ambientOcclusionValues[idx])
+            : 1f;
+        float caveCenterAo = SaturateFinite(0.52f + distFromCenterSq01 * 0.48f) * localizedAo;
 
         float terrainSkirt = 0f;
-        if (terrainHeights.IsCreated && ptsX > 1 && ptsZ > 1)
+        if (terrainHeights.IsCreated &&
+            ptsX > 1 &&
+            ptsZ > 1 &&
+            terrainHeights.Length >= ptsX * ptsZ &&
+            IsFinite(volumeOrigin) &&
+            math.isfinite(voxelStep) &&
+            voxelStep > 0f)
         {
             float terrainHeight = SampleTerrainHeight(p.xz);
-            terrainSkirt = 1f - math.smoothstep(0f, math.max(seamTransitionBand, 0.01f), math.abs(terrainHeight - p.y));
+            if (math.isfinite(terrainHeight))
+            {
+                float seamBand = ClampFinite(seamTransitionBand, 0.01f, 0.01f, MaxSafeColorVolumeExtent);
+                terrainSkirt = 1f - math.smoothstep(0f, seamBand, math.abs(terrainHeight - p.y));
+            }
         }
 
         float lodEdgeSkirt = 0f;
-        if (lodLevel > 0)
+        if (lodLevel > 0 && ptsX > 1 && ptsZ > 1 && IsFinite(volumeOrigin) && math.isfinite(voxelStep) && voxelStep > 0f)
         {
             float volumeSizeX = (ptsX - 1) * voxelStep;
             float volumeSizeZ = (ptsZ - 1) * voxelStep;
             float localX = p.x - volumeOrigin.x;
             float localZ = p.z - volumeOrigin.z;
             float edgeDist = math.min(localX, math.min(volumeSizeX - localX, math.min(localZ, volumeSizeZ - localZ)));
-            lodEdgeSkirt = 1f - math.smoothstep(0f, math.max(lodTransitionBand, voxelStep), edgeDist);
+            float lodBand = math.max(ClampFinite(lodTransitionBand, voxelStep, 0.01f, MaxSafeColorVolumeExtent), voxelStep);
+            lodEdgeSkirt = 1f - math.smoothstep(0f, lodBand, edgeDist);
         }
 
-        float skirtAlpha = math.saturate(math.max(terrainSkirt, lodEdgeSkirt));
+        float skirtAlpha = SaturateFinite(math.max(terrainSkirt, lodEdgeSkirt));
         float4 colorPayload = new float4(caveCenterAo, caveCenterAo, caveCenterAo, 0f);
         if (TryResolveCaveMouthTerrainColor(p, out float4 terrainSplatColor, out float splatWeight))
         {
-            float terrainLuma = math.saturate(math.dot(terrainSplatColor.xyz, new float3(0.299f, 0.587f, 0.114f)));
-            float mouthAo = math.saturate(math.lerp(caveCenterAo, math.min(caveCenterAo, terrainLuma), splatWeight));
+            float terrainLuma = SaturateFinite(math.dot(terrainSplatColor.xyz, new float3(0.299f, 0.587f, 0.114f)));
+            float mouthAo = SaturateFinite(math.lerp(caveCenterAo, math.min(caveCenterAo, terrainLuma), splatWeight));
             colorPayload.xyz = new float3(mouthAo);
             colorPayload.w = splatWeight;
         }
@@ -3085,8 +3109,15 @@ public struct VoxelColorJob : IJobParallelFor
 
     bool IsModifiedSdfCell(float3 position)
     {
-        if (!modifiedCells.IsCreated || modifiedCellCount <= 0 || voxelStep <= 0.0001f)
+        if (!modifiedCells.IsCreated ||
+            modifiedCellCount <= 0 ||
+            !IsFinite(position) ||
+            !math.all(math.isfinite(absoluteCellOffset)) ||
+            !math.isfinite(voxelStep) ||
+            voxelStep <= 0.0001f)
+        {
             return false;
+        }
 
         double invVoxelStep = 1.0d / math.max((double)voxelStep, 0.0001d);
         double3 absolutePosition = new double3(position.x, position.y, position.z) + absoluteCellOffset;
@@ -3201,6 +3232,11 @@ public struct VoxelColorJob : IJobParallelFor
         return math.isfinite(voxelStep) && voxelStep > 0f
             ? math.min(voxelStep, MaxSafeCaveMouthColorRadius)
             : MinSafeCaveMouthColorRadius;
+    }
+
+    static float ClampFinite(float value, float fallback, float minimum, float maximum)
+    {
+        return math.isfinite(value) ? math.clamp(value, minimum, maximum) : fallback;
     }
 
     static float SaturateFinite(float value)

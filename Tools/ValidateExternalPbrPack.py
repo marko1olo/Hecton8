@@ -31,6 +31,18 @@ def validate(args: argparse.Namespace) -> int:
     errors: list[str] = []
     warnings: list[str] = []
     required = ("BaseColor", "NormalGL", "ARM_AO_Rough_Metal", "Height", "MaskMap_UnityURP")
+    required_meta = (
+        "surfaceClass",
+        "heldToolAllowed",
+        "stationPropAllowed",
+        "salvageAllowed",
+        "worldPanelAllowed",
+        "tilingScale",
+        "metallic",
+        "smoothness",
+        "normalScale",
+        "heightScale",
+    )
     asset_count = 0
     map_count = 0
 
@@ -38,6 +50,29 @@ def validate(args: argparse.Namespace) -> int:
         asset_id = str(asset.get("id", "")).strip()
         maps = asset.get("maps", {}) or {}
         asset_count += 1
+        for key in required_meta:
+            if key not in asset:
+                errors.append(f"{asset_id}: missing metadata key {key}")
+        for key in ("heldToolAllowed", "stationPropAllowed", "salvageAllowed", "worldPanelAllowed"):
+            if key in asset and not isinstance(asset.get(key), bool):
+                errors.append(f"{asset_id}:{key}: expected bool")
+        for key, minimum, maximum in (
+            ("tilingScale", 0.25, 16.0),
+            ("metallic", 0.0, 1.0),
+            ("smoothness", 0.0, 1.0),
+            ("normalScale", 0.0, 2.0),
+            ("heightScale", 0.0, 0.05),
+        ):
+            if key not in asset:
+                continue
+            value = asset.get(key)
+            if not isinstance(value, (int, float)):
+                errors.append(f"{asset_id}:{key}: expected number")
+                continue
+            if float(value) < minimum or float(value) > maximum:
+                errors.append(f"{asset_id}:{key}: out of range {value} expected {minimum}..{maximum}")
+        if not any(bool(asset.get(key, False)) for key in ("heldToolAllowed", "stationPropAllowed", "salvageAllowed", "worldPanelAllowed")):
+            errors.append(f"{asset_id}: no gameplay usage flag enabled")
         for key in required:
             raw_path = str(maps.get(key, "")).strip()
             if not raw_path:

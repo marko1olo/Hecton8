@@ -208,7 +208,7 @@ namespace Hecton8.Atmosphere
         private VaultGenerationHandle<int> _bulkheadRoomBHandle;
         private VaultGenerationHandle<byte> _bulkheadSealedHandle;
         private VaultGenerationHandle<GasDynamicsTelemetryEntry> _telemetryRingHandle;
-        private GasDynamicsScratchBuffers _scratchBuffers = new GasDynamicsScratchBuffers();
+        private NativeArray<GasDynamicsTelemetryEntry> _stepTelemetryScratch;
         // COLD ALLOC: PendingBaseTransitionSignal[128] - fixed managed staging for same-phase gas mutation - owner: GasDynamicsSolver
         private readonly PendingBaseTransitionSignal[] _deferredBaseTransitions = new PendingBaseTransitionSignal[PendingBaseTransitionCapacity];
         private int _deferredBaseTransitionCount;
@@ -259,13 +259,6 @@ namespace Hecton8.Atmosphere
         private ITickDispatcher _tickDispatcher;
         private IPlayerMovementContracts _playerMovementContracts;
         private IDataVault _dataVault;
-
-        private ref NativeArray<GasDynamicsTelemetryEntry> _stepTelemetryScratch => ref _scratchBuffers.StepTelemetry;
-
-        private sealed class GasDynamicsScratchBuffers
-        {
-            public NativeArray<GasDynamicsTelemetryEntry> StepTelemetry;
-        }
 
         private NativeArray<float> ResolveRoomO2() => ResolveLane(in _roomO2Handle, RoomO2BufferId);
         private NativeArray<float> ResolveRoomCO2() => ResolveLane(in _roomCO2Handle, RoomCO2BufferId);
@@ -1743,47 +1736,23 @@ namespace Hecton8.Atmosphere
 
         private bool TryEnsureTelemetryScratchCold()
         {
-            ref NativeArray<GasDynamicsTelemetryEntry> scratch = ref _stepTelemetryScratch;
-            if (scratch.IsCreated)
-                return scratch.Length >= 1;
+            if (_stepTelemetryScratch.IsCreated)
+                return _stepTelemetryScratch.Length >= 1;
 
-            scratch = new NativeArray<GasDynamicsTelemetryEntry>(
+            _stepTelemetryScratch = H8Memory.Allocate<GasDynamicsTelemetryEntry>(
                 1,
+                OwnerSystemId,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
-            try
-            {
-                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
-                    scratch,
-                    nameof(GasDynamicsSolver),
-                    nameof(_stepTelemetryScratch),
-                    NativeAllocationLifetime.Session);
-                if (sentinelId <= 0)
-                    throw new InvalidOperationException("NativeMemorySentinel rejected gas dynamics telemetry scratch registration.");
-            }
-            catch
-            {
-                if (scratch.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(scratch);
-                    scratch.Dispose();
-                    scratch = default;
-                }
-
-                throw;
-            }
-            return scratch.IsCreated && scratch.Length >= 1;
+            return _stepTelemetryScratch.IsCreated && _stepTelemetryScratch.Length >= 1;
         }
 
         private void DisposeTelemetryScratchCold()
         {
-            ref NativeArray<GasDynamicsTelemetryEntry> scratch = ref _stepTelemetryScratch;
-            if (!scratch.IsCreated)
+            if (!_stepTelemetryScratch.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(scratch);
-            scratch.Dispose();
-            scratch = default;
+            H8Memory.Release(ref _stepTelemetryScratch, OwnerSystemId);
         }
 
         private bool TryPublishStepTelemetryFromScratch()

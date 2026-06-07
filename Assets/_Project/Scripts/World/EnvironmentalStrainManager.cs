@@ -76,7 +76,7 @@ namespace Hecton8.World
         {
             get
             {
-                EnvironmentalStrainManager registered = s_activeRuntimeInstance;
+                EnvironmentalStrainManager registered = ResolveActiveRuntime();
                 return registered != null ? registered.GetPredatorAggressionScale() : 1f;
             }
         }
@@ -86,7 +86,7 @@ namespace Hecton8.World
         /// </summary>
         public static bool TryGetSectorStrain01(Vector3 worldPosition, out float strain01)
         {
-            EnvironmentalStrainManager registered = s_activeRuntimeInstance;
+            EnvironmentalStrainManager registered = ResolveActiveRuntime();
             if (registered != null)
                 return registered.TryResolveSectorStrain(worldPosition, out strain01);
 
@@ -110,16 +110,16 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            EnvironmentalStrainManager registered = s_activeRuntimeInstance;
-            if (registered != null && registered != this)
-            {
-                SuppressDuplicateService();
-            }
+            if (TryAbortForUsableExistingRuntime())
+                return;
         }
 
         private void OnEnable()
         {
             if (_duplicateServiceSuppressed)
+                return;
+
+            if (TryAbortForUsableExistingRuntime())
                 return;
 
             TryRegisterService();
@@ -174,17 +174,90 @@ namespace Hecton8.World
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            EnvironmentalStrainManager registered = GlobalRegistry.EnvironmentalStrain;
-            if (registered != null && registered != this)
-            {
-                SuppressDuplicateService();
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterEnvironmentalStrainRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.EnvironmentalStrain, this);
             if (_serviceRegistered)
                 s_activeRuntimeInstance = this;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            EnvironmentalStrainManager registered = s_activeRuntimeInstance;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsEnvironmentalStrainRuntimeUsable(registered))
+                {
+                    SuppressDuplicateService();
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                    s_activeRuntimeInstance = null;
+
+                if (ReferenceEquals(GlobalRegistry.EnvironmentalStrain, registered))
+                    GlobalRegistry.UnregisterEnvironmentalStrainRuntime(registered);
+            }
+
+            EnvironmentalStrainManager globalRegistered = GlobalRegistry.EnvironmentalStrain;
+            if (ReferenceEquals(globalRegistered, null) || ReferenceEquals(globalRegistered, this))
+                return false;
+
+            if (IsEnvironmentalStrainRuntimeUsable(globalRegistered))
+            {
+                s_activeRuntimeInstance = globalRegistered;
+                SuppressDuplicateService();
+                return true;
+            }
+
+            if (ReferenceEquals(s_activeRuntimeInstance, globalRegistered))
+                s_activeRuntimeInstance = null;
+
+            GlobalRegistry.UnregisterEnvironmentalStrainRuntime(globalRegistered);
+            return false;
+        }
+
+        private static EnvironmentalStrainManager ResolveActiveRuntime()
+        {
+            EnvironmentalStrainManager registered = s_activeRuntimeInstance;
+            if (IsEnvironmentalStrainRuntimeUsable(registered))
+                return registered;
+
+            if (!ReferenceEquals(registered, null))
+            {
+                if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                    s_activeRuntimeInstance = null;
+
+                if (ReferenceEquals(GlobalRegistry.EnvironmentalStrain, registered))
+                    GlobalRegistry.UnregisterEnvironmentalStrainRuntime(registered);
+            }
+
+            EnvironmentalStrainManager globalRegistered = GlobalRegistry.EnvironmentalStrain;
+            if (IsEnvironmentalStrainRuntimeUsable(globalRegistered))
+            {
+                s_activeRuntimeInstance = globalRegistered;
+                return globalRegistered;
+            }
+
+            if (!ReferenceEquals(globalRegistered, null))
+            {
+                if (ReferenceEquals(s_activeRuntimeInstance, globalRegistered))
+                    s_activeRuntimeInstance = null;
+
+                GlobalRegistry.UnregisterEnvironmentalStrainRuntime(globalRegistered);
+            }
+
+            return null;
+        }
+
+        private static bool IsEnvironmentalStrainRuntimeUsable(EnvironmentalStrainManager manager)
+        {
+            return manager != null &&
+                   manager._serviceRegistered &&
+                   !manager._duplicateServiceSuppressed &&
+                   manager.isActiveAndEnabled;
         }
 
         private void SuppressDuplicateService()

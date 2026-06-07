@@ -84,6 +84,7 @@ namespace Hecton8.Physics.Exosuit.Editor
 
         private void OnEnable()
         {
+            SceneView.duringSceneGui -= DrawSceneGizmos;
             SceneView.duringSceneGui += DrawSceneGizmos;
         }
 

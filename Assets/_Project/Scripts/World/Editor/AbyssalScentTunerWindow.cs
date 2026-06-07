@@ -31,6 +31,7 @@ namespace Hecton8.World.EditorTools
 
         private void OnEnable()
         {
+            EditorApplication.update -= OnEditorUpdate;
             EditorApplication.update += OnEditorUpdate;
         }
 

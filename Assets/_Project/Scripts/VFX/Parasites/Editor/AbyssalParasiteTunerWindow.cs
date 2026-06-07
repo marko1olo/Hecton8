@@ -29,6 +29,7 @@ namespace Hecton8.VFX.Parasites.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= Repaint;
             EditorApplication.update += Repaint;
         }
 

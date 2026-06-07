@@ -243,7 +243,6 @@ namespace Hecton8.VFX.Bioluminescence
         private const string LegacyCsvOverrideFileName = "biolum_profiles.csv";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_238.bin";
         private const string DumpMirrorRelativePath = "Docs/AgentLogs/Dump_SHINOBU_238.h8dump";
-        private const string NativeMemoryOwner = nameof(BiolumPulseSyncRuntime);
         private const double ShaderClockWrapSeconds = 65536d;
         private const uint StateJobPinPulseState = 1u << 0;
         private const uint StateJobPinProfileFloats = 1u << 1;
@@ -311,7 +310,7 @@ namespace Hecton8.VFX.Bioluminescence
 
         // SOURCE DECISION BIOLUM_BLACKBOX_OWNER_LOCAL_20260605: ACCEPT_OWNER_LOCAL_PENDING_PROOF.
         // BlackBoxDumpSnapshotOwner.Entries and _blackBoxDumpWriteBytes stay owner-local diagnostic scratch.
-        // Lifetime: NativeAllocationLifetime.Session. Disposal: owner Dispose()/DisposeBlackBoxDumpSnapshot()
+        // Lifetime: H8Memory/SystemID.Vfx scene owner. Disposal: owner Dispose()/DisposeBlackBoxDumpSnapshot()
         // and DisposeBlackBoxDumpWriteBytes() before lifecycle release. No gameplay authority, no cross-domain
         // snapshot contract, and no blind DataVault migration; these buffers only decouple crash dump file IO
         // from DataVault write guards while the DataVault black-box ring remains runtime telemetry authority.
@@ -330,42 +329,14 @@ namespace Hecton8.VFX.Bioluminescence
             {
                 Dispose();
 
-                NativeArray<BiolumPulseTelemetryEntry> entries = default;
-                try
-                {
-                    // COLD NATIVE ALLOC: BiolumPulseTelemetryEntry[300] - black-box dump snapshot, flattens DataVault write locks - owner: BIOLUM_PULSE_SYNC
-                    entries = new NativeArray<BiolumPulseTelemetryEntry>(
-                        requiredLength,
-                        Allocator.Persistent,
-                        NativeArrayOptions.UninitializedMemory);
-                    int sentinelId = NativeMemorySentinel.RegisterNativeArray(
-                        entries,
-                        NativeMemoryOwner,
-                        nameof(BlackBoxDumpSnapshotOwner),
-                        NativeAllocationLifetime.Session);
-                    if (sentinelId <= 0)
-                        throw new InvalidOperationException("Native memory sentinel registration failed for biolum black-box dump snapshot.");
-
-                    Entries = entries;
-                    entries = default;
-                }
-                catch
-                {
-                    if (entries.IsCreated)
-                    {
-                        try
-                        {
-                            NativeMemorySentinel.UnregisterNativeArray(entries);
-                        }
-                        finally
-                        {
-                            entries.Dispose();
-                        }
-                    }
-
-                    Entries = default;
-                    throw;
-                }
+                // COLD NATIVE ALLOC: BiolumPulseTelemetryEntry[300] - black-box dump snapshot, flattens DataVault write locks - owner: BIOLUM_PULSE_SYNC
+                Entries = H8Memory.Allocate<BiolumPulseTelemetryEntry>(
+                    requiredLength,
+                    SystemID.Vfx,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory);
+                if (!Entries.IsCreated)
+                    throw new InvalidOperationException("H8Memory allocation failed for biolum black-box dump snapshot.");
             }
 
             public void Dispose()
@@ -376,9 +347,7 @@ namespace Hecton8.VFX.Bioluminescence
                     return;
                 }
 
-                NativeMemorySentinel.UnregisterNativeArray(Entries);
-                Entries.Dispose();
-                Entries = default;
+                H8Memory.Release(ref Entries, SystemID.Vfx);
             }
         }
 
@@ -3050,47 +3019,13 @@ namespace Hecton8.VFX.Bioluminescence
 
             DisposeCsvOverrideReadBytes();
 
-            NativeArray<byte> bytes = default;
-            try
-            {
-                // COLD NATIVE ALLOC: byte[CsvScratchByteCount] - editor CSV staging outside DataVault guards - owner: BIOLUM_PULSE_SYNC
-                bytes = new NativeArray<byte>(
-                    CsvScratchByteCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory);
-                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
-                    bytes,
-                    NativeMemoryOwner,
-                    nameof(_csvOverrideReadBytes),
-                    NativeAllocationLifetime.Session);
-                if (sentinelId <= 0)
-                {
-                    bytes.Dispose();
-                    bytes = default;
-                    return false;
-                }
-
-                _csvOverrideReadBytes = bytes;
-                bytes = default;
-                return true;
-            }
-            catch
-            {
-                if (bytes.IsCreated)
-                {
-                    try
-                    {
-                        NativeMemorySentinel.UnregisterNativeArray(bytes);
-                    }
-                    finally
-                    {
-                        bytes.Dispose();
-                    }
-                }
-
-                _csvOverrideReadBytes = default;
-                return false;
-            }
+            // COLD NATIVE ALLOC: byte[CsvScratchByteCount] - editor CSV staging outside DataVault guards - owner: BIOLUM_PULSE_SYNC
+            _csvOverrideReadBytes = H8Memory.Allocate<byte>(
+                CsvScratchByteCount,
+                SystemID.Vfx,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+            return _csvOverrideReadBytes.IsCreated;
         }
 
         private void DisposeCsvOverrideReadBytes()
@@ -3101,9 +3036,7 @@ namespace Hecton8.VFX.Bioluminescence
                 return;
             }
 
-            NativeMemorySentinel.UnregisterNativeArray(_csvOverrideReadBytes);
-            _csvOverrideReadBytes.Dispose();
-            _csvOverrideReadBytes = default;
+            H8Memory.Release(ref _csvOverrideReadBytes, SystemID.Vfx);
         }
 
         private unsafe int TryReadCsvOverrideIntoBuffer(NativeArray<byte> readBuffer, out long writeTicks)
@@ -4043,47 +3976,13 @@ namespace Hecton8.VFX.Bioluminescence
 
             DisposeBlackBoxDumpWriteBytes();
 
-            NativeArray<byte> bytes = default;
-            try
-            {
-                // COLD NATIVE ALLOC: byte[BlackBoxDumpByteCount] - private dump write mirror, keeps file IO outside DataVault guard - owner: BIOLUM_PULSE_SYNC
-                bytes = new NativeArray<byte>(
-                    BlackBoxDumpByteCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory);
-                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
-                    bytes,
-                    NativeMemoryOwner,
-                    nameof(_blackBoxDumpWriteBytes),
-                    NativeAllocationLifetime.Session);
-                if (sentinelId <= 0)
-                {
-                    bytes.Dispose();
-                    bytes = default;
-                    return false;
-                }
-
-                _blackBoxDumpWriteBytes = bytes;
-                bytes = default;
-                return true;
-            }
-            catch
-            {
-                if (bytes.IsCreated)
-                {
-                    try
-                    {
-                        NativeMemorySentinel.UnregisterNativeArray(bytes);
-                    }
-                    finally
-                    {
-                        bytes.Dispose();
-                    }
-                }
-
-                _blackBoxDumpWriteBytes = default;
-                return false;
-            }
+            // COLD NATIVE ALLOC: byte[BlackBoxDumpByteCount] - private dump write mirror, keeps file IO outside DataVault guard - owner: BIOLUM_PULSE_SYNC
+            _blackBoxDumpWriteBytes = H8Memory.Allocate<byte>(
+                BlackBoxDumpByteCount,
+                SystemID.Vfx,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+            return _blackBoxDumpWriteBytes.IsCreated;
         }
 
         private void DisposeBlackBoxDumpSnapshot()
@@ -4101,9 +4000,7 @@ namespace Hecton8.VFX.Bioluminescence
                 return;
             }
 
-            NativeMemorySentinel.UnregisterNativeArray(_blackBoxDumpWriteBytes);
-            _blackBoxDumpWriteBytes.Dispose();
-            _blackBoxDumpWriteBytes = default;
+            H8Memory.Release(ref _blackBoxDumpWriteBytes, SystemID.Vfx);
         }
 
         private bool QueueBlackBoxDumpWrite()

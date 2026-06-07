@@ -23,6 +23,8 @@ namespace Hecton8.Tests.Editor
         private const string SavePersistenceOmegaSmokeTesterPath = "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs";
         private const string SaveSystemRuntimeSmokeTesterPath = "Assets/_Project/Scripts/SaveSystemRuntimeSmokeTester.cs";
         private const string SaveRecoverySmokeTesterPath = "Assets/_Project/Scripts/SaveRecoverySmokeTester.cs";
+        private const string SaveSidecarStoragePath = "Assets/_Project/Scripts/SaveSidecarStorage.cs";
+        private const string EntityDeltaCompressionArchitecturePath = "Assets/_Project/Scripts/SaveSystem/EntityDeltaCompressionArchitecture.cs";
         private const string WalIntegrityFuzzerCorePath = "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs";
         private const string WalIntegrityFuzzerCoreShinobu357Path = "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs";
         private const string Arm64MemoryAlignmentXRayWindowPath = "Assets/_Project/Scripts/Editor/Arm64MemoryAlignmentXRayWindow.cs";
@@ -490,6 +492,50 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("compressedBuffer.Dispose()", source);
             StringAssert.DoesNotContain("rawBuffer.Dispose()", source);
             StringAssert.DoesNotContain("persistentWorldDeltas.Dispose()", source);
+        }
+
+        [Test]
+        public void SaveSidecarStorageTracksTempBuffersAtomically()
+        {
+            string source = ReadProjectFile(SaveSidecarStoragePath);
+
+            StringAssert.Contains("private static NativeArray<byte> AllocateTempNativeArrayBuffer", source);
+            StringAssert.Contains("NativeArray<byte> buffer = new NativeArray<byte>(length, Allocator.Temp, options);", source);
+            StringAssert.Contains("RegisterTempNativeArrayBuffer(buffer, label)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(buffer)", source);
+            StringAssert.Contains("RestoreTempNativeArrayBufferSentinelOrThrow", source);
+            StringAssert.Contains("AllocateTempNativeArrayBuffer(byteCount, MetadataWriteBufferLabel", source);
+            StringAssert.Contains("AllocateTempNativeArrayBuffer((int)fileLength, MetadataReadBufferLabel", source);
+            StringAssert.Contains("AllocateTempNativeArrayBuffer(byteCount, MaintenanceWriteBufferLabel", source);
+            StringAssert.Contains("AllocateTempNativeArrayBuffer((int)fileLength, MaintenanceReadBufferLabel", source);
+            StringAssert.Contains("DisposeTempNativeArrayBuffer(ref buffer, MetadataWriteBufferLabel)", source);
+            StringAssert.Contains("DisposeTempNativeArrayBuffer(ref buffer, MaintenanceReadBufferLabel)", source);
+            Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<byte>"), "Sidecar Temp byte buffers must stay centralized in AllocateTempNativeArrayBuffer.");
+            Assert.AreEqual(2, CountOccurrences(source, "NativeMemorySentinel.RegisterNativeArray(buffer"), "Sidecar storage has one normal registration and one restore registration.");
+
+            StringAssert.DoesNotContain("RegisterTempNativeArrayBuffer(buffer, \"", source);
+            StringAssert.DoesNotContain("new NativeArray<byte>(byteCount", source);
+            StringAssert.DoesNotContain("new NativeArray<byte>((int)fileLength", source);
+        }
+
+        [Test]
+        public void EntityDeltaCompressionArchitectureTracksTelemetryDumpPayloadAtomically()
+        {
+            string source = ReadProjectFile(EntityDeltaCompressionArchitecturePath);
+
+            StringAssert.Contains("private static NativeArray<byte> AllocateTempNativeArrayBuffer", source);
+            StringAssert.Contains("NativeArray<byte> buffer = new NativeArray<byte>(length, Allocator.Temp, options);", source);
+            StringAssert.Contains("RegisterTempNativeArrayBuffer(buffer, label)", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(buffer)", source);
+            StringAssert.Contains("RestoreTempNativeArrayBufferSentinelOrThrow", source);
+            StringAssert.Contains("NativeArray<byte> payload = AllocateTempNativeArrayBuffer(", source);
+            StringAssert.Contains("TelemetryDumpPayloadLabel", source);
+            StringAssert.Contains("DisposeTempNativeArrayBuffer(ref payload, TelemetryDumpPayloadLabel)", source);
+            Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<byte>"), "Entity delta telemetry dump Temp payload allocation must stay centralized in AllocateTempNativeArrayBuffer.");
+            Assert.AreEqual(2, CountOccurrences(source, "NativeMemorySentinel.RegisterNativeArray(buffer"), "Entity delta telemetry dump has one normal registration and one restore registration.");
+
+            StringAssert.DoesNotContain("RegisterTempNativeArrayBuffer(payload", source);
+            StringAssert.DoesNotContain("new NativeArray<byte>(", source.Replace("new NativeArray<byte>(length, Allocator.Temp, options);", string.Empty));
         }
 
         [Test]

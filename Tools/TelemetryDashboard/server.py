@@ -79,6 +79,8 @@ OCEAN_SURFACE_ATMOSPHERE_ENTRY = struct.Struct("<IIffqfifffffIii")
 THERMODYNAMICS_HAZARD_HEADER = struct.Struct("<Qiii")
 THERMODYNAMICS_HAZARD_ENTRY = struct.Struct("<ffffffIIIIIIIIBBHI")
 ABYSSAL_THERMODYNAMICS_ENTRY = struct.Struct("<ffffdddIIIIII")
+REACTOR_THERMAL_ENTRY = struct.Struct("<dddfffff" + "I" * 13 + "32x")
+NUCLEAR_REACTOR_THERMAL_ENTRY = struct.Struct("<dddffffff" + "I" * 12 + "32x")
 FOVEATED_SIMULATION_HEADER = struct.Struct("<Iii")
 FOVEATED_SIMULATION_ENTRY = struct.Struct("<iiiiiiffffffII")
 INPUT_DETERMINISM_ENTRY = struct.Struct("<dIIIIIIHH")
@@ -194,6 +196,9 @@ THERMODYNAMICS_HAZARD_ENTRY_BYTES = 64
 THERMODYNAMICS_HAZARD_TELEMETRY_CAPACITY = 300
 ABYSSAL_THERMODYNAMICS_ENTRY_BYTES = 64
 ABYSSAL_THERMODYNAMICS_TELEMETRY_CAPACITY = 300
+REACTOR_THERMAL_ENTRY_BYTES = 128
+NUCLEAR_REACTOR_THERMAL_ENTRY_BYTES = 128
+REACTOR_THERMAL_TELEMETRY_CAPACITY = 300
 FOVEATED_SIMULATION_MAGIC = 0x46384C44
 
 FOVEATED_SIMULATION_FLAG_LABELS = (
@@ -283,6 +288,18 @@ ABYSSAL_THERMODYNAMICS_FLAG_LABELS = (
     (1 << 3, "energyDrift", "energy-drift"),
     (1 << 4, "divergent", "divergent"),
     (1 << 5, "maxIterations", "max-iterations"),
+)
+
+REACTOR_THERMAL_FLAG_LABELS = (
+    (1 << 0, "nonFinite", "nonfinite"),
+    (1 << 1, "outOfGrid", "out-of-grid"),
+    (1 << 2, "meltdown", "meltdown"),
+    (1 << 3, "mockLoad", "mock-load"),
+    (1 << 4, "costOverBudget", "cost-over-budget"),
+    (1 << 5, "signalOverflowRisk", "signal-overflow-risk"),
+    (1 << 6, "timingProxy", "timing-proxy"),
+    (1 << 7, "noCoolant", "no-coolant"),
+    (1 << 8, "atomicAbort", "atomic-abort"),
 )
 
 INPUT_DETERMINISM_SCHEME_LABELS = {
@@ -2936,6 +2953,218 @@ def parse_abyssal_thermodynamics_raw_blackbox(data: bytes) -> dict[str, Any]:
         "entries": capped,
         "latest": latest,
         "warnings": warnings,
+    }
+
+
+def is_reactor_thermal_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPSHINOBU337BIN", "DUMPSHINOBU337H8DUMP"}
+
+
+def is_nuclear_reactor_thermal_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPSHINOBU342BIN", "DUMPSHINOBU342H8DUMP"}
+
+
+def reactor_thermal_raw_warnings(
+    data_len: int,
+    entry_size: int,
+    entry_count: int,
+    entries: list[dict[str, Any]],
+    nonfinite_seen: bool,
+) -> list[str]:
+    warnings = []
+    if data_len % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if entry_count > REACTOR_THERMAL_TELEMETRY_CAPACITY:
+        warnings.append("entry_capacity_exceeded")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_values")
+    if any(entry.get("nonFinite") or entry.get("nonFiniteCount", 0) for entry in entries):
+        warnings.append("nonfinite")
+    if any(entry.get("outOfGrid") for entry in entries):
+        warnings.append("out_of_grid")
+    if any(entry.get("meltdown") or entry.get("meltdownCount", 0) for entry in entries):
+        warnings.append("meltdown")
+    if any(entry.get("mockLoad") for entry in entries):
+        warnings.append("mock_load")
+    if any(entry.get("costOverBudget") for entry in entries):
+        warnings.append("cost_over_budget")
+    if any(entry.get("signalOverflowRisk") for entry in entries):
+        warnings.append("signal_overflow_risk")
+    if any(entry.get("noCoolant") for entry in entries):
+        warnings.append("no_coolant")
+    if any(entry.get("atomicAbort") or entry.get("atomicAbortCount", 0) for entry in entries):
+        warnings.append("atomic_abort")
+    if any(entry.get("activeReactorCount", 0) > 16 for entry in entries):
+        warnings.append("reactor_capacity_exceeded")
+    if any(entry.get("ringIndex", 0) >= REACTOR_THERMAL_TELEMETRY_CAPACITY for entry in entries):
+        warnings.append("ring_index_out_of_range")
+    return warnings
+
+
+def parse_reactor_thermal_blackbox(data: bytes) -> dict[str, Any]:
+    entry_size = REACTOR_THERMAL_ENTRY_BYTES
+    if len(data) < entry_size:
+        return {
+            "type": "reactor_thermal_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_entry"],
+        }
+
+    entry_count = len(data) // entry_size
+    readable_entries = min(entry_count, REACTOR_THERMAL_TELEMETRY_CAPACITY)
+    entries = []
+    nonfinite_seen = False
+    for index in range(readable_entries):
+        offset = index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = REACTOR_THERMAL_ENTRY.unpack_from(data, offset)
+        flags = fields[10]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, REACTOR_THERMAL_FLAG_LABELS)
+        if any(not math.isfinite(value) for value in fields[0:8]):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "hotReactorAup": {
+                    "x": round(fields[0], 4),
+                    "y": round(fields[1], 4),
+                    "z": round(fields[2], 4),
+                },
+                "totalJoulesInjected": round(fields[3], 4),
+                "averageCoreTempCelsius": round(fields[4], 4),
+                "maxCoreTempCelsius": round(fields[5], 4),
+                "maxSpeedMetersPerSecond": round(fields[6], 4),
+                "lastInjectionMicroseconds": round(fields[7], 4),
+                "activeReactorCount": fields[8],
+                "meltdownCount": fields[9],
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "frame": fields[11],
+                "stateHash": fields[12],
+                "stateHashHex": f"0x{fields[12]:08X}",
+                "hotCellHash": fields[13],
+                "hotCellHashHex": f"0x{fields[13]:08X}",
+                "injectionCellWrites": fields[14],
+                "nonFiniteCount": fields[15],
+                "thermalSignalCount": fields[16],
+                "damageSignalCount": fields[17],
+                "ringIndex": fields[18],
+                "hotReactorHashID": fields[19],
+                "hotReactorHashHex": f"0x{fields[19]:08X}",
+                "hotEntityHashID": fields[20],
+                "hotEntityHashHex": f"0x{fields[20]:08X}",
+                "nonFinite": bool(flags & (1 << 0)),
+                "outOfGrid": bool(flags & (1 << 1)),
+                "meltdown": bool(flags & (1 << 2)),
+                "mockLoad": bool(flags & (1 << 3)),
+                "costOverBudget": bool(flags & (1 << 4)),
+                "signalOverflowRisk": bool(flags & (1 << 5)),
+                "timingProxy": bool(flags & (1 << 6)),
+                "noCoolant": bool(flags & (1 << 7)),
+                "atomicAbort": bool(flags & (1 << 8)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    return {
+        "type": "reactor_thermal_blackbox",
+        "entrySize": entry_size,
+        "declaredEntryCount": entry_count,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": reactor_thermal_raw_warnings(len(data), entry_size, entry_count, entries, nonfinite_seen),
+    }
+
+
+def parse_nuclear_reactor_thermal_blackbox(data: bytes) -> dict[str, Any]:
+    entry_size = NUCLEAR_REACTOR_THERMAL_ENTRY_BYTES
+    if len(data) < entry_size:
+        return {
+            "type": "nuclear_reactor_thermal_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_entry"],
+        }
+
+    entry_count = len(data) // entry_size
+    readable_entries = min(entry_count, REACTOR_THERMAL_TELEMETRY_CAPACITY)
+    entries = []
+    nonfinite_seen = False
+    for index in range(readable_entries):
+        offset = index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = NUCLEAR_REACTOR_THERMAL_ENTRY.unpack_from(data, offset)
+        flags = fields[11]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, REACTOR_THERMAL_FLAG_LABELS)
+        if any(not math.isfinite(value) for value in fields[0:9]):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "hotReactorAup": {
+                    "x": round(fields[0], 4),
+                    "y": round(fields[1], 4),
+                    "z": round(fields[2], 4),
+                },
+                "totalGeneratedWatts": round(fields[3], 4),
+                "totalBoiledLiters": round(fields[4], 4),
+                "averageCoreTempCelsius": round(fields[5], 4),
+                "maxCoreTempCelsius": round(fields[6], 4),
+                "lastExecutionMicroseconds": round(fields[7], 4),
+                "averageCarnotEfficiency01": round(fields[8], 4),
+                "activeReactorCount": fields[9],
+                "meltdownCount": fields[10],
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "frame": fields[12],
+                "stateHash": fields[13],
+                "stateHashHex": f"0x{fields[13]:08X}",
+                "powerNodeHashID": fields[14],
+                "powerNodeHashHex": f"0x{fields[14]:08X}",
+                "fluidRoomHashID": fields[15],
+                "fluidRoomHashHex": f"0x{fields[15]:08X}",
+                "radiationSignalCount": fields[16],
+                "baseCompromiseSignalCount": fields[17],
+                "ringIndex": fields[18],
+                "nonFiniteCount": fields[19],
+                "atomicAbortCount": fields[20],
+                "nonFinite": bool(flags & (1 << 0)),
+                "outOfGrid": bool(flags & (1 << 1)),
+                "meltdown": bool(flags & (1 << 2)),
+                "mockLoad": bool(flags & (1 << 3)),
+                "costOverBudget": bool(flags & (1 << 4)),
+                "signalOverflowRisk": bool(flags & (1 << 5)),
+                "timingProxy": bool(flags & (1 << 6)),
+                "noCoolant": bool(flags & (1 << 7)),
+                "atomicAbort": bool(flags & (1 << 8)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    return {
+        "type": "nuclear_reactor_thermal_blackbox",
+        "entrySize": entry_size,
+        "declaredEntryCount": entry_count,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": reactor_thermal_raw_warnings(len(data), entry_size, entry_count, entries, nonfinite_seen),
     }
 
 
@@ -7759,6 +7988,10 @@ def parse_dump_file(path: Path) -> dict[str, Any]:
         return {**base, **parse_ocean_surface_atmosphere_blackbox(data)}
     if is_thermodynamics_hazard_blackbox_path(path):
         return {**base, **parse_thermodynamics_hazard_blackbox(data)}
+    if is_reactor_thermal_blackbox_path(path):
+        return {**base, **parse_reactor_thermal_blackbox(data)}
+    if is_nuclear_reactor_thermal_blackbox_path(path):
+        return {**base, **parse_nuclear_reactor_thermal_blackbox(data)}
     if is_foveated_simulation_blackbox_path(path):
         return {**base, **parse_foveated_simulation_blackbox(data)}
     if is_input_determinism_blackbox_path(path):

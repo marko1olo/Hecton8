@@ -46,6 +46,7 @@ namespace Hecton8.UI.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= PollRuntime;
             EditorApplication.update += PollRuntime;
         }
 

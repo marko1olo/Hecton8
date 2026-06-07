@@ -20,6 +20,7 @@ namespace Hecton8.Editor
 
         private void OnEnable()
         {
+            SceneView.duringSceneGui -= OnSceneGui;
             SceneView.duringSceneGui += OnSceneGui;
         }
 
