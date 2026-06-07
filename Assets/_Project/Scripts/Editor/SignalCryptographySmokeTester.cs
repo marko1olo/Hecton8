@@ -23,6 +23,8 @@ namespace Hecton8.Editor
         private const string SaveDataPath = "Assets/_Project/Scripts/SaveData.cs";
         private const string SpatialAudioPath = "Assets/_Project/Scripts/SpatialAudioManager.cs";
         private const string NotificationEventsPath = "Assets/_Project/Scripts/UI/NotificationEvents.cs";
+        private const string RuntimeScriptsRoot = "Assets/_Project/Scripts";
+        private const string LegacyHudNotificationProducerToken = "SignalBus<HUDNotificationSignal>.TryPushTracked";
         private const string ItemTemplateRegistryPath = "Assets/_Project/Scripts/Inventory/ItemTemplateRegistry.cs";
         private const string QuestStateManagerPath = "Assets/_Project/Scripts/Quest/QuestStateManager.cs";
         private const string QuestEventsPath = "Assets/_Project/Scripts/Quest/QuestEvents.cs";
@@ -99,6 +101,7 @@ namespace Hecton8.Editor
             RunEncryptedLogAudit(audioLogSystem, saveData, spatialAudio, notificationEvents, report, ref failureCount);
             RunBlueprintGateAudit(itemRegistry, questState, buildableData, moduleCatalog, playerBuilder, pdaConstructionTab, report, ref failureCount);
             RunProgressionNotificationCacheAudit(playerAchievementRegistry, pdaContextualAdvisorySystem, notificationEvents, report, ref failureCount);
+            RunHudNotificationProducerAudit(report, ref failureCount);
 
             bool passed = failureCount == 0;
             json = "{\"tester\":\"SignalCryptographySmokeTester\",\"status\":\"" +
@@ -696,6 +699,38 @@ namespace Hecton8.Editor
 
             if (notificationEvents.Length > 0)
                 AssertContains(notificationEvents, "public static bool TryResolveMessage(uint messageHash, out string message)", "NotificationEvents exposes registered-message resolve for cache repair", report, ref failureCount);
+        }
+
+        private static void RunHudNotificationProducerAudit(StringBuilder report, ref int failureCount)
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string runtimeRoot = Path.Combine(projectRoot, RuntimeScriptsRoot.Replace('/', Path.DirectorySeparatorChar));
+            if (!Directory.Exists(runtimeRoot))
+            {
+                failureCount++;
+                report.Append(" MISSING ").Append(RuntimeScriptsRoot).Append(';');
+                return;
+            }
+
+            int producerCount = 0;
+            string editorSegment = Path.DirectorySeparatorChar + "Editor" + Path.DirectorySeparatorChar;
+            foreach (string absolutePath in Directory.EnumerateFiles(runtimeRoot, "*.cs", SearchOption.AllDirectories))
+            {
+                if (absolutePath.IndexOf(editorSegment, StringComparison.OrdinalIgnoreCase) >= 0)
+                    continue;
+
+                string source = File.ReadAllText(absolutePath);
+                if (!ContainsOrdinal(source, LegacyHudNotificationProducerToken))
+                    continue;
+
+                producerCount++;
+                failureCount++;
+                string relativePath = absolutePath.Substring(projectRoot.Length + 1).Replace(Path.DirectorySeparatorChar, '/');
+                report.Append(" FAIL Legacy HUDNotificationSignal producer ").Append(relativePath).Append(';');
+            }
+
+            if (producerCount == 0)
+                report.Append(" PASS Runtime HUD notifications route through NotificationEvents bridge;");
         }
 
         private static void RunBlueprintGateAudit(
