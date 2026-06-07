@@ -217,6 +217,29 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("new FileStream(filepath, FileMode.Create)", createEmpty);
         }
 
+        [Test]
+        public void OfflineGeometryBakeArtifactsWriteThroughDurableAtomicTempPromotion()
+        {
+            string source = ReadProjectSource("_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs");
+            string manifest = ExtractMethodBody(source, "private static void WriteLodManifest(");
+            string textWriter = ExtractMethodBody(source, "internal static void WriteTextFileAtomic(");
+            string replace = ExtractMethodBody(source, "internal static void ReplaceTempFile(");
+
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", manifest);
+            StringAssert.Contains("stream.Flush(true);", manifest);
+            StringAssert.Contains("ReplaceTempFile(tempPath, manifestPath);", manifest);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", manifest);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", textWriter);
+            StringAssert.Contains("writer.Flush();", textWriter);
+            StringAssert.Contains("stream.Flush(true);", textWriter);
+            StringAssert.Contains("ReplaceTempFile(tempPath, relativePath);", textWriter);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", textWriter);
+            StringAssert.Contains("File.Replace(tempPath, finalPath, backupPath, true);", replace);
+            StringAssert.Contains("File.Move(tempPath, finalPath);", replace);
+            StringAssert.DoesNotContain("new FileStream(tempPath, FileMode.Create, FileAccess.Write", manifest);
+            StringAssert.DoesNotContain("new FileStream(tempPath, FileMode.Create, FileAccess.Write", textWriter);
+        }
+
         private static string ReadProjectSource(string assetRelativePath)
         {
             return File.ReadAllText(Path.Combine(Application.dataPath, assetRelativePath)).Replace("\r\n", "\n");

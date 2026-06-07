@@ -1665,6 +1665,9 @@ namespace Hecton8.Editor.OfflineGeometry
             string tempPath = manifestPath + ".tmp";
             try
             {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
                 if (count > 0)
                 {
                     // COLD ALLOC: NativeArray<OfflineLodManifestRecord>[count] - editor binary LOD manifest staging - owner: OfflineGeometryBaker
@@ -1717,7 +1720,7 @@ namespace Hecton8.Editor.OfflineGeometry
                 };
 
                 long expectedBytes = 64L + ((long)count * 128L);
-                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                 {
                     Span<byte> headerBytes = stackalloc byte[64];
                     WriteManifestHeaderLittleEndian(headerBytes, in header);
@@ -1745,8 +1748,7 @@ namespace Hecton8.Editor.OfflineGeometry
             }
             finally
             {
-                if (File.Exists(tempPath))
-                    File.Delete(tempPath);
+                TryDeleteFileNoThrow(tempPath);
                 DisposeTrackedNativeArray(ref records);
             }
         }
@@ -1857,7 +1859,10 @@ namespace Hecton8.Editor.OfflineGeometry
             string tempPath = relativePath + ".tmp";
             try
             {
-                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                 {
                     using (StreamWriter writer = new StreamWriter(stream, _Utf8NoBom, 1024, true))
                     {
@@ -1872,8 +1877,19 @@ namespace Hecton8.Editor.OfflineGeometry
             }
             finally
             {
-                if (File.Exists(tempPath))
-                    File.Delete(tempPath);
+                TryDeleteFileNoThrow(tempPath);
+            }
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
             }
         }
 
