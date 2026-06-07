@@ -17,8 +17,10 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("File.Replace(tempPath, fullPath, backupPath, true);", source);
             StringAssert.Contains("File.Move(tempPath, fullPath);", source);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", source);
             StringAssert.DoesNotContain("File.Move(fullPath, backupPath);", source);
             StringAssert.DoesNotContain("File.Move(backupPath, fullPath);", source);
+            StringAssert.DoesNotContain("new FileStream(tempPath, FileMode.Create, FileAccess.Write", source);
         }
     }
 }

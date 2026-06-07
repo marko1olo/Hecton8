@@ -693,7 +693,10 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             bool backupCreated = false;
             try
             {
-                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 65536))
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 65536))
                 {
                     stream.Write(header, 0, header.Length);
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(halfDistances);
