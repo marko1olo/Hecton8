@@ -5808,9 +5808,27 @@ namespace Hecton8.World
         private void CompleteAndReleaseChunkBuildJob(int slot)
         {
             ChunkBuildPendingJob pending = _chunkBuildJobs[slot];
-            DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete: true);
+            if (!ForceCompleteChunkBuildJobInPostSimulationWindow(ref pending.Handle))
+            {
+                _chunkBuildJobs[slot] = pending;
+                return;
+            }
+
             ReleaseChunkBuildPendingJob(ref pending);
             _chunkBuildJobs[slot] = default;
+        }
+
+        private static bool ForceCompleteChunkBuildJobInPostSimulationWindow(ref JobHandle handle)
+        {
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
         }
 
         private static void ReleaseChunkBuildPendingJob(ref ChunkBuildPendingJob pending)

@@ -170,6 +170,26 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void ChunkBuildTeardown_ForceCompletesInsidePostSimulationWindowBeforeReadPinRelease()
+        {
+            string bridgeSource = ReadProjectScript("World/HectonMapMagicVegetationBridge.cs");
+            string releaseBody = ExtractMethodBody(bridgeSource, "CompleteAndReleaseChunkBuildJob");
+            string helperBody = ExtractMethodBody(bridgeSource, "ForceCompleteChunkBuildJobInPostSimulationWindow");
+
+            AssertOrdered(
+                releaseBody,
+                "ForceCompleteChunkBuildJobInPostSimulationWindow(ref pending.Handle)",
+                "ReleaseChunkBuildPendingJob(ref pending)");
+            Assert.That(
+                releaseBody,
+                Does.Not.Contain("DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete: true)"));
+            Assert.That(releaseBody, Does.Contain("_chunkBuildJobs[slot] = pending;"));
+            AssertCompleteInsidePostSimulationWindow(
+                helperBody,
+                "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true)");
+        }
+
+        [Test]
         public void StaticHotPathAudit_RejectsSynchronousTokensOutsideLateFrameAndTeardown()
         {
             string bridgeSource = ReadProjectScript("World/HectonMapMagicVegetationBridge.cs");
@@ -357,6 +377,23 @@ namespace Hecton8.Tests.Editor
             Assert.That(rebuildBody, Does.Not.Contain("CompleteHLODCullJob"));
             Assert.That(rebuildBody, Does.Not.Contain("TryComplete"));
             Assert.That(completeBody, Does.Contain("DispatcherJobSwap.TryComplete"));
+        }
+
+        private static void AssertCompleteInsidePostSimulationWindow(string method, string completeCall)
+        {
+            const string beginWindow = "BeginPostSimulationSwapWindow();";
+            const string endWindow = "EndPostSimulationSwapWindow();";
+
+            int completeIndex = method.IndexOf(completeCall, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(completeIndex, 0, completeCall);
+
+            int beginIndex = method.LastIndexOf(beginWindow, completeIndex, StringComparison.Ordinal);
+            int endIndex = method.IndexOf(endWindow, completeIndex, StringComparison.Ordinal);
+
+            Assert.GreaterOrEqual(beginIndex, 0, completeCall);
+            Assert.GreaterOrEqual(endIndex, 0, completeCall);
+            Assert.Less(beginIndex, completeIndex, completeCall);
+            Assert.Less(completeIndex, endIndex, completeCall);
         }
 
         private static void AssertFlowCompletionContract(string source, string completeMethodName, string releaseMethodName)
