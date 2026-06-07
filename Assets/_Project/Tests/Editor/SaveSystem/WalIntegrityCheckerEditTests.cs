@@ -90,6 +90,22 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void EntityDeltaTelemetryDumpUsesTrackedTransientPayload()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/SaveSystem/EntityDeltaCompressionArchitecture.cs");
+            string source = File.ReadAllText(path);
+
+            StringAssert.Contains("private const string TelemetryDumpPayloadLabel = \"entityDeltaTelemetryDumpPayload\";", source);
+            StringAssert.Contains("NativeFaultDumpWriter.CreateTransientPayload(", source);
+            StringAssert.Contains("nameof(EntityDeltaCompressionArchitecture)", source);
+            StringAssert.Contains("TelemetryDumpPayloadLabel", source);
+            StringAssert.Contains("NativeArrayOptions.UninitializedMemory", source);
+            StringAssert.Contains("NativeFaultDumpWriter.DisposeTransientPayload(", source);
+            StringAssert.DoesNotContain("new NativeArray<byte>(", source);
+            StringAssert.DoesNotContain("payload.Dispose()", source);
+        }
+
+        [Test]
         public void HeadlessWalFuzzer_CorruptedPrimaryPromotesBackupAndValidatesHash()
         {
             WalFuzzerProfileDTO profile = WalIntegrityFuzzerCore.BuildDefaultProfile();

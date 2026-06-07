@@ -3150,6 +3150,22 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RepairToolBlackBoxDumpUsesTrackedTransientPayload()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "RepairTool.cs");
+            string dumpBody = ExtractMethodBody(source, "private static void WriteRepairBlackBoxSnapshotCold(");
+
+            Assert.That(source, Does.Contain("private const string RepairBlackBoxDumpPayloadLabel = \"repairToolBlackBoxDumpPayload\";"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("nameof(RepairTool)"));
+            Assert.That(dumpBody, Does.Contain("RepairBlackBoxDumpPayloadLabel"));
+            Assert.That(dumpBody, Does.Contain("NativeArrayOptions.UninitializedMemory"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBody, Does.Not.Contain("new NativeArray<byte>("));
+            Assert.That(dumpBody, Does.Not.Contain("payload.Dispose()"));
+        }
+
+        [Test]
         public void DiegeticPanelController_ColorFormatIsHardwareRouteNotQualityFork()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "DiegeticPanelController.cs");

@@ -271,6 +271,7 @@ namespace Hecton8.SaveSystem
         internal const uint TelemetryFlagDiskLatencySpike = 1u << 9;
         internal const uint TelemetryDumpMagic = 0x45445741u; // AWDE little-endian marker.
         internal const uint TelemetryDumpVersion = 1u;
+        private const string TelemetryDumpPayloadLabel = "entityDeltaTelemetryDumpPayload";
         internal const int FailureCodeCompressionAlias = 0x53434C41; // ALCS
         internal const int FailureCodeDecodeAlias = 0x53444C41; // ALDS
         public const uint SchemaHash = 0x45445231u; // EDR1
@@ -1346,9 +1347,10 @@ namespace Hecton8.SaveSystem
                     last);
 
                 int byteCount = headerBytes + entryCount * stride;
-                NativeArray<byte> payload = new NativeArray<byte>(
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
                     byteCount,
-                    Allocator.Temp,
+                    nameof(EntityDeltaCompressionArchitecture),
+                    TelemetryDumpPayloadLabel,
                     NativeArrayOptions.UninitializedMemory);
                 try
                 {
@@ -1364,8 +1366,10 @@ namespace Hecton8.SaveSystem
                 }
                 finally
                 {
-                    if (payload.IsCreated)
-                        payload.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(EntityDeltaCompressionArchitecture),
+                        TelemetryDumpPayloadLabel);
                 }
             }
             catch (IOException)

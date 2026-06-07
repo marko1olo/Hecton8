@@ -80,6 +80,7 @@ namespace Hecton8.Gameplay
         private const int RepairBlackBoxFrameCount = 300;
         private const int RepairBlackBoxEntrySizeBytes = 64;
         private const string RepairBlackBoxDumpPath = "Docs/AgentLogs/Dump_SHINOBU_224_RepairTool.bin";
+        private const string RepairBlackBoxDumpPayloadLabel = "repairToolBlackBoxDumpPayload";
         private static readonly System.Threading.WaitCallback RepairBlackBoxDumpWorkerCallback = RunRepairBlackBoxDumpWorker;
         private static readonly ulong HullDentsMutationGuardMask = MutationGuardBit(BufferID.HullDents);
         private static readonly ulong RepairBlackBoxMutationGuardMask = MutationGuardBit(BufferID.RepairToolBlackBox);
@@ -2090,9 +2091,10 @@ namespace Hecton8.Gameplay
             string path = Path.Combine(Application.dataPath, "..", RepairBlackBoxDumpPath);
             const int HeaderBytes = 12;
             const int RowBytes = 64;
-            NativeArray<byte> payload = new NativeArray<byte>(
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
                 HeaderBytes + RepairBlackBoxFrameCount * RowBytes,
-                Allocator.Temp,
+                nameof(RepairTool),
+                RepairBlackBoxDumpPayloadLabel,
                 NativeArrayOptions.UninitializedMemory);
             try
             {
@@ -2126,7 +2128,10 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(RepairTool),
+                    RepairBlackBoxDumpPayloadLabel);
             }
         }
 
