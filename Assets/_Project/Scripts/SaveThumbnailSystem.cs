@@ -779,10 +779,7 @@ namespace Hecton8.SaveSystem
                     return;
                 }
 
-                if (File.Exists(path))
-                    File.Delete(path);
-
-                File.Move(tempPath, path);
+                CommitThumbnailFileCold(tempPath, path);
                 await Awaitable.MainThreadAsync();
                 if (!IsCurrentGeneration(request.Generation))
                     publishCompletion = false;
@@ -1135,6 +1132,14 @@ namespace Hecton8.SaveSystem
             catch
             {
             }
+        }
+
+        private static void CommitThumbnailFileCold(string tempPath, string path)
+        {
+            if (File.Exists(path))
+                File.Replace(tempPath, path, null, true);
+            else
+                File.Move(tempPath, path);
         }
 
         private static string ResolveExistingThumbnailPath(string slotName)

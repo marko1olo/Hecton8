@@ -1850,6 +1850,9 @@ namespace Hecton8.Tests.Editor
             Assert.That(thumbnail, Does.Contain("ThumbnailJpegQualityVisualOverkill"));
             Assert.That(thumbnail, Does.Contain("ResolveThumbnailJpegQuality()"));
             Assert.That(thumbnail, Does.Contain("quality * quality * (3f - 2f * quality)"));
+            Assert.That(thumbnail, Does.Contain("CommitThumbnailFileCold(tempPath, path);"));
+            Assert.That(thumbnail, Does.Contain("private static void CommitThumbnailFileCold(string tempPath, string path)"));
+            Assert.That(thumbnail, Does.Contain("File.Replace(tempPath, path, null, true);"));
             Assert.That(thumbnail, Does.Not.Contain("ShouldSkipScreenshotForCurrentTier"));
             Assert.That(thumbnail, Does.Not.Contain("ThumbnailCaptureQualityThreshold01"));
             Assert.That(thumbnail, Does.Not.Contain("CaptureStatus.LowTierSkipped"));
