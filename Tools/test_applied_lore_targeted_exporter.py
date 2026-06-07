@@ -11,6 +11,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from AppliedLoreImporter import TARGET_LOCALES
 from AppliedLoreTargetedExporter import (
     AppliedLoreTargetedError,
+    export_targeted,
+    export_targeted,
     find_text_integrity_errors,
     load_packet_sources,
     merge_publication_surface_rows,
@@ -87,6 +89,44 @@ class TestAppliedLoreTargetedExporter(unittest.TestCase):
         errors = find_text_integrity_errors("CafÃ©")
         self.assertTrue(any("mojibake" in error for error in errors))
 
+    def test_source_only_validates_packet_without_generated_pages(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            base = root / "Docs" / "Lore" / "AppliedContent"
+            packet_dir = base / "packets"
+            packet_dir.mkdir(parents=True)
+            (packet_dir / "RS_TEST.packets.json").write_text(
+                json.dumps(
+                    {
+                        "release_set_id": "RS_TEST",
+                        "packets": [
+                            {
+                                "packet_id": "P_SOURCE_ONLY",
+                                "article_id": "test.source_only",
+                                "localized": complete_localized(),
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            stats = export_targeted(
+                root,
+                ("P_SOURCE_ONLY",),
+                include_all=False,
+                explicit_packet_sources=(),
+                dry_run=False,
+                validate_only=False,
+                source_only=True,
+                refresh_indexes=False,
+            )
+
+            self.assertEqual(stats.source_packets, 1)
+            self.assertEqual(stats.target_packets, 1)
+            self.assertEqual(stats.pages_written, 0)
+            self.assertEqual(stats.surface_rows_targeted, 0)
+
     def test_merge_surface_rows_replaces_selected_only(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
@@ -141,6 +181,41 @@ class TestAppliedLoreTargetedExporter(unittest.TestCase):
             rows = list(csv.DictReader(index_path.read_text(encoding="utf-8").splitlines()))
             self.assertTrue(any(row["packet_id"] == "P_KEEP" for row in rows))
             self.assertFalse(any(row["packet_id"] == "P_TEST" and row["page_path"] == "old.md" for row in rows))
+
+    def test_source_only_does_not_require_generated_pages(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            packet_dir = root / "Docs" / "Lore" / "AppliedContent" / "packets"
+            packet_dir.mkdir(parents=True)
+            packet_dir.joinpath("RS_TEST.packets.json").write_text(
+                json.dumps(
+                    {
+                        "release_set_id": "RS_TEST",
+                        "packets": [
+                            {
+                                "packet_id": "P_TEST",
+                                "article_id": "test.article",
+                                "localized": complete_localized(),
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            stats = export_targeted(
+                root,
+                ("P_TEST",),
+                include_all=False,
+                explicit_packet_sources=(),
+                dry_run=False,
+                validate_only=False,
+                source_only=True,
+                refresh_indexes=False,
+            )
+
+            self.assertEqual(stats.target_packets, 1)
+            self.assertEqual(stats.pages_written, 0)
 
 
 if __name__ == "__main__":

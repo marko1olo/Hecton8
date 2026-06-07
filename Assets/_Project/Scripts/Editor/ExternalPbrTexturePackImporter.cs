@@ -98,6 +98,7 @@ namespace Hecton8.EditorTools
             Texture2D baseColor = LoadTexture(asset.maps.BaseColor);
             Texture2D normal = LoadTexture(asset.maps.NormalGL);
             Texture2D maskMap = LoadTexture(asset.maps.MaskMap_UnityURP);
+            Texture2D arm = LoadTexture(asset.maps.ARM_AO_Rough_Metal);
             Texture2D height = LoadTexture(asset.maps.Height);
             if (baseColor == null || normal == null || maskMap == null)
             {
@@ -130,6 +131,7 @@ namespace Hecton8.EditorTools
             SetTextureIfPresent(material, "_MainTex", baseColor);
             SetTextureIfPresent(material, "_BumpMap", normal);
             SetTextureIfPresent(material, "_MetallicGlossMap", maskMap);
+            SetTextureIfPresent(material, "_OcclusionMap", arm);
             SetTextureIfPresent(material, "_ParallaxMap", height);
             SetFloatIfPresent(material, "_BumpScale", 0.85f);
             SetFloatIfPresent(material, "_Metallic", DefaultMetallic(asset.id));
@@ -137,6 +139,10 @@ namespace Hecton8.EditorTools
             SetFloatIfPresent(material, "_SmoothnessTextureChannel", 0f);
             SetFloatIfPresent(material, "_OcclusionStrength", 1f);
             SetFloatIfPresent(material, "_Parallax", 0.012f);
+            SetKeyword(material, "_NORMALMAP", normal != null);
+            SetKeyword(material, "_METALLICSPECGLOSSMAP", maskMap != null);
+            SetKeyword(material, "_OCCLUSIONMAP", arm != null);
+            SetKeyword(material, "_PARALLAXMAP", height != null);
             material.enableInstancing = true;
             EditorUtility.SetDirty(material);
             return true;
@@ -165,10 +171,18 @@ namespace Hecton8.EditorTools
                 material.SetFloat(property, value);
         }
 
+        private static void SetKeyword(Material material, string keyword, bool enabled)
+        {
+            if (enabled)
+                material.EnableKeyword(keyword);
+            else
+                material.DisableKeyword(keyword);
+        }
+
         private static float DefaultMetallic(string id)
         {
             id = id ?? string.Empty;
-            if (id.Contains("metal") || id.Contains("shutter") || id.Contains("factory"))
+            if (id.Contains("metal") || id.Contains("shutter") || id.Contains("factory") || id.Contains("corrugated") || id.Contains("iron") || id.Contains("container") || id.Contains("grate"))
                 return 0.75f;
             return 0f;
         }
@@ -182,7 +196,7 @@ namespace Hecton8.EditorTools
                 return 0.32f;
             if (id.Contains("blue_metal"))
                 return 0.38f;
-            if (id.Contains("metal") || id.Contains("shutter") || id.Contains("factory"))
+            if (id.Contains("metal") || id.Contains("shutter") || id.Contains("factory") || id.Contains("corrugated") || id.Contains("iron") || id.Contains("container") || id.Contains("grate"))
                 return 0.30f;
             return 0.35f;
         }

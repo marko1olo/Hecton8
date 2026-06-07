@@ -524,8 +524,8 @@ namespace Hecton8.Gameplay
                     CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _isRegistered = false;
-                    _lateFrameRegistered = false;
+                    UnregisterFromSlowTick();
+                    UnregisterFromLateFrameTick();
                     if (currentService != null)
                     {
                         RegisterToSlowTick();

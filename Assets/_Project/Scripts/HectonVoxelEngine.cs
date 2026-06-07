@@ -3453,6 +3453,30 @@ public struct VoxelSpawnPointJob : IJob
 
         return h;
     }
+
+    static bool TryNormalizeFinite(float3 value, out float3 normalized)
+    {
+        normalized = default;
+        if (!IsFinite(value))
+            return false;
+
+        float lengthSq = math.lengthsq(value);
+        if (!math.isfinite(lengthSq) || lengthSq <= 0.0001f)
+            return false;
+
+        normalized = value * math.rsqrt(lengthSq);
+        return IsFinite(normalized);
+    }
+
+    static float ClampFinite(float value, float fallback, float minimum, float maximum)
+    {
+        return math.isfinite(value) ? math.clamp(value, minimum, maximum) : fallback;
+    }
+
+    static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
+    }
 }
 
 #endregion
