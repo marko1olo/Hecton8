@@ -117,6 +117,22 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("process.Kill();", killBody);
         }
 
+        [Test]
+        public void CompilerOutputPromotionAvoidsDeleteMoveFallback()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCompiler.cs");
+            string promoteBody = ExtractMethodBody(source, "private static bool TryPromoteAfterReplaceFailure(");
+            string copyBody = ExtractMethodBody(source, "private static bool TryPromoteWithValidatedCopy(");
+
+            StringAssert.DoesNotContain("private static bool TryPromoteWithRecoverableMove", source);
+            StringAssert.DoesNotContain("TryPromoteWithRecoverableMove(", source);
+            StringAssert.DoesNotContain("File.Delete(outputPath);", source);
+            StringAssert.Contains("TryPromoteWithValidatedCopy(outputPath, tempPath, backupPath, out string copyError)", promoteBody);
+            StringAssert.Contains("File.Copy(tempPath, outputPath, true);", copyBody);
+            StringAssert.Contains("TryValidateBlobFile(outputPath, out string validationError)", copyBody);
+            StringAssert.Contains("TryRestoreBackup(outputPath, backupPath, out string restoreError)", copyBody);
+        }
+
         private static string ReadProjectFile(string relativePath)
         {
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
