@@ -151,6 +151,20 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("TryDeleteFile(finalPath);\n                File.Move(tempPath, finalPath);", source);
         }
 
+        [Test]
+        public void CorruptionFuzzerCopiesCasesThroughAtomicTempPromotion()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCorruptionFuzzer.cs");
+            string copyBody = ExtractMethodBody(source, "private static bool TryCopyFile(");
+
+            StringAssert.Contains("string tempPath = destinationPath + \".tmp\";", copyBody);
+            StringAssert.Contains("File.Copy(sourcePath, tempPath, false);", copyBody);
+            StringAssert.Contains("File.Replace(tempPath, destinationPath, null, true);", copyBody);
+            StringAssert.Contains("File.Move(tempPath, destinationPath);", copyBody);
+            StringAssert.Contains("TryDeleteTempFileNoThrow(tempPath)", copyBody);
+            StringAssert.DoesNotContain("File.Copy(sourcePath, destinationPath, true);", source);
+        }
+
         private static string ReadProjectFile(string relativePath)
         {
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

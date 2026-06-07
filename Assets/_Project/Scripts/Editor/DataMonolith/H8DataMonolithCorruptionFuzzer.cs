@@ -282,16 +282,49 @@ namespace Hecton8.EditorValidation
         private static bool TryCopyFile(string sourcePath, string destinationPath, out string error)
         {
             error = string.Empty;
+            string tempPath = destinationPath + ".tmp";
             try
             {
-                File.Copy(sourcePath, destinationPath, true);
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                File.Copy(sourcePath, tempPath, false);
+                if (File.Exists(destinationPath))
+                    File.Replace(tempPath, destinationPath, null, true);
+                else
+                    File.Move(tempPath, destinationPath);
+
                 return true;
             }
-            catch (IOException ex) { return FailFileMutation("copy", ex.Message, out error); }
-            catch (UnauthorizedAccessException ex) { return FailFileMutation("copy", ex.Message, out error); }
-            catch (ArgumentException ex) { return FailFileMutation("copy", ex.Message, out error); }
-            catch (NotSupportedException ex) { return FailFileMutation("copy", ex.Message, out error); }
-            catch (System.Security.SecurityException ex) { return FailFileMutation("copy", ex.Message, out error); }
+            catch (IOException ex) { TryDeleteTempFileNoThrow(tempPath); return FailFileMutation("copy", ex.Message, out error); }
+            catch (UnauthorizedAccessException ex) { TryDeleteTempFileNoThrow(tempPath); return FailFileMutation("copy", ex.Message, out error); }
+            catch (ArgumentException ex) { TryDeleteTempFileNoThrow(tempPath); return FailFileMutation("copy", ex.Message, out error); }
+            catch (NotSupportedException ex) { TryDeleteTempFileNoThrow(tempPath); return FailFileMutation("copy", ex.Message, out error); }
+            catch (System.Security.SecurityException ex) { TryDeleteTempFileNoThrow(tempPath); return FailFileMutation("copy", ex.Message, out error); }
+        }
+
+        private static void TryDeleteTempFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (System.Security.SecurityException)
+            {
+            }
         }
 
         private static bool TryGetFileLength(string path, out long length, out string error)
