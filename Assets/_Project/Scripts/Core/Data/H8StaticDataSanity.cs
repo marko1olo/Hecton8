@@ -85,10 +85,11 @@ namespace Hecton8.Core.Data
             ushort recordType,
             string message)
         {
-            store.DumpBlackBox();
+            bool dumpWritten = store.TryDumpBlackBox();
             return new H8StaticDataSanityReport
             {
                 IsClean = false,
+                BlackBoxDumpWritten = dumpWritten,
                 RecordsScanned = scanned,
                 FailedHash = hash,
                 FailedRecordType = recordType,

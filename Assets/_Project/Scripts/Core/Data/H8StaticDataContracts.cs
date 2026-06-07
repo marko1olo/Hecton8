@@ -1845,6 +1845,7 @@ namespace Hecton8.Core.Data
     public struct H8StaticDataSanityReport
     {
         public bool IsClean;
+        public bool BlackBoxDumpWritten;
         public int RecordsScanned;
         public uint FailedHash;
         public ushort FailedRecordType;
