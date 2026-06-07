@@ -1084,7 +1084,7 @@ namespace Hecton8.Narrative
                 if (updatedLineCountForFile <= 0)
                     continue;
 
-                File.WriteAllLines(fullSourcePath, lines, new UTF8Encoding(false));
+                WriteAllLinesAtomic(fullSourcePath, lines, new UTF8Encoding(false));
                 AssetDatabase.ImportAsset(sourcePath, ImportAssetOptions.ForceUpdate);
                 updatedFileCount++;
                 updatedLineCount += updatedLineCountForFile;
@@ -1137,6 +1137,57 @@ namespace Hecton8.Narrative
             }
 
             return sourcePaths;
+        }
+
+        private static void WriteAllLinesAtomic(string path, string[] lines, Encoding encoding)
+        {
+            string tempPath = path + ".tmp";
+            TryDeleteFileNoThrow(tempPath);
+            try
+            {
+                using (FileStream stream = new FileStream(
+                    tempPath,
+                    FileMode.CreateNew,
+                    FileAccess.Write,
+                    FileShare.Read,
+                    4096,
+                    FileOptions.WriteThrough | FileOptions.SequentialScan))
+                using (StreamWriter writer = new StreamWriter(stream, encoding, 4096, leaveOpen: true))
+                {
+                    for (int i = 0; i < lines.Length; i++)
+                        writer.WriteLine(lines[i]);
+
+                    writer.Flush();
+                    stream.Flush(true);
+                }
+
+                PromoteTempFileAtomic(tempPath, path);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void PromoteTempFileAtomic(string tempPath, string destinationPath)
+        {
+            if (File.Exists(destinationPath))
+                File.Replace(tempPath, destinationPath, null, true);
+            else
+                File.Move(tempPath, destinationPath);
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+            }
         }
 
         private sealed class LoreHashBuildPreprocessor : IPreprocessBuildWithReport

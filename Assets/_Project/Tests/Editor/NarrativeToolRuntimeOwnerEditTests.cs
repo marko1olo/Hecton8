@@ -62,6 +62,28 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("registered != null && registered != this", source);
         }
 
+        [Test]
+        public void LoreHashRebakeWritesSourceThroughAtomicTempPromotion()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project", "Scripts", "Narrative", "LoreDatabaseManager.cs"));
+            string rebake = ExtractMethodBody(source, "private static void RebakeLoreHashes()");
+            string write = ExtractMethodBody(source, "private static void WriteAllLinesAtomic(");
+            string promote = ExtractMethodBody(source, "private static void PromoteTempFileAtomic(");
+
+            StringAssert.Contains("WriteAllLinesAtomic(fullSourcePath, lines, new UTF8Encoding(false));", rebake);
+            StringAssert.Contains("string tempPath = path + \".tmp\";", write);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", write);
+            StringAssert.Contains("FileMode.CreateNew", write);
+            StringAssert.Contains("FileOptions.WriteThrough | FileOptions.SequentialScan", write);
+            StringAssert.Contains("writer.Flush();", write);
+            StringAssert.Contains("stream.Flush(true);", write);
+            StringAssert.Contains("PromoteTempFileAtomic(tempPath, path);", write);
+            StringAssert.Contains("File.Replace(tempPath, destinationPath, null, true);", promote);
+            StringAssert.Contains("File.Move(tempPath, destinationPath);", promote);
+            StringAssert.DoesNotContain("File.WriteAllLines(fullSourcePath", source);
+            AssertTextBefore(write, "stream.Flush(true);", "PromoteTempFileAtomic(tempPath, path);");
+        }
+
         private static void AssertTextBefore(string body, string expectedEarlier, string expectedLater)
         {
             int earlierIndex = body.IndexOf(expectedEarlier, StringComparison.Ordinal);
