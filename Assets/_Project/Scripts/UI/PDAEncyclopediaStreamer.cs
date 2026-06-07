@@ -584,12 +584,6 @@ namespace Hecton8.UI
             IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
             BindDataVaultForLifecycle(nextVault, previousVault);
 
-            if (_h8lrLoreStore != null)
-            {
-                _h8lrLoreStore.Dispose();
-                _h8lrLoreStore = null;
-            }
-
             if (_babelStore != null)
                 _babelStore.BindDataVault(_vault);
 
@@ -2829,6 +2823,7 @@ namespace Hecton8.UI
             if (ReferenceEquals(_vault, nextVault))
                 return;
 
+            DisposeH8lrLoreStore();
             ReleasePdaVaultHandles(_vault ?? fallbackReleaseVault);
             _vault = nextVault;
             _vaultReady = false;
@@ -2839,6 +2834,15 @@ namespace Hecton8.UI
             ResetDataMonolithMetadataSeed(ResolveActiveDataMonolithLocaleHash());
             _coldBootstrapAttempted = false;
             ResetActiveSourceCache();
+        }
+
+        private void DisposeH8lrLoreStore()
+        {
+            if (_h8lrLoreStore == null)
+                return;
+
+            _h8lrLoreStore.Dispose();
+            _h8lrLoreStore = null;
         }
 
         private void ReleasePdaVaultHandles(IDataVault vault)
@@ -3036,7 +3040,6 @@ namespace Hecton8.UI
             _h8lrLoreStore.Dispose();
             _h8lrLoreStore = null;
             _h8lrMetadataSeeded = false;
-            _lastFaultHash = FaultH8lrOpenFailed;
             QueueBlackBoxDump(FaultH8lrOpenFailed);
         }
 
