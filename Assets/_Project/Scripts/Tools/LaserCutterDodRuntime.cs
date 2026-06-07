@@ -1752,8 +1752,7 @@ namespace Hecton8.Tools
             if (vault == null)
                 return;
 
-            DispatcherJobFence.TryComplete(ref _scheduledSdfProbeHandle, forceComplete: true);
-            DispatcherJobFence.TryComplete(ref _scheduledEvaluationHandle, forceComplete: true);
+            CompleteScheduledJobsForVaultRebind();
             _scheduledSdfProbeActive = false;
             _scheduledSdfProbeCount = 0;
             _scheduledEvaluationActive = false;
@@ -1777,6 +1776,20 @@ namespace Hecton8.Tools
             ReleaseVaultHandle(vault, LaserCutterDodConstants.CsvScratchBuffer, ref _csvScratchHandle);
             ReleaseVaultHandle(vault, LaserCutterDodConstants.SdfSnapshotBuffer, ref _sdfSnapshotHandle);
             ReleaseVaultHandle(vault, LaserCutterDodConstants.CountersBuffer, ref _countersHandle);
+        }
+
+        private static void CompleteScheduledJobsForVaultRebind()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _scheduledSdfProbeHandle, forceComplete: true);
+                DispatcherJobFence.TryComplete(ref _scheduledEvaluationHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private static void ReleaseSdfReadLease(
