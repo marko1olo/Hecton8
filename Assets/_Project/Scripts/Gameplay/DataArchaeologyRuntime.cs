@@ -1985,6 +1985,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            string tempPath = null;
             try
             {
                 long byteCount = ResolveExpectedMmfByteCount();
@@ -1992,9 +1993,10 @@ namespace Hecton8.Gameplay
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                string tempPath = path + ".tmp";
+                tempPath = path + ".tmp";
+                TryDeleteMmfTempFileNoThrow(tempPath);
                 long writtenLength;
-                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, MmfFileStreamBufferBytes, FileOptions.WriteThrough))
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, MmfFileStreamBufferBytes, FileOptions.WriteThrough))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(MmfMagic);
@@ -2028,6 +2030,7 @@ namespace Hecton8.Gameplay
 
                 if (writtenLength != byteCount)
                 {
+                    TryDeleteMmfTempFileNoThrow(tempPath);
                     ScheduleMmfPersistenceRetry();
                     return;
                 }
@@ -2037,22 +2040,27 @@ namespace Hecton8.Gameplay
             }
             catch (IOException)
             {
+                TryDeleteMmfTempFileNoThrow(tempPath);
                 ScheduleMmfPersistenceRetry();
             }
             catch (UnauthorizedAccessException)
             {
+                TryDeleteMmfTempFileNoThrow(tempPath);
                 ScheduleMmfPersistenceRetry();
             }
             catch (NotSupportedException)
             {
+                TryDeleteMmfTempFileNoThrow(tempPath);
                 ScheduleMmfPersistenceRetry();
             }
             catch (ArgumentException)
             {
+                TryDeleteMmfTempFileNoThrow(tempPath);
                 ScheduleMmfPersistenceRetry();
             }
             catch (ObjectDisposedException)
             {
+                TryDeleteMmfTempFileNoThrow(tempPath);
                 ScheduleMmfPersistenceRetry();
             }
 #else
@@ -2073,6 +2081,27 @@ namespace Hecton8.Gameplay
                 File.Replace(tempPath, path, null, true);
             else
                 File.Move(tempPath, path);
+        }
+
+        private static void TryDeleteMmfTempFileNoThrow(string tempPath)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(tempPath) && File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
         }
 
         private void ClearMmfDirty()

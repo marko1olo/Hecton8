@@ -8996,6 +8996,21 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void DataArchaeologyRuntimeMmfPersistenceWritesThroughCreateNewTemp()
+        {
+            string source = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "Gameplay", "DataArchaeologyRuntime.cs"));
+
+            StringAssert.Contains("TryDeleteMmfTempFileNoThrow(tempPath);", source);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", source);
+            StringAssert.Contains("stream.Flush(true);", source);
+            StringAssert.Contains("File.Replace(tempPath, path, null, true);", source);
+            StringAssert.DoesNotContain("new FileStream(tempPath, FileMode.Create, FileAccess.Write", source);
+            Assert.Less(
+                source.IndexOf("new FileStream(tempPath, FileMode.CreateNew", StringComparison.Ordinal),
+                source.IndexOf("PromoteMmfTempFileCold(tempPath, path);", StringComparison.Ordinal));
+        }
+
+        [Test]
         public void DataArchaeologyRuntimeMigration_CurrentRepairsMalformedPartialProgress()
         {
             SaveData data = SaveData.CreateNew(0.0);
