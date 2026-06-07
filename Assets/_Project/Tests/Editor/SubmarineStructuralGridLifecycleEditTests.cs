@@ -31,6 +31,45 @@ namespace Hecton8.Tests.Editor
                 listener.IndexOf("SeedStructuralState();", StringComparison.Ordinal));
         }
 
+        [Test]
+        public void TeardownForceCompletesStructuralJobsInsidePostFixedSwapWindowBeforeVaultRelease()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/SubmarineStructuralGrid.cs");
+            string teardown = ExtractMethodBlock(source, "private void CompleteStructuralJobsForTeardown()");
+            string dispose = ExtractMethodBlock(source, "private void DisposeNativeStateDeferred()");
+
+            const string beginWindow = "DispatcherJobFence.BeginPostFixedSwapWindow();";
+            const string endWindow = "DispatcherJobFence.EndPostFixedSwapWindow();";
+            string[] completeCalls =
+            {
+                "DispatcherJobFence.TryComplete(ref _damageJobHandle, forceComplete: true)",
+                "DispatcherJobFence.TryComplete(ref _mappingJobHandle, forceComplete: true)",
+                "DispatcherJobFence.TryComplete(ref _fatigueJobHandle, forceComplete: true)",
+                "DispatcherJobFence.TryComplete(ref _breachRepairJobHandle, forceComplete: true)"
+            };
+
+            Assert.That(teardown, Does.Contain(beginWindow));
+            Assert.That(teardown, Does.Contain(endWindow));
+
+            foreach (string completeCall in completeCalls)
+            {
+                Assert.That(teardown, Does.Contain(completeCall));
+                Assert.Less(
+                    teardown.IndexOf(beginWindow, StringComparison.Ordinal),
+                    teardown.IndexOf(completeCall, StringComparison.Ordinal));
+                Assert.Less(
+                    teardown.IndexOf(completeCall, StringComparison.Ordinal),
+                    teardown.IndexOf(endWindow, StringComparison.Ordinal));
+            }
+
+            Assert.Less(
+                dispose.IndexOf("CompleteStructuralJobsForTeardown();", StringComparison.Ordinal),
+                dispose.IndexOf("UnlockStructuralJobBuffers(_damageJobLockMask", StringComparison.Ordinal));
+            Assert.Less(
+                dispose.IndexOf("UnlockStructuralJobBuffers(_breachRepairJobLockMask", StringComparison.Ordinal),
+                dispose.IndexOf("ReleaseVaultHandle(vault, ref _cellIntegrityFrontHandle);", StringComparison.Ordinal));
+        }
+
         private static string ReadProjectFile(string relativePath)
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
