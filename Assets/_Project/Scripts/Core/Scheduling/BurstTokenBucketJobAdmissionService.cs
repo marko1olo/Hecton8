@@ -86,18 +86,26 @@ namespace Hecton8.Core.Scheduling
         /// <param name="dataVault">Global data vault that owns all persistent admission buffers.</param>
         public void Initialize(IJobAdmissionTelemetrySink telemetrySink, IDataVault dataVault)
         {
-            if (_initialized)
+            _telemetrySink = telemetrySink;
+            if (_initialized && ReferenceEquals(_dataVault, dataVault))
                 return;
 
-            _telemetrySink = telemetrySink;
+            if (_initialized)
+            {
+                ReleaseVaultHandlesOnly();
+                ResetRuntimeState(clearTelemetrySink: false);
+            }
+
             if (dataVault == null)
             {
+                ReleaseVaultHandlesOnly();
                 ResetRuntimeState(clearTelemetrySink: false);
                 return;
             }
 
             if (dataVault.IsAllocationLocked || dataVault.IsCompactionFenceActive)
             {
+                ReleaseVaultHandlesOnly();
                 ResetRuntimeState(clearTelemetrySink: false);
                 return;
             }

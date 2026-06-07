@@ -1591,6 +1591,12 @@ namespace Hecton8.Bootstrap
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                RebindBootstrapSchedulerVaults(currentService as IDataVault);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
                 currentService == null ||
                 !isActiveAndEnabled)
@@ -1605,6 +1611,42 @@ namespace Hecton8.Bootstrap
             }
 
             TryRegisterBootstrapSlowTickable();
+        }
+
+        private static void RebindBootstrapSchedulerVaults(IDataVault currentVault)
+        {
+            ISimulationBucketer bucketer = GlobalRegistry.SimulationBucketer;
+            if (bucketer is ModuloSimulationBucketer moduloBucketer)
+            {
+                moduloBucketer.Initialize(SimulationBucketConstants.DefaultEntityCapacity, currentVault);
+            }
+            else if (bucketer == null && currentVault != null)
+            {
+                EnsureSimulationBucketerRegistered();
+            }
+            else if (bucketer != null && !bucketer.IsInitialized && currentVault != null)
+            {
+                bucketer.Initialize(SimulationBucketConstants.DefaultEntityCapacity);
+            }
+
+            IJobAdmissionService admission = GlobalRegistry.JobAdmission;
+            if (_jobAdmissionTelemetryBridge == null && (admission != null || currentVault != null))
+                _jobAdmissionTelemetryBridge = new JobAdmissionTelemetryBridge(); // COLD ALLOC: JobAdmissionTelemetryBridge[1] - scheduler telemetry bridge - owner: GameBootstrapper
+
+            if (admission is BurstTokenBucketJobAdmissionService burstAdmissionService)
+            {
+                burstAdmissionService.Initialize(_jobAdmissionTelemetryBridge, currentVault);
+                JobAdmissionSchedulerBridge.SetService(burstAdmissionService);
+            }
+            else if (admission == null && currentVault != null)
+            {
+                EnsureJobAdmissionServiceRegistered();
+            }
+            else if (admission != null && !admission.IsInitialized && currentVault != null)
+            {
+                admission.Initialize(_jobAdmissionTelemetryBridge);
+                JobAdmissionSchedulerBridge.SetService(admission);
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -5481,12 +5523,11 @@ namespace Hecton8.Bootstrap
                 if (_jobAdmissionTelemetryBridge == null)
                     _jobAdmissionTelemetryBridge = new JobAdmissionTelemetryBridge(); // COLD ALLOC: JobAdmissionTelemetryBridge[1] - scheduler telemetry bridge - owner: GameBootstrapper
 
-                if (!registered.IsInitialized)
+                if (registered is BurstTokenBucketJobAdmissionService burstAdmissionService)
+                    burstAdmissionService.Initialize(_jobAdmissionTelemetryBridge, GlobalRegistry.DataVault);
+                else if (!registered.IsInitialized)
                 {
-                    if (registered is BurstTokenBucketJobAdmissionService burstAdmissionService)
-                        burstAdmissionService.Initialize(_jobAdmissionTelemetryBridge, GlobalRegistry.DataVault);
-                    else
-                        registered.Initialize(_jobAdmissionTelemetryBridge);
+                    registered.Initialize(_jobAdmissionTelemetryBridge);
                 }
 
                 JobAdmissionSchedulerBridge.SetService(registered);
