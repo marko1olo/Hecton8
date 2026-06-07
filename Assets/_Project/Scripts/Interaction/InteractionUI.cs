@@ -16,7 +16,7 @@ namespace Hecton8.Interaction
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Interaction UI")]
-    public sealed class InteractionUI : MonoBehaviour, IInteractionEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class InteractionUI : MonoBehaviour, IInteractionEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener, ILateFrameTickable
     {
         [Header("UI References")]
         [SerializeField, Tooltip("The TextMeshProUGUI label that displays the interaction prompt.")]
@@ -37,6 +37,8 @@ namespace Hecton8.Interaction
         private ILocalizationTextReadModel _localizationManager;
         private bool _localizationColdResolved;
         private bool _hotSwapListenerRegistered;
+        private bool _pendingLanguagePromptRefresh;
+        private bool _lateFrameRefreshRegistered;
 
         // COLD ALLOC: char[192] — hover prompt rich-text buffer — owner: InteractionUI
         private readonly char[] _charBuffer = new char[192];
@@ -88,6 +90,7 @@ namespace Hecton8.Interaction
             UnsubscribeInputManager();
 
             TryUnregisterHotSwapListener();
+            TryUnregisterLateFrameRefresh();
 
             LocalizationEvents.UnregisterLanguageListener(this);
 
@@ -99,6 +102,7 @@ namespace Hecton8.Interaction
             UnsubscribeInputBindingService();
             UnsubscribeInputManager();
             TryUnregisterHotSwapListener();
+            TryUnregisterLateFrameRefresh();
         }
 
         private void HandleHoverChanged(IInteractable target)
@@ -188,6 +192,20 @@ namespace Hecton8.Interaction
             ConfigurePromptLabel();
             RefreshInteractPrefixCache();
             RefreshCurrentPrompt();
+            QueueLateFramePromptRefresh();
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_pendingLanguagePromptRefresh)
+            {
+                TryUnregisterLateFrameRefresh();
+                return;
+            }
+
+            _pendingLanguagePromptRefresh = false;
+            RefreshCurrentPrompt();
+            TryUnregisterLateFrameRefresh();
         }
 
         private void RefreshCurrentPrompt()
@@ -227,6 +245,8 @@ namespace Hecton8.Interaction
             SetPromptVisible(false);
 
             _lastDisplayedTarget = null;
+            _pendingLanguagePromptRefresh = false;
+            TryUnregisterLateFrameRefresh();
         }
 
         private void RefreshInteractPrefixCache()
@@ -433,6 +453,18 @@ namespace Hecton8.Interaction
                     _localizationColdResolved = true;
                     break;
 
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        TryUnregisterLateFrameRefresh();
+                    }
+                    else if (_pendingLanguagePromptRefresh && isActiveAndEnabled)
+                    {
+                        TryRegisterLateFrameRefresh();
+                    }
+
+                    return;
+
                 default:
                     return;
             }
@@ -456,6 +488,32 @@ namespace Hecton8.Interaction
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
+        }
+
+        private void QueueLateFramePromptRefresh()
+        {
+            if (_lastDisplayedTarget == null)
+                return;
+
+            _pendingLanguagePromptRefresh = true;
+            TryRegisterLateFrameRefresh();
+        }
+
+        private void TryRegisterLateFrameRefresh()
+        {
+            if (_lateFrameRefreshRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _lateFrameRefreshRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterLateFrameRefresh()
+        {
+            if (!_lateFrameRefreshRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _lateFrameRefreshRegistered = false;
         }
 
         private void CacheLocalizationCold(bool forceRefresh = false)

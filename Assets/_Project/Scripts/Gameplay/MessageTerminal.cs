@@ -216,6 +216,9 @@ namespace Hecton8.Gameplay
         private int _cachedReadTextLength;
         private int _cachedNewMessageTextLength;
         private int _cachedPlayingTextLength;
+        private string _cachedReadTextLegacy = DefaultReadText;
+        private string _cachedNewMessageTextLegacy = DefaultNewMessageText;
+        private string _cachedPlayingTextLegacy = DefaultPlayingText;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -579,11 +582,11 @@ namespace Hecton8.Gameplay
             switch (_state)
             {
                 case TerminalState.Idle:
-                    return DefaultReadText;
+                    return _cachedReadTextLegacy;
                 case TerminalState.NewMessage:
-                    return DefaultNewMessageText;
+                    return _cachedNewMessageTextLegacy;
                 case TerminalState.Playing:
-                    return DefaultPlayingText;
+                    return _cachedPlayingTextLegacy;
                 default:
                     return string.Empty;
             }
@@ -1429,6 +1432,17 @@ namespace Hecton8.Gameplay
             _cachedReadTextLength = InteractableTextCopy.CopyLocalizedTruncated(_localizationManager, LocalizationKeys.INTERACT_READ_MESSAGES, DefaultReadText, _cachedReadTextBuffer);
             _cachedNewMessageTextLength = InteractableTextCopy.CopyLocalizedTruncated(_localizationManager, LocalizationKeys.INTERACT_NEW_MESSAGE, DefaultNewMessageText, _cachedNewMessageTextBuffer);
             _cachedPlayingTextLength = InteractableTextCopy.CopyLocalizedTruncated(_localizationManager, LocalizationKeys.INTERACT_PLAYING, DefaultPlayingText, _cachedPlayingTextBuffer);
+            _cachedReadTextLegacy = CopyCachedLegacyText(_cachedReadTextBuffer, _cachedReadTextLength, DefaultReadText);
+            _cachedNewMessageTextLegacy = CopyCachedLegacyText(_cachedNewMessageTextBuffer, _cachedNewMessageTextLength, DefaultNewMessageText);
+            _cachedPlayingTextLegacy = CopyCachedLegacyText(_cachedPlayingTextBuffer, _cachedPlayingTextLength, DefaultPlayingText);
+        }
+
+        private static string CopyCachedLegacyText(char[] buffer, int length, string fallback)
+        {
+            if (buffer == null || length <= 0)
+                return fallback;
+
+            return new string(buffer, 0, Math.Min(length, buffer.Length));
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
