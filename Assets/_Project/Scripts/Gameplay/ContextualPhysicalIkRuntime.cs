@@ -2072,7 +2072,7 @@ namespace Hecton8.Gameplay
                 return;
 
             // COLD SYNC JOB: floating-origin rebasing must not race pending IK target writes.
-            DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
+            ForceCompletePendingGroundResponseInPostSimulationWindow();
             SwapTargetBuffers();
             PublishFrontTargetBuffer(applyPresentation: false);
             WriteTelemetrySample(TelemetryReasonOriginShift);
@@ -2086,7 +2086,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             // COLD SYNC JOB: lifecycle slot mutation must not race pending IK writes.
-            DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
+            ForceCompletePendingGroundResponseInPostSimulationWindow();
             SwapTargetBuffers();
             _groundResponseScheduled = false;
             _pendingGroundResponseHandle = default;
@@ -2099,12 +2099,25 @@ namespace Hecton8.Gameplay
                 return;
 
             // COLD SYNC JOB: disabled runtimes must not leave pre-shift target writes pending.
-            DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
+            ForceCompletePendingGroundResponseInPostSimulationWindow();
             SwapTargetBuffers();
             PublishFrontTargetBuffer(applyPresentation: false);
             WriteTelemetrySample(TelemetryReasonRuntimeDisable);
             _groundResponseScheduled = false;
             _pendingGroundResponseHandle = default;
+        }
+
+        private void ForceCompletePendingGroundResponseInPostSimulationWindow()
+        {
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
         }
 
         private void RebaseScheduledEntityStates(float3 shiftOffset)
