@@ -29,6 +29,13 @@ namespace Hecton8.Tests.Editor
             "DispatcherJobFence.TryComplete(ref _floodPropagationHandle, forceComplete: true)",
             "return FinishFloodPropagationJob();")]
         [TestCase(
+            "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+            "private void CompletePendingValidationForTeardown()",
+            "DispatcherJobSwap.BeginPostSimulationSwapWindow();",
+            "DispatcherJobSwap.EndPostSimulationSwapWindow();",
+            "DispatcherJobSwap.TryComplete(ref _validationHandle, forceComplete: true)",
+            "_validationPending = false;")]
+        [TestCase(
             "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
             "private void CompleteScheduledSolverForTeardown()",
             "DispatcherJobFence.BeginPostSimulationSwapWindow();",
