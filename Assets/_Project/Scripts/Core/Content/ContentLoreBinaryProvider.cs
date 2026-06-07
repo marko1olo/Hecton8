@@ -35,6 +35,7 @@ namespace Hecton8.Core.Content
 #if UNITY_EDITOR || UNITY_STANDALONE
         private MemoryMappedFile _mappedFile;
         private MemoryMappedViewAccessor _accessor;
+        private FileStream _mappedFileStream;
 #endif
         private FileStream _fallbackStream;
         private long _fileLength;
@@ -135,21 +136,7 @@ namespace Hecton8.Core.Content
                 return false;
             }
 
-            try
-            {
-                _fileLength = new FileInfo(path).Length;
-#if UNITY_EDITOR || UNITY_STANDALONE
-                _mappedFile = MemoryMappedFile.CreateFromFile(path, FileMode.Open, null, 0L, MemoryMappedFileAccess.Read);
-                _accessor = _mappedFile.CreateViewAccessor(0L, 0L, MemoryMappedFileAccess.Read);
-#else
-                _fallbackStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileStreamBufferBytes);
-#endif
-            }
-            catch (Exception exception) when (
-                exception is IOException ||
-                exception is UnauthorizedAccessException ||
-                exception is NotSupportedException ||
-                exception is ArgumentException)
+            if (!TryRefreshFileLength(path))
             {
                 Dispose();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -158,12 +145,82 @@ namespace Hecton8.Core.Content
                 return false;
             }
 
-            return true;
+#if UNITY_EDITOR || UNITY_STANDALONE
+            if (TryOpenMappedDictionary(path))
+                return true;
+#endif
+            if (TryOpenFallbackDictionaryStream(path))
+                return true;
+
+            Dispose();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Failed to open Babel dictionary.", this);
+#endif
+            return false;
         }
 
         public void Dispose()
         {
 #if UNITY_EDITOR || UNITY_STANDALONE
+            CloseMappedDictionary();
+#endif
+            CloseFallbackDictionaryStream();
+
+            _fileLength = 0L;
+        }
+
+        private bool TryRefreshFileLength(string path)
+        {
+            try
+            {
+                long length = new FileInfo(path).Length;
+                if (length <= 0L)
+                {
+                    _fileLength = 0L;
+                    return false;
+                }
+
+                _fileLength = length;
+                return true;
+            }
+            catch (Exception exception) when (IsDictionaryOpenException(exception))
+            {
+                _fileLength = 0L;
+                return false;
+            }
+        }
+
+#if UNITY_EDITOR || UNITY_STANDALONE
+        private bool TryOpenMappedDictionary(string path)
+        {
+            try
+            {
+                _mappedFileStream = new FileStream(
+                    path,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete,
+                    FileStreamBufferBytes,
+                    FileOptions.RandomAccess);
+                _mappedFile = MemoryMappedFile.CreateFromFile(
+                    _mappedFileStream,
+                    null,
+                    _fileLength,
+                    MemoryMappedFileAccess.Read,
+                    HandleInheritability.None,
+                    true);
+                _accessor = _mappedFile.CreateViewAccessor(0L, _fileLength, MemoryMappedFileAccess.Read);
+                return true;
+            }
+            catch (Exception exception) when (IsDictionaryOpenException(exception))
+            {
+                CloseMappedDictionary();
+                return false;
+            }
+        }
+
+        private void CloseMappedDictionary()
+        {
             if (_accessor != null)
             {
                 _accessor.Dispose();
@@ -175,14 +232,50 @@ namespace Hecton8.Core.Content
                 _mappedFile.Dispose();
                 _mappedFile = null;
             }
+
+            if (_mappedFileStream != null)
+            {
+                _mappedFileStream.Dispose();
+                _mappedFileStream = null;
+            }
+        }
 #endif
+
+        private bool TryOpenFallbackDictionaryStream(string path)
+        {
+            try
+            {
+                _fallbackStream = new FileStream(
+                    path,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete,
+                    FileStreamBufferBytes,
+                    FileOptions.RandomAccess);
+                return true;
+            }
+            catch (Exception exception) when (IsDictionaryOpenException(exception))
+            {
+                CloseFallbackDictionaryStream();
+                return false;
+            }
+        }
+
+        private void CloseFallbackDictionaryStream()
+        {
             if (_fallbackStream != null)
             {
                 _fallbackStream.Dispose();
                 _fallbackStream = null;
             }
+        }
 
-            _fileLength = 0L;
+        private static bool IsDictionaryOpenException(Exception exception)
+        {
+            return exception is IOException ||
+                   exception is UnauthorizedAccessException ||
+                   exception is NotSupportedException ||
+                   exception is ArgumentException;
         }
 
         private bool TryGetBlock(uint hash, out ContentLoreBlockIndex block)
@@ -286,7 +379,7 @@ namespace Hecton8.Core.Content
             if (end < block.Offset)
                 return false;
 
-            return _fileLength <= 0L || end <= _fileLength;
+            return _fileLength > 0L && end <= _fileLength;
         }
 
         private static bool TryResolveDictionaryPath(string relativePath, out string path)
