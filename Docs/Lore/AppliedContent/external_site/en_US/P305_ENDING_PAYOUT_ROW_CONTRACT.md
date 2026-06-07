@@ -7,6 +7,9 @@ poi_tags: poi.ending_payout_schema_card;poi.receiver_warning_row
 biome_tags: biome.ending;biome.dossier
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Ending Payout Data Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

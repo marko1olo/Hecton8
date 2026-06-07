@@ -7,6 +7,9 @@ poi_tags: poi.pressure_suit_grade_tag;poi.old_service_stamp
 biome_tags: biome.p63_shallows;biome.brine_canyon
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Сервисные классы скафандра давления"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

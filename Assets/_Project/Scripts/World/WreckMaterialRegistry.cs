@@ -486,8 +486,9 @@ namespace Hecton8.World
                 bool batchAdded = false;
                 try
                 {
-                    NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(
+                    NativeArray<MetadataValue> batchMetadata = H8Memory.Allocate<MetadataValue>(
                         WreckBrgMetadataCount,
+                        WreckBrgVaultOwner,
                         Allocator.Temp,
                         NativeArrayOptions.ClearMemory);
                     try
@@ -498,7 +499,7 @@ namespace Hecton8.World
                     finally
                     {
                         if (batchMetadata.IsCreated)
-                            batchMetadata.Dispose();
+                            H8Memory.Release(ref batchMetadata, WreckBrgVaultOwner);
                     }
 
                     batchAdded = !_batchId.Equals(default);
@@ -1687,9 +1688,9 @@ namespace Hecton8.World
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                TryUnregisterSlowTick();
+                TryUnregisterLateFrameTick();
                 _hasRuntimeDispatcher = currentService != null;
-                _registeredSlowTick = false;
-                _registeredLateFrameTick = false;
                 if (currentService != null && isActiveAndEnabled)
                     RefreshRuntimeTickRegistration();
             }

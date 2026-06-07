@@ -269,20 +269,16 @@ namespace Hecton8.Gameplay
                     TryRegisterSaveParticipant();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null || !isActiveAndEnabled)
-                        return;
-
                     TryUnregisterAupNarrativePoiUpdate();
                     TryUnregisterAupNarrativePoiLateFrame();
-                    TryRegisterAupNarrativePoiUpdate();
-                    TryRegisterAupNarrativePoiLateFrame();
                     if (_registeredSlowTick)
                     {
                         GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
                         _registeredSlowTick = false;
                     }
 
-                    TryRegister();
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     DisposeAupNarrativePoiVaultStorage();
@@ -308,7 +304,7 @@ namespace Hecton8.Gameplay
                     _atlasSignalReadModel = currentService as IAtlasSignalReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _narrativeAudioSink = currentService as ISpatialAudioNarrativeRadioSink;
+                    CacheNarrativeAudioSink(currentService);
                     break;
             }
         }
@@ -320,7 +316,28 @@ namespace Hecton8.Gameplay
             _questSystem = GlobalRegistry.QuestSystem;
             _firstHourReadModel = GlobalRegistry.FirstHourReadModel;
             _atlasSignalReadModel = GlobalRegistry.AtlasSignalReadModel;
-            _narrativeAudioSink = GlobalRegistry.Audio as ISpatialAudioNarrativeRadioSink;
+            CacheNarrativeAudioSink(GlobalRegistry.Audio);
+        }
+
+        private void CacheNarrativeAudioSink(object audioRuntime)
+        {
+            _narrativeAudioSink = IsAudioRuntimeObjectUsable(audioRuntime)
+                ? audioRuntime as ISpatialAudioNarrativeRadioSink
+                : null;
+        }
+
+        private static bool IsAudioRuntimeObjectUsable(object runtime)
+        {
+            if (runtime == null)
+                return false;
+
+            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+                return false;
+
+            if (runtime is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()

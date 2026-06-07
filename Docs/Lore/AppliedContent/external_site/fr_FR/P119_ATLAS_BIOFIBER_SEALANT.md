@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Mastic biofibre Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Mastic biofibre Atlas
 
-FR LOC HOLD: Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them.
+Le mastic biofibre Atlas fait profiter le joueur de la même erreur de classification qui rend la colonie profonde dérangeante. Atlas n'a pas inventé la biologie à partir de rien; il a trouvé des zones de réparation humides, des gaines de câble, des tissus greffés et des matériaux de joint, puis les a triés par fonction plutôt que par origine. Si quelque chose fuyait, s'ouvrait ou saignait, la logique de maintenance endommagée demandait une fermeture. Le résultat n'est ni une partie de monstre ni un outil propre. C'est un patch vivant prêt pour la pression, qui saisit les coutures, comble les déchirures de combinaison et s'accroche aux peaux de câble parce que tout cela ressemble à une instruction unique : fermer l'ouverture avant que le système ne perde davantage de masse. Les bonnes équipes le récoltent froid, le pincent à plat et le stockent derrière une doublure de capteur morte. Les mauvaises le gardent chaud et trouvent plus tard le patch rampant vers l'embout, l'entrée de pompe ou la déchirure de gant la plus proche. L'horreur est pratique. Tu as besoin du joint. Tu dois aussi te souvenir que le joint tente encore de réparer un monde qui ne sait plus ce qui doit compter comme un corps.
 
 ## Scanner
 
-FR LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+MASTIC BIOFIBRE ATLAS // Fibre de réparation humide née là où gaine de câble, tissu de plaie et joint de coque ont reçu la même classe de panne. Adhère sous pression; peut continuer à pousser après récolte.
 
 ## Terminal
 
-FR LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+CLASSE RESSOURCE : écologie de réparation altérée par Atlas. Poser une pince froide avant retrait. Usages : coutures humides, déchirures de combinaison, gaines de câble, articulations souples sous pression. Risques : fausse signature de vie, écho capteur, recherche active de couture en stockage.
 
 ## Audio
 
-FR LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+Il ne connaît pas la différence entre une fuite, une coupure et une bouche. Atlas lui a appris que les trois sont des ouvertures à fermer.
 
 ## Field Note
 
-FR LOC HOLD: Useful body horror: the player wants it and distrusts it.
+Un bon mastic sèche. Celui-ci écoute le prochain trou.
 
 <!-- External Site; generated from P119_ATLAS_BIOFIBER_SEALANT/fr_FR. -->

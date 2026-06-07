@@ -7,6 +7,9 @@ poi_tags: poi.colony_worker_nav_cluster;poi.worker_dossier_index
 biome_tags: biome.publication;biome.colony_evidence
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 1
+title: "Colony and Workers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

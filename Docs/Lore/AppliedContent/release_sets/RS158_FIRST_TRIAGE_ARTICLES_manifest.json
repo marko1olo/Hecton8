@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS158_FIRST_TRIAGE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P900_MED_FOAM_PRESSURE_PATCH",
+    "P901_BRUISE_STRIP_COLOR_BAND",
+    "P902_SPLINT_RAIL_BENT_NOTCH",
+    "P903_ANTISEPTIC_AMPOULE_CLOUD",
+    "P904_PAIN_LEDGER_DOSE_MARK"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P900_MED_FOAM_PRESSURE_PATCH.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P901_BRUISE_STRIP_COLOR_BAND.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P902_SPLINT_RAIL_BENT_NOTCH.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P903_ANTISEPTIC_AMPOULE_CLOUD.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P904_PAIN_LEDGER_DOSE_MARK.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

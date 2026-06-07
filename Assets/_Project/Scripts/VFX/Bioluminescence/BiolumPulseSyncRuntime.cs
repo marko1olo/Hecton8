@@ -209,6 +209,7 @@ namespace Hecton8.VFX.Bioluminescence
         private const int BlackBoxDumpStateWriting = 2;
         private const int BlackBoxDumpStateWritten = 3;
         private const int BlackBoxDumpStateFailed = 4;
+        private const int BlackBoxDumpWorkerJoinMilliseconds = 1000;
         private const float StrobeDurationSeconds = 0.1f;
         private const float StrobeFadeSeconds = 0.16f;
         private const float OverloadUpdateIntervalSeconds = 1f / 15f;
@@ -337,17 +338,31 @@ namespace Hecton8.VFX.Bioluminescence
                         requiredLength,
                         Allocator.Persistent,
                         NativeArrayOptions.UninitializedMemory);
-                    NativeMemorySentinel.RegisterNativeArray(
+                    int sentinelId = NativeMemorySentinel.RegisterNativeArray(
                         entries,
                         NativeMemoryOwner,
                         nameof(BlackBoxDumpSnapshotOwner),
                         NativeAllocationLifetime.Session);
+                    if (sentinelId <= 0)
+                        throw new InvalidOperationException("Native memory sentinel registration failed for biolum black-box dump snapshot.");
+
                     Entries = entries;
+                    entries = default;
                 }
                 catch
                 {
                     if (entries.IsCreated)
-                        entries.Dispose();
+                    {
+                        try
+                        {
+                            NativeMemorySentinel.UnregisterNativeArray(entries);
+                        }
+                        finally
+                        {
+                            entries.Dispose();
+                        }
+                    }
+
                     Entries = default;
                     throw;
                 }
@@ -2857,23 +2872,7 @@ namespace Hecton8.VFX.Bioluminescence
             if (string.IsNullOrEmpty(directory))
                 return;
 
-            try
-            {
-                Directory.CreateDirectory(directory);
-                _csvWatcher = new FileSystemWatcher(directory, CsvOverrideFileName)
-                {
-                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
-                    EnableRaisingEvents = false
-                };
-                _csvWatcher.Changed += OnCsvFileChanged;
-                _csvWatcher.Created += OnCsvFileChanged;
-                _csvWatcher.Renamed += OnCsvFileRenamed;
-                _csvWatcher.EnableRaisingEvents = true;
-            }
-            catch (Exception)
-            {
-                _csvWatcher = null;
-            }
+            _csvWatcher = TryCreateCsvBackgroundWatcher(directory);
 
             RequestCsvReload();
         }
@@ -2883,12 +2882,52 @@ namespace Hecton8.VFX.Bioluminescence
             FileSystemWatcher watcher = _csvWatcher;
             if (watcher != null)
             {
+                _csvWatcher = null;
+                StopCsvBackgroundWatcherNoThrow(watcher);
+            }
+        }
+
+        private FileSystemWatcher TryCreateCsvBackgroundWatcher(string directory)
+        {
+            try
+            {
+                Directory.CreateDirectory(directory);
+                FileSystemWatcher watcher = new FileSystemWatcher(directory, CsvOverrideFileName)
+                {
+                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
+                    EnableRaisingEvents = false
+                };
+                watcher.Changed += OnCsvFileChanged;
+                watcher.Created += OnCsvFileChanged;
+                watcher.Renamed += OnCsvFileRenamed;
+                watcher.EnableRaisingEvents = true;
+                return watcher;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private void StopCsvBackgroundWatcherNoThrow(FileSystemWatcher watcher)
+        {
+            try
+            {
                 watcher.EnableRaisingEvents = false;
+            }
+            catch (Exception)
+            {
+            }
+
+            try
+            {
                 watcher.Changed -= OnCsvFileChanged;
                 watcher.Created -= OnCsvFileChanged;
                 watcher.Renamed -= OnCsvFileRenamed;
                 watcher.Dispose();
-                _csvWatcher = null;
+            }
+            catch (Exception)
+            {
             }
         }
 
@@ -3019,18 +3058,36 @@ namespace Hecton8.VFX.Bioluminescence
                     CsvScratchByteCount,
                     Allocator.Persistent,
                     NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
                     bytes,
                     NativeMemoryOwner,
                     nameof(_csvOverrideReadBytes),
                     NativeAllocationLifetime.Session);
+                if (sentinelId <= 0)
+                {
+                    bytes.Dispose();
+                    bytes = default;
+                    return false;
+                }
+
                 _csvOverrideReadBytes = bytes;
+                bytes = default;
                 return true;
             }
             catch
             {
                 if (bytes.IsCreated)
-                    bytes.Dispose();
+                {
+                    try
+                    {
+                        NativeMemorySentinel.UnregisterNativeArray(bytes);
+                    }
+                    finally
+                    {
+                        bytes.Dispose();
+                    }
+                }
+
                 _csvOverrideReadBytes = default;
                 return false;
             }
@@ -4003,18 +4060,36 @@ namespace Hecton8.VFX.Bioluminescence
                     BlackBoxDumpByteCount,
                     Allocator.Persistent,
                     NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
                     bytes,
                     NativeMemoryOwner,
                     nameof(_blackBoxDumpWriteBytes),
                     NativeAllocationLifetime.Session);
+                if (sentinelId <= 0)
+                {
+                    bytes.Dispose();
+                    bytes = default;
+                    return false;
+                }
+
                 _blackBoxDumpWriteBytes = bytes;
+                bytes = default;
                 return true;
             }
             catch
             {
                 if (bytes.IsCreated)
-                    bytes.Dispose();
+                {
+                    try
+                    {
+                        NativeMemorySentinel.UnregisterNativeArray(bytes);
+                    }
+                    finally
+                    {
+                        bytes.Dispose();
+                    }
+                }
+
                 _blackBoxDumpWriteBytes = default;
                 return false;
             }
@@ -4051,8 +4126,7 @@ namespace Hecton8.VFX.Bioluminescence
             }
 
             Volatile.Write(ref _blackBoxDumpState, BlackBoxDumpStateQueued);
-            signal.Set();
-            return true;
+            return SignalBlackBoxDumpWorkerNoThrow(signal);
         }
 
         private void EnsureBlackBoxDumpWorker()
@@ -4067,7 +4141,7 @@ namespace Hecton8.VFX.Bioluminescence
                 AutoResetEvent staleSignal = _blackBoxDumpSignal;
                 if (staleSignal != null)
                 {
-                    staleSignal.Dispose();
+                    DisposeBlackBoxDumpSignalNoThrow(staleSignal);
                     _blackBoxDumpSignal = null;
                 }
             }
@@ -4099,7 +4173,7 @@ namespace Hecton8.VFX.Bioluminescence
                 _blackBoxDumpThread = null;
                 if (_blackBoxDumpSignal != null)
                 {
-                    _blackBoxDumpSignal.Dispose();
+                    DisposeBlackBoxDumpSignalNoThrow(_blackBoxDumpSignal);
                     _blackBoxDumpSignal = null;
                 }
 
@@ -4117,10 +4191,8 @@ namespace Hecton8.VFX.Bioluminescence
                 return true;
 
             Volatile.Write(ref _blackBoxDumpStopRequested, 1);
-            signal?.Set();
-            bool joined = true;
-            if (!ReferenceEquals(Thread.CurrentThread, thread))
-                joined = thread.Join(1000);
+            SignalBlackBoxDumpWorkerNoThrow(signal);
+            bool joined = TryJoinBlackBoxDumpWorkerNoThrow(thread);
 
             if (!joined)
             {
@@ -4131,11 +4203,59 @@ namespace Hecton8.VFX.Bioluminescence
             _blackBoxDumpThread = null;
             if (signal != null)
             {
-                signal.Dispose();
+                DisposeBlackBoxDumpSignalNoThrow(signal);
                 _blackBoxDumpSignal = null;
             }
 
             return true;
+        }
+
+        private static bool SignalBlackBoxDumpWorkerNoThrow(AutoResetEvent signal)
+        {
+            if (signal == null)
+                return false;
+
+            try
+            {
+                signal.Set();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static bool TryJoinBlackBoxDumpWorkerNoThrow(Thread thread)
+        {
+            if (thread == null || !thread.IsAlive)
+                return true;
+            if (ReferenceEquals(Thread.CurrentThread, thread))
+                return false;
+
+            try
+            {
+                thread.Join(BlackBoxDumpWorkerJoinMilliseconds);
+                return !thread.IsAlive;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static void DisposeBlackBoxDumpSignalNoThrow(AutoResetEvent signal)
+        {
+            if (signal == null)
+                return;
+
+            try
+            {
+                signal.Dispose();
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private void BlackBoxDumpWorkerLoop()

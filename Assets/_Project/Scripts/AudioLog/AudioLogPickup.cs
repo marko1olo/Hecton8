@@ -121,7 +121,7 @@ namespace Hecton8.Narrative
                 return;
             }
 
-            IAudioLogRuntime audioLogSystem = _cachedAudioLogSystem;
+            IAudioLogRuntime audioLogSystem = ResolveAudioLogSystem();
             if (logData != null && audioLogSystem != null)
             {
                 _alreadyDiscovered = _cachedLogHash != 0u && audioLogSystem.IsAudioLogDiscovered(_cachedLogHash);
@@ -144,6 +144,7 @@ namespace Hecton8.Narrative
             TryUnregisterPickupTemplate();
             TryUnregisterHotSwapListener();
             LocalizationEvents.UnregisterLanguageListener(this);
+            ClearCachedRegistryServices();
             _cachedLogHash = 0u;
 
             if (highlightObject != null)
@@ -155,6 +156,7 @@ namespace Hecton8.Narrative
             InteractableRegistry.InvalidateTree(this);
             TryUnregisterPickupTemplate();
             TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -165,7 +167,7 @@ namespace Hecton8.Narrative
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
-                    _cachedAudioLogSystem = currentService as IAudioLogRuntime;
+                    CacheAudioLogSystem(currentService as IAudioLogRuntime);
                     RefreshDiscoveryStateFromAudioLogSystem();
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
@@ -246,7 +248,7 @@ namespace Hecton8.Narrative
                 return;
             }
 
-            IAudioLogRuntime system = _cachedAudioLogSystem;
+            IAudioLogRuntime system = ResolveAudioLogSystem();
             if (system == null)
             {
 #if UNITY_EDITOR
@@ -405,8 +407,40 @@ namespace Hecton8.Narrative
 
         private void CacheRegistryServicesCold()
         {
-            _cachedAudioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogRuntime;
+            CacheAudioLogSystem(Hecton8.Core.GlobalRegistry.AudioLogRuntime);
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _cachedAudioLogSystem = null;
+            _cachedLocalization = null;
+        }
+
+        private void CacheAudioLogSystem(IAudioLogRuntime audioLogSystem)
+        {
+            _cachedAudioLogSystem = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null;
+        }
+
+        private IAudioLogRuntime ResolveAudioLogSystem()
+        {
+            IAudioLogRuntime audioLogSystem = _cachedAudioLogSystem;
+            if (IsAudioLogRuntimeUsable(audioLogSystem))
+                return audioLogSystem;
+
+            _cachedAudioLogSystem = null;
+            return null;
+        }
+
+        private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogSystem)
+        {
+            if (audioLogSystem == null)
+                return false;
+
+            if (audioLogSystem is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void RefreshDiscoveryStateFromAudioLogSystem()
@@ -415,7 +449,7 @@ namespace Hecton8.Narrative
                 return;
 
             RefreshCachedLogHash();
-            IAudioLogRuntime audioLogSystem = _cachedAudioLogSystem;
+            IAudioLogRuntime audioLogSystem = ResolveAudioLogSystem();
             _alreadyDiscovered = audioLogSystem != null && _cachedLogHash != 0u && audioLogSystem.IsAudioLogDiscovered(_cachedLogHash);
             BuildCache();
             if (_alreadyDiscovered && deactivateAfterPickup && isActiveAndEnabled)
@@ -452,7 +486,7 @@ namespace Hecton8.Narrative
             highlightObject = null;
             _alreadyDiscovered = false;
             RefreshCachedLogHash();
-            if (logData != null && _cachedAudioLogSystem != null && !_wfcOutpostPersistenceConfigured)
+            if (logData != null && ResolveAudioLogSystem() != null && !_wfcOutpostPersistenceConfigured)
             {
                 RefreshDiscoveryStateFromAudioLogSystem();
                 return;

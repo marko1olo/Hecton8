@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "خزف ضغط Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# خزف ضغط Deep Reach
 
-AR LOC HOLD: Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities.
+خزف ضغط Deep Reach يشرح لماذا استطاعت المستعمرة أن تعمل أصلا، ولماذا ما زالت بقاياها قاتلة. لم تبن Deep Reach صناعة القاع بسبب الجهل. تعلمت الشركة تضخيم الطين المحلي والصواهر الكبريتيدية وحرارة حدادات الفوهات إلى قطع خزفية تنجو من ضغوط لا يحتملها المعدن العادي. حلقات التثبيت أمسكت دروز المساكن. مقاعد الأختام أبقت المضخات صادقة. نقاط تماس القواطع حملت الحرارة عبر المحلول الملحي من دون أن تتحول إلى خردة لينة. عزل مهود الصعود اشترى دقائق حرجة حين كان عتاد الإطلاق يفترض أن يطبخ نفسه. هذه الكفاءة جزء من الرعب وليست تناقضا معه. اللاعب الذي يسترد خزف الضغط يمسك دليلا على أن Deep Reach فهمت هذا العالم بما يكفي لإبقاء الناس أحياء، ثم اختارت إجراءات ومسؤوليات جعلت التخلي عنهم مربحا. المادة تتذكر الحقيقتين. هي ثمينة في وصفة الهرب وخطرة في الحطام. الصدمة الحرارية قد تصنع ازدهار شظايا: كسر أبيض صامت ينفتح بتلات حادة على وجه الحلقة. تحرير الضغط السيئ يحول مقعد ختم مثاليا إلى شظايا. استخدم هذا المورد ليعرض حقيقة صناعية، لا ملمسا شريرا عاما. اعتمدت المستعمرة عليه لأنه كان يعمل. يعتمد اللاعب عليه للسبب نفسه.
 
 ## Scanner
 
-AR LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+خزف ضغط DEEP REACH // طين محلي وصاهر كبريتيدي وحرارة حدادة فوهات، تحولت إلى حلقات تثبيت ومقاعد أختام. يمسك الضغط بجمال؛ وعند الصدمة يفشل كسكاكين.
 
 ## Terminal
 
-AR LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+فئة المورد: معزز بواسطة Deep Reach. الاستخدامات: حلقات تثبيت، مقاعد أختام، نقاط تماس قواطع، عزل مهد الصعود. نمط الفشل: ازدهار شظايا تحت صدمة حرارية أو تحرير ضغط خاطئ.
 
 ## Audio
 
-AR LOC HOLD: The company was good at building things. That is part of the crime.
+كانت Deep Reach بارعة في البناء. لذلك نجحت الكذبة.
 
 ## Field Note
 
-AR LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+اطرقه وهو بارد. إن غنى بنبرة عالية، فلا تسخنه.
 
 <!-- External Site; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/ar_SA. -->

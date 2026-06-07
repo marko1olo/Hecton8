@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Density Skater Fauna"
+title: "فاونا متزلجي الكثافة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Density Skater Fauna
+# فاونا متزلجي الكثافة
 
-AR LOC HOLD: Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.
+متزلقو الكثافة حيوانات عمق متوسط تجعل وادي المحلول الملحي يبدو آلة طبقية لا حجما فارغا. أقدامها أو زعانفها أو وسائدها الخطافية تضغط على واجهات كثافة قوية بما يكفي لحمل أجسام صغيرة لثوان. للعين تبدو كأنها تتزلج في ماء مفتوح؛ وللscanner تترك تموجات حيث لا ينبغي أن تكون للماء المفتوح أي سطح. هذا التناقض هو الدليل. قد يشير أثر المتزلج إلى نافذة قص أو درجة محلول أو حافة سونار عمياء أو مسار صيد تستخدمه كائنات أكبر. الحيوان ليس سحرا ولا وعدا بالأمان. البدلة أثقل وأعلى صوتا وأسوأ شكلا للحيلة نفسها. استخدم آثار المتزلجين لقراءة الطبقة. لا تفترض أنك تستطيع اتباعهم.
 
 ## Scanner
 
-AR LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+متزلج الكثافة // فاونا رفيعة الأطراف تركب واجهة المحلول الملحي كسطح، وتترك تموجات حيث يتوقع السونار ماء مفتوحا.
 
 ## Terminal
 
-AR LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+خط أساس الفاونا: يزداد تماس المتزلجين قرب brine vanes الممزقة، ودرجات المحلول الدافئة، وحواف السونار الميتة. أثرها يحدد رف كثافة، لا موطئ قدم آمنا. لا تطارد عبر الطبقات المعتمة.
 
 ## Audio
 
-AR LOC HOLD: Something is walking on the water inside the water.
+شيء ما يمشي على الماء داخل الماء.
 
 ## Field Note
 
-AR LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+إنها لا تحلق. إنها تمشي على حد يمكن لبدلتك أن تسقط خلاله.
 
 <!-- In-Game Wiki; generated from P227_DENSITY_SKATER_FAUNA/ar_SA. -->

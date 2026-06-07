@@ -62,6 +62,28 @@ namespace Hecton8.EditorTools
         private const string WorldChunkResidencyDumpFileName = "Dump_1305_WorldChunkResidency.bin";
         private const string WorldChunkResidencyBackpressureDumpFileName = "Dump_1305_WorldChunkResidency_Backpressure.bin";
         private const string WorldChunkResidencyHlodDumpFileName = "Dump_1305_WorldChunkResidency_HLOD.bin";
+        private const uint GpuScatterDumpMagic = 0x47505344u; // GPSD
+        private const uint GpuScatterDumpVersion = 1u;
+        private const int GpuScatterDumpHeaderBytes = 32;
+        private const int GpuScatterDumpEntrySizeBytes = 64;
+        private const uint GpuScatterTelemetryHashSeed = 2166136261u;
+        private const uint GpuScatterInvalidStateFlag = 1u << 1;
+        private const string GpuScatterDumpFileName = "Dump_GPU_SCATTER_DIRECTOR.bin";
+        private const uint GpuScatterLodDumpMagic = 0x47534C4Du; // GSLM
+        private const uint GpuScatterLodDumpVersion = 2u;
+        private const int GpuScatterLodDumpHeaderBytes = 20;
+        private const int GpuScatterLodDumpEntrySizeBytes = 64;
+        private const string GpuScatterLodDumpFileName = "Dump_GPU_SCATTER_LOD_MANAGER.bin";
+        private const ulong VegetationMemoryDumpMagic = 0x313331365F564547UL;
+        private const int VegetationMemoryDumpVersion = 1;
+        private const int VegetationMemoryDumpHeaderBytes = 24;
+        private const int VegetationMemoryDumpEntrySizeBytes = 64;
+        private const string VegetationMemoryDumpFileName = "Dump_1316_Vegetation.bin";
+        private const uint GlobalShaderDispatcherDumpMagic = 0x47534844u; // GSHD
+        private const uint GlobalShaderDispatcherDumpVersion = 1u;
+        private const int GlobalShaderDispatcherDumpHeaderBytes = 32;
+        private const int GlobalShaderDispatcherDumpEntrySizeBytes = 16;
+        private const string GlobalShaderDispatcherDumpFileName = "Dump_GLOBAL_SHADER_DISPATCHER.bin";
         private readonly List<string> _rows = new List<string>(MaxDisplayedFrames);
         private TextField _pathField;
         private Label _summaryLabel;
@@ -182,6 +204,14 @@ namespace Hecton8.EditorTools
             if (TryParseSimulationBucketDump(path, bytes, span))
                 return;
             if (TryParseTerrainStreamingDump(path, bytes, span))
+                return;
+            if (TryParseGpuScatterDump(path, bytes, span))
+                return;
+            if (TryParseGpuScatterLodDump(path, bytes, span))
+                return;
+            if (TryParseVegetationMemoryDump(path, bytes, span))
+                return;
+            if (TryParseGlobalShaderDispatcherDump(path, bytes, span))
                 return;
 
             uint metadataMagic = bytes.Length >= GlobalTelemetryMetadataOffset + 4
@@ -1466,6 +1496,1181 @@ namespace Hecton8.EditorTools
             }
 
             return builder.Length == 0 ? "unknown" : builder.ToString();
+        }
+
+        private bool TryParseGpuScatterDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
+        {
+            if (!IsGpuScatterDumpPath(path))
+            {
+                return false;
+            }
+
+            if (span.Length < GpuScatterDumpHeaderBytes ||
+                ReadU32(span, 0) != GpuScatterDumpMagic)
+            {
+                SetSummary(BuildInvalidGpuScatterHeaderSummary(path, span.Length, 0u, 0, 0, 0, 0u, 0u, 0u));
+                return true;
+            }
+
+            uint version = ReadU32(span, 4);
+            int cursor = ReadI32(span, 8);
+            int entryCount = ReadI32(span, 12);
+            int entrySize = ReadI32(span, 16);
+            uint hashSeed = ReadU32(span, 20);
+            uint invalidStateFlag = ReadU32(span, 24);
+            uint reserved = ReadU32(span, 28);
+            bool valid =
+                version == GpuScatterDumpVersion &&
+                cursor >= 0 &&
+                entryCount > 0 &&
+                entryCount <= 100000 &&
+                cursor < entryCount &&
+                entrySize == GpuScatterDumpEntrySizeBytes &&
+                hashSeed == GpuScatterTelemetryHashSeed &&
+                invalidStateFlag == GpuScatterInvalidStateFlag &&
+                reserved == 0u &&
+                GpuScatterDumpHeaderBytes + (long)entryCount * entrySize <= span.Length;
+
+            if (!valid)
+            {
+                SetSummary(BuildInvalidGpuScatterHeaderSummary(
+                    path,
+                    span.Length,
+                    version,
+                    cursor,
+                    entryCount,
+                    entrySize,
+                    hashSeed,
+                    invalidStateFlag,
+                    reserved));
+                return true;
+            }
+
+            int nonEmptyEntryCount = CountGpuScatterEntriesWithPayload(span, entryCount);
+            int payloadBytes = entryCount * entrySize;
+            ulong payloadHash = ComputeXxHash64(bytes, GpuScatterDumpHeaderBytes, payloadBytes);
+            StringBuilder builder = new StringBuilder(300);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | bytes=");
+            builder.Append(span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | magic=GPSD");
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | layout=gpu-scatter-director-blackbox");
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | displayed=");
+            builder.Append(math.min(nonEmptyEntryCount, MaxDisplayedFrames).ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(nonEmptyEntryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | cursor=");
+            builder.Append(cursor.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | seed=0x");
+            builder.Append(hashSeed.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" | invalidFlag=0x");
+            builder.Append(invalidStateFlag.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" | xxHash3[payload]=0x");
+            builder.Append(payloadHash.ToString("X16", CultureInfo.InvariantCulture));
+            SetSummary(builder.ToString());
+
+            int skip = math.max(0, nonEmptyEntryCount - MaxDisplayedFrames);
+            int seen = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = GpuScatterDumpHeaderBytes + i * entrySize;
+                ReadOnlySpan<byte> entry = span.Slice(offset, entrySize);
+                if (IsEmptyGpuScatterEntry(entry))
+                    continue;
+
+                if (seen++ < skip)
+                    continue;
+
+                _rows.Add(BuildGpuScatterEntryLine(seen - 1, i, offset, entry));
+            }
+
+            return true;
+        }
+
+        private static string BuildInvalidGpuScatterHeaderSummary(
+            string path,
+            int byteCount,
+            uint version,
+            int cursor,
+            int entryCount,
+            int entrySize,
+            uint hashSeed,
+            uint invalidStateFlag,
+            uint reserved)
+        {
+            StringBuilder builder = new StringBuilder(224);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | invalid gpu-scatter-director blackbox header");
+            builder.Append(" | bytes=");
+            builder.Append(byteCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | cursor=");
+            builder.Append(cursor.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | seed=0x");
+            builder.Append(hashSeed.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" | invalidFlag=0x");
+            builder.Append(invalidStateFlag.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" | reserved=0x");
+            builder.Append(reserved.ToString("X8", CultureInfo.InvariantCulture));
+            return builder.ToString();
+        }
+
+        private static bool IsGpuScatterDumpPath(string path)
+        {
+            string fileName = Path.GetFileName(path) ?? string.Empty;
+            return string.Equals(
+                fileName,
+                GpuScatterDumpFileName,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int CountGpuScatterEntriesWithPayload(ReadOnlySpan<byte> bytes, int entryCount)
+        {
+            int count = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = GpuScatterDumpHeaderBytes + i * GpuScatterDumpEntrySizeBytes;
+                if (offset < 0 || offset + GpuScatterDumpEntrySizeBytes > bytes.Length)
+                    break;
+
+                if (!IsEmptyGpuScatterEntry(bytes.Slice(offset, GpuScatterDumpEntrySizeBytes)))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static bool IsEmptyGpuScatterEntry(ReadOnlySpan<byte> entry)
+        {
+            int scanned = math.min(GpuScatterDumpEntrySizeBytes, entry.Length);
+            for (int i = 0; i < scanned; i++)
+            {
+                if (entry[i] != 0)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static string BuildGpuScatterEntryLine(
+            int displayIndex,
+            int sourceIndex,
+            int offset,
+            ReadOnlySpan<byte> entry)
+        {
+            uint frame = ReadU32(entry, 0);
+            uint flags = ReadU32(entry, 4);
+            float centerX = ReadF32(entry, 8);
+            float centerY = ReadF32(entry, 12);
+            float centerZ = ReadF32(entry, 16);
+            float aupX = ReadF32(entry, 20);
+            float aupZ = ReadF32(entry, 24);
+            float radiusMeters = ReadF32(entry, 28);
+            float cellSizeMeters = ReadF32(entry, 32);
+            int gridResolution = ReadI32(entry, 36);
+            int candidateCount = ReadI32(entry, 40);
+            uint biomeHash = ReadU32(entry, 44);
+            uint visibleCount = ReadU32(entry, 48);
+            uint stateHash = ReadU32(entry, 52);
+            uint originShiftSequence = ReadU32(entry, 56);
+            uint blobChecksumLo = ReadU32(entry, 60);
+            uint computedStateHash = ComputeGpuScatterStateHash(
+                gridResolution,
+                candidateCount,
+                biomeHash,
+                visibleCount,
+                originShiftSequence,
+                blobChecksumLo);
+
+            StringBuilder builder = new StringBuilder(320);
+            builder.Append('#');
+            builder.Append(displayIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" slot=");
+            builder.Append(sourceIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" @");
+            builder.Append(offset.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" frame=");
+            builder.Append(frame.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" flags=0x");
+            builder.Append(flags.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(' ');
+            builder.Append(ResolveGpuScatterFlagsLabel(flags));
+            builder.Append(" center=");
+            builder.Append(centerX.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(centerY.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(centerZ.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" aup=");
+            builder.Append(aupX.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(aupZ.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" radius=");
+            builder.Append(radiusMeters.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" cell=");
+            builder.Append(cellSizeMeters.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" grid=");
+            builder.Append(gridResolution.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" candidates=");
+            builder.Append(candidateCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" visible=");
+            builder.Append(visibleCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" biome=0x");
+            builder.Append(biomeHash.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" origin=");
+            builder.Append(originShiftSequence.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" blob=0x");
+            builder.Append(blobChecksumLo.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" hash=0x");
+            builder.Append(stateHash.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" hashOk=");
+            builder.Append(stateHash == computedStateHash ? "yes" : "no");
+            if (stateHash != computedStateHash)
+            {
+                builder.Append(" calc=0x");
+                builder.Append(computedStateHash.ToString("X8", CultureInfo.InvariantCulture));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string ResolveGpuScatterFlagsLabel(uint flags)
+        {
+            if (flags == 0u)
+                return "none";
+
+            StringBuilder builder = new StringBuilder(96);
+            AppendFlagLabel(builder, (flags & (1u << 0)) != 0u, "missing-dependency");
+            AppendFlagLabel(builder, (flags & (1u << 1)) != 0u, "invalid-state");
+            AppendFlagLabel(builder, (flags & (1u << 2)) != 0u, "origin-shift");
+
+            const uint knownFlags =
+                (1u << 0) |
+                (1u << 1) |
+                (1u << 2);
+            uint unknownFlags = flags & ~knownFlags;
+            if (unknownFlags != 0u)
+            {
+                if (builder.Length != 0)
+                    builder.Append('|');
+
+                builder.Append("unknown=0x");
+                builder.Append(unknownFlags.ToString("X8", CultureInfo.InvariantCulture));
+            }
+
+            return builder.Length == 0 ? "unknown" : builder.ToString();
+        }
+
+        private static uint ComputeGpuScatterStateHash(
+            int gridResolution,
+            int candidateCount,
+            uint biomeHash,
+            uint visibleCount,
+            uint originShiftSequence,
+            uint blobChecksumLo)
+        {
+            uint hash = GpuScatterTelemetryHashSeed;
+            hash = MixGpuScatterTelemetryHash(hash, unchecked((uint)math.max(0, gridResolution)));
+            hash = MixGpuScatterTelemetryHash(hash, unchecked((uint)math.max(0, candidateCount)));
+            hash = MixGpuScatterTelemetryHash(hash, biomeHash);
+            hash = MixGpuScatterTelemetryHash(hash, visibleCount);
+            hash = MixGpuScatterTelemetryHash(hash, originShiftSequence);
+            hash = MixGpuScatterTelemetryHash(hash, blobChecksumLo);
+            return hash;
+        }
+
+        private static uint MixGpuScatterTelemetryHash(uint hash, uint value)
+        {
+            return unchecked((hash ^ value) * 16777619u);
+        }
+
+        private bool TryParseGpuScatterLodDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
+        {
+            if (!IsGpuScatterLodDumpPath(path))
+            {
+                return false;
+            }
+
+            if (span.Length < GpuScatterLodDumpHeaderBytes ||
+                ReadU32(span, 0) != GpuScatterLodDumpMagic)
+            {
+                SetSummary(BuildInvalidGpuScatterLodHeaderSummary(path, span.Length, 0u, 0u, 0, 0));
+                return true;
+            }
+
+            uint version = ReadU32(span, 4);
+            uint reason = ReadU32(span, 8);
+            int entryCount = ReadI32(span, 12);
+            int cursor = ReadI32(span, 16);
+            bool valid =
+                version == GpuScatterLodDumpVersion &&
+                entryCount > 0 &&
+                entryCount <= 100000 &&
+                cursor >= 0 &&
+                cursor < entryCount &&
+                GpuScatterLodDumpHeaderBytes + (long)entryCount * GpuScatterLodDumpEntrySizeBytes <= span.Length;
+
+            if (!valid)
+            {
+                SetSummary(BuildInvalidGpuScatterLodHeaderSummary(
+                    path,
+                    span.Length,
+                    version,
+                    reason,
+                    entryCount,
+                    cursor));
+                return true;
+            }
+
+            int nonEmptyEntryCount = CountGpuScatterLodEntriesWithPayload(span, entryCount);
+            int payloadBytes = entryCount * GpuScatterLodDumpEntrySizeBytes;
+            ulong payloadHash = ComputeXxHash64(bytes, GpuScatterLodDumpHeaderBytes, payloadBytes);
+            StringBuilder builder = new StringBuilder(300);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | bytes=");
+            builder.Append(span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | magic=GSLM");
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | layout=gpu-scatter-lod-blackbox");
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | displayed=");
+            builder.Append(math.min(nonEmptyEntryCount, MaxDisplayedFrames).ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(nonEmptyEntryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(GpuScatterLodDumpEntrySizeBytes.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | cursor=");
+            builder.Append(cursor.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | reason=0x");
+            builder.Append(reason.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(' ');
+            builder.Append(ResolveGpuScatterLodReasonLabel(reason));
+            builder.Append(" | xxHash3[payload]=0x");
+            builder.Append(payloadHash.ToString("X16", CultureInfo.InvariantCulture));
+            SetSummary(builder.ToString());
+
+            int skip = math.max(0, nonEmptyEntryCount - MaxDisplayedFrames);
+            int seen = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = GpuScatterLodDumpHeaderBytes + i * GpuScatterLodDumpEntrySizeBytes;
+                ReadOnlySpan<byte> entry = span.Slice(offset, GpuScatterLodDumpEntrySizeBytes);
+                if (IsEmptyGpuScatterLodEntry(entry))
+                    continue;
+
+                if (seen++ < skip)
+                    continue;
+
+                _rows.Add(BuildGpuScatterLodEntryLine(seen - 1, i, offset, entry));
+            }
+
+            return true;
+        }
+
+        private static string BuildInvalidGpuScatterLodHeaderSummary(
+            string path,
+            int byteCount,
+            uint version,
+            uint reason,
+            int entryCount,
+            int cursor)
+        {
+            StringBuilder builder = new StringBuilder(192);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | invalid gpu-scatter-lod blackbox header");
+            builder.Append(" | bytes=");
+            builder.Append(byteCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | cursor=");
+            builder.Append(cursor.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | reason=0x");
+            builder.Append(reason.ToString("X8", CultureInfo.InvariantCulture));
+            return builder.ToString();
+        }
+
+        private static bool IsGpuScatterLodDumpPath(string path)
+        {
+            string fileName = Path.GetFileName(path) ?? string.Empty;
+            return string.Equals(
+                fileName,
+                GpuScatterLodDumpFileName,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int CountGpuScatterLodEntriesWithPayload(ReadOnlySpan<byte> bytes, int entryCount)
+        {
+            int count = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = GpuScatterLodDumpHeaderBytes + i * GpuScatterLodDumpEntrySizeBytes;
+                if (offset < 0 || offset + GpuScatterLodDumpEntrySizeBytes > bytes.Length)
+                    break;
+
+                if (!IsEmptyGpuScatterLodEntry(bytes.Slice(offset, GpuScatterLodDumpEntrySizeBytes)))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static bool IsEmptyGpuScatterLodEntry(ReadOnlySpan<byte> entry)
+        {
+            int scanned = math.min(GpuScatterLodDumpEntrySizeBytes, entry.Length);
+            for (int i = 0; i < scanned; i++)
+            {
+                if (entry[i] != 0)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static string BuildGpuScatterLodEntryLine(
+            int displayIndex,
+            int sourceIndex,
+            int offset,
+            ReadOnlySpan<byte> entry)
+        {
+            int frame = ReadI32(entry, 0);
+            int activeInstanceCount = ReadI32(entry, 4);
+            int visibleFloraCount = ReadI32(entry, 8);
+            float cullDistanceMeters = ReadF32(entry, 12);
+            float systemStress01 = ReadF32(entry, 16);
+            float cameraX = ReadF32(entry, 20);
+            float cameraY = ReadF32(entry, 24);
+            float cameraZ = ReadF32(entry, 28);
+            float aupX = ReadF32(entry, 32);
+            float aupY = ReadF32(entry, 36);
+            float aupZ = ReadF32(entry, 40);
+            uint matrixGeneration = ReadU32(entry, 44);
+            uint metadataGeneration = ReadU32(entry, 48);
+            uint flags = ReadU32(entry, 52);
+            uint auxiliaryGenerationHash = ReadU32(entry, 56);
+            uint visualPayloadGeneration = ReadU32(entry, 60);
+
+            StringBuilder builder = new StringBuilder(320);
+            builder.Append('#');
+            builder.Append(displayIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" slot=");
+            builder.Append(sourceIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" @");
+            builder.Append(offset.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" frame=");
+            builder.Append(frame.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" active=");
+            builder.Append(activeInstanceCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" visible=");
+            builder.Append(visibleFloraCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" cull=");
+            builder.Append(cullDistanceMeters.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" stress=");
+            builder.Append(systemStress01.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" camera=");
+            builder.Append(cameraX.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(cameraY.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(cameraZ.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" aup=");
+            builder.Append(aupX.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(aupY.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(aupZ.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" flags=0x");
+            builder.Append(flags.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(' ');
+            builder.Append(ResolveGpuScatterLodFlagsLabel(flags));
+            builder.Append(" matrixGen=");
+            builder.Append(matrixGeneration.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" metadataGen=");
+            builder.Append(metadataGeneration.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" aux=0x");
+            builder.Append(auxiliaryGenerationHash.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" visualGen=");
+            builder.Append(visualPayloadGeneration.ToString(CultureInfo.InvariantCulture));
+            return builder.ToString();
+        }
+
+        private static string ResolveGpuScatterLodReasonLabel(uint reason)
+        {
+            switch (reason)
+            {
+                case 0x4E414E31u:
+                    return "nonfinite-matrix";
+                case 0x4E414E32u:
+                    return "nonfinite-metadata";
+                case 0x4E414E33u:
+                    return "nonfinite-auxiliary-lane";
+                case 0x41555031u:
+                    return "nonfinite-aup";
+                case 0x41424931u:
+                    return "abi-layout";
+                default:
+                    return "unknown";
+            }
+        }
+
+        private static string ResolveGpuScatterLodFlagsLabel(uint flags)
+        {
+            if (flags == 0u)
+                return "none";
+
+            StringBuilder builder = new StringBuilder(180);
+            AppendFlagLabel(builder, (flags & (1u << 0)) != 0u, "gpu-ready");
+            AppendFlagLabel(builder, (flags & (1u << 1)) != 0u, "camera-signal");
+            AppendFlagLabel(builder, (flags & (1u << 2)) != 0u, "stress-shed");
+            AppendFlagLabel(builder, (flags & (1u << 4)) != 0u, "nonfinite-vault-matrix");
+            AppendFlagLabel(builder, (flags & (1u << 5)) != 0u, "invalid-frustum");
+            AppendFlagLabel(builder, (flags & (1u << 6)) != 0u, "no-active-instances");
+            AppendFlagLabel(builder, (flags & (1u << 7)) != 0u, "invalid-thread-group");
+            AppendFlagLabel(builder, (flags & (1u << 8)) != 0u, "invalid-material-variant");
+            AppendFlagLabel(builder, (flags & (1u << 9)) != 0u, "nonfinite-aup-shift");
+            AppendFlagLabel(builder, (flags & (1u << 10)) != 0u, "nonfinite-metadata");
+            AppendFlagLabel(builder, (flags & (1u << 11)) != 0u, "nonfinite-auxiliary-lane");
+
+            const uint knownFlags =
+                (1u << 0) |
+                (1u << 1) |
+                (1u << 2) |
+                (1u << 4) |
+                (1u << 5) |
+                (1u << 6) |
+                (1u << 7) |
+                (1u << 8) |
+                (1u << 9) |
+                (1u << 10) |
+                (1u << 11);
+            uint unknownFlags = flags & ~knownFlags;
+            if (unknownFlags != 0u)
+            {
+                if (builder.Length != 0)
+                    builder.Append('|');
+
+                builder.Append("unknown=0x");
+                builder.Append(unknownFlags.ToString("X8", CultureInfo.InvariantCulture));
+            }
+
+            return builder.Length == 0 ? "unknown" : builder.ToString();
+        }
+
+        private bool TryParseVegetationMemoryDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
+        {
+            if (!IsVegetationMemoryDumpPath(path))
+            {
+                return false;
+            }
+
+            if (span.Length < VegetationMemoryDumpHeaderBytes ||
+                ReadU64(span, 0) != VegetationMemoryDumpMagic)
+            {
+                SetSummary(BuildInvalidVegetationMemoryHeaderSummary(path, span.Length, 0, 0, 0, 0));
+                return true;
+            }
+
+            int version = ReadI32(span, 8);
+            int entryCount = ReadI32(span, 12);
+            int entrySize = ReadI32(span, 16);
+            int cursor = ReadI32(span, 20);
+            bool valid =
+                version == VegetationMemoryDumpVersion &&
+                entryCount > 0 &&
+                entryCount <= 100000 &&
+                entrySize == VegetationMemoryDumpEntrySizeBytes &&
+                cursor >= 0 &&
+                cursor < entryCount &&
+                VegetationMemoryDumpHeaderBytes + (long)entryCount * entrySize <= span.Length;
+
+            if (!valid)
+            {
+                SetSummary(BuildInvalidVegetationMemoryHeaderSummary(
+                    path,
+                    span.Length,
+                    version,
+                    entryCount,
+                    entrySize,
+                    cursor));
+                return true;
+            }
+
+            int nonEmptyEntryCount = CountVegetationMemoryEntriesWithPayload(span, entryCount);
+            int payloadBytes = entryCount * entrySize;
+            ulong payloadHash = ComputeXxHash64(bytes, VegetationMemoryDumpHeaderBytes, payloadBytes);
+            StringBuilder builder = new StringBuilder(300);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | bytes=");
+            builder.Append(span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | magic=VEG_1316");
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | layout=vegetation-memory-blackbox");
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | displayed=");
+            builder.Append(math.min(nonEmptyEntryCount, MaxDisplayedFrames).ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(nonEmptyEntryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | cursor=");
+            builder.Append(cursor.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | xxHash3[payload]=0x");
+            builder.Append(payloadHash.ToString("X16", CultureInfo.InvariantCulture));
+            SetSummary(builder.ToString());
+
+            int skip = math.max(0, nonEmptyEntryCount - MaxDisplayedFrames);
+            int seen = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = VegetationMemoryDumpHeaderBytes + i * entrySize;
+                ReadOnlySpan<byte> entry = span.Slice(offset, entrySize);
+                if (IsEmptyVegetationMemoryEntry(entry))
+                    continue;
+
+                if (seen++ < skip)
+                    continue;
+
+                _rows.Add(BuildVegetationMemoryEntryLine(seen - 1, i, offset, entry));
+            }
+
+            return true;
+        }
+
+        private static string BuildInvalidVegetationMemoryHeaderSummary(
+            string path,
+            int byteCount,
+            int version,
+            int entryCount,
+            int entrySize,
+            int cursor)
+        {
+            StringBuilder builder = new StringBuilder(192);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | invalid vegetation-memory blackbox header");
+            builder.Append(" | bytes=");
+            builder.Append(byteCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | cursor=");
+            builder.Append(cursor.ToString(CultureInfo.InvariantCulture));
+            return builder.ToString();
+        }
+
+        private static bool IsVegetationMemoryDumpPath(string path)
+        {
+            string fileName = Path.GetFileName(path) ?? string.Empty;
+            return string.Equals(
+                fileName,
+                VegetationMemoryDumpFileName,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int CountVegetationMemoryEntriesWithPayload(ReadOnlySpan<byte> bytes, int entryCount)
+        {
+            int count = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = VegetationMemoryDumpHeaderBytes + i * VegetationMemoryDumpEntrySizeBytes;
+                if (offset < 0 || offset + VegetationMemoryDumpEntrySizeBytes > bytes.Length)
+                    break;
+
+                if (!IsEmptyVegetationMemoryEntry(bytes.Slice(offset, VegetationMemoryDumpEntrySizeBytes)))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static bool IsEmptyVegetationMemoryEntry(ReadOnlySpan<byte> entry)
+        {
+            int scanned = math.min(VegetationMemoryDumpEntrySizeBytes, entry.Length);
+            for (int i = 0; i < scanned; i++)
+            {
+                if (entry[i] != 0)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static string BuildVegetationMemoryEntryLine(
+            int displayIndex,
+            int sourceIndex,
+            int offset,
+            ReadOnlySpan<byte> entry)
+        {
+            ulong stateHash = ReadU64(entry, 0);
+            uint bufferId = ReadU32(entry, 8);
+            uint generation = ReadU32(entry, 12);
+            uint frame = ReadU32(entry, 16);
+            int expectedLength = ReadI32(entry, 20);
+            int actualLength = ReadI32(entry, 24);
+            int culledInstances = ReadI32(entry, 28);
+            float jobMicroseconds = ReadF32(entry, 32);
+            float qualityWeight = ReadF32(entry, 36);
+            ushort failureCode = ReadU16(entry, 40);
+            ushort phase = ReadU16(entry, 42);
+            uint flags = ReadU32(entry, 44);
+            float positionX = ReadF32(entry, 48);
+            float positionY = ReadF32(entry, 52);
+            float positionZ = ReadF32(entry, 56);
+            uint reserved = ReadU32(entry, 60);
+            ulong computedStateHash = ComputeVegetationMemoryStateHash(
+                bufferId,
+                generation,
+                frame,
+                expectedLength,
+                actualLength,
+                culledInstances,
+                jobMicroseconds,
+                qualityWeight,
+                failureCode,
+                phase,
+                flags,
+                positionX,
+                positionY,
+                positionZ);
+
+            StringBuilder builder = new StringBuilder(340);
+            builder.Append('#');
+            builder.Append(displayIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" slot=");
+            builder.Append(sourceIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" @");
+            builder.Append(offset.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" frame=");
+            builder.Append(frame.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" buffer=0x");
+            builder.Append(bufferId.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" gen=");
+            builder.Append(generation.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" len=");
+            builder.Append(actualLength.ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(expectedLength.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" culled=");
+            builder.Append(culledInstances.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" jobUs=");
+            builder.Append(jobMicroseconds.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" quality=");
+            builder.Append(qualityWeight.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" code=");
+            builder.Append(ResolveVegetationMemoryCodeLabel(failureCode));
+            builder.Append('(');
+            builder.Append(failureCode.ToString(CultureInfo.InvariantCulture));
+            builder.Append(')');
+            builder.Append(" phase=");
+            builder.Append(ResolveVegetationMemoryPhaseLabel(phase));
+            builder.Append('(');
+            builder.Append(phase.ToString(CultureInfo.InvariantCulture));
+            builder.Append(')');
+            builder.Append(" flags=0x");
+            builder.Append(flags.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(' ');
+            builder.Append(ResolveVegetationMemoryFlagsLabel(flags));
+            builder.Append(" pos=");
+            builder.Append(positionX.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(positionY.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(positionZ.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" reserved=0x");
+            builder.Append(reserved.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" hash=0x");
+            builder.Append(stateHash.ToString("X16", CultureInfo.InvariantCulture));
+            builder.Append(" hashOk=");
+            builder.Append(stateHash == computedStateHash ? "yes" : "no");
+            if (stateHash != computedStateHash)
+            {
+                builder.Append(" calc=0x");
+                builder.Append(computedStateHash.ToString("X16", CultureInfo.InvariantCulture));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string ResolveVegetationMemoryCodeLabel(ushort code)
+        {
+            switch (code)
+            {
+                case 0:
+                    return "none";
+                case 1:
+                    return "cold-boot-registered";
+                case 2:
+                    return "defrag-scheduled";
+                case 3:
+                    return "defrag-completed";
+                case 4:
+                    return "vault-resolve-failed";
+                case 5:
+                    return "write-lock-contention";
+                case 6:
+                    return "nan-detected";
+                case 7:
+                    return "shutdown-released";
+                case 8:
+                    return "staging-capacity-exceeded";
+                case 9:
+                    return "compaction-fence-active";
+                default:
+                    return "unknown";
+            }
+        }
+
+        private static string ResolveVegetationMemoryPhaseLabel(ushort phase)
+        {
+            switch (phase)
+            {
+                case 0:
+                    return "unknown";
+                case 1:
+                    return "cold-boot";
+                case 2:
+                    return "slow-tick";
+                case 3:
+                    return "visual-sync";
+                case 4:
+                    return "defrag";
+                case 5:
+                    return "shutdown";
+                default:
+                    return "unknown";
+            }
+        }
+
+        private static string ResolveVegetationMemoryFlagsLabel(uint flags)
+        {
+            if (flags == 0u)
+                return "none";
+
+            StringBuilder builder = new StringBuilder(140);
+            AppendFlagLabel(builder, (flags & (1u << 0)) != 0u, "cold-boot");
+            AppendFlagLabel(builder, (flags & (1u << 1)) != 0u, "defrag");
+            AppendFlagLabel(builder, (flags & (1u << 2)) != 0u, "lock-contention");
+            AppendFlagLabel(builder, (flags & (1u << 3)) != 0u, "stale-handle");
+            AppendFlagLabel(builder, (flags & (1u << 4)) != 0u, "nan");
+            AppendFlagLabel(builder, (flags & (1u << 5)) != 0u, "capacity");
+            AppendFlagLabel(builder, (flags & (1u << 6)) != 0u, "compaction-fence");
+
+            const uint knownFlags =
+                (1u << 0) |
+                (1u << 1) |
+                (1u << 2) |
+                (1u << 3) |
+                (1u << 4) |
+                (1u << 5) |
+                (1u << 6);
+            uint unknownFlags = flags & ~knownFlags;
+            if (unknownFlags != 0u)
+            {
+                if (builder.Length != 0)
+                    builder.Append('|');
+
+                builder.Append("unknown=0x");
+                builder.Append(unknownFlags.ToString("X8", CultureInfo.InvariantCulture));
+            }
+
+            return builder.Length == 0 ? "unknown" : builder.ToString();
+        }
+
+        private static ulong ComputeVegetationMemoryStateHash(
+            uint bufferId,
+            uint generation,
+            uint frame,
+            int expectedLength,
+            int actualLength,
+            int culledInstances,
+            float jobMicroseconds,
+            float qualityWeight,
+            ushort failureCode,
+            ushort phase,
+            uint flags,
+            float positionX,
+            float positionY,
+            float positionZ)
+        {
+            ulong hash = 1469598103934665603UL;
+            hash = MixVegetationMemoryHash(hash, bufferId);
+            hash = MixVegetationMemoryHash(hash, generation);
+            hash = MixVegetationMemoryHash(hash, frame);
+            hash = MixVegetationMemoryHash(hash, unchecked((uint)expectedLength));
+            hash = MixVegetationMemoryHash(hash, unchecked((uint)actualLength));
+            hash = MixVegetationMemoryHash(hash, unchecked((uint)culledInstances));
+            hash = MixVegetationMemoryHash(hash, math.asuint(jobMicroseconds));
+            hash = MixVegetationMemoryHash(hash, math.asuint(qualityWeight));
+            hash = MixVegetationMemoryHash(hash, failureCode);
+            hash = MixVegetationMemoryHash(hash, phase);
+            hash = MixVegetationMemoryHash(hash, flags);
+            hash = MixVegetationMemoryHash(hash, math.asuint(positionX));
+            hash = MixVegetationMemoryHash(hash, math.asuint(positionY));
+            hash = MixVegetationMemoryHash(hash, math.asuint(positionZ));
+            return hash;
+        }
+
+        private static ulong MixVegetationMemoryHash(ulong hash, uint value)
+        {
+            hash ^= value;
+            hash *= 1099511628211UL;
+            return hash;
+        }
+
+        private bool TryParseGlobalShaderDispatcherDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
+        {
+            if (!IsGlobalShaderDispatcherDumpPath(path))
+            {
+                return false;
+            }
+
+            if (span.Length < GlobalShaderDispatcherDumpHeaderBytes ||
+                ReadU32(span, 0) != GlobalShaderDispatcherDumpMagic)
+            {
+                SetSummary(BuildInvalidGlobalShaderDispatcherHeaderSummary(path, span.Length, 0u, 0u, 0, 0, 0u, 0u));
+                return true;
+            }
+
+            uint version = ReadU32(span, 4);
+            uint reasonFlags = ReadU32(span, 8);
+            int cursor = ReadI32(span, 12);
+            int entryCount = ReadI32(span, 16);
+            int entrySize = ReadI32(span, 20);
+            uint requiredShaderGlobalSlots = ReadU32(span, 24);
+            uint reserved = ReadU32(span, 28);
+            bool valid =
+                version == GlobalShaderDispatcherDumpVersion &&
+                cursor >= 0 &&
+                entryCount > 0 &&
+                entryCount <= 100000 &&
+                cursor < entryCount &&
+                entrySize == GlobalShaderDispatcherDumpEntrySizeBytes &&
+                requiredShaderGlobalSlots > 0u &&
+                requiredShaderGlobalSlots <= 100000u &&
+                reserved == 0u &&
+                GlobalShaderDispatcherDumpHeaderBytes + (long)entryCount * entrySize <= span.Length;
+
+            if (!valid)
+            {
+                SetSummary(BuildInvalidGlobalShaderDispatcherHeaderSummary(
+                    path,
+                    span.Length,
+                    version,
+                    reasonFlags,
+                    cursor,
+                    entryCount,
+                    requiredShaderGlobalSlots,
+                    reserved));
+                return true;
+            }
+
+            int nonEmptyEntryCount = CountGlobalShaderDispatcherEntriesWithPayload(span, entryCount);
+            int payloadBytes = entryCount * entrySize;
+            ulong payloadHash = ComputeXxHash64(bytes, GlobalShaderDispatcherDumpHeaderBytes, payloadBytes);
+            StringBuilder builder = new StringBuilder(300);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | bytes=");
+            builder.Append(span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | magic=GSHD");
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | layout=global-shader-dispatcher-blackbox");
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | displayed=");
+            builder.Append(math.min(nonEmptyEntryCount, MaxDisplayedFrames).ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(nonEmptyEntryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | cursor=");
+            builder.Append(cursor.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | requiredSlots=");
+            builder.Append(requiredShaderGlobalSlots.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | reason=0x");
+            builder.Append(reasonFlags.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(' ');
+            builder.Append(ResolveGlobalShaderDispatcherReasonLabel(reasonFlags));
+            builder.Append(" | xxHash3[payload]=0x");
+            builder.Append(payloadHash.ToString("X16", CultureInfo.InvariantCulture));
+            SetSummary(builder.ToString());
+
+            int skip = math.max(0, nonEmptyEntryCount - MaxDisplayedFrames);
+            int seen = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = GlobalShaderDispatcherDumpHeaderBytes + i * entrySize;
+                ReadOnlySpan<byte> entry = span.Slice(offset, entrySize);
+                if (IsEmptyGlobalShaderDispatcherEntry(entry))
+                    continue;
+
+                if (seen++ < skip)
+                    continue;
+
+                _rows.Add(BuildGlobalShaderDispatcherEntryLine(seen - 1, i, offset, entry));
+            }
+
+            return true;
+        }
+
+        private static string BuildInvalidGlobalShaderDispatcherHeaderSummary(
+            string path,
+            int byteCount,
+            uint version,
+            uint reasonFlags,
+            int cursor,
+            int entryCount,
+            uint requiredShaderGlobalSlots,
+            uint reserved)
+        {
+            StringBuilder builder = new StringBuilder(224);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | invalid global-shader-dispatcher blackbox header");
+            builder.Append(" | bytes=");
+            builder.Append(byteCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | cursor=");
+            builder.Append(cursor.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | requiredSlots=");
+            builder.Append(requiredShaderGlobalSlots.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | reason=0x");
+            builder.Append(reasonFlags.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" | reserved=0x");
+            builder.Append(reserved.ToString("X8", CultureInfo.InvariantCulture));
+            return builder.ToString();
+        }
+
+        private static bool IsGlobalShaderDispatcherDumpPath(string path)
+        {
+            string fileName = Path.GetFileName(path) ?? string.Empty;
+            return string.Equals(
+                fileName,
+                GlobalShaderDispatcherDumpFileName,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int CountGlobalShaderDispatcherEntriesWithPayload(ReadOnlySpan<byte> bytes, int entryCount)
+        {
+            int count = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = GlobalShaderDispatcherDumpHeaderBytes + i * GlobalShaderDispatcherDumpEntrySizeBytes;
+                if (offset < 0 || offset + GlobalShaderDispatcherDumpEntrySizeBytes > bytes.Length)
+                    break;
+
+                if (!IsEmptyGlobalShaderDispatcherEntry(bytes.Slice(offset, GlobalShaderDispatcherDumpEntrySizeBytes)))
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static bool IsEmptyGlobalShaderDispatcherEntry(ReadOnlySpan<byte> entry)
+        {
+            int scanned = math.min(GlobalShaderDispatcherDumpEntrySizeBytes, entry.Length);
+            for (int i = 0; i < scanned; i++)
+            {
+                if (entry[i] != 0)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static string BuildGlobalShaderDispatcherEntryLine(
+            int displayIndex,
+            int sourceIndex,
+            int offset,
+            ReadOnlySpan<byte> entry)
+        {
+            float frame = ReadF32(entry, 0);
+            float dispatchMicroseconds = ReadF32(entry, 4);
+            float keywordCount = ReadF32(entry, 8);
+            float flagsFloat = ReadF32(entry, 12);
+            uint flags = FloatToUIntOrZero(flagsFloat);
+
+            StringBuilder builder = new StringBuilder(220);
+            builder.Append('#');
+            builder.Append(displayIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" slot=");
+            builder.Append(sourceIndex.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" @");
+            builder.Append(offset.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" frame=");
+            builder.Append(frame.ToString("0", CultureInfo.InvariantCulture));
+            builder.Append(" dispatchUs=");
+            builder.Append(dispatchMicroseconds.ToString("0.###", CultureInfo.InvariantCulture));
+            builder.Append(" keywords=");
+            builder.Append(keywordCount.ToString("0", CultureInfo.InvariantCulture));
+            builder.Append(" flags=0x");
+            builder.Append(flags.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(' ');
+            builder.Append(ResolveGlobalShaderDispatcherTelemetryFlagsLabel(flags));
+            return builder.ToString();
+        }
+
+        private static string ResolveGlobalShaderDispatcherReasonLabel(uint flags)
+        {
+            if (flags == 0u)
+                return "none";
+
+            StringBuilder builder = new StringBuilder(96);
+            AppendFlagLabel(builder, (flags & (1u << 0)) != 0u, "layout-fault");
+            AppendFlagLabel(builder, (flags & (1u << 1)) != 0u, "dispatch-over-budget");
+            AppendFlagLabel(builder, (flags & (1u << 2)) != 0u, "vault-unavailable");
+
+            const uint knownFlags =
+                (1u << 0) |
+                (1u << 1) |
+                (1u << 2);
+            uint unknownFlags = flags & ~knownFlags;
+            if (unknownFlags != 0u)
+            {
+                if (builder.Length != 0)
+                    builder.Append('|');
+
+                builder.Append("unknown=0x");
+                builder.Append(unknownFlags.ToString("X8", CultureInfo.InvariantCulture));
+            }
+
+            return builder.Length == 0 ? "unknown" : builder.ToString();
+        }
+
+        private static string ResolveGlobalShaderDispatcherTelemetryFlagsLabel(uint flags)
+        {
+            if (flags == 0u)
+                return "none";
+
+            return "unknown=0x" + flags.ToString("X8", CultureInfo.InvariantCulture);
+        }
+
+        private static uint FloatToUIntOrZero(float value)
+        {
+            if (!math.isfinite(value) || value <= 0f || value > (float)uint.MaxValue)
+                return 0u;
+
+            return unchecked((uint)math.round(value));
         }
 
         private bool TryParseJobAdmissionDump(string path, byte[] bytes, ReadOnlySpan<byte> span)

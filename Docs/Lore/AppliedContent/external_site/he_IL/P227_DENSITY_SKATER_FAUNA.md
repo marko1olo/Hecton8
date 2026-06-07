@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Density Skater Fauna"
+title: "פאונת מחליקי צפיפות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Density Skater Fauna
+# פאונת מחליקי צפיפות
 
-HE LOC HOLD: Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes.
+פאונת מחליקי הצפיפות הופכת אחת מהרעיונות המדעיים-הקשים המוזרים ביותר של HECTON-8 למפגש שאפשר להבין בלי הרצאה: מים יכולים להכיל משטחים. בקניון התמלחת, מליחות, טמפרטורה ולחץ נערמים למדפי צפיפות. בעלי חיים קטנים מנצלים את המדפים האלה כפי שחרקי פני מים מנצלים מתח, רק שהמשטח קבור בתוך האוקיינוס. התוצאה צריכה להרגיש מוזרה אך הוגנת. מחליק חוצה פער שנראה ריק; הסונאר מראה אדווה; trim החליפה מתנדנד; השחקן מבין שיש שם גבול. הכתיבה וההצבה צריכות להתנגד לריחוף פנטזיה. המחליק אינו צף כי העולם שכח פיזיקה. הוא חי כי הפיזיקה מסוימת. מסלולו יכול להוביל אל brine vanes קרועות, כיסים דלי מלח, מדרגות תמלחת חמות או נתיבי מארב. הוא גם יכול להטעות: מה שנושא חיה קלה עשוי להפיל Marauder עמוס אל מים שחורים שכבתיים. ערך העיצוב אינו היצור עצמו, אלא השיעור שהוא מלמד. הקניון אינו מרחב פתוח. הוא מכונה של מים נערמים, וכל גוף קטן שהולך עליה מצייר את המפה בתנועה.
 
 ## Scanner
 
-HE LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+מחליק צפיפות // פאונה דקת גפיים רוכבת על ממשק תמלחת כעל משטח, ומשאירה אדוות במקום שבו הסונאר מצפה למים פתוחים.
 
 ## Terminal
 
-HE LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+קו בסיס פאונה: מגע עם מחליקים עולה ליד brine vanes קרועות, מדרגות תמלחת חמות וקצוות סונאר מתים. השובל שלהם מסמן מדף צפיפות, לא דריכה בטוחה. אל תרדוף דרך שכבות אטומות.
 
 ## Audio
 
-HE LOC HOLD: Something is walking on the water inside the water.
+משהו הולך על המים שבתוך המים.
 
 ## Field Note
 
-HE LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+הם אינם מרחפים. הם הולכים על גבול שהחליפה שלך יכולה ליפול דרכו.
 
 <!-- External Site; generated from P227_DENSITY_SKATER_FAUNA/he_IL. -->

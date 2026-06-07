@@ -25,9 +25,9 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _Breakup: 0.12
-    - _NoiseScale: 54
+    - _Breakup: 0.34
+    - _NoiseScale: 42
     m_Colors:
-    - _Tint: {r: 0.92, g: 0.98, b: 0.92, a: 0.74}
+    - _Tint: {r: 0.9, g: 0.985, b: 1, a: 0.48}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

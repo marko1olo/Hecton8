@@ -7,6 +7,9 @@ poi_tags: poi.last_normal_day_set;poi.unsigned_correction_note
 biome_tags: biome.colony;biome.evidence
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Last Normal Day Evidence Set"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

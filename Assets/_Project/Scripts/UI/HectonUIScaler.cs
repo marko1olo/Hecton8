@@ -114,15 +114,9 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null)
-                {
-                    _registeredToTickManager = false;
-                    _registeredToSlowTickManager = false;
-                    return;
-                }
-
                 UnregisterFromTickManager();
-                RegisterToTickManager();
+                if (currentService != null && isActiveAndEnabled)
+                    RegisterToTickManager();
             }
         }
 

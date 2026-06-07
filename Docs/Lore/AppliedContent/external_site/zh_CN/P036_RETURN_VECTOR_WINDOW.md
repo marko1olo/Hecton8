@@ -7,6 +7,9 @@ poi_tags: poi.orbital_comm_window;poi.black_keel_signal
 biome_tags: biome.surface_squall;biome.shallow_shelter
 locale: zh_CN
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "返航矢量窗口"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

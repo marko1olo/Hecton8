@@ -7,6 +7,9 @@ poi_tags: poi.revoked_field_systems_record;poi.evacuations_infrastructure_badge
 biome_tags: biome.safe_module;biome.colony
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Field Systems Specialist Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

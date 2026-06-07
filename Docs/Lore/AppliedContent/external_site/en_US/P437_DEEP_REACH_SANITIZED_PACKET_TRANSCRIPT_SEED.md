@@ -7,6 +7,9 @@ poi_tags: poi.deep_reach_sanitized_transcript;poi.legal_delay_caption
 biome_tags: biome.deep_reach_archive;biome.claim_admin
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Deep Reach Sanitized Packet Transcript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

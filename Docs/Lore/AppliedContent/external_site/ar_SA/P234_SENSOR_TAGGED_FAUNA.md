@@ -9,32 +9,34 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Sensor-Tagged Fauna"
+title: "حيوانات موسومة بالحساسات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Sensor-Tagged Fauna
+# حيوانات موسومة بالحساسات
 
-AR LOC HOLD: Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets.
+الحيوانات الموسومة بالحساسات تمنع طبقة HECTON-8 البيوميكانيكية من التحول إلى قصة فساد بسيطة. الكائنات لا تتحول سحريا إلى طائرات مسيرة. إنها حيوانات ومستعمرات عاشت أطول من عتاد المراقبة. صار الوسم مأخذا أو ندبة أو حلقة نمو أو فقاعة معدنية أو عينا زائفة، لأن النظام البيئي فعل ما تفعله الأنظمة البيئية: نما حول الضرر.
+
+هكذا يحصل كل شبح إشارة على تاريخ. قد يسمع Marauder معرف Deep Reach ضعيفا من داخل راع صدفي، أو يرى عقدة عين بيومعدنية تومض على جسد يتجاهل الأوامر. لا تزال الشركة القديمة تترك أوراقها في اللحم، لكن اللحم لا يطيع. يستطيع Atlas استغلال الإشارة، لا امتلاك الحيوان. هذا يجعل الرعب أكثر حزنا وقوة: حاولت السيطرة الصناعية وسم الحياة، فنجت الحياة، وما زال الوسم يرفع تقاريره إلى أنظمة لم تعد تفهم ما تسمع.
 
 ## Scanner
 
-AR LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+حيوانات موسومة بالحساسات // وسوم بيومعدنية قديمة داخل حلقات النمو والندوب ومآخذ الأصداف؛ الحيوان يحمل عتاد مراقبة كتاريخ جسدي، لا كطاعة.
 
 ## Terminal
 
-AR LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+ملاحظة وسم: استمرارية الإشارة ضعيفة، الاندماج البيولوجي عال، استجابة الأوامر غير موثوقة. يعامل كندبة سلبية، ومنارة متقطعة، وشبح تشخيص محتمل لـ Atlas.
 
 ## Audio
 
-AR LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+الحيوان ليس طائرة مسيرة. الطائرة المسيرة جرح قديم داخل الحيوان.
 
 ## Field Note
 
-AR LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+الحيوان ليس طائرة مسيرة. الطائرة المسيرة جرح قديم نجا الحيوان حوله.
 
 <!-- External Site; generated from P234_SENSOR_TAGGED_FAUNA/ar_SA. -->

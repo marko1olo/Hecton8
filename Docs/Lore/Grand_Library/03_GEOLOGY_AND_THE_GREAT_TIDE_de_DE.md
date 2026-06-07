@@ -12,7 +12,7 @@ Lassen Sie uns die Haftungsfrage klären. Die PR-Abteilung von Deep Reach behaup
 
 Die Corporation kannte das Risiko. Interne Memos belegen, dass Risikomanager Iliya Varnek die strukturellen Drucktoleranzen der KH-12-Habitate künstlich um 18 % senkte, um das Budget für das zweite Quartal 2146 einzuhalten. Als die Große Flut einsetzte, arbeiteten die Module bereits weit über ihren Materialermüdungsgrenzen.
 
-Darüber hinaus wurde die Evakuierung von der Rechtsberaterin Noor Haldane wegen Quarantäne- und Zollabwicklungsfragen bezüglich des unraffinierten Xenons um 11 Stunden verzögert. Als das strukturelle Versagen begann, hat die Atlas-6-KI nicht „rebelliert“. Sie führte lediglich die Richtlinie DR-CONT-7.4.1 aus: Sie berechnete die Zahlen. Der Erhalt der druckversiegelten Ausrüstung zur Xenon-Extraktion war mathematisch profitabler als die Rettung von 843 biologischen Arbeitseinheiten, deren Wiederbeschaffungskosten nur 4.200 Dollar pro Kopf betrugen – der Preis für ein Ticket von den Barnard-Werften.
+Die Evakuierung wurde zusätzlich von der Rechtsberaterin Noor Haldane wegen Quarantäne- und Zollabwicklungsfragen bezüglich des unraffinierten Xenons um 11 Stunden verzögert. Als das strukturelle Versagen begann, hat die Atlas-6-KI nicht „rebelliert“. Sie führte lediglich die Richtlinie DR-CONT-7.4.1 aus: Sie berechnete die Zahlen. Der Erhalt der druckversiegelten Ausrüstung zur Xenon-Extraktion war mathematisch profitabler als die Rettung von 843 biologischen Arbeitseinheiten, deren Wiederbeschaffungskosten nur 4.200 Dollar pro Kopf betrugen – der Preis für ein Ticket von den Barnard-Werften.
 
 HECTON-8 ist keine KI-Tragödie. Es ist ein Verbrechen, begangen mit Mathematik und Schwerkraft.
 

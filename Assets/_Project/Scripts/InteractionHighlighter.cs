@@ -361,7 +361,7 @@ namespace Hecton8.Interaction
         /// </summary>
         private void StartTicking()
         {
-            if (_isTicking || !Application.isPlaying)
+            if (_isTicking || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _isTicking = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
@@ -409,7 +409,7 @@ namespace Hecton8.Interaction
 
         private void StartLateFrameTicking()
         {
-            if (_lateFrameRegistered || !Application.isPlaying)
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
@@ -435,28 +435,32 @@ namespace Hecton8.Interaction
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            bool wasTicking = _isTicking;
-            bool hadLateFrame = _lateFrameRegistered;
-            if (currentService == null)
-                return;
+            bool wasTickDormant = _tickDormant;
+            bool needsTick = _isTicking || wasTickDormant;
+            bool needsLateFrame = _lateFrameRegistered || _pendingVisualApply || wasTickDormant;
 
-            if (wasTicking)
+            if (_isTicking)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
                 _isTicking = false;
             }
 
-            if (hadLateFrame)
+            if (_lateFrameRegistered)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _lateFrameRegistered = false;
             }
 
-            if (isActiveAndEnabled)
+            if (currentService != null && isActiveAndEnabled)
             {
-                if (wasTicking)
+                if (needsTick)
+                {
                     StartTicking();
-                if (hadLateFrame)
+                    if (wasTickDormant && _isTicking)
+                        _tickDormant = true;
+                }
+
+                if (needsLateFrame)
                     StartLateFrameTicking();
             }
 
@@ -473,7 +477,7 @@ namespace Hecton8.Interaction
 
         private void TryUnregisterHotSwapListenerIfIdle()
         {
-            if (!_hotSwapRegistered || _isTicking || _lateFrameRegistered)
+            if (!_hotSwapRegistered || _isTicking || _lateFrameRegistered || _pendingVisualApply || _tickDormant)
                 return;
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);

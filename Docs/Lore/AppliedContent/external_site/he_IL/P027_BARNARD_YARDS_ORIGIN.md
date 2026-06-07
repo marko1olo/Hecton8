@@ -7,6 +7,9 @@ poi_tags: poi.worker_locker;poi.tool_stamp
 biome_tags: biome.crash_shelf;biome.drowned_colony
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "מוצא Barnard Yards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

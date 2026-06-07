@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "Frete de fusão por pellets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# Frete de fusão por pellets
 
-PT LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for.
+Frete de fusão por pellets é a história industrial por trás de HECTON-8. Máquinas e carga pesada chegaram a Aegir porque infraestrutura podia por décadas empurrar, alimentar, proteger e frear massa; a rota continua cruel porque a contabilidade vive mais que a emergência.
 
 ## Scanner
 
-PT LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Placa de motor. Frete com fusão alimentada por pellets cruzou como infraestrutura: impulso, escudo, deriva, frenagem e cobrança de perdas.
 
 ## Terminal
 
-PT LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+DOUTRINA DE FRETE: cargas seed classe Atlas e frete colonial usaram impulso de vela de feixe, fusão alimentada por pellets, frenagem por vela magnética e longos intervalos de deriva. A carga viva chegou depois que máquinas tornaram a rota faturável.
 
 ## Audio
 
-PT LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+Uma nave pesada não é milagre. É uma hipoteca com motores.
 
 ## Field Note
 
-PT LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+Trânsito pesado não é heroico. É um contrato de rota velho com cicatrizes de calor.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/pt_BR. -->

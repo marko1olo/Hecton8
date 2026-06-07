@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "弹丸聚变货运"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# 弹丸聚变货运
 
-CN LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.
+没有 FTL 也能进行重型星际航行，但代价严酷。光束帆加速、弹丸供料聚变、护盾质量、漫长巡航和制动架构把 seed 载荷及后来的殖民货运送到 Aegir。同一套物流也让救援变慢：每一公斤、床位、制动槽和幸存者座位都属于时间表。
 
 ## Scanner
 
-CN LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+驱动板。弹丸供料聚变货运以基础设施形式穿越：加速、护盾、巡航、制动，并核算损失。
 
 ## Terminal
 
-CN LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+货运 doctrine：Atlas 级 seed 载荷和殖民地货运使用光束帆加速、弹丸供料聚变、磁帆制动和漫长巡航间隔。活体货物是在机器把航线变成可计费路线后才抵达的。
 
 ## Audio
 
-CN LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+重型飞船不是奇迹。它是带发动机的抵押贷款。
 
 ## Field Note
 
-CN LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+重型运输不是英雄故事。它是一份带热疤的旧航线合同。
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/zh_CN. -->

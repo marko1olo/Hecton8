@@ -656,7 +656,7 @@ namespace Hecton8.Construction
             DisposeNativeBuffers();
             _atmosphereReadModel = null;
             _ambientCurrentReadModel = null;
-            _audioService = null;
+            ClearCachedAudioService();
             _fluidDecals = null;
             _dataVault = null;
             _graph.Dispose();
@@ -675,7 +675,7 @@ namespace Hecton8.Construction
         {
             _atmosphereReadModel = atmosphereReadModel;
             _ambientCurrentReadModel = ambientCurrentReadModel;
-            _audioService = audioService;
+            CacheAudioService(audioService);
             _fluidDecals = fluidDecals;
         }
 
@@ -691,7 +691,7 @@ namespace Hecton8.Construction
 
         internal void SetAudioService(IAudioService audioService)
         {
-            _audioService = audioService;
+            CacheAudioService(audioService);
         }
 
         internal void SetFluidDecalPresentation(IFluidDecalPresentationSink fluidDecals)
@@ -2114,16 +2114,42 @@ namespace Hecton8.Construction
                 pressureDelta,
                 depthMeters,
                 pitchScale);
-            IAudioService audioService = GetCachedAudioService();
+            IAudioService audioService = ResolveAudioService();
             if (audioService != null && audioService.QueueHullStressSignal(in signal))
                 return;
 
             ProceduralAudioEvents.TryRaiseHullStressSignal(in signal);
         }
 
-        private IAudioService GetCachedAudioService()
+        private void CacheAudioService(IAudioService audioService)
         {
-            return _audioService;
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            ClearCachedAudioService();
+            return null;
+        }
+
+        private void ClearCachedAudioService()
+        {
+            _audioService = null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryFlagAnalyticalIntegrityLeak(int moduleCount, float stress)

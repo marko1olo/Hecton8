@@ -9,32 +9,32 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Shell Clamp Reef"
+title: "シェルクランプ礁"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JP LOC HOLD: Shell Clamp Reef
+# シェルクランプ礁
 
-JP LOC HOLD: Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures.
+シェルクランプ礁は、HECTON-8 の明るい生態と後の機械的恐怖をつなぐ視覚的な橋である。要点は、海が人間の機材を憎んでいることではない。もっと悪く、もっと有用なことだ。海はその周りで成長する方法を覚えた。クランプ殻は、流れ、鉱物流出、振動が硬い縁を利益に変える場所へ定着する。そのためケーブル外装、カプセルの継ぎ目、玄武岩の唇は同じ種類の生息地になりうる。これが浅い棚を装飾ではなく触覚的な場所にする。プレイヤーは、命をまとったボルト、礁の肋骨へ変わるケーブル線、白いクランプに覆われた pressure glass の継ぎ目を見て、すべての成長が汚染ではないと理解するべきだ。ある成長は荷重を支えている。この考えは、魔法なしに Atlas 修理ロジックへ先払いされる。Atlas は後に、礁がすでに証明した習性を悪用する。在来生物は人間の機械を構造として扱える。よい配置なら、採取はボタン押しではなく判断になる。死んだ縁は殻粒、シーリングペーストの質感、初期素材への信頼を与える。礁の生きた中心は経路標識を固定し、漏れを塞いでいるかもしれない。盲目的に取り除けば、海は説教しない。ケーブルが動き出し、継ぎ目が滲み、グレイザーの群れが消え、経路が変わる。
 
 ## Scanner
 
-JP LOC HOLD: Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.
+シェルクランプ礁 // 在来のクランプ殻が岩、ケーブル外装、カプセル外板、pressure glass の継ぎ目に固着する。礁は機械を基質として受け入れている。
 
 ## Terminal
 
-JP LOC HOLD: REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.
+礁ベースライン: 摩耗したケーブル外装、温かい継ぎ目の金属、鉱物流出を伴う pressure glass 縁で固着が増える。採取は死んだ外殻だけ。サービスライン近くの生きたクランプを切ると、漏れを開いたり修理ファウナの注意を引いたりする。
 
 ## Audio
 
-JP LOC HOLD: The reef has learned the shape of bolts.
+礁はボルトの形を覚えた。
 
 ## Field Note
 
-JP LOC HOLD: Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.
+手の届く最初のクランプをこじるな。生きた集団は、ケーブルを静止させ、細い漏れを塞ぎ、経路アンカーを示しているかもしれない。
 
 <!-- External Site; generated from P224_SHELL_CLAMP_REEF/ja_JP. -->

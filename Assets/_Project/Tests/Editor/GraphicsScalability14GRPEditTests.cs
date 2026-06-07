@@ -333,10 +333,17 @@ namespace Hecton8.Tests.Editor
             string dumpBody = ExtractMethodBlock(source, "private void DumpBlackBox(byte reason)");
             string copyBody = ExtractMethodBlock(source, "private bool CopyBlackBoxDumpSnapshot()");
             string writeBody = ExtractMethodBlock(source, "private bool WriteBlackBoxDumpSnapshotToScratch(byte reason)");
+            string queueBody = ExtractMethodBlock(source, "private bool QueueBlackBoxDumpWrite()");
+            string ensureWorkerBody = ExtractMethodBlock(source, "private void EnsureBlackBoxDumpWorker()");
+            string stopWorkerBody = ExtractMethodBlock(source, "private bool StopBlackBoxDumpWorker()");
+            string joinWorkerBody = ExtractMethodBlock(source, "private static bool TryJoinBlackBoxDumpWorkerNoThrow");
+            string signalWorkerBody = ExtractMethodBlock(source, "private static bool SignalBlackBoxDumpWorkerNoThrow");
+            string disposeSignalBody = ExtractMethodBlock(source, "private static void DisposeBlackBoxDumpSignalNoThrow");
 
             Assert.That(source, Does.Contain("private NativeArray<BiolumPulseTelemetryEntry> _blackBoxDumpSnapshot;"));
             Assert.That(source, Does.Contain("private bool EnsureBlackBoxDumpSnapshot()"));
             Assert.That(source, Does.Contain("private void DisposeBlackBoxDumpSnapshot()"));
+            Assert.That(source, Does.Contain("private const int BlackBoxDumpWorkerJoinMilliseconds = 1000;"));
             Assert.That(dumpBody, Does.Contain("CopyBlackBoxDumpSnapshot()"));
             Assert.That(dumpBody, Does.Contain("WriteBlackBoxDumpSnapshotToScratch(reason)"));
             Assert.That(dumpBody, Does.Not.Contain("TryAcquireBlackBoxBuffer"));
@@ -346,6 +353,48 @@ namespace Hecton8.Tests.Editor
             Assert.That(writeBody, Does.Contain("TryAcquireBiolumGuard(vault, BlackBoxDumpScratchGuardMask)"));
             Assert.That(writeBody, Does.Contain("ReleaseBiolumGuard(vault, BlackBoxDumpScratchGuardMask);"));
             Assert.That(writeBody, Does.Not.Contain("BlackBoxGuardMask"));
+            Assert.That(queueBody, Does.Contain("return SignalBlackBoxDumpWorkerNoThrow(signal);"));
+            Assert.That(ensureWorkerBody, Does.Contain("DisposeBlackBoxDumpSignalNoThrow(staleSignal);"));
+            Assert.That(ensureWorkerBody, Does.Contain("DisposeBlackBoxDumpSignalNoThrow(_blackBoxDumpSignal);"));
+            Assert.That(stopWorkerBody, Does.Contain("SignalBlackBoxDumpWorkerNoThrow(signal);"));
+            Assert.That(stopWorkerBody, Does.Contain("TryJoinBlackBoxDumpWorkerNoThrow(thread);"));
+            Assert.That(stopWorkerBody, Does.Contain("DisposeBlackBoxDumpSignalNoThrow(signal);"));
+            Assert.That(joinWorkerBody, Does.Contain("ReferenceEquals(Thread.CurrentThread, thread)"));
+            Assert.That(joinWorkerBody, Does.Contain("thread.Join(BlackBoxDumpWorkerJoinMilliseconds);"));
+            Assert.That(joinWorkerBody, Does.Contain("return !thread.IsAlive;"));
+            Assert.That(joinWorkerBody, Does.Contain("catch (Exception)"));
+            Assert.That(signalWorkerBody, Does.Contain("signal.Set();"));
+            Assert.That(signalWorkerBody, Does.Contain("catch (Exception)"));
+            Assert.That(disposeSignalBody, Does.Contain("signal.Dispose();"));
+            Assert.That(disposeSignalBody, Does.Contain("catch (Exception)"));
+            Assert.That(source, Does.Not.Contain("signal?.Set();"));
+            Assert.That(source, Does.Not.Contain("thread.Join(1000)"));
+        }
+
+        [Test]
+        public void BiolumCsvBackgroundWatcher_UsesFailClosedNoThrowLifecycle()
+        {
+            string path = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs");
+            string source = File.ReadAllText(path);
+            string ensureBody = ExtractMethodBlock(source, "private void EnsureCsvBackgroundWatcher()");
+            string stopBody = ExtractMethodBlock(source, "private void StopCsvBackgroundWatcher()");
+            string createBody = ExtractMethodBlock(source, "private FileSystemWatcher TryCreateCsvBackgroundWatcher(string directory)");
+            string stopNoThrowBody = ExtractMethodBlock(source, "private void StopCsvBackgroundWatcherNoThrow(FileSystemWatcher watcher)");
+
+            Assert.That(ensureBody, Does.Contain("_csvWatcher = TryCreateCsvBackgroundWatcher(directory);"));
+            Assert.That(stopBody, Does.Contain("_csvWatcher = null;"));
+            Assert.That(stopBody, Does.Contain("StopCsvBackgroundWatcherNoThrow(watcher);"));
+            Assert.That(createBody, Does.Contain("Directory.CreateDirectory(directory);"));
+            Assert.That(createBody, Does.Contain("watcher.EnableRaisingEvents = true;"));
+            Assert.That(createBody, Does.Contain("return watcher;"));
+            Assert.That(createBody, Does.Contain("catch (Exception)"));
+            Assert.That(createBody, Does.Contain("return null;"));
+            Assert.That(stopNoThrowBody, Does.Contain("watcher.EnableRaisingEvents = false;"));
+            Assert.That(stopNoThrowBody, Does.Contain("watcher.Changed -= OnCsvFileChanged;"));
+            Assert.That(stopNoThrowBody, Does.Contain("watcher.Dispose();"));
+            Assert.That(stopNoThrowBody, Does.Contain("catch (Exception)"));
         }
 
         [Test]

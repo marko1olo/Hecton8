@@ -142,6 +142,7 @@ namespace Hecton8.AtlasSignal
             UnregisterBeaconAndRefreshShaderStatic();
             FlushPendingDominantStaticShaderValue();
             TryUnregisterLateFrame();
+            ClearCachedRegistryServices();
         }
 
         private void OnDestroy()
@@ -151,6 +152,7 @@ namespace Hecton8.AtlasSignal
             UnregisterBeaconAndRefreshShaderStatic();
             FlushPendingDominantStaticShaderValue();
             TryUnregisterLateFrame();
+            ClearCachedRegistryServices();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -222,7 +224,7 @@ namespace Hecton8.AtlasSignal
             _telemetry.ErrorNoise01 = result.ErrorNoise01;
             _telemetry.Static01 = result.Static01;
 
-            IAudioLogRuntime audioLogs = _audioLogs;
+            IAudioLogRuntime audioLogs = ResolveAudioLogSystem();
             _telemetry.RecoveredBits = audioLogs != null
                 ? audioLogs.GetRecoveredEncryptedAudioLogBits(linkedAudioLogHash)
                 : 0u;
@@ -319,7 +321,7 @@ namespace Hecton8.AtlasSignal
             if (linkedAudioLogHash == 0u || fragmentHash == 0u)
                 return false;
 
-            IAudioLogRuntime audioLogs = _audioLogs;
+            IAudioLogRuntime audioLogs = ResolveAudioLogSystem();
             if (audioLogs == null)
                 return false;
 
@@ -429,7 +431,7 @@ namespace Hecton8.AtlasSignal
 
         private float ResolveCaveErrorMultiplier()
         {
-            ISpatialAudioListenerCaveReadModel spatialAudio = _spatialAudio;
+            ISpatialAudioListenerCaveReadModel spatialAudio = ResolveSpatialAudio();
             if (spatialAudio != null &&
                 spatialAudio.IsListenerInsideCaveVolume)
             {
@@ -448,17 +450,17 @@ namespace Hecton8.AtlasSignal
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
-                    _audioLogs = currentService as IAudioLogRuntime;
+                    CacheAudioLogSystem(currentService as IAudioLogRuntime);
                     return;
                 case GlobalRegistryServiceSlot.Audio:
-                    _spatialAudio = currentService as ISpatialAudioListenerCaveReadModel;
+                    CacheSpatialAudio(currentService);
                     return;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     return;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registered = false;
-                    _registeredLateFrame = false;
+                    TryUnregisterTick();
+                    TryUnregisterLateFrame();
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegisterTick();
@@ -470,9 +472,73 @@ namespace Hecton8.AtlasSignal
 
         private void CacheRegistryServicesCold()
         {
-            _audioLogs = GlobalRegistry.AudioLogRuntime;
-            _spatialAudio = GlobalRegistry.Audio as ISpatialAudioListenerCaveReadModel;
+            CacheAudioLogSystem(GlobalRegistry.AudioLogRuntime);
+            CacheSpatialAudio(GlobalRegistry.Audio);
             _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _audioLogs = null;
+            _spatialAudio = null;
+            _playerRuntimeContext = null;
+        }
+
+        private void CacheAudioLogSystem(IAudioLogRuntime audioLogSystem)
+        {
+            _audioLogs = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null;
+        }
+
+        private void CacheSpatialAudio(object audioRuntime)
+        {
+            _spatialAudio = IsAudioRuntimeObjectUsable(audioRuntime)
+                ? audioRuntime as ISpatialAudioListenerCaveReadModel
+                : null;
+        }
+
+        private IAudioLogRuntime ResolveAudioLogSystem()
+        {
+            IAudioLogRuntime audioLogSystem = _audioLogs;
+            if (IsAudioLogRuntimeUsable(audioLogSystem))
+                return audioLogSystem;
+
+            _audioLogs = null;
+            return null;
+        }
+
+        private ISpatialAudioListenerCaveReadModel ResolveSpatialAudio()
+        {
+            ISpatialAudioListenerCaveReadModel spatialAudio = _spatialAudio;
+            if (IsAudioRuntimeObjectUsable(spatialAudio))
+                return spatialAudio;
+
+            _spatialAudio = null;
+            return null;
+        }
+
+        private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogSystem)
+        {
+            if (audioLogSystem == null)
+                return false;
+
+            if (audioLogSystem is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static bool IsAudioRuntimeObjectUsable(object runtime)
+        {
+            if (runtime == null)
+                return false;
+
+            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+                return false;
+
+            if (runtime is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void ResolvePlayer()

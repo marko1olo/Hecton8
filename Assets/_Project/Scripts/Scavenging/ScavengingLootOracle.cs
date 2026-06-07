@@ -958,36 +958,30 @@ namespace Hecton8.Scavenging
                 Dispose();
                 try
                 {
-                    Requests = new NativeArray<ScavengingHarvestRequestDTO>(
+                    Requests = AllocateNativeArray<ScavengingHarvestRequestDTO>(
                         ScavengingLootOracleConstants.DefaultRequestCapacity,
-                        Allocator.Persistent,
-                        NativeArrayOptions.UninitializedMemory);
-                    NativeMemorySentinel.RegisterNativeArray(Requests, nameof(ScavengingLootOracleRuntime), nameof(Requests), NativeAllocationLifetime.Scene);
-                    ResolvedYields = new NativeArray<ScavengingResolvedYieldDTO>(
+                        NativeArrayOptions.UninitializedMemory,
+                        nameof(Requests));
+                    ResolvedYields = AllocateNativeArray<ScavengingResolvedYieldDTO>(
                         ScavengingLootOracleConstants.DefaultRequestCapacity,
-                        Allocator.Persistent,
-                        NativeArrayOptions.UninitializedMemory);
-                    NativeMemorySentinel.RegisterNativeArray(ResolvedYields, nameof(ScavengingLootOracleRuntime), nameof(ResolvedYields), NativeAllocationLifetime.Scene);
-                    VisualSignals = new NativeArray<VisualScavengeSignal>(
+                        NativeArrayOptions.UninitializedMemory,
+                        nameof(ResolvedYields));
+                    VisualSignals = AllocateNativeArray<VisualScavengeSignal>(
                         ScavengingLootOracleConstants.DefaultRequestCapacity,
-                        Allocator.Persistent,
-                        NativeArrayOptions.UninitializedMemory);
-                    NativeMemorySentinel.RegisterNativeArray(VisualSignals, nameof(ScavengingLootOracleRuntime), nameof(VisualSignals), NativeAllocationLifetime.Scene);
-                    TelemetryRing = new NativeArray<ScavengingTelemetryEntry>(
+                        NativeArrayOptions.UninitializedMemory,
+                        nameof(VisualSignals));
+                    TelemetryRing = AllocateNativeArray<ScavengingTelemetryEntry>(
                         ScavengingLootOracleConstants.TelemetryRingCapacity,
-                        Allocator.Persistent,
-                        NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(TelemetryRing, nameof(ScavengingLootOracleRuntime), nameof(TelemetryRing), NativeAllocationLifetime.Scene);
-                    DistributionAudit = new NativeArray<uint>(
+                        NativeArrayOptions.ClearMemory,
+                        nameof(TelemetryRing));
+                    DistributionAudit = AllocateNativeArray<uint>(
                         ScavengingLootOracleConstants.DefaultAuditCapacity,
-                        Allocator.Persistent,
-                        NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(DistributionAudit, nameof(ScavengingLootOracleRuntime), nameof(DistributionAudit), NativeAllocationLifetime.Scene);
-                    LootEntryScratch = new NativeArray<LootTableEntryDTO>(
+                        NativeArrayOptions.ClearMemory,
+                        nameof(DistributionAudit));
+                    LootEntryScratch = AllocateNativeArray<LootTableEntryDTO>(
                         ScavengingLootOracleConstants.DefaultLootEntryCapacity,
-                        Allocator.Persistent,
-                        NativeArrayOptions.UninitializedMemory);
-                    NativeMemorySentinel.RegisterNativeArray(LootEntryScratch, nameof(ScavengingLootOracleRuntime), nameof(LootEntryScratch), NativeAllocationLifetime.Scene);
+                        NativeArrayOptions.UninitializedMemory,
+                        nameof(LootEntryScratch));
                 }
                 catch
                 {
@@ -1006,14 +1000,18 @@ namespace Hecton8.Scavenging
                 DisposeNativeArray(ref LootEntryScratch);
             }
 
+            private static NativeArray<T> AllocateNativeArray<T>(int length, NativeArrayOptions options, string label) where T : struct
+            {
+                NativeArray<T> array = H8Memory.Allocate<T>(length, OwnerSystem, Allocator.Persistent, options);
+                if (!array.IsCreated)
+                    throw new InvalidOperationException($"{nameof(ScavengingLootOracleRuntime)} native allocation failed for {label}.");
+
+                return array;
+            }
+
             private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
             {
-                if (!array.IsCreated)
-                    return;
-
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                array.Dispose();
-                array = default;
+                H8Memory.Release(ref array, OwnerSystem);
             }
         }
 

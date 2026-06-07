@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Vent Anchor Colonies"
+title: "מושבות עוגני פתחים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Vent Anchor Colonies
+# מושבות עוגני פתחים
 
-HE LOC HOLD: Vent Anchor Colonies explain why deep exploration is mechanically necessary. They turn thermal vents into resource engines, biological shelters and pressure hazards, giving the player a reason to move down instead of simply repairing upward.
+מושבות עוגני פתחים הן תשובת המשאבים לבעיה נרטיבית: למה Marauder תקוע ירד עמוק יותר במקום רק לתקן כלפי מעלה? מפני שהחלקים ששורדים את לחץ HECTON-8 נולדים במקום שבו האוקיינוס עוין ביותר. עוגני פתחים גדלים סביב מוצאים תרמיים כמו מהדקים חיים, לוכדים גופריתים, מינרלים שעברו מחזורי חום וקודמנים קרמיים במדפים מצולעים. הם מחברים אקולוגיה ליצירה בצורה מקורקעת. המושבה אינה נקודת אוצר. היא תהליך תעשייתי מסוכן עם דופק. פאונה קטנה מסתתרת בצלעות הקרות יותר. Brine vanes מתעקלות הרחק מהפלומה החמה. מחליקי צפיפות עשויים לחצות את המדרגה החמה אך לעולם לא את הגרון הלבן. מפגש טוב צריך לגרום לשחקן לראות נתיב תיקון ואזור מוות באותו אובייקט. העוגן אומר: כן, החומר שאתה צריך קיים; לא, לא תיקח אותו בבטחה. כאן גם היכולת של Deep Reach נעשית אמינה. התאגיד לא המציא כימיית לחץ שימושית משום מקום. הוא למד לקצור ולתקנן תהליכים שהאוקיינוס כבר הפעיל, ואז בנה liability paperwork סביב האנשים שנשלחו לחתוך דגימות ממים רותחים.
 
 ## Scanner
 
-HE LOC HOLD: Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.
+מושבת עוגני פתחים // מושבות מצולעות ננעלות סביב פתחים תרמיים, לוכדות גופריתים ומגדלות את הכימיה הדרושה לתיקונים בדירוג עומק.
 
 ## Terminal
 
-HE LOC HOLD: RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.
+קו בסיס משאבים: מושבות מעלות הסתברות ל-cold-sealant grit, pressure-ceramic precursor ו-sulfide salt. bloom תרמי נשאר קטלני; לקחת דגימות רק מצלעות מקוררות ומלוחות שנשרו.
 
 ## Audio
 
-HE LOC HOLD: Every good repair part is sitting in water that wants to cook you.
+כל חלק תיקון טוב יושב במים שרוצים לבשל אותך.
 
 ## Field Note
 
-HE LOC HOLD: Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.
+עוגן פתח הוא סימן משאב, אזהרת חום, שפת מחסה והוכחה של-forge chemistry יש ידיים חיות סביבה.
 
 <!-- External Site; generated from P228_VENT_ANCHOR_COLONIES/he_IL. -->

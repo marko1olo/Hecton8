@@ -68,11 +68,12 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !_active || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             TryUnregisterDispatcher();
-            TryRegisterDispatcher();
+            if (currentService != null && _active && isActiveAndEnabled)
+                TryRegisterDispatcher();
         }
 
         public void LateFrameTick()

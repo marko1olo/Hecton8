@@ -7,6 +7,9 @@ poi_tags: poi.sky_window;poi.route_archive
 biome_tags: biome.storm_shelf;biome.surface_weather
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Estrella anfitriona de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

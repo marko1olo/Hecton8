@@ -7,6 +7,9 @@ poi_tags: poi.ending_record_copy_card;poi.payload_receipt_panel
 biome_tags: biome.ui;biome.ending
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "UI-копия записи концовки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

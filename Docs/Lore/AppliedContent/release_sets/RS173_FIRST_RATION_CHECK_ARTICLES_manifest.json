@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS173_FIRST_RATION_CHECK_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1125_RATION_FOIL_PINHOLE",
+    "P1126_NUTRIENT_GEL_COLD_LAYER",
+    "P1127_ALGAE_PASTE_SEPARATION_LINE",
+    "P1128_CANTEEN_THREAD_GRIT_RING",
+    "P1129_HEAT_TAB_SPENT_EDGE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1125_RATION_FOIL_PINHOLE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1126_NUTRIENT_GEL_COLD_LAYER.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1127_ALGAE_PASTE_SEPARATION_LINE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1128_CANTEEN_THREAD_GRIT_RING.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1129_HEAT_TAB_SPENT_EDGE.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

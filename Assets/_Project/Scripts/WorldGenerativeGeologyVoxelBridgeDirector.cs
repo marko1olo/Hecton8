@@ -455,8 +455,7 @@ namespace Hecton8.World
             else if (currentService != null)
                 _runtimeDispatcherReady = true;
 
-            _registeredToFrameTickManager = false;
-            _registeredToSlowTickManager = false;
+            TryUnregisterRuntimeCallbacks();
             TryRegisterRuntimeCallbacks();
         }
 
@@ -503,6 +502,21 @@ namespace Hecton8.World
 
             if (!_registeredToSlowTickManager)
                 _registeredToSlowTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterRuntimeCallbacks()
+        {
+            if (_registeredToFrameTickManager)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredToFrameTickManager = false;
+            }
+
+            if (_registeredToSlowTickManager)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredToSlowTickManager = false;
+            }
         }
 
         public void Tick(float deltaTime)

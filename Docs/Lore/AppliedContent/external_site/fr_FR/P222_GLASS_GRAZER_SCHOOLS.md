@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Glass Grazer Schools"
+title: "Bancs de brouteurs de verre"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Glass Grazer Schools
+# Bancs de brouteurs de verre
 
-FR LOC HOLD: Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf.
+Les Bancs de brouteurs de verre sont la première leçon de HECTON-8 sur le comportement animal comme instrumentation. Les brouteurs ne sont ni des animaux de compagnie, ni des sacs à butin, ni une décoration inoffensive. Ce sont de petits mangeurs à coque transparente qui rendent le plateau peu profond lisible en raclant le film minéral en couloirs lumineux. Un banc vivant dit au Marauder où le pressure glass pousse, quel joint est trop chaud, où un courant vient de tourner, et où les prédateurs ne sont pas passés récemment. Le moment important est souvent l'absence : le film reste, les petites bouches à coque cessent de tictaquer, et une route propre paraît soudain fausse. Ce silence rejoint directement la grammaire du prédateur de hauts-fonds, où le danger arrive d'abord comme faune manquante, bruit de bloom brisé et ombre sur un récif pourtant magnifique. Un bon placement doit laisser le joueur apprendre avec son corps : nager vers la ligne pâle, entendre le tic-tac durcir contre la coque, remarquer la zone claire autour d'une plaque de mastic chaud, puis voir le banc se replier avant que le sonar sache pourquoi. Les brouteurs de verre font vivre HECTON-8 parce qu'ils sont utiles, fragiles et honnêtes. Ils n'expliquent pas l'océan. Ils exposent ce que l'océan vient de faire.
 
 ## Scanner
 
-FR LOC HOLD: Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.
+BANC DE BROUTEURS DE VERRE // Des brouteurs à coque transparente raclent le film minéral du pressure glass et des bords de tapis photiques. Leur tic-tac ouvre des cicatrices de route claires ; un silence brusque est une donnée de prédateur.
 
 ## Terminal
 
-FR LOC HOLD: FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.
+FAUNE DE BASE : grappe de brouteurs non hostiles. Suivre le film de pressure glass, le bloom minéral frais, la perturbation du courant et le déplacement par prédateur. Une absence après nourrissage actif est un avertissement de route, pas un point d'apparition vide.
 
 ## Audio
 
-FR LOC HOLD: Hear the ticking on the shell? That is lunch, map and warning in the same sound.
+Tu entends le tic-tac sur la coque ? C'est un repas, une carte et un avertissement dans le même son.
 
 ## Field Note
 
-FR LOC HOLD: Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.
+Ne poursuis pas le banc. Lis ce qu'il expose : film frais, vieille rayure, évitement du mastic chaud, et couloir vide que les animaux refusent de franchir.
 
 <!-- External Site; generated from P222_GLASS_GRAZER_SCHOOLS/fr_FR. -->

@@ -7,6 +7,9 @@ poi_tags: poi.worker_locker;poi.shift_board
 biome_tags: biome.drowned_infrastructure
 locale: uk_UA
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Мітка Barnard"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

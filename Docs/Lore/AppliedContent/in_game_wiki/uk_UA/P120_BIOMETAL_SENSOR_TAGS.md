@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "Біометалеві сенсорні мітки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# Біометалеві сенсорні мітки
 
-UA LOC HOLD: Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.
+Біометалеві сенсорні мітки є малими телеметричними лусками, знайденими у фауні, кабельному рості та ремонтній екології. Вони можуть уточнювати пінгери й маршрути сканера, але кожна корисна мітка також є доказом: Atlas використовувала живих носіїв, щоб розширювати пошкоджену мережу обслуговування.
 
 ## Scanner
 
-UA LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+БІОМЕТАЛЕВІ СЕНСОРНІ МІТКИ // Тонкі металеві луски, що вросли в риб, кабельну ламінарію й ремонтну тканину. Поліпшують налаштування пінгера; якщо зняти гарячими, Atlas може почути зниклого носія.
 
 ## Terminal
 
-UA LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+КЛАС РЕСУРСУ: змінено Atlas / чутливе як доказ. Використання: фокус пінгера, решітка сканера, впевненість маршруту, пакети доказів. Рекомендований холодний збір. Ризики: зростання уваги, хибні повернення носія, пошкоджена фауна.
 
 ## Audio
 
-UA LOC HOLD: The fish is not a drone. The tag does not know the difference.
+Риба не дрон. Мітка все одно продовжує звітувати.
 
 ## Field Note
 
-UA LOC HOLD: Make resource extraction feel like evidence handling.
+Якщо вона блимає під ножем, запиши дані перед зрізом.
 
 <!-- In-Game Wiki; generated from P120_BIOMETAL_SENSOR_TAGS/uk_UA. -->

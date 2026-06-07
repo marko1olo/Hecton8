@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "Nativer Sulfidsalz-Stapel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# Nativer Sulfidsalz-Stapel
 
-DE LOC HOLD: Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent.
+Der native Sulfidsalz-Stapel ist der Basisartikel zur ertrunkenen Geologie von HECTON-8. Er ist keine Atlas-Kontamination, kein Deep-Reach-Abfall und nicht der Beginn von Xenon-Omega. Er gehört zur älteren Schicht: Sulfidsalze, Metallionen und Solekrusten, gebaut von Druck, Hitze und Zeit. Im Feld wirken diese Lager bescheiden neben leuchtendem Schuldenmaterial, doch sie ermöglichen die ersten Reparaturen. Ein Stapel kann oxidierte Kontakte waschen, Notzellenchemie speisen, den Schmelzpunkt von Keramik senken oder einen sauberen Handschuh in weniger als einer Minute in ein Säureproblem verwandeln. Genau so sollte HECTON-8 nützlich wirken: praktisch, gefährlich und gleichgültig. Deep Reach hat den Metallhunger des Mondes nicht erfunden. Die Firma lernte nur, ihn in Rechnung zu stellen. Gute Ressourcenplatzierung zeigt das, bevor der größere Schrecken kommt. Die Wände sind bereits reaktiv. Die Sole erinnert sich bereits an Druck. Bergung beginnt damit, zu erkennen, welcher Teil der Welt beim Atmen hilft und welcher das frisst, was dich am Leben hält.
 
 ## Scanner
 
-DE LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+NATIVE SULFIDSALZE // Von Schloten aufgereihte Kristalle und schwarze Solekruste, älter als Deep Reach. Nass leitfähig, warm korrosiv, nützlich bevor irgendetwas blau wird.
 
 ## Terminal
 
-DE LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+RESSOURCENKLASSE: native Geologie. Nutzungen: Leiterwäsche, Notzellenchemie, Keramikfluss, Korrosionskatalysator. Von warmer Ansaugluft fernhalten; Staub blüht als Säurefilm auf Anzugmetall auf.
 
 ## Audio
 
-DE LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+Der Mond brauchte keine Firma, um gefährlich zu sein. Er kannte Chemie bereits.
 
 ## Field Note
 
-DE LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+Wenn die Handschuhe jucken, bist du schon spät dran. Spülen, erden, Wand protokollieren.
 
 <!-- External Site; generated from P116_NATIVE_SULFIDE_SALT_STACK/de_DE. -->

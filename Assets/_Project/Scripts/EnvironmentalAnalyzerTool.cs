@@ -55,7 +55,7 @@ namespace Hecton8.Gameplay
         [Header("Analysis")]
         [SerializeField] private float range = 14f;
         [SerializeField] private float analysisCooldown = 0.4f;
-        [SerializeField] private LayerMask analysisMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask analysisMask = Hecton8.Core.HectonLayerMasks.FieldToolScanLayerMask;
         [SerializeField] private float feedbackInterval = 0.45f;
 
         private HectonSurvivalSystem _survival;
@@ -486,7 +486,13 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            return RequestPrimarySurfaceHit(origin, direction, range, analysisMask.value, QueryTriggerInteraction.Collide, out hit);
+            return RequestPrimarySurfaceHit(
+                origin,
+                direction,
+                range,
+                HectonLayerMasks.ResolveFieldToolScanLayerMask(analysisMask.value),
+                QueryTriggerInteraction.Collide,
+                out hit);
         }
 
         private bool TryResolveAnalysisRay(out Vector3 origin, out Vector3 direction)

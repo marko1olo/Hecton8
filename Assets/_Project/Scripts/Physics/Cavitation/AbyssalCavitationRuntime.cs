@@ -1575,14 +1575,15 @@ namespace Hecton8.Physics
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
-                currentService == null ||
-                !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
             {
                 return;
             }
 
             UnregisterRuntimeLanes();
+            if (currentService == null || !isActiveAndEnabled)
+                return;
+
             RegisterRuntimeLanes();
         }
 

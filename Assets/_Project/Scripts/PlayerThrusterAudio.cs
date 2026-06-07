@@ -204,11 +204,11 @@ namespace Hecton8.Audio
             GlobalRegistryServiceSlot serviceSlot,
             ref object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Audio)
-                return;
-
-            CacheSpatialAudioManager(currentService as IAudioService);
-            TryAssignMixerRoute(force: true);
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+            {
+                CacheSpatialAudioManager(currentService as IAudioService);
+                TryAssignMixerRoute(force: true);
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -216,11 +216,21 @@ namespace Hecton8.Audio
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Audio)
-                return;
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    CacheSpatialAudioManager(currentService as IAudioService);
+                    TryAssignMixerRoute(force: true);
+                    break;
 
-            CacheSpatialAudioManager(currentService as IAudioService);
-            TryAssignMixerRoute(force: true);
+                case GlobalRegistryServiceSlot.Player:
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    break;
+
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    RebindDispatcherForLifecycle(currentService);
+                    break;
+            }
         }
 
         public void Tick(float deltaTime)
@@ -531,16 +541,38 @@ namespace Hecton8.Audio
 
             _transportCoordinatorLookupAttempted = true;
             IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
-            if (runtimeContext == null)
+            if (runtimeContext == null || !runtimeContext.IsInitialized)
                 return;
 
-            if (playerMovement == null)
-                playerMovement = runtimeContext.PlayerMovement;
+            CachePlayerRuntimeContext(runtimeContext);
+        }
 
-            if (playerToolManager == null)
-                playerToolManager = runtimeContext.ToolManager;
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext runtimeContext)
+        {
+            if (runtimeContext == null || !runtimeContext.IsInitialized)
+            {
+                _transportCoordinatorLookupAttempted = false;
+                return;
+            }
 
-            playerTransportCoordinator = runtimeContext.PlayerTransportCoordinator;
+            HectonPlayerMovement runtimeMovement = runtimeContext.PlayerMovement;
+            if (runtimeMovement != null)
+                playerMovement = runtimeMovement;
+
+            PlayerToolManager runtimeToolManager = runtimeContext.ToolManager;
+            if (runtimeToolManager != null)
+                playerToolManager = runtimeToolManager;
+
+            PlayerTransportCoordinator runtimeTransportCoordinator = runtimeContext.PlayerTransportCoordinator;
+            if (runtimeTransportCoordinator != null)
+            {
+                playerTransportCoordinator = runtimeTransportCoordinator;
+                _transportCoordinatorLookupAttempted = true;
+            }
+            else
+            {
+                _transportCoordinatorLookupAttempted = false;
+            }
         }
 
         private void RefreshRuntimeAudioServicesCold()
@@ -550,7 +582,9 @@ namespace Hecton8.Audio
 
         private void CacheSpatialAudioManager(IAudioService audioService)
         {
-            _cachedSpatialAudioSfxRoute = audioService as ISpatialAudioSfxMixerRouteReadModel;
+            _cachedSpatialAudioSfxRoute = IsAudioServiceUsable(audioService)
+                ? audioService as ISpatialAudioSfxMixerRouteReadModel
+                : null;
         }
 
         private void TryAssignMixerRoute(bool force = false)
@@ -558,9 +592,41 @@ namespace Hecton8.Audio
             if (_audioSource == null || (!force && _audioSource.outputAudioMixerGroup != null))
                 return;
 
-            ISpatialAudioSfxMixerRouteReadModel spatialAudioRoute = _cachedSpatialAudioSfxRoute;
+            ISpatialAudioSfxMixerRouteReadModel spatialAudioRoute = ResolveSpatialAudioSfxRoute();
             if (spatialAudioRoute != null)
                 _audioSource.outputAudioMixerGroup = spatialAudioRoute.SfxGroup;
+        }
+
+        private ISpatialAudioSfxMixerRouteReadModel ResolveSpatialAudioSfxRoute()
+        {
+            ISpatialAudioSfxMixerRouteReadModel route = _cachedSpatialAudioSfxRoute;
+            if (IsAudioRuntimeObjectUsable(route))
+                return route;
+
+            _cachedSpatialAudioSfxRoute = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            return IsAudioRuntimeObjectUsable(audioService);
+        }
+
+        private static bool IsAudioRuntimeObjectUsable(object runtime)
+        {
+            if (runtime == null)
+                return false;
+
+            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+                return false;
+
+            if (runtime is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -601,9 +667,25 @@ namespace Hecton8.Audio
             _registered = false;
         }
 
+        private void RebindDispatcherForLifecycle(object currentService)
+        {
+            bool hadPendingLateFrameOutput = _unityOutputDirty || _lateFrameRegistered;
+
+            TryUnregisterLateFrame();
+            TryUnregister();
+
+            if (currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryRegister();
+
+            if (hadPendingLateFrameOutput)
+                TryRegisterLateFrame();
+        }
+
         private void TryRegisterLateFrame()
         {
-            if (_lateFrameRegistered || !Application.isPlaying)
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);

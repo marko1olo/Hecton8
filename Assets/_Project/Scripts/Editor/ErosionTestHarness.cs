@@ -88,34 +88,17 @@ namespace Hecton8.Editor
 
             try
             {
-                before = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                heightA = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                heightB = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                sediment = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                wear = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                before = AllocateTrackedTempJobArray<float>(PixelCount, NativeArrayOptions.UninitializedMemory, BeforeLabel, out beforeRegistrationId);
+                heightA = AllocateTrackedTempJobArray<float>(PixelCount, NativeArrayOptions.UninitializedMemory, HeightALabel, out heightARegistrationId);
+                heightB = AllocateTrackedTempJobArray<float>(PixelCount, NativeArrayOptions.UninitializedMemory, HeightBLabel, out heightBRegistrationId);
+                sediment = AllocateTrackedTempJobArray<float>(PixelCount, NativeArrayOptions.ClearMemory, SedimentLabel, out sedimentRegistrationId);
+                wear = AllocateTrackedTempJobArray<float>(PixelCount, NativeArrayOptions.ClearMemory, WearLabel, out wearRegistrationId);
                 int dropletsPerSlice = ResolveDropletsPerSlice(
                     MaxErosionOperationsPerSlice,
                     ResolveCurrentErosionOperations(PixelCount, SedimentaryFlatIterations, ThermalSlumpIterations, RunCanyonWallPass));
-                heightDeltas = new NativeQueue<HydraulicErosionHeightDelta>(Allocator.TempJob); // COLD ALLOC: NativeQueue<HydraulicErosionHeightDelta>[tracked cap 8388608 entries, ~128 MiB payload upper-bound] - sliced editor erosion deltas; harness mirrors MapMagic queue budget for proof artifacts - owner: ErosionTestHarness
-                heightDeltaBudget = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                metrics = new NativeArray<ErosionSmokeMetrics>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                RegisterTempJobBuffers(
-                    before,
-                    heightA,
-                    heightB,
-                    sediment,
-                    wear,
-                    heightDeltas,
-                    heightDeltaBudget,
-                    metrics,
-                    ResolveHeightDeltaQueueCapacity(dropletsPerSlice, ErosionMaxLifetime),
-                    out beforeRegistrationId,
-                    out heightARegistrationId,
-                    out heightBRegistrationId,
-                    out sedimentRegistrationId,
-                    out wearRegistrationId,
-                    out heightDeltaBudgetRegistrationId,
-                    out metricsRegistrationId);
+                heightDeltas = AllocateTrackedHeightDeltaQueue(ResolveHeightDeltaQueueCapacity(dropletsPerSlice, ErosionMaxLifetime)); // COLD ALLOC: NativeQueue<HydraulicErosionHeightDelta>[tracked cap 8388608 entries, ~128 MiB payload upper-bound] - sliced editor erosion deltas; harness mirrors MapMagic queue budget for proof artifacts - owner: ErosionTestHarness
+                heightDeltaBudget = AllocateTrackedTempJobArray<int>(2, NativeArrayOptions.ClearMemory, HeightDeltaBudgetLabel, out heightDeltaBudgetRegistrationId);
+                metrics = AllocateTrackedTempJobArray<ErosionSmokeMetrics>(1, NativeArrayOptions.ClearMemory, MetricsLabel, out metricsRegistrationId);
 
                 handle = new ErosionFractalHeightmapJob
                 {
@@ -287,10 +270,8 @@ namespace Hecton8.Editor
 
             try
             {
-                raw = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                quantized = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                rawRegistrationId = NativeMemorySentinel.RegisterNativeArray(raw, NativeMemoryOwner, ShelfRawLabel, NativeAllocationLifetime.TempJob);
-                quantizedRegistrationId = NativeMemorySentinel.RegisterNativeArray(quantized, NativeMemoryOwner, ShelfQuantizedLabel, NativeAllocationLifetime.TempJob);
+                raw = AllocateTrackedTempJobArray<float>(PixelCount, NativeArrayOptions.UninitializedMemory, ShelfRawLabel, out rawRegistrationId);
+                quantized = AllocateTrackedTempJobArray<float>(PixelCount, NativeArrayOptions.UninitializedMemory, ShelfQuantizedLabel, out quantizedRegistrationId);
 
                 HectonSandboxAbyssalShelfParams parameters = CreateMacroShelfParameters();
                 AbsoluteUniversePosition previewOriginAup = HectonSandboxAbyssalShelfMath.BuildAupXZ(
@@ -422,32 +403,48 @@ namespace Hecton8.Editor
             return math.clamp(queueCapacity / 16, 1024, MaxHeightDeltaApplyPerJob);
         }
 
-        private static void RegisterTempJobBuffers(
-            NativeArray<float> before,
-            NativeArray<float> heightA,
-            NativeArray<float> heightB,
-            NativeArray<float> sediment,
-            NativeArray<float> wear,
-            NativeQueue<HydraulicErosionHeightDelta> heightDeltas,
-            NativeArray<int> heightDeltaBudget,
-            NativeArray<ErosionSmokeMetrics> metrics,
-            int heightDeltaQueueCapacity,
-            out int beforeRegistrationId,
-            out int heightARegistrationId,
-            out int heightBRegistrationId,
-            out int sedimentRegistrationId,
-            out int wearRegistrationId,
-            out int heightDeltaBudgetRegistrationId,
-            out int metricsRegistrationId)
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, NativeArrayOptions options, string label, out int registrationId) where T : struct
         {
-            beforeRegistrationId = NativeMemorySentinel.RegisterNativeArray(before, NativeMemoryOwner, BeforeLabel, NativeAllocationLifetime.TempJob);
-            heightARegistrationId = NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
-            heightBRegistrationId = NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
-            sedimentRegistrationId = NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
-            wearRegistrationId = NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeQueue(heightDeltas, heightDeltaQueueCapacity, NativeMemoryOwner, HeightDeltaQueueLabel, NativeAllocationLifetime.TempJob);
-            heightDeltaBudgetRegistrationId = NativeMemorySentinel.RegisterNativeArray(heightDeltaBudget, NativeMemoryOwner, HeightDeltaBudgetLabel, NativeAllocationLifetime.TempJob);
-            metricsRegistrationId = NativeMemorySentinel.RegisterNativeArray(metrics, NativeMemoryOwner, MetricsLabel, NativeAllocationLifetime.TempJob);
+            registrationId = 0;
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            if (!array.IsCreated)
+                throw new System.InvalidOperationException("[ErosionTestHarness] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (registrationId <= 0)
+                    throw new System.InvalidOperationException("[ErosionTestHarness] NativeMemorySentinel rejected NativeArray registration for " + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                registrationId = 0;
+                throw;
+            }
+
+            return array;
+        }
+
+        private static NativeQueue<HydraulicErosionHeightDelta> AllocateTrackedHeightDeltaQueue(int heightDeltaQueueCapacity)
+        {
+            NativeQueue<HydraulicErosionHeightDelta> queue = new NativeQueue<HydraulicErosionHeightDelta>(Allocator.TempJob);
+            if (!queue.IsCreated)
+                throw new System.InvalidOperationException("[ErosionTestHarness] NativeQueue allocation failed for " + HeightDeltaQueueLabel + ".");
+
+            try
+            {
+                int registrationId = NativeMemorySentinel.RegisterNativeQueue(queue, heightDeltaQueueCapacity, NativeMemoryOwner, HeightDeltaQueueLabel, NativeAllocationLifetime.TempJob);
+                if (registrationId <= 0)
+                    throw new System.InvalidOperationException("[ErosionTestHarness] NativeMemorySentinel rejected NativeQueue registration for " + HeightDeltaQueueLabel + ".");
+            }
+            catch
+            {
+                queue.Dispose();
+                throw;
+            }
+
+            return queue;
         }
 
         private static void DisposeTracked<T>(ref NativeArray<T> array, ref int registrationId) where T : struct
@@ -455,10 +452,17 @@ namespace Hecton8.Editor
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.Unregister(registrationId);
-            registrationId = 0;
-            array.Dispose();
-            array = default;
+            try
+            {
+                if (registrationId > 0)
+                    NativeMemorySentinel.Unregister(registrationId);
+            }
+            finally
+            {
+                registrationId = 0;
+                array.Dispose();
+                array = default;
+            }
         }
 
         private static void DisposeTrackedQueue(ref NativeQueue<HydraulicErosionHeightDelta> queue)
@@ -466,9 +470,15 @@ namespace Hecton8.Editor
             if (!queue.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, HeightDeltaQueueLabel);
-            queue.Dispose();
-            queue = default;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, HeightDeltaQueueLabel);
+            }
+            finally
+            {
+                queue.Dispose();
+                queue = default;
+            }
         }
 
         private static void WriteHeightPng(NativeArray<float> heights, string path)
@@ -480,8 +490,7 @@ namespace Hecton8.Editor
 
             try
             {
-                pixels = new NativeArray<Color32>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                pixelsRegistrationId = NativeMemorySentinel.RegisterNativeArray(pixels, NativeMemoryOwner, HeightPixelsLabel, NativeAllocationLifetime.TempJob);
+                pixels = AllocateTrackedTempJobArray<Color32>(PixelCount, NativeArrayOptions.UninitializedMemory, HeightPixelsLabel, out pixelsRegistrationId);
 
                 handle = new ErosionGrayscalePngBakeJob
                 {
@@ -514,8 +523,7 @@ namespace Hecton8.Editor
 
             try
             {
-                pixels = new NativeArray<Color32>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                pixelsRegistrationId = NativeMemorySentinel.RegisterNativeArray(pixels, NativeMemoryOwner, NormalPixelsLabel, NativeAllocationLifetime.TempJob);
+                pixels = AllocateTrackedTempJobArray<Color32>(PixelCount, NativeArrayOptions.UninitializedMemory, NormalPixelsLabel, out pixelsRegistrationId);
 
                 handle = new ErosionNormalMapBakeJob
                 {
@@ -556,10 +564,8 @@ namespace Hecton8.Editor
 
             try
             {
-                pixels = new NativeArray<Color32>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                maxValue = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                pixelsRegistrationId = NativeMemorySentinel.RegisterNativeArray(pixels, NativeMemoryOwner, MaskPixelsLabel, NativeAllocationLifetime.TempJob);
-                maxValueRegistrationId = NativeMemorySentinel.RegisterNativeArray(maxValue, NativeMemoryOwner, MaskMaxLabel, NativeAllocationLifetime.TempJob);
+                pixels = AllocateTrackedTempJobArray<Color32>(PixelCount, NativeArrayOptions.UninitializedMemory, MaskPixelsLabel, out pixelsRegistrationId);
+                maxValue = AllocateTrackedTempJobArray<float>(1, NativeArrayOptions.ClearMemory, MaskMaxLabel, out maxValueRegistrationId);
 
                 maxHandle = new ErosionMaskMaxJob
                 {

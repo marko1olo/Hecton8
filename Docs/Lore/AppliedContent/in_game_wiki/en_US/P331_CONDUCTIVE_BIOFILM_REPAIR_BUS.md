@@ -7,6 +7,9 @@ poi_tags: poi.conductive_biofilm_bus;poi.wet_cable_skin
 biome_tags: biome.atlas;biome.ecology
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Conductive Biofilm Repair Bus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

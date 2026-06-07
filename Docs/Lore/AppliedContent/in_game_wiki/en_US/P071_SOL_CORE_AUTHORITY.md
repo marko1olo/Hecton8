@@ -7,6 +7,9 @@ poi_tags: poi.old_law_plate;poi.sol_cert_seal
 biome_tags: biome.drowned_admin;biome.contract_archive
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Sol Core Authority"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

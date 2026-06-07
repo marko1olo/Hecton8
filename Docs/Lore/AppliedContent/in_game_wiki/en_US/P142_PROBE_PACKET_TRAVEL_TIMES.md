@@ -7,6 +7,9 @@ poi_tags: poi.probe_packet_spool;poi.beam_sail_archive
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Probe Packet Travel Times"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Photic Mat Baseline"
+title: "Photische Mattenbasis"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Photic Mat Baseline
+# Photische Mattenbasis
 
-DE LOC HOLD: Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.
+Photische Matten sind das erste Flachwasserleben, das dem Spieler beim Atmen helfen und unvorsichtige Ernte trotzdem bestrafen kann. Der Film wächst dort, wo Licht, Mineralabfluss und langsames Wasser zusammentreffen, und überzieht Fels mit sauerstoffreicher Farbe. Ein gesunder Kern ist weich und hell; ein salzharter Rand bedeutet, dass Druckchemie oder alte Infrastruktur die Tasche stresst. Die Matte verändert auch Klang: gutes Wachstum dämpft kleine Einschläge, während kontaminierte Nähte unter dem Schaber klicken und zischen. Schneide nur lose Fransen, wenn du Faser oder Sauerstoffchemie brauchst. Den hellen Kern neben Luke, Rohr oder versiegeltem Paneel zu reißen, kann lokalen Sauerstoff senken und freilegen, was die Matte niederhielt.
 
 ## Scanner
 
-DE LOC HOLD: Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.
+PHOTISCHE MATTE // Mineralgenährter lebender Film auf Flachwasserfels. Helle Bänder oxygenieren Wasser; salzharte Ränder markieren gestresste Druckchemie und verborgene Nahtlecks.
 
 ## Terminal
 
-DE LOC HOLD: ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.
+ÖKOLOGIEBASIS: kartiert Sauerstoffhaut, Mineralabfluss, akustische Dämpfung und Salzrandstress. Nur lose Fransen ernten. Reißen nahe Nähten oder versiegelter Ausrüstung kann eine Tasche in Kontamination kollabieren lassen.
 
 ## Audio
 
-DE LOC HOLD: It looks clean because it is working hard. That is not the same as safe.
+Es sieht sauber aus, weil es arbeitet. Das ist nicht dasselbe wie sicher.
 
 ## Field Note
 
-DE LOC HOLD: Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.
+Schabe nicht zuerst die hellste Stelle. Lies Rand, Blasen und Klang; die Matte ist Messgerät, bevor sie Ressource ist.
 
 <!-- In-Game Wiki; generated from P221_PHOTIC_MAT_BASELINE/de_DE. -->

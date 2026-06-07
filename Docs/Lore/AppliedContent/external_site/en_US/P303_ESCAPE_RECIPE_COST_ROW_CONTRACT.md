@@ -7,6 +7,9 @@ poi_tags: poi.escape_recipe_schema_card;poi.ascent_component_bin
 biome_tags: biome.escape_chain;biome.authoring
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Escape Recipe Cost Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "Біометалеві сенсорні мітки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# Біометалеві сенсорні мітки
 
-UA LOC HOLD: Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems.
+Біометалеві сенсорні мітки не є звичайними колекційними предметами. Вони з'являються тоді, коли ремонтній системі вже байдуже, чи носій є машиною, кабельним ростом або твариною. Мітка є тонкою біометалевою лускою, яка вростає в тканину, п'є трохи струму, записує рух і повторює впевненість місця через воду. Marauder може використати її для налаштування пінгера, збільшення дальності сканера або доказу, що маршрут був живим, коли Atlas його торкнулася. Саме ця користь є проблемою. Зніми мітку холодною, і вона стане доказом. Зніми гарячою, і мережа може помітити зниклого носія, відповісти хибними поверненнями або спрямувати ремонтну логіку до пораненої тварини, зрізаної ламінарії чи водолаза, який тримає мітку. Матеріал змушує ставитися до здобичі як до справи: корисно, брудно і все ще звітує.
 
 ## Scanner
 
-UA LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+БІОМЕТАЛЕВІ СЕНСОРНІ МІТКИ // Тонкі металеві луски, що вросли в риб, кабельну ламінарію й ремонтну тканину. Поліпшують налаштування пінгера; якщо зняти гарячими, Atlas може почути зниклого носія.
 
 ## Terminal
 
-UA LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+КЛАС РЕСУРСУ: змінено Atlas / чутливе як доказ. Використання: фокус пінгера, решітка сканера, впевненість маршруту, пакети доказів. Рекомендований холодний збір. Ризики: зростання уваги, хибні повернення носія, пошкоджена фауна.
 
 ## Audio
 
-UA LOC HOLD: The fish is not a drone. The tag does not know the difference.
+Риба не дрон. Мітка все одно продовжує звітувати.
 
 ## Field Note
 
-UA LOC HOLD: Make resource extraction feel like evidence handling.
+Якщо вона блимає під ножем, запиши дані перед зрізом.
 
 <!-- External Site; generated from P120_BIOMETAL_SENSOR_TAGS/uk_UA. -->

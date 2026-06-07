@@ -187,12 +187,8 @@ namespace Hecton.Localization
 
         private void Awake()
         {
-            LocalizationManager registered = GlobalRegistry.Localization;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterLocalizationRuntime(this);
             _registeredLocalizationRuntime = ReferenceEquals(GlobalRegistry.Localization, this);
@@ -217,6 +213,32 @@ namespace Hecton.Localization
             RestoreSavedLanguage();
             RefreshRuntimeRegistry();
             TryRegisterBabelDispatcher();
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            LocalizationManager registered = GlobalRegistry.Localization;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsLocalizationRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterLocalizationRuntime(registered);
+            GlobalRegistry.UnregisterBabelLocalizationRuntime(registered);
+            if (ReferenceEquals(ActiveRuntimeInstance, registered))
+                ActiveRuntimeInstance = null;
+            return false;
+        }
+
+        private static bool IsLocalizationRuntimeUsable(LocalizationManager localization)
+        {
+            return localization != null &&
+                   localization._registeredLocalizationRuntime &&
+                   localization.isActiveAndEnabled;
         }
 
         private void OnDestroy()
@@ -803,7 +825,7 @@ namespace Hecton.Localization
                     _cachedNativeInputRuntime = currentService as INativeInputManagerRuntime;
                     break;
                 case GlobalRegistryServiceSlot.UserOptionsRuntime:
-                    _cachedUserOptions = currentService as UserOptionsPersistence;
+                    CacheUserOptions(currentService as UserOptionsPersistence);
                     break;
             }
         }
@@ -2157,7 +2179,7 @@ namespace Hecton.Localization
             _cachedVegetationBridge = GlobalRegistry.MapMagicVegetation;
             _cachedAcousticMadnessCueSink = GlobalRegistry.AcousticZoneMadnessCueSink;
             _cachedNativeInputRuntime = GlobalRegistry.NativeInputRuntime;
-            _cachedUserOptions = GlobalRegistry.UserOptions;
+            CacheUserOptions(GlobalRegistry.UserOptions);
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
@@ -2871,7 +2893,7 @@ namespace Hecton.Localization
 
         private void RestoreSavedLanguage()
         {
-            UserOptionsPersistence options = _cachedUserOptions;
+            UserOptionsPersistence options = ResolveUserOptionsPersistence();
             if (options != null && options.HasKey(PrefsLanguageKey))
             {
                 int saved = options.GetInt(PrefsLanguageKey, (int)defaultLanguage);
@@ -2965,12 +2987,34 @@ namespace Hecton.Localization
 
         private void SavePersistentLanguagePreference(GameLanguage language)
         {
-            UserOptionsPersistence options = _cachedUserOptions;
+            UserOptionsPersistence options = ResolveUserOptionsPersistence();
             if (options == null)
                 return;
 
             options.SetInt(PrefsLanguageKey, (int)language);
             options.Save();
+        }
+
+        private UserOptionsPersistence ResolveUserOptionsPersistence()
+        {
+            UserOptionsPersistence options = _cachedUserOptions;
+            if (IsUserOptionsRuntimeUsable(options))
+                return options;
+
+            CacheUserOptions(GlobalRegistry.UserOptions);
+            return _cachedUserOptions;
+        }
+
+        private void CacheUserOptions(UserOptionsPersistence options)
+        {
+            _cachedUserOptions = IsUserOptionsRuntimeUsable(options) ? options : null;
+        }
+
+        private static bool IsUserOptionsRuntimeUsable(UserOptionsPersistence options)
+        {
+            return options != null &&
+                   options.IsServiceReady &&
+                   options.isActiveAndEnabled;
         }
 
         private string ApplyInterfaceIntrusionIfNeeded(string text)

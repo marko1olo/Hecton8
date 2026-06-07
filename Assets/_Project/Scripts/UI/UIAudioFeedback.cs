@@ -111,12 +111,8 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            UIAudioFeedback registered = GlobalRegistry.UIAudioFeedback;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
             _primaryButtonClickAction = OnPrimaryButtonClicked; // COLD ALLOC: UnityAction[1] — cached primary button audio listener — owner: UIAudioFeedback
             _secondaryButtonClickAction = OnSecondaryButtonClicked; // COLD ALLOC: UnityAction[1] — cached secondary button audio listener — owner: UIAudioFeedback
             _destructiveButtonClickAction = OnDestructiveButtonClicked; // COLD ALLOC: UnityAction[1] — cached destructive button audio listener — owner: UIAudioFeedback
@@ -241,7 +237,7 @@ namespace Hecton8.UI
             if (serviceSlot != GlobalRegistryServiceSlot.Audio)
                 return;
 
-            _audioManager = currentService as IAudioService;
+            CacheAudioService(currentService as IAudioService);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -250,7 +246,7 @@ namespace Hecton8.UI
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
-                _audioManager = currentService as IAudioService;
+                CacheAudioService(currentService as IAudioService);
         }
 
         private bool TryRegisterRuntime()
@@ -261,18 +257,37 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return false;
 
-            UIAudioFeedback registered = GlobalRegistry.UIAudioFeedback;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             GlobalRegistry.RegisterUIAudioFeedbackRuntime(this);
             _runtimeRegistered = ReferenceEquals(GlobalRegistry.UIAudioFeedback, this);
             if (_runtimeRegistered)
                 s_activeRuntime = this;
             return _runtimeRegistered;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            UIAudioFeedback registered = GlobalRegistry.UIAudioFeedback;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsUIAudioFeedbackRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterUIAudioFeedbackRuntime(registered);
+            if (ReferenceEquals(s_activeRuntime, registered))
+                s_activeRuntime = null;
+            return false;
+        }
+
+        private static bool IsUIAudioFeedbackRuntimeUsable(UIAudioFeedback feedback)
+        {
+            return feedback != null && feedback._runtimeRegistered && feedback.isActiveAndEnabled;
         }
 
         private void TryUnregisterRuntime()
@@ -305,7 +320,7 @@ namespace Hecton8.UI
 
         private void BindAudioAndRegisterControls()
         {
-            _audioManager = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
 
             if (_controlsRegistered)
                 return;
@@ -599,10 +614,11 @@ namespace Hecton8.UI
 
         private void PlaySound(AudioClip clip, float vol)
         {
-            if (_audioManager == null)
+            IAudioService audioManager = ResolveAudioService();
+            if (audioManager == null)
                 return;
 
-            _audioManager.PlayStatic2D(clip, vol, _audioManager.InterfaceGroup);
+            audioManager.PlayStatic2D(clip, vol, audioManager.InterfaceGroup);
             _totalSoundsPlayed++;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -616,6 +632,32 @@ namespace Hecton8.UI
                 }
             }
 #endif
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioManager = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioManager;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioManager = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         // ----------------------------------------------------------

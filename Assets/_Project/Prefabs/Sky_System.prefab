@@ -138,7 +138,7 @@ MonoBehaviour:
   runtimeCamera: {fileID: 0}
   followInEditMode: 1
   followInPlayMode: 1
-  followVerticalPosition: 0
-  lockToSeaLevel: 1
-  fallbackSeaLevelY: 0
+  followVerticalPosition: 1
+  lockToSeaLevel: 0
+  fallbackSeaLevelY: 14.02
   positionOffset: {x: 0, y: 0, z: 0}

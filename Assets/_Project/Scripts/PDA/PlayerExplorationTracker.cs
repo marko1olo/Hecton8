@@ -3388,6 +3388,17 @@ namespace Hecton8.PDA
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    UnregisterCartographyDispatcher();
+                    UnregisterFromTickManager();
+                    UnregisterFromSlowTickManager();
+                    if (currentService != null && isActiveAndEnabled)
+                    {
+                        TryRegisterWithTickManager();
+                        TryRegisterWithSlowTickManager();
+                        TryRegisterCartographyDispatcher();
+                    }
+                    break;
                 case GlobalRegistryServiceSlot.Save:
                     UnregisterFromSaveManager();
                     _saveService = currentService as ISaveService;

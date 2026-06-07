@@ -9,32 +9,34 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Wide Filter Body Trace"
+title: "Слід широкого фільтрувального тіла"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Wide Filter Body Trace
+# Слід широкого фільтрувального тіла
 
-UA LOC HOLD: Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.
+Широкі фільтрувальні тіла першими доводять, що відкрита безодня між орієнтирами не порожня. Вони рухаються глибокою водою як повільні збирачі планктонних хмар, ширші за малі прибудови колонії. Істота не полює на Marauder; вона змінює карту навколо Marauder. Після її проходу зависле життя рідшає, сонарні повернення розмазуються вздовж краю тіла, а поховані промислові контури можуть на кілька хвилин проступити з мулу.
+
+Тому організм є і небезпекою, і інструментом. Його тінь може сховати сервісну раму або зробити маршрут відкритим там, де вода насправді заповнена рухомою тканиною. Правильна дія - читати слід: чиста вода за пащею, брудний спад на краю, акустична тиша в затінку тіла. Не пливи під тінь лише щоб побачити істоту. Іди залишеним просвітом тільки якщо маєш заряд, лінію й шлях назад.
 
 ## Scanner
 
-UA LOC HOLD: A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.
+ШИРОКЕ ФІЛЬТРУВАЛЬНЕ ТІЛО // Велика фільтрувальна істота перетинає жолоб; за нею рідшає планктон, на краю розмазується сонар, а руїни можуть з'являтися або зникати під її тінню.
 
 ## Terminal
 
-UA LOC HOLD: CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.
+БАЗА КОНТАКТУ: прохід широкого фільтрувального тіла дає низьку щільність планктону, розмазаний край луни, тихий за тиском слід і тимчасові коридори видимості. Не йти під черевну тінь. Використовувати акустичний просвіт лише після осідання хвостового мулу.
 
 ## Audio
 
-UA LOC HOLD: That is not a roar. That is the sound of the map being wiped clean.
+Це не рев. Це звук карти, яку витирають начисто.
 
 ## Field Note
 
-UA LOC HOLD: Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.
+Не називай це босом. Називай це погодою зі шлунком: повільною, величезною, корисною й байдужою.
 
 <!-- In-Game Wiki; generated from P229_WIDE_FILTER_BODY_TRACE/uk_UA. -->

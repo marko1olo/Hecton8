@@ -465,13 +465,16 @@ namespace Hecton8.World
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             TryUnregisterFromTickManager();
             TryUnregisterFromLateFrameTickManager();
-            TryRegisterToTickManager();
-            TryRegisterToLateFrameTickManager();
+            if (currentService != null && isActiveAndEnabled)
+            {
+                TryRegisterToTickManager();
+                TryRegisterToLateFrameTickManager();
+            }
         }
 
         private void TryRegisterHotSwapListener()

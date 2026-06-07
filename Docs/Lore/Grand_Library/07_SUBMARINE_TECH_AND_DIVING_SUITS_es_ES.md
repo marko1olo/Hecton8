@@ -33,4 +33,4 @@ Los contratistas están equipados con arpones neumáticos y lanzas térmicas. La
 
 Los Merodeadores usan trajes de buceo industrial pesado de Clase-IV reutilizados. No están construidos para el combate; están construidos para soportar la aplastante oscuridad. Los trajes consisten en un exoesqueleto articulado de carburo de titanio cubierto con vejigas de neopreno sintético.
 
-La principal causa de muerte de los contratistas no son los depredadores. Es la perforación del traje. A la profundidad de operación, el agua que rompe el sello dañado de un traje no simplemente se filtra. Entra como un chorro de agua hipersónico que corta huesos y tejidos como un cortador láser. Los actuarios de Keelmark han notado que la muerte por inyección a alta presión es casi instantánea.
+La principal causa de muerte de los contratistas no son los depredadores. Es la perforación del traje. A la profundidad de operación, el agua que rompe el sello dañado de un traje no es una simple filtración. Entra como un chorro de agua hipersónico que corta huesos y tejidos como un cortador láser. Los actuarios de Keelmark han notado que la muerte por inyección a alta presión es casi instantánea.

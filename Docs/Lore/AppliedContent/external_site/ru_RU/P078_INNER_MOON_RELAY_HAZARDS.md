@@ -7,6 +7,9 @@ poi_tags: poi.radiation_shutter;poi.inner_relay_dead_zone
 biome_tags: biome.orbital_window;biome.drowned_comms
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Relay-опасности внутренних лун"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

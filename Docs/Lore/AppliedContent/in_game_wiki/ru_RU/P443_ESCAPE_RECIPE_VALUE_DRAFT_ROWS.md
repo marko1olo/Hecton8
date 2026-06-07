@@ -7,6 +7,9 @@ poi_tags: poi.escape_recipe_table_draft;poi.ascent_part_cost_card
 biome_tags: biome.escape_chain;biome.atlas_basin
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Черновые строки стоимости escape recipes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

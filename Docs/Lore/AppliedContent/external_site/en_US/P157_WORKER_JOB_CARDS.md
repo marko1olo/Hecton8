@@ -7,6 +7,9 @@ poi_tags: poi.worker_job_card_stack;poi.flooded_id_clip
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Worker Job Cards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

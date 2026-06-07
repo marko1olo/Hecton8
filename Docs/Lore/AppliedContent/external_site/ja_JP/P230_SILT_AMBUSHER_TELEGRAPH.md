@@ -9,32 +9,34 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Silt Ambusher Telegraph"
+title: "シルト伏撃者の予兆"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JP LOC HOLD: Silt Ambusher Telegraph
+# シルト伏撃者の予兆
 
-JP LOC HOLD: Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact.
+シルト伏撃者の予兆は、HECTON-8 における生物記事であると同時に公平性の規則でもある。最深部は敵対的で暗く読みにくくてよいが、見えない乱数でプレイヤーを罰してはならない。シルト伏撃者が恐ろしいのは、ほとんど地形だからだ。堆積物の下に埋まった生きた罠であり、振動、熱、不注意な重量を待っている。深淵に属するのは、深淵そのものがセンサーへの信頼をめぐる場所だからである。
+
+良い配置は、危険の前に証拠を与える。板が滑らかすぎる。小さな這う生物がいない。縁が自然沈降ではできない三日月を描く。パルスは遅く、低く、柔らかく返る。流れがないはずの場所で、ランプがシルトの一呼吸を捕らえる。プレイヤーがこれらの兆候を知ると、平らな一面すべてが問いになる。ランダムな罰ではない。それが HECTON-8 の契約だ。海は残酷でよいが、注意を払う者には読めなければならない。
 
 ## Scanner
 
-JP LOC HOLD: A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.
+シルト伏撃床 // 清潔すぎるシルト、消えた採食生物、低いパルス反応が、板が開く前に生きた罠を示す。
 
 ## Terminal
 
-JP LOC HOLD: CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.
+接触規則: 伏撃床には接触前の兆候が最低二つ必要。清潔な板、消えた微小生物、三日月形の縁、低いパルス反応、遅れて呼吸するシルト。兆候予算を満たさない場合、痕跡のみの遭遇へ下げること。
 
 ## Audio
 
-JP LOC HOLD: Flat ground is a lie down here.
+ここで平らな地面は嘘をつく。その上を這っていないものを見ろ。
 
 ## Field Note
 
-JP LOC HOLD: Deep danger must telegraph. The player should learn the wrongness before paying for it.
+深淵はキャラクターに不公平でもよい。ゲームはプレイヤーに不公平であってはならない。すべての伏撃は読める違和感を残せ。
 
 <!-- External Site; generated from P230_SILT_AMBUSHER_TELEGRAPH/ja_JP. -->

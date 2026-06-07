@@ -7,6 +7,9 @@ poi_tags: poi.quarantine_relay_fragment;poi.stale_air_counter
 biome_tags: biome.quarantine;biome.relay
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Quarantine Relay Fragment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -87,7 +87,7 @@ namespace Hecton8.Visor
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            _registeredToLateFrame = false;
+            TryUnregisterTick();
             if (currentService != null && isActiveAndEnabled)
                 TryRegisterTick();
         }
@@ -264,7 +264,7 @@ namespace Hecton8.Visor
 
         private void TryRegisterTick()
         {
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registeredToLateFrame)

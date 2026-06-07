@@ -12,6 +12,9 @@ namespace Hecton8.SaveSystem
         public const int InvalidBiomeId = -1;
         public const int WordBitCount = 64;
         public const int WordCount = ((MaxBiomeId - MinBiomeId + 1) + WordBitCount - 1) / WordBitCount;
+        private const int BiomeCount = MaxBiomeId - MinBiomeId + 1;
+        private const int LastWordValidBitCount = BiomeCount - ((WordCount - 1) * WordBitCount);
+        private const ulong LastWordValidBitMask = (1UL << LastWordValidBitCount) - 1UL;
 
         public static bool IsValidBiomeId(int biomeId)
         {
@@ -40,7 +43,7 @@ namespace Hecton8.SaveSystem
             int wordCount = words.Length < WordCount ? words.Length : WordCount;
             for (int i = 0; i < wordCount; i++)
             {
-                if (words[i] != 0L)
+                if (SanitizeWord(i, words[i]) != 0L)
                     return true;
             }
 
@@ -115,6 +118,37 @@ namespace Hecton8.SaveSystem
             }
 
             return InvalidBiomeId;
+        }
+
+        public static long SanitizeWord(int wordIndex, long value)
+        {
+            if (wordIndex < 0 || wordIndex >= WordCount)
+                return 0L;
+
+            if (wordIndex != WordCount - 1)
+                return value;
+
+            return (long)(((ulong)value) & LastWordValidBitMask);
+        }
+
+        public static bool SanitizeWords(long[] words)
+        {
+            if (words == null)
+                return false;
+
+            int wordCount = words.Length < WordCount ? words.Length : WordCount;
+            bool changed = false;
+            for (int i = 0; i < wordCount; i++)
+            {
+                long sanitizedWord = SanitizeWord(i, words[i]);
+                if (sanitizedWord == words[i])
+                    continue;
+
+                words[i] = sanitizedWord;
+                changed = true;
+            }
+
+            return changed;
         }
 
         private static void Clear(long[] words)

@@ -7,6 +7,9 @@ poi_tags: poi.ephemeris_tuning_sheet;poi.route_band_calculator
 biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "RAN Aegir Ephemeris Bands"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

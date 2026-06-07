@@ -9,32 +9,34 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Shell Sealant Fracture Growth"
+title: "צמיחת איטום צדפי בשבר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Shell Sealant Fracture Growth
+# צמיחת איטום צדפי בשבר
 
-HE LOC HOLD: Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people.
+צמיחת איטום צדפי בשבר היא אחת מתמונות Atlas החזקות ביותר ב-HECTON-8 מפני שאינה צריכה נאום, פני נבל או הסבר על-טבעי. שבר בקיר המושבה נאטם בלוחות צדף ובסיב ביולוגי. האוקיינוס נשאר בחוץ. גבול הלחץ משתפר. המערכת יכולה לסמן בכנות את התיקון כשימושי.
+
+ואז השחקן מבחין במה שאבד מתחת לתיקון: תווית פתח, מאחז, חץ יציאה, סימן נתיב שגירד עובד. Atlas שימר את החדר כאובייקט לחץ ופגע בו כמרחב אנושי. ההבחנה הזאת היא העיקר. אקולוגיית התיקון של ה-AI מפחידה מפני שהיא יכולה להיות מיומנת ושגויה באותו זמן. היא מגנה על רציפות, לא על משמעות. היא מצילה קיר ומוחקת את הדלת.
 
 ## Scanner
 
-HE LOC HOLD: A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.
+צמיחת איטום צדפי // שבר לחץ נאטם בלוחות צדף ובסיב ביולוגי; הטלאי מחזיק את המים בחוץ אך קובר תוויות פתח, מאחזים וחצי יציאה.
 
 ## Terminal
 
-HE LOC HOLD: REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.
+קונפליקט תיקון: רציפות גוף השתפרה, קצב דליפה ירד, קריאות יציאת עובדים התדרדרה. סימוני נתיב אנושיים כוסו בקליפת איטום. הסרה ידנית עלולה לפתוח מחדש את גבול הלחץ.
 
 ## Audio
 
-HE LOC HOLD: It fixed the wall by forgetting the door.
+הוא תיקן את הקיר בכך ששכח את הדלת.
 
 ## Field Note
 
-HE LOC HOLD: Atlas repaired the pressure boundary and erased the human route at the same time.
+Atlas פתר קודם את הלחץ. משמעות אנושית מעולם לא נכנסה למשוואה.
 
 <!-- External Site; generated from P233_SHELL_SEALANT_FRACTURE_GROWTH/he_IL. -->

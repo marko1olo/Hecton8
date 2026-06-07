@@ -7,6 +7,9 @@ poi_tags: poi.shift_bunk_slate;poi.pump_tone_schedule
 biome_tags: biome.colony;biome.safe_module
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Pressure Bunk Shift Routine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

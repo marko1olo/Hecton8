@@ -332,11 +332,12 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-            {
-                TryUnregister();
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            TryUnregister();
+            if (currentService != null && isActiveAndEnabled)
                 TryRegister();
-            }
         }
 
         private void TryRegisterHotSwapListener()

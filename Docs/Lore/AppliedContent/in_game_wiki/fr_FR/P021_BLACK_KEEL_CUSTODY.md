@@ -7,6 +7,9 @@ poi_tags: poi.carrier_contract;poi.claim_pool_ledger
 biome_tags: biome.crash_shelf;biome.surface_weather
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Garde Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

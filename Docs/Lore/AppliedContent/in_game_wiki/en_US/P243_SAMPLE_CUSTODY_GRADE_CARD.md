@@ -7,6 +7,9 @@ poi_tags: poi.sample_custody_tag;poi.blue_debt_case
 biome_tags: biome.resource_custody;biome.claim_admin
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Sample Custody Grade Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

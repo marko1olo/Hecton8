@@ -129,8 +129,8 @@ namespace Hecton8.Dev
             if (biolumController == null)
                 biolumController = GlobalRegistry.BiolumController;
 
-            if (_spatialAudioModulation == null)
-                _spatialAudioModulation = GlobalRegistry.Audio as ISpatialAudioEnvironmentModulationSink;
+            if (!IsAudioRuntimeObjectUsable(_spatialAudioModulation))
+                CacheSpatialAudioModulation(GlobalRegistry.Audio);
 
             if (randomEventSystem == null)
                 randomEventSystem = GlobalRegistry.RandomEvents;
@@ -148,7 +148,7 @@ namespace Hecton8.Dev
                 return Fail("Missing EcosystemDirector.");
             if (biolumController == null)
                 return Fail("Missing HectonBiolumController.");
-            if (_spatialAudioModulation == null)
+            if (ResolveSpatialAudioModulation() == null)
                 return Fail("Missing spatial audio modulation sink.");
             if (randomEventSystem == null)
                 return Fail("Missing RandomEventSystem.");
@@ -209,16 +209,51 @@ namespace Hecton8.Dev
 
         private bool ValidateAudioPitchScalar()
         {
-            float previousCents = _spatialAudioModulation.EclipseAcousticPitchShiftCents;
-            _spatialAudioModulation.SetEclipseAcousticPitchShiftCents(-150f);
+            ISpatialAudioEnvironmentModulationSink spatialAudioModulation = ResolveSpatialAudioModulation();
+            if (spatialAudioModulation == null)
+                return Fail("Missing spatial audio modulation sink.");
 
-            _debugEclipsePitchRatio = _spatialAudioModulation.EclipseAcousticPitchRatio;
+            float previousCents = spatialAudioModulation.EclipseAcousticPitchShiftCents;
+            spatialAudioModulation.SetEclipseAcousticPitchShiftCents(-150f);
+
+            _debugEclipsePitchRatio = spatialAudioModulation.EclipseAcousticPitchRatio;
             bool valid = Mathf.Abs(_debugEclipsePitchRatio - EclipseMinus150CentsPitchRatio) <= PitchRatioTolerance;
 
-            _spatialAudioModulation.SetEclipseAcousticPitchShiftCents(previousCents);
+            spatialAudioModulation.SetEclipseAcousticPitchShiftCents(previousCents);
 
             if (!valid)
                 return Fail("Eclipse acoustic pitch ratio mismatch.");
+
+            return true;
+        }
+
+        private void CacheSpatialAudioModulation(object audioRuntime)
+        {
+            _spatialAudioModulation = IsAudioRuntimeObjectUsable(audioRuntime)
+                ? audioRuntime as ISpatialAudioEnvironmentModulationSink
+                : null;
+        }
+
+        private ISpatialAudioEnvironmentModulationSink ResolveSpatialAudioModulation()
+        {
+            ISpatialAudioEnvironmentModulationSink spatialAudioModulation = _spatialAudioModulation;
+            if (IsAudioRuntimeObjectUsable(spatialAudioModulation))
+                return spatialAudioModulation;
+
+            _spatialAudioModulation = null;
+            return null;
+        }
+
+        private static bool IsAudioRuntimeObjectUsable(object runtime)
+        {
+            if (runtime == null)
+                return false;
+
+            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+                return false;
+
+            if (runtime is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
 
             return true;
         }

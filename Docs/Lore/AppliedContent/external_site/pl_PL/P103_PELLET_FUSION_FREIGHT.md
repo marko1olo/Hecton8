@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "Fracht fuzyjny na pelletach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# Fracht fuzyjny na pelletach
 
-PL LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for.
+Fracht fuzyjny na pelletach to przemysłowa historia za HECTON-8. Maszyny i ciężki ładunek dotarły do Aegir, bo infrastruktura mogła przez dekady pchać, karmić, chronić i hamować masę; trasa pozostaje okrutna, bo księgowość żyje dłużej niż awaria.
 
 ## Scanner
 
-PL LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Płyta napędu. Fracht z fuzją karmioną pelletami szedł jako infrastruktura: rozpęd, osłona, dryf, hamowanie i rozliczenie strat.
 
 ## Terminal
 
-PL LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+DOKTRYNA FRACHTU: ładunki seed klasy Atlas i fracht kolonialny używały rozpędu żaglem wiązkowym, fuzji karmionej pelletami, hamowania żaglem magnetycznym i długich interwałów dryfu. Żywy ładunek przybył po tym, jak maszyny uczyniły trasę rozliczalną.
 
 ## Audio
 
-PL LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+Ciężki statek nie jest cudem. To hipoteka z silnikami.
 
 ## Field Note
 
-PL LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+Ciężki tranzyt nie jest heroiczny. To stary kontrakt trasy z bliznami po cieple.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/pl_PL. -->

@@ -737,12 +737,9 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             DisposeNativeJobArray(ref array);
-            array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                array,
-                nameof(ShinobuFloraFaunaSymbiosisSolver),
-                label,
-                NativeAllocationLifetime.Session);
+            array = H8Memory.Allocate<T>(length, SystemID.AIEcology, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            if (!array.IsCreated)
+                throw new InvalidOperationException($"{nameof(ShinobuFloraFaunaSymbiosisSolver)} native allocation failed for {label}.");
         }
 
         private void DisposeLocalBuffersCold()
@@ -774,9 +771,7 @@ namespace Hecton8.AI.Ecosystem
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            H8Memory.Release(ref array, SystemID.AIEcology);
         }
 
         private bool AreVaultHandlesReady()

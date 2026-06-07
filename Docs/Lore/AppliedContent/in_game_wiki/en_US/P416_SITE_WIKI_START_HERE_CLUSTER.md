@@ -7,6 +7,9 @@ poi_tags: poi.site_start_here_nav;poi.codex_front_index
 biome_tags: biome.publication;biome.codex
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 1
+title: "Start Here: HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

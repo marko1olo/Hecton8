@@ -7,6 +7,9 @@ poi_tags: poi.ran_aegir_route_plate;poi.longrange_catalog_stamp
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Ran-Aegir Distance Model"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

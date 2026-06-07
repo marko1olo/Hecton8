@@ -409,7 +409,8 @@ namespace Hecton8.Gameplay
                         _playerReferenceTransform = ResolvePlayerReferenceTransform();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredTick = false;
+                    TryUnregisterTick();
+                    TryUnregisterLateFrameTick();
                     if (currentService != null && _spraying)
                     {
                         _tickDormant = false;

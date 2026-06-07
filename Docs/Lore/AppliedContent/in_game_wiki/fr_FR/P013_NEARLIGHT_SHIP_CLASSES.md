@@ -7,6 +7,9 @@ poi_tags: poi.transit_manifest;poi.sleeper_tag
 biome_tags: biome.drowned_colony;biome.crash_shelf
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Classes de vaisseaux proche-lumière"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

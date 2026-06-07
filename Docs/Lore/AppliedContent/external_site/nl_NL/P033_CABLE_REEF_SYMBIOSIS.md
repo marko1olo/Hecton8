@@ -7,6 +7,9 @@ poi_tags: poi.cable_reef;poi.service_trench
 biome_tags: biome.service_canyon;biome.cable_reef
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Kabelrif-symbiose"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

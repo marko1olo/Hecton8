@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Shallow Predator Shadow Rule"
+title: "Regel van de ondiepe roofdierschaduw"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Shallow Predator Shadow Rule
+# Regel van de ondiepe roofdierschaduw
 
-NL LOC HOLD: Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact.
+De Regel van de ondiepe roofdierschaduw is een lore- en encounterregel, geen soortprofiel. De taak is de toon van de fotische shelf beschermen: mooi, leesbaar, levend en nog steeds in staat je te doden. Het roofdier komt via getuigen. Glasgrazers laten voedsel achter en verdwijnen. Lantaarnstroming-bloom blijft gloeien maar verliest zijn zachte deeltjesruis. Schelpklemriffen trekken strak op kabels alsof de hele route ademhaalt. Pas daarna beweegt een schaduw door het licht. Die volgorde telt omdat de oceaan systemisch voelt in plaats van theatraal. De speler wordt niet gestraft door een monster dat uit het niets materialiseert; de speler komt onder druk door signalen die hij had kunnen leren lezen. Goede implementatie moet audio-, visuele en ecologische aanwijzingen stapelen zodat de waarschuwing verschillende schermen, talen en toegankelijkheidsbehoeften overleeft: ontbrekende tikken, afgesneden bloom-geluid, breed silhouet, verplaatst spoor, routedieren uit fase. De directe aanval is het minst interessante deel. Sterker is het moment waarop een reparatiedoel nog bereikbaar is, het water nog prachtig blijft en elk levend instrument zegt dat de route duur is geworden.
 
 ## Scanner
 
-NL LOC HOLD: A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.
+ONDIEPE ROOFDIERSCHADUW // Ontbrekende grazer-tikken, gescheurd bloom-geluid en een brede bewegende schaduw zijn het eerste contact. Routedruk komt voor gevechtscontact.
 
 ## Terminal
 
-NL LOC HOLD: CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.
+CONTACTREGEL: roofdierbewijs moet routekeuze veranderen voordat schade wordt afgedwongen. Breng het als afwezigheid, stilte, silhouet en spoor; directe aanval pas nadat de speler minstens twee aanwijzingen negeert of verkeerd leest.
 
 ## Audio
 
-NL LOC HOLD: When the little mouths stop ticking, stop moving.
+Als de kleine monden stoppen met tikken, stop met bewegen.
 
 ## Field Note
 
-NL LOC HOLD: Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.
+Geef het roofdier niet eerst een gezicht. Laat de shelf verkeerd worden: voedsel blijft liggen, water wordt helderder, klein leven vertrekt, dan kruist de schaduw de taak.
 
 <!-- External Site; generated from P225_SHALLOW_PREDATOR_SHADOW_RULE/nl_NL. -->

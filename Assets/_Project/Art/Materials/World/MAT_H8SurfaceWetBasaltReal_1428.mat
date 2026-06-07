@@ -30,7 +30,7 @@ Material:
   m_InvalidKeywords:
   - _DETAIL
   m_LightmapFlags: 0
-  m_EnableInstancingVariants: 0
+  m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap:
@@ -104,25 +104,25 @@ Material:
     - _AlphaToMask: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
-    - _BumpScale: 0.62
+    - _BumpScale: 0.72
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Cull: 2
     - _Cutoff: 0.5
-    - _DetailAlbedoMapScale: 0.52
-    - _DetailNormalMapScale: 1
+    - _DetailAlbedoMapScale: 0.34
+    - _DetailNormalMapScale: 0.86
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _EnvironmentReflections: 0.46
+    - _EnvironmentReflections: 0.52
     - _GlossMapScale: 0
-    - _Glossiness: 0.28
+    - _Glossiness: 0.36
     - _GlossyReflections: 0
     - _Metallic: 0.02
-    - _OcclusionStrength: 0.72
+    - _OcclusionStrength: 0.82
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _Smoothness: 0.34
+    - _Smoothness: 0.44
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 0.58
     - _SrcBlend: 1
@@ -132,9 +132,9 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.66, g: 0.62, b: 0.53, a: 1}
-    - _Color: {r: 0.66, g: 0.62, b: 0.53, a: 1}
-    - _EmissionColor: {r: 0.018, g: 0.016, b: 0.012, a: 1}
-    - _SpecColor: {r: 0.18, g: 0.17, b: 0.15, a: 1}
+    - _BaseColor: {r: 0.46, g: 0.52, b: 0.56, a: 1}
+    - _Color: {r: 0.46, g: 0.52, b: 0.56, a: 1}
+    - _EmissionColor: {r: 0.006, g: 0.01, b: 0.012, a: 1}
+    - _SpecColor: {r: 0.14, g: 0.15, b: 0.16, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

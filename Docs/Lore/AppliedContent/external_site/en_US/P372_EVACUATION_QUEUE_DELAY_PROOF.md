@@ -7,6 +7,9 @@ poi_tags: poi.evacuation_queue_clock;poi.manual_witness_slot
 biome_tags: biome.colony;biome.safe_module
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Evacuation Queue Delay Proof"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

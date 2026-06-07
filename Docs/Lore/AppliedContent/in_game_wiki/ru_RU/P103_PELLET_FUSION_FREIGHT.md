@@ -7,31 +7,34 @@ poi_tags: poi.freight_drive_plate;poi.seed_ship_manifest
 biome_tags: biome.carrier_link;biome.relay_shadow
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Пеллетно-термоядерные грузовые рейсы"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-fusion грузовые рейсы
+# Пеллетно-термоядерные грузовые рейсы
 
-Тяжелый межзвездный полет возможен, но жесток. Pellet-beam assisted fusion, external staging, длинные coasts и тормозная инфраструктура позволили Atlas-class seed payloads и позднему colony freight дойти до Aegir без FTL. Та же логистика делает спасение медленным и политически условным.
+Тяжёлый межзвёздный перелёт возможен без FTL, но он жесток. Разгон лучевым парусом, пеллетное термоядерное питание, масса защиты, долгий дрейф и тормозная архитектура довели seed-грузы и поздний колониальный фрахт до Aegir. Та же логистика делает спасение медленным: каждый килограмм, койка, тормозной слот и место выжившего принадлежат расписанию.
 
 ## Scanner
 
-Drive plate. Тяжелые корабли пересекали маршрут как staged freight: разгон, coast, торможение, учет потерь.
+Пластина двигателя. Пеллетно-термоядерные грузовики шли как инфраструктура: разгон, щит, дрейф, торможение и счёт за потери.
 
 ## Terminal
 
-FREIGHT DOCTRINE: Atlas-class seed payloads и colony freight использовали external staging, pellet-beam assisted fusion, magsail braking и длинные coast intervals. Living cargo прибыл после того, как машины сделали маршрут оплачиваемым.
+ГРУЗОВАЯ ДОКТРИНА: seed-грузы класса Atlas и колониальный фрахт использовали разгон лучевым парусом, пеллетное термоядерное питание, магнитопарусное торможение и долгие интервалы дрейфа. Живой груз прибыл после того, как машины сделали маршрут оплачиваемым.
 
 ## Audio
 
-Тяжелый корабль - не чудо. Это ипотека с двигателями.
+Тяжёлый корабль не чудо. Это ипотека с двигателями.
 
 ## Field Note
 
-Тяжелый transit должен ощущаться индустриальным и старым, а не героическим.
+Тяжёлый транзит не героичен. Это старый маршрутный контракт с тепловыми шрамами.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/ru_RU. -->

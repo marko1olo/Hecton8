@@ -123,5 +123,14 @@ namespace Hecton8.Gameplay.Atlas6Liability
                     value0: _currentPressureSealIntegrity);
             }
         }
+
+        public void RestoreState(float pressureSealIntegrity, bool isBulkheadLocked)
+        {
+            _currentPressureSealIntegrity = math.isfinite(pressureSealIntegrity)
+                ? math.saturate(pressureSealIntegrity)
+                : 1f;
+            IsBulkheadLocked = isBulkheadLocked;
+            _powerDivertedToVaults = 0f;
+        }
     }
 }

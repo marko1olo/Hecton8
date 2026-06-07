@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "מטען היתוך כדוריות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# מטען היתוך כדוריות
 
-HE LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.
+מסע בין-כוכבי כבד אפשרי בלי FTL, אבל הוא מעניש. האצת מפרש קרן, היתוך מוזן כדוריות, מסת מיגון, שיוט ארוך וארכיטקטורת בלימה הביאו מטעני seed ומטען מושבה מאוחר יותר אל Aegir. אותה לוגיסטיקה מאטה חילוץ: כל קילוגרם, דרגש, חריץ בלימה ומושב ניצול שייכים ללוח זמנים.
 
 ## Scanner
 
-HE LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+לוח הנעה. מטען היתוך מוזן כדוריות חצה כתשתית: דחיפה, מגן, שיוט, בלימה וחיוב הפסדים.
 
 ## Terminal
 
-HE LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+דוקטרינת מטען: מטעני seed מדרגת Atlas ומטען מושבה השתמשו בהאצת מפרש קרן, היתוך מוזן כדוריות, בלימת מפרש מגנטי ומרווחי שיוט ארוכים. מטען חי הגיע אחרי שמכונות הפכו את הנתיב לבר חיוב.
 
 ## Audio
 
-HE LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+ספינה כבדה אינה נס. זו משכנתא עם מנועים.
 
 ## Field Note
 
-HE LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+תעבורה כבדה אינה הירואית. זה חוזה נתיב ישן עם צלקות חום.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/he_IL. -->

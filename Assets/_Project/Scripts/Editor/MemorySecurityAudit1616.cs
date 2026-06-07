@@ -564,6 +564,9 @@ namespace Hecton8.EditorTools
             try
             {
                 id = NativeMemorySentinel.RegisterPointer(pointer, 64, in owner, in label, NativeAllocationLifetime.Scene);
+                if (id <= 0)
+                    throw new InvalidOperationException("Mock scene leak probe registration failed.");
+
                 NativeMemorySentinel.BeginDiagnosticSceneLeakLogSuppression();
                 try
                 {
@@ -624,6 +627,9 @@ namespace Hecton8.EditorTools
             try
             {
                 id = NativeMemorySentinel.RegisterPointer(pointer, 64, in owner, in label, NativeAllocationLifetime.Scene, scene);
+                if (id <= 0)
+                    throw new InvalidOperationException("Explicit scene unregister probe registration failed.");
+
                 if (!NativeMemorySentinel.ContainsTrackedAllocationForDiagnostics(in owner, in label, NativeAllocationLifetime.Scene, scene))
                     throw new InvalidOperationException("Explicit scene registration was not visible to diagnostics.");
 
@@ -655,6 +661,9 @@ namespace Hecton8.EditorTools
                 for (int i = 0; i < RegistrationStressIterations; i++)
                 {
                     int id = NativeMemorySentinel.RegisterPointer(pointer, 64, in owner, in label, NativeAllocationLifetime.Scene);
+                    if (id <= 0)
+                        throw new InvalidOperationException("Zero-GC registration probe failed to register native pointer.");
+
                     NativeMemorySentinel.Unregister(id);
                 }
 

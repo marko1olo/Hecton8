@@ -4,6 +4,8 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -109,11 +111,25 @@ namespace Hecton8.Gameplay
 
         private void InternalUpdateRegistry()
         {
+            if (!TryResolveValidRuntimeSource(out Vector3 position, out float intensity, out float radius))
+            {
+                TryUnregisterAuthority();
+                return;
+            }
+
             HazardType resolvedType = ResolveHazardType();
             if (resolvedType == HazardType.Radiation)
             {
+                if (!Application.isPlaying ||
+                    _instanceID == 0 ||
+                    !TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition sourceAup))
+                {
+                    TryUnregisterAuthority();
+                    return;
+                }
+
                 HectonHazardManager.Unregister(_instanceID);
-                RadiationHazardGrid.RegisterSource(_instanceID, _tr.position, _intensity, _radius);
+                RadiationHazardGrid.RegisterSource(_instanceID, in sourceAup, intensity, radius);
                 _registeredRadiationSource = true;
                 return;
             }
@@ -129,15 +145,15 @@ namespace Hecton8.Gameplay
                 HectonHazardManager.Unregister(_instanceID);
                 IThermodynamicsService thermodynamics = _thermodynamicsService;
                 if (thermodynamics != null && thermodynamics.IsInitialized)
-                    thermodynamics.TryInjectTransientHeatSource(_tr.position, _radius, _intensity, unchecked((uint)_instanceID));
+                    thermodynamics.TryInjectTransientHeatSource(position, radius, intensity, unchecked((uint)_instanceID));
                 return;
             }
 
             HectonHazardManager.Register(
                 _instanceID,
-                _tr.position,
-                _intensity,
-                _radius,
+                position,
+                intensity,
+                radius,
                 resolvedType,
                 ResolveVisorGlitchBias(),
                 _profile);
@@ -162,6 +178,56 @@ namespace Hecton8.Gameplay
         private float ResolveVisorGlitchBias()
         {
             return _profile != null ? _profile.VisorGlitchBias : 1f;
+        }
+
+        private bool TryResolveValidRuntimeSource(out Vector3 position, out float intensity, out float radius)
+        {
+            position = default;
+            intensity = 0f;
+            radius = 0f;
+
+            Transform cachedTransform = _tr;
+            if (cachedTransform == null)
+                return false;
+
+            position = cachedTransform.position;
+            if (!IsFiniteRuntimePosition(position) || !IsValidHazardSourcePayload(_intensity, _radius))
+                return false;
+
+            intensity = _intensity;
+            radius = _radius;
+            return true;
+        }
+
+        private static bool IsValidHazardSourcePayload(float intensity, float radius)
+        {
+            return math.isfinite(intensity) &&
+                   intensity > 0f &&
+                   math.isfinite(radius) &&
+                   radius > 0f;
+        }
+
+        private static bool IsFiniteRuntimePosition(Vector3 runtimePosition)
+        {
+            return math.isfinite(runtimePosition.x) &&
+                   math.isfinite(runtimePosition.y) &&
+                   math.isfinite(runtimePosition.z);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteRuntimePosition(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private void TryRegisterToSlowTickManager()

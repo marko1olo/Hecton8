@@ -7,6 +7,9 @@ poi_tags: poi.pressure_casket_stage_chart;poi.blue_debt_seal_failure
 biome_tags: biome.resource_pressure;biome.vent_forge
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Pressure Containment Failure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -2375,6 +2375,11 @@ namespace Hecton8.Core.Content
 
         private void TryUnregister()
         {
+            TryUnregisterDispatcherRoutes(clearPendingState: true);
+        }
+
+        private void TryUnregisterDispatcherRoutes(bool clearPendingState)
+        {
             if (!_registeredTick && !_registeredLateFrame && !_registeredSlowTick && !_registeredColdTick)
                 return;
 
@@ -2391,9 +2396,12 @@ namespace Hecton8.Core.Content
             _registeredLateFrame = false;
             _registeredSlowTick = false;
             _registeredColdTick = false;
-            _pendingContentVisualSyncTick = false;
-            _pendingAupCleanup = false;
-            _pendingVramIntercept = false;
+            if (clearPendingState)
+            {
+                _pendingContentVisualSyncTick = false;
+                _pendingAupCleanup = false;
+                _pendingVramIntercept = false;
+            }
         }
 
         private void TryRegisterHotSwap()
@@ -2495,7 +2503,8 @@ namespace Hecton8.Core.Content
                     _assetLifecycle = currentService as IAssetLifecyclePressureSink;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService != null)
+                    TryUnregisterDispatcherRoutes(clearPendingState: false);
+                    if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;
             }

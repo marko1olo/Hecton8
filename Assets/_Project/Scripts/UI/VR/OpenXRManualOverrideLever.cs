@@ -258,6 +258,8 @@ namespace Hecton8.UI.VR
             if (_pendingLatchShutdown)
             {
                 _pendingLatchShutdown = false;
+                TryUnregisterReceiver();
+                TryUnregisterTick();
             }
         }
 
@@ -688,6 +690,11 @@ namespace Hecton8.UI.VR
                     nameof(OpenXRManualOverrideLever),
                     BlackBoxDumpPayloadLabel,
                     NativeArrayOptions.UninitializedMemory);
+                if (!payload.IsCreated)
+                {
+                    _blackBoxDumpQueued = true;
+                    return;
+                }
 
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                 Span<byte> header = new Span<byte>(payloadPtr, headerBytes);

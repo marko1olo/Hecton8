@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Lantern Drift Bloom"
+title: "Bloom de deriva-lanterna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Lantern Drift Bloom
+# Bloom de deriva-lanterna
 
-PT LOC HOLD: Lantern Drift Bloom explains why HECTON-8 can look vivid without losing pressure. Bioluminescent plankton makes the water readable, but it also masks hazards and carries tool disturbance through the food web.
+Bloom de deriva-lanterna é como HECTON-8 diz que claro não significa seguro. O bloom não é uma camada de névoa decorativa. É um painel de instrumentos móvel feito de células vivas, corrente, vibração e apetite. Em água quieta, ele desenha a plataforma rasa melhor que uma lanterna: redemoinhos brilham na borda, laços de cabo aparecem como halos quebrados, estilhaços de pressure glass lançam cortes azuis finos, e um canal seguro pode parecer um rio de estrelas. A armadilha é que a mesma luz registra perturbação. Ligue um cutter, faça uma bomba tossir, dê pings demais no sonar ou chute um propulsor em pânico, e o bloom carrega sua posição para fora. Os tique-taques dos pastadores afinam. Filtradores se viram. Algo maior pode seguir o rastro iluminado antes que a UI saiba nomeá-lo. Este artigo impede que a beleza de HECTON-8 vire papel de parede. Um bom design de encontro deve fazer o jogador querer a luz, usar a luz e depois temer o que a luz diz sobre ele. Um corredor de bloom pode ser a via mais clara por um recife e ainda assim o pior lugar para consertar uma válvula barulhenta. Ele pertence ao lado dos pastadores de vidro e das sombras de predador porque os três ensinam a mesma regra: o oceano é legível, e ele também está lendo você.
 
 ## Scanner
 
-PT LOC HOLD: A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.
+BLOOM DE DERIVA-LANTERNA // Plâncton bioluminescente marca a corrente em faixas. Ele contorna água segura e perigos pequenos, mas ruído de ferramenta transforma o bloom em rastro iluminado.
 
 ## Terminal
 
-PT LOC HOLD: VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.
+EVENTO DE VISIBILIDADE: bloom melhora leitura de silhueta e rastreamento de corrente, mas reduz furtividade. Agitação por cutter, bomba, pinger, propulsor ou impacto no casco pode atrair filtradores, pastadores e predadores rasos pelo rastro iluminado.
 
 ## Audio
 
-PT LOC HOLD: Pretty water is still water. It carries your noise.
+Água bonita ainda é água. Ela carrega o seu ruído.
 
 ## Field Note
 
-PT LOC HOLD: Lantern drift is not decoration. It is a visibility event with acoustic consequences.
+Luz aqui não é conforto. Em água de bloom, cada pulso de cutter, tosse de bomba e retorno de pinger viaja mais longe que a sua lâmpada.
 
 <!-- External Site; generated from P223_LANTERN_DRIFT_BLOOM/pt_BR. -->

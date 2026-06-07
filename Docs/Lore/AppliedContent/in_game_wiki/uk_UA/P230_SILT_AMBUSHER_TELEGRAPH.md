@@ -9,32 +9,34 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Silt Ambusher Telegraph"
+title: "Ознаки мулового засідника"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Silt Ambusher Telegraph
+# Ознаки мулового засідника
 
-UA LOC HOLD: Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.
+Мулові засідники роблять глибину з малою видимістю страшною, але не довільною. Вони лежать під пласкими плитами дрібного осаду там, де органічний пил зазвичай мав би годувати мікрофауну. Справжнє ложе засідки занадто чисте. Дрібні пасовиська його оминають. Тонкі фільтрувальні нитки зупиняються на краю. Імпульс сканера повертається низько і пізно, бо верхня мембрана тварини поглинає звук до відповіді похованого м'яза.
+
+Правило просте: гравець має змогу вивчити небезпеку до контакту. Однієї чистої плити недостатньо. Її треба поєднати з відсутнім життям, серпоподібним швом, хибним імпульсом, повільним диханням мулу або тремтінням тиску під лампою. Якщо цих знаків немає, зустріч має лишитися слідом, а не атакою. Страх народжується, коли розумієш, що морське дно брехало просто перед очима.
 
 ## Scanner
 
-UA LOC HOLD: A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.
+ЛОЖЕ МУЛОВОГО ЗАСІДНИКА // Чистий мул, відсутні дрібні пасовиська і низьке імпульсне повернення позначають живу пастку до відкриття плити.
 
 ## Terminal
 
-UA LOC HOLD: CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.
+ПРАВИЛО КОНТАКТУ: ложа засідників потребують щонайменше двох ознак до контакту: чиста плита, відсутня мікрофауна, серпоподібний край, низьке імпульсне повернення або запізніле дихання мулу. Якщо бюджет ознак не виконано, понизити до зустрічі лише зі слідом.
 
 ## Audio
 
-UA LOC HOLD: Flat ground is a lie down here.
+Рівне дно тут бреше. Дивись, що по ньому не повзає.
 
 ## Field Note
 
-UA LOC HOLD: Deep danger must telegraph. The player should learn the wrongness before paying for it.
+Безодня може бути несправедливою до персонажа; гра не може бути несправедливою до гравця. Кожна засада має лишити читану неправильність.
 
 <!-- In-Game Wiki; generated from P230_SILT_AMBUSHER_TELEGRAPH/uk_UA. -->

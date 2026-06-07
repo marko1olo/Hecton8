@@ -8,7 +8,7 @@
 
 ## 1. Deep Reach Corporate Structure
 
-Welcome to the Aegir System. You are now a licensed independent contractor operating under the jurisdiction of the Deep Reach Extraterrestrial Development Combine. To ensure seamless integration, memorize the following departmental authorities:
+Welcome to the Aegir System. You are now a licensed independent contractor operating under the jurisdiction of the Deep Reach Extraterrestrial Development Combine. To ensure standardized integration, memorize the following departmental authorities:
 
 *   **Aegir Continuity Holdings:** The frontier division that holds all planetary leases for HECTON-8. They are your ultimate employer.
 *   **Atlas Continuity Office:** The legal and software division managing the Atlas-6 AI core. Do not attempt to interface with Atlas-6 without authorization.

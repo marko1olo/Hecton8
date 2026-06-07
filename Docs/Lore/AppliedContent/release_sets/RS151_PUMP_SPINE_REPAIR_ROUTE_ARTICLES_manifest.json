@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS151_PUMP_SPINE_REPAIR_ROUTE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P805_MANUAL_BILGE_CRANK_WEAR",
+    "P806_INTAKE_GRATE_SALT_FEATHER",
+    "P807_COLD_SEALANT_CLAMP_SCAR",
+    "P808_PUMP_SPINE_RETURN_STAMP",
+    "P809_PRESSURE_DRIP_COUNTER"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P805_MANUAL_BILGE_CRANK_WEAR.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P806_INTAKE_GRATE_SALT_FEATHER.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P807_COLD_SEALANT_CLAMP_SCAR.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P808_PUMP_SPINE_RETURN_STAMP.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P809_PRESSURE_DRIP_COUNTER.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

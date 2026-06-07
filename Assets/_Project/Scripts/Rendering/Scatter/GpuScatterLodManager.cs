@@ -1766,11 +1766,14 @@ namespace Hecton8.Rendering.Scatter
                 return false;
 
             DisposeVisibleCountReadbackData();
-            _visibleCountReadback.Data = new NativeArray<uint>(
+            _visibleCountReadback.Data = H8Memory.Allocate<uint>(
                 IndirectArgsElementCount,
+                SystemID.Vfx,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_visibleCountReadback.Data, nameof(GpuScatterLodManager), "_visibleCountReadbackData", NativeAllocationLifetime.Scene);
+            if (!_visibleCountReadback.Data.IsCreated)
+                return false;
+
             _visibleCountReadbackRepairRequested = false;
             return true;
         }
@@ -1831,9 +1834,7 @@ namespace Hecton8.Rendering.Scatter
 
             if (_visibleCountReadback.Data.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_visibleCountReadback.Data);
-                _visibleCountReadback.Data.Dispose();
-                _visibleCountReadback.Data = default;
+                H8Memory.Release(ref _visibleCountReadback.Data, SystemID.Vfx);
             }
 
             _visibleCountReadbackReleaseRequested = false;

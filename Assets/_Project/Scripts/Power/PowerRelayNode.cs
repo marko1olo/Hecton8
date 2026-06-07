@@ -150,11 +150,12 @@ namespace Hecton8.Power
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             TryUnregister();
-            TryRegister();
+            if (currentService != null && isActiveAndEnabled)
+                TryRegister();
         }
 
         public void SlowTick()

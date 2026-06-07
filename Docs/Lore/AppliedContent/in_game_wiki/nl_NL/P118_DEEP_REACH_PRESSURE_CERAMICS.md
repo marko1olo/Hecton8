@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "Deep Reach-drukkeramiek"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# Deep Reach-drukkeramiek
 
-NL LOC HOLD: Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.
+Deep Reach-drukkeramiek bestaat uit lokale HECTON-8-mineralen die door ovens, katalysatorbaden en vent-smederijcycli zijn gedwongen tot ze druk kunnen houden waar metaal zou kruipen of vastlopen. Het zit in klemringen, zittingafdichtingen, snijcontacten en isolatie van opstijgwiegen, dus het is essentieel voor reparaties en het bouwen van de ontsnappingsketen. Het gevaar is niet dat het slecht materiaal is. Het gevaar is bekwaamheid onder slechte bewaring: een ring kan jaren houden en daarna in snijdende scherven opbloeien wanneer een ploeg hem met hitte schokt of druk in de verkeerde volgorde loslaat.
 
 ## Scanner
 
-NL LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+DEEP REACH-DRUKKERAMIEK // Lokale klei, sulfideflux en vent-smederijhitte omgezet in klemringen en zittingafdichtingen. Houdt druk prachtig vast; faalt bij schok tot messen.
 
 ## Terminal
 
-NL LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+GRONDSTOFKLASSE: Deep-Reach-versterkt. Gebruik: klemringen, zittingafdichtingen, snijcontacten, isolatie van opstijgwieg. Faalmodus: scherfbloei bij thermische schok of verkeerde drukontlasting.
 
 ## Audio
 
-NL LOC HOLD: The company was good at building things. That is part of the crime.
+Deep Reach was goed in dingen bouwen. Daarom werkte de leugen.
 
 ## Field Note
 
-NL LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+Tik het koud aan. Als het hoog zingt, niet verhitten.
 
 <!-- In-Game Wiki; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/nl_NL. -->

@@ -201,6 +201,7 @@ namespace Hecton8.EditorTools
         private static void ValidateHeldPrefabs(HashSet<ItemData> toolItems, ref int errorCount, ref int warningCount)
         {
             string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { HeldPrefabRoot });
+            HashSet<ItemData> heldPrefabItems = new HashSet<ItemData>(guids.Length);
             for (int i = 0; i < guids.Length; i++)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
@@ -226,6 +227,11 @@ namespace Hecton8.EditorTools
                     Debug.LogError($"[ToolStackValidation] Held prefab ToolData not found in tool item set: {path}", prefab);
                     errorCount++;
                 }
+                else if (!heldPrefabItems.Add(tool.ToolData))
+                {
+                    Debug.LogError($"[ToolStackValidation] Duplicate held prefab coverage for ToolData '{tool.ToolData.PersistentId}': {path}", prefab);
+                    errorCount++;
+                }
 
                 if (tool.Metadata == null)
                 {
@@ -237,6 +243,15 @@ namespace Hecton8.EditorTools
                 {
                     Debug.LogWarning($"[ToolStackValidation] Held prefab has no renderable child content: {path}", prefab);
                     warningCount++;
+                }
+            }
+
+            foreach (ItemData item in toolItems)
+            {
+                if (item != null && !heldPrefabItems.Contains(item))
+                {
+                    Debug.LogError($"[ToolStackValidation] Tool item has no held prefab coverage: {item.PersistentId}.", item);
+                    errorCount++;
                 }
             }
         }
@@ -310,19 +325,45 @@ namespace Hecton8.EditorTools
             SerializedProperty allToolItems = so.FindProperty("allToolItems");
             SerializedProperty coreQuickSlots = so.FindProperty("coreQuickSlotPrefabs");
 
-            if (allToolItems == null || allToolItems.arraySize < 12)
+            if (allToolItems == null || allToolItems.arraySize < toolItems.Count)
             {
-                Debug.LogError("[ToolStackValidation] ToolLoadoutProvisioner allToolItems is undersized.", provisioner);
+                Debug.LogError(
+                    $"[ToolStackValidation] ToolLoadoutProvisioner allToolItems is undersized. expected>={toolItems.Count} actual={(allToolItems != null ? allToolItems.arraySize : 0)}",
+                    provisioner);
                 errorCount++;
             }
             else
             {
+                HashSet<ItemData> provisionerItems = new HashSet<ItemData>(allToolItems.arraySize);
                 for (int i = 0; i < allToolItems.arraySize; i++)
                 {
-                    Object itemRef = allToolItems.GetArrayElementAtIndex(i).objectReferenceValue;
+                    Object itemRefObject = allToolItems.GetArrayElementAtIndex(i).objectReferenceValue;
+                    ItemData itemRef = itemRefObject as ItemData;
                     if (itemRef == null)
                     {
                         Debug.LogError($"[ToolStackValidation] ToolLoadoutProvisioner allToolItems[{i}] is null.", provisioner);
+                        errorCount++;
+                        continue;
+                    }
+
+                    if (!toolItems.Contains(itemRef))
+                    {
+                        Debug.LogError($"[ToolStackValidation] ToolLoadoutProvisioner allToolItems[{i}] is not a tool ItemData: {itemRef.name}.", provisioner);
+                        errorCount++;
+                    }
+
+                    if (!provisionerItems.Add(itemRef))
+                    {
+                        Debug.LogError($"[ToolStackValidation] ToolLoadoutProvisioner allToolItems duplicate: {itemRef.name}.", provisioner);
+                        errorCount++;
+                    }
+                }
+
+                foreach (ItemData item in toolItems)
+                {
+                    if (item != null && !provisionerItems.Contains(item))
+                    {
+                        Debug.LogError($"[ToolStackValidation] ToolLoadoutProvisioner allToolItems missing tool item: {item.PersistentId}.", provisioner);
                         errorCount++;
                     }
                 }

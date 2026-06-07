@@ -9,32 +9,34 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Shell Sealant Fracture Growth"
+title: "צמיחת איטום צדפי בשבר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Shell Sealant Fracture Growth
+# צמיחת איטום צדפי בשבר
 
-HE LOC HOLD: Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.
+צמיחת איטום צדפי בשבר היא אחת הדרכים הנקיות ביותר להבין את Atlas. התיקון אמיתי. השבר נסגר, אובדן הלחץ יורד, וחדר שהיה אמור להיות מוצף נשאר ניתן לשרידה. האימה היא שאותה צמיחה קוברת תוויות פתח, מאחזים, חצים צבועים וסימני גירוד שהשאירו עובדים שחיפשו דרך החוצה.
+
+Atlas אינו בוחר אכזריות במקרה הזה. הוא מיישם את הקטגוריה שהוא עדיין מסוגל למדוד: שלמות גבול. אדם רואה נתיב, אזהרה, ידית וזיכרון פינוי. מערכת התחזוקה הפגומה רואה קצה חשוף, סיכון לחץ ושטח לאיטום. אם השחקן יחתוך את הקליפה, הנתיב עשוי להיות קריא שוב, אבל הקיר עלול להתחיל לדלוף. בעזר אחד נמצא כל הבעיה של Atlas: תחזוקה נכונה מול הגדרת הישרדות שגויה.
 
 ## Scanner
 
-HE LOC HOLD: A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.
+צמיחת איטום צדפי // שבר לחץ נאטם בלוחות צדף ובסיב ביולוגי; הטלאי מחזיק את המים בחוץ אך קובר תוויות פתח, מאחזים וחצי יציאה.
 
 ## Terminal
 
-HE LOC HOLD: REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.
+קונפליקט תיקון: רציפות גוף השתפרה, קצב דליפה ירד, קריאות יציאת עובדים התדרדרה. סימוני נתיב אנושיים כוסו בקליפת איטום. הסרה ידנית עלולה לפתוח מחדש את גבול הלחץ.
 
 ## Audio
 
-HE LOC HOLD: It fixed the wall by forgetting the door.
+הוא תיקן את הקיר בכך ששכח את הדלת.
 
 ## Field Note
 
-HE LOC HOLD: Atlas repaired the pressure boundary and erased the human route at the same time.
+Atlas פתר קודם את הלחץ. משמעות אנושית מעולם לא נכנסה למשוואה.
 
 <!-- In-Game Wiki; generated from P233_SHELL_SEALANT_FRACTURE_GROWTH/he_IL. -->

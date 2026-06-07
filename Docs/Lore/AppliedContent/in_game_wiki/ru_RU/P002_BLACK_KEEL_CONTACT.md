@@ -7,6 +7,9 @@ poi_tags: poi.signal_mast;poi.service_buoy
 biome_tags: biome.storm_shelf;biome.shallow_reef
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Контакт Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

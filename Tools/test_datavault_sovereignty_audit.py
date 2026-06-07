@@ -113,7 +113,7 @@ class DataVaultRegressionDrilldownTests(unittest.TestCase):
         by_domain = aggregate_regression_details(details)
         by_surface = aggregate_regression_details_by_surface(details)
 
-        self.assertTrue(any("Forbidden direct NativeArray constructors increased" in e for e in errors))
+        self.assertTrue(any("Forbidden direct native collection constructors increased" in e for e in errors))
         self.assertEqual(len(details), 3)
         self.assertEqual(by_domain[0]["domain"], "Construction")
         self.assertEqual(by_domain[0]["fieldDeclarationDelta"], 2)

@@ -442,10 +442,9 @@ namespace Hecton8.Atmosphere
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService != null)
+                UnregisterDispatcherPhases();
+                if (currentService != null && !_shutdown)
                     RegisterDispatcherPhases();
-                else
-                    UnregisterDispatcherPhases();
             }
         }
 

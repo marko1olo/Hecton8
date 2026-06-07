@@ -298,6 +298,15 @@ namespace Hecton8.Tests.Editor.Bakers
             Assert.That(renderer, Does.Contain("marineSnowMaskAtlas != null ? math.saturate(marineSnowMaskAtlasWeight) : 0f"));
             Assert.AreEqual(1, CountSourceOccurrences(renderer, "private void EnsureCsvProfileBackgroundReader("));
             Assert.AreEqual(1, CountSourceOccurrences(renderer, "private void StopCsvProfileBackgroundReader("));
+            Assert.AreEqual(1, CountSourceOccurrences(renderer, "private static bool TryJoinCsvProfileThreadNoThrow(Thread reader)"));
+            Assert.That(renderer, Does.Contain("private const int CsvProfileThreadJoinTimeoutMilliseconds = CsvProfilePollSliceMilliseconds + 10;"));
+            Assert.That(renderer, Does.Contain("catch (Exception)"));
+            Assert.That(renderer, Does.Contain("_csvProfileThreadStopRequested = true;"));
+            Assert.That(renderer, Does.Contain("TryJoinCsvProfileThreadNoThrow(reader)"));
+            Assert.That(renderer, Does.Contain("ReferenceEquals(Thread.CurrentThread, reader)"));
+            Assert.That(renderer, Does.Contain("reader.Join(CsvProfileThreadJoinTimeoutMilliseconds);"));
+            Assert.That(renderer, Does.Contain("return !reader.IsAlive;"));
+            Assert.That(renderer, Does.Not.Contain("reader.Join(CsvProfilePollSliceMilliseconds + 10);"));
             Assert.AreEqual(1, CountSourceOccurrences(renderer, "private void RefreshSiltProfileCsv("));
             Assert.AreEqual(1, CountSourceOccurrences(renderer, "private void RefreshPropwashWakeProfileCsv("));
             Assert.That(renderer, Does.Not.Contain("GlobalRegistry.Get<"));

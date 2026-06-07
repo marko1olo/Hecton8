@@ -9,32 +9,34 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Sensor-Tagged Fauna"
+title: "Fauna Bertag Sensor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Sensor-Tagged Fauna
+# Fauna Bertag Sensor
 
-ID LOC HOLD: Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.
+Fauna bertag sensor membuat kehidupan yang diubah Atlas tetap membumi. Deep Reach dulu menandai hewan, koloni cangkang, dan spesies rute untuk memantau gerak, toleransi tekanan, dan kontaminasi. Bertahun-tahun kemudian, tag biometal itu bukan lagi peralatan bersih. Mereka duduk di cincin pertumbuhan, soket cangkang, bekas luka lama, dan tutup mineral, dibawa sebagai bagian tubuh yang bertahan hidup di sekelilingnya.
+
+Perbedaan ini penting. Makhluk bertag bukan boneka. Atlas dapat melakukan ping pada tag, salah membaca balasan, atau memakainya sebagai penanda diagnostik lemah, tetapi respons perintah tidak andal dan sering tidak ada. Pemain harus membaca tag sebagai sejarah industri: sinyal samar, luka lama, jejak tanggung jawab, dan kadang petunjuk tempat Deep Reach mengawasi sebelum koloni gagal.
 
 ## Scanner
 
-ID LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+FAUNA BERTAG SENSOR // Tag biometal lama duduk di cincin pertumbuhan, bekas luka, dan soket cangkang; hewan membawa perangkat pemantau sebagai sejarah tubuh, bukan kepatuhan.
 
 ## Terminal
 
-ID LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+CATATAN TAG: kontinuitas sinyal lemah, integrasi biologis tinggi, respons perintah tidak andal. Perlakukan sebagai bekas luka pasif, suar terputus-putus, dan kemungkinan hantu diagnostik Atlas.
 
 ## Audio
 
-ID LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+Hewan itu bukan drone. Drone adalah luka lama di dalam hewan.
 
 ## Field Note
 
-ID LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+Hewan itu bukan drone. Drone adalah luka lama yang dikelilingi hewan itu saat bertahan hidup.
 
 <!-- In-Game Wiki; generated from P234_SENSOR_TAGGED_FAUNA/id_ID. -->

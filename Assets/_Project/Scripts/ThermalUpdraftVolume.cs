@@ -35,11 +35,13 @@ namespace Hecton8.Physics
         {
             TryGetComponent(out _currentVolume);
             _hazardSourceId = unchecked((int)EntityId.ToULong(GetEntityId()));
+            SanitizeAuthoringValues();
             ApplyPreset();
         }
 
         private void OnEnable()
         {
+            SanitizeAuthoringValues();
             ApplyPreset();
             UpdateHazardRegistration();
             if (Application.isPlaying)
@@ -69,7 +71,7 @@ namespace Hecton8.Physics
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredToTick = false;
+                TryUnregisterFromTick();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegisterToTick();
             }
@@ -99,20 +101,65 @@ namespace Hecton8.Physics
                 swirlBias);
         }
 
+        private void SanitizeAuthoringValues()
+        {
+            updraftStrength = float.IsFinite(updraftStrength) ? Mathf.Max(0f, updraftStrength) : 0f;
+            swirlBias = float.IsFinite(swirlBias) ? Mathf.Clamp(swirlBias, -1f, 1f) : 0f;
+            heatIntensity = float.IsFinite(heatIntensity) ? Mathf.Max(0f, heatIntensity) : 0f;
+            hazardRadiusScale = float.IsFinite(hazardRadiusScale) ? Mathf.Max(0.1f, hazardRadiusScale) : 0.1f;
+        }
+
         private void UpdateHazardRegistration()
         {
             if (!isActiveAndEnabled)
                 return;
 
-            float radius = _currentVolume != null
-                ? _currentVolume.GetApproximateInfluenceRadius() * Mathf.Max(0.1f, hazardRadiusScale)
-                : Mathf.Max(1f, hazardRadiusScale);
+            Vector3 position = transform.position;
+            if (!IsFiniteVector3(position) ||
+                !float.IsFinite(heatIntensity) ||
+                heatIntensity <= 0f)
+            {
+                HectonHazardManager.Unregister(_hazardSourceId);
+                return;
+            }
+
+            float influenceRadius = _currentVolume != null
+                ? _currentVolume.GetApproximateInfluenceRadius()
+                : 1f;
+            float safeInfluenceRadius = FiniteAtLeast(influenceRadius, 1f, 1f);
+            float radius = safeInfluenceRadius * FiniteAtLeast(hazardRadiusScale, 1.1f, 0.1f);
+            if (!float.IsFinite(radius) || radius <= 0f)
+            {
+                HectonHazardManager.Unregister(_hazardSourceId);
+                return;
+            }
 
             IThermodynamicsService thermodynamics = GlobalRegistry.ThermodynamicsService;
-            if (thermodynamics != null && thermodynamics.IsInitialized)
-                thermodynamics.TryInjectTransientHeatSource(transform.position, radius, heatIntensity, unchecked((uint)_hazardSourceId));
-            else
-                HectonHazardManager.Unregister(_hazardSourceId);
+            bool injected = thermodynamics != null &&
+                            thermodynamics.IsInitialized &&
+                            thermodynamics.TryInjectTransientHeatSource(
+                                position,
+                                radius,
+                                heatIntensity,
+                                unchecked((uint)_hazardSourceId));
+            if (injected)
+                return;
+
+            HectonHazardManager.Unregister(_hazardSourceId);
+        }
+
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z);
+        }
+
+        private static float FiniteAtLeast(float value, float fallback, float minimum)
+        {
+            float safeFallback = float.IsFinite(fallback) ? fallback : minimum;
+            float safeValue = float.IsFinite(value) ? value : safeFallback;
+            return Mathf.Max(minimum, safeValue);
         }
 
         private void TryRegisterToTick()
@@ -140,10 +187,7 @@ namespace Hecton8.Physics
             if (_currentVolume == null)
                 TryGetComponent(out _currentVolume);
 
-            updraftStrength = Mathf.Max(0f, updraftStrength);
-            swirlBias = Mathf.Clamp(swirlBias, -1f, 1f);
-            heatIntensity = Mathf.Max(0f, heatIntensity);
-            hazardRadiusScale = Mathf.Max(0.1f, hazardRadiusScale);
+            SanitizeAuthoringValues();
             ApplyPreset();
         }
 #endif

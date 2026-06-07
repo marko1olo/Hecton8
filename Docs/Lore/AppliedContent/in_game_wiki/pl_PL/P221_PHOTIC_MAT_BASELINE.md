@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Photic Mat Baseline"
+title: "Bazowa mata fotyczna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Photic Mat Baseline
+# Bazowa mata fotyczna
 
-PL LOC HOLD: Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.
+Maty fotyczne są pierwszym płytkim życiem, które pomaga graczowi oddychać i nadal karze za nieostrożny zbiór. Film rośnie tam, gdzie spotykają się światło, spływ mineralny i wolna woda, pokrywając skałę kolorem bogatym w tlen. Zdrowy środek jest miękki i jasny; solnie twardy brzeg oznacza, że chemia ciśnienia albo stara infrastruktura stresuje kieszeń. Mata zmienia też dźwięk: dobry wzrost tłumi drobne uderzenia, a skażone szwy klikają i syczą pod skrobakiem. Jeśli potrzebujesz włókna albo chemii tlenu, tnij tylko luźne frędzle. Rozerwanie jasnego środka przy włazie, rurze albo panelu uszczelnionym może obniżyć lokalny tlen i odsłonić to, co mata przytrzymywała.
 
 ## Scanner
 
-PL LOC HOLD: Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.
+MATA FOTYCZNA // Żywy film karmiony minerałami na płytkiej skale. Jasne pasma natleniają wodę; solnie twarde brzegi znaczą zestresowaną chemię ciśnienia i ukryte przecieki szwów.
 
 ## Terminal
 
-PL LOC HOLD: ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.
+BAZA EKOLOGICZNA: mapuje skórę tlenową, spływ minerałów, tłumienie akustyczne i stres solnego brzegu. Zbierać tylko luźne frędzle. Rozrywanie przy szwach lub sprzęcie uszczelnionym może zapaść kieszeń w skażenie.
 
 ## Audio
 
-PL LOC HOLD: It looks clean because it is working hard. That is not the same as safe.
+Wygląda czysto, bo pracuje. To nie to samo, co bezpiecznie.
 
 ## Field Note
 
-PL LOC HOLD: Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.
+Nie skrob najjaśniejszego miejsca jako pierwszego. Czytaj brzeg, bąble i dźwięk; mata jest miernikiem, zanim stanie się zasobem.
 
 <!-- In-Game Wiki; generated from P221_PHOTIC_MAT_BASELINE/pl_PL. -->

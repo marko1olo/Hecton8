@@ -7,6 +7,9 @@ poi_tags: poi.dead_beacon_ping;poi.outer_relay_solver
 biome_tags: biome.orbit;biome.comms
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Outer Dead Beacon Moon Role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

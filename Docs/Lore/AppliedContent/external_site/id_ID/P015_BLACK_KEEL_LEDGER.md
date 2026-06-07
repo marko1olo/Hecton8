@@ -7,6 +7,9 @@ poi_tags: poi.claim_pool_ledger;poi.carrier_debt_record
 biome_tags: biome.drowned_colony;biome.deep_launch_route
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Ledger Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

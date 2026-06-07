@@ -7,6 +7,9 @@ poi_tags: poi.factory_threshold;poi.atlas_gate
 biome_tags: biome.bottom_factory;biome.atlas_zone
 locale: pt_BR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Limiar fábrica-templo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

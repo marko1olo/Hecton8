@@ -7,6 +7,9 @@ poi_tags: poi.marauder_correction_note;poi.bad_claim_margin
 biome_tags: biome.marauder;biome.evidence
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Marauder Correction Note Sample"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

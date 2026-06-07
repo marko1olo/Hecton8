@@ -7,6 +7,9 @@ poi_tags: poi.repair_scar;poi.drone_nest
 biome_tags: biome.cable_forest;biome.deep_abyss
 locale: pt_BR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Cicatriz de reparo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

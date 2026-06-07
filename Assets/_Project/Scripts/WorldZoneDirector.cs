@@ -233,16 +233,11 @@ namespace Hecton8.World
                     RebindPlayerContext(previousService, currentService);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                    {
-                        _registeredToTickManager = false;
-                        return;
-                    }
-
+                    TryUnregister();
                     if (isActiveAndEnabled)
                     {
-                        TryUnregister();
-                        TryRegister();
+                        if (currentService != null)
+                            TryRegister();
                     }
                     break;
             }

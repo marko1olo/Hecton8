@@ -8,7 +8,7 @@
 
 ## 1. The Constant Weight
 
-You don't just know the ocean is out there. You feel it. Sector 44 was built on the edge of the abyssal trench. The groaning of the titanium struts is constant. It sounds like a dying whale trapped inside the walls. 
+It is one thing to know the ocean is out there. It is another to feel it pressing against the titanium, every single second. Sector 44 was built on the edge of the abyssal trench. The groaning of the titanium struts is constant. It sounds like a dying whale trapped inside the walls.
 
 The corporate orientation video said the modular bulkheads could withstand a direct impact from a tectonic shift. But when you are lying in your bunk at 0400 hours and you hear the rivets pinging against the hull pressure, you realize the math doesn't care about your heart rate. The ocean wants to crush us. It is just waiting for someone to forget to cycle an airlock.
 

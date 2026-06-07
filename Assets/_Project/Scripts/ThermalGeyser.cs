@@ -18,6 +18,21 @@ namespace Hecton8.Caves
         private const float MinimumCylinderHeightMeters = 1f;
         private const float EruptionCylinderHeightMultiplier = 2.25f;
         private const float DefaultMineralEjectionIntervalSeconds = 600f;
+        private const float DefaultQuietDurationSeconds = 10f;
+        private const float DefaultEruptionDurationSeconds = 3f;
+        private const float DefaultEruptionRadiusMeters = 4f;
+        private const float DefaultCavitationRadiusMeters = 6f;
+        private const float DefaultUpdraftStrength = 500f;
+        private const float DefaultMineralEjectionImpulse = 8f;
+        private const float MaxQuietDurationSeconds = 30f;
+        private const float MaxEruptionDurationSeconds = 12f;
+        private const float MaxEruptionRadiusMeters = 18f;
+        private const float MaxCavitationRadiusMeters = 24f;
+        private const float MaxGlobalIntensity = 1.25f;
+        private const float MaxUpdraftStrength = 500f;
+        private const float MaxRuntimeUpdraftStrength = MaxUpdraftStrength * MaxGlobalIntensity;
+        private const float MaxMineralEjectionIntervalSeconds = 1800f;
+        private const float MaxMineralEjectionImpulse = 30f;
         private const int MinimumEjectedMineralCount = 3;
         private const int MaximumEjectedMineralCount = 5;
 
@@ -39,11 +54,11 @@ namespace Hecton8.Caves
         [Tooltip("Impulse magnitude stored on ejected item records when loot hydrates.")]
         private float mineralEjectionImpulse = 8f;
 
-        private float _quietDuration = 10f;
-        private float _eruptionDuration = 3f;
-        private float _eruptionRadius = 4f;
-        private float _cavitationRadius = 6f;
-        private float _updraftStrength = 500f;
+        private float _quietDuration = DefaultQuietDurationSeconds;
+        private float _eruptionDuration = DefaultEruptionDurationSeconds;
+        private float _eruptionRadius = DefaultEruptionRadiusMeters;
+        private float _cavitationRadius = DefaultCavitationRadiusMeters;
+        private float _updraftStrength = DefaultUpdraftStrength;
         private float _phaseTimer;
         private bool _isErupting;
         private bool _registeredTick;
@@ -60,16 +75,17 @@ namespace Hecton8.Caves
             if (config == null)
                 return;
 
-            _quietDuration = Mathf.Max(0.5f, config.quietDuration);
-            _eruptionDuration = Mathf.Max(0.5f, config.eruptionDuration);
-            _eruptionRadius = Mathf.Max(0.5f, config.eruptionRadius);
-            _cavitationRadius = Mathf.Max(_eruptionRadius, config.cavitationRadius);
-            _updraftStrength = Mathf.Max(0f, config.updraftStrength * Mathf.Max(0.1f, globalIntensity));
+            float safeGlobalIntensity = ClampFinite(globalIntensity, 1f, 0.1f, MaxGlobalIntensity);
+            _quietDuration = ClampFinite(config.quietDuration, DefaultQuietDurationSeconds, 0.5f, MaxQuietDurationSeconds);
+            _eruptionDuration = ClampFinite(config.eruptionDuration, DefaultEruptionDurationSeconds, 0.5f, MaxEruptionDurationSeconds);
+            _eruptionRadius = ClampFinite(config.eruptionRadius, DefaultEruptionRadiusMeters, 0.5f, MaxEruptionRadiusMeters);
+            _cavitationRadius = math.max(_eruptionRadius, ClampFinite(config.cavitationRadius, DefaultCavitationRadiusMeters, 0.5f, MaxCavitationRadiusMeters));
+            _updraftStrength = ClampFinite(config.updraftStrength, DefaultUpdraftStrength, 0f, MaxUpdraftStrength) * safeGlobalIntensity;
 
             ConfigureCurrentVolume();
             _phaseTimer = _quietDuration;
             _isErupting = false;
-            _mineralEjectionTimer = Mathf.Max(60f, mineralEjectionIntervalSeconds);
+            _mineralEjectionTimer = ClampFinite(mineralEjectionIntervalSeconds, DefaultMineralEjectionIntervalSeconds, 60f, MaxMineralEjectionIntervalSeconds);
         }
 
         internal void CacheRuntimeWiringCold(CurrentVolume currentVolumeComponent)
@@ -82,7 +98,7 @@ namespace Hecton8.Caves
 
         public void Tick(float dt)
         {
-            float safeDt = Mathf.Max(0f, dt);
+            float safeDt = FiniteAtLeast(dt, 0f, 0f);
             TickMineralEjection(safeDt);
 
             _phaseTimer -= safeDt;
@@ -96,7 +112,7 @@ namespace Hecton8.Caves
 
         public void FixedTick(float fdt)
         {
-            if (fdt <= 0f)
+            if (!math.isfinite(fdt) || fdt <= 0f)
                 return;
 
             SubmitVolcanicDirectorVent();
@@ -118,11 +134,12 @@ namespace Hecton8.Caves
 
         private void Awake()
         {
+            SanitizeAuthoringValues();
             ResolveRuntimeWiring();
             CacheRegistryServicesCold();
             _mineralEjectionSeed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ 0x9E3779B9u;
             _volcanicVentSourceHash = Mix(_mineralEjectionSeed, VolcanicUpdraftVault.SourceHash);
-            _mineralEjectionTimer = Mathf.Max(60f, mineralEjectionIntervalSeconds);
+            _mineralEjectionTimer = ClampFinite(mineralEjectionIntervalSeconds, DefaultMineralEjectionIntervalSeconds, 60f, MaxMineralEjectionIntervalSeconds);
         }
 
         private void OnEnable()
@@ -161,8 +178,7 @@ namespace Hecton8.Caves
                     _persistentWorldRegistry = currentService as IPersistentDroppedItemRegistry;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredTick = false;
-                    _registeredFixedTick = false;
+                    TryUnregister();
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;
@@ -178,7 +194,7 @@ namespace Hecton8.Caves
             if (_mineralEjectionTimer > 0f || !_isErupting)
                 return;
 
-            _mineralEjectionTimer = Mathf.Max(60f, mineralEjectionIntervalSeconds);
+            _mineralEjectionTimer = ClampFinite(mineralEjectionIntervalSeconds, DefaultMineralEjectionIntervalSeconds, 60f, MaxMineralEjectionIntervalSeconds);
             EjectMineralBurst();
         }
 
@@ -193,6 +209,10 @@ namespace Hecton8.Caves
             int count = MinimumEjectedMineralCount + (int)Mathf.Floor(Next01(ref state) * (MaximumEjectedMineralCount - MinimumEjectedMineralCount + 1));
             count = Mathf.Clamp(count, MinimumEjectedMineralCount, MaximumEjectedMineralCount);
             Vector3 origin = transform.position;
+            if (!IsFiniteVector3(origin))
+                return;
+
+            float safeImpulse = ClampFinite(mineralEjectionImpulse, DefaultMineralEjectionImpulse, 0.1f, MaxMineralEjectionImpulse);
             for (int i = 0; i < count; i++)
             {
                 Vector3 lateral = new Vector3((Next01(ref state) * 2f) - 1f, 0f, (Next01(ref state) * 2f) - 1f);
@@ -201,8 +221,8 @@ namespace Hecton8.Caves
                 lateral.Normalize();
 
                 Vector3 spawnPosition = origin + (Vector3.up * 0.25f) + (lateral * math.lerp(0.15f, 0.6f, Next01(ref state)));
-                Vector3 impulse = (Vector3.up * math.lerp(0.85f, 1.25f, Next01(ref state)) * mineralEjectionImpulse) +
-                                  (lateral * (mineralEjectionImpulse * 0.25f));
+                Vector3 impulse = (Vector3.up * math.lerp(0.85f, 1.25f, Next01(ref state)) * safeImpulse) +
+                                  (lateral * (safeImpulse * 0.25f));
                 registry.TryRegisterDroppedItem(ejectedMineralItem, 1, spawnPosition, impulse);
             }
         }
@@ -220,6 +240,9 @@ namespace Hecton8.Caves
             if (currentVolume == null)
                 return;
 
+            float safeEruptionRadius = ClampFinite(_eruptionRadius, DefaultEruptionRadiusMeters, 0.5f, MaxEruptionRadiusMeters);
+            _eruptionRadius = safeEruptionRadius;
+            _cavitationRadius = math.max(safeEruptionRadius, ClampFinite(_cavitationRadius, DefaultCavitationRadiusMeters, 0.5f, MaxCavitationRadiusMeters));
             currentVolume.ApplySemanticBoundsPreset(
                 CurrentVolume.VolumeShape.Sphere,
                 Vector3.one * (_cavitationRadius * 2f),
@@ -241,17 +264,21 @@ namespace Hecton8.Caves
             if (!TryResolveVentAup(out AbsoluteUniversePosition aup))
                 return;
 
-            float eruptionHeight = math.max(MinimumCylinderHeightMeters, _eruptionRadius * EruptionCylinderHeightMultiplier);
+            float safeEruptionRadius = ClampFinite(_eruptionRadius, DefaultEruptionRadiusMeters, 0.5f, MaxEruptionRadiusMeters);
+            float safeEruptionDuration = ClampFinite(_eruptionDuration, DefaultEruptionDurationSeconds, 0.5f, MaxEruptionDurationSeconds);
+            float safeUpdraftStrength = ClampFinite(_updraftStrength, 0f, 0f, MaxRuntimeUpdraftStrength);
+            float safePhaseTimer = math.select(0f, _phaseTimer, math.isfinite(_phaseTimer));
+            float eruptionHeight = math.max(MinimumCylinderHeightMeters, safeEruptionRadius * EruptionCylinderHeightMultiplier);
             float active01 = _isErupting ? 1f : 0f;
-            float timer01 = _eruptionDuration > 0.0001f
-                ? math.saturate(1f - (_phaseTimer / math.max(0.0001f, _eruptionDuration)))
+            float timer01 = safeEruptionDuration > 0.0001f
+                ? math.saturate(1f - (safePhaseTimer / math.max(0.0001f, safeEruptionDuration)))
                 : active01;
 
             director.TryUpsertAuthoredVent(
                 _volcanicVentSourceHash,
                 aup.ToAbsoluteDouble3(),
-                math.max(0.5f, _eruptionRadius),
-                _updraftStrength * active01,
+                safeEruptionRadius,
+                safeUpdraftStrength * active01,
                 eruptionHeight,
                 active01,
                 timer01);
@@ -273,6 +300,38 @@ namespace Hecton8.Caves
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
             return aup.IsFinite();
+        }
+
+        private void OnValidate()
+        {
+            SanitizeAuthoringValues();
+        }
+
+        private void SanitizeAuthoringValues()
+        {
+            mineralEjectionIntervalSeconds = ClampFinite(mineralEjectionIntervalSeconds, DefaultMineralEjectionIntervalSeconds, 60f, MaxMineralEjectionIntervalSeconds);
+            mineralEjectionImpulse = ClampFinite(mineralEjectionImpulse, DefaultMineralEjectionImpulse, 0.1f, MaxMineralEjectionImpulse);
+        }
+
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
+        private static float FiniteAtLeast(float value, float fallback, float minimum)
+        {
+            float safeFallback = math.select(minimum, fallback, math.isfinite(fallback));
+            float safeValue = math.select(safeFallback, value, math.isfinite(value));
+            return math.max(minimum, safeValue);
+        }
+
+        private static float ClampFinite(float value, float fallback, float minimum, float maximum)
+        {
+            float safeFallback = math.select(minimum, fallback, math.isfinite(fallback));
+            float safeValue = math.select(safeFallback, value, math.isfinite(value));
+            return math.clamp(safeValue, minimum, maximum);
         }
 
         private void TryRegister()

@@ -7,6 +7,9 @@ poi_tags: poi.tool_custody;poi.salvage_locker
 biome_tags: biome.drowned_colony;biome.deep_colony
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Custodia de herramienta de salvamento"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

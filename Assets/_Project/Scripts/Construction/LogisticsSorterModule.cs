@@ -118,11 +118,12 @@ namespace Hecton8.Construction
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             TryUnregister();
-            TryRegister();
+            if (currentService != null && isActiveAndEnabled)
+                TryRegister();
         }
 
         public void SlowTick()
@@ -261,10 +262,10 @@ namespace Hecton8.Construction
             _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
-        private void TryUnregister()
-        {
-            if (!_registered)
-                return;
+            private void TryUnregister()
+            {
+                if (!_registered)
+                    return;
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;

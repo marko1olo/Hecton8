@@ -9,32 +9,34 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Silt Ambusher Telegraph"
+title: "إشارات كمين الطمي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Silt Ambusher Telegraph
+# إشارات كمين الطمي
 
-AR LOC HOLD: Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact.
+إشارات كمين الطمي هي مقالة عن كائن وقاعدة إنصاف في HECTON-8 في الوقت نفسه. أعمق المناطق يمكن أن تكون عدائية ومظلمة وصعبة القراءة، لكنها لا ينبغي أن تعاقب اللاعب برميات غير مرئية. كمين الطمي مخيف لأنه يكاد يكون تضاريس: فخ حي مدفون تحت الرواسب، ينتظر الاهتزاز والحرارة والوزن غير الحذر. إنه ينتمي إلى الهاوية لأن الهاوية أصلا تدور حول الثقة بالحساسات.
+
+الموضع الجيد يمنح اللاعب دليلا قبل الخطر. الصفيحة ملساء أكثر مما ينبغي. الزواحف الصغيرة غائبة. الحافة تصنع هلالا لا يصنعه الترسب الطبيعي. النبضة تعود متأخرة ومنخفضة وناعمة. المصباح يلتقط نفسا واحدا من الطمي حيث لا يجب أن يتحرك أي تيار. عندما يعرف اللاعب هذه العلامات، تصبح كل رقعة مسطحة سؤالا، لا عقوبة عشوائية. هذا هو عقد HECTON-8: يمكن للمحيط أن يكون قاسيا، لكنه يجب أن يكون مقروءا لمن ينتبه.
 
 ## Scanner
 
-AR LOC HOLD: A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.
+سرير كمين الطمي // طمي نظيف، وغياب للرعاة الصغار، وعودة نبضية منخفضة تشير إلى فخ حي قبل أن تنفتح الصفيحة.
 
 ## Terminal
 
-AR LOC HOLD: CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.
+قاعدة الاتصال: أسرة الكمين تتطلب علامتين على الأقل قبل الاتصال: صفيحة نظيفة، غياب الميكروفونا، حافة هلالية، عودة نبضية منخفضة أو تنفس طمي متأخر. إذا فشلت ميزانية العلامات، خفض اللقاء إلى أثر فقط.
 
 ## Audio
 
-AR LOC HOLD: Flat ground is a lie down here.
+الأرض المسطحة تكذب هنا. ابحث عما لا يزحف فوقها.
 
 ## Field Note
 
-AR LOC HOLD: Deep danger must telegraph. The player should learn the wrongness before paying for it.
+يمكن للهاوية أن تكون غير عادلة مع الشخصية؛ لا يمكن للعبة أن تكون غير عادلة مع اللاعب. كل كمين يجب أن يترك خللا قابلا للقراءة.
 
 <!-- External Site; generated from P230_SILT_AMBUSHER_TELEGRAPH/ar_SA. -->

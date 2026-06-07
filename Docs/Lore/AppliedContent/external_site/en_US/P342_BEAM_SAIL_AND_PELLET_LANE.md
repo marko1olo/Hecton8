@@ -7,6 +7,9 @@ poi_tags: poi.transit_lane_record;poi.pellet_stream_warning
 biome_tags: biome.orbit;biome.contract
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Beam Sail and Pellet Lane"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

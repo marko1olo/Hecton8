@@ -7,6 +7,9 @@ poi_tags: poi.repaired_human_object;poi.biofilm_seal_trace
 biome_tags: biome.atlas_maintenance;biome.photic_shelf
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "First Atlas Repair Trace"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

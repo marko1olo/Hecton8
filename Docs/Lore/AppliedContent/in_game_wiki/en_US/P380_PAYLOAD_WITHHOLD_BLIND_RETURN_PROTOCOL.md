@@ -7,6 +7,9 @@ poi_tags: poi.blind_return_abort;poi.payload_blackout_key
 biome_tags: biome.atlas_basin;biome.factory_temple
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Payload Withhold Blind Return Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

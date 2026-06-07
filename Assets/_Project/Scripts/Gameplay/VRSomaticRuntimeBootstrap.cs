@@ -136,19 +136,18 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
-            if (!isActiveAndEnabled)
-                return;
-
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService != null && _registeredSlowTick)
-                {
-                    TryUnregisterSlowTick();
+                bool wasRegistered = _registeredSlowTick;
+                TryUnregisterSlowTick();
+                if (currentService != null && wasRegistered && isActiveAndEnabled)
                     TryRegisterSlowTick();
-                }
 
                 return;
             }
+
+            if (!isActiveAndEnabled)
+                return;
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player && HectonXRRuntimeState.IsXRActive)
             {

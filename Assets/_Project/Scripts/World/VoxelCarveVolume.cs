@@ -264,17 +264,19 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
-            if (_spawnCarvePending == 0 || currentService == null || !isActiveAndEnabled)
+            if (_spawnCarvePending == 0 || !isActiveAndEnabled)
                 return;
 
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
-                    TryPrimeRuntimeBridge(transform.TransformPoint(localCenter));
+                    if (currentService != null)
+                        TryPrimeRuntimeBridge(transform.TransformPoint(localCenter));
                     return;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredLateFrameTick = 0;
-                    TryRegisterLateFrameTickable();
+                    TryUnregisterLateFrameTickable();
+                    if (currentService != null)
+                        TryRegisterLateFrameTickable();
                     return;
             }
         }

@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Brine Vane Forests"
+title: "Pekelvinbossen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Brine Vane Forests
+# Pekelvinbossen
 
-NL LOC HOLD: Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.
+Pekelvinbossen zijn de eerste middeldiepe ecologie die onzichtbare natuurkunde zichtbaar maakt. Het zijn platte zout-mineraalmembranen langs grenzen tussen pekel, temperatuur en druk. Van afstand lijken ze bleke bladeren in een verdronken canyon; van dichtbij zijn het route-instrumenten. Een intacte plaat betekent dat het water aan de andere kant niet alleen anders is, maar moeilijk binnen te gaan, met genoeg dichtheidsschering om sonar te buigen en een lichaam uit trim te trekken. Gescheurde randen markeren recente doorgang. Gekrulde punten tonen waar de grens verzwakt tot een scheringsvenster. Bleke mineraalribben kunnen van afgeworpen stroken worden geoogst, maar een levende plaat doorsnijden kan de enige leesbare baan door een canyonmuur sluiten. Volg gescheurde vinnen als je een route nodig hebt. Vermijd zwart gelaagd water dat hun randen wist.
 
 ## Scanner
 
-NL LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+PEKELVINBOS // Zout-mineraalmembranen groeien langs dichtheidsschering. Ze tonen waar water verdikt tot een muur en waar sonar zal buigen.
 
 ## Terminal
 
-NL LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+CANYON-BASIS: intacte vinplaten markeren harde dichtheidsgrenzen. Gescheurde randen en gekrulde punten wijzen op scheringsvensters, zoutarmere zakken of recent verkeer. Vermijd ondoorzichtig gelaagd water; het kan sonar blind maken en een pak onder verwachte drijfkracht trekken.
 
 ## Audio
 
-NL LOC HOLD: The canyon has leaves because it has pressure gradients.
+De canyon heeft bladeren omdat hij drukgradiënten heeft.
 
 ## Field Note
 
-NL LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+Het zijn geen bomen. Het zijn drukbladeren: membranen die leven van chemische gradiënten, alleen gescheurd waar recent een route doorheen is geforceerd.
 
 <!-- In-Game Wiki; generated from P226_BRINE_VANE_FORESTS/nl_NL. -->

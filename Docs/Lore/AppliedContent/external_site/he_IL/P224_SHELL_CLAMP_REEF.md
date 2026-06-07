@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Shell Clamp Reef"
+title: "שונית מהדקי קונכייה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Shell Clamp Reef
+# שונית מהדקי קונכייה
 
-HE LOC HOLD: Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures.
+שונית מהדקי הקונכייה היא הגשר החזותי בין האקולוגיה הבהירה של HECTON-8 לבין אימת המכונה המאוחרת יותר. העניין אינו שהאוקיינוס שונא חומרה אנושית. העניין גרוע ושימושי יותר: האוקיינוס למד לצמוח סביבה. מהדקי קונכייה מתיישבים במקום שבו זרם, חלחול מינרלי ורטט הופכים קצה קשה לרווחי, ולכן מעטפת כבל, תפר קפסולה ושפת בזלת יכולים להפוך לאותו סוג בית גידול. כך המדף הרדוד נעשה מוחשי ולא דקורטיבי. השחקן צריך לראות ברגים שלובשים חיים, קווי כבל שהופכים לצלעות שונית, תפרי pressure glass מצופים מהדקים לבנים, ולהבין שלא כל צמיחה היא זיהום. חלק מהצמיחה נושאת עומס. הרעיון הזה מכין את לוגיקת התיקון של Atlas בלי צורך בקסם. Atlas ינצל אחר כך הרגל שהשונית כבר הוכיחה: אורגניזמים מקומיים יכולים להתייחס למכונות אנושיות כמבנה. מיקום טוב צריך להפוך קציר להחלטה, לא ללחיצת כפתור. השוליים המתים נותנים גרגר קונכייה, מרקם משחת איטום וביטחון חומרי מוקדם. הלב החי של השונית עשוי להחזיק סמן נתיב או לסגור דליפה. הסר אותו בעיוורון והאוקיינוס לא יטיף; כבל יתחיל לזוז, תפר יתחיל לבכות, להקת רועים תעזוב והנתיב ישתנה.
 
 ## Scanner
 
-HE LOC HOLD: Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.
+שונית מהדקי קונכייה // מהדקי קונכייה מקומיים נאחזים בסלע, במעטפות כבל, בציפוי קפסולה ובתפרי pressure glass. השונית קיבלה מכונות כמצע.
 
 ## Terminal
 
-HE LOC HOLD: REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.
+קו בסיס שונית: היצמדות עולה על מעטפות כבל שחוקות, מתכת תפר חמה ושולי pressure glass עם חלחול מינרלי. לקצור רק קונכיות חיצוניות מתות. חיתוך מהדקים חיים ליד קווי שירות עלול לפתוח דליפות או למשוך תשומת לב של פאונת תיקון.
 
 ## Audio
 
-HE LOC HOLD: The reef has learned the shape of bolts.
+השונית למדה את צורת הברגים.
 
 ## Field Note
 
-HE LOC HOLD: Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.
+אל תעקור את המהדק הראשון שבהישג יד. אשכול חי עשוי להחזיק כבל דומם, לסגור דליפה דקיקה או לסמן עוגן נתיב.
 
 <!-- External Site; generated from P224_SHELL_CLAMP_REEF/he_IL. -->

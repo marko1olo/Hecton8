@@ -208,32 +208,53 @@ namespace Hecton8.Gameplay
 
         private static void EnsureInitialized()
         {
-            if (!_pendingSignals.IsCreated)
+            try
             {
-                _pendingSignals = new NativeQueue<SuitMeshUpdateSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SuitMeshUpdateSignal>[16] - deferred suit mesh lane - owner: SuitMeshUpdateEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingSignals,
-                    PendingCapacity,
-                    nameof(SuitMeshUpdateEvents),
-                    nameof(_pendingSignals),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingSignals, PendingCapacity);
-            }
+                if (!_pendingSignals.IsCreated)
+                {
+                    _pendingSignals = new NativeQueue<SuitMeshUpdateSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SuitMeshUpdateSignal>[16] - deferred suit mesh lane - owner: SuitMeshUpdateEvents
+                    RegisterNativeQueue(ref _pendingSignals, PendingCapacity, nameof(_pendingSignals));
+                    PrewarmQueue(ref _pendingSignals, PendingCapacity);
+                }
 
-            if (!_nextFrameSignals.IsCreated)
+                if (!_nextFrameSignals.IsCreated)
+                {
+                    _nextFrameSignals = new NativeQueue<SuitMeshUpdateSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SuitMeshUpdateSignal>[16] - next-frame suit mesh lane - owner: SuitMeshUpdateEvents
+                    RegisterNativeQueue(ref _nextFrameSignals, PendingCapacity, nameof(_nextFrameSignals));
+                    PrewarmQueue(ref _nextFrameSignals, PendingCapacity);
+                }
+            }
+            catch
             {
-                _nextFrameSignals = new NativeQueue<SuitMeshUpdateSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SuitMeshUpdateSignal>[16] - next-frame suit mesh lane - owner: SuitMeshUpdateEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameSignals,
-                    PendingCapacity,
-                    nameof(SuitMeshUpdateEvents),
-                    nameof(_nextFrameSignals),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameSignals, PendingCapacity);
+                DisposeQueue(ref _pendingSignals, nameof(_pendingSignals));
+                DisposeQueue(ref _nextFrameSignals, nameof(_nextFrameSignals));
+                _pendingSignalCount = 0;
+                _nextFrameSignalCount = 0;
+                throw;
             }
         }
 
-        private static void DisposeQueue(ref NativeQueue<SuitMeshUpdateSignal> queue, string label)
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(SuitMeshUpdateEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            DisposeQueue(ref queue, label);
+            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void DisposeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
         {
             if (!queue.IsCreated)
                 return;

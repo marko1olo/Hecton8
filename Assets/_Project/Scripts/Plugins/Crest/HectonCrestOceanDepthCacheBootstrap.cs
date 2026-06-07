@@ -309,6 +309,13 @@ namespace Hecton8.World
             if (!_registeredToSlowTickManager && !_registeredToLateFrame)
                 return;
 
+            TryUnregisterDispatcherTicks();
+            _pendingDepthCacheVisualSync = false;
+            _pendingDepthCacheForcePopulate = false;
+        }
+
+        private void TryUnregisterDispatcherTicks()
+        {
             if (_registeredToSlowTickManager)
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             if (_registeredToLateFrame)
@@ -316,8 +323,6 @@ namespace Hecton8.World
 
             _registeredToSlowTickManager = false;
             _registeredToLateFrame = false;
-            _pendingDepthCacheVisualSync = false;
-            _pendingDepthCacheForcePopulate = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -331,10 +336,13 @@ namespace Hecton8.World
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            TryUnregister();
+            TryUnregisterDispatcherTicks();
+            if (currentService == null || !isActiveAndEnabled)
+                return;
+
             TryRegister();
         }
 

@@ -7,6 +7,9 @@ poi_tags: poi.tariff_plate;poi.claim_terminal
 biome_tags: biome.corporate_wreck;biome.salvage_route
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Black Keel Tariff Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

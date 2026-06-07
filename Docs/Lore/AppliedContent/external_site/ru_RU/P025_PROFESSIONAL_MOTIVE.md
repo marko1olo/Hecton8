@@ -7,6 +7,9 @@ poi_tags: poi.barnard_mark;poi.personal_object
 biome_tags: biome.crash_shelf;biome.drowned_colony
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Профессиональный мотив"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

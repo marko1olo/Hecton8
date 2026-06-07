@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "Estrato de sales sulfuradas nativas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# Estrato de sales sulfuradas nativas
 
-ES LOC HOLD: Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent.
+El estrato de sales sulfuradas nativas es el artículo base para la geología sumergida de HECTON-8. No es contaminación de Atlas, ni basura de Deep Reach, ni el comienzo de Xenon-Omega. Es una capa más antigua: sales sulfuradas, iones metálicos y costras de salmuera formadas por presión, calor y tiempo. En el campo parecen humildes junto a los materiales de deuda que brillan, pero permiten las primeras reparaciones. Un estrato puede limpiar contactos oxidados, alimentar química de emergencia, bajar el punto de fusión de una cerámica o convertir un guante limpio en un problema ácido en menos de un minuto. Así debe sentirse un recurso útil en HECTON-8: práctico, peligroso e indiferente. Deep Reach no inventó el apetito de la luna por el metal. Aprendió a facturarlo. La colocación correcta de estos recursos debe enseñar eso antes de que llegue el horror mayor. Las paredes ya son reactivas. La salmuera ya recuerda la presión. El saqueo empieza al distinguir qué pedazo del mundo ayuda a respirar y qué pedazo morderá el equipo que te mantiene con vida.
 
 ## Scanner
 
-ES LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+SALES SULFURADAS NATIVAS // Cristales armados por respiraderos y costra negra de salmuera, anteriores a Deep Reach. Mojadas conducen, templadas corroen, útiles antes de que nada se vuelva azul.
 
 ## Terminal
 
-ES LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+CLASE DE RECURSO: geología nativa. Usos: lavado de conductores, química de celda de emergencia, fundente cerámico, catalizador corrosivo. Sellar lejos del aire de admisión caliente; el polvo florece como película ácida sobre el metal del traje.
 
 ## Audio
 
-ES LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+La luna no necesitó a una compañía para ser peligrosa. Ya sabía química.
 
 ## Field Note
 
-ES LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+Si los guantes pican, ya vas tarde. Enjuaga, deriva a tierra, registra la pared.
 
 <!-- External Site; generated from P116_NATIVE_SULFIDE_SALT_STACK/es_ES. -->

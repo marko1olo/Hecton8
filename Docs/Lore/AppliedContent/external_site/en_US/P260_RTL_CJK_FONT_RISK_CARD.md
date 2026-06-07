@@ -7,6 +7,9 @@ poi_tags: poi.font_risk_card;poi.rtl_layout_sample
 biome_tags: biome.localization;biome.ui
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "RTL And CJK Font Risk Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

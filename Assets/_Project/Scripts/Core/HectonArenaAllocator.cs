@@ -192,6 +192,18 @@ namespace Hecton8.Core
                     nameof(HectonArenaAllocator),
                     nameof(_basePtr),
                     NativeAllocationLifetime.TransientArena);
+                if (_sentinelId <= 0)
+                {
+                    H8Memory.FreeRaw(_basePtr, Allocator.Persistent, SystemID.H8Memory);
+                    _basePtr = null;
+                    _capacityBytes = 0;
+                    _arenaCapacityBytes = 0;
+                    _slabCapacityBytes = 0;
+                    _slabCount = 0;
+                    ResetScalarState();
+                    ClearManagedState();
+                    throw new InvalidOperationException("NativeMemorySentinel rejected Hecton arena base pointer registration.");
+                }
 
                 MemoryBudgetTracker.Register(BudgetOwner, _capacityBytes, _capacityBytes);
                 RecreateSafetyHandle(0);
@@ -368,7 +380,7 @@ namespace Hecton8.Core
             }
 
             ReleaseSafetyHandles();
-            if (_sentinelId != 0)
+            if (_sentinelId > 0)
             {
                 NativeMemorySentinel.Unregister(_sentinelId);
                 _sentinelId = 0;

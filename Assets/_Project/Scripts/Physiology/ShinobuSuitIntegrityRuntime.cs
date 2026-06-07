@@ -174,6 +174,9 @@ namespace Hecton8.Physiology
             {
                 _tickDispatcher = currentService as ITickDispatcher;
                 _lastDispatcherTimeSeconds = -1d;
+                TryUnregisterTicks();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterTicks();
             }
         }
 

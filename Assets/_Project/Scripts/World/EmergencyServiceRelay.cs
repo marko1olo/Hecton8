@@ -237,6 +237,7 @@ namespace Hecton8.World
                 highlightObject.SetActive(false);
 
             _highlighter?.SetHighlight(false);
+            ClearCachedRegistryServices();
         }
 
         private void OnDestroy()
@@ -246,6 +247,8 @@ namespace Hecton8.World
 
             if (s_ActiveRelays.Remove(this))
                 MarkRegistryDirty();
+
+            ClearCachedRegistryServices();
         }
 
         /// <summary>Returns the active relay at the given registry index.</summary>
@@ -288,7 +291,7 @@ namespace Hecton8.World
             if (!IsWhiteSpace(resolvedLoreMessage))
                 NotificationEvents.TryPushInfo(resolvedLoreMessage);
 
-            IAudioLogRuntime audioLogSystem = _cachedAudioLogSystem;
+            IAudioLogRuntime audioLogSystem = ResolveAudioLogSystem();
             if (audioLogSystem != null && _linkedAudioLogHash != 0u)
                 audioLogSystem.TryPlayAudioLogByHash(_linkedAudioLogHash);
 
@@ -419,7 +422,7 @@ namespace Hecton8.World
                     RebuildInteractText();
                     break;
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
-                    _cachedAudioLogSystem = currentService as IAudioLogRuntime;
+                    CacheAudioLogSystem(currentService as IAudioLogRuntime);
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
@@ -435,9 +438,43 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             _cachedNarrativeDiscovery = GlobalRegistry.NarrativeDiscoveryReadModel;
-            _cachedAudioLogSystem = GlobalRegistry.AudioLogRuntime;
+            CacheAudioLogSystem(GlobalRegistry.AudioLogRuntime);
             _cachedPlayerContext = GlobalRegistry.Player;
             _cachedLocalization = GlobalRegistry.LocalizationText;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _cachedNarrativeDiscovery = null;
+            _cachedAudioLogSystem = null;
+            _cachedPlayerContext = null;
+            _cachedLocalization = null;
+        }
+
+        private void CacheAudioLogSystem(IAudioLogRuntime audioLogSystem)
+        {
+            _cachedAudioLogSystem = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null;
+        }
+
+        private IAudioLogRuntime ResolveAudioLogSystem()
+        {
+            IAudioLogRuntime audioLogSystem = _cachedAudioLogSystem;
+            if (IsAudioLogRuntimeUsable(audioLogSystem))
+                return audioLogSystem;
+
+            _cachedAudioLogSystem = null;
+            return null;
+        }
+
+        private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogSystem)
+        {
+            if (audioLogSystem == null)
+                return false;
+
+            if (audioLogSystem is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()

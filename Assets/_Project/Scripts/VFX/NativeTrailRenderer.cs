@@ -195,24 +195,7 @@ namespace Hecton8.VFX
                 ITickDispatcher tickDispatcher = currentService as ITickDispatcher;
                 if (!ReferenceEquals(_tickDispatcher, tickDispatcher))
                 {
-                    if (_registeredOriginShift)
-                    {
-                        HectonFloatingOrigin.UnregisterListener(this);
-                        _registeredOriginShift = false;
-                    }
-
-                    if (_registeredUpdate)
-                    {
-                        GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                        _registeredUpdate = false;
-                    }
-
-                    if (_registeredColdTick)
-                    {
-                        GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
-                        _registeredColdTick = false;
-                    }
-
+                    TryUnregisterDispatcherTicks();
                     _tickDispatcher = tickDispatcher;
                 }
 
@@ -511,6 +494,21 @@ namespace Hecton8.VFX
                 _registeredRender = false;
             }
 
+            if (_registeredUpdate)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredUpdate = false;
+            }
+
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredColdTick = false;
+            }
+        }
+
+        private void TryUnregisterDispatcherTicks()
+        {
             if (_registeredUpdate)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);

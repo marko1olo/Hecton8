@@ -81,36 +81,63 @@ namespace Hecton8.Core
         {
             _capacity = expectedCapacity <= 0 ? 1 : expectedCapacity;
             _events = new NativeQueue<int>(Allocator.Persistent);
-            _counters = Hecton8.Core.Memory.H8Memory.Allocate<int>(
-                CounterLength,
-                Hecton8.Core.Memory.SystemID.CoreDiagnostics,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeQueue(
-                _events,
-                _capacity,
-                nameof(BurstCallbackQueue),
-                nameof(_events),
-                NativeAllocationLifetime.Session);
-            if (!_counters.IsCreated)
+            bool queueRegistered = false;
+            bool budgetRegistered = false;
+            try
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(BurstCallbackQueue), nameof(_events));
-                _events.Dispose();
-                _events = default;
-                _capacity = 0;
-                _counterSentinelId = 0;
-                return;
+                int queueSentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                    _events,
+                    _capacity,
+                    nameof(BurstCallbackQueue),
+                    nameof(_events),
+                    NativeAllocationLifetime.Session);
+                if (queueSentinelId <= 0)
+                    throw new InvalidOperationException("NativeMemorySentinel rejected BurstCallbackQueue event queue registration.");
+
+                queueRegistered = true;
+                _counters = Hecton8.Core.Memory.H8Memory.Allocate<int>(
+                    CounterLength,
+                    Hecton8.Core.Memory.SystemID.CoreDiagnostics,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+                if (!_counters.IsCreated)
+                    throw new InvalidOperationException("BurstCallbackQueue counter allocation failed.");
+
+                _counterSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    _counters,
+                    nameof(BurstCallbackQueue),
+                    nameof(_counters),
+                    NativeAllocationLifetime.Session);
+                if (_counterSentinelId <= 0)
+                    throw new InvalidOperationException("NativeMemorySentinel rejected BurstCallbackQueue counter registration.");
+
+                int bytes = sizeof(int) * (_capacity + CounterLength);
+                MemoryBudgetTracker.Register(BudgetOwner, bytes, bytes);
+                budgetRegistered = true;
+                Prewarm();
             }
-
-            _counterSentinelId = NativeMemorySentinel.RegisterNativeArray(
-                _counters,
-                nameof(BurstCallbackQueue),
-                nameof(_counters),
-                NativeAllocationLifetime.Session);
-
-            int bytes = sizeof(int) * (_capacity + CounterLength);
-            MemoryBudgetTracker.Register(BudgetOwner, bytes, bytes);
-            Prewarm();
+            catch
+            {
+                if (budgetRegistered)
+                    MemoryBudgetTracker.Unregister(BudgetOwner);
+                if (_counterSentinelId > 0)
+                {
+                    NativeMemorySentinel.Unregister(_counterSentinelId);
+                    _counterSentinelId = 0;
+                }
+                Hecton8.Core.Memory.H8Memory.Release(
+                    ref _counters,
+                    Hecton8.Core.Memory.SystemID.CoreDiagnostics);
+                if (queueRegistered)
+                    NativeMemorySentinel.UnregisterNativeQueue(nameof(BurstCallbackQueue), nameof(_events));
+                if (_events.IsCreated)
+                {
+                    _events.Dispose();
+                    _events = default;
+                }
+                _capacity = 0;
+                throw;
+            }
         }
 
         public void Enqueue(int eventId)
@@ -197,7 +224,7 @@ namespace Hecton8.Core
             Clear();
             NativeMemorySentinel.UnregisterNativeQueue(nameof(BurstCallbackQueue), nameof(_events));
 
-            if (_counterSentinelId != 0)
+            if (_counterSentinelId > 0)
             {
                 NativeMemorySentinel.Unregister(_counterSentinelId);
                 _counterSentinelId = 0;
@@ -218,7 +245,7 @@ namespace Hecton8.Core
 
             NativeMemorySentinel.UnregisterNativeQueue(nameof(BurstCallbackQueue), nameof(_events));
 
-            if (_counterSentinelId != 0)
+            if (_counterSentinelId > 0)
             {
                 NativeMemorySentinel.Unregister(_counterSentinelId);
                 _counterSentinelId = 0;

@@ -221,7 +221,7 @@ namespace Hecton8.AtlasSignal
                 _firstHourDirector = currentService as IFirstHourReadModel;
             else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registered = false;
+                TryUnregister();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegister();
             }

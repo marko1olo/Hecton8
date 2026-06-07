@@ -7,6 +7,9 @@ poi_tags: poi.liability_memo_shards;poi.packet_notary_stamp
 biome_tags: biome.worker_archive;biome.relay_archive
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Цепочка фрагментов liability memo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

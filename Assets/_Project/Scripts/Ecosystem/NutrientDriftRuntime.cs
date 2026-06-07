@@ -501,10 +501,9 @@ namespace Hecton8.Ecosystem
                     _playerContext = currentService as IPlayerRuntimeContext;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    UnregisterDispatcherRoutes();
                     if (currentService != null)
                         TryRegister();
-                    else
-                        UnregisterDispatcherRoutes();
                     break;
             }
         }

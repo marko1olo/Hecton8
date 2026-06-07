@@ -114,6 +114,7 @@ namespace Hecton8.Core.Generated
         public const uint P106_ILIYA_VARNEK_TIDE_MARGIN = 0x58EB5C7Fu;
         public const uint P107_SELENE_ARENDT_ATLAS_WEIGHTING = 0xF1B339F0u;
         public const uint P108_NOOR_HALDANE_EVAC_CERT = 0x939CBB9Cu;
+        public const uint P1090_SILENT_ORBIT_RECEIPT_LEDGER = 0x526B68EBu;
         public const uint P109_MAREK_IBARRA_LOSS_CONVERSION = 0x278195EDu;
         public const uint P110_VERA_SATO_REN_RETURN_ACTION = 0xF66E6A74u;
         public const uint P111_MANUAL_BILGE_PUMP_KIT = 0x2118B231u;
@@ -470,6 +471,10 @@ namespace Hecton8.Core.Generated
         public const uint P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE = 0x39EB648Eu;
         public const uint P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE = 0x64DCA3D4u;
         public const uint P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE = 0x6893BE85u;
+        public const uint P621_AEGIR_RECOVERY_WINDOW_GEOMETRY = 0x8BBBEE0Fu;
+        public const uint P622_KESTREL_RELAY_SHADOW_CHART = 0x756AA1A6u;
+        public const uint P623_PELLET_LANE_WAKE_LEDGER = 0x1C738CB9u;
+        public const uint P624_CABLE_FOREST_CONDUCTIVE_BIOTA = 0x727AB672u;
 
         public const uint Locale_en_US = 0x6C199F07u;
         public const uint Locale_ru_RU = 0x5FBC7928u;

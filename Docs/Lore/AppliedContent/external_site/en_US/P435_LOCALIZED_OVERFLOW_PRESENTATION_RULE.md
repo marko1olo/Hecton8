@@ -7,6 +7,9 @@ poi_tags: poi.localization_overflow_rule;poi.rtl_cjk_review_badge
 biome_tags: biome.localization;biome.ui_rules
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Localized Overflow Presentation Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

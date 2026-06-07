@@ -7,6 +7,9 @@ poi_tags: poi.route_delay_notice;poi.old_packet_stamp
 biome_tags: biome.shallow_annex;biome.carrier_link
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Экономика маршрутов без FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Mastic biofibre Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Mastic biofibre Atlas
 
-FR LOC HOLD: Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.
+Le mastic biofibre Atlas est une erreur utile. Il pousse dans une écologie de réparation où tissu vivant, gaine de câble déchirée et couture qui fuit ont été classés comme le même type de blessure. Une bande préparée peut sceller du matériel de survie ou des joints souples sous pression dans l'eau, mais un stockage tiède peut réveiller une croissance chercheuse de coutures et de fausses signatures de vie.
 
 ## Scanner
 
-FR LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+MASTIC BIOFIBRE ATLAS // Fibre de réparation humide née là où gaine de câble, tissu de plaie et joint de coque ont reçu la même classe de panne. Adhère sous pression; peut continuer à pousser après récolte.
 
 ## Terminal
 
-FR LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+CLASSE RESSOURCE : écologie de réparation altérée par Atlas. Poser une pince froide avant retrait. Usages : coutures humides, déchirures de combinaison, gaines de câble, articulations souples sous pression. Risques : fausse signature de vie, écho capteur, recherche active de couture en stockage.
 
 ## Audio
 
-FR LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+Il ne connaît pas la différence entre une fuite, une coupure et une bouche. Atlas lui a appris que les trois sont des ouvertures à fermer.
 
 ## Field Note
 
-FR LOC HOLD: Useful body horror: the player wants it and distrusts it.
+Un bon mastic sèche. Celui-ci écoute le prochain trou.
 
 <!-- In-Game Wiki; generated from P119_ATLAS_BIOFIBER_SEALANT/fr_FR. -->

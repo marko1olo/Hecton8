@@ -416,9 +416,13 @@ namespace Hecton8.Rendering.Scatter
                 return false;
 
             payload.Header = header;
-            payload.Matrices = new NativeArray<Matrix4x4>(header.MatrixCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            payload.Metadata = new NativeArray<GpuScatterFloraInstanceData>(header.MetadataCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            payload.QualityIndices = new NativeArray<int>(header.QualityIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            if (!TryAllocateScratch(header.MatrixCount, NativeArrayOptions.UninitializedMemory, out payload.Matrices, out failure) ||
+                !TryAllocateScratch(header.MetadataCount, NativeArrayOptions.UninitializedMemory, out payload.Metadata, out failure) ||
+                !TryAllocateScratch(header.QualityIndexCount, NativeArrayOptions.UninitializedMemory, out payload.QualityIndices, out failure))
+            {
+                payload.Dispose();
+                return false;
+            }
 
             reader.BaseStream.Seek(header.MatrixOffsetBytes, SeekOrigin.Begin);
             for (int i = 0; i < header.MatrixCount; i++)
@@ -579,7 +583,9 @@ namespace Hecton8.Rendering.Scatter
         private static bool ValidateQualityMap(NativeArray<int> qualityIndices, int count, out string failure)
         {
             failure = string.Empty;
-            NativeArray<byte> seen = new NativeArray<byte>(count, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            if (!TryAllocateScratch(count, NativeArrayOptions.ClearMemory, out NativeArray<byte> seen, out failure))
+                return false;
+
             try
             {
                 for (int i = 0; i < qualityIndices.Length; i++)
@@ -602,7 +608,7 @@ namespace Hecton8.Rendering.Scatter
             }
             finally
             {
-                seen.Dispose();
+                ReleaseScratch(ref seen);
             }
 
             return true;
@@ -623,8 +629,16 @@ namespace Hecton8.Rendering.Scatter
                 return false;
             }
 
-            NativeArray<Matrix4x4> matrices = new NativeArray<Matrix4x4>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<GpuScatterFloraInstanceData> metadata = new NativeArray<GpuScatterFloraInstanceData>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<Matrix4x4> matrices = default;
+            NativeArray<GpuScatterFloraInstanceData> metadata = default;
+            if (!TryAllocateScratch(count, NativeArrayOptions.UninitializedMemory, out matrices, out failure) ||
+                !TryAllocateScratch(count, NativeArrayOptions.UninitializedMemory, out metadata, out failure))
+            {
+                ReleaseScratch(ref matrices);
+                ReleaseScratch(ref metadata);
+                return false;
+            }
+
             bool transferred = false;
             try
             {
@@ -635,9 +649,9 @@ namespace Hecton8.Rendering.Scatter
                     metadata[dst] = payload.Metadata[src];
                 }
 
-                payload.Matrices.Dispose();
-                payload.Metadata.Dispose();
-                payload.QualityIndices.Dispose();
+                ReleaseScratch(ref payload.Matrices);
+                ReleaseScratch(ref payload.Metadata);
+                ReleaseScratch(ref payload.QualityIndices);
                 payload.Matrices = matrices;
                 payload.Metadata = metadata;
                 payload.QualityIndices = default;
@@ -648,12 +662,33 @@ namespace Hecton8.Rendering.Scatter
             {
                 if (!transferred)
                 {
-                    if (matrices.IsCreated)
-                        matrices.Dispose();
-                    if (metadata.IsCreated)
-                        metadata.Dispose();
+                    ReleaseScratch(ref matrices);
+                    ReleaseScratch(ref metadata);
                 }
             }
+        }
+
+        private static bool TryAllocateScratch<T>(
+            int length,
+            NativeArrayOptions options,
+            out NativeArray<T> array,
+            out string failure) where T : struct
+        {
+            failure = string.Empty;
+            array = H8Memory.Allocate<T>(length, SystemID.Vfx, Allocator.TempJob, options);
+            if (array.IsCreated)
+                return true;
+
+            failure = "native scratch allocation failed";
+            return false;
+        }
+
+        private static void ReleaseScratch<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            H8Memory.Release(ref array, SystemID.Vfx);
         }
 
         private static BrgRuntimeHeader ReadHeader(BinaryReader reader)
@@ -779,12 +814,9 @@ namespace Hecton8.Rendering.Scatter
 
             public void Dispose()
             {
-                if (Matrices.IsCreated)
-                    Matrices.Dispose();
-                if (Metadata.IsCreated)
-                    Metadata.Dispose();
-                if (QualityIndices.IsCreated)
-                    QualityIndices.Dispose();
+                ReleaseScratch(ref Matrices);
+                ReleaseScratch(ref Metadata);
+                ReleaseScratch(ref QualityIndices);
             }
         }
     }

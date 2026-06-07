@@ -37,6 +37,8 @@ namespace Hecton8.EditorValidation
         private const int Utf8ScratchBytes = 16384;
         private const int LocalizationPoolExpectedValueCapacity = 65536;
         private const int LocalizationPoolInitialByteCapacity = 8 * 1024 * 1024;
+        private const int PythonToolTimeoutMilliseconds = 30000;
+        private const int PythonToolOutputDrainMilliseconds = 1000;
         private const string TempOutputSuffix = ".tmp";
         private const string BackupOutputSuffix = ".bak";
         private const int MoveFileReplaceExisting = 0x1;
@@ -272,22 +274,124 @@ namespace Hecton8.EditorValidation
                 CreateNoWindow = true
             };
 
-            using Process process = Process.Start(startInfo);
+            using Process process = TryStartPythonProjectToolNoThrow(startInfo);
             if (process == null)
             {
                 summary = label + " failed to start.";
                 return false;
             }
 
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
+            Task<string> outputTask;
+            Task<string> errorTask;
+            try
+            {
+                outputTask = process.StandardOutput.ReadToEndAsync();
+                errorTask = process.StandardError.ReadToEndAsync();
+            }
+            catch (Exception ex)
+            {
+                KillPythonProjectToolNoThrow(process);
+                summary = label + " output capture failed: " + ex.Message;
+                return false;
+            }
+
+            if (!TryWaitForPythonProjectTool(process, label, out summary))
+                return false;
+
+            WaitForPythonProjectToolOutputDrain(outputTask, errorTask);
+            string output = ReadProcessOutputTaskNoThrow(outputTask);
+            string error = ReadProcessOutputTaskNoThrow(errorTask);
+            int exitCode = ReadProcessExitCodeNoThrow(process);
             summary = output.Trim();
-            if (process.ExitCode == 0)
+            if (exitCode == 0)
                 return true;
 
-            summary = label + " exit=" + process.ExitCode + " stdout=" + output.Trim() + " stderr=" + error.Trim();
+            summary = label + " exit=" + exitCode + " stdout=" + output.Trim() + " stderr=" + error.Trim();
             return false;
+        }
+
+        private static Process TryStartPythonProjectToolNoThrow(ProcessStartInfo startInfo)
+        {
+            try
+            {
+                return Process.Start(startInfo);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private static bool TryWaitForPythonProjectTool(Process process, string label, out string summary)
+        {
+            try
+            {
+                if (process.WaitForExit(PythonToolTimeoutMilliseconds))
+                {
+                    summary = string.Empty;
+                    return true;
+                }
+
+                KillPythonProjectToolNoThrow(process);
+                summary = label + " timed out after " + PythonToolTimeoutMilliseconds + "ms.";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                KillPythonProjectToolNoThrow(process);
+                summary = label + " wait failed: " + ex.Message;
+                return false;
+            }
+        }
+
+        private static void WaitForPythonProjectToolOutputDrain(Task<string> outputTask, Task<string> errorTask)
+        {
+            try
+            {
+                Task.WaitAll(new Task[] { outputTask, errorTask }, PythonToolOutputDrainMilliseconds);
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private static string ReadProcessOutputTaskNoThrow(Task<string> task)
+        {
+            if (task == null || !task.IsCompleted || task.IsCanceled || task.IsFaulted)
+                return string.Empty;
+
+            try
+            {
+                return task.Result ?? string.Empty;
+            }
+            catch (Exception)
+            {
+                return string.Empty;
+            }
+        }
+
+        private static int ReadProcessExitCodeNoThrow(Process process)
+        {
+            try
+            {
+                return process.ExitCode;
+            }
+            catch (Exception)
+            {
+                return -1;
+            }
+        }
+
+        private static void KillPythonProjectToolNoThrow(Process process)
+        {
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill();
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private static string QuoteArg(string value)
@@ -4646,14 +4750,18 @@ namespace Hecton8.EditorValidation
         {
             EditorApplication.update -= DrainPendingBake;
             EditorApplication.update += DrainPendingBake;
+            AssemblyReloadEvents.beforeAssemblyReload -= StopWatcher;
+            AssemblyReloadEvents.beforeAssemblyReload += StopWatcher;
+            EditorApplication.quitting -= StopWatcher;
+            EditorApplication.quitting += StopWatcher;
             StartWatcher();
         }
 
         private static void StartWatcher()
         {
             StopWatcher();
-            _sourceWatcher = StartWatcherFor(Path.GetFullPath(H8DataMonolithCompiler.SourceFolder));
-            _balanceWatcher = StartWatcherFor(Path.GetFullPath("Data/Balance"));
+            _sourceWatcher = TryStartWatcherFor(Path.GetFullPath(H8DataMonolithCompiler.SourceFolder));
+            _balanceWatcher = TryStartWatcherFor(Path.GetFullPath("Data/Balance"));
         }
 
         internal static void RequestBake()
@@ -4662,20 +4770,45 @@ namespace Hecton8.EditorValidation
             Interlocked.Exchange(ref _pendingBake, 1);
         }
 
-        private static FileSystemWatcher StartWatcherFor(string absoluteSourceFolder)
+        private static FileSystemWatcher TryStartWatcherFor(string absoluteSourceFolder)
         {
-            Directory.CreateDirectory(absoluteSourceFolder);
-            FileSystemWatcher watcher = new FileSystemWatcher(absoluteSourceFolder)
+            try
             {
-                IncludeSubdirectories = true,
-                NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size
-            };
-            watcher.Changed += HandleSourceChanged;
-            watcher.Created += HandleSourceChanged;
-            watcher.Deleted += HandleSourceChanged;
-            watcher.Renamed += HandleSourceRenamed;
-            watcher.EnableRaisingEvents = true;
-            return watcher;
+                Directory.CreateDirectory(absoluteSourceFolder);
+                FileSystemWatcher watcher = new FileSystemWatcher(absoluteSourceFolder)
+                {
+                    IncludeSubdirectories = true,
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size
+                };
+                watcher.Changed += HandleSourceChanged;
+                watcher.Created += HandleSourceChanged;
+                watcher.Deleted += HandleSourceChanged;
+                watcher.Renamed += HandleSourceRenamed;
+                watcher.EnableRaisingEvents = true;
+                return watcher;
+            }
+            catch (IOException ex)
+            {
+                Debug.LogWarning("[H8DataMonolithFileSystemWatcher] Source watcher unavailable: " + ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                Debug.LogWarning("[H8DataMonolithFileSystemWatcher] Source watcher unavailable: " + ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Debug.LogWarning("[H8DataMonolithFileSystemWatcher] Source watcher unavailable: " + ex.Message);
+            }
+            catch (NotSupportedException ex)
+            {
+                Debug.LogWarning("[H8DataMonolithFileSystemWatcher] Source watcher unavailable: " + ex.Message);
+            }
+            catch (System.Security.SecurityException ex)
+            {
+                Debug.LogWarning("[H8DataMonolithFileSystemWatcher] Source watcher unavailable: " + ex.Message);
+            }
+
+            return null;
         }
 
         private static void StopWatcher()
@@ -4686,16 +4819,37 @@ namespace Hecton8.EditorValidation
 
         private static void StopWatcher(ref FileSystemWatcher watcher)
         {
-            if (watcher == null)
+            FileSystemWatcher activeWatcher = watcher;
+            watcher = null;
+            if (activeWatcher == null)
                 return;
 
-            watcher.EnableRaisingEvents = false;
-            watcher.Changed -= HandleSourceChanged;
-            watcher.Created -= HandleSourceChanged;
-            watcher.Deleted -= HandleSourceChanged;
-            watcher.Renamed -= HandleSourceRenamed;
-            watcher.Dispose();
-            watcher = null;
+            try
+            {
+                activeWatcher.EnableRaisingEvents = false;
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+
+            activeWatcher.Changed -= HandleSourceChanged;
+            activeWatcher.Created -= HandleSourceChanged;
+            activeWatcher.Deleted -= HandleSourceChanged;
+            activeWatcher.Renamed -= HandleSourceRenamed;
+
+            try
+            {
+                activeWatcher.Dispose();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
         }
 
         private static void HandleSourceChanged(object sender, FileSystemEventArgs args)
@@ -4758,6 +4912,8 @@ namespace Hecton8.EditorValidation
         private const int Port = 48088;
         private const string ReloadPrefix = "RELOAD ";
         private const int MaxReloadPacketChars = 1024;
+        private const int HotReloadThreadJoinMilliseconds = 1000;
+        private static readonly object LifecycleLock = new object();
         private static readonly object QueueLock = new object();
         private static TcpListener _listener;
         private static Thread _thread;
@@ -4799,58 +4955,60 @@ namespace Hecton8.EditorValidation
 
         private static void Start()
         {
-            if (Interlocked.Exchange(ref _running, 1) == 1)
-                return;
-
-            try
+            lock (LifecycleLock)
             {
-                _listener = new TcpListener(IPAddress.Loopback, Port);
-                _listener.Start(4);
-                _thread = new Thread(ListenLoop)
+                Thread existingThread = _thread;
+                if (existingThread != null && !existingThread.IsAlive)
                 {
-                    IsBackground = true,
-                    Name = "H8.DataMonolith.HotReload"
-                };
-                _thread.Start();
-            }
-            catch (SocketException ex)
-            {
-                HandleStartFailure(ex);
-            }
-            catch (ObjectDisposedException ex)
-            {
-                HandleStartFailure(ex);
-            }
-            catch (InvalidOperationException ex)
-            {
-                HandleStartFailure(ex);
-            }
-            catch (ThreadStateException ex)
-            {
-                HandleStartFailure(ex);
-            }
-            catch (System.Security.SecurityException ex)
-            {
-                HandleStartFailure(ex);
+                    _thread = null;
+                    Interlocked.Exchange(ref _running, 0);
+                }
+
+                if (_thread != null && _thread.IsAlive)
+                    return;
+
+                if (Interlocked.Exchange(ref _running, 1) == 1)
+                    return;
+
+                try
+                {
+                    _listener = new TcpListener(IPAddress.Loopback, Port);
+                    _listener.Start(4);
+                    Thread thread = new Thread(ListenLoop)
+                    {
+                        IsBackground = true,
+                        Name = "H8.DataMonolith.HotReload"
+                    };
+                    _thread = thread;
+                    thread.Start();
+                }
+                catch (SocketException ex)
+                {
+                    HandleStartFailure(ex);
+                }
+                catch (ObjectDisposedException ex)
+                {
+                    HandleStartFailure(ex);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    HandleStartFailure(ex);
+                }
+                catch (ThreadStateException ex)
+                {
+                    HandleStartFailure(ex);
+                }
+                catch (System.Security.SecurityException ex)
+                {
+                    HandleStartFailure(ex);
+                }
             }
         }
 
         private static void HandleStartFailure(Exception ex)
         {
             Interlocked.Exchange(ref _running, 0);
-            try
-            {
-                _listener?.Stop();
-            }
-            catch (SocketException)
-            {
-            }
-            catch (ObjectDisposedException)
-            {
-            }
-            catch (InvalidOperationException)
-            {
-            }
+            StopListenerNoThrow(_listener);
 
             _listener = null;
             _thread = null;
@@ -4859,10 +5017,39 @@ namespace Hecton8.EditorValidation
 
         private static void Stop()
         {
+            Thread thread;
+            TcpListener listener;
+            lock (LifecycleLock)
+            {
+                Interlocked.Exchange(ref _running, 0);
+                thread = _thread;
+                listener = _listener;
+                _listener = null;
+            }
+
+            StopListenerNoThrow(listener);
+            if (TryJoinHotReloadThreadNoThrow(thread))
+            {
+                lock (LifecycleLock)
+                {
+                    if (ReferenceEquals(_thread, thread))
+                        _thread = null;
+                }
+            }
+
+            lock (QueueLock)
+                _pendingPath = null;
+        }
+
+        private static void StopListenerNoThrow(TcpListener listener)
+        {
+            if (listener == null)
+                return;
+
             Interlocked.Exchange(ref _running, 0);
             try
             {
-                _listener?.Stop();
+                listener.Stop();
             }
             catch (SocketException)
             {
@@ -4873,64 +5060,106 @@ namespace Hecton8.EditorValidation
             catch (InvalidOperationException)
             {
             }
+        }
 
-            _listener = null;
-            _thread = null;
-            lock (QueueLock)
-                _pendingPath = null;
+        private static bool TryJoinHotReloadThreadNoThrow(Thread thread)
+        {
+            if (thread == null || !thread.IsAlive)
+                return true;
+
+            if (ReferenceEquals(Thread.CurrentThread, thread))
+                return false;
+
+            try
+            {
+                thread.Join(HotReloadThreadJoinMilliseconds);
+                return !thread.IsAlive;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         private static void ListenLoop()
         {
-            while (Volatile.Read(ref _running) != 0)
+            try
             {
-                try
+                while (Volatile.Read(ref _running) != 0)
                 {
-                    TcpClient client = _listener.AcceptTcpClient();
-                    using (client)
-                    using (NetworkStream stream = client.GetStream())
-                    using (StreamReader reader = new StreamReader(stream, Encoding.UTF8, false, 1024, false))
+                    try
                     {
-                        string line = reader.ReadLine();
-                        if (!string.IsNullOrEmpty(line) &&
-                            line.Length <= MaxReloadPacketChars &&
-                            line.StartsWith(ReloadPrefix, StringComparison.Ordinal))
+                        TcpListener listener = _listener;
+                        if (listener == null)
+                            return;
+
+                        TcpClient client = listener.AcceptTcpClient();
+                        using (client)
+                        using (NetworkStream stream = client.GetStream())
+                        using (StreamReader reader = new StreamReader(stream, Encoding.UTF8, false, 1024, false))
                         {
-                            string path = line.Substring(ReloadPrefix.Length);
-                            if (IsAllowedReloadPath(path))
-                                QueueReload(Path.GetFullPath(path));
+                            string line = reader.ReadLine();
+                            if (!string.IsNullOrEmpty(line) &&
+                                line.Length <= MaxReloadPacketChars &&
+                                line.StartsWith(ReloadPrefix, StringComparison.Ordinal))
+                            {
+                                string path = line.Substring(ReloadPrefix.Length);
+                                if (IsAllowedReloadPath(path))
+                                    QueueReload(Path.GetFullPath(path));
+                            }
                         }
                     }
-                }
-                catch (SocketException)
-                {
-                    return;
-                }
-                catch (ObjectDisposedException)
-                {
-                    return;
-                }
-                catch (IOException ex)
-                {
-                    Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
-                }
-                catch (ArgumentException ex)
-                {
-                    Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
-                }
-                catch (NotSupportedException ex)
-                {
-                    Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
-                }
-                catch (System.Security.SecurityException ex)
-                {
-                    Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
+                    catch (SocketException)
+                    {
+                        return;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        return;
+                    }
+                    catch (IOException ex)
+                    {
+                        Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
+                    }
+                    catch (NotSupportedException ex)
+                    {
+                        Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
+                    }
+                    catch (System.Security.SecurityException ex)
+                    {
+                        Debug.LogWarning("[H8DataMonolithHotReloadSocket] Reload packet rejected: " + ex.Message);
+                    }
                 }
             }
+            finally
+            {
+                CleanupExitedHotReloadThread(Thread.CurrentThread);
+            }
+        }
+
+        private static void CleanupExitedHotReloadThread(Thread thread)
+        {
+            TcpListener listener = null;
+            lock (LifecycleLock)
+            {
+                if (!ReferenceEquals(_thread, thread))
+                    return;
+
+                Interlocked.Exchange(ref _running, 0);
+                listener = _listener;
+                _listener = null;
+                _thread = null;
+            }
+
+            StopListenerNoThrow(listener);
         }
 
         private static void QueueReload(string absolutePath)

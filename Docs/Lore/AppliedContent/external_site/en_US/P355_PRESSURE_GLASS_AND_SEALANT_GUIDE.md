@@ -7,6 +7,9 @@ poi_tags: poi.pressure_glass_fracture;poi.sealant_growth_edge
 biome_tags: biome.geology;biome.atlas
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Pressure Glass and Sealant Guide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

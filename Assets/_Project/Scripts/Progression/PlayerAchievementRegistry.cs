@@ -799,8 +799,7 @@ namespace Hecton8.Progression
                     RebindSaveService(currentService as ISaveService);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredToTick = false;
-                    _registeredToSlowTick = false;
+                    UnregisterFromTickManager();
                     if (currentService != null && isActiveAndEnabled)
                         TryRegisterWithTickManager();
                     break;

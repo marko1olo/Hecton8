@@ -97,13 +97,9 @@ namespace Hecton8.Audio
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null)
+                TryUnregister(clearPendingPreset: false);
+                if (currentService != null && isActiveAndEnabled)
                 {
-                    _registered = false;
-                }
-                else if (isActiveAndEnabled)
-                {
-                    TryUnregister();
                     TryRegister();
                 }
 
@@ -179,6 +175,11 @@ namespace Hecton8.Audio
 
         private void TryUnregister()
         {
+            TryUnregister(clearPendingPreset: true);
+        }
+
+        private void TryUnregister(bool clearPendingPreset)
+        {
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -191,7 +192,8 @@ namespace Hecton8.Audio
                 _registered = false;
             }
 
-            _pendingPresetStateDirty = false;
+            if (clearPendingPreset)
+                _pendingPresetStateDirty = false;
         }
 
         private void TryRegisterHotSwapListener()

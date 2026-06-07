@@ -828,9 +828,8 @@ namespace Hecton8.Gameplay
                     }
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredSlowTickable = false;
-                    _registeredLateFrameTickable = false;
-                    if (currentService != null)
+                    TryUnregisterTickOwners();
+                    if (currentService != null && isActiveAndEnabled)
                         TryRegisterTickOwners();
                     break;
             }
@@ -3743,12 +3742,17 @@ namespace Hecton8.Gameplay
             dto.currentLifeLowestOxygenNormalized = _currentLifeLowestOxygenNormalized;
             dto.currentLifeLowestEnergyNormalized = _currentLifeLowestEnergyNormalized;
             dto.currentLifeLowestIntegrityNormalized = _currentLifeLowestIntegrityNormalized;
-            dto.injuryFlags = (byte)_injuryStatus;
+            PlayerInjuryStatus savedInjuries = ResolveCurrentInjuries();
+            dto.injuryFlags = (byte)((byte)savedInjuries & SaveData.PlayerInjurySupportedFlagMask);
             dto.bleedingSecondsRemaining = 0f;
             dto.bleedingDamagePerSecond = 0f;
-            dto.bleedingSeverity01 = _bleedingSeverity01;
+            dto.bleedingSeverity01 = (savedInjuries & PlayerInjuryStatus.Bleeding) != 0
+                ? SafeSaturate(_bleedingSeverity01)
+                : 0f;
             dto.fractureSecondsRemaining = 0f;
-            dto.fracturePenalty01 = FracturePenalty01;
+            dto.fracturePenalty01 = (savedInjuries & PlayerInjuryStatus.Fracture) != 0
+                ? SafeSaturate(_fracturePenalty01)
+                : 0f;
             dto.environmentTemperature = _environmentTemperature;
             dto.coldStressSeverity01 = _coldSeverity01;
             dto.heatStressSeverity01 = _heatSeverity01;
@@ -3764,11 +3768,13 @@ namespace Hecton8.Gameplay
             dto.SetPosition(transform.position);
             dto.SetRotation(transform.rotation);
             dto.SetVelocity(ResolveSavedPlayerVelocity());
+            SaveDataPlayerSurvivalSanitizer.SanitizePlayerStats(ref dto);
         }
 
         public void LoadFromSaveData(SaveData data)
         {
             PlayerStatsDTO dto = data.playerStats;
+            SaveDataPlayerSurvivalSanitizer.SanitizePlayerStats(ref dto);
             bool hasTelemetryV23 = data.version >= 23;
             oxygen    = Mathf.Clamp(dto.oxygen,    0f, ResolveRuntimeMaxOxygenCapacity());
             energy    = Mathf.Clamp(dto.energy,    0f, stats.MaxEnergy);
@@ -3781,9 +3787,13 @@ namespace Hecton8.Gameplay
             _currentLifeLowestOxygenNormalized = hasTelemetryV23 ? Mathf.Clamp01(dto.currentLifeLowestOxygenNormalized) : OxygenNormalized;
             _currentLifeLowestEnergyNormalized = hasTelemetryV23 ? Mathf.Clamp01(dto.currentLifeLowestEnergyNormalized) : EnergyNormalized;
             _currentLifeLowestIntegrityNormalized = hasTelemetryV23 ? Mathf.Clamp01(dto.currentLifeLowestIntegrityNormalized) : IntegrityNormalized;
-            _injuryStatus = (PlayerInjuryStatus)dto.injuryFlags & ~(PlayerInjuryStatus.Bleeding | PlayerInjuryStatus.Fracture);
-            _bleedingSeverity01 = 0f;
-            _fracturePenalty01 = 0f;
+            _injuryStatus = (PlayerInjuryStatus)(dto.injuryFlags & SaveData.PlayerInjurySupportedFlagMask);
+            _bleedingSeverity01 = (_injuryStatus & PlayerInjuryStatus.Bleeding) != 0
+                ? SafeSaturate(dto.bleedingSeverity01)
+                : 0f;
+            _fracturePenalty01 = (_injuryStatus & PlayerInjuryStatus.Fracture) != 0
+                ? SafeSaturate(dto.fracturePenalty01)
+                : 0f;
             ClearCombatStatusReadModel(CombatStatusBits.Bleeding64 | CombatStatusBits.Fractured64);
             _environmentTemperature = dto.environmentTemperature;
             _internalTemperature = _environmentTemperature;
@@ -3948,6 +3958,12 @@ namespace Hecton8.Gameplay
             {
                 QueueLegacyBleedingStatus();
                 ClearLegacyBleedingState(ref injuryChanged);
+            }
+
+            if ((_injuryStatus & PlayerInjuryStatus.Fracture) != 0)
+            {
+                QueueLegacyFractureStatus();
+                ClearLegacyFractureState(ref injuryChanged);
             }
 
             if (!HasFracture && _fracturePenalty01 > 0f)
@@ -5043,6 +5059,14 @@ namespace Hecton8.Gameplay
             return QueueBleedingStatus(severity, duration, damagePerSecond);
         }
 
+        private bool QueueLegacyFractureStatus()
+        {
+            float penalty = math.saturate(math.max(0.1f, _fracturePenalty01));
+            float severity = Mathf.InverseLerp(FractureBasePenalty, FractureMaxPenalty, penalty);
+            float duration = LerpClamped(FractureBaseDurationSeconds, FractureMaxDurationSeconds, severity);
+            return QueueFractureStatus(penalty, duration);
+        }
+
         private bool QueueBleedingStatus(float severity01, float durationSeconds, float damagePerSecond)
         {
             float severity = math.saturate(severity01);
@@ -5093,9 +5117,15 @@ namespace Hecton8.Gameplay
             injuryChanged = true;
         }
 
+        private void ClearLegacyFractureState(ref bool injuryChanged)
+        {
+            _injuryStatus &= ~PlayerInjuryStatus.Fracture;
+            injuryChanged = true;
+        }
+
         private PlayerInjuryStatus ResolveCurrentInjuries()
         {
-            PlayerInjuryStatus injuries = _injuryStatus & ~(PlayerInjuryStatus.Bleeding | PlayerInjuryStatus.Fracture);
+            PlayerInjuryStatus injuries = (PlayerInjuryStatus)((byte)_injuryStatus & SaveData.PlayerInjurySupportedFlagMask);
             if (HasCachedCombatStatusEffect(CombatStatusBits.Bleeding64))
                 injuries |= PlayerInjuryStatus.Bleeding;
             if (HasCachedCombatStatusEffect(CombatStatusBits.Fractured64))

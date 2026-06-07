@@ -7,6 +7,9 @@ poi_tags: poi.sonar_pylon;poi.return_beacon
 biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Rute Pulang Sonar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -90,10 +90,9 @@ namespace Hecton8.Interaction
 
             bool shouldRestoreTick = (_registeredMomentumTick && !_momentumTickDormant) || ShouldRunMomentumTick();
             bool shouldRestoreLateFrame = _registeredLateFrame || _visualDirty;
+            TryUnregisterMomentumTick();
+            TryUnregisterLateFrameTick();
             _dispatcherAvailable = currentService != null;
-            _registeredMomentumTick = false;
-            _registeredLateFrame = false;
-            _momentumTickDormant = false;
             if (shouldRestoreTick && currentService != null && isActiveAndEnabled)
                 TryRegisterMomentumTick();
             if (shouldRestoreLateFrame && currentService != null && isActiveAndEnabled)
@@ -190,6 +189,7 @@ namespace Hecton8.Interaction
             {
                 _angularVelocityDegreesPerSecond = 0f;
                 _momentumTickDormant = true;
+                TryRegisterLateFrameTick();
                 return;
             }
 
@@ -200,6 +200,7 @@ namespace Hecton8.Interaction
             {
                 _angularVelocityDegreesPerSecond = 0f;
                 _momentumTickDormant = true;
+                TryRegisterLateFrameTick();
                 return;
             }
 
@@ -270,6 +271,8 @@ namespace Hecton8.Interaction
         {
             if (_visualDirty)
                 FlushWheelVisual();
+            if (_momentumTickDormant)
+                TryUnregisterMomentumTick();
             if (!_visualDirty && !ShouldRunMomentumTick())
                 TryUnregisterLateFrameTick();
         }

@@ -7,6 +7,9 @@ poi_tags: poi.ascent_package;poi.launch_floodgate
 biome_tags: biome.atlas_bottom;biome.deep_launch_route
 locale: pl_PL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Okno ładunku"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

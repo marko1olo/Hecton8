@@ -912,8 +912,7 @@
                     _cachedObserverMovement = null;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredTick = false;
-                    _registeredLateFrame = false;
+                    TryUnregisterTick();
                     if (currentService != null && NeedsActiveTick())
                     {
                         _tickDormant = false;

@@ -7,6 +7,9 @@ poi_tags: poi.depth_gate;poi.pressure_bulkhead
 biome_tags: biome.crash_shelf;biome.service_canyon
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "圧力ラダー"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

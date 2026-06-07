@@ -5,6 +5,7 @@ using Hecton8.Data;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Hecton8.World;
 using Unity.Burst;
@@ -298,6 +299,7 @@ namespace Hecton8.Systems.AI
         private const float SafeIdleStressDecayPerTick = 0.06f;
         private const float InvHash24Max = 1f / 16777215f;
         private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
+        private const SystemID NativeArrayOwnerSystem = SystemID.GameplayCombat;
 
         private NativeArray<EncounterDirectorState> _frontState;
         private NativeArray<EncounterDirectorState> _backState;
@@ -355,24 +357,44 @@ namespace Hecton8.Systems.AI
 
         internal EncounterDirector()
         {
-            _frontState = new NativeArray<EncounterDirectorState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _backState = new NativeArray<EncounterDirectorState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _enemyTokens = new NativeArray<EncounterEnemyToken>(MaxActiveEnemies, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _frustumPlanes = new NativeArray<float4>(FrustumPlaneCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _candidateDirections = new NativeArray<float3>(HighCandidateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _jobOutput = new NativeArray<EncounterJobOutput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _spawnRequests = new NativeArray<EncounterSpawnRequest>(HeadlessSpawnRequestCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _despawnRequests = new NativeArray<int>(HeadlessDespawnRequestCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _debugEventRing = new NativeArray<EncounterDebugEvent>(DebugEventRingCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _debugEventHead = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _headlessEntities = new NativeList<HeadlessEntity>(HeadlessEntityCapacity, DataVaultExemptSceneScratchAllocator);
-            // COLD ALLOC: HeadlessEntity[1024] - data-only encounter threat slots, no GameObject hydration - owner: EncounterDirector
-            for (int i = 0; i < HeadlessEntityCapacity; i++)
-                _headlessEntities.Add(default);
+            _frontState = H8Memory.Allocate<EncounterDirectorState>(1, NativeArrayOwnerSystem, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
+            _backState = H8Memory.Allocate<EncounterDirectorState>(1, NativeArrayOwnerSystem, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
+            _enemyTokens = H8Memory.Allocate<EncounterEnemyToken>(MaxActiveEnemies, NativeArrayOwnerSystem, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
+            _frustumPlanes = H8Memory.Allocate<float4>(FrustumPlaneCount, NativeArrayOwnerSystem, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
+            _candidateDirections = H8Memory.Allocate<float3>(HighCandidateCount, NativeArrayOwnerSystem, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
+            _jobOutput = H8Memory.Allocate<EncounterJobOutput>(1, NativeArrayOwnerSystem, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
+            _spawnRequests = H8Memory.Allocate<EncounterSpawnRequest>(HeadlessSpawnRequestCapacity, NativeArrayOwnerSystem, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
+            _despawnRequests = H8Memory.Allocate<int>(HeadlessDespawnRequestCapacity, NativeArrayOwnerSystem, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
+            _debugEventRing = H8Memory.Allocate<EncounterDebugEvent>(DebugEventRingCapacity, NativeArrayOwnerSystem, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
+            _debugEventHead = H8Memory.Allocate<int>(1, NativeArrayOwnerSystem, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
+            _predatorAupUpload = H8Memory.Allocate<float4>(PredatorAupBufferCapacity, NativeArrayOwnerSystem, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
+            _blackBox = H8Memory.Allocate<EncounterDirectorBlackBoxEntry>(DirectorBlackBoxCapacity, NativeArrayOwnerSystem, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
+            _blackBoxHead = H8Memory.Allocate<int>(1, NativeArrayOwnerSystem, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
+            if (!AllNativeArraysCreated())
+            {
+                Dispose();
+                throw new InvalidOperationException("EncounterDirector native allocation failed.");
+            }
 
-            _predatorAupUpload = new NativeArray<float4>(PredatorAupBufferCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _blackBox = new NativeArray<EncounterDirectorBlackBoxEntry>(DirectorBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _blackBoxHead = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            try
+            {
+                _headlessEntities = new NativeList<HeadlessEntity>(HeadlessEntityCapacity, DataVaultExemptSceneScratchAllocator);
+                // COLD ALLOC: HeadlessEntity[1024] - data-only encounter threat slots, no GameObject hydration - owner: EncounterDirector
+                for (int i = 0; i < HeadlessEntityCapacity; i++)
+                    _headlessEntities.Add(default);
+            }
+            catch
+            {
+                if (_headlessEntities.IsCreated)
+                {
+                    _headlessEntities.Dispose();
+                    _headlessEntities = default;
+                }
+
+                Dispose();
+                throw;
+            }
+
             RegisterNativeMemorySentinel();
             _trackedTransforms = new Transform[MaxActiveEnemies];
             _trackedEntityIds = new int[MaxActiveEnemies];
@@ -664,20 +686,26 @@ namespace Hecton8.Systems.AI
 
         private void RegisterNativeMemorySentinel()
         {
-            NativeMemorySentinel.RegisterNativeArray(_frontState, nameof(EncounterDirector), nameof(_frontState), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_backState, nameof(EncounterDirector), nameof(_backState), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_enemyTokens, nameof(EncounterDirector), nameof(_enemyTokens), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_frustumPlanes, nameof(EncounterDirector), nameof(_frustumPlanes), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_candidateDirections, nameof(EncounterDirector), nameof(_candidateDirections), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_jobOutput, nameof(EncounterDirector), nameof(_jobOutput), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_spawnRequests, nameof(EncounterDirector), nameof(_spawnRequests), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_despawnRequests, nameof(EncounterDirector), nameof(_despawnRequests), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_debugEventRing, nameof(EncounterDirector), nameof(_debugEventRing), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_debugEventHead, nameof(EncounterDirector), nameof(_debugEventHead), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeList(_headlessEntities, nameof(EncounterDirector), nameof(_headlessEntities), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_predatorAupUpload, nameof(EncounterDirector), nameof(_predatorAupUpload), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_blackBox, nameof(EncounterDirector), nameof(_blackBox), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_blackBoxHead, nameof(EncounterDirector), nameof(_blackBoxHead), NativeAllocationLifetime.Scene);
+            int sentinelId = NativeMemorySentinel.RegisterNativeList(_headlessEntities, nameof(EncounterDirector), nameof(_headlessEntities), NativeAllocationLifetime.Scene);
+            if (sentinelId <= 0)
+                throw new InvalidOperationException("Native memory sentinel registration failed for encounter headless entities.");
+        }
+
+        private bool AllNativeArraysCreated()
+        {
+            return _frontState.IsCreated &&
+                   _backState.IsCreated &&
+                   _enemyTokens.IsCreated &&
+                   _frustumPlanes.IsCreated &&
+                   _candidateDirections.IsCreated &&
+                   _jobOutput.IsCreated &&
+                   _spawnRequests.IsCreated &&
+                   _despawnRequests.IsCreated &&
+                   _debugEventRing.IsCreated &&
+                   _debugEventHead.IsCreated &&
+                   _predatorAupUpload.IsCreated &&
+                   _blackBox.IsCreated &&
+                   _blackBoxHead.IsCreated;
         }
 
         internal void EnsureGpuResources()
@@ -2107,18 +2135,15 @@ namespace Hecton8.Systems.AI
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
             if (hasDependency)
             {
-                handle = array.Dispose(handle);
+                handle = H8Memory.Release(ref array, handle, NativeArrayOwnerSystem);
                 hasDependency = true;
             }
             else
             {
-                array.Dispose();
+                H8Memory.Release(ref array, NativeArrayOwnerSystem);
             }
-
-            array = default;
         }
 
         private static void DisposeNativeList<T>(ref NativeList<T> list, string label, ref JobHandle handle, ref bool hasDependency) where T : unmanaged

@@ -7,6 +7,9 @@ poi_tags: poi.predator_shadow_sonar_gap;poi.cut_fish_path
 biome_tags: biome.photic_shelf;biome.shelf_drop
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Predator Shadow Encounter Grammar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

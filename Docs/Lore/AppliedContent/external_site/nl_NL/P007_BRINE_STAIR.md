@@ -7,6 +7,9 @@ poi_tags: poi.brine_curtain;poi.ballast_station
 biome_tags: biome.brine_stairs;biome.thermal_field
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Pekeltrap"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

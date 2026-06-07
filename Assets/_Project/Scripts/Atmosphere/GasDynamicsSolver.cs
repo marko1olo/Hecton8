@@ -1079,7 +1079,7 @@ namespace Hecton8.Atmosphere
                 case GlobalRegistryServiceSlot.TickManager:
                     if (currentService == null || currentService is ITickDispatcher)
                         _tickDispatcher = currentService as ITickDispatcher;
-                    _registeredTicks = false;
+                    TryUnregisterTicks();
                     if (currentService != null && isActiveAndEnabled)
                         TryRegisterTicks();
                     break;
@@ -1751,11 +1751,27 @@ namespace Hecton8.Atmosphere
                 1,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                scratch,
-                nameof(GasDynamicsSolver),
-                nameof(_stepTelemetryScratch),
-                NativeAllocationLifetime.Session);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    scratch,
+                    nameof(GasDynamicsSolver),
+                    nameof(_stepTelemetryScratch),
+                    NativeAllocationLifetime.Session);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("NativeMemorySentinel rejected gas dynamics telemetry scratch registration.");
+            }
+            catch
+            {
+                if (scratch.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(scratch);
+                    scratch.Dispose();
+                    scratch = default;
+                }
+
+                throw;
+            }
             return scratch.IsCreated && scratch.Length >= 1;
         }
 

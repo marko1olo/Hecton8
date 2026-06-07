@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Shell Clamp Reef"
+title: "Риф мушлевих затискачів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Shell Clamp Reef
+# Риф мушлевих затискачів
 
-UA LOC HOLD: Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.
+Рифи мушлевих затискачів - перше місце, де мілкий шельф перестає розділяти місцеве життя й людські уламки. Мушлеві затискачі не розумні й не є тканиною Atlas; вони йдуть за мінеральним просочуванням, теплом, вібрацією і тиском течії. Цього досить, щоб із лячним терпінням хапати базальт, старі кабельні оболонки, обшивку капсули й шви pressure glass. Для гравця риф може бути водночас маршрутним знаком, джерелом збору і структурним попередженням. Мертві зовнішні мушлі дають корисну крихту для герметика й керамічного наповнювача. Живе ядро може працювати: тримати кабель тихим, підсилювати тріснутий кронштейн або сповільнювати протік, який scanner ще не назвав. Зріж не той кластер, і риф не нападе. Середовище просто втратить підпору.
 
 ## Scanner
 
-UA LOC HOLD: Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.
+РИФ МУШЛЕВИХ ЗАТИСКАЧІВ // Місцеві мушлеві затискачі хапають камінь, кабельні оболонки, обшивку капсули й шви pressure glass. Риф прийняв машини як субстрат.
 
 ## Terminal
 
-UA LOC HOLD: REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.
+БАЗОВИЙ РИФ: зчеплення зростає на стертих кабельних оболонках, теплому металі швів і краях pressure glass з мінеральним просочуванням. Збирати лише мертві зовнішні мушлі. Зріз живих затискачів біля сервісних ліній може відкрити протікання або привернути увагу ремонтної фауни.
 
 ## Audio
 
-UA LOC HOLD: The reef has learned the shape of bolts.
+Риф вивчив форму болтів.
 
 ## Field Note
 
-UA LOC HOLD: Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.
+Не відламуй перший затискач, до якого дістався. Живий кластер може тримати кабель нерухомим, закривати волосяний протік або позначати маршрутний якір.
 
 <!-- In-Game Wiki; generated from P224_SHELL_CLAMP_REEF/uk_UA. -->

@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS167_FIRST_REPAIR_MARK_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1120_PUMP_FLOW_ARROW_SCAR",
+    "P1121_HOSE_CLAMP_TORQUE_TICK",
+    "P1122_FILTER_GASKET_BITE_LINE",
+    "P1123_GROUND_STRAP_SALT_BLOOM",
+    "P1124_MANUAL_BYPASS_LOCKOUT_TAG"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1120_PUMP_FLOW_ARROW_SCAR.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1121_HOSE_CLAMP_TORQUE_TICK.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1122_FILTER_GASKET_BITE_LINE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1123_GROUND_STRAP_SALT_BLOOM.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1124_MANUAL_BYPASS_LOCKOUT_TAG.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

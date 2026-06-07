@@ -162,14 +162,13 @@ namespace Hecton8.Editor.OfflineGeometry
             try
             {
                 // COLD ALLOC: NativeArray<VertexAttributeDescriptor>[3] - editor mesh ABI descriptor, disposed before returning.
-                layout = new NativeArray<VertexAttributeDescriptor>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                layout = InteriorClutterForge.AllocateTrackedNativeArray<VertexAttributeDescriptor>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory, nameof(layout));
                 WriteLayout(layout);
                 mesh.SetVertexBufferParams(vertexCount, layout);
             }
             finally
             {
-                if (layout.IsCreated)
-                    layout.Dispose();
+                InteriorClutterForge.DisposeTrackedNativeArray(ref layout);
             }
         }
 

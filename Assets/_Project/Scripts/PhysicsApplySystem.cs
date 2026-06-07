@@ -2467,10 +2467,10 @@ namespace Hecton8.Physics
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregisterRuntimeLanes();
                     if (currentService == null)
                         return;
 
-                    TryUnregisterRuntimeLanes();
                     TryRegisterRuntimeLanes();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:

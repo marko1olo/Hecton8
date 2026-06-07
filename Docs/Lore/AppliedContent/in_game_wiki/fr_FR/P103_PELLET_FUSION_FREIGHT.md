@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "Fret à fusion par pellets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# Fret à fusion par pellets
 
-FR LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.
+Le voyage interstellaire lourd est possible sans FTL, mais il punit. Accélération par voile à faisceau, fusion nourrie aux pellets, masse de blindage, longues dérives et architecture de freinage ont porté les charges seed puis le fret colonial jusqu'à Aegir. La même logistique ralentit le secours : chaque kilogramme, couchette, créneau de freinage et siège survivant appartient à un calendrier.
 
 ## Scanner
 
-FR LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Plaque moteur. Le fret à fusion nourrie aux pellets a traversé comme infrastructure : poussée, blindage, dérive, freinage, pertes facturées.
 
 ## Terminal
 
-FR LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+DOCTRINE FRET : les charges seed de classe Atlas et le fret colonial utilisaient accélération par voile à faisceau, fusion nourrie aux pellets, freinage par voile magnétique et longs intervalles de dérive. Le vivant est arrivé après que les machines ont rendu la route facturable.
 
 ## Audio
 
-FR LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+Un navire lourd n'est pas un miracle. C'est une hypothèque avec des moteurs.
 
 ## Field Note
 
-FR LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+Le transit lourd n'est pas héroïque. C'est un vieux contrat de route avec des cicatrices de chaleur.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/fr_FR. -->

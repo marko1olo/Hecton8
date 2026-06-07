@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS176_FIRST_HABITAT_MARK_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1155_CONDENSATE_DRIP_TRACK",
+    "P1156_VENT_SLAT_DUST_RIB",
+    "P1157_DRAIN_TRAP_SALT_CAP",
+    "P1158_MOLD_EDGE_DRY_BORDER",
+    "P1159_AIRLOCK_FLOOR_TIDE_STAIN"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1155_CONDENSATE_DRIP_TRACK.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1156_VENT_SLAT_DUST_RIB.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1157_DRAIN_TRAP_SALT_CAP.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1158_MOLD_EDGE_DRY_BORDER.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1159_AIRLOCK_FLOOR_TIDE_STAIN.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

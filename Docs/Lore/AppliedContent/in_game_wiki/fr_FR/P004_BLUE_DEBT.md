@@ -7,6 +7,9 @@ poi_tags: poi.pressure_casket;poi.cable_forest
 biome_tags: biome.industrial_descent;biome.thermal_field
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

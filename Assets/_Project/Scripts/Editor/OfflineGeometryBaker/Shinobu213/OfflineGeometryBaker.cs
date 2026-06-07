@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using Hecton8.World.OfflineGeometry;
 using Unity.Collections;
@@ -27,6 +28,9 @@ namespace Hecton8.Editor.OfflineGeometry
         private const uint WarningSourceAssetMissing = 32u;
         private const uint WarningPrefabSaveFailed = 64u;
         private const uint WarningLodAssetBindFailed = 128u;
+        private const string NativeMemoryOwner = "SHINOBU_213";
+        private const string NativeMemorySentinelTypeName = "Hecton8.Core.NativeMemorySentinel";
+        private const string NativeAllocationLifetimeTypeName = "Hecton8.Core.NativeAllocationLifetime";
 
         private const MeshUpdateFlags MeshFlags =
             MeshUpdateFlags.DontRecalculateBounds |
@@ -240,8 +244,7 @@ namespace Hecton8.Editor.OfflineGeometry
                     {
                         if (lod0OwnedByCaller && lod0Mesh != null)
                             UnityEngine.Object.DestroyImmediate(lod0Mesh);
-                        if (lod0Raw.IsCreated)
-                            lod0Raw.Dispose();
+                        DisposeTrackedNativeArray(ref lod0Raw);
                         continue;
                     }
 
@@ -254,8 +257,7 @@ namespace Hecton8.Editor.OfflineGeometry
                         metric.ExtractionMilliseconds += _Stopwatch.Elapsed.TotalMilliseconds;
                         if (lod1Raw.IsCreated)
                         {
-                            lod1Raw.Dispose();
-                            lod1Raw = default;
+                            DisposeTrackedNativeArray(ref lod1Raw);
                         }
 
                         _Stopwatch.Restart();
@@ -265,8 +267,7 @@ namespace Hecton8.Editor.OfflineGeometry
                         metric.ExtractionMilliseconds += _Stopwatch.Elapsed.TotalMilliseconds;
                         if (lod2Raw.IsCreated)
                         {
-                            lod2Raw.Dispose();
-                            lod2Raw = default;
+                            DisposeTrackedNativeArray(ref lod2Raw);
                         }
                         if (lod1Mesh == null || lod2Mesh == null)
                             continue;
@@ -335,12 +336,9 @@ namespace Hecton8.Editor.OfflineGeometry
                             UnityEngine.Object.DestroyImmediate(lod1Mesh);
                         if (lod0OwnedByCaller && lod0Mesh != null)
                             UnityEngine.Object.DestroyImmediate(lod0Mesh);
-                        if (lod2Raw.IsCreated)
-                            lod2Raw.Dispose();
-                        if (lod1Raw.IsCreated)
-                            lod1Raw.Dispose();
-                        if (lod0Raw.IsCreated)
-                            lod0Raw.Dispose();
+                        DisposeTrackedNativeArray(ref lod2Raw);
+                        DisposeTrackedNativeArray(ref lod1Raw);
+                        DisposeTrackedNativeArray(ref lod0Raw);
                     }
                 }
 
@@ -398,7 +396,7 @@ namespace Hecton8.Editor.OfflineGeometry
             try
             {
                 // COLD ALLOC: NativeArray<OfflineGeometryRawVertex>[vertexCount] - editor mock high-poly mesh benchmark - owner: OfflineGeometryBaker
-                raw = new NativeArray<OfflineGeometryRawVertex>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                raw = AllocateTrackedNativeArray<OfflineGeometryRawVertex>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(raw));
                 _Stopwatch.Restart();
                 using (_MockHighPolyJobMarker.Auto())
                 {
@@ -428,10 +426,8 @@ namespace Hecton8.Editor.OfflineGeometry
             }
             finally
             {
-                if (ranges.IsCreated)
-                    ranges.Dispose();
-                if (raw.IsCreated)
-                    raw.Dispose();
+                DisposeTrackedNativeArray(ref ranges);
+                DisposeTrackedNativeArray(ref raw);
             }
         }
 
@@ -458,7 +454,7 @@ namespace Hecton8.Editor.OfflineGeometry
             try
             {
                 // COLD ALLOC: NativeArray<OfflinePrimitiveFitResult>[1] - editor preview primitive fit - owner: OfflineGeometryBaker
-                fit = new NativeArray<OfflinePrimitiveFitResult>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                fit = AllocateTrackedNativeArray<OfflinePrimitiveFitResult>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(fit));
                 using (_PreviewPrimitiveFitJobMarker.Auto())
                 {
                     new FitGeometricPrimitivesJob
@@ -472,13 +468,13 @@ namespace Hecton8.Editor.OfflineGeometry
 
                 int hullVertexCapacity = ResolveHullVertexCapacity(settings.ConvexHullVertexLimit);
                 // COLD ALLOC: NativeArray<float3>[hullVertexCapacity] - editor preview support hull - owner: OfflineGeometryBaker
-                hull = new NativeArray<float3>(hullVertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                hull = AllocateTrackedNativeArray<float3>(hullVertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(hull));
                 // COLD ALLOC: NativeArray<ushort>[2048] - editor preview support hull indices - owner: OfflineGeometryBaker
-                hullIndexBuffer = new NativeArray<ushort>(OfflineGeometryBakerConstants.MaxHullIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                hullIndexBuffer = AllocateTrackedNativeArray<ushort>(OfflineGeometryBakerConstants.MaxHullIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(hullIndexBuffer));
                 // COLD ALLOC: NativeArray<int>[1] - editor preview hull count - owner: OfflineGeometryBaker
-                hullCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                hullCount = AllocateTrackedNativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(hullCount));
                 // COLD ALLOC: NativeArray<int>[1] - editor preview hull index count - owner: OfflineGeometryBaker
-                hullIndexCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                hullIndexCount = AllocateTrackedNativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(hullIndexCount));
                 using (_PreviewHullJobMarker.Auto())
                 {
                     new GenerateConvexHullJob
@@ -504,12 +500,12 @@ namespace Hecton8.Editor.OfflineGeometry
             }
             finally
             {
-                if (hullIndexCount.IsCreated) hullIndexCount.Dispose();
-                if (hullCount.IsCreated) hullCount.Dispose();
-                if (hullIndexBuffer.IsCreated) hullIndexBuffer.Dispose();
-                if (hull.IsCreated) hull.Dispose();
-                if (fit.IsCreated) fit.Dispose();
-                if (raw.IsCreated) raw.Dispose();
+                DisposeTrackedNativeArray(ref hullIndexCount);
+                DisposeTrackedNativeArray(ref hullCount);
+                DisposeTrackedNativeArray(ref hullIndexBuffer);
+                DisposeTrackedNativeArray(ref hull);
+                DisposeTrackedNativeArray(ref fit);
+                DisposeTrackedNativeArray(ref raw);
             }
         }
 
@@ -522,6 +518,101 @@ namespace Hecton8.Editor.OfflineGeometry
             for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
                 triangles += (int)(mesh.GetIndexCount(subMeshIndex) / 3u);
             return triangles;
+        }
+
+        private static NativeArray<T> AllocateTrackedNativeArray<T>(int length, Allocator allocator, NativeArrayOptions options, string label) where T : struct
+        {
+            if (length <= 0)
+                return default;
+
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[SHINOBU_213] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                RegisterTrackedNativeArray(array, label, ResolveNativeAllocationLifetimeName(allocator));
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                UnregisterTrackedNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
+        }
+
+        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label, string lifetimeName) where T : struct
+        {
+            Type sentinelType = FindType(NativeMemorySentinelTypeName);
+            Type lifetimeType = FindType(NativeAllocationLifetimeTypeName);
+            if (sentinelType == null || lifetimeType == null)
+                throw new InvalidOperationException("[SHINOBU_213] NativeMemorySentinel bridge unavailable for " + label + ".");
+
+            MethodInfo method = sentinelType.GetMethod("RegisterNativeArray", BindingFlags.Public | BindingFlags.Static);
+            if (method == null)
+                throw new InvalidOperationException("[SHINOBU_213] NativeMemorySentinel.RegisterNativeArray unavailable for " + label + ".");
+
+            object lifetime = Enum.Parse(lifetimeType, lifetimeName);
+            object id = method.MakeGenericMethod(typeof(T)).Invoke(
+                null,
+                new object[] { array, NativeMemoryOwner, label, lifetime });
+            if (!(id is int sentinelId) || sentinelId <= 0)
+                throw new InvalidOperationException("[SHINOBU_213] NativeMemorySentinel rejected native allocation registration for " + label + ".");
+        }
+
+        private static void UnregisterTrackedNativeArray<T>(NativeArray<T> array) where T : struct
+        {
+            Type sentinelType = FindType(NativeMemorySentinelTypeName);
+            MethodInfo method = sentinelType != null ? sentinelType.GetMethod("UnregisterNativeArray", BindingFlags.Public | BindingFlags.Static) : null;
+            if (method == null)
+                throw new InvalidOperationException("[SHINOBU_213] NativeMemorySentinel.UnregisterNativeArray unavailable.");
+
+            method.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { array });
+        }
+
+        private static string ResolveNativeAllocationLifetimeName(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return "Temp";
+                case Allocator.TempJob:
+                    return "TempJob";
+                case Allocator.Persistent:
+                    return "Session";
+                default:
+                    return "Session";
+            }
+        }
+
+        private static Type FindType(string fullName)
+        {
+            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (int i = 0; i < assemblies.Length; i++)
+            {
+                Type type = assemblies[i].GetType(fullName, false);
+                if (type != null)
+                    return type;
+            }
+
+            return null;
         }
 
         private static unsafe Mesh BuildLodMesh(Mesh source, string meshName, float ratio, int maxTriangles, int selectionWindow, out int triangleCount, out NativeArray<OfflineGeometryRawVertex> rawVertices)
@@ -554,7 +645,7 @@ namespace Hecton8.Editor.OfflineGeometry
 
                     int vertexCount = triangleCount * 3;
                     // COLD ALLOC: NativeArray<OfflineGeometryRawVertex>[vertexCount] - editor LOD triangle-soup output - owner: OfflineGeometryBaker
-                    rawVertices = new NativeArray<OfflineGeometryRawVertex>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    rawVertices = AllocateTrackedNativeArray<OfflineGeometryRawVertex>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(rawVertices));
                     NativeArray<byte> positionData = meshData.GetVertexData<byte>(layout.PositionStream);
                     NativeArray<byte> normalData = layout.HasNormals != 0 ? meshData.GetVertexData<byte>(layout.NormalStream) : default;
                     NativeArray<byte> uvData = layout.HasUv0 != 0 ? meshData.GetVertexData<byte>(layout.Uv0Stream) : default;
@@ -620,8 +711,7 @@ namespace Hecton8.Editor.OfflineGeometry
                     {
                         if (rawVertices.IsCreated)
                         {
-                            rawVertices.Dispose();
-                            rawVertices = default;
+                            DisposeTrackedNativeArray(ref rawVertices);
                         }
 
                         triangleCount = 0;
@@ -633,15 +723,13 @@ namespace Hecton8.Editor.OfflineGeometry
                 {
                     if (rawVertices.IsCreated)
                     {
-                        rawVertices.Dispose();
-                        rawVertices = default;
+                        DisposeTrackedNativeArray(ref rawVertices);
                     }
                     throw;
                 }
                 finally
                 {
-                    if (ranges.IsCreated)
-                        ranges.Dispose();
+                    DisposeTrackedNativeArray(ref ranges);
                 }
             }
         }
@@ -667,9 +755,9 @@ namespace Hecton8.Editor.OfflineGeometry
             {
                 int vertexCount = rawVertices.Length;
                 // COLD ALLOC: NativeArray<OfflineGeometryVertex32>[vertexCount] - editor interleaved GPU vertex stream - owner: OfflineGeometryBaker
-                packed = new NativeArray<OfflineGeometryVertex32>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                packed = AllocateTrackedNativeArray<OfflineGeometryVertex32>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(packed));
                 // COLD ALLOC: NativeArray<uint>[vertexCount] - editor linear index stream - owner: OfflineGeometryBaker
-                indices = new NativeArray<uint>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                indices = AllocateTrackedNativeArray<uint>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(indices));
                 using (_PackMeshJobMarker.Auto())
                 {
                     JobHandle packHandle = new OfflinePackVertexJob
@@ -729,15 +817,15 @@ namespace Hecton8.Editor.OfflineGeometry
             }
             finally
             {
-                if (indices.IsCreated) indices.Dispose();
-                if (packed.IsCreated) packed.Dispose();
+                DisposeTrackedNativeArray(ref indices);
+                DisposeTrackedNativeArray(ref packed);
             }
         }
 
         private static NativeArray<OfflineSubMeshRange> BuildSingleSubMeshRange(int triangleCount)
         {
             // COLD ALLOC: NativeArray<OfflineSubMeshRange>[1] - editor mock mesh submesh range - owner: OfflineGeometryBaker
-            NativeArray<OfflineSubMeshRange> ranges = new NativeArray<OfflineSubMeshRange>(1, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<OfflineSubMeshRange> ranges = AllocateTrackedNativeArray<OfflineSubMeshRange>(1, Allocator.Temp, NativeArrayOptions.UninitializedMemory, nameof(ranges));
             ranges[0] = new OfflineSubMeshRange
             {
                 SourceIndexStart = 0,
@@ -847,7 +935,7 @@ namespace Hecton8.Editor.OfflineGeometry
             try
             {
                 // COLD ALLOC: NativeArray<OfflinePrimitiveFitResult>[1] - editor primitive collider fit result - owner: OfflineGeometryBaker
-                fit = new NativeArray<OfflinePrimitiveFitResult>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                fit = AllocateTrackedNativeArray<OfflinePrimitiveFitResult>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(fit));
                 using (_ColliderPrimitiveFitJobMarker.Auto())
                 {
                     new FitGeometricPrimitivesJob
@@ -908,8 +996,7 @@ namespace Hecton8.Editor.OfflineGeometry
             }
             finally
             {
-                if (fit.IsCreated)
-                    fit.Dispose();
+                DisposeTrackedNativeArray(ref fit);
             }
         }
 
@@ -935,13 +1022,13 @@ namespace Hecton8.Editor.OfflineGeometry
             {
                 int hullVertexCapacity = ResolveHullVertexCapacity(hullVertexLimit);
                 // COLD ALLOC: NativeArray<float3>[hullVertexCapacity] - editor bounded convex support hull vertices - owner: OfflineGeometryBaker
-                hullVertices = new NativeArray<float3>(hullVertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                hullVertices = AllocateTrackedNativeArray<float3>(hullVertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(hullVertices));
                 // COLD ALLOC: NativeArray<ushort>[2048] - editor bounded convex support hull indices - owner: OfflineGeometryBaker
-                hullIndices = new NativeArray<ushort>(OfflineGeometryBakerConstants.MaxHullIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                hullIndices = AllocateTrackedNativeArray<ushort>(OfflineGeometryBakerConstants.MaxHullIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(hullIndices));
                 // COLD ALLOC: NativeArray<int>[1] - editor fallback hull vertex count - owner: OfflineGeometryBaker
-                hullCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                hullCount = AllocateTrackedNativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(hullCount));
                 // COLD ALLOC: NativeArray<int>[1] - editor fallback hull index count - owner: OfflineGeometryBaker
-                hullIndexCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                hullIndexCount = AllocateTrackedNativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(hullIndexCount));
                 using (_ColliderHullJobMarker.Auto())
                 {
                     new GenerateConvexHullJob
@@ -962,7 +1049,7 @@ namespace Hecton8.Editor.OfflineGeometry
                     return null;
 
                 // COLD ALLOC: NativeArray<OfflineGeometryVertex32>[vertexCount] - editor convex collider vertex stream - owner: OfflineGeometryBaker
-                packed = new NativeArray<OfflineGeometryVertex32>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                packed = AllocateTrackedNativeArray<OfflineGeometryVertex32>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(packed));
                 for (int i = 0; i < vertexCount; i++)
                 {
                     packed[i] = new OfflineGeometryVertex32
@@ -1005,11 +1092,11 @@ namespace Hecton8.Editor.OfflineGeometry
             {
                 if (!transferred && mesh != null)
                     UnityEngine.Object.DestroyImmediate(mesh);
-                if (packed.IsCreated) packed.Dispose();
-                if (hullIndexCount.IsCreated) hullIndexCount.Dispose();
-                if (hullCount.IsCreated) hullCount.Dispose();
-                if (hullIndices.IsCreated) hullIndices.Dispose();
-                if (hullVertices.IsCreated) hullVertices.Dispose();
+                DisposeTrackedNativeArray(ref packed);
+                DisposeTrackedNativeArray(ref hullIndexCount);
+                DisposeTrackedNativeArray(ref hullCount);
+                DisposeTrackedNativeArray(ref hullIndices);
+                DisposeTrackedNativeArray(ref hullVertices);
             }
         }
 
@@ -1022,7 +1109,7 @@ namespace Hecton8.Editor.OfflineGeometry
         {
             int subMeshCount = math.max(0, meshData.subMeshCount);
             // COLD ALLOC: NativeArray<OfflineSubMeshRange>[subMeshCount] - editor mesh submesh budget ranges - owner: OfflineGeometryBaker
-            NativeArray<OfflineSubMeshRange> ranges = new NativeArray<OfflineSubMeshRange>(subMeshCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<OfflineSubMeshRange> ranges = AllocateTrackedNativeArray<OfflineSubMeshRange>(subMeshCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(ranges));
             int total = 0;
             for (int i = 0; i < subMeshCount; i++)
             {
@@ -1581,7 +1668,7 @@ namespace Hecton8.Editor.OfflineGeometry
                 if (count > 0)
                 {
                     // COLD ALLOC: NativeArray<OfflineLodManifestRecord>[count] - editor binary LOD manifest staging - owner: OfflineGeometryBaker
-                    records = new NativeArray<OfflineLodManifestRecord>(count, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    records = AllocateTrackedNativeArray<OfflineLodManifestRecord>(count, Allocator.Temp, NativeArrayOptions.UninitializedMemory, nameof(records));
                     for (int i = 0; i < count; i++)
                     {
                         OfflineBakeMetrics metric = metrics[i];
@@ -1660,8 +1747,7 @@ namespace Hecton8.Editor.OfflineGeometry
             {
                 if (File.Exists(tempPath))
                     File.Delete(tempPath);
-                if (records.IsCreated)
-                    records.Dispose();
+                DisposeTrackedNativeArray(ref records);
             }
         }
 

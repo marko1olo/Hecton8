@@ -283,11 +283,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled || !_lateFrameRegistered)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
+            bool needsLateFrameTick = _lateFrameRegistered || _screenVisualDirty;
             TryUnregisterLateFrameTick();
-            TryRegisterLateFrameTick();
+            if (needsLateFrameTick && currentService != null && isActiveAndEnabled)
+                TryRegisterLateFrameTick();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -578,7 +580,7 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterLateFrameTick()
         {
-            if (_lateFrameRegistered || !Application.isPlaying)
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);

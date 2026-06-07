@@ -7,6 +7,9 @@ poi_tags: poi.terminal_register_card;poi.message_style_sheet
 biome_tags: biome.localization;biome.terminal_os
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Правило регистра терминальных текстов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

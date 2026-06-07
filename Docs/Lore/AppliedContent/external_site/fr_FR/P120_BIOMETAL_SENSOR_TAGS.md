@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "Balises sensorielles biométal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# Balises sensorielles biométal
 
-FR LOC HOLD: Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems.
+Les balises sensorielles biométal ne sont pas des objets à collectionner génériques. Elles apparaissent quand un système de réparation cesse de se soucier que son porteur soit machine, croissance de câble ou animal. La balise est une fine écaille biométallique qui s'enfonce dans le tissu, boit un peu de courant, enregistre le mouvement et répète une confiance de position dans l'eau. Un Marauder peut s'en servir pour accorder un pinger, étendre la portée d'un scanner ou prouver qu'une route était vivante quand Atlas l'a touchée. Cette utilité est le problème. Retire une balise froide et elle devient preuve. Retire-la chaude et le réseau peut remarquer le porteur manquant, répondre par de faux retours ou envoyer une logique de réparation vers l'animal blessé, le kelp coupé ou le plongeur qui tient la balise. Le matériau oblige à traiter le butin comme un dossier : utile, sale et encore en train de rapporter.
 
 ## Scanner
 
-FR LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+BALISES SENSORIELLES BIOMÉTAL // Fines écailles métalliques poussées dans poisson, kelp de câble et tissu de réparation. Améliorent l'accord du pinger; récoltées chaudes, Atlas peut entendre le porteur manquant.
 
 ## Terminal
 
-FR LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+CLASSE RESSOURCE : altérée par Atlas / sensible comme preuve. Usages : focus de pinger, treillis de scanner, confiance de route, paquets de preuve. Récolte froide conseillée. Risques : hausse d'attention, faux retours de porteur, faune blessée.
 
 ## Audio
 
-FR LOC HOLD: The fish is not a drone. The tag does not know the difference.
+Le poisson n'est pas un drone. La balise continue pourtant de rapporter.
 
 ## Field Note
 
-FR LOC HOLD: Make resource extraction feel like evidence handling.
+Si elle clignote sous la lame, enregistre avant de couper.
 
 <!-- External Site; generated from P120_BIOMETAL_SENSOR_TAGS/fr_FR. -->

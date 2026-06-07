@@ -64,7 +64,12 @@ namespace Hecton8.Dev
 
             bool loadingStagePass =
                 ContainsAll(loadingScreen, "LoadingPipelineStage", "Paging Sectors...", "Hydrating Entities...", "Building NavGrid...", "CharBufferPool.TryAcquire", "SetCharArray", "WritePercent") &&
-                ContainsAll(saveManager, "ReportLoadPipelineStage(LoadingPipelineStage.PagingSectors", "ReportLoadPipelineStage(LoadingPipelineStage.HydratingEntities", "ReportLoadPipelineStage(LoadingPipelineStage.BuildingNavGrid");
+                ContainsAll(saveManager, "ReportLoadPipelineStage(LoadingPipelineStage.PagingSectors", "ReportLoadPipelineStage(LoadingPipelineStage.HydratingEntities", "ReportLoadPipelineStage(LoadingPipelineStage.BuildingNavGrid") &&
+                ContainsAll(saveManager, "LoadingScreenController loadingScreen = ResolveLoadingScreenController()", "IsLoadingScreenControllerUsable", "_cachedLoadingScreenController = null", "_cachedLoadingScreenController = IsLoadingScreenControllerUsable(loadingScreen) ? loadingScreen : null") &&
+                ContainsAll(loadingScreen, "TryAbortForUsableExistingRuntime", "IsLoadingScreenRuntimeUsable", "GlobalRegistry.UnregisterLoadingScreenRuntime(current);", "ReferenceEquals(current, null)", "ReferenceEquals(current, this)") &&
+                SourceIndex(loadingScreen, "if (TryAbortForUsableExistingRuntime())") < SourceIndex(loadingScreen, "GlobalRegistry.RegisterLoadingScreenRuntime(this);") &&
+                SourceIndex(loadingScreen, "current != null && current != this") == int.MaxValue &&
+                SourceIndex(saveManager, "_cachedLoadingScreenController = GlobalRegistry.LoadingScreen") == int.MaxValue;
 
             bool safeAupSnapPass =
                 ContainsAll(saveManager, "TryApplySafeAupSnapOnLoad(data)", "AbsoluteUniversePosition.FromRuntimePosition", "HectonFloatingOrigin.BeginSafeTeleportProtocol");
@@ -213,12 +218,12 @@ namespace Hecton8.Dev
                 ContainsAll(thumbnailSystem, "ResolveThumbnailFileStem", "SaveManager.ResolveSafeSlotFileStem(slotName)", "HectonPersistentPathPolicy.CombineFile(ResolveThumbnailFileStem(slotName) + Extension)", "HectonPersistentPathPolicy.CombineFile(ResolveThumbnailFileStem(slotName) + LegacyExtension)") &&
                 CountOccurrences(thumbnailSystem, "SaveManager.TryResolveSafeSlotName(slotName, out slotName)") >= 4 &&
                 ContainsAll(thumbnailSystem, "AsyncWriteManager.WriteAll(tempPath, dataPtr, encodedJpg.Length, out string writeError)", "throw new IOException(writeError);", "bool encodedJpgRegistered = false", "encodedJpgRegistered = true", "File.Move(tempPath, path);", "await Awaitable.MainThreadAsync();") &&
-                ContainsAll(saveSidecarStorage, "NativeTempMemoryLifetime = NativeAllocationLifetime.Temp", "RegisterTempBuffer(buffer, \"metadataWriteBuffer\")", "RegisterTempBuffer(buffer, \"metadataReadBuffer\")", "RegisterTempBuffer(buffer, \"maintenanceWriteBuffer\")", "RegisterTempBuffer(buffer, \"maintenanceReadBuffer\")", "NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime)", "NativeMemorySentinel.UnregisterNativeArray(buffer)") &&
+                ContainsAll(saveSidecarStorage, "NativeTempMemoryLifetime = NativeAllocationLifetime.Temp", "RegisterTempNativeArrayBuffer(buffer, \"metadataWriteBuffer\")", "RegisterTempNativeArrayBuffer(buffer, \"metadataReadBuffer\")", "RegisterTempNativeArrayBuffer(buffer, \"maintenanceWriteBuffer\")", "RegisterTempNativeArrayBuffer(buffer, \"maintenanceReadBuffer\")", "int registrationId = NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime)", "if (registrationId <= 0)", "NativeMemorySentinel.UnregisterNativeArray(buffer)", "RestoreTempNativeArrayBufferSentinelOrThrow") &&
                 ContainsAll(saveSlotThumbnail, "SaveManager.IsSafeSlotName(slotName)", "SaveThumbnailSystem.CaptureThumbnail(slotName, captureCamera);", "SaveThumbnailSystem.LoadThumbnailTextureAsync(slotName, destroyCancellationToken)", "AdvanceLoadSequence()") &&
                 SourceIndex(thumbnailSystem, "slotName + Extension") == int.MaxValue &&
                 SourceIndex(thumbnailSystem, "slotName + LegacyExtension") == int.MaxValue &&
                 SourceIndex(thumbnailSystem, "new FileStream(tempPath") == int.MaxValue &&
-                CountOccurrences(saveSidecarStorage, "DisposeTempBuffer(ref buffer);") == 4 &&
+                CountOccurrences(saveSidecarStorage, "DisposeTempNativeArrayBuffer(ref buffer,") == 4 &&
                 CountOccurrences(saveSidecarStorage, "buffer.Dispose();") == 1;
 
             bool pass = asyncThumbnailPass &&

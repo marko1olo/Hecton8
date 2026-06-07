@@ -67,11 +67,12 @@ namespace Hecton8.World
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             TryUnregisterSlowTick();
-            TryRegisterSlowTick();
+            if (currentService != null && isActiveAndEnabled)
+                TryRegisterSlowTick();
         }
 
         private void TryRegisterSlowTick()

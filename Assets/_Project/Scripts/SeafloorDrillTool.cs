@@ -21,7 +21,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float cooldownSeconds = 0.28f;
         [SerializeField] private float recoilImpulse = 2.2f;
         [SerializeField] private float hapticRatedPower = 28f;
-        [SerializeField] private LayerMask drillMask = HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask drillMask = HectonLayerMasks.FieldToolSurfaceLayerMask;
         [SerializeField] private QueryTriggerInteraction triggerInteraction = QueryTriggerInteraction.Collide;
 
         private float _cooldownRemaining;
@@ -178,7 +178,13 @@ namespace Hecton8.Gameplay
             if (runtimeRange <= 0f)
                 return false;
 
-            if (!RequestPrimarySurfaceHit(origin, drillDirection, runtimeRange, drillMask.value, triggerInteraction, out InteractionSurfaceHit hit) ||
+            if (!RequestPrimarySurfaceHit(
+                    origin,
+                    drillDirection,
+                    runtimeRange,
+                    HectonLayerMasks.ResolveSurfaceInteractionLayerMask(drillMask.value),
+                    triggerInteraction,
+                    out InteractionSurfaceHit hit) ||
                 hit.collider == null)
             {
                 return false;

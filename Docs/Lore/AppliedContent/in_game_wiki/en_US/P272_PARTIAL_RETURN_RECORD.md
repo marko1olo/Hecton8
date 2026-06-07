@@ -7,6 +7,9 @@ poi_tags: poi.partial_return_record;poi.quarantine_reentry_order
 biome_tags: biome.ending;biome.replay
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Partial Return Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

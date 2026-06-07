@@ -64,7 +64,7 @@ namespace Hecton8.Graphics.Materials
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             if (_registeredLateFrame)
@@ -72,6 +72,9 @@ namespace Hecton8.Graphics.Materials
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = false;
             }
+
+            if (currentService == null || !isActiveAndEnabled)
+                return;
 
             TryRegisterTick();
         }

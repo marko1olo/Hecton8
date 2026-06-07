@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS165_FIRST_INVENTORY_SORTING_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1110_DRY_POUCH_SALT_CHECK",
+    "P1111_WET_STOCK_RED_TAG",
+    "P1112_DIRTY_TOOL_WRAP_QUARANTINE",
+    "P1113_PERSONAL_EFFECTS_CUSTODY_TRAY",
+    "P1114_SHARP_DEBRIS_EDGE_FLAG"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1110_DRY_POUCH_SALT_CHECK.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1111_WET_STOCK_RED_TAG.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1112_DIRTY_TOOL_WRAP_QUARANTINE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1113_PERSONAL_EFFECTS_CUSTODY_TRAY.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1114_SHARP_DEBRIS_EDGE_FLAG.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

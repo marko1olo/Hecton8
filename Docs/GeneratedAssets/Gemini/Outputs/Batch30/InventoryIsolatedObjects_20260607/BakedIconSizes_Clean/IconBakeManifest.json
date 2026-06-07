@@ -1,0 +1,107 @@
+{
+  "iconCount": 10,
+  "icons": [
+    {
+      "outputs": [
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_01_OxygenMicroTank_Alpha512_32.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_01_OxygenMicroTank_Alpha512_64.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_01_OxygenMicroTank_Alpha512_128.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_01_OxygenMicroTank_Alpha512_256.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_01_OxygenMicroTank_Alpha512_512.png"
+      ],
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_01_OxygenMicroTank_Alpha512.png"
+    },
+    {
+      "outputs": [
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_02_PressureRegulatorModule_Alpha512_32.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_02_PressureRegulatorModule_Alpha512_64.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_02_PressureRegulatorModule_Alpha512_128.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_02_PressureRegulatorModule_Alpha512_256.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_02_PressureRegulatorModule_Alpha512_512.png"
+      ],
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_02_PressureRegulatorModule_Alpha512.png"
+    },
+    {
+      "outputs": [
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_03_PressureSalvageCaseA_Alpha512_32.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_03_PressureSalvageCaseA_Alpha512_64.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_03_PressureSalvageCaseA_Alpha512_128.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_03_PressureSalvageCaseA_Alpha512_256.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_03_PressureSalvageCaseA_Alpha512_512.png"
+      ],
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_03_PressureSalvageCaseA_Alpha512.png"
+    },
+    {
+      "outputs": [
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_04_FoldedMultitoolA_Alpha512_32.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_04_FoldedMultitoolA_Alpha512_64.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_04_FoldedMultitoolA_Alpha512_128.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_04_FoldedMultitoolA_Alpha512_256.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_04_FoldedMultitoolA_Alpha512_512.png"
+      ],
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_04_FoldedMultitoolA_Alpha512.png"
+    },
+    {
+      "outputs": [
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_05_FoldedMultitoolB_Alpha512_32.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_05_FoldedMultitoolB_Alpha512_64.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_05_FoldedMultitoolB_Alpha512_128.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_05_FoldedMultitoolB_Alpha512_256.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_05_FoldedMultitoolB_Alpha512_512.png"
+      ],
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_05_FoldedMultitoolB_Alpha512.png"
+    },
+    {
+      "outputs": [
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_06_PowerCoilCartridge_Alpha512_32.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_06_PowerCoilCartridge_Alpha512_64.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_06_PowerCoilCartridge_Alpha512_128.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_06_PowerCoilCartridge_Alpha512_256.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_06_PowerCoilCartridge_Alpha512_512.png"
+      ],
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_06_PowerCoilCartridge_Alpha512.png"
+    },
+    {
+      "outputs": [
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_07_ThermalControlModule_Alpha512_32.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_07_ThermalControlModule_Alpha512_64.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_07_ThermalControlModule_Alpha512_128.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_07_ThermalControlModule_Alpha512_256.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_07_ThermalControlModule_Alpha512_512.png"
+      ],
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_07_ThermalControlModule_Alpha512.png"
+    },
+    {
+      "outputs": [
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_08_BeaconPuck_Alpha512_32.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_08_BeaconPuck_Alpha512_64.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_08_BeaconPuck_Alpha512_128.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_08_BeaconPuck_Alpha512_256.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_08_BeaconPuck_Alpha512_512.png"
+      ],
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_08_BeaconPuck_Alpha512.png"
+    },
+    {
+      "outputs": [
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_09_SampleVialRack_Alpha512_32.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_09_SampleVialRack_Alpha512_64.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_09_SampleVialRack_Alpha512_128.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_09_SampleVialRack_Alpha512_256.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_09_SampleVialRack_Alpha512_512.png"
+      ],
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_09_SampleVialRack_Alpha512.png"
+    },
+    {
+      "outputs": [
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_10_AlloyIngot_Alpha512_32.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_10_AlloyIngot_Alpha512_64.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_10_AlloyIngot_Alpha512_128.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_10_AlloyIngot_Alpha512_256.png",
+        "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIconSizes_Clean/DRAFT_TX_B30_IsolatedInventory_10_AlloyIngot_Alpha512_512.png"
+      ],
+      "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_10_AlloyIngot_Alpha512.png"
+    }
+  ],
+  "schema": "hecton8.icon_bake_manifest.v1",
+  "tool": "Tools/IconBaker.py"
+}

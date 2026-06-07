@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "Rodzimy stos soli siarczkowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# Rodzimy stos soli siarczkowych
 
-PL LOC HOLD: Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent.
+Rodzimy stos soli siarczkowych to podstawowy artykuł o zatopionej geologii HECTON-8. To nie skażenie Atlasem, nie odpad Deep Reach i nie początek Xenon-Omega. To starsza warstwa: sole siarczkowe, jony metali i skorupy solanki zbudowane przez ciśnienie, ciepło i czas. W terenie wyglądają skromnie obok świecących materiałów długu, ale to one pozwalają wykonać pierwsze naprawy. Stos może zmyć tlenki ze styków, zasilić chemię ogniwa awaryjnego, obniżyć temperaturę topnienia ceramiki albo w mniej niż minutę zmienić czystą rękawicę w kwaśny problem. Tak właśnie HECTON-8 ma być użyteczne: praktycznie, groźnie i obojętnie. Deep Reach nie wymyśliło metalowego apetytu księżyca. Firma nauczyła się wystawiać za niego rachunek. Dobre rozmieszczenie zasobów powinno pokazać to przed nadejściem większej grozy. Ściany już reagują. Solanka już pamięta ciśnienie. Złomowanie zaczyna się od rozpoznania, który kawałek świata pomoże oddychać, a który przeżre to, co trzyma cię przy życiu.
 
 ## Scanner
 
-PL LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+RODZIME SOLE SIARCZKOWE // Kryształy zbudowane przez kominy i czarna skorupa solanki, starsze niż Deep Reach. Mokre przewodzą, ciepłe żrą, przydatne zanim cokolwiek zrobi się niebieskie.
 
 ## Terminal
 
-PL LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+KLASA ZASOBU: geologia rodzima. Zastosowania: płukanie przewodników, chemia ogniw awaryjnych, topnik ceramiczny, katalizator korozji. Trzymać z dala od ciepłego powietrza wlotowego; pył rozkwita kwaśnym filmem na metalu skafandra.
 
 ## Audio
 
-PL LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+Księżyc nie potrzebował firmy, żeby być groźny. Chemię znał już wcześniej.
 
 ## Field Note
 
-PL LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+Jeśli rękawice swędzą, jesteś już spóźniony. Płucz, uziemiaj, wpisz ścianę do dziennika.
 
 <!-- External Site; generated from P116_NATIVE_SULFIDE_SALT_STACK/pl_PL. -->

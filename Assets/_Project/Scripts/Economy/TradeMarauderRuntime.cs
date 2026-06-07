@@ -1977,11 +1977,9 @@ namespace Hecton8.Economy
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null || !isActiveAndEnabled)
-                    return;
-
                 TryUnregisterRuntimeLanes();
-                TryRegisterRuntimeLanes();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterRuntimeLanes();
                 return;
             }
 

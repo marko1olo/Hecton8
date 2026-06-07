@@ -9,32 +9,34 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Sensor-Tagged Fauna"
+title: "Fauna met sensortags"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Sensor-Tagged Fauna
+# Fauna met sensortags
 
-NL LOC HOLD: Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.
+Fauna met sensortags houdt door Atlas veranderd leven geaard. Deep Reach tagde ooit dieren, schelpkolonies en routesoorten om beweging, drukbestendigheid en besmetting te monitoren. Jaren later zijn die biometalen tags geen schoon apparaat meer. Ze zitten in groeiringen, schelpsockets, oude littekens en mineraalkappen, gedragen als deel van het lichaam dat eromheen overleefde.
+
+Dat onderscheid telt. Een getagd wezen is geen pop. Atlas kan de tag pingen, de terugkeer verkeerd lezen of hem als zwak diagnostisch herkenningspunt gebruiken, maar commandoreactie is onbetrouwbaar en vaak afwezig. De speler moet de tag lezen als industriële geschiedenis: een zwak signaal, oude wond, aansprakelijkheidsspoor en soms aanwijzing waar Deep Reach keek voordat de kolonie faalde.
 
 ## Scanner
 
-NL LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+FAUNA MET SENSORTAGS // Oude biometalen tags zitten in groeiringen, littekens en schelpsockets; het dier draagt monitorhardware als lichaamsgeschiedenis, niet als gehoorzaamheid.
 
 ## Terminal
 
-NL LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+TAGNOTITIE: signaalcontinuïteit zwak, biologische integratie hoog, commandoreactie onbetrouwbaar. Behandel als passief litteken, onderbroken baken en mogelijke Atlas-diagnosespook.
 
 ## Audio
 
-NL LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+Het dier is geen drone. De drone is een oude wond in het dier.
 
 ## Field Note
 
-NL LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+Het dier is geen drone. De drone is een oude wond waar het dier omheen overleefde.
 
 <!-- In-Game Wiki; generated from P234_SENSOR_TAGGED_FAUNA/nl_NL. -->

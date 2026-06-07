@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Glass Grazer Schools"
+title: "Scholen glasgrazers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Glass Grazer Schools
+# Scholen glasgrazers
 
-NL LOC HOLD: Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.
+Glasgrazers zijn de eerste ondiepwaterdieren die schoonheid nuttig maken zonder de shelf veilig te maken. Hun transparante schalen en harde mondribbels schrapen mineraalfilm van pressure glass, losse fotische matten en oude kabelmantels. Een etende school laat bleke banen achter die recente stroming, nieuwe groei en de rustigste lijn rond een vervuilde naad tonen. Kijk naar de rand van de school, niet naar het midden: ze mijden warme kit, zure pekellekken en oppervlakken met Atlas-compatibele signaaldrift. Als het tikken stopt terwijl er nog voedsel ligt, heeft iets groters het water veranderd. De vrijgemaakte baan is bewijs, geen toestemming om te sprinten.
 
 ## Scanner
 
-NL LOC HOLD: Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.
+SCHOOL GLASGRAZERS // Transparante schaaleters schrapen mineraalfilm van pressure glass en randen van fotische matten. Hun tikken opent heldere routesporen; plotselinge stilte is roofdiergegeven.
 
 ## Terminal
 
-NL LOC HOLD: FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.
+FAUNA-BASIS: niet-vijandige grazercluster. Volg pressure-glass-film, verse mineralenbloom, stromingsverstoring en verplaatsing door roofdieren. Afwezigheid na actief eten is een routewaarschuwing, geen leeg spawnpunt.
 
 ## Audio
 
-NL LOC HOLD: Hear the ticking on the shell? That is lunch, map and warning in the same sound.
+Hoor je het tikken op de schaal? Dat is lunch, kaart en waarschuwing in hetzelfde geluid.
 
 ## Field Note
 
-NL LOC HOLD: Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.
+Jaag de school niet na. Lees wat ze blootlegt: verse film, oude schraap, ontwijking van warme kit en de lege baan die de dieren weigeren te kruisen.
 
 <!-- In-Game Wiki; generated from P222_GLASS_GRAZER_SCHOOLS/nl_NL. -->

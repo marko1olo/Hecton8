@@ -7,6 +7,9 @@ poi_tags: poi.ending_record_layout;poi.receiver_badge_set
 biome_tags: biome.codex;biome.spoiler_gate
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Dossier Ending Record Layout Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

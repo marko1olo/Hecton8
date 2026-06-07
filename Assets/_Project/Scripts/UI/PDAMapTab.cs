@@ -277,7 +277,7 @@ namespace Hecton8.UI
                     _encounterDirector = currentService as IEncounterDirectorService;
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.WorldSeedProvider:
                     _worldSeedProvider = currentService as IWorldSeedProvider;
@@ -289,8 +289,7 @@ namespace Hecton8.UI
                     _streamingBackpressureService = currentService as IStreamingBackpressureService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredLateFrame = false;
-                    _registeredSlowTick = false;
+                    UnregisterFromTickManager();
                     if (currentService != null && isActiveAndEnabled)
                         RegisterToTickManager();
                     break;
@@ -568,7 +567,28 @@ namespace Hecton8.UI
 
         private IAudioService ResolveAudioService()
         {
-            return IsLiveUnityObjectReference(_audioService) ? _audioService : null;
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private IWorldSeedProvider ResolveWorldSeedProvider()
@@ -613,7 +633,7 @@ namespace Hecton8.UI
             _explorationTracker = GlobalRegistry.PlayerExploration as IPdaCartographyReadModel;
             _markerRegistry = GlobalRegistry.PDAMarkers;
             _encounterDirector = GlobalRegistry.EncounterDirector;
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _worldSeedProvider = GlobalRegistry.WorldSeedProvider;
             _playerContext = GlobalRegistry.Player;
             _streamingBackpressureService = GlobalRegistry.StreamingBackpressure;

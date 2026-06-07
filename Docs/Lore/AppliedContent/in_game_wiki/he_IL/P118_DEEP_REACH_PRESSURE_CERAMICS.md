@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "קרמיקת לחץ Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# קרמיקת לחץ Deep Reach
 
-HE LOC HOLD: Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.
+קרמיקת הלחץ של Deep Reach היא מינרלים מקומיים של HECTON-8 שנדחפו דרך תנורים, אמבטיות קטליטיות ומחזורי כבשני פתחים עד שיכלו להחזיק לחץ במקום שבו מתכת הייתה זוחלת או נתפסת. היא מופיעה בטבעות הידוק, מושבי אטם, מגעי חותך ובידוד עריסות עלייה, ולכן היא חיונית לתיקונים ולייצור שרשרת בריחה. הסכנה שלה אינה חומר מרושע. הסכנה היא כשירות תחת משמורת גרועה: טבעת יכולה להחזיק שנים ואז לפרוח לרסיסים חותכים אם צוות מכה אותה בחום או משחרר לחץ בסדר שגוי.
 
 ## Scanner
 
-HE LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+קרמיקת לחץ DEEP REACH // חרסית מקומית, שטף גופריתי וחום כבשן פתח שהפכו לטבעות הידוק ומושבי אטם. מחזיקה לחץ יפה; בהלם היא נכשלת לסכינים.
 
 ## Terminal
 
-HE LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+סיווג משאב: מוגבר בידי Deep Reach. שימושים: טבעות הידוק, מושבי אטם, מגעי חותך, בידוד עריסת עלייה. מצב כשל: פריחת רסיסים בהלם תרמי או בשחרור לחץ שגוי.
 
 ## Audio
 
-HE LOC HOLD: The company was good at building things. That is part of the crime.
+Deep Reach ידעה לבנות דברים. לכן השקר עבד.
 
 ## Field Note
 
-HE LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+הקש עליה קרה. אם היא שרה גבוה, אל תחמם.
 
 <!-- In-Game Wiki; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/he_IL. -->

@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS163_FIRST_ACOUSTIC_CUE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P970_PIPE_KNOCK_RETURN_PATTERN",
+    "P971_HULL_TICK_STRESS_COUNT",
+    "P972_RELAY_HISS_CLEAN_DROP",
+    "P973_PUMP_COUGH_AIR_LOCK",
+    "P974_REEF_SCRAPE_LOW_NOTE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P970_PIPE_KNOCK_RETURN_PATTERN.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P971_HULL_TICK_STRESS_COUNT.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P972_RELAY_HISS_CLEAN_DROP.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P973_PUMP_COUGH_AIR_LOCK.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P974_REEF_SCRAPE_LOW_NOTE.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

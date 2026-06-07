@@ -1441,8 +1441,9 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             DisposeNativeMirrorArray(ref array);
-            array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(array, nameof(ShinobuEcosystemBalancer), label, NativeAllocationLifetime.Session);
+            array = H8Memory.Allocate<T>(length, SystemID.AIEcology, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            if (!array.IsCreated)
+                throw new InvalidOperationException($"{nameof(ShinobuEcosystemBalancer)} native allocation failed for {label}.");
         }
 
         private void DisposeTelemetryMirrorsCold()
@@ -1474,9 +1475,7 @@ namespace Hecton8.AI.Ecosystem
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            H8Memory.Release(ref array, SystemID.AIEcology);
         }
 
         private IDataVault EnsureDataVaultCold()
@@ -4932,21 +4931,10 @@ namespace Hecton8.AI.Ecosystem
         {
             Volatile.Write(ref s_stopRequested, 1);
             AutoResetEvent signal = s_dumpSignal;
-            if (signal != null)
-            {
-                try
-                {
-                    signal.Set();
-                }
-                catch (ObjectDisposedException)
-                {
-                }
-            }
+            SignalDumpWorkerNoThrow(signal);
 
             Thread worker = s_dumpWorker;
-            bool workerStopped = worker == null || !worker.IsAlive;
-            if (worker != null && worker.IsAlive)
-                workerStopped = worker.Join(DumpWorkerJoinMilliseconds);
+            bool workerStopped = TryJoinDumpWorkerNoThrow(worker);
 
             if (!workerStopped)
                 return;
@@ -4954,19 +4942,62 @@ namespace Hecton8.AI.Ecosystem
             DrainPendingDump();
             s_dumpWorker = null;
             if (signal != null)
-                signal.Dispose();
+                DisposeDumpSignalNoThrow(signal);
             s_dumpSignal = null;
             s_dumpVault = null;
             s_dumpSnapshotHandle = default;
-            if (s_snapshotBuffer.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(s_snapshotBuffer);
-                s_snapshotBuffer.Dispose();
-            }
-            s_snapshotBuffer = default;
+            H8Memory.Release(ref s_snapshotBuffer, SystemID.AIEcology);
             Volatile.Write(ref s_pendingByteCount, 0);
             Volatile.Write(ref s_dumpState, DumpStateIdle);
             Volatile.Write(ref s_stopRequested, 0);
+        }
+
+        private static bool SignalDumpWorkerNoThrow(AutoResetEvent signal)
+        {
+            if (signal == null)
+                return false;
+
+            try
+            {
+                signal.Set();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static bool TryJoinDumpWorkerNoThrow(Thread worker)
+        {
+            if (worker == null || !worker.IsAlive)
+                return true;
+            if (ReferenceEquals(Thread.CurrentThread, worker))
+                return false;
+
+            try
+            {
+                worker.Join(DumpWorkerJoinMilliseconds);
+                return !worker.IsAlive;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static void DisposeDumpSignalNoThrow(AutoResetEvent signal)
+        {
+            if (signal == null)
+                return;
+
+            try
+            {
+                signal.Dispose();
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private static void AddDumpFailureFlags(int flags)
@@ -5046,14 +5077,15 @@ namespace Hecton8.AI.Ecosystem
             if (s_snapshotBuffer.IsCreated && s_snapshotBuffer.Length >= DumpSnapshotBytes)
                 return;
 
-            if (s_snapshotBuffer.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(s_snapshotBuffer);
-                s_snapshotBuffer.Dispose();
-            }
+            H8Memory.Release(ref s_snapshotBuffer, SystemID.AIEcology);
 
-            s_snapshotBuffer = new NativeArray<byte>(DumpSnapshotBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(s_snapshotBuffer, nameof(ShinobuEcosystemTelemetryForensics), nameof(s_snapshotBuffer), NativeAllocationLifetime.Session);
+            s_snapshotBuffer = H8Memory.Allocate<byte>(
+                DumpSnapshotBytes,
+                SystemID.AIEcology,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+            if (!s_snapshotBuffer.IsCreated)
+                throw new InvalidOperationException($"{nameof(ShinobuEcosystemTelemetryForensics)} native allocation failed for {nameof(s_snapshotBuffer)}.");
         }
 
         private static bool TryResolveSnapshotBuffer(out NativeArray<byte> snapshot)

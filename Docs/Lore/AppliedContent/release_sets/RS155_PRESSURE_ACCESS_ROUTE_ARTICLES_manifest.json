@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS155_PRESSURE_ACCESS_ROUTE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P840_PRESSURE_DOOR_MANUAL_WHEEL",
+    "P841_HATCH_GASKET_MEMORY_RING",
+    "P842_LOCKOUT_TAG_WET_INK",
+    "P843_EQUALIZATION_PIN_STICK",
+    "P844_VIEWPORT_HAIRLINE_CRACK"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P840_PRESSURE_DOOR_MANUAL_WHEEL.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P841_HATCH_GASKET_MEMORY_RING.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P842_LOCKOUT_TAG_WET_INK.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P843_EQUALIZATION_PIN_STICK.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P844_VIEWPORT_HAIRLINE_CRACK.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

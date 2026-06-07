@@ -7,6 +7,9 @@ poi_tags: poi.coordinate_demand_packet;poi.payload_receiver_toggle
 biome_tags: biome.deep_reach;biome.contract
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Recovery Compliance Coordinate Demand"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

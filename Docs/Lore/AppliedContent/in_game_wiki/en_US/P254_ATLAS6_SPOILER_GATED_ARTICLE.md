@@ -7,6 +7,9 @@ poi_tags: poi.public_atlas_article;poi.spoiler_gate_plate
 biome_tags: biome.publication;biome.atlas_maintenance
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Atlas-6 Spoiler-Gated Article"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

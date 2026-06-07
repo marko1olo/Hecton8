@@ -7,6 +7,9 @@ poi_tags: poi.deep_reach_clause_stamp;poi.recovery_compliance_packet
 biome_tags: biome.deep_reach_pressure;biome.claim_admin
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Карта веса условий Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

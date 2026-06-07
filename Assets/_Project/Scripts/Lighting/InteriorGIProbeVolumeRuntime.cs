@@ -1138,6 +1138,27 @@ namespace Hecton8.Lighting
             TryUnregisterHotSwapListener();
         }
 
+        private void TryUnregisterDispatcherTicks()
+        {
+            if (_registeredTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+        }
+
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
@@ -1154,9 +1175,7 @@ namespace Hecton8.Lighting
                     break;
 
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredTick = false;
-                    _registeredSlowTick = false;
-                    _registeredLateFrame = false;
+                    TryUnregisterDispatcherTicks();
                     if (currentService != null)
                         TryRegister();
                     break;

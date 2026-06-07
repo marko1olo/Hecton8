@@ -143,6 +143,9 @@ namespace Hecton8.UI
 
         private void RunVisualSync(float deltaTime)
         {
+            if (_survivalSystem == null)
+                ResolveSurvivalSystem(false);
+
             if (_survivalSystem == null || !_survivalSystem.IsAlive)
             {
                 SetAllBarsEmpty();
@@ -295,6 +298,14 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                UnregisterFromTick();
+                if (currentService != null && isActiveAndEnabled)
+                    RegisterToTick();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Player)
                 return;
 
@@ -334,7 +345,7 @@ namespace Hecton8.UI
 
         private void RegisterToTick()
         {
-            if (_registered || !Application.isPlaying)
+            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);

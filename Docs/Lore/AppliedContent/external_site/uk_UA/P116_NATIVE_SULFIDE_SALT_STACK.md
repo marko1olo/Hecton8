@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "Самородна сульфідно-соляна гряда"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# Самородна сульфідно-соляна гряда
 
-UA LOC HOLD: Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent.
+Самородна сульфідно-соляна гряда - базова стаття про затоплену геологію HECTON-8. Це не забруднення Atlas, не відходи Deep Reach і не початок Xenon-Omega. Це старший шар: сульфідні солі, іони металів і розсільні кірки, зібрані тиском, теплом і часом. У полі такі поклади виглядають скромно поруч зі сяйними борговими матеріалами, але саме вони роблять можливими перші ремонти. Гряда може змити оксиди з контактів, підживити хімію аварійної комірки, знизити температуру плавлення кераміки або менш ніж за хвилину перетворити чисту рукавичку на кислотну проблему. Саме так HECTON-8 має бути корисним: практично, небезпечно й байдуже. Deep Reach не винайшла апетит місяця до металу. Компанія навчилася виставляти за нього рахунок. Гарне розміщення ресурсів має пояснити це до появи більшого жаху. Стіни вже реактивні. Розсіл уже пам'ятає тиск. Мародерство починається з уміння відрізнити шмат світу, що допоможе дихати, від шмату світу, який проїсть те, що тримає тебе живим.
 
 ## Scanner
 
-UA LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+САМОРОДНІ СУЛЬФІДНІ СОЛІ // Кристали, зібрані вентиляційними джерелами, і чорна розсільна кірка, старші за Deep Reach. Вологі проводять струм, теплі роз'їдають метал, корисні ще до того, як щось стане синім.
 
 ## Terminal
 
-UA LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+КЛАС РЕСУРСУ: природна геологія. Використання: промивання провідників, аварійна хімія комірок, керамічний флюс, корозійний каталізатор. Тримати подалі від теплого впускного повітря; пил розквітає кислотною плівкою на металі костюма.
 
 ## Audio
 
-UA LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+Місяцю не потрібна була компанія, щоб бути небезпечним. Він уже знав хімію.
 
 ## Field Note
 
-UA LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+Якщо рукавички сверблять, ти вже запізнився. Промий, заземли, занеси стіну в журнал.
 
 <!-- External Site; generated from P116_NATIVE_SULFIDE_SALT_STACK/uk_UA. -->

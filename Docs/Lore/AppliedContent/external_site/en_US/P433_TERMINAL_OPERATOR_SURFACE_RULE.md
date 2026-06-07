@@ -7,6 +7,9 @@ poi_tags: poi.terminal_operator_rule;poi.legal_boilerplate_style
 biome_tags: biome.terminal_ui;biome.colony_infrastructure
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Terminal Operator Surface Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

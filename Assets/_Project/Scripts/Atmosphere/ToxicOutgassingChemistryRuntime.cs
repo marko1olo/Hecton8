@@ -56,9 +56,14 @@ namespace Hecton8.Atmosphere
         private const float NaNEpsilon = 0.0001f;
         private const float SlowTickDeltaSeconds = 0.1f;
         private const float RebaseHalfCellBias = 0.5f;
+        private const uint ToxicBlackBoxMagic = 0x38584F54u; // TOX8
+        private const uint ToxicBlackBoxVersion = 1u;
+        private const int ToxicBlackBoxHeaderBytes = 32;
+        private const int ToxicBlackBoxEntryBytes = 64;
         private const uint ToxicityExposureLaneHash = 0x54584F58u; // TOX
         private const uint ToxicityBiolumLaneHash = 0x54424C4Du; // TBLM
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_TOXIC_SURGEON.bin";
+        private const string DumpPayloadLabel = "ToxicOutgassingTelemetryDumpPayload";
 #if UNITY_EDITOR
         private const string CsvRelativePath = "Data/Tuning/chemical_properties.csv";
 #endif
@@ -127,6 +132,7 @@ namespace Hecton8.Atmosphere
         private int _sourceCount;
         private int _entityCount;
         private int _telemetryCursor;
+        private int _telemetryRetainedCount;
         private int _densityVersion;
         private uint _simulationFrameCounter;
         private float _cellSizeMeters;
@@ -897,6 +903,7 @@ namespace Hecton8.Atmosphere
             _sourceCount = 0;
             _entityCount = 0;
             _telemetryCursor = 0;
+            _telemetryRetainedCount = 0;
             _densityVersion = 0;
             _simulationFrameCounter = 0u;
             _cellSizeMeters = 0f;
@@ -957,6 +964,8 @@ namespace Hecton8.Atmosphere
             MemClearArray(OpenBuffer(in _gridHeader, GridHeaderBufferId));
             MemClearArray(OpenBuffer(in _cellStatesFront, CellStateFrontBufferId));
             MemClearArray(OpenBuffer(in _cellStatesBack, CellStateBackBufferId));
+            _telemetryCursor = 0;
+            _telemetryRetainedCount = 0;
         }
 
         private static void MemClearArray<T>(NativeArray<T> array) where T : struct
@@ -1351,12 +1360,25 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
+            int capacity = math.min(ring.Length, TelemetryCapacity);
+            if (capacity <= 0)
+            {
+                return;
+            }
+
             ToxicityGridTelemetryEntry entry = scratch[0];
             entry.DiffusionCompleteMs = _lastCompleteMs;
             entry.Flags = (byte)(entry.Flags | _pendingFailureFlags);
             _pendingFailureFlags = 0;
-            ring[_telemetryCursor] = entry;
-            _telemetryCursor = (_telemetryCursor + 1) % TelemetryCapacity;
+            int writeIndex = _telemetryCursor;
+            if (writeIndex < 0 || writeIndex >= capacity)
+            {
+                writeIndex = 0;
+            }
+
+            ring[writeIndex] = entry;
+            _telemetryCursor = (writeIndex + 1) % capacity;
+            _telemetryRetainedCount = math.min(_telemetryRetainedCount + 1, capacity);
             if (entry.NanDetected != 0)
             {
                 DumpBlackBox();
@@ -1401,6 +1423,7 @@ namespace Hecton8.Atmosphere
 
         private void DumpBlackBox()
         {
+            NativeArray<byte> payload = default;
             try
             {
                 CompleteScheduledWorkForTeardown();
@@ -1408,9 +1431,48 @@ namespace Hecton8.Atmosphere
                 if (!ring.IsCreated || ring.Length == 0)
                     return;
 
-                int cursor = math.clamp(_telemetryCursor - 1, 0, ring.Length - 1);
-                ToxicityGridTelemetryEntry entry = ring[cursor];
-                if (!math.isfinite(entry.MaxDensity) || !math.isfinite(entry.TotalPlumeVolume))
+                int entrySize = UnsafeUtility.SizeOf<ToxicityGridTelemetryEntry>();
+                int capacity = math.min(ring.Length, TelemetryCapacity);
+                int retainedCount = math.clamp(_telemetryRetainedCount, 0, capacity);
+                if (entrySize != ToxicBlackBoxEntryBytes || capacity <= 0 || retainedCount <= 0)
+                    return;
+
+                int cursor = _telemetryCursor;
+                if (cursor < 0 || cursor >= capacity)
+                    cursor = 0;
+
+                int start = retainedCount >= capacity ? cursor : 0;
+                int payloadBytes = retainedCount * entrySize;
+                int byteCount = ToxicBlackBoxHeaderBytes + payloadBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(ToxicOutgassingChemistryRuntime),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                uint* header = (uint*)destination;
+                header[0] = ToxicBlackBoxMagic;
+                header[1] = ToxicBlackBoxVersion;
+                header[2] = ToxicBlackBoxHeaderBytes;
+                header[3] = unchecked((uint)entrySize);
+                header[4] = unchecked((uint)capacity);
+                header[5] = unchecked((uint)retainedCount);
+                header[6] = unchecked((uint)cursor);
+                header[7] = unchecked((uint)payloadBytes);
+
+                byte* rowDestination = destination + ToxicBlackBoxHeaderBytes;
+                for (int i = 0; i < retainedCount; i++)
+                {
+                    int index = start + i;
+                    if (index >= capacity)
+                        index -= capacity;
+
+                    ToxicityGridTelemetryEntry entry = ring[index];
+                    UnsafeUtility.MemCpy(rowDestination + i * entrySize, UnsafeUtility.AddressOf(ref entry), entrySize);
+                }
+
+                if (!NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, byteCount))
                     MarkFailure(TelemetryFlagDumpFailure);
             }
             catch (IOException)
@@ -1428,6 +1490,21 @@ namespace Hecton8.Atmosphere
             catch (NotSupportedException)
             {
                 MarkFailure(TelemetryFlagDumpFailure);
+            }
+            catch (ObjectDisposedException)
+            {
+                MarkFailure(TelemetryFlagDumpFailure);
+            }
+            catch (InvalidOperationException)
+            {
+                MarkFailure(TelemetryFlagDumpFailure);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ToxicOutgassingChemistryRuntime),
+                    DumpPayloadLabel);
             }
         }
 

@@ -423,6 +423,14 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterTick();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterTick();
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
                 _playerRuntimeContext = currentService as IPlayerRuntimeContext;
@@ -453,7 +461,7 @@ namespace Hecton8.UI
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
-                _audioService = currentService as IAudioService;
+                CacheAudioService(currentService as IAudioService);
         }
 
         private void TryRegisterHotSwapListener()
@@ -477,7 +485,7 @@ namespace Hecton8.UI
         {
             _playerRuntimeContext = GlobalRegistry.Player;
             _nativeInputManager = GlobalRegistry.NativeInputRuntime;
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _localizationMadnessPresentation = GlobalRegistry.LocalizationMadnessPresentation;
         }
 
@@ -492,6 +500,32 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
         //  AUTO-RESOLVE
         // ══════════════════════════════════════════════════════════
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
 
         private void AutoResolve()
         {
@@ -2428,7 +2462,7 @@ namespace Hecton8.UI
         {
             if (clip == null) return;
 
-            IAudioService audio = _audioService;
+            IAudioService audio = ResolveAudioService();
             if (audio != null)
                 audio.PlayStatic2D(clip, uiVolume);
         }

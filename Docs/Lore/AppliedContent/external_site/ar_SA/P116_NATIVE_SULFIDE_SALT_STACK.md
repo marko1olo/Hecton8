@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "رصيف أملاح كبريتيدية أصلية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# رصيف أملاح كبريتيدية أصلية
 
-AR LOC HOLD: Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent.
+رصيف الأملاح الكبريتيدية الأصلية هو مدخل أساسي إلى جيولوجيا HECTON-8 الغارقة. هذا ليس تلوثا من Atlas، ولا نفايات من Deep Reach، ولا بداية Xenon-Omega. إنه الطبقة الأقدم: أملاح كبريتيدية وأيونات معدنية وقشور محلول ملحي بنتها الضغوط والحرارة والزمن. في الميدان تبدو هذه الترسبات متواضعة بجانب مواد الدين المتوهجة، لكنها هي التي تجعل الإصلاحات الأولى ممكنة. يمكن للرصيف أن يغسل الأكسدة عن الوصلات، أو يغذي كيمياء خلية طارئة، أو يخفض نقطة انصهار خزف، أو يحول قفازا نظيفا إلى مشكلة حمضية في أقل من دقيقة. هذه هي منفعة HECTON-8 كما ينبغي أن تكون: عملية وخطرة وغير مكترثة. لم تخترع Deep Reach شهية القمر للمعدن؛ تعلمت فقط كيف ترسل لها فاتورة. يجب أن يعلم توزيع الموارد الجيد اللاعب هذا قبل وصول الرعب الأكبر. الجدران تفاعلية بالفعل. المحلول الملحي يتذكر الضغط بالفعل. يبدأ النهب حين تعرف أي قطعة من العالم تساعدك على التنفس، وأي قطعة ستأكل الشيء الذي يبقيك حيا.
 
 ## Scanner
 
-AR LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+أملاح كبريتيدية أصلية // بلورات رتبتها الفوهات وقشرة محلول ملحي سوداء أقدم من Deep Reach. توصل الكهرباء وهي رطبة، وتأكل المعدن وهي دافئة، وتنفع قبل أن يتحول أي شيء إلى الأزرق.
 
 ## Terminal
 
-AR LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+فئة المورد: جيولوجيا أصلية. الاستخدامات: غسل الموصلات، كيمياء الخلايا الطارئة، صاهر خزفي، محفز تآكل. يعزل عن هواء السحب الدافئ؛ فالغبار يزهر كغشاء حمضي على معدن البدلة.
 
 ## Audio
 
-AR LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+لم تكن هذه القمر بحاجة إلى شركة كي يصبح خطرا. كان يعرف الكيمياء من قبل.
 
 ## Field Note
 
-AR LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+إذا بدأت القفازات بالحكة فقد تأخرت. اغسل، أرض الشحنة، وسجل الجدار.
 
 <!-- External Site; generated from P116_NATIVE_SULFIDE_SALT_STACK/ar_SA. -->

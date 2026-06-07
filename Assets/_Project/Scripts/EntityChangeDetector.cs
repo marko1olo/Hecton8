@@ -307,12 +307,8 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            EntityChangeManager registered = GlobalRegistry.EntityChanges;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
         }
 
         private void OnEnable()
@@ -342,15 +338,34 @@ namespace Hecton8.Core
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            EntityChangeManager registered = GlobalRegistry.EntityChanges;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterEntityChangeManagerRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.EntityChanges, this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            EntityChangeManager registered = GlobalRegistry.EntityChanges;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsEntityChangeRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterEntityChangeManagerRuntime(registered);
+            return false;
+        }
+
+        private static bool IsEntityChangeRuntimeUsable(EntityChangeManager manager)
+        {
+            return manager != null &&
+                   manager._serviceRegistered &&
+                   manager.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()

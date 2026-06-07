@@ -71,6 +71,12 @@ namespace Hecton8.World
         private const float CaveEvaluationIntervalSeconds = 2f;
         private const float CaveEvaluationClockMaxSeconds = 16777215f;
         private const float ThermalGeyserFloorOffset = 0.35f;
+        private const float EntranceQualityFallbackRadius = 4f;
+        private const float EntranceQualityMinRadius = 0.5f;
+        private const float EntranceQualityMaxRadius = 24f;
+        private const float EntranceHintMinFunnelLength = 0.5f;
+        private const float EntranceHintMaxFunnelLength = 80f;
+        private const float EntranceHintMaxInfluenceRadius = 128f;
         private static readonly string[] _EntranceMarkerNames = CreateIndexedNameCache("Marker_", EntranceMarkerNameCapacity); // COLD ALLOC: string[32] — bounded entrance marker names — owner: WorldCaveDirector
         private static readonly string[] _ThermalGeyserNames = CreateTwoDigitNameCache("_ThermalGeyser_", ThermalGeyserNameCapacity); // COLD ALLOC: string[32] — bounded thermal geyser names — owner: WorldCaveDirector
         private static readonly Color _EntranceHazardColor = new Color(0.9f, 0.3f, 0.2f);
@@ -391,17 +397,11 @@ namespace Hecton8.World
                     UpdateDiagnostics();
                     return;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                    {
-                        _registeredToTickManager = false;
-                        _registeredLateFrame = false;
-                        return;
-                    }
-
+                    TryUnregister();
                     if (isActiveAndEnabled)
                     {
-                        TryUnregister();
-                        TryRegister();
+                        if (currentService != null)
+                            TryRegister();
                     }
                     return;
             }
@@ -1272,17 +1272,25 @@ namespace Hecton8.World
             if (marker == null)
                 return;
 
+            if (instance.preset == null ||
+                !CaveDressingRuntimeSanitizer.IsFinite(position) ||
+                !CaveDressingRuntimeSanitizer.IsFinite(inwardDirection))
+            {
+                if (marker.activeSelf)
+                    marker.SetActive(false);
+                return;
+            }
+
+            // Adjust effects based on cave mood and hazard
+            float mood = CaveDressingRuntimeSanitizer.SaturateFinite(instance.preset.moodLevel);
+            float hazard = CaveDressingRuntimeSanitizer.SaturateFinite(instance.preset.hazardLevel);
             markerTransform.position = position + Vector3.up * 0.5f; // Slightly above ground
             float inwardDirectionSq = inwardDirection.sqrMagnitude;
-            markerTransform.rotation = inwardDirectionSq > 0.001f
+            markerTransform.rotation = inwardDirectionSq > 0.001f && math.isfinite(inwardDirectionSq)
                 ? Quaternion.LookRotation(inwardDirection * math.rsqrt(inwardDirectionSq), Vector3.up)
                 : Quaternion.identity;
             if (!marker.activeSelf)
                 marker.SetActive(true);
-
-            // Adjust effects based on cave mood and hazard
-            float mood = instance.preset.moodLevel;
-            float hazard = instance.preset.hazardLevel;
 
             // Light color based on mood/hazard
             Color lightColor;
@@ -1302,7 +1310,11 @@ namespace Hecton8.World
             // Add a light for visibility
             Light entranceLight = markerState.Light;
             if (entranceLight == null)
+            {
+                if (marker.activeSelf)
+                    marker.SetActive(false);
                 return;
+            }
 
             entranceLight.type = LightType.Point;
             entranceLight.color = lightColor;
@@ -1312,7 +1324,11 @@ namespace Hecton8.World
             // Add particle system for atmospheric effect
             ParticleSystem ps = markerState.Particles;
             if (ps == null)
+            {
+                if (marker.activeSelf)
+                    marker.SetActive(false);
                 return;
+            }
 
             var main = ps.main;
             main.startSize = 0.05f + mood * 0.15f;
@@ -1409,27 +1425,46 @@ namespace Hecton8.World
             GameObject entranceQualityGO = visualState.EntranceQualityObject;
             if (entranceQualityGO == null)
                 return;
+            if (preset == null)
+            {
+                DisableEntranceQualityObject(entranceQualityGO);
+                return;
+            }
 
             entranceQualityRoot.localPosition = Vector3.zero;
             entranceQualityRoot.localRotation = Quaternion.identity;
             entranceQualityRoot.localScale = Vector3.one;
+            float safeEntranceRadius = CaveDressingRuntimeSanitizer.ClampFinite(
+                preset.entranceRadius,
+                EntranceQualityFallbackRadius,
+                EntranceQualityMinRadius,
+                EntranceQualityMaxRadius);
 
             // Add collider as "quality zone" marker
             SphereCollider sphereCollider = visualState.EntranceQualityCollider;
             if (sphereCollider == null)
+            {
+                DisableEntranceQualityObject(entranceQualityGO);
                 return;
-            sphereCollider.radius = preset.entranceRadius * 2f;
+            }
+            sphereCollider.radius = safeEntranceRadius * 2f;
             sphereCollider.isTrigger = true;
 
             // Add light glow aura at entrance for safe zone feel
             Light entranceGlow = visualState.EntranceQualityLight;
             if (entranceGlow == null)
+            {
+                DisableEntranceQualityObject(entranceQualityGO);
                 return;
+            }
             entranceGlow.type = LightType.Point;
             entranceGlow.color = new Color(0.8f, 0.7f, 0.5f); // warm safety glow
             entranceGlow.intensity = 0.5f;
-            entranceGlow.range = preset.entranceRadius * 3f;
+            entranceGlow.range = safeEntranceRadius * 3f;
             entranceGlow.renderingLayerMask = HectonLayerMasks.AllDefinedProjectLayersMask;
+
+            if (!entranceQualityGO.activeSelf)
+                entranceQualityGO.SetActive(true);
         }
 
         private void InitializeCaveDressingLayer(CaveInstance instance, CavePreset preset)
@@ -1440,10 +1475,12 @@ namespace Hecton8.World
             // 3. Place simple sediment shelf meshes
             // 4. Spawn fungi particle systems
 
-            if (instance.volume == null) return;
+            if (instance.volume == null || preset == null) return;
 
             // Get dressing config for this cave type
             CaveDressingConfig dressingConfig = CaveDressingConfig.GetConfigForContext(preset.spawnContext);
+            if (dressingConfig == null)
+                return;
 
             if (!_caveVisualRuntimeStates.TryGetValue(instance.key, out CaveVisualRuntimeState visualState) ||
                 visualState == null)
@@ -1456,44 +1493,44 @@ namespace Hecton8.World
                 return;
 
             // Apply mineral crust if enabled
-            if (dressingConfig.mineralCrust.enabled)
+            if (dressingConfig.mineralCrust != null && dressingConfig.mineralCrust.enabled)
             {
                 ApplyMineralCrustToVolume(instance.volume, dressingConfig.mineralCrust);
             }
 
-            if (dressingConfig.wallGrowth.enabled)
+            if (dressingConfig.wallGrowth != null && dressingConfig.wallGrowth.enabled)
             {
                 ApplyWallGrowth(instance, dressingConfig);
             }
 
-            if (dressingConfig.glowingTissue.enabled)
+            if (dressingConfig.glowingTissue != null && dressingConfig.glowingTissue.enabled)
             {
                 ApplyGlowingTissue(instance, dressingConfig);
             }
 
             // Spawn sediment shelves if enabled
-            if (dressingConfig.sedimentShelves.enabled)
+            if (dressingConfig.sedimentShelves != null && dressingConfig.sedimentShelves.enabled)
             {
                 SpawnSedimentShelves(instance, dressingConfig);
             }
 
-            if (dressingConfig.serviceRemnants.enabled)
+            if (dressingConfig.serviceRemnants != null && dressingConfig.serviceRemnants.enabled)
             {
                 ApplyServiceRemnants(instance, dressingConfig);
             }
 
-            if (dressingConfig.bioRoots.enabled)
+            if (dressingConfig.bioRoots != null && dressingConfig.bioRoots.enabled)
             {
                 ApplyBioRoots(instance, dressingConfig);
             }
 
-            if (dressingConfig.thermalGeysers.enabled)
+            if (dressingConfig.thermalGeysers != null && dressingConfig.thermalGeysers.enabled)
             {
                 ApplyThermalGeysers(instance, dressingConfig);
             }
 
             // Spawn fungi particles if enabled
-            if (dressingConfig.deepFungi.enabled)
+            if (dressingConfig.deepFungi != null && dressingConfig.deepFungi.enabled)
             {
                 SpawnDeepFungiParticles(dressingRoot.gameObject, instance, dressingConfig.deepFungi);
             }
@@ -1503,15 +1540,19 @@ namespace Hecton8.World
         {
             // Apply mineral crust as material property block to the cave mesh
             MeshRenderer meshRenderer = volume != null ? volume.CachedMeshRenderer : null;
-            if (meshRenderer == null) return;
+            if (meshRenderer == null || config == null) return;
 
             _CaveSurfacePropertyBlock.Clear();
             meshRenderer.GetPropertyBlock(_CaveSurfacePropertyBlock);
+            float crustIntensity = CaveDressingRuntimeSanitizer.SaturateFinite(config.intensity, 0f) *
+                CaveDressingRuntimeSanitizer.ClampFinite(config.scale, 1f, 0.1f, 2f);
+            float roughnessBoost = CaveDressingRuntimeSanitizer.SaturateFinite(config.roughnessBoost);
+            Color crustTint = CaveDressingRuntimeSanitizer.SanitizeColor(config.tint, new Color(0.9f, 0.85f, 0.7f, 1f));
 
             // Set crust parameters (assuming shader has these properties)
-            _CaveSurfacePropertyBlock.SetFloat(_CrustIntensityId, config.intensity * config.scale);
-            _CaveSurfacePropertyBlock.SetColor(_CrustColorId, config.tint);
-            _CaveSurfacePropertyBlock.SetFloat(_CrustRoughnessId, config.roughnessBoost);
+            _CaveSurfacePropertyBlock.SetFloat(_CrustIntensityId, crustIntensity);
+            _CaveSurfacePropertyBlock.SetColor(_CrustColorId, crustTint);
+            _CaveSurfacePropertyBlock.SetFloat(_CrustRoughnessId, roughnessBoost);
 
             meshRenderer.SetPropertyBlock(_CaveSurfacePropertyBlock);
         }
@@ -1609,7 +1650,8 @@ namespace Hecton8.World
 
             ThermalGeyserConfig geyserConfig = dressingConfig.thermalGeysers;
             int maxGeyserCount = Mathf.Clamp(geyserConfig.maxCount, 0, ThermalGeyserNameCapacity);
-            int geyserCount = Mathf.Clamp(Mathf.RoundToInt(maxGeyserCount * Mathf.Clamp01(dressingConfig.globalIntensity)), 0, maxGeyserCount);
+            float safeGeyserIntensity = ResolveFiniteClamp(dressingConfig.globalIntensity, 1f, 0f, 1.25f);
+            int geyserCount = Mathf.Clamp(Mathf.RoundToInt(maxGeyserCount * safeGeyserIntensity), 0, maxGeyserCount);
             if (!_caveVisualRuntimeStates.TryGetValue(instance.key, out CaveVisualRuntimeState visualState) ||
                 visualState == null ||
                 visualState.ThermalGeysers == null)
@@ -1641,7 +1683,7 @@ namespace Hecton8.World
 
                 geyserTransform.localPosition = ResolveThermalGeyserLocalPosition(instance.volume, instance.preset, geyserIndex);
                 geyserTransform.localRotation = Quaternion.identity;
-                geyser.Configure(geyserConfig, dressingConfig.globalIntensity);
+                geyser.Configure(geyserConfig, safeGeyserIntensity);
 
                 if (!geyserObject.activeSelf)
                     geyserObject.SetActive(true);
@@ -1652,13 +1694,47 @@ namespace Hecton8.World
 
         private Vector3 ResolveThermalGeyserLocalPosition(HectonVoxelVolume volume, CavePreset preset, int geyserIndex)
         {
-            if (volume == null || !CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, preset, out Bounds bounds))
+            if (volume == null ||
+                !CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, preset, out Bounds bounds) ||
+                !IsFiniteBounds(bounds))
+            {
                 return Vector3.zero;
+            }
 
             float margin = 1.25f;
-            float sampleX = math.lerp(bounds.min.x + margin, bounds.max.x - margin, Hash01(geyserIndex + 1, 41));
-            float sampleZ = math.lerp(bounds.min.z + margin, bounds.max.z - margin, Hash01(geyserIndex + 1, 83));
+            float minX = bounds.min.x + margin;
+            float maxX = bounds.max.x - margin;
+            float minZ = bounds.min.z + margin;
+            float maxZ = bounds.max.z - margin;
+            if (maxX < minX)
+                minX = maxX = bounds.center.x;
+            if (maxZ < minZ)
+                minZ = maxZ = bounds.center.z;
+
+            float sampleX = math.lerp(minX, maxX, Hash01(geyserIndex + 1, 41));
+            float sampleZ = math.lerp(minZ, maxZ, Hash01(geyserIndex + 1, 83));
             return new Vector3(sampleX, bounds.min.y + ThermalGeyserFloorOffset, sampleZ);
+        }
+
+        private static bool IsFiniteBounds(Bounds bounds)
+        {
+            return IsFiniteVector3(bounds.min) &&
+                   IsFiniteVector3(bounds.max) &&
+                   IsFiniteVector3(bounds.center);
+        }
+
+        private static bool IsFiniteVector3(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
+        private static float ResolveFiniteClamp(float value, float fallback, float minimum, float maximum)
+        {
+            float safeFallback = math.select(minimum, fallback, math.isfinite(fallback));
+            float safeValue = math.select(safeFallback, value, math.isfinite(value));
+            return math.clamp(safeValue, minimum, maximum);
         }
 
         private static float Hash01(int index, int salt)
@@ -1698,8 +1774,6 @@ namespace Hecton8.World
             if (parent == null || instance.volume == null || config == null)
                 return;
 
-            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(instance.volume, instance.preset, out Bounds volumeBounds))
-                return;
             if (!_caveVisualRuntimeStates.TryGetValue(instance.key, out CaveVisualRuntimeState visualState) ||
                 visualState == null)
             {
@@ -1708,6 +1782,13 @@ namespace Hecton8.World
 
             Transform fungiTransform = visualState.FungiTransform;
             GameObject fungiGO = visualState.FungiObject;
+            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(instance.volume, instance.preset, out Bounds volumeBounds) ||
+                !CaveDressingRuntimeSanitizer.IsFinite(volumeBounds))
+            {
+                DisableFungiObject(fungiGO);
+                return;
+            }
+
             if (fungiTransform == null)
                 return;
             else if (fungiGO != null && !fungiGO.activeSelf)
@@ -1715,7 +1796,7 @@ namespace Hecton8.World
                 fungiGO.SetActive(true);
             }
 
-            float verticalBias = Mathf.Clamp01(config.verticalBias);
+            float verticalBias = CaveDressingRuntimeSanitizer.SaturateFinite(config.verticalBias, 0.3f);
             float verticalMin = math.lerp(volumeBounds.min.y, volumeBounds.center.y, 0.2f);
             float verticalMax = math.lerp(volumeBounds.center.y, volumeBounds.max.y, 0.85f);
             Vector3 emissionCenter = new Vector3(
@@ -1726,24 +1807,40 @@ namespace Hecton8.World
                 Mathf.Max(2f, volumeBounds.size.x * 0.72f),
                 Mathf.Max(1.5f, volumeBounds.size.y * 0.28f),
                 Mathf.Max(2f, volumeBounds.size.z * 0.72f));
-            float volumeFactor = Mathf.Clamp01((volumeBounds.size.x * volumeBounds.size.y * volumeBounds.size.z) / 6000f);
+            if (!CaveDressingRuntimeSanitizer.IsFinite(emissionCenter) ||
+                !CaveDressingRuntimeSanitizer.IsFinite(emissionSize))
+            {
+                DisableFungiObject(fungiGO);
+                return;
+            }
+
+            float volumeFactor = CaveDressingRuntimeSanitizer.SaturateFinite(
+                (volumeBounds.size.x * volumeBounds.size.y * volumeBounds.size.z) / 6000f,
+                0f);
 
             fungiTransform.localPosition = emissionCenter;
 
             ParticleSystem ps = visualState.FungiParticles;
             if (ps == null)
+            {
+                DisableFungiObject(fungiGO);
                 return;
+            }
 
+            float particleSize = CaveDressingRuntimeSanitizer.ClampFinite(config.particleSize, 0.1f, 0.01f, 0.5f);
+            float lifetime = CaveDressingRuntimeSanitizer.ClampFinite(config.lifetime, 2f, 0.5f, 5f);
+            float density = CaveDressingRuntimeSanitizer.SaturateFinite(config.density, 0.5f);
+            float emissionRate = CaveDressingRuntimeSanitizer.ClampFinite(config.emissionRate, 10f, 0f, 50f);
             var main = ps.main;
-            main.startSize = new ParticleSystem.MinMaxCurve(config.particleSize * 0.5f, config.particleSize * 1.5f);
-            main.startLifetime = config.lifetime;
+            main.startSize = new ParticleSystem.MinMaxCurve(particleSize * 0.5f, particleSize * 1.5f);
+            main.startLifetime = lifetime;
             main.maxParticles = Mathf.Clamp(
-                Mathf.RoundToInt(math.lerp(18f, 84f, volumeFactor) * Mathf.Clamp01(config.density)),
+                Mathf.RoundToInt(math.lerp(18f, 84f, volumeFactor) * density),
                 8,
                 96);
 
             var emission = ps.emission;
-            emission.rateOverTime = config.emissionRate * math.lerp(0.7f, 1.2f, volumeFactor);
+            emission.rateOverTime = emissionRate * math.lerp(0.7f, 1.2f, volumeFactor);
 
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.BoxShell;
@@ -1753,10 +1850,30 @@ namespace Hecton8.World
             colorOverLifetime.enabled = true;
             DeepFungiParticleCache fungiCache = visualState.FungiCache;
             if (fungiCache == null)
+            {
+                DisableFungiObject(fungiGO);
                 return;
-            if (!fungiCache.TryResolveGradient(config.glowColor, out Gradient fungiGradient))
+            }
+
+            Color glowColor = CaveDressingRuntimeSanitizer.SanitizeColor(config.glowColor, new Color(0.22f, 0.72f, 0.56f, 1f));
+            if (!fungiCache.TryResolveGradient(glowColor, out Gradient fungiGradient))
+            {
+                DisableFungiObject(fungiGO);
                 return;
+            }
             colorOverLifetime.color = fungiGradient;
+        }
+
+        private static void DisableFungiObject(GameObject fungiObject)
+        {
+            if (fungiObject != null && fungiObject.activeSelf)
+                fungiObject.SetActive(false);
+        }
+
+        private static void DisableEntranceQualityObject(GameObject entranceQualityObject)
+        {
+            if (entranceQualityObject != null && entranceQualityObject.activeSelf)
+                entranceQualityObject.SetActive(false);
         }
 
         private static Transform ActivateCachedRoot(Transform root)
@@ -2177,22 +2294,86 @@ namespace Hecton8.World
                 return;
             }
 
-            CaveEntranceHint[] hints = new CaveEntranceHint[entrances.Length]; // COLD ALLOC: one hint array per cave, owner: WorldCaveDirector
+            int validHintCount = 0;
             for (int i = 0; i < entrances.Length; i++)
             {
-                CaveEntrance entrance = entrances[i];
-                Vector3 surfacePosition = entrance.surfacePosition;
-                Vector3 interiorPosition = surfacePosition + ((Vector3)entrance.inwardDirection * entrance.funnelLength);
-                float influenceRadius = Mathf.Max(entrance.radius * 2.5f, entrance.funnelLength + entrance.innerRadius);
-                hints[i] = new CaveEntranceHint(
-                    surfacePosition,
-                    interiorPosition,
-                    entrance.radius,
-                    influenceRadius);
+                if (TryBuildEntranceHint(in entrances[i], out _))
+                    validHintCount++;
+            }
+
+            if (validHintCount <= 0)
+            {
+                if (_caveEntranceHints.Remove(caveKey))
+                    _entranceHintVersion = _entranceHintVersion == int.MaxValue ? 1 : _entranceHintVersion + 1;
+                return;
+            }
+
+            CaveEntranceHint[] hints = new CaveEntranceHint[validHintCount]; // COLD ALLOC: one hint array per cave, owner: WorldCaveDirector
+            int writeIndex = 0;
+            for (int i = 0; i < entrances.Length && writeIndex < hints.Length; i++)
+            {
+                if (!TryBuildEntranceHint(in entrances[i], out CaveEntranceHint hint))
+                    continue;
+
+                hints[writeIndex++] = hint;
             }
 
             _caveEntranceHints[caveKey] = hints;
             _entranceHintVersion = _entranceHintVersion == int.MaxValue ? 1 : _entranceHintVersion + 1;
+        }
+
+        private static bool TryBuildEntranceHint(in CaveEntrance entrance, out CaveEntranceHint hint)
+        {
+            hint = default;
+            Vector3 surfacePosition = entrance.surfacePosition;
+            Vector3 inwardDirection = (Vector3)entrance.inwardDirection;
+            if (!CaveDressingRuntimeSanitizer.IsFinite(surfacePosition) ||
+                !CaveDressingRuntimeSanitizer.IsFinite(inwardDirection) ||
+                !math.isfinite(entrance.radius) ||
+                !math.isfinite(entrance.funnelLength) ||
+                !math.isfinite(entrance.innerRadius) ||
+                entrance.radius <= 0f ||
+                entrance.funnelLength <= 0f ||
+                entrance.innerRadius < 0f)
+            {
+                return false;
+            }
+
+            float directionSq = inwardDirection.sqrMagnitude;
+            if (!math.isfinite(directionSq) || directionSq <= 0.0001f)
+                return false;
+
+            Vector3 safeDirection = inwardDirection * math.rsqrt(directionSq);
+            float entranceRadius = CaveDressingRuntimeSanitizer.ClampFinite(
+                entrance.radius,
+                EntranceQualityFallbackRadius,
+                EntranceQualityMinRadius,
+                EntranceQualityMaxRadius);
+            float funnelLength = CaveDressingRuntimeSanitizer.ClampFinite(
+                entrance.funnelLength,
+                entranceRadius * 2f,
+                EntranceHintMinFunnelLength,
+                EntranceHintMaxFunnelLength);
+            float innerRadius = CaveDressingRuntimeSanitizer.ClampFinite(
+                entrance.innerRadius,
+                entranceRadius * 0.5f,
+                0f,
+                entranceRadius);
+            Vector3 interiorPosition = surfacePosition + (safeDirection * funnelLength);
+            if (!CaveDressingRuntimeSanitizer.IsFinite(interiorPosition))
+                return false;
+
+            float influenceRadius = CaveDressingRuntimeSanitizer.ClampFinite(
+                Mathf.Max(entranceRadius * 2.5f, funnelLength + innerRadius),
+                entranceRadius * 2.5f,
+                entranceRadius,
+                EntranceHintMaxInfluenceRadius);
+            hint = new CaveEntranceHint(
+                surfacePosition,
+                interiorPosition,
+                entranceRadius,
+                influenceRadius);
+            return true;
         }
 
         private void RefreshBiomeRuntimeContext(HectonBiomeFamilyProfile biomeFamily)

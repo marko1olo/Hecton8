@@ -7,6 +7,9 @@ poi_tags: poi.probe_packet_spool;poi.beam_sail_archive
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Время пробных пакетов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

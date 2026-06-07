@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "Etiquetas sensoras de biometal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# Etiquetas sensoras de biometal
 
-ES LOC HOLD: Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.
+Las etiquetas sensoras de biometal son pequeñas escamas de telemetría halladas en fauna, crecimiento de cable y ecología de reparación. Pueden afinar pingers y rutas de escáner, pero cada etiqueta útil también es prueba: Atlas ha usado portadores vivos para extender una red de mantenimiento dañada.
 
 ## Scanner
 
-ES LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+ETIQUETAS SENSORAS DE BIOMETAL // Escamas metálicas finas crecidas en peces, kelp de cable y tejido de reparación. Mejoran el ajuste del pinger; si se extraen calientes, Atlas puede oír al portador perdido.
 
 ## Terminal
 
-ES LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+CLASE DE RECURSO: alterado por Atlas / sensible como prueba. Usos: foco de pinger, retícula de escáner, confianza de ruta, paquetes de prueba. Se recomienda extracción fría. Riesgos: subida de atención, falsos retornos de portador, fauna dañada.
 
 ## Audio
 
-ES LOC HOLD: The fish is not a drone. The tag does not know the difference.
+El pez no es un dron. La etiqueta informa de todos modos.
 
 ## Field Note
 
-ES LOC HOLD: Make resource extraction feel like evidence handling.
+Si parpadea bajo el cuchillo, registra antes de cortar.
 
 <!-- In-Game Wiki; generated from P120_BIOMETAL_SENSOR_TAGS/es_ES. -->

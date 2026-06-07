@@ -9,32 +9,34 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Sensor-Tagged Fauna"
+title: "Fauna Bertag Sensor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Sensor-Tagged Fauna
+# Fauna Bertag Sensor
 
-ID LOC HOLD: Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets.
+Fauna Bertag Sensor mencegah lapisan biomekanis HECTON-8 menjadi fiksi korupsi sederhana. Makhluk tidak secara ajaib diubah menjadi drone. Mereka adalah hewan dan koloni yang hidup lebih lama daripada perangkat pemantau. Tag menjadi soket, bekas luka, cincin pertumbuhan, lepuh mineral, atau mata palsu karena ekosistem melakukan hal yang dilakukan ekosistem: tumbuh di sekitar kerusakan.
+
+Ini memberi setiap hantu sinyal sejarah. Marauder dapat mendengar identitas Deep Reach lemah dari dalam pemakan cangkang atau melihat node mata biometal berkedip dari tubuh yang mengabaikan perintah. Korporasi lama masih meninggalkan dokumen di dalam daging, tetapi daging tidak patuh. Atlas dapat mengeksploitasi sinyal, bukan memiliki hewan. Itu membuat horor lebih sedih dan lebih kuat: kontrol industri mencoba menandai kehidupan, kehidupan bertahan, dan tanda itu masih melapor ke sistem yang tidak lagi memahami apa yang mereka dengar.
 
 ## Scanner
 
-ID LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+FAUNA BERTAG SENSOR // Tag biometal lama duduk di cincin pertumbuhan, bekas luka, dan soket cangkang; hewan membawa perangkat pemantau sebagai sejarah tubuh, bukan kepatuhan.
 
 ## Terminal
 
-ID LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+CATATAN TAG: kontinuitas sinyal lemah, integrasi biologis tinggi, respons perintah tidak andal. Perlakukan sebagai bekas luka pasif, suar terputus-putus, dan kemungkinan hantu diagnostik Atlas.
 
 ## Audio
 
-ID LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+Hewan itu bukan drone. Drone adalah luka lama di dalam hewan.
 
 ## Field Note
 
-ID LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+Hewan itu bukan drone. Drone adalah luka lama yang dikelilingi hewan itu saat bertahan hidup.
 
 <!-- External Site; generated from P234_SENSOR_TAGGED_FAUNA/id_ID. -->

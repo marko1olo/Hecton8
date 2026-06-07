@@ -47,19 +47,7 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingBiomeIds.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicBiomeEvents), nameof(_pendingBiomeIds));
-                _pendingBiomeIds.Dispose();
-                _pendingBiomeIds = default;
-            }
-
-            if (_nextFrameBiomeIds.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicBiomeEvents), nameof(_nextFrameBiomeIds));
-                _nextFrameBiomeIds.Dispose();
-                _nextFrameBiomeIds = default;
-            }
+            ReleaseNativeQueues();
 
             _pendingBiomeIdCount = 0;
             _nextFrameBiomeIdCount = 0;
@@ -186,28 +174,65 @@ namespace Hecton8.Core
 
         private static void EnsureInitialized()
         {
-            if (!_pendingBiomeIds.IsCreated)
+            try
             {
-                _pendingBiomeIds = new NativeQueue<int>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<int>[8] - deferred MapMagic biome events flushed by SystemDispatcher - owner: MapMagicBiomeEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingBiomeIds,
-                    ExpectedPendingBiomeEventCapacity,
-                    nameof(MapMagicBiomeEvents),
-                    nameof(_pendingBiomeIds),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingBiomeIds, ExpectedPendingBiomeEventCapacity);
+                if (!_pendingBiomeIds.IsCreated)
+                {
+                    _pendingBiomeIds = new NativeQueue<int>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<int>[8] - deferred MapMagic biome events flushed by SystemDispatcher - owner: MapMagicBiomeEvents
+                    RegisterNativeQueue(ref _pendingBiomeIds, ExpectedPendingBiomeEventCapacity, nameof(_pendingBiomeIds));
+                    PrewarmQueue(ref _pendingBiomeIds, ExpectedPendingBiomeEventCapacity);
+                }
+
+                if (!_nextFrameBiomeIds.IsCreated)
+                {
+                    _nextFrameBiomeIds = new NativeQueue<int>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<int>[8] - next-frame MapMagic biome event lane prevents same-frame reentrant dispatch - owner: MapMagicBiomeEvents
+                    RegisterNativeQueue(ref _nextFrameBiomeIds, ExpectedPendingBiomeEventCapacity, nameof(_nextFrameBiomeIds));
+                    PrewarmQueue(ref _nextFrameBiomeIds, ExpectedPendingBiomeEventCapacity);
+                }
+            }
+            catch
+            {
+                ReleaseNativeQueues();
+                _pendingBiomeIdCount = 0;
+                _nextFrameBiomeIdCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(MapMagicBiomeEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            queue.Dispose();
+            queue = default;
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            if (_pendingBiomeIds.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicBiomeEvents), nameof(_pendingBiomeIds));
+                _pendingBiomeIds.Dispose();
+                _pendingBiomeIds = default;
             }
 
-            if (!_nextFrameBiomeIds.IsCreated)
+            if (_nextFrameBiomeIds.IsCreated)
             {
-                _nextFrameBiomeIds = new NativeQueue<int>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<int>[8] - next-frame MapMagic biome event lane prevents same-frame reentrant dispatch - owner: MapMagicBiomeEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameBiomeIds,
-                    ExpectedPendingBiomeEventCapacity,
-                    nameof(MapMagicBiomeEvents),
-                    nameof(_nextFrameBiomeIds),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameBiomeIds, ExpectedPendingBiomeEventCapacity);
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicBiomeEvents), nameof(_nextFrameBiomeIds));
+                _nextFrameBiomeIds.Dispose();
+                _nextFrameBiomeIds = default;
             }
         }
 
@@ -352,19 +377,7 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicTerrainTileEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicTerrainTileEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseNativeQueues();
 
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
@@ -603,28 +616,68 @@ namespace Hecton8.Core
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
+            try
             {
-                _pendingEvents = new NativeQueue<MapMagicTerrainTileEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<MapMagicTerrainTileEventPayload>[16] - deferred MapMagic tile events flushed by SystemDispatcher - owner: MapMagicTerrainTileEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(MapMagicTerrainTileEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<MapMagicTerrainTileEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<MapMagicTerrainTileEventPayload>[16] - deferred MapMagic tile events flushed by SystemDispatcher - owner: MapMagicTerrainTileEvents
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                }
+
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<MapMagicTerrainTileEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<MapMagicTerrainTileEventPayload>[16] - next-frame MapMagic tile events prevent same-frame reentrant dispatch - owner: MapMagicTerrainTileEvents
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                }
+            }
+            catch
+            {
+                ReleaseNativeQueues();
+                ClearSnapshotSlots();
+                _snapshotWriteIndex = 0;
+                _snapshotPendingCount = 0;
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(MapMagicTerrainTileEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            queue.Dispose();
+            queue = default;
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicTerrainTileEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
             }
 
-            if (!_nextFrameEvents.IsCreated)
+            if (_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<MapMagicTerrainTileEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<MapMagicTerrainTileEventPayload>[16] - next-frame MapMagic tile events prevent same-frame reentrant dispatch - owner: MapMagicTerrainTileEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(MapMagicTerrainTileEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicTerrainTileEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
             }
         }
 

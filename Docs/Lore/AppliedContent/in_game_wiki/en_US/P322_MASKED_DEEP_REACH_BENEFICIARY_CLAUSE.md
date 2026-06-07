@@ -7,6 +7,9 @@ poi_tags: poi.beneficiary_clause_redaction;poi.priority_channel_stamp
 biome_tags: biome.contract;biome.deep_reach
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Masked Deep Reach Beneficiary Clause"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Noble Gas Brine Pockets"
+title: "Bolsas de salmuera con gases nobles"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Noble Gas Brine Pockets
+# Bolsas de salmuera con gases nobles
 
-ES LOC HOLD: Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.
+Las bolsas de salmuera con gases nobles son registros de presión sellados dentro de las salmueras minerales de HECTON-8. Una bolsa útil no es solo xenón en agua; es proporción de gases, curva de presión, cicatriz térmica y red de defectos minerales mantenidas juntas el tiempo suficiente para probar qué ocurrió bajo tierra. Ventilar la bolsa destruye el valor y la evidencia. Estas muestras importan porque los procesos de Deep Reach, y luego de Atlas, pueden empujar la materia con la historia de presión correcta hacia Xenon-Omega, pero la bolsa cruda sigue siendo geología, no un tesoro por sí misma.
 
 ## Scanner
 
-ES LOC HOLD: Natural-to-process resource. Valuable only if pressure history survives extraction.
+BOLSA DE SALMUERA CON GASES NOBLES // Burbuja de presión sellada en salmuera mineral. El valor sobrevive solo si la historia de presión sigue cerrada; ventílala y la fortuna se vuelve clima.
 
 ## Terminal
 
-ES LOC HOLD: RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+CLASE DE RECURSO: materia nativa/de proceso. Usar extracción con campana de presión. No ventilar ni calentar la muestra. Evidencia requerida: curva de presión, proporción de gases, mapa de defectos minerales.
 
 ## Audio
 
-ES LOC HOLD: Open it wrong and the fortune becomes weather.
+Xenon-Omega empieza aquí como química atrapada, no como mineral milagroso.
 
 ## Field Note
 
-ES LOC HOLD: This is where Xenon-Omega begins as chemistry, not magic.
+No abras la bolsa para ver si es rica. Así es como las tripulaciones pobres fabrican burbujas.
 
 <!-- In-Game Wiki; generated from P117_NOBLE_GAS_BRINE_POCKETS/es_ES. -->

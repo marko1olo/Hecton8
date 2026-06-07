@@ -103,6 +103,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            EditorApplication.update -= RefreshTelemetry;
             EditorApplication.update += RefreshTelemetry;
         }
 

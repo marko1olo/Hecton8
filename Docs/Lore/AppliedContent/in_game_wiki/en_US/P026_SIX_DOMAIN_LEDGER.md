@@ -7,6 +7,9 @@ poi_tags: poi.domain_plate;poi.route_archive
 biome_tags: biome.drowned_colony;biome.deep_archive
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Six Domain Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

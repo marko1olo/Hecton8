@@ -7,6 +7,9 @@ poi_tags: poi.carrier_autonomy_table;poi.no_surface_drop_stamp
 biome_tags: biome.orbit;biome.hardware
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Пределы автономии salvage carrier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -47,6 +47,10 @@ namespace Hecton8.SaveSystem
         public const int DirtyMaskWordCount = CellCount / 32;
         public const byte StorageDense = 0;
         public const byte StorageUniformSdfRle = 1 << 0;
+        public const byte SupportedStorageFlags = StorageUniformSdfRle;
+        public const byte CellFlagAdditive = 1 << 0;
+        public const byte CellFlagReplace = 1 << 1;
+        public const byte SupportedCellFlags = CellFlagAdditive | CellFlagReplace;
         public const int UniformSdfRlePayloadBytes = sizeof(ushort);
 
         public long chunkX;

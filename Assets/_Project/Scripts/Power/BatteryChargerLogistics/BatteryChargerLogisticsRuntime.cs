@@ -748,11 +748,7 @@ namespace Hecton8.Power
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredPreSimulation = false;
-                _registeredSimulation = false;
-                _registeredPostSimulation = false;
-                _registeredVisualSync = false;
-                _registeredColdTick = false;
+                UnregisterDispatcherPhases();
                 if (currentService != null)
                     RegisterDispatcherPhases();
             }

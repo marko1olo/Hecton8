@@ -9,32 +9,34 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Sensor-Tagged Fauna"
+title: "פאונה מסומנת בחיישנים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Sensor-Tagged Fauna
+# פאונה מסומנת בחיישנים
 
-HE LOC HOLD: Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets.
+פאונה מסומנת בחיישנים מונעת מהשכבה הביומכנית של HECTON-8 להפוך לסיפור השחתה פשוט. היצורים אינם הופכים בקסם לרחפנים. הם חיות ומושבות ששרדו מעבר לחומרת הניטור. התג הפך לשקע, צלקת, טבעת גדילה, שלפוחית מינרלית או עין מזויפת, מפני שהמערכת האקולוגית עשתה מה שמערכות אקולוגיות עושות: גדלה סביב נזק.
+
+כך לכל רוח אות יש היסטוריה. Marauder עשוי לשמוע מזהה חלש של Deep Reach מתוך מלחך קונכיות, או לראות צומת עין ביומטלית מהבהבת על גוף שמתעלם מפקודות. התאגיד הישן עדיין משאיר ניירת בבשר, אבל הבשר אינו מציית. Atlas יכול לנצל את האות, לא להחזיק בחיה. זה עושה את האימה עצובה וחזקה יותר: שליטה תעשייתית ניסתה לסמן חיים, החיים שרדו, והסימון עדיין מדווח למערכות שכבר אינן מבינות מה הן שומעות.
 
 ## Scanner
 
-HE LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+פאונה מסומנת בחיישנים // תגי ביומטל ישנים יושבים בטבעות גדילה, צלקות ושקעי קונכייה; החיה נושאת חומרת ניטור כהיסטוריית גוף, לא כציות.
 
 ## Terminal
 
-HE LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+הערת תג: רציפות אות חלשה, שילוב ביולוגי גבוה, תגובת פקודה לא אמינה. להתייחס כצלקת פסיבית, משואה לסירוגין ורוח אבחון אפשרית של Atlas.
 
 ## Audio
 
-HE LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+החיה אינה רחפן. הרחפן הוא פצע ישן בתוך החיה.
 
 ## Field Note
 
-HE LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+החיה אינה רחפן. הרחפן הוא פצע ישן שהחיה שרדה סביבו.
 
 <!-- External Site; generated from P234_SENSOR_TAGGED_FAUNA/he_IL. -->

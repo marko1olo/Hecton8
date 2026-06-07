@@ -169,11 +169,12 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-            {
-                Unregister();
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            Unregister();
+            if (currentService != null && isActiveAndEnabled)
                 TryRegister();
-            }
         }
 
         private bool RefreshCachedQualityWeight()

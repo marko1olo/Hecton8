@@ -7,6 +7,9 @@ poi_tags: poi.atlas_weighting_audit;poi.claim_continuity_priority
 biome_tags: biome.abyssal_machine_field;biome.atlas_basin
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Доказательство weighting audit Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -249,6 +249,7 @@ namespace Hecton8.Editor.GeologyForge
     {
         private const int PreviewResolution = 24;
         private const int MaxPreviewPoints = 2048;
+        private const string NativeMemoryOwner = nameof(GeologyForgePreview);
         private static readonly Vector3[] _points;
         private static int _pointCount;
         private static bool _subscribed;
@@ -271,7 +272,7 @@ namespace Hecton8.Editor.GeologyForge
             {
                 _pointCount = 0;
                 // COLD ALLOC: NativeArray<float>[count] — editor preview SDF scratch — owner: GeologyForgePreview
-                density = new NativeArray<float>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                density = GeologyForgeNativeMemory.AllocateArray<float>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, NativeMemoryOwner, nameof(density));
                 JobHandle previewHandle = new GenerateMockFractalNoiseJob
                 {
                     Density = density,
@@ -339,7 +340,7 @@ namespace Hecton8.Editor.GeologyForge
             }
             finally
             {
-                if (density.IsCreated) density.Dispose();
+                GeologyForgeNativeMemory.DisposeArray(ref density);
             }
         }
 

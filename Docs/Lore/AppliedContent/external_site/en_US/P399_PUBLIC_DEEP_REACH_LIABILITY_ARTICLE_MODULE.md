@@ -7,6 +7,9 @@ poi_tags: poi.public_deep_reach_article;poi.liability_chain_diagram
 biome_tags: biome.publication;biome.deep_reach
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Deep Reach Liability Evidence"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

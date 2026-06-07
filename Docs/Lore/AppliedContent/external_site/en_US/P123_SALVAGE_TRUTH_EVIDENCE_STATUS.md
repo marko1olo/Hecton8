@@ -7,6 +7,9 @@ poi_tags: poi.chain_of_custody_case;poi.packet_witness_slot
 biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Salvage Truth Evidence Status"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

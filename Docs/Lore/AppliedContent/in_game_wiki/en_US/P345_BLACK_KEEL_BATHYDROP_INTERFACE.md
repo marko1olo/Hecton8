@@ -7,6 +7,9 @@ poi_tags: poi.bathydrop_damage_panel;poi.ascent_latch_sample
 biome_tags: biome.shallow;biome.engineering
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Black Keel Bathydrop Interface"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

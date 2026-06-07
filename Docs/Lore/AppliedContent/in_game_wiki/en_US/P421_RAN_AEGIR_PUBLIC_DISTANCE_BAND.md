@@ -7,6 +7,9 @@ poi_tags: poi.ran_aegir_distance_band;poi.no_ftl_route_index
 biome_tags: biome.human_space;biome.publication
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Ran/Aegir Distance Band"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

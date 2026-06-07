@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Density Skater Fauna"
+title: "פאונת מחליקי צפיפות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Density Skater Fauna
+# פאונת מחליקי צפיפות
 
-HE LOC HOLD: Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.
+מחליקי צפיפות הם בעלי חיים בעומק בינוני שגורמים לקניון התמלחת להרגיש כמו מכונה שכבתית ולא נפח ריק. רגליהם, סנפיריהם או כריותיהם הקרסיות לוחצים על ממשקי צפיפות חזקים מספיק לשאת גופים קטנים לכמה שניות. לעין הם נראים כמחליקים במים פתוחים; ל-scanner הם משאירים אדוות במקום שבו למים פתוחים לא אמור להיות משטח. הסתירה היא הרמז. עקבת מחליק יכולה לסמן חלון גזירה, מדרגת תמלחת, קצה סונאר עיוור או נתיב ציד של יצורים גדולים יותר. החיה אינה קסם ואינה הבטחת בטיחות. חליפה כבדה יותר, רועשת יותר ובעלת צורה גרועה לאותה תחבולה. השתמש בשובלי מחליקים כדי לקרוא את השכבה. אל תניח שתוכל לעקוב.
 
 ## Scanner
 
-HE LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+מחליק צפיפות // פאונה דקת גפיים רוכבת על ממשק תמלחת כעל משטח, ומשאירה אדוות במקום שבו הסונאר מצפה למים פתוחים.
 
 ## Terminal
 
-HE LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+קו בסיס פאונה: מגע עם מחליקים עולה ליד brine vanes קרועות, מדרגות תמלחת חמות וקצוות סונאר מתים. השובל שלהם מסמן מדף צפיפות, לא דריכה בטוחה. אל תרדוף דרך שכבות אטומות.
 
 ## Audio
 
-HE LOC HOLD: Something is walking on the water inside the water.
+משהו הולך על המים שבתוך המים.
 
 ## Field Note
 
-HE LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+הם אינם מרחפים. הם הולכים על גבול שהחליפה שלך יכולה ליפול דרכו.
 
 <!-- In-Game Wiki; generated from P227_DENSITY_SKATER_FAUNA/he_IL. -->

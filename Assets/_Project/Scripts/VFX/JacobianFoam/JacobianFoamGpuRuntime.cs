@@ -181,13 +181,13 @@ namespace Hecton8.VFX
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null || !isActiveAndEnabled)
-                    return;
-
                 TryUnregisterLateFrameTickable();
                 TryUnregisterColdTickable();
-                TryRegisterColdTickable();
-                TryRegisterLateFrameTickable();
+                if (currentService != null && isActiveAndEnabled)
+                {
+                    TryRegisterColdTickable();
+                    TryRegisterLateFrameTickable();
+                }
                 return;
             }
 

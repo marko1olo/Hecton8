@@ -7,6 +7,9 @@ poi_tags: poi.site_aegir_map_caption;poi.moon_ladder_public_label
 biome_tags: biome.publication;biome.aegir
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Aegir Site System Map Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

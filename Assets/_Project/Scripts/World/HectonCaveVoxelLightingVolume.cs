@@ -438,11 +438,12 @@ namespace Hecton8.World
                 _resourceRefreshRequested = !HasRequiredResources();
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredLateFrameTick = false;
-                _registeredSlowTick = false;
-                TryRegister();
+                TryUnregister();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
+                return;
             }
         }
 

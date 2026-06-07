@@ -7,6 +7,9 @@ poi_tags: poi.blue_debt_sample;poi.xenon_omega_ledger
 biome_tags: biome.resource;biome.deep
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Blue Debt Pressure History Guide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.name_pool_card;poi.shift_name_strip
 biome_tags: biome.industrial_shelf;biome.shallow_annex
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Worker Name Pool Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.deep_reach_contract;poi.relay_instruction
 biome_tags: biome.drowned_colony;biome.deep_relay
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Deep Reach帰還請求"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.public_article_tier_card;poi.site_spoiler_gate
 biome_tags: biome.dossier_archive;biome.claim_admin
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Public Article Tier Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

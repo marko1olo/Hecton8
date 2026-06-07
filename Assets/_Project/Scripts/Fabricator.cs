@@ -631,6 +631,7 @@ namespace Hecton8.Crafting
             TryUnregisterSparkLightTick();
             TryUnregisterLateFrame();
             TryUnregister();
+            ClearCachedAudioService();
             PublishFabricatorActiveCountBlackBox();
         }
 
@@ -647,6 +648,7 @@ namespace Hecton8.Crafting
             UnregisterSparkProxyLight();
             TryUnregisterSparkLightTick();
             TryUnregisterLateFrame();
+            ClearCachedAudioService();
             DisposeCraftingScratch();
             PublishFabricatorActiveCountBlackBox();
         }
@@ -2720,7 +2722,9 @@ namespace Hecton8.Crafting
             if (clip == null)
                 return;
 
-            _audioService?.PlayAtPoint(clip, position);
+            IAudioService audioService = ResolveAudioService();
+            if (audioService != null)
+                audioService.PlayAtPoint(clip, position);
         }
 
         private void QueueProceduralAudioPing(
@@ -3495,7 +3499,7 @@ namespace Hecton8.Crafting
 
         private void EnsureScanLogSystem()
         {
-            CacheScanLogSystem(_scanLogSystem);
+            CacheScanLogSystem(Hecton8.Core.GlobalRegistry.ScanLogService);
         }
 
         private void CacheScanLogSystem(IScanLogService current)
@@ -4042,7 +4046,7 @@ namespace Hecton8.Crafting
 
         private void TryRegister()
         {
-            if (_tickRegistered || !Application.isPlaying)
+            if (_tickRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _tickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
@@ -4050,7 +4054,7 @@ namespace Hecton8.Crafting
 
         private void TryRegisterLateFrame()
         {
-            if (_lateFrameRegistered || !Application.isPlaying)
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -4065,13 +4069,17 @@ namespace Hecton8.Crafting
             _tickRegistered = false;
         }
 
-        private void TryUnregisterLateFrame()
+        private void TryUnregisterLateFrame(bool clearPendingPresentation = true)
         {
-            if (!_lateFrameRegistered)
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
+
+            if (!clearPendingPresentation)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-            _lateFrameRegistered = false;
             _pendingAssemblyVisualCommand = 0;
             _pendingAssemblyBeginRecipe = null;
             _pendingFabricationSparksDirty = false;
@@ -4087,20 +4095,21 @@ namespace Hecton8.Crafting
 
         private void TryRegisterSparkLightTick()
         {
-            if (_sparkLightTickRegistered || !Application.isPlaying)
+            if (_sparkLightTickRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _sparkLightTickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
-        private void TryUnregisterSparkLightTick()
+        private void TryUnregisterSparkLightTick(bool resetSleepState = true)
         {
             if (!_sparkLightTickRegistered)
                 return;
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _sparkLightTickRegistered = false;
-            _sparkLightTickSleeping = false;
+            if (resetSleepState)
+                _sparkLightTickSleeping = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -4135,7 +4144,7 @@ namespace Hecton8.Crafting
                     }
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _localizationManager = currentService as ILocalizationTextReadModel;
@@ -4151,6 +4160,9 @@ namespace Hecton8.Crafting
                     MarkRecipeCacheDirty();
                     EnsureCraftingScratchCold();
                     EnsureRecipeCache();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    RebindFabricatorDispatcherTickRoutes(currentService);
                     break;
             }
         }
@@ -4168,9 +4180,40 @@ namespace Hecton8.Crafting
                 if (_playerTransform == null)
                     _playerTransform = _cachedPlayerContext.PlayerTransform;
             }
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _localizationManager = Hecton8.Core.GlobalRegistry.LocalizationText;
             CacheScanLogSystem(Hecton8.Core.GlobalRegistry.ScanLogService);
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            ClearCachedAudioService();
+            return null;
+        }
+
+        private void ClearCachedAudioService()
+        {
+            _audioService = null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -4188,6 +4231,20 @@ namespace Hecton8.Crafting
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
+        }
+
+        private void RebindFabricatorDispatcherTickRoutes(object currentService)
+        {
+            TryUnregisterSparkLightTick(resetSleepState: false);
+            TryUnregisterLateFrame(clearPendingPresentation: false);
+            TryUnregister();
+
+            if (currentService == null || !isActiveAndEnabled)
+                return;
+
+            TryRegister();
+            TryRegisterLateFrame();
+            TryRegisterSparkLightTick();
         }
 
         private void RebuildInteractText()

@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Density Skater Fauna"
+title: "Fauna Density Skater"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Density Skater Fauna
+# Fauna Density Skater
 
-ID LOC HOLD: Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes.
+Fauna Density Skater mengubah salah satu gagasan hard-sci-fi HECTON-8 yang paling aneh menjadi encounter yang bisa dipahami tanpa ceramah: air dapat berisi permukaan. Di canyon brine, salinitas, suhu, dan tekanan bertumpuk menjadi shelf densitas. Hewan kecil mengeksploitasi shelf itu seperti serangga permukaan mengeksploitasi tegangan, hanya saja permukaannya terkubur di dalam laut. Hasilnya harus terasa ganjil tetapi adil. Skater menyeberangi celah yang tampak kosong; sonar menunjukkan riak; trim suit goyah; pemain menyadari ada batas di sana. Penulisan dan penempatan harus menolak levitasi fantasi. Skater tidak mengambang karena dunia lupa fisika. Ia hidup karena fisikanya spesifik. Jalurnya bisa mengarah ke brine vane robek, kantong garam rendah, langkah brine hangat, atau jalur ambush. Ia juga bisa menipu: yang membawa hewan ringan dapat menjatuhkan Marauder bermuatan ke air hitam berlapis. Nilai desainnya bukan makhluk itu sendiri, melainkan pelajaran yang diajarkan. Canyon bukan ruang terbuka. Ia mesin air bertumpuk, dan setiap tubuh kecil yang berjalan di atasnya menggambar peta dalam gerak.
 
 ## Scanner
 
-ID LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+DENSITY SKATER // Fauna berkaki tipis menaiki antarmuka brine seperti permukaan, meninggalkan riak di tempat sonar mengira air terbuka.
 
 ## Terminal
 
-ID LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+FAUNA DASAR: kontak skater meningkat dekat brine vane robek, langkah brine hangat, dan tepi mati sonar. Wake mereka menandai shelf densitas, bukan pijakan aman. Jangan mengejar melintasi lapisan opak.
 
 ## Audio
 
-ID LOC HOLD: Something is walking on the water inside the water.
+Ada sesuatu berjalan di atas air di dalam air.
 
 ## Field Note
 
-ID LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+Mereka tidak melayang. Mereka berjalan di batas yang bisa membuat suit-mu jatuh menembusnya.
 
 <!-- External Site; generated from P227_DENSITY_SKATER_FAUNA/id_ID. -->

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -11,6 +12,8 @@ namespace Hecton8.Editor.HydraulicErosionForge
 {
     internal static unsafe class HydraulicErosionWeatheringCsv
     {
+        private const string NativeMemoryOwner = nameof(HydraulicErosionWeatheringCsv);
+        private const string CsvBytesLabel = "WeatheringCsvBytes";
         private const int MaximumCsvBytes = 2 * 1024 * 1024;
 
         public static void LoadProfiles(List<WeatheringProfileDTO> profiles)
@@ -36,7 +39,7 @@ namespace Hecton8.Editor.HydraulicErosionForge
                         throw new InvalidDataException("terrain_weathering_profiles.csv invalid size.");
 
                     int length = (int)length64;
-                    bytes = new NativeArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    bytes = AllocateTrackedArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory, CsvBytesLabel, NativeAllocationLifetime.Temp);
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(bytes);
                     Span<byte> target = new Span<byte>(ptr, length);
                     int read = 0;
@@ -68,8 +71,7 @@ namespace Hecton8.Editor.HydraulicErosionForge
             }
             finally
             {
-                if (bytes.IsCreated)
-                    bytes.Dispose();
+                DisposeTrackedArray(ref bytes);
             }
 
             if (profiles.Count == 0)
@@ -278,6 +280,48 @@ namespace Hecton8.Editor.HydraulicErosionForge
         private static int Utf8BomOffset(byte* bytes, int length)
         {
             return length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF ? 3 : 0;
+        }
+
+        private static NativeArray<T> AllocateTrackedArray<T>(
+            int length,
+            Allocator allocator,
+            NativeArrayOptions options,
+            string label,
+            NativeAllocationLifetime lifetime) where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[HydraulicErosionWeatheringCsv] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, lifetime);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("[HydraulicErosionWeatheringCsv] NativeMemorySentinel rejected NativeArray registration for " + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private static void DisposeTrackedArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
         }
 
         private static string ProjectRoot()

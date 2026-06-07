@@ -7,6 +7,9 @@ poi_tags: poi.p63_work_order_card;poi.manual_pump_handle
 biome_tags: biome.first_hour;biome.work_order
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "P-63 Pump Room Work Order"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

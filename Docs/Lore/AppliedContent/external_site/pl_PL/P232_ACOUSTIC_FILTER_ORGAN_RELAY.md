@@ -9,32 +9,34 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Acoustic Filter Organ Relay"
+title: "Przekaźnik organu filtra akustycznego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Acoustic Filter Organ Relay
+# Przekaźnik organu filtra akustycznego
 
-PL LOC HOLD: Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence.
+Przekaźnik organu filtra akustycznego jest mostem między sonarowym gameplayem a biomechanicznym horrorem Atlas. Opuszczone systemy HECTON-8 nie potrzebują mówiącego potwora w ścianach. Potrzebują uszkodzonej infrastruktury, która zwerbowała żywe filtry akustyczne, bo mięso, rura i ciśnienie czasem rozwiązują problem trasowania lepiej niż martwa elektronika.
+
+Organ przekaźnika rośnie wokół rur jak mokra ściana skrzelowa. Tłumi ryk pomp, przepuszcza wąskie impulsy pingera i wygina echa w stały sposób. Daje to projektowaniu poziomów mocną zasadę: dźwięk może kłamać, ale powinien kłamać według wzoru. Gracz może nauczyć się, które zwroty są złożone, które korytarze ukrywa tylko przesunięcie fazy i które trasy konserwacyjne Atlas utrzymał przy życiu, akceptując biologię jako sprzęt. Horror nie polega na tym, że pokój ma głos. Horror polega na tym, że potrafi słuchać, trasować i naprawiać, nigdy nie rozumiejąc, do czego człowiek potrzebował tego pokoju.
 
 ## Scanner
 
-PL LOC HOLD: Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
+ORGAN FILTRA AKUSTYCZNEGO // Tkanka ściany skrzelowej obrosła rury przekaźnikowe; tłumi ryk pomp, przepuszcza wąskie impulsy pingera i składa sonar w powtarzalne kłamstwa.
 
 ## Terminal
 
-PL LOC HOLD: RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
+NOTA PRZEKAŹNIKA: żywa przegroda przepuszcza impulsy klasy pinger, odrzuca szeroki szum pomp i przesuwa fazę ech powrotnych. Mapy poniżej oznaczyć jako warunkowo prawdziwe.
 
 ## Audio
 
-PL LOC HOLD: The room is listening with meat and pipe.
+Pokój słucha mięsem i rurą.
 
 ## Field Note
 
-PL LOC HOLD: Atlas does not need language here. It needs filters, pulses and living baffles.
+Atlas nie potrzebuje tu głosu. Potrzebuje organu, który pozwoli przetrwać właściwemu dźwiękowi.
 
 <!-- External Site; generated from P232_ACOUSTIC_FILTER_ORGAN_RELAY/pl_PL. -->

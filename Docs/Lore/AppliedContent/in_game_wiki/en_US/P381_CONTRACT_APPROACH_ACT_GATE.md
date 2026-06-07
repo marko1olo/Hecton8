@@ -7,6 +7,9 @@ poi_tags: poi.black_keel_contract_board;poi.bathydrop_manifest
 biome_tags: biome.orbit_transfer;biome.shallows
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Contract Approach Act Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

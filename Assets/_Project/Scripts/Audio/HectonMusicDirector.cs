@@ -1038,10 +1038,15 @@ namespace Hecton8.Audio
                 return true;
 
             HectonMusicDirector activeDirector = GlobalRegistry.MusicDirector;
-            if (activeDirector != null && activeDirector != this)
+            if (!ReferenceEquals(activeDirector, null) && !ReferenceEquals(activeDirector, this))
             {
-                Destroy(gameObject);
-                return false;
+                if (IsMusicDirectorRuntimeUsable(activeDirector))
+                {
+                    Destroy(gameObject);
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterMusicDirectorRuntime(activeDirector);
             }
 
             GlobalRegistry.RegisterMusicDirectorRuntime(this);
@@ -1049,6 +1054,11 @@ namespace Hecton8.Audio
             if (_serviceRegistered)
                 s_activeRuntimeInstance = this;
             return _serviceRegistered;
+        }
+
+        private static bool IsMusicDirectorRuntimeUsable(HectonMusicDirector director)
+        {
+            return director != null && director.isActiveAndEnabled;
         }
 
         private void TryUnregisterFromGlobalRegistry()
@@ -1278,7 +1288,11 @@ namespace Hecton8.Audio
         private IAudioService ResolveAudioService()
         {
             IAudioService audioService = _cachedAudioService;
-            return audioService != null && audioService.IsInitialized ? audioService : null;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _cachedAudioService = null;
+            return null;
         }
 
         private IAcousticZoneReadModel ResolveAcousticZone()
@@ -1319,12 +1333,21 @@ namespace Hecton8.Audio
         private IVocalWarningSystem ResolveVocalWarningSystem()
         {
             IVocalWarningSystem vocalWarningSystem = _cachedVocalWarningSystem;
-            return vocalWarningSystem != null && vocalWarningSystem.IsInitialized ? vocalWarningSystem : null;
+            if (IsVocalWarningRuntimeUsable(vocalWarningSystem))
+                return vocalWarningSystem;
+
+            _cachedVocalWarningSystem = null;
+            return null;
         }
 
         private IAudioLogRuntime ResolveAudioLogRuntime()
         {
-            return _cachedAudioLogRuntime;
+            IAudioLogRuntime audioLogRuntime = _cachedAudioLogRuntime;
+            if (IsAudioLogRuntimeUsable(audioLogRuntime))
+                return audioLogRuntime;
+
+            _cachedAudioLogRuntime = null;
+            return null;
         }
 
         private void RefreshCachedRuntimeServicesCold()
@@ -1357,20 +1380,20 @@ namespace Hecton8.Audio
 
         private void CacheAudioService(IAudioService audioService, int frame)
         {
-            _cachedAudioService = audioService != null && audioService.IsInitialized ? audioService : null;
+            _cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null;
             _nextAudioServiceResolveFrame = frame + DependencyRetryFrameInterval;
         }
 
         private void CacheVocalWarningSystem(IVocalWarningSystem vocalWarningSystem, int frame)
         {
-            _cachedVocalWarningSystem = vocalWarningSystem != null && vocalWarningSystem.IsInitialized ? vocalWarningSystem : null;
+            _cachedVocalWarningSystem = IsVocalWarningRuntimeUsable(vocalWarningSystem) ? vocalWarningSystem : null;
             _nextVocalWarningResolveFrame = frame + DependencyRetryFrameInterval;
             _lastForegroundSpeechDuckingRefreshFrame = -1;
         }
 
         private void CacheAudioLogRuntime(IAudioLogRuntime audioLogRuntime, int frame)
         {
-            _cachedAudioLogRuntime = audioLogRuntime;
+            _cachedAudioLogRuntime = IsAudioLogRuntimeUsable(audioLogRuntime) ? audioLogRuntime : null;
             _nextAudioLogResolveFrame = frame + DependencyRetryFrameInterval;
             _lastForegroundSpeechDuckingRefreshFrame = -1;
         }
@@ -1529,8 +1552,11 @@ namespace Hecton8.Audio
         {
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             IVocalWarningSystem vocalWarningSystem = _cachedVocalWarningSystem;
-            if (vocalWarningSystem != null && vocalWarningSystem.IsInitialized)
+            if (IsVocalWarningRuntimeUsable(vocalWarningSystem))
                 return;
+
+            if (vocalWarningSystem != null)
+                _cachedVocalWarningSystem = null;
 
             if (frame < _nextVocalWarningResolveFrame)
                 return;
@@ -1541,13 +1567,50 @@ namespace Hecton8.Audio
         private void RefreshAudioLogRuntimeIfStale()
         {
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            if (_cachedAudioLogRuntime != null)
+            IAudioLogRuntime audioLogRuntime = _cachedAudioLogRuntime;
+            if (IsAudioLogRuntimeUsable(audioLogRuntime))
                 return;
+
+            if (audioLogRuntime != null)
+                _cachedAudioLogRuntime = null;
 
             if (frame < _nextAudioLogResolveFrame)
                 return;
 
             CacheAudioLogRuntime(GlobalRegistry.AudioLogRuntime, frame);
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static bool IsVocalWarningRuntimeUsable(IVocalWarningSystem vocalWarningSystem)
+        {
+            if (vocalWarningSystem == null || !vocalWarningSystem.IsInitialized)
+                return false;
+
+            if (vocalWarningSystem is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogRuntime)
+        {
+            if (audioLogRuntime == null)
+                return false;
+
+            if (audioLogRuntime is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void BindRuntimeVoiceRoutingCold()

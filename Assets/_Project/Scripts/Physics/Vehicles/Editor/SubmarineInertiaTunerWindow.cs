@@ -146,6 +146,7 @@ namespace Hecton8.Physics.Vehicles.Editor
 
         private void OnEnable()
         {
+            EditorApplication.update -= OnEditorPulse;
             EditorApplication.update += OnEditorPulse;
         }
 

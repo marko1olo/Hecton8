@@ -1515,21 +1515,14 @@ namespace Hecton8.Core
                 Interlocked.Exchange(ref _inputProfileCsvDirty, 0);
             }
 
-            try
+            FileSystemWatcher watcher = TryCreateInputProfileCsvWatcher(projectRoot);
+            if (watcher == null)
             {
-                FileSystemWatcher watcher = new FileSystemWatcher(projectRoot, "input_profiles.csv");
-                watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName;
-                watcher.Changed += HandleInputProfileCsvChanged;
-                watcher.Created += HandleInputProfileCsvChanged;
-                watcher.Renamed += HandleInputProfileCsvChanged;
-                watcher.EnableRaisingEvents = true;
-                _inputProfileCsvWatcher = watcher;
-            }
-            catch (Exception)
-            {
-                _inputProfileCsvWatcher = null;
                 CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+                return;
             }
+
+            _inputProfileCsvWatcher = watcher;
         }
 
         private void DisposeInputProfileCsvWatcher()
@@ -1538,12 +1531,48 @@ namespace Hecton8.Core
             if (watcher == null)
                 return;
 
-            watcher.EnableRaisingEvents = false;
-            watcher.Changed -= HandleInputProfileCsvChanged;
-            watcher.Created -= HandleInputProfileCsvChanged;
-            watcher.Renamed -= HandleInputProfileCsvChanged;
-            watcher.Dispose();
             _inputProfileCsvWatcher = null;
+            StopInputProfileCsvWatcherNoThrow(watcher);
+        }
+
+        private FileSystemWatcher TryCreateInputProfileCsvWatcher(string projectRoot)
+        {
+            try
+            {
+                FileSystemWatcher watcher = new FileSystemWatcher(projectRoot, "input_profiles.csv");
+                watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName;
+                watcher.Changed += HandleInputProfileCsvChanged;
+                watcher.Created += HandleInputProfileCsvChanged;
+                watcher.Renamed += HandleInputProfileCsvChanged;
+                watcher.EnableRaisingEvents = true;
+                return watcher;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private void StopInputProfileCsvWatcherNoThrow(FileSystemWatcher watcher)
+        {
+            try
+            {
+                watcher.EnableRaisingEvents = false;
+            }
+            catch (Exception)
+            {
+            }
+
+            try
+            {
+                watcher.Changed -= HandleInputProfileCsvChanged;
+                watcher.Created -= HandleInputProfileCsvChanged;
+                watcher.Renamed -= HandleInputProfileCsvChanged;
+                watcher.Dispose();
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private void HandleInputProfileCsvChanged(object sender, FileSystemEventArgs args)
@@ -2053,10 +2082,13 @@ namespace Hecton8.Core
         {
             if (thread == null || !thread.IsAlive)
                 return true;
+            if (ReferenceEquals(Thread.CurrentThread, thread))
+                return false;
 
             try
             {
-                return thread.Join(2000);
+                thread.Join(2000);
+                return !thread.IsAlive;
             }
             catch (Exception)
             {
@@ -2766,6 +2798,11 @@ namespace Hecton8.Core
 
         private void TryUnregisterFromDispatcher()
         {
+            TryUnregisterFromDispatcher(clearPendingHapticOutput: true);
+        }
+
+        private void TryUnregisterFromDispatcher(bool clearPendingHapticOutput)
+        {
             TryUnregisterHapticSynthesisPostSimulation();
             if (_registeredSlowTick)
             {
@@ -2777,7 +2814,8 @@ namespace Hecton8.Core
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
                 _registeredLateFrame = false;
-                _pendingHapticOutput = false;
+                if (clearPendingHapticOutput)
+                    _pendingHapticOutput = false;
             }
         }
 
@@ -2850,6 +2888,15 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterFromDispatcher(clearPendingHapticOutput: false);
+                if (currentService != null && isActiveAndEnabled && _isInitialized)
+                    TryRegisterToDispatcher();
+
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
                 _playerContext = currentService as IPlayerRuntimeContext;

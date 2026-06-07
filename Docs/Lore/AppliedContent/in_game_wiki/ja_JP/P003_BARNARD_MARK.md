@@ -7,6 +7,9 @@ poi_tags: poi.worker_locker;poi.shift_board
 biome_tags: biome.drowned_infrastructure
 locale: ja_JP
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Barnardの刻印"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

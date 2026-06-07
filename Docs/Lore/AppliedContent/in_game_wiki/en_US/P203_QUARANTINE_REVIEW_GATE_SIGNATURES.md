@@ -7,6 +7,9 @@ poi_tags: poi.quarantine_review_gate;poi.evacuate_hold_card
 biome_tags: biome.industrial_shelf;biome.med_lock
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Quarantine Hold Signatures"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

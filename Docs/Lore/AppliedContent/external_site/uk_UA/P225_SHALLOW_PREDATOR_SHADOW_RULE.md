@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Shallow Predator Shadow Rule"
+title: "Правило тіні мілководного хижака"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Shallow Predator Shadow Rule
+# Правило тіні мілководного хижака
 
-UA LOC HOLD: Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact.
+Правило тіні мілководного хижака - правило лору й encounter, а не профіль виду. Його завдання - захистити тон фотичного шельфу: красивий, читабельний, живий і все ще здатний убити. Хижак приходить через свідків. Скляні скребці лишають їжу й зникають. Цвітіння ліхтарного дрейфу продовжує світитися, але втрачає м'який частковий шурхіт. Рифи мушлевих затискачів стягуються на кабелях, наче весь маршрут зробив вдих. Лише після цього тінь рухається крізь світло. Цей порядок важливий, бо робить океан системним, а не театральним. Гравця не карає монстр, що матеріалізувався нізвідки; гравця стискає набір знаків, які він міг навчитися читати. Хороша реалізація має нашаровувати аудіо, візуальні й екологічні підказки так, щоб попередження переживало різні дисплеї, мови й потреби доступності: зникле цокання, обрізаний шум bloom, широкий силует, зміщений слід, маршрутна фауна поза фазою. Пряма атака - найменш цікава частина. Сильніший момент, коли ремонтна ціль усе ще досяжна, вода все ще прекрасна, а кожен живий прилад каже, що маршрут став дорогим.
 
 ## Scanner
 
-UA LOC HOLD: A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.
+ТІНЬ МІЛКОВОДНОГО ХИЖАКА // Зникле цокання скребців, розірваний шум bloom і широка рухома тінь є першим контактом. Тиск маршруту йде раніше бойового контакту.
 
 ## Terminal
 
-UA LOC HOLD: CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.
+ПРАВИЛО КОНТАКТУ: докази хижака мають змінити вибір маршруту до примусової шкоди. Ставити як відсутність, тишу, силует і слід; пряму атаку - лише після того, як гравець ігнорує або хибно читає щонайменше дві підказки.
 
 ## Audio
 
-UA LOC HOLD: When the little mouths stop ticking, stop moving.
+Коли маленькі роти перестають цокати, перестань рухатися.
 
 ## Field Note
 
-UA LOC HOLD: Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.
+Не давай хижакові спершу обличчя. Нехай шельф стане неправильним: їжа лишається, вода яснішає, дрібне життя йде, потім тінь перетинає задачу.
 
 <!-- External Site; generated from P225_SHALLOW_PREDATOR_SHADOW_RULE/uk_UA. -->

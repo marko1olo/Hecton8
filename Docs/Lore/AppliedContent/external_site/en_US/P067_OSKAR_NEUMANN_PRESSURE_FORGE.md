@@ -7,6 +7,9 @@ poi_tags: poi.pressure_forge;poi.clamp_ring_jig
 biome_tags: biome.deep_fabrication;biome.machine_trench
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Oskar Neumann Pressure Forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -141,8 +141,9 @@ namespace Hecton8.Atmosphere
                     return;
 
                 DisposeNativeJobArray(ref array);
-                array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(array, nameof(ShinobuStormPropagationRuntime), label, NativeAllocationLifetime.Session);
+                array = H8Memory.Allocate<T>(length, OwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                if (!array.IsCreated)
+                    throw new InvalidOperationException($"{nameof(ShinobuStormPropagationRuntime)} native allocation failed for {label}.");
             }
 
             private static void DisposeNativeJobArray<T>(ref NativeArray<T> array)
@@ -151,9 +152,7 @@ namespace Hecton8.Atmosphere
                 if (!array.IsCreated)
                     return;
 
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                array.Dispose();
-                array = default;
+                H8Memory.Release(ref array, OwnerSystem);
             }
         }
 
@@ -1280,7 +1279,13 @@ namespace Hecton8.Atmosphere
 
         private static bool TryWriteTelemetryDumpSnapshotCold(byte[] scratch, int byteCount)
         {
-            return scratch != null && byteCount > 0 && byteCount <= scratch.Length;
+            return scratch != null &&
+                   byteCount > 0 &&
+                   byteCount <= scratch.Length &&
+                   NativeFaultDumpWriter.TryWriteAll(
+                       DumpRelativePath,
+                       new ReadOnlySpan<byte>(scratch, 0, byteCount),
+                       byteCount);
         }
 
         private float SampleGlobalQualityWeightForTick()

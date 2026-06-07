@@ -594,6 +594,7 @@ namespace Hecton8.Physics
         private const int StressNodeCount = 4096;
         private const int StressSegmentCount = StressNodeCount - 1;
         private const int StressIterations = 64;
+        private const int StressWorkerJoinMilliseconds = 3000;
         private const uint StressSeed = 0x13031303u;
         private const uint FailureHandle = 1u << 0;
         private const uint FailureLock = 1u << 1;
@@ -745,7 +746,11 @@ namespace Hecton8.Physics
                     IsBackground = true,
                     Name = "H8.Tether1303.DefragFuzzer"
                 };
-                worker.Start();
+                if (!TryStartStressWorkerNoThrow(worker))
+                {
+                    failureFlags |= FailureThread;
+                    return false;
+                }
 
                 for (int pass = 0; pass < StressIterations; pass++)
                 {
@@ -811,7 +816,7 @@ namespace Hecton8.Physics
             finally
             {
                 System.Threading.Volatile.Write(ref stop, 1);
-                if (worker != null && worker.IsAlive && !worker.Join(3000))
+                if (!TryJoinStressWorkerNoThrow(worker, StressWorkerJoinMilliseconds))
                     failureFlags |= FailureThread;
 
                 if (mutationGuardHeld)
@@ -869,6 +874,41 @@ namespace Hecton8.Physics
             {
                 System.Threading.Interlocked.Increment(ref workerFailures);
                 System.Threading.Volatile.Write(ref stop, 1);
+            }
+        }
+
+        private static bool TryStartStressWorkerNoThrow(System.Threading.Thread worker)
+        {
+            if (worker == null)
+                return false;
+
+            try
+            {
+                worker.Start();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryJoinStressWorkerNoThrow(System.Threading.Thread worker, int timeoutMilliseconds)
+        {
+            if (worker == null || !worker.IsAlive)
+                return true;
+
+            if (System.Threading.Thread.CurrentThread.ManagedThreadId == worker.ManagedThreadId)
+                return false;
+
+            try
+            {
+                worker.Join(timeoutMilliseconds);
+                return !worker.IsAlive;
+            }
+            catch
+            {
+                return false;
             }
         }
 

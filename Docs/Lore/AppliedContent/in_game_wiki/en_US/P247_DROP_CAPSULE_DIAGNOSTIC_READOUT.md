@@ -7,6 +7,9 @@ poi_tags: poi.capsule_diagnostic_screen;poi.flooded_ascent_bus
 biome_tags: biome.first_hour_capsule;biome.surface_storm
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Drop Capsule Diagnostic Readout"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

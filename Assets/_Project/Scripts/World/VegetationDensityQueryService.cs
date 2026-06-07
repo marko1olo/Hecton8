@@ -155,21 +155,30 @@ namespace Hecton8.World
             }
 
             DisposeDensityQueryScratch();
-            _densityQueryScratchChunks = new NativeArray<VegetationDensityChunkRecord>(
-                nextChunkCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: VegetationDensityChunkRecord[nextChunkCapacity] - persistent density-query rebuild scratch - owner: HectonMapMagicVegetationBridge
-            RegisterTrackedNativeArray(_densityQueryScratchChunks, nameof(_densityQueryScratchChunks));
-            _densityQueryScratchDensityGrid = new NativeArray<float3>(
-                nextGridCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: float3[nextGridCapacity] - persistent density-query grid rebuild scratch - owner: HectonMapMagicVegetationBridge
-            RegisterTrackedNativeArray(_densityQueryScratchDensityGrid, nameof(_densityQueryScratchDensityGrid));
-            _densityQueryScratchThreatAttractorGrid = new NativeArray<float2>(
-                nextGridCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: float2[nextGridCapacity] - persistent threat-attractor rebuild scratch - owner: HectonMapMagicVegetationBridge
-            RegisterTrackedNativeArray(_densityQueryScratchThreatAttractorGrid, nameof(_densityQueryScratchThreatAttractorGrid));
+            try
+            {
+                // COLD ALLOC: VegetationDensityChunkRecord[nextChunkCapacity] - persistent density-query rebuild scratch - owner: HectonMapMagicVegetationBridge
+                _densityQueryScratchChunks = AllocateDensityQueryNativeArray<VegetationDensityChunkRecord>(
+                    nextChunkCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(_densityQueryScratchChunks));
+                // COLD ALLOC: float3[nextGridCapacity] - persistent density-query grid rebuild scratch - owner: HectonMapMagicVegetationBridge
+                _densityQueryScratchDensityGrid = AllocateDensityQueryNativeArray<float3>(
+                    nextGridCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(_densityQueryScratchDensityGrid));
+                // COLD ALLOC: float2[nextGridCapacity] - persistent threat-attractor rebuild scratch - owner: HectonMapMagicVegetationBridge
+                _densityQueryScratchThreatAttractorGrid = AllocateDensityQueryNativeArray<float2>(
+                    nextGridCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(_densityQueryScratchThreatAttractorGrid));
+            }
+            catch
+            {
+                DisposeDensityQueryScratch();
+                throw;
+            }
+
             return _densityQueryScratchChunks.IsCreated &&
                    _densityQueryScratchChunks.Length >= nextChunkCapacity &&
                    _densityQueryScratchDensityGrid.IsCreated &&
@@ -180,9 +189,9 @@ namespace Hecton8.World
 
         private void DisposeDensityQueryScratch()
         {
-            DisposeNativeArray(ref _densityQueryScratchThreatAttractorGrid);
-            DisposeNativeArray(ref _densityQueryScratchDensityGrid);
-            DisposeNativeArray(ref _densityQueryScratchChunks);
+            DisposeDensityQueryNativeArray(ref _densityQueryScratchThreatAttractorGrid);
+            DisposeDensityQueryNativeArray(ref _densityQueryScratchDensityGrid);
+            DisposeDensityQueryNativeArray(ref _densityQueryScratchChunks);
         }
 
         private int FindDensityQueryChunkIndex(ChunkKey key)
@@ -568,30 +577,38 @@ namespace Hecton8.World
             }
 
             DisposeDensityQuerySnapshotLeaseArrays(ref lease);
-            lease.ChunkCapacity = chunkCapacity;
-            lease.GridCapacity = gridCapacity;
-            lease.Chunks = new NativeArray<VegetationDensityChunkRecord>(
-                chunkCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: VegetationDensityChunkRecord[chunkCapacity] - public density query lease bank - owner: HectonMapMagicVegetationBridge
-            RegisterTrackedNativeArray(lease.Chunks, nameof(_densityQuerySnapshotLeases));
-
-            if (includeDensityGrid)
+            try
             {
-                lease.DensityGrid = new NativeArray<float3>(
-                    gridCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: float3[gridCapacity] - public visibility/biomass density lease grid - owner: HectonMapMagicVegetationBridge
-                RegisterTrackedNativeArray(lease.DensityGrid, nameof(_densityQuerySnapshotLeases));
+                lease.ChunkCapacity = chunkCapacity;
+                lease.GridCapacity = gridCapacity;
+                // COLD ALLOC: VegetationDensityChunkRecord[chunkCapacity] - public density query lease bank - owner: HectonMapMagicVegetationBridge
+                lease.Chunks = AllocateDensityQueryNativeArray<VegetationDensityChunkRecord>(
+                    chunkCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(_densityQuerySnapshotLeases));
+
+                if (includeDensityGrid)
+                {
+                    // COLD ALLOC: float3[gridCapacity] - public visibility/biomass density lease grid - owner: HectonMapMagicVegetationBridge
+                    lease.DensityGrid = AllocateDensityQueryNativeArray<float3>(
+                        gridCapacity,
+                        NativeArrayOptions.UninitializedMemory,
+                        nameof(_densityQuerySnapshotLeases));
+                }
+
+                if (includeThreatAttractorGrid)
+                {
+                    // COLD ALLOC: float2[gridCapacity] - public threat-attractor density lease grid - owner: HectonMapMagicVegetationBridge
+                    lease.ThreatAttractorGrid = AllocateDensityQueryNativeArray<float2>(
+                        gridCapacity,
+                        NativeArrayOptions.UninitializedMemory,
+                        nameof(_densityQuerySnapshotLeases));
+                }
             }
-
-            if (includeThreatAttractorGrid)
+            catch
             {
-                lease.ThreatAttractorGrid = new NativeArray<float2>(
-                    gridCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: float2[gridCapacity] - public threat-attractor density lease grid - owner: HectonMapMagicVegetationBridge
-                RegisterTrackedNativeArray(lease.ThreatAttractorGrid, nameof(_densityQuerySnapshotLeases));
+                DisposeDensityQuerySnapshotLeaseArrays(ref lease);
+                throw;
             }
 
             bool ready = lease.Chunks.IsCreated &&
@@ -660,11 +677,39 @@ namespace Hecton8.World
 
         private static void DisposeDensityQuerySnapshotLeaseArrays(ref DensityQuerySnapshotLease lease)
         {
-            DisposeNativeArray(ref lease.ThreatAttractorGrid, lease.Handle);
-            DisposeNativeArray(ref lease.DensityGrid, lease.Handle);
-            DisposeNativeArray(ref lease.Chunks, lease.Handle);
+            DisposeDensityQueryNativeArray(ref lease.ThreatAttractorGrid, lease.Handle);
+            DisposeDensityQueryNativeArray(ref lease.DensityGrid, lease.Handle);
+            DisposeDensityQueryNativeArray(ref lease.Chunks, lease.Handle);
             lease.Active = false;
             lease.Handle = default;
+        }
+
+        private static NativeArray<T> AllocateDensityQueryNativeArray<T>(
+            int length,
+            NativeArrayOptions options,
+            string label) where T : struct
+        {
+            NativeArray<T> array = H8Memory.Allocate<T>(
+                length,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.Persistent,
+                options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException($"{nameof(HectonMapMagicVegetationBridge)} density query native allocation failed for {label}.");
+
+            return array;
+        }
+
+        private static void DisposeDensityQueryNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            H8Memory.Release(ref array, VegetationMemorySovereigntyConstants.OwnerSystemId);
+        }
+
+        private static void DisposeDensityQueryNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        {
+            JobHandle disposeHandle = H8Memory.Release(ref array, dependency, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            if (!array.IsCreated)
+                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
         }
 
         private bool TryPinDensityQueryJobSnapshot(

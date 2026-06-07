@@ -7,6 +7,9 @@ poi_tags: poi.recovery_compliance_signature;poi.return_action_notice
 biome_tags: biome.carrier_link;biome.abyssal_machine_field
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Vera Sato-Ren: return action"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

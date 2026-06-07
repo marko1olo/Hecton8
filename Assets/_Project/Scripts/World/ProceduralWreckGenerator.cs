@@ -1877,10 +1877,8 @@ namespace Hecton8.World
                         TryRegisterLootTick();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    UnregisterDispatcherLanesForHotSwap();
                     _dispatcher = currentService as ITickDispatcher;
-                    _registeredLootTick = false;
-                    _registeredLootLateFrame = false;
-                    _registeredWreckSlowTick = false;
                     if (currentService != null && isActiveAndEnabled)
                     {
                         if (_pendingLootCount > 0 || _blackBoxDumpRequested)
@@ -3593,6 +3591,27 @@ namespace Hecton8.World
 
             _pendingLootReadIndex = 0;
             _pendingLootCount = 0;
+        }
+
+        private void UnregisterDispatcherLanesForHotSwap()
+        {
+            if (_registeredLootLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLootLateFrame = false;
+            }
+
+            if (_registeredLootTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredLootTick = false;
+            }
+
+            if (_registeredWreckSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredWreckSlowTick = false;
+            }
         }
 
         private void TryUnregisterLootTick()

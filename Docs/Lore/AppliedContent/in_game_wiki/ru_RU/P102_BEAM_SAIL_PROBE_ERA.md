@@ -7,6 +7,9 @@ poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
 biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Эра beam-sail зондов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

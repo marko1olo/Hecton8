@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "Estrato de sales sulfuradas nativas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# Estrato de sales sulfuradas nativas
 
-ES LOC HOLD: Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.
+Los estratos de sales sulfuradas nativas son una de las primeras pruebas de que HECTON-8 no es solo una escena de crimen corporativo. Crecen donde el calor de los respiraderos, la filtración de salmuera y la corteza rica en metales se muelen bajo presión, dejando sales verde negruzcas en repisas, nervaduras y chimeneas quebradizas. Limpian conductores, despiertan celdas de emergencia, ajustan fundentes cerámicos y arruinan herramientas cuando una tripulación los trata como mineral común. Deben aparecer antes de la deuda azul: el jugador aprende que la luna tenía química, valor y peligros propios antes del sello de Deep Reach.
 
 ## Scanner
 
-ES LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+SALES SULFURADAS NATIVAS // Cristales armados por respiraderos y costra negra de salmuera, anteriores a Deep Reach. Mojadas conducen, templadas corroen, útiles antes de que nada se vuelva azul.
 
 ## Terminal
 
-ES LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+CLASE DE RECURSO: geología nativa. Usos: lavado de conductores, química de celda de emergencia, fundente cerámico, catalizador corrosivo. Sellar lejos del aire de admisión caliente; el polvo florece como película ácida sobre el metal del traje.
 
 ## Audio
 
-ES LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+La luna no necesitó a una compañía para ser peligrosa. Ya sabía química.
 
 ## Field Note
 
-ES LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+Si los guantes pican, ya vas tarde. Enjuaga, deriva a tierra, registra la pared.
 
 <!-- In-Game Wiki; generated from P116_NATIVE_SULFIDE_SALT_STACK/es_ES. -->

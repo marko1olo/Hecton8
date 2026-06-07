@@ -94,9 +94,6 @@ namespace Hecton8.World
         private const uint NavGridFlagContention = 1u << 2;
         private const uint NavGridFlagOverBudget = 1u << 3;
         private const ulong NavGridTelemetryStateHash = 0x313331365F4E4156UL;
-        private const string NativeMemoryOwner = nameof(VoxelDynamicNavGridRuntime);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
-        private const string ObstacleSnapshotNativeMemoryLabel = "VoxelDynamicNavGridRuntime.ObstacleSnapshot";
         private const string DynamicClearanceBudgetWarningMessage = "[VoxelDynamicNavGridRuntime] Partial clearance dilation exceeded 1ms; next destroyed-flora clear uses reduced clearance radius.";
 
         // COLD ALLOC: fixed managed slots - capped voxel navgrid snapshots keyed by runtime volume instance ID - owner: VoxelDynamicNavGridRuntime
@@ -1305,15 +1302,13 @@ namespace Hecton8.World
             {
                 if (!_obstacleSnapshotPool[i].IsCreated)
                 {
-                    _obstacleSnapshotPool[i] = new NativeArray<NavObstaclePrimitive>(
+                    _obstacleSnapshotPool[i] = H8Memory.Allocate<NavObstaclePrimitive>(
                         MaxObstacleSnapshotPrimitiveCount,
+                        NavGridVaultOwner,
                         Allocator.Persistent,
                         NativeArrayOptions.UninitializedMemory);
-                    NativeMemorySentinel.RegisterNativeArray(
-                        _obstacleSnapshotPool[i],
-                        NativeMemoryOwner,
-                        ObstacleSnapshotNativeMemoryLabel,
-                        NativeMemoryLifetime);
+                    if (!_obstacleSnapshotPool[i].IsCreated)
+                        return false;
                 }
 
                 _obstacleSnapshotLeaseStates[i] = 0;
@@ -1363,13 +1358,10 @@ namespace Hecton8.World
             for (int i = 0; i < _obstacleSnapshotPool.Length; i++)
             {
                 _obstacleSnapshotLeaseStates[i] = 0;
-                NativeArray<NavObstaclePrimitive> snapshot = _obstacleSnapshotPool[i];
-                if (!snapshot.IsCreated)
+                if (!_obstacleSnapshotPool[i].IsCreated)
                     continue;
 
-                NativeMemorySentinel.UnregisterNativeArray(snapshot);
-                snapshot.Dispose();
-                _obstacleSnapshotPool[i] = default;
+                H8Memory.Release(ref _obstacleSnapshotPool[i], NavGridVaultOwner);
             }
 
             _obstacleSnapshotPoolReady = false;

@@ -364,10 +364,17 @@ namespace Hecton8.Interaction
 
         private void RefreshTickRegistration()
         {
-            if (math.abs(_targetAngle - _currentAngle) >= 0.001f || _snapCooldownRemaining > 0f || _ballastSubmitPending)
+            if (ShouldRunSnapTick())
                 TryRegister();
             else
                 Unregister();
+        }
+
+        private bool ShouldRunSnapTick()
+        {
+            return math.abs(_targetAngle - _currentAngle) >= 0.001f ||
+                   _snapCooldownRemaining > 0f ||
+                   _ballastSubmitPending;
         }
 
         private void Unregister()
@@ -391,7 +398,7 @@ namespace Hecton8.Interaction
         private void RefreshColdRegistryReferences()
         {
             _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _submarineCore = ResolveSubmarineCore(GlobalRegistry.Submarine);
         }
 
@@ -403,7 +410,7 @@ namespace Hecton8.Interaction
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.Submarine:
                     _submarineCore = ResolveSubmarineCore(currentService);
@@ -411,13 +418,46 @@ namespace Hecton8.Interaction
                     QueueBallastSubmit();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    bool shouldRunTick = ShouldRunSnapTick();
+                    bool hasPendingVisualAngle = _hasPendingVisualAngle;
                     _dispatcherAvailable = currentService != null;
-                    _registered = false;
-                    _registeredLateFrame = false;
+                    Unregister();
+                    _hasPendingVisualAngle = hasPendingVisualAngle;
                     if (currentService != null && isActiveAndEnabled)
-                        RefreshTickRegistration();
+                    {
+                        if (shouldRunTick)
+                            TryRegister();
+                        if (_hasPendingVisualAngle)
+                            TryRegisterLateFrameTick();
+                    }
                     break;
             }
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -763,8 +803,11 @@ namespace Hecton8.Interaction
 
         private void QueueSnapAudio(Vector3 handPosition)
         {
-            IAudioService audio = _audioService;
-            if (!emitSnapAudio || snapAudioEventId == 0u || audio == null || !audio.IsInitialized)
+            if (!emitSnapAudio || snapAudioEventId == 0u)
+                return;
+
+            IAudioService audio = ResolveAudioService();
+            if (audio == null)
                 return;
 
             Vector3 sourcePosition = leverTransform != null ? leverTransform.position : handPosition;

@@ -7,6 +7,9 @@ poi_tags: poi.packet_notary_seal;poi.relay_delay_stamp
 biome_tags: biome.relay_spine;biome.claim_admin
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Packet Notary Interface Signatures"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

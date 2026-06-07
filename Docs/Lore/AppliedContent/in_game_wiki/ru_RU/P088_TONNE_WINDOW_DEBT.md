@@ -7,6 +7,9 @@ poi_tags: poi.tonne_window_meter;poi.debt_oxygen_ledger
 biome_tags: biome.arrival_shelf;biome.carrier_link
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Tonne-Window Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

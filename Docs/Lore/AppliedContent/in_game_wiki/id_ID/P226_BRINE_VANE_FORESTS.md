@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Brine Vane Forests"
+title: "Hutan Brine Vane"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Brine Vane Forests
+# Hutan Brine Vane
 
-ID LOC HOLD: Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.
+Hutan brine vane adalah ekologi kedalaman menengah pertama yang membuat fisika tak terlihat menjadi terlihat. Mereka membran garam-mineral datar yang terbentang di batas antara brine, suhu, dan tekanan. Dari jauh tampak seperti daun pucat di canyon tenggelam; dari dekat mereka instrumen rute. Lembar utuh berarti air di sisi lain bukan hanya berbeda, tetapi sulit dimasuki, dengan shear densitas cukup kuat untuk membengkokkan sonar dan menarik tubuh keluar dari trim. Tepi robek menandai lintasan baru. Ujung melengkung menunjukkan batas melemah menjadi jendela shear. Rusuk mineral pucat bisa dipanen dari strip yang gugur, tetapi memotong lembar hidup dapat menutup jalur terbaca satu-satunya melalui dinding canyon. Ikuti vane robek saat butuh rute. Hindari air hitam berlapis yang menghapus tepinya.
 
 ## Scanner
 
-ID LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+HUTAN BRINE VANE // Membran garam-mineral tumbuh sepanjang shear densitas. Mereka menunjukkan di mana air menebal menjadi dinding dan di mana sonar akan membengkok.
 
 ## Terminal
 
-ID LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+DASAR CANYON: lembar vane utuh menandai batas densitas keras. Tepi robek dan ujung melengkung menunjukkan jendela shear, kantong lebih rendah garam, atau lalu lintas baru. Hindari air berlapis opak; itu bisa membutakan sonar dan menarik suit di bawah buoyancy yang diharapkan.
 
 ## Audio
 
-ID LOC HOLD: The canyon has leaves because it has pressure gradients.
+Canyon punya daun karena punya gradien tekanan.
 
 ## Field Note
 
-ID LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+Mereka bukan pohon. Mereka daun tekanan: membran yang makan gradien kimia, robek hanya di tempat rute baru saja memaksa lewat.
 
 <!-- In-Game Wiki; generated from P226_BRINE_VANE_FORESTS/id_ID. -->

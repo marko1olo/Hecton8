@@ -900,20 +900,20 @@ namespace Hecton8.Graphics.Culling
                 return;
 
             DisposeIndirectArgsReadbackData();
-            _indirectArgsReadback.Data = new NativeArray<uint>(
+            _indirectArgsReadback.Data = H8Memory.Allocate<uint>(
                 IndirectArgsCount,
+                VaultOwnerSystemId,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[5] - async indirect args telemetry readback target - owner: InstanceCullingService
-            NativeMemorySentinel.RegisterNativeArray(_indirectArgsReadback.Data, nameof(InstanceCullingService), "_indirectArgsReadbackData", NativeAllocationLifetime.Scene);
+            if (!_indirectArgsReadback.Data.IsCreated)
+                throw new InvalidOperationException($"{nameof(InstanceCullingService)} native allocation failed for _indirectArgsReadbackData.");
         }
 
         private void DisposeIndirectArgsReadbackData()
         {
             if (_indirectArgsReadback.Data.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_indirectArgsReadback.Data);
-                _indirectArgsReadback.Data.Dispose();
-                _indirectArgsReadback.Data = default;
+                H8Memory.Release(ref _indirectArgsReadback.Data, VaultOwnerSystemId);
             }
         }
 

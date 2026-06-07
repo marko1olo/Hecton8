@@ -7,6 +7,9 @@ poi_tags: poi.vent_micronode_nest;poi.thermal_logic_patch
 biome_tags: biome.atlas;biome.vent
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Vent Micronode Power Nest"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

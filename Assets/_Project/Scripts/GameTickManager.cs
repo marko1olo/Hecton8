@@ -277,7 +277,7 @@ namespace Hecton8.Core
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            _registeredToDispatcher = false;
+            UnregisterDispatcherLanes();
 
             if (currentService == null ||
                 !_serviceRegistered ||

@@ -7,6 +7,9 @@ poi_tags: poi.cable_splice;poi.atlas_repair_scar
 biome_tags: biome.service_corridor;biome.cable_reef
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Kabelsplitslitteken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

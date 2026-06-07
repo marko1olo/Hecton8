@@ -7,6 +7,9 @@ poi_tags: poi.carrier_autonomy_table;poi.no_surface_drop_stamp
 biome_tags: biome.orbit;biome.hardware
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Salvage Carrier Autonomy Limits"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

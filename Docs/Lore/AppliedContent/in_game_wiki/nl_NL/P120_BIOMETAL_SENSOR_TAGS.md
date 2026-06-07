@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "Biometalen sensortags"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# Biometalen sensortags
 
-NL LOC HOLD: Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.
+Biometalen sensortags zijn kleine telemetrieschubben in fauna, kabelgroei en reparatie-ecologie. Ze kunnen pingers en scannerroutes aanscherpen, maar elke nuttige tag is ook bewijs: Atlas gebruikte levende dragers om een beschadigd onderhoudsnet uit te breiden.
 
 ## Scanner
 
-NL LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+BIOMETALEN SENSORTAGS // Dunne metaalschubben gegroeid in vissen, kabelkelp en reparatieweefsel. Verbeteren pingerafstelling; heet geoogst kan Atlas de ontbrekende drager horen.
 
 ## Terminal
 
-NL LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+GRONDSTOFKLASSE: door Atlas veranderd / bewijsgevoelig. Gebruik: pingerfocus, scannerraster, routevertrouwen, bewijspakketten. Koude oogst aanbevolen. Risico's: aandachtsstijging, valse dragerretours, beschadigde fauna.
 
 ## Audio
 
-NL LOC HOLD: The fish is not a drone. The tag does not know the difference.
+De vis is geen drone. De tag blijft toch rapporteren.
 
 ## Field Note
 
-NL LOC HOLD: Make resource extraction feel like evidence handling.
+Als hij onder het mes knippert, neem op voordat je snijdt.
 
 <!-- In-Game Wiki; generated from P120_BIOMETAL_SENSOR_TAGS/nl_NL. -->

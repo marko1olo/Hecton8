@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Brine Vane Forests"
+title: "Ліси розсольних лопатей"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Brine Vane Forests
+# Ліси розсольних лопатей
 
-UA LOC HOLD: Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure.
+Ліси розсольних лопатей - місце, де HECTON-8 перестає дозволяти воді поводитися як порожній простір. У каньйоні вода стає архітектурою: шари щільності складаються стінами, сонар згинається навколо невидимих полиць, а необережний спуск може поставити костюм нижче очікуваної плавучості раніше, ніж глибиномір стане драматичним. Розсольні лопаті роблять цю математику видимою. Це не земні рослини й не розмовний чужий риф. Це соле-мінеральні мембрани, що ростуть там, де хімічні градієнти продовжують їх годувати: достатньо плоскі, щоб здаватися ботанікою, і достатньо фізичні, щоб їм довіряти. Живий лист каже: тут не переходь. Рваний край каже: щось недавно пройшло. Закручений кінець каже: межа слабшає. Бліде ребро каже: мембрана скидала матеріал, можливо корисний для хімії розсолу, крихти герметика або калібрування density sensor. Хороший дизайн каньйону має змушувати гравців орієнтуватися за цими знаками, а не за стрілками: дрейфувати вздовж цілої стіни, знайти рвану пащу, побачити викривлення сонара, відчути зміну trim костюма і зрозуміти, що океан не перекриває шлях зі злості. Він підкоряється тиску. Тому ліси розсольних лопатей красиві холодніше, ніж фотичний шельф. Вони не вітають. Вони читаються.
 
 ## Scanner
 
-UA LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+ЛІС РОЗСОЛЬНИХ ЛОПАТЕЙ // Соле-мінеральні мембрани ростуть уздовж зсуву щільності. Вони показують, де вода густішає у стіну і де сонар почне згинатися.
 
 ## Terminal
 
-UA LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+БАЗА КАНЬЙОНУ: цілі листи лопатей позначають жорсткі межі щільності. Рвані краї й закручені кінці вказують на вікна зсуву, менш солоні кишені або недавній рух. Уникай непрозорої шаруватої води; вона може засліпити сонар і потягти костюм нижче очікуваної плавучості.
 
 ## Audio
 
-UA LOC HOLD: The canyon has leaves because it has pressure gradients.
+У каньйону є листя, бо в нього є градієнти тиску.
 
 ## Field Note
 
-UA LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+Це не дерева. Це листя тиску: мембрани, що живляться хімічними градієнтами й рвуться лише там, де маршрут недавно продавився наскрізь.
 
 <!-- External Site; generated from P226_BRINE_VANE_FORESTS/uk_UA. -->

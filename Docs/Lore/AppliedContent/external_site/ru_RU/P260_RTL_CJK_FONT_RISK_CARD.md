@@ -7,6 +7,9 @@ poi_tags: poi.font_risk_card;poi.rtl_layout_sample
 biome_tags: biome.localization;biome.ui
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Карта риска RTL и CJK шрифтов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

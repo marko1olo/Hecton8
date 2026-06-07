@@ -65,6 +65,8 @@ namespace Hecton8.UI
         private static ReadOnlySpan<char> LogStationKeepingArmed => "[OK] STATION KEEPING ARMED".AsSpan();
         private static ReadOnlySpan<char> LogStationKeepingReleased => "[OK] STATION KEEPING RELEASED".AsSpan();
         private static ReadOnlySpan<char> LogHostileDroneDetected => "[CRIT] HOSTILE DRONE DETECTED".AsSpan();
+        private static ReadOnlySpan<char> LogEngineTelemetryMasked => "[WARN] ENGINE TELEMETRY MASKED".AsSpan();
+        private static ReadOnlySpan<char> LogEngineTelemetryRestored => "[OK] ENGINE TELEMETRY RESTORED".AsSpan();
         private static ReadOnlySpan<char> LogBusPower => "BUS POWER ".AsSpan();
         private static ReadOnlySpan<char> LogOxygen => "OXYGEN ".AsSpan();
         private static ReadOnlySpan<char> LogHullPressure => "HULL PRESSURE ".AsSpan();
@@ -235,10 +237,11 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 TryUnregister();
-                TryRegister();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
             }
         }
 
@@ -699,6 +702,8 @@ namespace Hecton8.UI
         {
             switch (code)
             {
+                case HectonSubmarineOsLogCode.ReactorStable:
+                    return LogReactorStable;
                 case HectonSubmarineOsLogCode.LowPowerModeEngaged:
                     return LogLowPowerEngaged;
                 case HectonSubmarineOsLogCode.LowPowerModeCleared:
@@ -729,8 +734,12 @@ namespace Hecton8.UI
                     return LogStationKeepingReleased;
                 case HectonSubmarineOsLogCode.HostileDroneDetected:
                     return LogHostileDroneDetected;
+                case HectonSubmarineOsLogCode.EngineTelemetryMasked:
+                    return LogEngineTelemetryMasked;
+                case HectonSubmarineOsLogCode.EngineTelemetryRestored:
+                    return LogEngineTelemetryRestored;
                 default:
-                    return LogReactorStable;
+                    return ReadOnlySpan<char>.Empty;
             }
         }
 

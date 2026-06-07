@@ -7,6 +7,9 @@ poi_tags: poi.factory_temple_gate;poi.living_pressure_skin
 biome_tags: biome.atlas_bottom;biome.factory_temple
 locale: pt_BR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Fábrica do fundo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.sanitized_accident_packet;poi.deep_reach_status_notice
 biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "First Sanitized Accident Packet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

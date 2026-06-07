@@ -662,10 +662,23 @@ namespace Hecton8.UI
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.RenderTexturePoolRuntime:
-                    _cachedRenderTexturePool = currentService as IRenderTexturePoolService;
+                    IRenderTexturePoolService nextPool = currentService as IRenderTexturePoolService;
+                    bool externalPoolChanged =
+                        _externalRenderTexture != null &&
+                        !ReferenceEquals(_externalRenderTexturePoolOwner, nextPool);
+                    if (externalPoolChanged)
+                    {
+                        ReleaseExternalRenderTexture();
+                        _externalFeedActive = false;
+                        _lastScreenTexture = null;
+                    }
+
+                    _cachedRenderTexturePool = nextPool;
+                    if (externalPoolChanged && _externalFeedRequested && isActiveAndEnabled)
+                        EnsureExternalRenderTextureCurrent();
                     break;
                 case GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime:
-                    _cachedPlayerCriticalAudio = currentService as IPlayerCriticalSonarEchoReadModel;
+                    CachePlayerCriticalAudio(currentService as IPlayerCriticalSonarEchoReadModel);
                     InvalidateRadarDispatchCache();
                     break;
                 case GlobalRegistryServiceSlot.GroundRadarRuntime:
@@ -696,11 +709,39 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedRenderTexturePool = GlobalRegistry.RenderTexturePoolService;
-            _cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalSonarEcho;
+            CachePlayerCriticalAudio(GlobalRegistry.PlayerCriticalSonarEcho);
             _cachedGroundRadar = GlobalRegistry.GroundRadar;
             _cachedHabitatGraph = GlobalRegistry.HabitatGraph;
             _cachedPowerGrid = GlobalRegistry.PowerGrid;
             CacheDataVaultCold();
+        }
+
+        private void CachePlayerCriticalAudio(IPlayerCriticalSonarEchoReadModel playerCriticalAudio)
+        {
+            _cachedPlayerCriticalAudio = IsPlayerCriticalSonarEchoReadModelUsable(playerCriticalAudio)
+                ? playerCriticalAudio
+                : null;
+        }
+
+        private IPlayerCriticalSonarEchoReadModel ResolvePlayerCriticalSonarEchoReadModel()
+        {
+            IPlayerCriticalSonarEchoReadModel playerCriticalAudio = _cachedPlayerCriticalAudio;
+            if (IsPlayerCriticalSonarEchoReadModelUsable(playerCriticalAudio))
+                return playerCriticalAudio;
+
+            _cachedPlayerCriticalAudio = null;
+            return null;
+        }
+
+        private static bool IsPlayerCriticalSonarEchoReadModelUsable(IPlayerCriticalSonarEchoReadModel playerCriticalAudio)
+        {
+            if (playerCriticalAudio == null)
+                return false;
+
+            if (playerCriticalAudio is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void CacheGraphicsCapabilitiesCold()
@@ -1921,7 +1962,7 @@ namespace Hecton8.UI
             if (TryUploadGroundRadarPingsAndDispatchRadar())
                 return;
 
-            IPlayerCriticalSonarEchoReadModel audioRuntime = _cachedPlayerCriticalAudio;
+            IPlayerCriticalSonarEchoReadModel audioRuntime = ResolvePlayerCriticalSonarEchoReadModel();
             if (audioRuntime == null ||
                 !audioRuntime.TryGetCockpitSonarEchoTaps(out NativeArray<SonarEchoTap>.ReadOnly taps, out int tapCount, out int sequence))
             {

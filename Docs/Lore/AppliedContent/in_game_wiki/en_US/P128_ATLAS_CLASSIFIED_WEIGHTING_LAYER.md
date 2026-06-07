@@ -7,6 +7,9 @@ poi_tags: poi.weighting_table_fragment;poi.xo_continuity_priority
 biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Atlas Classified Weighting Layer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

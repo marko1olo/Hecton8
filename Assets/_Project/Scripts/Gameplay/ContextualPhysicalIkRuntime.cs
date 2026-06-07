@@ -1515,6 +1515,12 @@ namespace Hecton8.Gameplay
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
+                    break;
+
                 case GlobalRegistryServiceSlot.Player:
                     IPlayerRuntimeContext previousContext = previousService as IPlayerRuntimeContext;
                     Camera previousCamera = previousContext != null ? previousContext.PlayerCamera : null;

@@ -7,6 +7,9 @@ poi_tags: poi.shallow_annex_p63;poi.first_bilge_room
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Photic Shelf Survival Act"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

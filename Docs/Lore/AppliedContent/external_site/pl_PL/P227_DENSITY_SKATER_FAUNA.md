@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Density Skater Fauna"
+title: "Fauna łyżwiarzy gęstości"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Density Skater Fauna
+# Fauna łyżwiarzy gęstości
 
-PL LOC HOLD: Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes.
+Fauna łyżwiarzy gęstości zmienia jedną z najdziwniejszych hard-sci-fi idei HECTON-8 w spotkanie zrozumiałe bez wykładu: woda może zawierać powierzchnie. W kanionie solanki zasolenie, temperatura i ciśnienie układają się w półki gęstości. Małe zwierzęta wykorzystują je tak, jak owady powierzchniowe wykorzystują napięcie, tylko że powierzchnia jest pogrzebana w oceanie. Efekt powinien być niesamowity, ale uczciwy. Łyżwiarz przecina pozornie pustą szczelinę; sonar pokazuje falę; trim kombinezonu drży; gracz rozumie, że jest tam granica. Tekst i rozmieszczenie muszą opierać się fantastycznej lewitacji. Łyżwiarz nie unosi się dlatego, że świat zapomniał fizyki. Żyje, bo fizyka jest konkretna. Jego trasa może prowadzić do rozdartych brine vanes, mniej słonych kieszeni, ciepłych stopni solanki lub linii zasadzki. Może też zmylić: to, co niesie lekkie zwierzę, może upuścić obciążonego Maraudera w czarną warstwową wodę. Wartością projektu nie jest samo stworzenie, ale lekcja. Kanion nie jest otwartą przestrzenią. Jest maszyną z ułożonej wody, a każde małe ciało, które po niej idzie, rysuje mapę w ruchu.
 
 ## Scanner
 
-PL LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+ŁYŻWIARZ GĘSTOŚCI // Cienkokończysta fauna jedzie po interfejsie solanki jak po powierzchni, zostawiając fale tam, gdzie sonar oczekuje otwartej wody.
 
 ## Terminal
 
-PL LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+BAZA FAUNY: kontakt z łyżwiarzami rośnie przy rozdartych brine vanes, ciepłych stopniach solanki i martwych krawędziach sonaru. Ich ślad oznacza półkę gęstości, nie bezpieczne oparcie. Nie goń przez nieprzezroczyste warstwy.
 
 ## Audio
 
-PL LOC HOLD: Something is walking on the water inside the water.
+Coś chodzi po wodzie wewnątrz wody.
 
 ## Field Note
 
-PL LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+Oni nie lewitują. Chodzą po granicy, przez którą twój kombinezon może spaść.
 
 <!-- External Site; generated from P227_DENSITY_SKATER_FAUNA/pl_PL. -->

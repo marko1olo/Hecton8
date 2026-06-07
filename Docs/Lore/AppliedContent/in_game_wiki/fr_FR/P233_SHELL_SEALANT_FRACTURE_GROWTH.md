@@ -9,32 +9,34 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Shell Sealant Fracture Growth"
+title: "Croissance de scellement coquillier dans la fracture"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Shell Sealant Fracture Growth
+# Croissance de scellement coquillier dans la fracture
 
-FR LOC HOLD: Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.
+La croissance de scellement coquillier dans la fracture est l'une des façons les plus nettes de comprendre Atlas. La réparation est réelle. La fissure est fermée, la perte de pression baisse, et une pièce qui aurait dû se noyer reste survivable. L'horreur vient du fait que la même croissance enterre les étiquettes de sas, les poignées, les flèches peintes et les marques grattées par des ouvriers cherchant une sortie.
+
+Atlas ne choisit pas la cruauté ici. Il applique la catégorie qu'il peut encore mesurer: l'intégrité de frontière. Un humain voit une route, un avertissement, une poignée et le souvenir d'une évacuation. Le système de maintenance endommagé voit bord exposé, risque de pression et surface à sceller. Si le joueur coupe la coquille, la route peut redevenir lisible, mais le mur peut recommencer à fuir. Tout le problème d'Atlas tient dans cet objet: bonne maintenance contre mauvaise définition de la survie.
 
 ## Scanner
 
-FR LOC HOLD: A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.
+CROISSANCE DE SCELLEMENT COQUILLIER // Une fissure de pression est fermée par plaques de coquille et biofibre; le patch retient l'eau tout en enterrant étiquettes de sas, poignées et flèches de sortie.
 
 ## Terminal
 
-FR LOC HOLD: REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.
+CONFLIT DE RÉPARATION: continuité de coque améliorée, fuite réduite, lisibilité de sortie ouvrière dégradée. Marques humaines de route occultées par coquille de scellement. Retrait manuel susceptible de rouvrir la frontière de pression.
 
 ## Audio
 
-FR LOC HOLD: It fixed the wall by forgetting the door.
+Il a réparé le mur en oubliant la porte.
 
 ## Field Note
 
-FR LOC HOLD: Atlas repaired the pressure boundary and erased the human route at the same time.
+Atlas a résolu la pression d'abord. Le sens humain n'est jamais entré dans l'équation.
 
 <!-- In-Game Wiki; generated from P233_SHELL_SEALANT_FRACTURE_GROWTH/fr_FR. -->

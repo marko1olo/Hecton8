@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Біоволоконний герметик Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Біоволоконний герметик Atlas
 
-UA LOC HOLD: Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them.
+Біоволоконний герметик Atlas змушує гравця отримувати користь від тієї самої помилки класифікації, через яку глибока колонія здається неправильною. Atlas не створила біологію з нічого; вона знайшла мокрі ремонтні зони, кабельні оболонки, прищеплену тканину й прокладковий матеріал, а потім відсортувала їх за функцією, а не походженням. Якщо щось текло, відкривалося або кровило, пошкоджена логіка обслуговування просила закриття. Результат не є частиною монстра й не є чистим інструментом. Це готова до тиску жива латка, що хапає шви, заповнює розриви костюма й чіпляється за кабельні шкіри, бо все це схоже на одну інструкцію: закрити отвір, перш ніж система втратить більше маси. Добрі команди збирають її холодною, притискають пласко й тримають за мертвою сенсорною підкладкою. Погані команди залишають її теплою, а потім знаходять латку, що повзе до найближчого загубника, входу помпи або розриву рукавички. Жах практичний. Тобі потрібна герметизація. І ти маєш пам'ятати, що герметик досі намагається ремонтувати світ, який уже не знає, що вважати тілом.
 
 ## Scanner
 
-UA LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+БІОВОЛОКОННИЙ ГЕРМЕТИК ATLAS // Мокре ремонтне волокно, що виросло там, де кабельна оболонка, ранова тканина й корпусна прокладка отримали один клас відмови. Схоплюється під тиском; може рости після збору.
 
 ## Terminal
 
-UA LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+КЛАС РЕСУРСУ: змінена Atlas ремонтна екологія. Перед зняттям затиснути холодним фіксатором. Використання: мокрі шви, розриви костюма, кабельні оболонки, гнучкі тискові стики. Ризики: хибна жива сигнатура, сенсорне ехо, активний пошук швів під час зберігання.
 
 ## Audio
 
-UA LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+Він не знає різниці між течією, порізом і ротом. Atlas навчила його, що всі три речі є отворами, які треба закрити.
 
 ## Field Note
 
-UA LOC HOLD: Useful body horror: the player wants it and distrusts it.
+Добрий герметик висихає. Цей слухає, де з'явиться наступна діра.
 
 <!-- External Site; generated from P119_ATLAS_BIOFIBER_SEALANT/uk_UA. -->

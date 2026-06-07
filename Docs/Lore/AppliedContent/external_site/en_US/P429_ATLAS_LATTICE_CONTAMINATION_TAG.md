@@ -7,6 +7,9 @@ poi_tags: poi.atlas_lattice_tag;poi.contaminated_sample_case
 biome_tags: biome.atlas_repair_network;biome.deep_ecology
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Atlas Lattice Contamination Tag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

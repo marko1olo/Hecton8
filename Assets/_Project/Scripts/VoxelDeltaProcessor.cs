@@ -124,8 +124,8 @@ namespace Hecton8.Caves
         private const byte ThermalMeltMaterialId = 2;
         private const byte TitaniumVoxelMaterialId = 4;
         private const byte ItemSourceVoxelCarve = 12;
-        private const byte DeltaModeAdditive = 1 << 0;
-        private const byte DeltaModeReplace = 1 << 1;
+        private const byte DeltaModeAdditive = VoxelDeltaChunkDTO.CellFlagAdditive;
+        private const byte DeltaModeReplace = VoxelDeltaChunkDTO.CellFlagReplace;
         private const byte CarveSourceLaser = 1 << 0;
         private const byte DeltaShapeSphere = 0;
         private const byte DeltaShapeBox = 1;
@@ -593,6 +593,7 @@ namespace Hecton8.Caves
             DisposeChunkStatePool(failedVault);
             ReleaseScheduledCarveWriteHandle(failedVault);
             DisposeCompactionScratchBuffers(failedVault);
+            DisposeNativeSnapshotScratchBuffer(failedVault);
             DisposeBlackBox();
             DisposeCarveEventQueue(failedVault);
             _dataVault = oldVault;
@@ -2393,6 +2394,8 @@ namespace Hecton8.Caves
             data.voxelDeltaPersistence.EnsureCapacity(_chunkStates.Count + _compactedChunkStates.Count);
             data.voxelDeltaPersistence.chunkCount = 0;
             data.voxelDeltaPersistence.totalCellCount = 0;
+            data.voxelDeltaPersistence.carvingOperationCount = 0;
+            data.voxelDeltaPersistence.carvingOperations ??= Array.Empty<VoxelCarvingOperationDTO>();
 
             for (int slot = 0; slot < _compactedChunkStates.SlotCapacity; slot++)
             {
@@ -2557,23 +2560,61 @@ namespace Hecton8.Caves
         /// <param name="data">Loaded save container.</param>
         public void LoadFromSaveData(SaveData data)
         {
+            if (TryLoadFromSaveData(data, out string error) || string.IsNullOrEmpty(error))
+                return;
+
+            Hecton8.Core.H8Debug.LogError("[VoxelDeltaProcessor] " + error, this);
+        }
+
+        public bool TryLoadFromSaveData(SaveData data, out string error)
+        {
+            error = string.Empty;
             DisposeChunkStates();
             DisposeCompactedChunkStates();
             _chunkWriteVersions.Clear();
             _pendingRebuildVolumes.Clear();
 
-            if (data == null || data.voxelDeltaPersistence.chunkCount <= 0 || data.voxelDeltaPersistence.chunks == null)
-                return;
+            if (!TryValidateSaveDataForLoad(data, out string validationError))
+            {
+                return FailLoadedVoxelDeltaState(
+                    validationError,
+                    out error);
+            }
 
-            int chunkCount = math.min(data.voxelDeltaPersistence.chunkCount, data.voxelDeltaPersistence.chunks.Length);
+            if (data == null)
+                return true;
+
+            VoxelDeltaPersistenceDTO voxelDeltaPersistence = data.voxelDeltaPersistence;
+            if (voxelDeltaPersistence.chunkCount <= 0)
+            {
+                if (voxelDeltaPersistence.totalCellCount > 0)
+                {
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta binary payload has cells without chunks.",
+                        out error);
+                }
+
+                return true;
+            }
+
+            if (voxelDeltaPersistence.chunks == null ||
+                voxelDeltaPersistence.chunkCount > voxelDeltaPersistence.chunks.Length)
+            {
+                return FailLoadedVoxelDeltaState(
+                    "Voxel delta chunk count exceeds available binary payload chunks.",
+                    out error);
+            }
+
+            int chunkCount = voxelDeltaPersistence.chunkCount;
+            int loadedCellCount = 0;
             for (int chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++)
             {
-                VoxelDeltaChunkDTO chunk = data.voxelDeltaPersistence.chunks[chunkIndex];
+                VoxelDeltaChunkDTO chunk = voxelDeltaPersistence.chunks[chunkIndex];
                 bool hasUniformStorage = (chunk.storageFlags & VoxelDeltaChunkDTO.StorageUniformSdfRle) != 0;
                 bool hasDenseStorage = HasDenseStorage(in chunk);
                 int denseCellCount = hasDenseStorage ? CountDirtyCells(chunk.dirtyMaskWords) : 0;
                 int legacyCellCount = chunk.cells != null
-                    ? math.min(chunk.cellCount, chunk.cells.Length)
+                    ? math.clamp(chunk.cellCount, 0, math.min(chunk.cells.Length, ChunkCellCount))
                     : 0;
 
                 int3 chunkCoord = new int3((int)chunk.chunkX, (int)chunk.chunkY, (int)chunk.chunkZ);
@@ -2581,12 +2622,19 @@ namespace Hecton8.Caves
 
                 if (hasUniformStorage)
                 {
-                    TryStoreCompactedChunkState(address, new CompactedChunkState(
-                        chunkCoord,
-                        chunk.voxelSize,
-                        chunk.uniformSdfValueBits,
-                        DefaultMaterialId,
-                        DeltaModeReplace));
+                    if (!TryStoreCompactedChunkState(address, new CompactedChunkState(
+                            chunkCoord,
+                            chunk.voxelSize,
+                            chunk.uniformSdfValueBits,
+                            DefaultMaterialId,
+                            DeltaModeReplace)))
+                    {
+                        return FailLoadedVoxelDeltaState(
+                            "Voxel delta compacted chunk store failed while loading binary payload.",
+                            out error);
+                    }
+
+                    loadedCellCount = AddNativeSnapshotDirtyCellCountClamped(loadedCellCount, VoxelDeltaChunkDTO.CellCount);
                     continue;
                 }
 
@@ -2594,7 +2642,11 @@ namespace Hecton8.Caves
                     continue;
 
                 if (!TryGetOrCreateChunkState(chunkCoord, chunk.voxelSize, out ChunkDeltaState state))
-                    continue;
+                {
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta dirty chunk pool exhausted while loading binary payload.",
+                        out error);
+                }
 
                 if (!TryResolveChunkStateStorage(
                         in state,
@@ -2603,7 +2655,9 @@ namespace Hecton8.Caves
                         out NativeArray<byte> materialIds,
                         out NativeArray<byte> cellFlags))
                 {
-                    continue;
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta chunk storage is unavailable while loading binary payload.",
+                        out error);
                 }
 
                 if (hasDenseStorage && denseCellCount > 0)
@@ -2615,9 +2669,10 @@ namespace Hecton8.Caves
                     {
                         sdfValueBits[i] = chunk.sdfValueBits[i];
                         materialIds[i] = chunk.materialIds[i];
-                        cellFlags[i] = chunk.cellFlags != null && chunk.cellFlags.Length == ChunkCellCount
+                        byte sourceFlags = chunk.cellFlags != null && chunk.cellFlags.Length == ChunkCellCount
                             ? chunk.cellFlags[i]
                             : (byte)0;
+                        cellFlags[i] = SanitizeVoxelDeltaCellFlags(sourceFlags);
                     }
 
                     state.DirtyCellCount = denseCellCount;
@@ -2631,11 +2686,34 @@ namespace Hecton8.Caves
                         if (!TryComputeLocalCellIndex(absoluteCell, state.ChunkCoord, out uint localIndex))
                             continue;
 
-                        SetCell(ref state, localIndex, ClampToHalf(cell.sdfValue), cell.materialId, cell.flags);
+                        if (!SetCell(
+                                ref state,
+                                localIndex,
+                                ClampToHalf(cell.sdfValue),
+                                cell.materialId,
+                                SanitizeVoxelDeltaCellFlags(cell.flags)))
+                        {
+                            return FailLoadedVoxelDeltaState(
+                                "Voxel delta legacy cell store failed while loading binary payload.",
+                                out error);
+                        }
                     }
                 }
 
-                TryStoreChunkState(address, in state);
+                loadedCellCount = AddNativeSnapshotDirtyCellCountClamped(loadedCellCount, state.DirtyCellCount);
+                if (!TryStoreChunkState(address, in state))
+                {
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta dirty chunk store failed while loading binary payload.",
+                        out error);
+                }
+            }
+
+            if (loadedCellCount != voxelDeltaPersistence.totalCellCount)
+            {
+                return FailLoadedVoxelDeltaState(
+                    "Voxel delta binary payload total cell count mismatch.",
+                    out error);
             }
 
             for (int i = 0; i < _registeredVolumes.Count; i++)
@@ -2644,6 +2722,134 @@ namespace Hecton8.Caves
                 if (volume != null && HasOverlappingDelta(volume))
                     volume.RequestDeltaRebuild();
             }
+
+            return true;
+        }
+
+        internal static bool TryValidateSaveDataForLoad(SaveData data, out string error)
+        {
+            error = string.Empty;
+            if (data == null)
+                return true;
+
+            VoxelDeltaPersistenceDTO voxelDeltaPersistence = data.voxelDeltaPersistence;
+            if (voxelDeltaPersistence.chunkCount <= 0)
+            {
+                if (voxelDeltaPersistence.totalCellCount > 0)
+                {
+                    error = "Voxel delta binary payload has cells without chunks.";
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (voxelDeltaPersistence.chunks == null ||
+                voxelDeltaPersistence.chunkCount > voxelDeltaPersistence.chunks.Length)
+            {
+                error = "Voxel delta chunk count exceeds available binary payload chunks.";
+                return false;
+            }
+
+            int loadedCellCount = 0;
+            uint[] legacyDirtyMaskScratch = null;
+            for (int chunkIndex = 0; chunkIndex < voxelDeltaPersistence.chunkCount; chunkIndex++)
+            {
+                VoxelDeltaChunkDTO chunk = voxelDeltaPersistence.chunks[chunkIndex];
+                if (!IsSupportedVoxelDeltaChunkCoordinate(chunk.chunkX) ||
+                    !IsSupportedVoxelDeltaChunkCoordinate(chunk.chunkY) ||
+                    !IsSupportedVoxelDeltaChunkCoordinate(chunk.chunkZ))
+                {
+                    error = "Voxel delta binary payload chunk coordinate is outside the supported range.";
+                    return false;
+                }
+
+                if (!math.isfinite(chunk.voxelSize) || chunk.voxelSize <= 0f)
+                {
+                    error = "Voxel delta binary payload chunk has invalid voxel size.";
+                    return false;
+                }
+
+                if ((chunk.storageFlags & ~VoxelDeltaChunkDTO.SupportedStorageFlags) != 0)
+                {
+                    error = "Voxel delta binary payload chunk has unsupported storage flags.";
+                    return false;
+                }
+
+                if ((chunk.storageFlags & VoxelDeltaChunkDTO.StorageUniformSdfRle) != 0)
+                {
+                    loadedCellCount = AddNativeSnapshotDirtyCellCountClamped(
+                        loadedCellCount,
+                        VoxelDeltaChunkDTO.CellCount);
+                    continue;
+                }
+
+                if (HasDenseStorage(in chunk))
+                {
+                    loadedCellCount = AddNativeSnapshotDirtyCellCountClamped(
+                        loadedCellCount,
+                        CountDirtyCells(chunk.dirtyMaskWords));
+                    continue;
+                }
+
+                if (chunk.cells == null)
+                    continue;
+
+                int legacyCellCount = math.clamp(
+                    chunk.cellCount,
+                    0,
+                    math.min(chunk.cells.Length, ChunkCellCount));
+                if (legacyCellCount <= 0)
+                    continue;
+
+                legacyDirtyMaskScratch ??= new uint[ChunkDirtyMaskWordCount];
+                Array.Clear(legacyDirtyMaskScratch, 0, legacyDirtyMaskScratch.Length);
+                int3 chunkCoord = new int3((int)chunk.chunkX, (int)chunk.chunkY, (int)chunk.chunkZ);
+                int appliedLegacyCellCount = 0;
+                for (int cellIndex = 0; cellIndex < legacyCellCount; cellIndex++)
+                {
+                    VoxelDeltaCellDTO cell = chunk.cells[cellIndex];
+                    int3 absoluteCell = MortonDecodeSigned(cell.universeKey);
+                    if (!TryComputeLocalCellIndex(absoluteCell, chunkCoord, out uint localIndex))
+                        continue;
+
+                    int wordIndex = (int)(localIndex >> 5);
+                    uint bitMask = 1u << ((int)localIndex & 31);
+                    if ((legacyDirtyMaskScratch[wordIndex] & bitMask) != 0u)
+                        continue;
+
+                    legacyDirtyMaskScratch[wordIndex] |= bitMask;
+                    appliedLegacyCellCount++;
+                }
+
+                loadedCellCount = AddNativeSnapshotDirtyCellCountClamped(
+                    loadedCellCount,
+                    appliedLegacyCellCount);
+            }
+
+            if (loadedCellCount != voxelDeltaPersistence.totalCellCount)
+            {
+                error = "Voxel delta binary payload total cell count mismatch.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool FailLoadedVoxelDeltaState(string message, out string error)
+        {
+            error = message;
+            WriteBlackBoxSample(0UL, VoxelBlackBoxQueueOverflowFlag);
+            ClearLoadedVoxelDeltaStateAfterFailedLoad();
+            return false;
+        }
+
+        private void ClearLoadedVoxelDeltaStateAfterFailedLoad()
+        {
+            DisposeChunkStates();
+            DisposeCompactedChunkStates();
+            _chunkWriteVersions.Clear();
+            _pendingRebuildVolumes.Clear();
         }
 
         public bool TryMeasureNativeSnapshotByteCount(out int byteCount)
@@ -3417,6 +3623,9 @@ namespace Hecton8.Caves
         {
             error = string.Empty;
 
+            if (!TryValidateNativeSnapshotForLoad(snapshot, out error))
+                return false;
+
             DisposeChunkStates();
             DisposeCompactedChunkStates();
             _chunkWriteVersions.Clear();
@@ -3427,6 +3636,414 @@ namespace Hecton8.Caves
                 RequestRebuildsForLoadedState();
                 return true;
             }
+
+            int legacyHeaderBytes = UnsafeUtility.SizeOf<LegacyNativeSnapshotHeader>();
+            if (snapshot.Length < legacyHeaderBytes)
+            {
+                return FailLoadedVoxelDeltaState(
+                    "Voxel delta snapshot is truncated.",
+                    out error);
+            }
+
+            byte* snapshotPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(snapshot);
+            int minimumHeaderBytes;
+            bool snapshotHasFlags;
+            bool snapshotHasRleChunks;
+            bool snapshotHasDeltaRle;
+            bool snapshotHasAlignedHeaders;
+            NativeSnapshotHeader header;
+            int snapshotVersion = ReadInt32(snapshotPtr, 0);
+
+            if (snapshotVersion == NativeSnapshotMagic ||
+                snapshotVersion == NativeSnapshotRleMagic ||
+                snapshotVersion == NativeSnapshotDeltaRleMagic ||
+                snapshotVersion == NativeSnapshotDeltaRleAlignedMagic)
+            {
+                snapshotHasAlignedHeaders = snapshotVersion == NativeSnapshotDeltaRleAlignedMagic;
+                if (snapshotHasAlignedHeaders)
+                {
+                    if (snapshot.Length < UnsafeUtility.SizeOf<NativeSnapshotHeader>())
+                    {
+                        return FailLoadedVoxelDeltaState(
+                            "Voxel delta aligned snapshot header is truncated.",
+                            out error);
+                    }
+
+                    header = UnsafeUtility.ReadArrayElement<NativeSnapshotHeader>(snapshotPtr, 0);
+                    minimumHeaderBytes = UnsafeUtility.SizeOf<NativeSnapshotHeader>();
+                }
+                else
+                {
+                    if (snapshot.Length < NativeSnapshotVersionedHeaderBytes)
+                    {
+                        return FailLoadedVoxelDeltaState(
+                            "Voxel delta versioned snapshot header is truncated.",
+                            out error);
+                    }
+
+                    header = new NativeSnapshotHeader
+                    {
+                        Version = snapshotVersion,
+                        ChunkCount = ReadInt32(snapshotPtr, 4),
+                        TotalDirtyCellCount = ReadInt32(snapshotPtr, 8),
+                        Reserved0 = 0
+                    };
+                    minimumHeaderBytes = NativeSnapshotVersionedHeaderBytes;
+                }
+
+                snapshotHasFlags = true;
+                snapshotHasRleChunks = snapshotVersion == NativeSnapshotRleMagic ||
+                                       snapshotVersion == NativeSnapshotDeltaRleMagic ||
+                                       snapshotVersion == NativeSnapshotDeltaRleAlignedMagic;
+                snapshotHasDeltaRle = snapshotVersion == NativeSnapshotDeltaRleMagic ||
+                                      snapshotVersion == NativeSnapshotDeltaRleAlignedMagic;
+            }
+            else
+            {
+                header = new NativeSnapshotHeader
+                {
+                    Version = 1,
+                    ChunkCount = ReadInt32(snapshotPtr, 0),
+                    TotalDirtyCellCount = ReadInt32(snapshotPtr, 4),
+                    Reserved0 = 0
+                };
+                minimumHeaderBytes = legacyHeaderBytes;
+                snapshotHasFlags = false;
+                snapshotHasRleChunks = false;
+                snapshotHasDeltaRle = false;
+                snapshotHasAlignedHeaders = false;
+            }
+
+            if (header.ChunkCount < 0 || header.TotalDirtyCellCount < 0)
+            {
+                return FailLoadedVoxelDeltaState(
+                    "Voxel delta snapshot header is invalid.",
+                    out error);
+            }
+
+            int cursor = minimumHeaderBytes;
+            int dirtyMaskByteLength = ChunkDirtyMaskWordCount * UnsafeUtility.SizeOf<uint>();
+            int sdfByteLength = ChunkCellCount * UnsafeUtility.SizeOf<ushort>();
+            int materialByteLength = ChunkCellCount * UnsafeUtility.SizeOf<byte>();
+            int flagsByteLength = ChunkCellCount * UnsafeUtility.SizeOf<byte>();
+            int chunkHeaderBytes = snapshotHasAlignedHeaders
+                ? UnsafeUtility.SizeOf<NativeSnapshotChunkHeaderDeltaRle>()
+                : snapshotHasDeltaRle
+                ? NativeSnapshotLegacyDeltaRleChunkHeaderBytes
+                : snapshotHasRleChunks
+                ? NativeSnapshotLegacyRleChunkHeaderBytes
+                : NativeSnapshotLegacyChunkHeaderBytes;
+            int loadedDirtyCellCount = 0;
+
+            for (int chunkIndex = 0; chunkIndex < header.ChunkCount; chunkIndex++)
+            {
+                if (cursor > snapshot.Length - chunkHeaderBytes)
+                {
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta chunk header exceeds the snapshot bounds.",
+                        out error);
+                }
+
+                NativeSnapshotChunkHeader chunkHeader;
+                byte storageFlags = NativeSnapshotStorageDense;
+                int declaredPayloadBytes = 0;
+                ulong declaredPayloadHash64 = 0UL;
+                if (snapshotHasDeltaRle)
+                {
+                    if (snapshotHasAlignedHeaders)
+                    {
+                        NativeSnapshotChunkHeaderDeltaRle deltaHeader = UnsafeUtility.ReadArrayElement<NativeSnapshotChunkHeaderDeltaRle>(snapshotPtr + cursor, 0);
+                        chunkHeader = new NativeSnapshotChunkHeader
+                        {
+                            ChunkX = deltaHeader.ChunkX,
+                            ChunkY = deltaHeader.ChunkY,
+                            ChunkZ = deltaHeader.ChunkZ,
+                            VoxelSize = deltaHeader.VoxelSize,
+                            DirtyCellCount = deltaHeader.DirtyCellCount,
+                            Reserved0 = 0
+                        };
+                        storageFlags = deltaHeader.StorageFlags;
+                        declaredPayloadBytes = deltaHeader.PayloadByteLength;
+                        declaredPayloadHash64 = CombineHash64(deltaHeader.PayloadHashLow, deltaHeader.PayloadHashHigh);
+                    }
+                    else
+                    {
+                        ReadLegacyDeltaRleChunkHeader(
+                            snapshotPtr + cursor,
+                            out chunkHeader,
+                            out storageFlags,
+                            out declaredPayloadBytes,
+                            out declaredPayloadHash64);
+                    }
+                }
+                else if (snapshotHasRleChunks)
+                {
+                    ReadLegacyRleChunkHeader(snapshotPtr + cursor, out chunkHeader, out storageFlags, out declaredPayloadBytes);
+                }
+                else
+                {
+                    ReadLegacyChunkHeader(snapshotPtr + cursor, out chunkHeader);
+                }
+
+                cursor += chunkHeaderBytes;
+
+                if (chunkHeader.VoxelSize <= 0f || chunkHeader.DirtyCellCount < 0)
+                {
+                    if (snapshotHasDeltaRle)
+                        ReportVoxelDeltaChunkCorruption(SaveCorruptionMalformedRleAction, chunkHeader.DirtyCellCount);
+
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta chunk header contains invalid values.",
+                        out error);
+                }
+
+                if (snapshotHasRleChunks && !IsSupportedNativeSnapshotStorageFlags(storageFlags))
+                {
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta snapshot storage flags are outside the supported range.",
+                        out error);
+                }
+
+                int chunkPayloadBytes = dirtyMaskByteLength + sdfByteLength + materialByteLength + (snapshotHasFlags ? flagsByteLength : 0);
+                int3 chunkCoord = new int3(chunkHeader.ChunkX, chunkHeader.ChunkY, chunkHeader.ChunkZ);
+                ChunkAddress address = new ChunkAddress(chunkCoord, chunkHeader.VoxelSize);
+
+                if (snapshotHasDeltaRle)
+                {
+                    if (declaredPayloadBytes < 0 || cursor > snapshot.Length - declaredPayloadBytes)
+                    {
+                        ReportVoxelDeltaChunkCorruption(SaveCorruptionBoundsAction, chunkHeader.DirtyCellCount);
+                        return FailLoadedVoxelDeltaState(
+                            "Voxel delta delta-RLE payload exceeds the snapshot bounds.",
+                            out error);
+                    }
+
+                    ulong computedPayloadHash64 = SaveBinaryStorage.Hash64(snapshotPtr + cursor, declaredPayloadBytes);
+                    if (computedPayloadHash64 != declaredPayloadHash64)
+                    {
+                        ReportVoxelDeltaChunkCorruption(SaveCorruptionHashMismatchAction, chunkHeader.DirtyCellCount);
+                        return FailLoadedVoxelDeltaState(
+                            "Voxel delta delta-RLE payload hash mismatch.",
+                            out error);
+                    }
+                }
+
+                if ((storageFlags & NativeSnapshotStorageUniformSdfRle) != 0)
+                {
+                    bool hasCurrentUniformPayload = declaredPayloadBytes == NativeSnapshotUniformSdfRlePayloadBytes;
+                    bool hasLegacyUniformPayload = declaredPayloadBytes == NativeSnapshotLegacyUniformSdfRlePayloadBytes;
+                    if ((!hasCurrentUniformPayload && !hasLegacyUniformPayload) ||
+                        cursor > snapshot.Length - declaredPayloadBytes ||
+                        chunkHeader.DirtyCellCount != ChunkCellCount)
+                    {
+                        if (snapshotHasDeltaRle)
+                            ReportVoxelDeltaChunkCorruption(SaveCorruptionMalformedRleAction, chunkHeader.DirtyCellCount);
+
+                        return FailLoadedVoxelDeltaState(
+                            "Voxel delta RLE payload is invalid.",
+                            out error);
+                    }
+
+                    ushort sdfBits = hasCurrentUniformPayload
+                        ? DequantizeSdfByte((sbyte)(*(snapshotPtr + cursor)))
+                        : UnsafeUtility.ReadArrayElement<ushort>(snapshotPtr + cursor, 0);
+                    cursor += declaredPayloadBytes;
+                    if (snapshotHasAlignedHeaders)
+                        cursor = AlignSnapshotCursor4Clamped(cursor, snapshot.Length);
+
+                    if (!TryStoreCompactedChunkState(address, new CompactedChunkState(
+                            chunkCoord,
+                            chunkHeader.VoxelSize,
+                            sdfBits,
+                            DefaultMaterialId,
+                            DeltaModeReplace)))
+                    {
+                        return FailLoadedVoxelDeltaState(
+                            "Voxel delta compacted chunk store failed while loading uniform payload.",
+                            out error);
+                    }
+                    loadedDirtyCellCount = AddNativeSnapshotDirtyCellCountClamped(
+                        loadedDirtyCellCount,
+                        chunkHeader.DirtyCellCount);
+                    continue;
+                }
+
+                if ((storageFlags & NativeSnapshotStorageSparseDeltaRle) != 0)
+                {
+                    if (declaredPayloadBytes < 0 || cursor > snapshot.Length - declaredPayloadBytes)
+                    {
+                        if (snapshotHasDeltaRle)
+                            ReportVoxelDeltaChunkCorruption(SaveCorruptionBoundsAction, chunkHeader.DirtyCellCount);
+
+                        return FailLoadedVoxelDeltaState(
+                            "Voxel delta sparse RLE payload exceeds the snapshot bounds.",
+                            out error);
+                    }
+
+                    if (!TryLoadSparseRlePayload(
+                            snapshotPtr + cursor,
+                            declaredPayloadBytes,
+                            chunkCoord,
+                            chunkHeader.VoxelSize,
+                            chunkHeader.DirtyCellCount,
+                            address))
+                    {
+                        if (snapshotHasDeltaRle)
+                            ReportVoxelDeltaChunkCorruption(SaveCorruptionMalformedRleAction, chunkHeader.DirtyCellCount);
+
+                        return FailLoadedVoxelDeltaState(
+                            "Voxel delta sparse RLE payload is invalid.",
+                            out error);
+                    }
+
+                    cursor += declaredPayloadBytes;
+                    if (snapshotHasAlignedHeaders)
+                        cursor = AlignSnapshotCursor4Clamped(cursor, snapshot.Length);
+                    loadedDirtyCellCount = AddNativeSnapshotDirtyCellCountClamped(
+                        loadedDirtyCellCount,
+                        chunkHeader.DirtyCellCount);
+                    continue;
+                }
+
+                if (snapshotHasRleChunks && declaredPayloadBytes != chunkPayloadBytes)
+                {
+                    if (snapshotHasDeltaRle)
+                        ReportVoxelDeltaChunkCorruption(SaveCorruptionMalformedRleAction, chunkHeader.DirtyCellCount);
+
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta dense payload length mismatch.",
+                        out error);
+                }
+
+                if (cursor > snapshot.Length - chunkPayloadBytes)
+                {
+                    if (snapshotHasDeltaRle)
+                        ReportVoxelDeltaChunkCorruption(SaveCorruptionBoundsAction, chunkHeader.DirtyCellCount);
+
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta chunk payload exceeds the snapshot bounds.",
+                        out error);
+                }
+
+                int denseDirtyCellCount = CountNativeSnapshotDirtyMaskBits(snapshotPtr + cursor);
+                if (denseDirtyCellCount != chunkHeader.DirtyCellCount)
+                {
+                    if (snapshotHasDeltaRle)
+                        ReportVoxelDeltaChunkCorruption(SaveCorruptionMalformedRleAction, chunkHeader.DirtyCellCount);
+
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta dense dirty-mask count does not match the chunk header.",
+                        out error);
+                }
+
+                if (!TryGetOrCreateChunkState(chunkCoord, chunkHeader.VoxelSize, out ChunkDeltaState state))
+                {
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta dirty chunk pool exhausted while loading dense payload.",
+                        out error);
+                }
+
+                if (!TryResolveChunkStateStorage(
+                        in state,
+                        out NativeArray<uint> dirtyMaskWords,
+                        out NativeArray<ushort> sdfValueBits,
+                        out NativeArray<byte> materialIds,
+                        out NativeArray<byte> cellFlags))
+                {
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta chunk storage is unavailable.",
+                        out error);
+                }
+
+                void* dirtyMaskPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dirtyMaskWords);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(dirtyMaskPtr, dirtyMaskWords.Length * UnsafeUtility.SizeOf<uint>(), snapshotPtr + cursor, dirtyMaskByteLength))
+                {
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta dirty-mask copy exceeded destination bounds.",
+                        out error);
+                }
+                cursor += dirtyMaskByteLength;
+
+                void* sdfPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sdfValueBits);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(sdfPtr, sdfValueBits.Length * UnsafeUtility.SizeOf<ushort>(), snapshotPtr + cursor, sdfByteLength))
+                {
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta SDF copy exceeded destination bounds.",
+                        out error);
+                }
+                cursor += sdfByteLength;
+
+                void* materialPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(materialIds);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(materialPtr, materialIds.Length * UnsafeUtility.SizeOf<byte>(), snapshotPtr + cursor, materialByteLength))
+                {
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta material copy exceeded destination bounds.",
+                        out error);
+                }
+                cursor += materialByteLength;
+
+                if (snapshotHasFlags)
+                {
+                    void* flagsPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(cellFlags);
+                    if (!UnsafeMemoryCopyGuard.SafeCopy(flagsPtr, cellFlags.Length * UnsafeUtility.SizeOf<byte>(), snapshotPtr + cursor, flagsByteLength))
+                    {
+                        return FailLoadedVoxelDeltaState(
+                            "Voxel delta flag copy exceeded destination bounds.",
+                            out error);
+                    }
+                    cursor += flagsByteLength;
+                }
+                else
+                {
+                    void* flagsPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(cellFlags);
+                    UnsafeUtility.MemClear(flagsPtr, flagsByteLength);
+                }
+
+                state.DirtyCellCount = chunkHeader.DirtyCellCount;
+                if (!TryStoreChunkState(address, in state))
+                {
+                    return FailLoadedVoxelDeltaState(
+                        "Voxel delta dirty chunk store failed while loading dense payload.",
+                        out error);
+                }
+                loadedDirtyCellCount = AddNativeSnapshotDirtyCellCountClamped(
+                    loadedDirtyCellCount,
+                    chunkHeader.DirtyCellCount);
+                if (snapshotHasAlignedHeaders)
+                    cursor = AlignSnapshotCursor4Clamped(cursor, snapshot.Length);
+            }
+
+            if (cursor != snapshot.Length)
+            {
+                return FailLoadedVoxelDeltaState(
+                    "Voxel delta snapshot contains unread trailing bytes.",
+                    out error);
+            }
+
+            if (loadedDirtyCellCount != header.TotalDirtyCellCount)
+            {
+                return FailLoadedVoxelDeltaState(
+                    "Voxel delta snapshot dirty-cell count does not match the header.",
+                    out error);
+            }
+
+            RequestRebuildsForLoadedState();
+            return true;
+        }
+
+        internal static bool TryValidateNativeSnapshotForLoad(NativeArray<byte> snapshot, out string error)
+        {
+            unsafe
+            {
+                return TryValidateNativeSnapshotForLoadUnsafe(snapshot, out error);
+            }
+        }
+
+        private static unsafe bool TryValidateNativeSnapshotForLoadUnsafe(NativeArray<byte> snapshot, out string error)
+        {
+            error = string.Empty;
+            if (!snapshot.IsCreated || snapshot.Length <= 0)
+                return true;
 
             int legacyHeaderBytes = UnsafeUtility.SizeOf<LegacyNativeSnapshotHeader>();
             if (snapshot.Length < legacyHeaderBytes)
@@ -3521,7 +4138,6 @@ namespace Hecton8.Caves
                 ? NativeSnapshotLegacyRleChunkHeaderBytes
                 : NativeSnapshotLegacyChunkHeaderBytes;
             int loadedDirtyCellCount = 0;
-            bool skippedCorruptChunk = false;
 
             for (int chunkIndex = 0; chunkIndex < header.ChunkCount; chunkIndex++)
             {
@@ -3576,45 +4192,30 @@ namespace Hecton8.Caves
 
                 if (chunkHeader.VoxelSize <= 0f || chunkHeader.DirtyCellCount < 0)
                 {
-                    if (snapshotHasDeltaRle &&
-                        declaredPayloadBytes >= 0 &&
-                        cursor <= snapshot.Length - declaredPayloadBytes)
-                    {
-                        ReportVoxelDeltaChunkCorruption(SaveCorruptionMalformedRleAction, chunkHeader.DirtyCellCount);
-                        cursor += declaredPayloadBytes;
-                        if (snapshotHasAlignedHeaders)
-                            cursor = AlignSnapshotCursor4Clamped(cursor, snapshot.Length);
-                        skippedCorruptChunk = true;
-                        continue;
-                    }
-
                     error = "Voxel delta chunk header contains invalid values.";
                     return false;
                 }
 
-                int chunkPayloadBytes = dirtyMaskByteLength + sdfByteLength + materialByteLength + (snapshotHasFlags ? flagsByteLength : 0);
-                int3 chunkCoord = new int3(chunkHeader.ChunkX, chunkHeader.ChunkY, chunkHeader.ChunkZ);
-                ChunkAddress address = new ChunkAddress(chunkCoord, chunkHeader.VoxelSize);
+                if (snapshotHasRleChunks && !IsSupportedNativeSnapshotStorageFlags(storageFlags))
+                {
+                    error = "Voxel delta snapshot storage flags are outside the supported range.";
+                    return false;
+                }
 
+                int chunkPayloadBytes = dirtyMaskByteLength + sdfByteLength + materialByteLength + (snapshotHasFlags ? flagsByteLength : 0);
                 if (snapshotHasDeltaRle)
                 {
                     if (declaredPayloadBytes < 0 || cursor > snapshot.Length - declaredPayloadBytes)
                     {
-                        ReportVoxelDeltaChunkCorruption(SaveCorruptionBoundsAction, chunkHeader.DirtyCellCount);
-                        skippedCorruptChunk = true;
-                        cursor = snapshot.Length;
-                        break;
+                        error = "Voxel delta delta-RLE payload exceeds the snapshot bounds.";
+                        return false;
                     }
 
                     ulong computedPayloadHash64 = SaveBinaryStorage.Hash64(snapshotPtr + cursor, declaredPayloadBytes);
                     if (computedPayloadHash64 != declaredPayloadHash64)
                     {
-                        ReportVoxelDeltaChunkCorruption(SaveCorruptionHashMismatchAction, chunkHeader.DirtyCellCount);
-                        cursor += declaredPayloadBytes;
-                        if (snapshotHasAlignedHeaders)
-                            cursor = AlignSnapshotCursor4Clamped(cursor, snapshot.Length);
-                        skippedCorruptChunk = true;
-                        continue;
+                        error = "Voxel delta delta-RLE payload hash mismatch.";
+                        return false;
                     }
                 }
 
@@ -3626,57 +4227,32 @@ namespace Hecton8.Caves
                         cursor > snapshot.Length - declaredPayloadBytes ||
                         chunkHeader.DirtyCellCount != ChunkCellCount)
                     {
-                        if (snapshotHasDeltaRle)
-                        {
-                            ReportVoxelDeltaChunkCorruption(SaveCorruptionMalformedRleAction, chunkHeader.DirtyCellCount);
-                            skippedCorruptChunk = true;
-                            cursor = math.min(snapshot.Length, cursor + math.max(0, declaredPayloadBytes));
-                            if (snapshotHasAlignedHeaders)
-                                cursor = AlignSnapshotCursor4Clamped(cursor, snapshot.Length);
-                            continue;
-                        }
-
                         error = "Voxel delta RLE payload is invalid.";
                         return false;
                     }
 
-                    ushort sdfBits = hasCurrentUniformPayload
-                        ? DequantizeSdfByte((sbyte)(*(snapshotPtr + cursor)))
-                        : UnsafeUtility.ReadArrayElement<ushort>(snapshotPtr + cursor, 0);
                     cursor += declaredPayloadBytes;
                     if (snapshotHasAlignedHeaders)
                         cursor = AlignSnapshotCursor4Clamped(cursor, snapshot.Length);
-
-                    TryStoreCompactedChunkState(address, new CompactedChunkState(
-                        chunkCoord,
-                        chunkHeader.VoxelSize,
-                        sdfBits,
-                        DefaultMaterialId,
-                        DeltaModeReplace));
-                    loadedDirtyCellCount += chunkHeader.DirtyCellCount;
+                    loadedDirtyCellCount = AddNativeSnapshotDirtyCellCountClamped(
+                        loadedDirtyCellCount,
+                        chunkHeader.DirtyCellCount);
                     continue;
                 }
 
                 if ((storageFlags & NativeSnapshotStorageSparseDeltaRle) != 0)
                 {
-                    if (!TryLoadSparseRlePayload(
+                    if (declaredPayloadBytes < 0 || cursor > snapshot.Length - declaredPayloadBytes)
+                    {
+                        error = "Voxel delta sparse RLE payload exceeds the snapshot bounds.";
+                        return false;
+                    }
+
+                    if (!TryValidateSparseRlePayload(
                             snapshotPtr + cursor,
                             declaredPayloadBytes,
-                            chunkCoord,
-                            chunkHeader.VoxelSize,
-                            chunkHeader.DirtyCellCount,
-                            address))
+                            chunkHeader.DirtyCellCount))
                     {
-                        if (snapshotHasDeltaRle)
-                        {
-                            ReportVoxelDeltaChunkCorruption(SaveCorruptionMalformedRleAction, chunkHeader.DirtyCellCount);
-                            skippedCorruptChunk = true;
-                            cursor += declaredPayloadBytes;
-                            if (snapshotHasAlignedHeaders)
-                                cursor = AlignSnapshotCursor4Clamped(cursor, snapshot.Length);
-                            continue;
-                        }
-
                         error = "Voxel delta sparse RLE payload is invalid.";
                         return false;
                     }
@@ -3684,118 +4260,66 @@ namespace Hecton8.Caves
                     cursor += declaredPayloadBytes;
                     if (snapshotHasAlignedHeaders)
                         cursor = AlignSnapshotCursor4Clamped(cursor, snapshot.Length);
-                    loadedDirtyCellCount += chunkHeader.DirtyCellCount;
+                    loadedDirtyCellCount = AddNativeSnapshotDirtyCellCountClamped(
+                        loadedDirtyCellCount,
+                        chunkHeader.DirtyCellCount);
                     continue;
                 }
 
                 if (snapshotHasRleChunks && declaredPayloadBytes != chunkPayloadBytes)
                 {
-                    if (snapshotHasDeltaRle)
-                    {
-                        ReportVoxelDeltaChunkCorruption(SaveCorruptionMalformedRleAction, chunkHeader.DirtyCellCount);
-                        skippedCorruptChunk = true;
-                        cursor += declaredPayloadBytes;
-                        if (snapshotHasAlignedHeaders)
-                            cursor = AlignSnapshotCursor4Clamped(cursor, snapshot.Length);
-                        continue;
-                    }
-
                     error = "Voxel delta dense payload length mismatch.";
                     return false;
                 }
 
                 if (cursor > snapshot.Length - chunkPayloadBytes)
                 {
-                    if (snapshotHasDeltaRle)
-                    {
-                        ReportVoxelDeltaChunkCorruption(SaveCorruptionBoundsAction, chunkHeader.DirtyCellCount);
-                        skippedCorruptChunk = true;
-                        cursor = snapshot.Length;
-                        break;
-                    }
-
                     error = "Voxel delta chunk payload exceeds the snapshot bounds.";
                     return false;
                 }
 
-                if (!TryGetOrCreateChunkState(chunkCoord, chunkHeader.VoxelSize, out ChunkDeltaState state))
+                int denseDirtyCellCount = CountNativeSnapshotDirtyMaskBits(snapshotPtr + cursor);
+                if (denseDirtyCellCount != chunkHeader.DirtyCellCount)
                 {
-                    error = "Voxel delta dirty chunk pool exhausted while loading dense payload.";
+                    error = "Voxel delta dense dirty-mask count does not match the chunk header.";
                     return false;
                 }
 
-                if (!TryResolveChunkStateStorage(
-                        in state,
-                        out NativeArray<uint> dirtyMaskWords,
-                        out NativeArray<ushort> sdfValueBits,
-                        out NativeArray<byte> materialIds,
-                        out NativeArray<byte> cellFlags))
-                {
-                    error = "Voxel delta chunk storage is unavailable.";
-                    return false;
-                }
-
-                void* dirtyMaskPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dirtyMaskWords);
-                if (!UnsafeMemoryCopyGuard.SafeCopy(dirtyMaskPtr, dirtyMaskWords.Length * UnsafeUtility.SizeOf<uint>(), snapshotPtr + cursor, dirtyMaskByteLength))
-                {
-                    error = "Voxel delta dirty-mask copy exceeded destination bounds.";
-                    return false;
-                }
-                cursor += dirtyMaskByteLength;
-
-                void* sdfPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sdfValueBits);
-                if (!UnsafeMemoryCopyGuard.SafeCopy(sdfPtr, sdfValueBits.Length * UnsafeUtility.SizeOf<ushort>(), snapshotPtr + cursor, sdfByteLength))
-                {
-                    error = "Voxel delta SDF copy exceeded destination bounds.";
-                    return false;
-                }
-                cursor += sdfByteLength;
-
-                void* materialPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(materialIds);
-                if (!UnsafeMemoryCopyGuard.SafeCopy(materialPtr, materialIds.Length * UnsafeUtility.SizeOf<byte>(), snapshotPtr + cursor, materialByteLength))
-                {
-                    error = "Voxel delta material copy exceeded destination bounds.";
-                    return false;
-                }
-                cursor += materialByteLength;
-
-                if (snapshotHasFlags)
-                {
-                    void* flagsPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(cellFlags);
-                    if (!UnsafeMemoryCopyGuard.SafeCopy(flagsPtr, cellFlags.Length * UnsafeUtility.SizeOf<byte>(), snapshotPtr + cursor, flagsByteLength))
-                    {
-                        error = "Voxel delta flag copy exceeded destination bounds.";
-                        return false;
-                    }
-                    cursor += flagsByteLength;
-                }
-                else
-                {
-                    void* flagsPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(cellFlags);
-                    UnsafeUtility.MemClear(flagsPtr, flagsByteLength);
-                }
-
-                state.DirtyCellCount = chunkHeader.DirtyCellCount;
-                TryStoreChunkState(address, in state);
-                loadedDirtyCellCount += chunkHeader.DirtyCellCount;
+                cursor += chunkPayloadBytes;
                 if (snapshotHasAlignedHeaders)
                     cursor = AlignSnapshotCursor4Clamped(cursor, snapshot.Length);
+                loadedDirtyCellCount = AddNativeSnapshotDirtyCellCountClamped(
+                    loadedDirtyCellCount,
+                    chunkHeader.DirtyCellCount);
             }
 
-            if (cursor != snapshot.Length && !skippedCorruptChunk)
+            if (cursor != snapshot.Length)
             {
                 error = "Voxel delta snapshot contains unread trailing bytes.";
                 return false;
             }
 
-            if (loadedDirtyCellCount != header.TotalDirtyCellCount && !skippedCorruptChunk)
+            if (loadedDirtyCellCount != header.TotalDirtyCellCount)
             {
                 error = "Voxel delta snapshot dirty-cell count does not match the header.";
                 return false;
             }
 
-            RequestRebuildsForLoadedState();
             return true;
+        }
+
+        private static unsafe int CountNativeSnapshotDirtyMaskBits(byte* dirtyMaskPtr)
+        {
+            int dirtyCellCount = 0;
+            for (int wordIndex = 0; wordIndex < ChunkDirtyMaskWordCount; wordIndex++)
+            {
+                uint word = UnsafeUtility.ReadArrayElement<uint>(dirtyMaskPtr, wordIndex);
+                dirtyCellCount = AddNativeSnapshotDirtyCellCountClamped(
+                    dirtyCellCount,
+                    math.countbits(word));
+            }
+
+            return dirtyCellCount;
         }
 
         private unsafe bool TryLoadSparseRlePayload(
@@ -5018,6 +5542,11 @@ namespace Hecton8.Caves
                    chunk.materialIds.Length == ChunkCellCount;
         }
 
+        private static bool IsSupportedVoxelDeltaChunkCoordinate(long value)
+        {
+            return value >= int.MinValue && value <= int.MaxValue;
+        }
+
         private static bool TryComputeLocalCellIndex(int3 absoluteCell, int3 chunkCoord, out uint localIndex)
         {
             int3 localCell = absoluteCell - (chunkCoord * ChunkResolution);
@@ -5069,6 +5598,11 @@ namespace Hecton8.Caves
 
             SetCell(dirtyMaskWords, sdfValueBits, materialIds, cellFlagValues, ref state, localIndex, value, materialId, cellFlags);
             return true;
+        }
+
+        private static byte SanitizeVoxelDeltaCellFlags(byte cellFlags)
+        {
+            return (byte)(cellFlags & VoxelDeltaChunkDTO.SupportedCellFlags);
         }
 
         private static void SetCell(
@@ -6460,7 +6994,9 @@ namespace Hecton8.Caves
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            if (sentinelId <= 0)
+                throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
@@ -7540,6 +8076,23 @@ namespace Hecton8.Caves
         private static ulong CombineHash64(uint low, uint high)
         {
             return ((ulong)high << 32) | low;
+        }
+
+        private static bool IsSupportedNativeSnapshotStorageFlags(byte storageFlags)
+        {
+            return storageFlags == NativeSnapshotStorageDense ||
+                   storageFlags == NativeSnapshotStorageUniformSdfRle ||
+                   storageFlags == NativeSnapshotStorageSparseDeltaRle;
+        }
+
+        private static int AddNativeSnapshotDirtyCellCountClamped(int current, int add)
+        {
+            if (add <= 0)
+                return math.max(0, current);
+
+            return current > int.MaxValue - add
+                ? int.MaxValue
+                : current + add;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 16)]

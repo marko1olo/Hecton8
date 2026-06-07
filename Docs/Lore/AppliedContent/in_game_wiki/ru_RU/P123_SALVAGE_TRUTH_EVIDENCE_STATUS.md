@@ -7,6 +7,9 @@ poi_tags: poi.chain_of_custody_case;poi.packet_witness_slot
 biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Статус salvage-правды как доказательства"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

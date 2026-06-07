@@ -7,6 +7,9 @@ poi_tags: poi.public_ledger_uplink;poi.witness_hash_stack
 biome_tags: biome.atlas_basin;biome.claim_route
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Payload Public Ledger Receiver Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "Pelletfusions-Fracht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# Pelletfusions-Fracht
 
-DE LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.
+Schwerer interstellarer Flug ist ohne FTL möglich, aber brutal. Strahlsegel-Boost, pelletgespeiste Fusion, Schildmasse, lange Drifts und Bremsarchitektur brachten Seed-Nutzlasten und spätere Koloniefracht nach Aegir. Dieselbe Logistik macht Rettung langsam: jedes Kilogramm, jeder Liegeplatz, Bremsslot und Überlebendensitz gehört zu einem Fahrplan.
 
 ## Scanner
 
-DE LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Antriebsplatte. Pelletgespeiste Fusionsfracht kreuzte als Infrastruktur: Schub, Schild, Drift, Bremsen und Verlustabrechnung.
 
 ## Terminal
 
-DE LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+FRACHTDOKTRIN: Seed-Nutzlasten der Atlas-Klasse und Koloniefracht nutzten Strahlsegel-Boost, pelletgespeiste Fusion, Magnetsegelbremsen und lange Driftintervalle. Lebende Fracht kam an, nachdem Maschinen die Route abrechenbar gemacht hatten.
 
 ## Audio
 
-DE LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+Ein schweres Schiff ist kein Wunder. Es ist eine Hypothek mit Triebwerken.
 
 ## Field Note
 
-DE LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+Schwerer Transit ist nicht heroisch. Er ist ein alter Routenvertrag mit Hitznarben.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/de_DE. -->

@@ -37,15 +37,14 @@ namespace Hecton8.Economy
 
         private void Awake()
         {
-            ScrapManager registered = s_activeRuntimeInstance ?? GlobalRegistry.Scrap;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
-            }
+            TryAbortForUsableExistingRuntime();
         }
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             TryRegisterToGlobalRegistry();
@@ -77,17 +76,54 @@ namespace Hecton8.Economy
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            ScrapManager registered = GlobalRegistry.Scrap;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterScrapRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Scrap, this);
             if (_serviceRegistered)
                 s_activeRuntimeInstance = this;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            ScrapManager active = s_activeRuntimeInstance;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsScrapRuntimeUsable(active))
+                {
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntimeInstance, active))
+                    s_activeRuntimeInstance = null;
+                if (ReferenceEquals(GlobalRegistry.Scrap, active))
+                    GlobalRegistry.UnregisterScrapRuntime(active);
+            }
+
+            ScrapManager registered = GlobalRegistry.Scrap;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsScrapRuntimeUsable(registered))
+            {
+                s_activeRuntimeInstance = registered;
+                Destroy(gameObject);
+                return true;
+            }
+
+            if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                s_activeRuntimeInstance = null;
+            GlobalRegistry.UnregisterScrapRuntime(registered);
+            return false;
+        }
+
+        private static bool IsScrapRuntimeUsable(ScrapManager manager)
+        {
+            return manager != null &&
+                   manager._serviceRegistered &&
+                   manager.isActiveAndEnabled;
         }
 
         private void TryUnregisterFromGlobalRegistry()

@@ -3466,7 +3466,7 @@ namespace Hecton8.Audio
                     Interlocked.Exchange(ref _audioProducerRestartRequested, 1);
                     Interlocked.Exchange(ref _audioProducerRunning, 1);
                     SignalAudioProducerThread();
-                    if (!producerThread.Join(0))
+                    if (!TryJoinAudioProducerThreadNoThrow(producerThread, 0))
                         return;
 
                     Interlocked.Exchange(ref _audioProducerRestartRequested, 0);
@@ -3480,13 +3480,28 @@ namespace Hecton8.Audio
                 return;
 
             Interlocked.Exchange(ref _audioProducerRestartRequested, 0);
-            _audioProducerThread = new Thread(AudioProducerLoop)
+            try
             {
-                IsBackground = true,
-                Name = "Hecton8ProceduralAudioProducer",
-                Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.AudioProducer)
-            };
-            _audioProducerThread.Start();
+                Thread nextProducerThread = new Thread(AudioProducerLoop)
+                {
+                    IsBackground = true,
+                    Name = "Hecton8ProceduralAudioProducer",
+                    Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.AudioProducer)
+                };
+                _audioProducerThread = nextProducerThread;
+                nextProducerThread.Start();
+            }
+            catch (Exception)
+            {
+                Interlocked.Exchange(ref _audioProducerRestartRequested, 0);
+                Interlocked.Exchange(ref _audioProducerRunning, 0);
+                _audioProducerThread = null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Audio producer thread failed to start. Procedural audio output will retry on the next lifecycle start.");
+#endif
+                return;
+            }
+
             SignalAudioProducerThread();
         }
 
@@ -3501,7 +3516,7 @@ namespace Hecton8.Audio
             if (producerThread == null)
                 return true;
 
-            if (producerThread.Join(AudioProducerJoinTimeoutMs))
+            if (TryJoinAudioProducerThreadNoThrow(producerThread, AudioProducerJoinTimeoutMs))
             {
                 _audioProducerThread = null;
                 return true;
@@ -3511,6 +3526,25 @@ namespace Hecton8.Audio
             Hecton8.Core.H8Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Audio producer thread failed to stop within watchdog budget. Native audio buffers remain owned until the worker exits.");
 #endif
             return false;
+        }
+
+        private static bool TryJoinAudioProducerThreadNoThrow(Thread producerThread, int timeoutMilliseconds)
+        {
+            if (producerThread == null || !producerThread.IsAlive)
+                return true;
+
+            if (ReferenceEquals(Thread.CurrentThread, producerThread))
+                return false;
+
+            try
+            {
+                producerThread.Join(timeoutMilliseconds);
+                return !producerThread.IsAlive;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         private bool IsAudioProducerThreadAlive()
@@ -5068,21 +5102,51 @@ namespace Hecton8.Audio
         private ISpatialAudioListenerCaveReadModel ResolveSpatialAudioListenerCaveReadModel()
         {
             ISpatialAudioListenerCaveReadModel readModel = _spatialAudioListenerCaveReadModel;
-            return readModel;
+            if (IsAudioRuntimeObjectUsable(readModel))
+                return readModel;
+
+            _spatialAudioListenerCaveReadModel = null;
+            return null;
         }
 
         private ISpatialAudioBinauralEmitterReadModel ResolveSpatialAudioBinauralEmitterReadModel()
         {
             ISpatialAudioBinauralEmitterReadModel readModel = _spatialAudioBinauralEmitterReadModel;
-            return readModel;
+            if (IsAudioRuntimeObjectUsable(readModel))
+                return readModel;
+
+            _spatialAudioBinauralEmitterReadModel = null;
+            return null;
         }
 
         private void CacheAudioRuntimeService(IAudioService audioService, int frame)
         {
-            bool isInitialized = audioService != null && audioService.IsInitialized;
-            _spatialAudioListenerCaveReadModel = isInitialized ? audioService as ISpatialAudioListenerCaveReadModel : null;
-            _spatialAudioBinauralEmitterReadModel = isInitialized ? audioService as ISpatialAudioBinauralEmitterReadModel : null;
+            bool isUsable = IsAudioServiceUsable(audioService);
+            _spatialAudioListenerCaveReadModel = isUsable ? audioService as ISpatialAudioListenerCaveReadModel : null;
+            _spatialAudioBinauralEmitterReadModel = isUsable ? audioService as ISpatialAudioBinauralEmitterReadModel : null;
             _audioServiceLookupFrame = frame;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            return IsAudioRuntimeObjectUsable(audioService);
+        }
+
+        private static bool IsAudioRuntimeObjectUsable(object runtime)
+        {
+            if (runtime == null)
+                return false;
+
+            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+                return false;
+
+            if (runtime is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void CacheColdRegistryReferences()
@@ -7375,17 +7439,27 @@ namespace Hecton8.Audio
                 return true;
 
             PlayerCriticalProceduralAudioRenderer registeredInstance = GlobalRegistry.PlayerCriticalAudio;
-            if (registeredInstance != null && registeredInstance != this)
+            if (!ReferenceEquals(registeredInstance, null) && !ReferenceEquals(registeredInstance, this))
             {
-                Volatile.Write(ref s_runtimeInstalled, 1);
-                Destroy(this);
-                return false;
+                if (IsPlayerCriticalAudioRuntimeUsable(registeredInstance))
+                {
+                    Volatile.Write(ref s_runtimeInstalled, 1);
+                    Destroy(this);
+                    return false;
+                }
+
+                GlobalRegistry.UnregisterPlayerCriticalAudioRuntime(registeredInstance);
             }
 
             GlobalRegistry.RegisterPlayerCriticalAudioRuntime(this);
             _runtimeRegistered = ReferenceEquals(GlobalRegistry.PlayerCriticalAudio, this);
             Volatile.Write(ref s_runtimeInstalled, _runtimeRegistered ? 1 : 0);
             return _runtimeRegistered;
+        }
+
+        private static bool IsPlayerCriticalAudioRuntimeUsable(PlayerCriticalProceduralAudioRenderer renderer)
+        {
+            return renderer != null && renderer.isActiveAndEnabled;
         }
 
         private void TryUnregister()

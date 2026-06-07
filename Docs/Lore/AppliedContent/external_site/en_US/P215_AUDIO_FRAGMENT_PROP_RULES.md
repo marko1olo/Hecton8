@@ -7,6 +7,9 @@ poi_tags: poi.audio_fragment_tag;poi.hydrophone_log_strip
 biome_tags: biome.relay_spine;biome.worker_locker
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Audio Fragment Prop Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

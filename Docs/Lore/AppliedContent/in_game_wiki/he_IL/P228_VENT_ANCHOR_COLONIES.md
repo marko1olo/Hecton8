@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Vent Anchor Colonies"
+title: "מושבות עוגני פתחים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Vent Anchor Colonies
+# מושבות עוגני פתחים
 
-HE LOC HOLD: Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.
+מושבות עוגני פתחים מסבירות למה Marauder אינו יכול לפתור כל בעיית תיקון בהישארות במים רדודים. המושבות גדלות במקום שבו פתחים תרמיים דוחפים חום וכימיית גופריתים אל שכבות תמלחת. גופיהן המצולעים לוכדים מינרלים, מתקררים ללוחות ומגינים על פאונת פתחים קטנה בשפת מים קטלניים. זה הופך אותן לבעלות ערך בלי להפוך אותן לעפרה קסומה. צלעות שנשרו יכולות להזין pressure-ceramic filler, cold-sealant grit ומסננים כימיים. צלעות חיות וחמות יכולות להרוג חליפה מהר או לסדוק ראש כלי בהלם תרמי. הקריאה הנכונה היא סבלנות: סרוק את ה-bloom התרמי, המתן לשפה המקוררת, חתוך רק לוחות שנשרו והשאר את הגרון הפעיל לבד אלא אם היעד שווה את הסיכון.
 
 ## Scanner
 
-HE LOC HOLD: Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.
+מושבת עוגני פתחים // מושבות מצולעות ננעלות סביב פתחים תרמיים, לוכדות גופריתים ומגדלות את הכימיה הדרושה לתיקונים בדירוג עומק.
 
 ## Terminal
 
-HE LOC HOLD: RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.
+קו בסיס משאבים: מושבות מעלות הסתברות ל-cold-sealant grit, pressure-ceramic precursor ו-sulfide salt. bloom תרמי נשאר קטלני; לקחת דגימות רק מצלעות מקוררות ומלוחות שנשרו.
 
 ## Audio
 
-HE LOC HOLD: Every good repair part is sitting in water that wants to cook you.
+כל חלק תיקון טוב יושב במים שרוצים לבשל אותך.
 
 ## Field Note
 
-HE LOC HOLD: Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.
+עוגן פתח הוא סימן משאב, אזהרת חום, שפת מחסה והוכחה של-forge chemistry יש ידיים חיות סביבה.
 
 <!-- In-Game Wiki; generated from P228_VENT_ANCHOR_COLONIES/he_IL. -->

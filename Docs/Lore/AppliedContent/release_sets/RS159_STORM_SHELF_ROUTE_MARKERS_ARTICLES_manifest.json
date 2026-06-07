@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS159_STORM_SHELF_ROUTE_MARKERS_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P905_ANCHOR_PAINT_CURRENT_SIDE",
+    "P906_KELP_SNAG_LINE_DIRECTION",
+    "P907_HULL_SCRAPE_ROUTE_ARROW",
+    "P908_SILT_FAN_RECENT_DISTURBANCE",
+    "P909_EMERGENCY_CHALK_TIDE_MARK"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P905_ANCHOR_PAINT_CURRENT_SIDE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P906_KELP_SNAG_LINE_DIRECTION.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P907_HULL_SCRAPE_ROUTE_ARROW.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P908_SILT_FAN_RECENT_DISTURBANCE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P909_EMERGENCY_CHALK_TIDE_MARK.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

@@ -451,9 +451,10 @@ namespace Hecton8.World
                     InvalidateViewerAupCache();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
                     _dispatcher = currentService as ITickDispatcher;
-                    _registered = false;
-                    TryRegister();
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
                     break;
                 case GlobalRegistryServiceSlot.DynamicResolutionRuntime:
                     _dynamicResolutionScaler = currentService as DynamicResolutionScaler;

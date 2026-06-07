@@ -148,7 +148,7 @@ MonoBehaviour:
   sampleCooldown: 0.3
   samplingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 2121609
   feedbackInterval: 0.45
 --- !u!114 &2493075126144140622
 MonoBehaviour:

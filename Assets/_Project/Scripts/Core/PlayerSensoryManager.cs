@@ -189,19 +189,17 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
-            if (!isActiveAndEnabled)
-                return;
-
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService != null)
-                {
-                    TryUnregisterUpdatable();
+                TryUnregisterUpdatable();
+                if (currentService != null && isActiveAndEnabled)
                     TryRegisterUpdatable();
-                }
 
                 return;
             }
+
+            if (!isActiveAndEnabled)
+                return;
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {

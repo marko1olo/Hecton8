@@ -7,6 +7,9 @@ poi_tags: poi.worker_locker;poi.tool_stamp
 biome_tags: biome.crash_shelf;biome.drowned_colony
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Походження Barnard Yards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

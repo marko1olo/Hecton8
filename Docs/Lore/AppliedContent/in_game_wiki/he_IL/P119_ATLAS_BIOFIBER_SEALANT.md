@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "איטום ביו-סיבי של Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# איטום ביו-סיבי של Atlas
 
-HE LOC HOLD: Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.
+איטום ביו-סיבי של Atlas הוא טעות שימושית. הוא גדל באקולוגיית תיקון שבה רקמה חיה, מעטפת כבל קרועה ותפר דולף סווגו כאותו סוג של פצע. רצועה מוכנה יכולה לאטום ציוד הישרדות או מפרקי לחץ גמישים בתוך מים, אבל אחסון חמים עלול להעיר צמיחה שמחפשת תפרים וחתימות חיים כוזבות.
 
 ## Scanner
 
-HE LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+איטום ביו-סיבי של ATLAS // סיב תיקון רטוב שגדל במקום שבו מעטפת כבל, רקמת פצע ואטם גוף קיבלו אותה מחלקת כשל. נדבק תחת לחץ; עלול להמשיך לגדול אחרי הקציר.
 
 ## Terminal
 
-HE LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+מחלקת משאב: אקולוגיית תיקון ששונתה בידי Atlas. להצמיד קר לפני הסרה. שימושים: טלאי תפרים רטובים, קרעי חליפה, מעטפות כבלים, מפרקי לחץ גמישים. סיכונים: חתימת חיים כוזבת, הד חיישן, חיפוש תפרים פעיל באחסון.
 
 ## Audio
 
-HE LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+הוא לא יודע את ההבדל בין דליפה, חתך ופה. Atlas לימדה אותו שכל השלושה הם פתחים שצריך לסגור.
 
 ## Field Note
 
-HE LOC HOLD: Useful body horror: the player wants it and distrusts it.
+איטום טוב מתייבש. זה מקשיב לחור הבא.
 
 <!-- In-Game Wiki; generated from P119_ATLAS_BIOFIBER_SEALANT/he_IL. -->

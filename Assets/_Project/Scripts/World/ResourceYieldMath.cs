@@ -71,7 +71,7 @@ namespace Hecton8.World
             float nodeHardness,
             float elapsedSeconds)
         {
-            return math.max(0f, toolPower) * math.max(0.01f, nodeHardness) * math.max(0f, elapsedSeconds);
+            return math.max(0f, toolPower) * math.rcp(math.max(0.01f, nodeHardness)) * math.max(0f, elapsedSeconds);
         }
     }
 }

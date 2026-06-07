@@ -7,6 +7,9 @@ poi_tags: poi.depth_band_chart;poi.suit_rating_panel
 biome_tags: biome.photic_shelf;biome.cable_reef
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Global Ocean Depth Bands"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

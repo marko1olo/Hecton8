@@ -33,14 +33,10 @@ namespace Hecton8.World
 
             try
             {
-                heights = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                sediment = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                weights = new NativeArray<float4>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                slopeWeights = new NativeArray<float>(CellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(heights, NativeMemoryOwner, "heights", NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, "sediment", NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(weights, NativeMemoryOwner, "weights", NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(slopeWeights, NativeMemoryOwner, "slopeWeights", NativeAllocationLifetime.TempJob);
+                heights = AllocateTrackedTempJobArray<float>(CellCount, "heights", NativeArrayOptions.UninitializedMemory);
+                sediment = AllocateTrackedTempJobArray<float>(CellCount, "sediment", NativeArrayOptions.ClearMemory);
+                weights = AllocateTrackedTempJobArray<float4>(CellCount, "weights", NativeArrayOptions.UninitializedMemory);
+                slopeWeights = AllocateTrackedTempJobArray<float>(CellCount, "slopeWeights", NativeArrayOptions.UninitializedMemory);
 
                 FillSmokeInputs(heights, sediment);
 
@@ -148,9 +144,37 @@ namespace Hecton8.World
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
+        }
+
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, string label, NativeArrayOptions options)
+            where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+
             array.Dispose();
-            array = default;
+            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
     }
 }

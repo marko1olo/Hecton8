@@ -100,12 +100,8 @@ namespace Hecton8.Physics
 
         private void Awake()
         {
-            AmbientWaterMotionManager registered = GlobalRegistry.AmbientWaterMotion;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             RefreshDistanceThresholds();
             CacheRegistryServicesCold();
@@ -115,6 +111,9 @@ namespace Hecton8.Physics
         private void OnEnable()
         {
             _runtimeWaterMotionCallbacksActive = Application.isPlaying;
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             TryRegister();
@@ -156,17 +155,11 @@ namespace Hecton8.Physics
                     _ambientCurrentReadModel = currentService as IAmbientCurrentReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                    {
-                        _tickRegistered = false;
-                        _lateFrameRegistered = false;
-                        break;
-                    }
-
+                    TryUnregister();
                     if (isActiveAndEnabled)
                     {
-                        TryUnregister();
-                        TryRegister();
+                        if (currentService != null)
+                            TryRegister();
                     }
                     break;
             }
@@ -627,17 +620,55 @@ namespace Hecton8.Physics
             if (_serviceRegistered || !_runtimeWaterMotionCallbacksActive)
                 return;
 
-            AmbientWaterMotionManager registered = GlobalRegistry.AmbientWaterMotion;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterAmbientWaterMotionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.AmbientWaterMotion, this);
             if (_serviceRegistered)
                 s_activeRuntime = this;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            AmbientWaterMotionManager active = s_activeRuntime;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsAmbientWaterMotionRuntimeUsable(active))
+                {
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntime, active))
+                    s_activeRuntime = null;
+                if (ReferenceEquals(GlobalRegistry.AmbientWaterMotion, active))
+                    GlobalRegistry.UnregisterAmbientWaterMotionRuntime(active);
+            }
+
+            AmbientWaterMotionManager registered = GlobalRegistry.AmbientWaterMotion;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsAmbientWaterMotionRuntimeUsable(registered))
+            {
+                s_activeRuntime = registered;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterAmbientWaterMotionRuntime(registered);
+            if (ReferenceEquals(s_activeRuntime, registered))
+                s_activeRuntime = null;
+            return false;
+        }
+
+        private static bool IsAmbientWaterMotionRuntimeUsable(AmbientWaterMotionManager manager)
+        {
+            return manager != null &&
+                   manager._serviceRegistered &&
+                   manager._runtimeWaterMotionCallbacksActive &&
+                   manager.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()

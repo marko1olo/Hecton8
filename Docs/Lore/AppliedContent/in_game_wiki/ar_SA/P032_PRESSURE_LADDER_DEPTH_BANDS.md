@@ -7,6 +7,9 @@ poi_tags: poi.depth_gate;poi.pressure_bulkhead
 biome_tags: biome.crash_shelf;biome.service_canyon
 locale: ar_SA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "سلم الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

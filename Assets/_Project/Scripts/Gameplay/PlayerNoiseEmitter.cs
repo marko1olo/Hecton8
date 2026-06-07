@@ -81,10 +81,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            if (_registered)
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-
-            _registered = false;
+            TryUnregister();
             TryUnregisterHotSwapListener();
             ClearObservedToolReference();
             NoiseSystem.ClearPlayerSignal();
@@ -195,18 +192,41 @@ namespace Hecton8.Gameplay
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
-        private void ResolveReferencesFromRuntimeContext()
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+            _registered = false;
+        }
+
+        private void ResolveReferencesFromRuntimeContext(bool replaceExisting = false)
         {
             if (_cachedTransform == null)
                 _cachedTransform = transform;
 
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
 
-            if (_playerMovement == null && playerContext != null)
+            if ((_playerMovement == null || replaceExisting) && playerContext != null)
                 _playerMovement = playerContext.PlayerMovement;
 
-            if (_playerToolManager == null && playerContext != null)
+            if ((_playerToolManager == null || replaceExisting) && playerContext != null)
                 _playerToolManager = playerContext.ToolManager;
+
+            if ((_playerFlashlight == null || replaceExisting) && playerContext != null)
+                _playerFlashlight = playerContext.Flashlight;
+
+            if ((_playerTransportCoordinator == null || replaceExisting) && playerContext != null)
+                _playerTransportCoordinator = playerContext.PlayerTransportCoordinator;
+
+            if (replaceExisting && playerContext == null)
+            {
+                _playerMovement = null;
+                _playerToolManager = null;
+                _playerFlashlight = null;
+                _playerTransportCoordinator = null;
+            }
         }
 
         private void ResolveReferencesCold()
@@ -232,12 +252,19 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Player)
-                return;
-
-            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
-            if (_playerMovement == null || _playerToolManager == null)
-                ResolveReferencesFromRuntimeContext();
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    ResolveReferencesFromRuntimeContext(replaceExisting: true);
+                    RefreshObservedToolReference();
+                    break;
+            }
         }
 
         private void TryRegisterHotSwapListener()

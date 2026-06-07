@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "Tag Sensor Biometal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# Tag Sensor Biometal
 
-ID LOC HOLD: Biometal Sensor Tags connect resources, ecology and Atlas agency. They are not generic collectibles; they are material proof that the repair network has entered living systems.
+Tag sensor biometal bukan koleksi biasa. Itu terjadi ketika sistem perbaikan berhenti peduli apakah pembawanya mesin, pertumbuhan kabel, atau hewan. Tag itu sisik biometal tipis yang tumbuh ke jaringan, minum sedikit arus, merekam gerak, dan mengulang keyakinan lokasi lewat air. Marauder dapat memakainya untuk menyetel pinger, memperluas jangkauan scanner, atau membuktikan bahwa suatu rute masih hidup saat Atlas menyentuhnya. Kegunaan itulah masalahnya. Cabut tag dingin dan ia menjadi bukti. Cabut panas dan jaringan mungkin menyadari pembawa yang hilang, menjawab dengan balikan palsu, atau mengirim logika perbaikan menuju hewan terluka, kelp terpotong, atau penyelam yang memegang tag itu. Material ini memaksa pemain memperlakukan loot seperti berkas kasus: berguna, kotor, dan masih melapor.
 
 ## Scanner
 
-ID LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+TAG SENSOR BIOMETAL // Sisik logam tipis yang tumbuh pada ikan, kelp kabel, dan jaringan perbaikan. Memperbaiki setelan pinger; jika dipanen panas, Atlas bisa mendengar pembawa yang hilang.
 
 ## Terminal
 
-ID LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+KELAS SUMBER DAYA: diubah Atlas / peka bukti. Kegunaan: fokus pinger, kisi scanner, keyakinan rute, paket bukti. Panen dingin disarankan. Risiko: kenaikan perhatian, balikan pembawa palsu, fauna rusak.
 
 ## Audio
 
-ID LOC HOLD: The fish is not a drone. The tag does not know the difference.
+Ikan itu bukan drone. Tagnya tetap melapor.
 
 ## Field Note
 
-ID LOC HOLD: Make resource extraction feel like evidence handling.
+Jika berkedip di bawah pisau, rekam sebelum memotong.
 
 <!-- External Site; generated from P120_BIOMETAL_SENSOR_TAGS/id_ID. -->

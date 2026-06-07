@@ -7,6 +7,9 @@ poi_tags: poi.quarantine_hold_record;poi.biological_custody_tag
 biome_tags: biome.ending;biome.quarantine
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Quarantine Hold Interrogation Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

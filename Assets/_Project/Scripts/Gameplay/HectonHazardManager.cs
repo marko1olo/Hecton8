@@ -23,6 +23,13 @@ namespace Hecton8.Gameplay
         private static readonly int[] _radiationFacadeIds = new int[MaxTrackedRadiationFacadeIds];
         private static int _radiationFacadeIdCount;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            System.Array.Clear(_radiationFacadeIds, 0, _radiationFacadeIds.Length);
+            _radiationFacadeIdCount = 0;
+        }
+
         internal HazardZoneManager ResolveOrAddZoneManager()
         {
             return ResolveZoneManager();
@@ -67,7 +74,10 @@ namespace Hecton8.Gameplay
         internal static bool Register(int id, Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias, HazardZoneProfile profile)
         {
             if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition positionAup))
+            {
+                Unregister(id, type);
                 return false;
+            }
 
             return Register(id, in positionAup, intensity, radius, type, visorGlitchBias, profile);
         }
@@ -75,12 +85,28 @@ namespace Hecton8.Gameplay
         internal static bool Register(int id, in AbsoluteUniversePosition positionAup, float intensity, float radius, HazardType type, float visorGlitchBias, HazardZoneProfile profile)
         {
             if (!IsFiniteAup(in positionAup))
+            {
+                Unregister(id, type);
                 return false;
+            }
 
             if (type == HazardType.Radiation)
             {
-                if (!Application.isPlaying || id == 0 || !TrackRadiationFacadeId(id, out bool addedFacadeId))
+                if (!Application.isPlaying || id == 0)
                     return false;
+
+                if (!IsValidRadiationFacadeSourceInput(intensity, radius))
+                {
+                    _ = UntrackRadiationFacadeId(id);
+                    RadiationHazardGrid.UnregisterSource(id);
+                    return false;
+                }
+
+                if (!TrackRadiationFacadeId(id, out bool addedFacadeId))
+                {
+                    RadiationHazardGrid.UnregisterSource(id);
+                    return false;
+                }
 
                 if (addedFacadeId)
                 {
@@ -97,7 +123,14 @@ namespace Hecton8.Gameplay
                 RadiationHazardGrid.UnregisterSource(id);
 
             HazardZoneManager zoneManager = ResolveZoneManager();
-            return zoneManager != null && zoneManager.RegisterZone(id, in positionAup, intensity, radius, type, visorGlitchBias, profile);
+            if (zoneManager == null)
+                return false;
+
+            bool registered = zoneManager.RegisterZone(id, in positionAup, intensity, radius, type, visorGlitchBias, profile);
+            if (!registered)
+                zoneManager.UnregisterZone(id);
+
+            return registered;
         }
 
         /// <summary>
@@ -105,6 +138,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         public static void Unregister(int id)
         {
+            if (id == 0)
+                return;
+
             if (UntrackRadiationFacadeId(id))
                 RadiationHazardGrid.UnregisterSource(id);
 
@@ -115,6 +151,9 @@ namespace Hecton8.Gameplay
 
         public static void Unregister(int id, HazardType type)
         {
+            if (id == 0)
+                return;
+
             if (type == HazardType.Radiation)
             {
                 _ = UntrackRadiationFacadeId(id);
@@ -128,7 +167,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Returns the summed hazard intensity at a runtime world-space point.
+        /// Returns the bounded summed hazard intensity at a runtime world-space point.
         /// </summary>
         public static float GetHazardIntensity(Vector3 runtimePoint, HazardType type)
         {
@@ -145,7 +184,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Returns the summed hazard intensity at an absolute-universe point without exposing the World AUP type to callers.
+        /// Returns the bounded summed hazard intensity at an absolute-universe point without exposing the World AUP type to callers.
         /// </summary>
         public static float GetHazardIntensity(double3 absolutePoint, HazardType type)
         {
@@ -163,7 +202,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Returns the summed hazard intensity at an absolute-universe point.
+        /// Returns the bounded summed hazard intensity at an absolute-universe point.
         /// </summary>
         public static float GetHazardIntensity(in AbsoluteUniversePosition pointAup, HazardType type)
         {
@@ -200,6 +239,14 @@ namespace Hecton8.Gameplay
                 return environmentContext.HazardZones;
 
             return GlobalRegistry.HazardZones;
+        }
+
+        private static bool IsValidRadiationFacadeSourceInput(float intensity, float radius)
+        {
+            return math.isfinite(intensity) &&
+                   intensity > 0f &&
+                   math.isfinite(radius) &&
+                   radius > 0f;
         }
 
         private static bool TrackRadiationFacadeId(int id, out bool added)

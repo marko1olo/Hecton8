@@ -149,10 +149,19 @@ namespace Hecton8.Core.Bridge
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                s_registered = false;
+                UnregisterRunnerLateFrame();
                 if (HasPendingRequests())
                     RegisterRunnerCold();
             }
+        }
+
+        private static void UnregisterRunnerLateFrame()
+        {
+            if (!s_registered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(s_runner, PriorityLayer.Core);
+            s_registered = false;
         }
 
         private static void FlushLateFrame()

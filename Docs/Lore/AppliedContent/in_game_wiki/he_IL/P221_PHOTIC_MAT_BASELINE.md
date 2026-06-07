@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Photic Mat Baseline"
+title: "קו בסיס מרבד פוטי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Photic Mat Baseline
+# קו בסיס מרבד פוטי
 
-HE LOC HOLD: Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.
+מרבדים פוטיים הם החיים הרדודים הראשונים שיכולים לעזור לשחקן לנשום ועדיין להעניש קציר רשלני. הסרט גדל במקום שבו אור, נגר מינרלי ומים איטיים נפגשים, ומכסה סלע בצבע עשיר בחמצן. מרכז בריא נראה רך ובהיר; שוליים קשים ממלח פירושם שכימיית לחץ או תשתית ישנה מלחיצות את הכיס. המרבד משנה גם את הצליל: צמיחה טובה מעמעמת פגיעות קטנות, בעוד תפרים מזוהמים מקליקים ומבעבעים תחת המגרד. חתוך רק שוליים חופשיים כשצריך סיב או כימיית חמצן. קריעת המרכז הבהיר ליד פתח, צינור או לוח אטום יכולה להפיל חמצן מקומי ולחשוף את מה שהמרבד החזיק למטה.
 
 ## Scanner
 
-HE LOC HOLD: Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.
+מרבד פוטי // סרט חי שניזון ממינרלים על סלע רדוד. פסים בהירים מחמצנים מים; שוליים קשים ממלח מסמנים כימיית לחץ מתוחה ודליפות תפר נסתרות.
 
 ## Terminal
 
-HE LOC HOLD: ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.
+קו בסיס אקולוגי: ממפה עור חמצן, נגר מינרלי, דעיכה אקוסטית ומתח שולי מלח. לקצור רק שוליים חופשיים. קריעה ליד תפרים או ציוד אטום עלולה להפיל כיס לזיהום.
 
 ## Audio
 
-HE LOC HOLD: It looks clean because it is working hard. That is not the same as safe.
+זה נראה נקי כי זה עובד. זה לא אותו דבר כמו בטוח.
 
 ## Field Note
 
-HE LOC HOLD: Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.
+אל תגרד קודם את הכתם הבהיר ביותר. קרא את הקצה, הבועות והצליל; המרבד הוא מד לפני שהוא משאב.
 
 <!-- In-Game Wiki; generated from P221_PHOTIC_MAT_BASELINE/he_IL. -->

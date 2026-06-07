@@ -7,6 +7,9 @@ poi_tags: poi.orbit_dossier;poi.signal_mast
 biome_tags: biome.storm_shelf;biome.orbit_window
 locale: nl_NL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Maanladder van Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Brine Vane Forests"
+title: "Ліси розсольних лопатей"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Brine Vane Forests
+# Ліси розсольних лопатей
 
-UA LOC HOLD: Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.
+Ліси розсольних лопатей - перша середньоглибинна екологія, що робить невидиму фізику видимою. Це плоскі соле-мінеральні мембрани, натягнуті вздовж меж між розсолом, температурою і тиском. Здалеку вони схожі на бліде листя в затопленому каньйоні; зблизька це маршрутні прилади. Цілий лист означає, що вода з іншого боку не просто інша, а важка для входу, зі зсувом щільності, достатнім, щоб зігнути сонар і збити тіло з trim. Рвані краї позначають недавній прохід. Закручені кінці показують, де межа слабшає у вікно зсуву. Бліді мінеральні ребра можна збирати зі скинутих смуг, але зріз живого листа може закрити єдину читабельну смугу крізь стіну каньйону. Іди за рваними лопатями, коли потрібен маршрут. Уникай чорної шаруватої води, що стирає їхні краї.
 
 ## Scanner
 
-UA LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+ЛІС РОЗСОЛЬНИХ ЛОПАТЕЙ // Соле-мінеральні мембрани ростуть уздовж зсуву щільності. Вони показують, де вода густішає у стіну і де сонар почне згинатися.
 
 ## Terminal
 
-UA LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+БАЗА КАНЬЙОНУ: цілі листи лопатей позначають жорсткі межі щільності. Рвані краї й закручені кінці вказують на вікна зсуву, менш солоні кишені або недавній рух. Уникай непрозорої шаруватої води; вона може засліпити сонар і потягти костюм нижче очікуваної плавучості.
 
 ## Audio
 
-UA LOC HOLD: The canyon has leaves because it has pressure gradients.
+У каньйону є листя, бо в нього є градієнти тиску.
 
 ## Field Note
 
-UA LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+Це не дерева. Це листя тиску: мембрани, що живляться хімічними градієнтами й рвуться лише там, де маршрут недавно продавився наскрізь.
 
 <!-- In-Game Wiki; generated from P226_BRINE_VANE_FORESTS/uk_UA. -->

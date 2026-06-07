@@ -7,6 +7,9 @@ poi_tags: poi.ru_review_card;poi.cyrillic_width_sample
 biome_tags: biome.localization;biome.review
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Russian Operational Voice Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -22,6 +23,7 @@ namespace Hecton8.EditorTools
         private const string ProfileCsvPath = "Assets/_Project/Data/TechArt/texture_packing_profiles.csv";
         private const string DefaultOutputFolder = "Assets/_Project/BakedGeometry/Textures";
         private const int PreviewSize = 256;
+        private const string NativeMemoryOwner = nameof(TextureChannelPackerWindow);
 
         private readonly List<TexturePackingProfile> _profiles = new List<TexturePackingProfile>(8); // COLD ALLOC: List<TexturePackingProfile>[8] - editor profile cache - owner: TextureChannelPackerWindow
         private readonly List<string> _profileNames = new List<string>(8); // COLD ALLOC: List<string>[8] - editor popup labels - owner: TextureChannelPackerWindow
@@ -405,9 +407,9 @@ namespace Hecton8.EditorTools
             {
                 snapshot = CaptureReadableTexture(source, PreviewSize, PreviewSize);
                 NativeArray<Color32> sourcePixels = snapshot.GetRawTextureData<Color32>();
-                ao = new NativeArray<Color32>(sourcePixels.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[preview] - editor AO preview - owner: TextureChannelPackerWindow
-                roughness = new NativeArray<Color32>(sourcePixels.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[preview] - editor roughness preview - owner: TextureChannelPackerWindow
-                metallic = new NativeArray<Color32>(sourcePixels.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[preview] - editor metallic preview - owner: TextureChannelPackerWindow
+                ao = TexturePackerEditorNativeMemory.AllocateArray<Color32>(sourcePixels.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, NativeMemoryOwner, nameof(ao)); // COLD ALLOC: NativeArray<Color32>[preview] - editor AO preview - owner: TextureChannelPackerWindow
+                roughness = TexturePackerEditorNativeMemory.AllocateArray<Color32>(sourcePixels.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, NativeMemoryOwner, nameof(roughness)); // COLD ALLOC: NativeArray<Color32>[preview] - editor roughness preview - owner: TextureChannelPackerWindow
+                metallic = TexturePackerEditorNativeMemory.AllocateArray<Color32>(sourcePixels.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, NativeMemoryOwner, nameof(metallic)); // COLD ALLOC: NativeArray<Color32>[preview] - editor metallic preview - owner: TextureChannelPackerWindow
 
                 new HectonArmTextureChannelPacker.ExtractArmPreviewJob
                 {
@@ -430,12 +432,9 @@ namespace Hecton8.EditorTools
             {
                 if (snapshot != null)
                     Object.DestroyImmediate(snapshot);
-                if (ao.IsCreated)
-                    ao.Dispose();
-                if (roughness.IsCreated)
-                    roughness.Dispose();
-                if (metallic.IsCreated)
-                    metallic.Dispose();
+                TexturePackerEditorNativeMemory.DisposeArray(ref ao);
+                TexturePackerEditorNativeMemory.DisposeArray(ref roughness);
+                TexturePackerEditorNativeMemory.DisposeArray(ref metallic);
             }
         }
 
@@ -581,6 +580,64 @@ namespace Hecton8.EditorTools
         }
     }
 
+    internal static class TexturePackerEditorNativeMemory
+    {
+        internal static NativeArray<T> AllocateArray<T>(int length, Allocator allocator, NativeArrayOptions options, string owner, string label) where T : struct
+        {
+            if (length <= 0)
+                return default;
+
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[TexturePackerEditorNativeMemory] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, owner, label, ResolveNativeAllocationLifetime(allocator));
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("[TexturePackerEditorNativeMemory] NativeMemorySentinel rejected NativeArray registration for " + owner + "." + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        internal static void DisposeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
+        }
+
+        private static NativeAllocationLifetime ResolveNativeAllocationLifetime(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return NativeAllocationLifetime.Temp;
+                case Allocator.TempJob:
+                    return NativeAllocationLifetime.TempJob;
+                case Allocator.Persistent:
+                    return NativeAllocationLifetime.Session;
+                default:
+                    return NativeAllocationLifetime.Session;
+            }
+        }
+    }
+
     internal static unsafe class TexturePackingProfileCsv
     {
         private const uint HashNone = 0xADA7AFDBu;
@@ -600,6 +657,7 @@ namespace Hecton8.EditorTools
         private const uint HashInvert = 0x316C9FA1u;
         private const uint HashSmoothness = 0xA29A2330u;
         private const uint HashI = 0xEC0C35C4u;
+        private const string NativeMemoryOwner = nameof(TexturePackingProfileCsv);
 
         internal static void Load(string assetPath, List<TexturePackingProfile> profiles)
         {
@@ -626,7 +684,7 @@ namespace Hecton8.EditorTools
                     }
 
                     int length = (int)length64;
-                    bytes = new NativeArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[csv bytes] - editor profile CSV buffer - owner: TexturePackingProfileCsv
+                    bytes = TexturePackerEditorNativeMemory.AllocateArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory, NativeMemoryOwner, nameof(bytes)); // COLD ALLOC: NativeArray<byte>[csv bytes] - editor profile CSV buffer - owner: TexturePackingProfileCsv
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(bytes);
                     int read = 0;
                     while (read < length)
@@ -648,8 +706,7 @@ namespace Hecton8.EditorTools
             }
             finally
             {
-                if (bytes.IsCreated)
-                    bytes.Dispose();
+                TexturePackerEditorNativeMemory.DisposeArray(ref bytes);
             }
 
             if (profiles.Count == 0)

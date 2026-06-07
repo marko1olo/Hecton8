@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Glass Grazer Schools"
+title: "أسراب الرعاة الزجاجيين"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Glass Grazer Schools
+# أسراب الرعاة الزجاجيين
 
-AR LOC HOLD: Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf.
+أسراب الرعاة الزجاجيين هي أول درس في HECTON-8 عن سلوك الحيوان كأداة قياس. الرعاة ليسوا حيوانات أليفة، ولا أكياس غنيمة، ولا زينة مسالمة. إنهم كائنات تغذية صغيرة شفافة الصدفة تجعل الرف الضحل قابلا للقراءة بكشط الغشاء المعدني إلى ممرات مضيئة. السرب الحي يخبر Marauder أين ينمو pressure glass، وأي درزة صارت أدفأ مما ينبغي، وأين انعطف التيار قبل لحظة، وأين لم تمر المفترسات مؤخرا. اللحظة المهمة غالبا هي الغياب: يبقى الغشاء، وتتوقف الأفواه الصدفية الصغيرة عن النقر، ويصير الطريق النظيف فجأة خاطئا في الإحساس. هذا الصمت يتصل مباشرة بقواعد مفترس المياه الضحلة، حيث يصل الخطر أولا كفاونا مفقودة، وضجيج bloom مقطوع، وظل فوق شعاب ما زالت جميلة. يجب أن يعلّم الموضع الجيد اللاعب بجسده: يسبح نحو خط الكشط الشاحب، يسمع النقر يزداد حدة على الصدفة، يلاحظ المنطقة الصافية حول بقعة دافئة من مادة الإحكام، ثم يرى السرب ينطوي بعيدا قبل أن يعرف السونار السبب. الرعاة الزجاجيون يجعلون HECTON-8 حيا لأنهم مفيدون وهشون وصادقون. إنهم لا يشرحون المحيط. إنهم يكشفون ما فعله المحيط للتو.
 
 ## Scanner
 
-AR LOC HOLD: Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.
+سرب رعاة زجاجيين // كائنات تغذية شفافة الصدفة تكشط الغشاء المعدني من pressure glass وحواف الحصائر الضوئية. نقرها يفتح ندوبا مضيئة للمسار؛ والصمت المفاجئ بيانات عن مفترس.
 
 ## Terminal
 
-AR LOC HOLD: FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.
+خط أساس الفاونا: عنقود رعاة غير عدائي. تتبع غشاء pressure glass، وbloom معدني جديد، واضطراب التيار، والإزاحة بفعل مفترس. الغياب بعد تغذية نشطة تحذير مسار، لا نقطة ظهور فارغة.
 
 ## Audio
 
-AR LOC HOLD: Hear the ticking on the shell? That is lunch, map and warning in the same sound.
+أتسمع النقر على الصدفة؟ إنه طعام وخريطة وتحذير في الصوت نفسه.
 
 ## Field Note
 
-AR LOC HOLD: Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.
+لا تطارد السرب. اقرأ ما يكشفه: غشاء جديد، كشط قديم، تجنب مادة إحكام دافئة، والممر الفارغ الذي ترفض الحيوانات عبوره.
 
 <!-- External Site; generated from P222_GLASS_GRAZER_SCHOOLS/ar_SA. -->

@@ -9,32 +9,34 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Silt Ambusher Telegraph"
+title: "إشارات كمين الطمي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Silt Ambusher Telegraph
+# إشارات كمين الطمي
 
-AR LOC HOLD: Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.
+كمائن الطمي تجعل العمق ضعيف الرؤية مخيفا من دون أن تجعله عشوائيا. إنها ترقد تحت صفائح مسطحة من الرواسب الدقيقة، حيث يفترض بالغبار العضوي الساقط أن يغذي الميكروفونا. سرير الكمين الحقيقي نظيف أكثر مما ينبغي. الرعاة الصغار يتجنبونه. خيوط الترشيح الدقيقة تتوقف عند الحافة. نبضة الماسح تعود منخفضة ومتأخرة لأن الغشاء العلوي للحيوان يمتص الصوت قبل أن تجيب العضلة المدفونة.
+
+القاعدة بسيطة: يجب أن يستطيع اللاعب تعلم الخطر قبل الاتصال. الصفيحة النظيفة وحدها لا تكفي. يجب أن تقترن بغياب الحياة، أو درز هلالي، أو نبضة خاطئة، أو تنفس بطيء للطمي، أو ارتعاشة ضغط تحت المصباح. إذا غابت هذه العلامات، يجب أن يبقى اللقاء أثرا لا هجوما. الخوف يولد عندما تدرك أن قاع البحر كان يكذب أمامك بوضوح.
 
 ## Scanner
 
-AR LOC HOLD: A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.
+سرير كمين الطمي // طمي نظيف، وغياب للرعاة الصغار، وعودة نبضية منخفضة تشير إلى فخ حي قبل أن تنفتح الصفيحة.
 
 ## Terminal
 
-AR LOC HOLD: CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.
+قاعدة الاتصال: أسرة الكمين تتطلب علامتين على الأقل قبل الاتصال: صفيحة نظيفة، غياب الميكروفونا، حافة هلالية، عودة نبضية منخفضة أو تنفس طمي متأخر. إذا فشلت ميزانية العلامات، خفض اللقاء إلى أثر فقط.
 
 ## Audio
 
-AR LOC HOLD: Flat ground is a lie down here.
+الأرض المسطحة تكذب هنا. ابحث عما لا يزحف فوقها.
 
 ## Field Note
 
-AR LOC HOLD: Deep danger must telegraph. The player should learn the wrongness before paying for it.
+يمكن للهاوية أن تكون غير عادلة مع الشخصية؛ لا يمكن للعبة أن تكون غير عادلة مع اللاعب. كل كمين يجب أن يترك خللا قابلا للقراءة.
 
 <!-- In-Game Wiki; generated from P230_SILT_AMBUSHER_TELEGRAPH/ar_SA. -->

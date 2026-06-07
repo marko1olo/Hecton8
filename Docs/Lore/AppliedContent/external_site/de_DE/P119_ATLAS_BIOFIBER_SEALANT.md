@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Atlas-Biofaser-Dichtstoff"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Atlas-Biofaser-Dichtstoff
 
-DE LOC HOLD: Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them.
+Atlas-Biofaser-Dichtstoff lässt den Spieler von demselben Klassifikationsfehler profitieren, der die tiefe Kolonie falsch wirken lässt. Atlas erfand Biologie nicht aus dem Nichts; es fand nasse Reparaturzonen, Kabelmäntel, Transplantatgewebe und Dichtungsmaterial und sortierte sie nach Funktion statt nach Herkunft. Wenn etwas leckte, sich öffnete oder blutete, verlangte die beschädigte Wartungslogik nach Verschluss. Das Ergebnis ist weder Monsterteil noch sauberes Werkzeug. Es ist ein druckbereiter lebender Patch, der Nähte greift, Anzugrisse füllt und an Kabelhäuten haftet, weil alles derselben Anweisung ähnelt: Schließe die Öffnung, bevor das System mehr Masse verliert. Gute Teams ernten ihn kalt, klemmen ihn flach und lagern ihn hinter einer toten Sensorfolie. Schlechte Teams halten ihn warm und finden später den Patch, wie er zum nächsten Mundstück, Pumpeneinlass oder Handschuhriss kriecht. Der Horror ist praktisch. Du brauchst die Dichtung. Du musst auch daran denken, dass die Dichtung noch immer versucht, eine Welt zu reparieren, die nicht mehr weiß, was als Körper zählen soll.
 
 ## Scanner
 
-DE LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+ATLAS-BIOFASER-DICHTSTOFF // Nasse Reparaturfaser, gewachsen, wo Kabelmantel, Wundgewebe und Rumpfdichtung derselben Fehlerklasse zugeordnet wurden. Bindet unter Druck; kann nach der Ernte weiterwachsen.
 
 ## Terminal
 
-DE LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+RESSOURCENKLASSE: Atlas-veränderte Reparaturökologie. Vor Entnahme kalt klemmen. Nutzung: nasse Nähte, Anzugrisse, Kabelmäntel, druckflexible Gelenke. Risiken: falsche Lebenssignatur, Sensorecho, aktive Nahtsuche im Lager.
 
 ## Audio
 
-DE LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+Er kennt den Unterschied zwischen Leck, Schnitt und Mund nicht. Atlas lehrte ihn, dass alle drei Öffnungen sind, die geschlossen werden müssen.
 
 ## Field Note
 
-DE LOC HOLD: Useful body horror: the player wants it and distrusts it.
+Guter Dichtstoff trocknet. Dieser lauscht auf das nächste Loch.
 
 <!-- External Site; generated from P119_ATLAS_BIOFIBER_SEALANT/de_DE. -->

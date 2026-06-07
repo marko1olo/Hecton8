@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Noble Gas Brine Pockets"
+title: "Kieszenie solanki z gazami szlachetnymi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Noble Gas Brine Pockets
+# Kieszenie solanki z gazami szlachetnymi
 
-PL LOC HOLD: Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.
+Kieszenie solanki z gazami szlachetnymi to uszczelnione zapisy ciśnienia w mineralnych solankach HECTON-8. Użyteczna kieszeń nie jest po prostu ksenonem w wodzie; to proporcja gazów, krzywa ciśnienia, blizna termiczna i sieć defektów mineralnych utrzymane razem dość długo, by dowieść, co działo się pod ziemią. Odpowietrzenie niszczy i wartość, i dowód. Te próbki są ważne, bo procesy Deep Reach, a później Atlas, mogą pchnąć właściwy wsad o właściwej historii ciśnienia ku Xenon-Omega, ale surowa kieszeń pozostaje geologią, nie skarbem samym w sobie.
 
 ## Scanner
 
-PL LOC HOLD: Natural-to-process resource. Valuable only if pressure history survives extraction.
+KIESZEŃ SOLANKI Z GAZAMI SZLACHETNYMI // Uszczelniony bąbel ciśnienia w solance mineralnej. Wartość przetrwa tylko, jeśli historia ciśnienia zostanie zamknięta; odpowietrz ją, a fortuna zmieni się w pogodę.
 
 ## Terminal
 
-PL LOC HOLD: RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+KLASA ZASOBU: rodzime/procesowe medium wsadowe. Użyć ekstrakcji dzwonem ciśnieniowym. Nie odpowietrzać ani nie ogrzewać próbki. Wymagane dowody: krzywa ciśnienia, proporcja gazów, mapa defektów minerału.
 
 ## Audio
 
-PL LOC HOLD: Open it wrong and the fortune becomes weather.
+Xenon-Omega zaczyna się tutaj jako uwięziona chemia, nie cudowna ruda.
 
 ## Field Note
 
-PL LOC HOLD: This is where Xenon-Omega begins as chemistry, not magic.
+Nie otwieraj kieszeni, żeby sprawdzić, czy jest bogata. Tak biedne załogi robią bąbelki.
 
 <!-- In-Game Wiki; generated from P117_NOBLE_GAS_BRINE_POCKETS/pl_PL. -->

@@ -7,31 +7,34 @@ poi_tags: poi.freight_drive_plate;poi.seed_ship_manifest
 biome_tags: biome.carrier_link;biome.relay_shadow
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Пеллетно-термоядерные грузовые рейсы"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-fusion грузовые рейсы
+# Пеллетно-термоядерные грузовые рейсы
 
-Pellet-fusion грузовые рейсы задают индустриальную историю кораблей за HECTON-8. Маршрут правдоподобен, потому что машины и тяжелый груз двигались через staged infrastructure; он остается жестоким, потому что каждый килограмм, braking window и survivor seat попадает в учет.
+Пеллетно-термоядерный фрахт это индустриальная история за HECTON-8. Машины и тяжёлый груз добрались до Aegir потому, что инфраструктура могла десятилетиями толкать, кормить, защищать и тормозить массу; маршрут остаётся жестоким, потому что учёт живёт дольше аварии.
 
 ## Scanner
 
-Drive plate. Тяжелые корабли пересекали маршрут как staged freight: разгон, coast, торможение, учет потерь.
+Пластина двигателя. Пеллетно-термоядерные грузовики шли как инфраструктура: разгон, щит, дрейф, торможение и счёт за потери.
 
 ## Terminal
 
-FREIGHT DOCTRINE: Atlas-class seed payloads и colony freight использовали external staging, pellet-beam assisted fusion, magsail braking и длинные coast intervals. Living cargo прибыл после того, как машины сделали маршрут оплачиваемым.
+ГРУЗОВАЯ ДОКТРИНА: seed-грузы класса Atlas и колониальный фрахт использовали разгон лучевым парусом, пеллетное термоядерное питание, магнитопарусное торможение и долгие интервалы дрейфа. Живой груз прибыл после того, как машины сделали маршрут оплачиваемым.
 
 ## Audio
 
-Тяжелый корабль - не чудо. Это ипотека с двигателями.
+Тяжёлый корабль не чудо. Это ипотека с двигателями.
 
 ## Field Note
 
-Тяжелый transit должен ощущаться индустриальным и старым, а не героическим.
+Тяжёлый транзит не героичен. Это старый маршрутный контракт с тепловыми шрамами.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/ru_RU. -->

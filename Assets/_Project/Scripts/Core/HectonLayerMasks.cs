@@ -29,6 +29,12 @@ namespace Hecton8.Core
         public const uint AllDefinedProjectRenderingLayerMaskValue =
             (1u << 23) - 1u;
 
+        /// <summary>Compile-time terrain/SDF host mask for resource-node placement authoring.</summary>
+        public const int TerrainSdfProbeLayerMaskValue =
+            (1 << 7) |
+            (1 << 12) |
+            (1 << 21);
+
         /// <summary>No Unity layers.</summary>
         public static readonly int NoLayers = 0;
 
@@ -194,9 +200,13 @@ namespace Hecton8.Core
              BaseModuleLayerMask |
              VehicleLayerMask |
              VoxelCaveLayerMask |
+             VoxelProxyLayerMask |
              DebrisLayerMask) &
             ~UILayerMask &
             ~IgnoreRaycastLayerMask;
+
+        /// <summary>Terrain/SDF surface layers accepted by ground, seabed, and snap probes.</summary>
+        public static readonly int TerrainSdfProbeLayerMask = TerrainSdfProbeLayerMaskValue;
 
         /// <summary>Mounted-player sweep mask for vehicle/structure obstruction probes.</summary>
         public static readonly int MountedSweepLayerMask =
@@ -206,7 +216,17 @@ namespace Hecton8.Core
             StrictInteractionLayerMask |
             VehicleLayerMask |
             VoxelCaveLayerMask |
+            VoxelProxyLayerMask |
             DebrisLayerMask;
+
+        /// <summary>Primary handheld tool surface target mask, excluding player, water, UI, presentation, and authoring-only layers.</summary>
+        public static readonly int FieldToolSurfaceLayerMask = MountedSweepLayerMask;
+
+        /// <summary>Scanner/analyzer target mask, extending physical surfaces with trigger and brine hazard zones.</summary>
+        public static readonly int FieldToolScanLayerMask =
+            FieldToolSurfaceLayerMask |
+            TriggerZoneLayerMask |
+            BrineToxicityLayerMask;
 
         /// <summary>All populated project layers, capped to the explicitly authored project layer set.</summary>
         public static readonly int AllDefinedProjectLayersMask =
@@ -263,10 +283,73 @@ namespace Hecton8.Core
             return layerMask < 0 ? AllDefinedProjectLayersMask : layerMask;
         }
 
+        /// <summary>Resolves serialized probe masks so legacy strict/empty settings still hit terrain and voxel surfaces.</summary>
+        public static int ResolveTerrainSdfProbeLayerMask(int layerMask)
+        {
+            if (layerMask == 0 || IsEverythingLayerMask(layerMask))
+                return TerrainSdfProbeLayerMask;
+
+            int sanitizedMask = SanitizeAuthoringLayerMask(layerMask);
+            if (layerMask == StrictInteractionLayerMask)
+                return sanitizedMask | TerrainSdfProbeLayerMask;
+
+            return IncludesAnyLayer(sanitizedMask, TerrainSdfProbeLayerMask)
+                ? sanitizedMask | TerrainSdfProbeLayerMask
+                : sanitizedMask;
+        }
+
+        /// <summary>Resolves resource-node host layers; legacy strict masks become terrain/SDF hosts.</summary>
+        public static int ResolveResourceNodeHostLayerMask(int layerMask)
+        {
+            if (layerMask == 0 ||
+                IsEverythingLayerMask(layerMask) ||
+                layerMask == StrictInteractionLayerMask)
+            {
+                return TerrainSdfProbeLayerMask;
+            }
+
+            int sanitizedMask = SanitizeAuthoringLayerMask(layerMask);
+            return IncludesAnyLayer(sanitizedMask, TerrainSdfProbeLayerMask)
+                ? sanitizedMask | TerrainSdfProbeLayerMask
+                : sanitizedMask;
+        }
+
+        /// <summary>Resolves tool surface masks while preserving explicit broad/custom masks.</summary>
+        public static int ResolveSurfaceInteractionLayerMask(int layerMask)
+        {
+            if (layerMask == 0)
+                return 0;
+
+            int sanitizedMask = SanitizeAuthoringLayerMask(layerMask);
+            if (layerMask == StrictInteractionLayerMask)
+                return sanitizedMask | TerrainSdfProbeLayerMask;
+
+            return IncludesAnyLayer(sanitizedMask, TerrainSdfProbeLayerMask)
+                ? sanitizedMask | TerrainSdfProbeLayerMask
+                : sanitizedMask;
+        }
+
+        /// <summary>Resolves scanner/advice masks; legacy strict/everything authoring becomes the full field scan lane.</summary>
+        public static int ResolveFieldToolScanLayerMask(int layerMask)
+        {
+            if (layerMask == 0)
+                return 0;
+
+            if (layerMask == StrictInteractionLayerMask || IsEverythingLayerMask(layerMask))
+                return FieldToolScanLayerMask;
+
+            return ResolveSurfaceInteractionLayerMask(layerMask);
+        }
+
         /// <summary>Maps an int layer mask to the renderer-safe unsigned payload used by GPU draw APIs.</summary>
         public static uint ToRenderingLayerMask(int layerMask)
         {
             return (uint)SanitizeAuthoringLayerMask(layerMask) & AllDefinedProjectRenderingLayerMaskValue;
+        }
+
+        private static bool IncludesAnyLayer(int layerMask, int requiredLayers)
+        {
+            return (layerMask & requiredLayers) != 0;
         }
     }
 }

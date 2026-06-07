@@ -7,6 +7,9 @@ poi_tags: poi.pressure_clamp_ring;poi.cold_sealant_patch
 biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Pressure Seal Clamp Ring Assembly"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

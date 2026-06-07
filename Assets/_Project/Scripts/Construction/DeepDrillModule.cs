@@ -300,7 +300,7 @@ namespace Hecton8.Construction
                     origin,
                     Vector3.down,
                     math.max(0.001f, placementProbeHeight + placementProbeDistance),
-                    seabedMask.value,
+                    HectonLayerMasks.ResolveTerrainSdfProbeLayerMask(seabedMask.value),
                     QueryTriggerInteraction.Ignore,
                     out InteractionSurfaceHit hit))
             {
@@ -376,17 +376,9 @@ namespace Hecton8.Construction
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            if (currentService == null)
-            {
-                _registered = false;
-                return;
-            }
-
-            if (isActiveAndEnabled)
-            {
-                TryUnregister();
+            TryUnregister();
+            if (currentService != null && isActiveAndEnabled)
                 TryRegister();
-            }
         }
 
         private bool CanAccumulateMoreOutput()

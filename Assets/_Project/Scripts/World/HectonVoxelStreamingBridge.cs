@@ -815,13 +815,9 @@ namespace Hecton8.World
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
                     if (currentService != null && isActiveAndEnabled)
-                    {
-                        _registeredTick = false;
-                        _registeredSlowTick = false;
-                        _registeredLateFrame = false;
                         TryRegister();
-                    }
                     return;
 
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:

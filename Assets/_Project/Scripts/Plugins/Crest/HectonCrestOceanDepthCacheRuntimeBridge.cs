@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Crest;
+using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -15,6 +16,8 @@ namespace Hecton8.World
     internal static unsafe class HectonCrestOceanDepthCacheRuntimeBridge
     {
         private const float HectonMinimumCameraHeightAboveSeaLevel = 8f;
+        private const string NativeMemoryOwner = nameof(HectonCrestOceanDepthCacheRuntimeBridge);
+        private const string DepthCacheReadbackPixelsLabel = "depthCacheReadbackPixels";
         private static readonly bool HectonRuntimeDepthCacheCameraDisabled = true;
 
         internal static void HectonConfigureRealtimeCapture(
@@ -97,53 +100,138 @@ namespace Hecton8.World
                 cacheWidth * cacheHeight,
                 Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
-            UnityEngine.Rendering.AsyncGPUReadbackRequest readbackRequest = UnityEngine.Rendering.AsyncGPUReadback.RequestIntoNativeArray(
-                ref readbackPixels,
-                cacheTexture,
-                0,
-                TextureFormat.RGBA32,
-                request =>
+            ReadbackDisposalState readbackDisposalState;
+            try
             {
-                NativeArray<byte> pngBytes = default;
-                try
+                int readbackSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    readbackPixels,
+                    NativeMemoryOwner,
+                    DepthCacheReadbackPixelsLabel,
+                    NativeAllocationLifetime.Session);
+                if (readbackSentinelId <= 0)
+                    throw new InvalidOperationException("Native memory sentinel registration failed for Crest depth-cache readback pixels.");
+
+                readbackDisposalState = new ReadbackDisposalState(
+                    readbackSentinelId);
+            }
+            catch
+            {
+                if (readbackPixels.IsCreated)
+                    readbackPixels.Dispose();
+
+                throw;
+            }
+
+            UnityEngine.Rendering.AsyncGPUReadbackRequest readbackRequest;
+            try
+            {
+                readbackRequest = UnityEngine.Rendering.AsyncGPUReadback.RequestIntoNativeArray(
+                    ref readbackPixels,
+                    cacheTexture,
+                    0,
+                    TextureFormat.RGBA32,
+                    request =>
                 {
-                    if (request.hasError)
-                        return;
-
-                    pngBytes = ImageConversion.EncodeNativeArrayToPNG(
-                        readbackPixels,
-                        GraphicsFormat.R8G8B8A8_UNorm,
-                        (uint)cacheWidth,
-                        (uint)cacheHeight,
-                        0u);
-
-                    if (pngBytes.IsCreated && pngBytes.Length > 0)
+                    NativeArray<byte> pngBytes = default;
+                    try
                     {
-                        byte* pngPointer = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(pngBytes);
-                        using FileStream stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read, 65536, FileOptions.SequentialScan);
-                        stream.Write(new ReadOnlySpan<byte>(pngPointer, pngBytes.Length));
-                    }
-                }
-                finally
-                {
-                    if (pngBytes.IsCreated)
-                        pngBytes.Dispose();
+                        if (request.hasError)
+                            return;
 
-                    if (readbackPixels.IsCreated)
-                        readbackPixels.Dispose();
-                }
-            });
+                        pngBytes = ImageConversion.EncodeNativeArrayToPNG(
+                            readbackPixels,
+                            GraphicsFormat.R8G8B8A8_UNorm,
+                            (uint)cacheWidth,
+                            (uint)cacheHeight,
+                            0u);
+
+                        if (pngBytes.IsCreated && pngBytes.Length > 0)
+                        {
+                            byte* pngPointer = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(pngBytes);
+                            using FileStream stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read, 65536, FileOptions.SequentialScan);
+                            stream.Write(new ReadOnlySpan<byte>(pngPointer, pngBytes.Length));
+                        }
+                    }
+                    finally
+                    {
+                        if (pngBytes.IsCreated)
+                            pngBytes.Dispose();
+
+                        DisposeRegisteredReadbackPixels(readbackPixels, readbackDisposalState);
+                    }
+                });
+            }
+            catch
+            {
+                DisposeRegisteredReadbackPixels(readbackPixels, readbackDisposalState);
+                throw;
+            }
 
             if (!readbackRequest.hasError)
                 return true;
 
-            if (readbackPixels.IsCreated)
-                readbackPixels.Dispose();
+            DisposeRegisteredReadbackPixels(readbackPixels, readbackDisposalState);
 
             return false;
 #else
             return false;
 #endif
+        }
+
+        private static void DisposeRegisteredReadbackPixels(
+            NativeArray<Color32> readbackPixels,
+            ReadbackDisposalState readbackDisposalState)
+        {
+            if (readbackDisposalState == null ||
+                System.Threading.Interlocked.Exchange(ref readbackDisposalState.Disposed, 1) != 0)
+            {
+                return;
+            }
+
+            bool unregistered = false;
+            try
+            {
+                if (readbackDisposalState.SentinelId > 0)
+                {
+                    NativeMemorySentinel.Unregister(readbackDisposalState.SentinelId);
+                    readbackDisposalState.SentinelId = 0;
+                    unregistered = true;
+                }
+                else
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(readbackPixels);
+                }
+
+                if (readbackPixels.IsCreated)
+                    readbackPixels.Dispose();
+            }
+            catch
+            {
+                System.Threading.Volatile.Write(ref readbackDisposalState.Disposed, 0);
+                if (unregistered && readbackPixels.IsCreated)
+                {
+                    readbackDisposalState.SentinelId = NativeMemorySentinel.RegisterNativeArray(
+                        readbackPixels,
+                        NativeMemoryOwner,
+                        DepthCacheReadbackPixelsLabel,
+                        NativeAllocationLifetime.Session);
+                    if (readbackDisposalState.SentinelId <= 0)
+                        throw new InvalidOperationException("Native memory sentinel restore failed for Crest depth-cache readback pixels.");
+                }
+
+                throw;
+            }
+        }
+
+        private sealed class ReadbackDisposalState
+        {
+            internal int SentinelId;
+            internal int Disposed;
+
+            internal ReadbackDisposalState(int sentinelId)
+            {
+                SentinelId = sentinelId;
+            }
         }
     }
 }

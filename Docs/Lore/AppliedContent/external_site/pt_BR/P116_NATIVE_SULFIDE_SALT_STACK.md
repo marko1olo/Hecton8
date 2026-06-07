@@ -9,32 +9,32 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "Pilha de sais sulfetados nativos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# Pilha de sais sulfetados nativos
 
-PT LOC HOLD: Native Sulfide Salt Stack defines the natural resource layer of HECTON-8: dangerous, useful and independent of Deep Reach intent.
+A pilha de sais sulfetados nativos é o artigo base da geologia afogada de HECTON-8. Não é contaminação do Atlas, nem resíduo da Deep Reach, nem começo de Xenon-Omega. É a camada mais antiga: sais sulfetados, íons metálicos e crostas de salmoura montados por pressão, calor e tempo. Em campo, esses depósitos parecem humildes perto dos materiais de dívida brilhantes, mas são eles que permitem os primeiros reparos. Uma pilha pode lavar contatos oxidados, alimentar química de célula emergencial, reduzir o ponto de fusão de uma cerâmica ou transformar uma luva limpa em um problema ácido em menos de um minuto. É assim que um recurso útil deve parecer em HECTON-8: prático, perigoso e indiferente. A Deep Reach não inventou o apetite da lua por metal. A empresa aprendeu a cobrar por ele. Uma boa distribuição de recursos deve ensinar isso antes que o horror maior chegue. As paredes já são reativas. A salmoura já lembra pressão. Saquear começa quando você aprende qual pedaço do mundo ajuda a respirar e qual pedaço vai corroer o que mantém você vivo.
 
 ## Scanner
 
-PT LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+SAIS SULFETADOS NATIVOS // Cristais armados por respiradouros e crosta negra de salmoura, mais antigos que a Deep Reach. Molhados conduzem, mornos corroem, úteis antes de qualquer coisa ficar azul.
 
 ## Terminal
 
-PT LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+CLASSE DE RECURSO: geologia nativa. Usos: lavagem de condutores, química de célula emergencial, fluxo cerâmico, catalisador de corrosão. Isolar do ar de admissão quente; a poeira floresce como filme ácido no metal do traje.
 
 ## Audio
 
-PT LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+A lua não precisou de uma empresa para ser perigosa. Ela já conhecia química.
 
 ## Field Note
 
-PT LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+Se as luvas coçam, você já está atrasado. Enxágue, aterre, registre a parede.
 
 <!-- External Site; generated from P116_NATIVE_SULFIDE_SALT_STACK/pt_BR. -->

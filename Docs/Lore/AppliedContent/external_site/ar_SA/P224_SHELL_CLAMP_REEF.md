@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Shell Clamp Reef"
+title: "شعاب المشابك الصدفية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Shell Clamp Reef
+# شعاب المشابك الصدفية
 
-AR LOC HOLD: Shell Clamp Reef is a key visual and narrative bridge in HECTON-8. It keeps the early shelf bright and tactile while proving that native life has already folded human metal into its own structures.
+شعاب المشابك الصدفية هي الجسر البصري بين بيئة HECTON-8 المضيئة ورعبها الآلي اللاحق. الفكرة ليست أن المحيط يكره عتاد البشر. الفكرة أسوأ وأكثر نفعا: لقد تعلم المحيط أن ينمو حوله. تستقر المشابك الصدفية حيث يجعل التيار والرشح المعدني والاهتزاز الحافة الصلبة مربحة، ولذلك يمكن لغلاف كابل ودرز كبسولة وشفرة بازلتية أن تصبح النوع نفسه من الموطن. هذا يجعل الرف الضحل ملموسا لا زخرفيا. يجب أن يرى اللاعب براغي ترتدي الحياة، ومسارات كابلات تتحول إلى أضلاع شعاب، ودرزات pressure glass متقشرة بمشابك بيضاء، وأن يفهم أن ليس كل نمو تلوثا. بعض النمو يحمل حملا. هذه الفكرة تمهد منطق إصلاح Atlas من دون سحر. يستغل Atlas لاحقا عادة أثبتتها الشعاب بالفعل: يمكن للكائنات المحلية أن تعامل آلات البشر كبنية. يجب أن يجعل الموضع الجيد الحصاد قرارا لا ضغطة زر. الحافة الميتة تعطي حبيبات صدفية وملمس معجون إحكام وثقة مبكرة بالمواد. قد يكون قلب الشعاب الحي يثبت علامة مسار أو يغلق تسربا. أزله عميانا، ولن يعظك المحيط؛ يبدأ كابل بالحركة، ويبدأ درز بالبكاء، وتغادر أسراب الرعاة، ويتغير المسار.
 
 ## Scanner
 
-AR LOC HOLD: Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.
+شعاب المشابك الصدفية // مشابك صدفية محلية تمسك بالصخر وأغلفة الكابلات وصفائح الكبسولة ودرزات pressure glass. قبلت الشعاب الآلات كركيزة.
 
 ## Terminal
 
-AR LOC HOLD: REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.
+خط أساس الشعاب: يزداد الالتصاق على أغلفة الكابلات المهترئة، ومعدن الدرز الدافئ، وحواف pressure glass ذات الرشح المعدني. اجمع الأصداف الخارجية الميتة فقط. قطع المشابك الحية قرب خطوط الخدمة قد يفتح تسربات أو يجذب انتباه فاونا الإصلاح.
 
 ## Audio
 
-AR LOC HOLD: The reef has learned the shape of bolts.
+تعلمت الشعاب شكل البراغي.
 
 ## Field Note
 
-AR LOC HOLD: Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.
+لا تقتلع أول مشبك تصل إليه. قد تكون كتلة حية تثبت كابلا، أو تغلق تسربا شعريا، أو تعلم مرساة مسار.
 
 <!-- External Site; generated from P224_SHELL_CLAMP_REEF/ar_SA. -->

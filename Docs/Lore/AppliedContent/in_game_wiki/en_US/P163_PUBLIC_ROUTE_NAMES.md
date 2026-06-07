@@ -7,6 +7,9 @@ poi_tags: poi.route_name_slate;poi.packet_lane_marker
 biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Public Route Names"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

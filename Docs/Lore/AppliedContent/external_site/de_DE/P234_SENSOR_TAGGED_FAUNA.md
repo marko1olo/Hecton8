@@ -9,32 +9,34 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Sensor-Tagged Fauna"
+title: "Sensor-markierte Fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Sensor-Tagged Fauna
+# Sensor-markierte Fauna
 
-DE LOC HOLD: Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets.
+Sensor-markierte Fauna verhindert, dass HECTON-8s biomechanische Schicht zur einfachen Korruptionsfiktion wird. Die Kreaturen werden nicht magisch in Drohnen verwandelt. Es sind Tiere und Kolonien, die Überwachungshardware überlebt haben. Das Tag wurde Fassung, Narbe, Wachstumsring, Mineralblase oder falsches Auge, weil das Ökosystem tat, was Ökosysteme tun: Es wuchs um Schaden herum.
+
+So bekommt jeder Signalgeist Geschichte. Ein Marauder kann eine schwache Deep-Reach-Kennung aus einem Schalengrazer hören oder einen Biometall-Augenpunkt an einem Körper blinken sehen, der Befehle ignoriert. Die alte Firma hinterlässt noch Papierarbeit im Fleisch, aber das Fleisch gehorcht nicht. Atlas kann das Signal ausnutzen, nicht das Tier besitzen. Das macht den Horror trauriger und stärker: Industrielle Kontrolle wollte Leben markieren, Leben überlebte, und die Marke berichtet weiter an Systeme, die nicht mehr verstehen, was sie hören.
 
 ## Scanner
 
-DE LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+SENSOR-MARKIERTE FAUNA // Alte Biometall-Tags sitzen in Wachstumsringen, Narben und Schalenfassungen; das Tier trägt Überwachungshardware als Körpergeschichte, nicht als Gehorsam.
 
 ## Terminal
 
-DE LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+TAG-NOTIZ: Signalkontinuität schwach, biologische Integration hoch, Befehlsantwort unzuverlässig. Als passive Narbe, intermittierendes Beacon und möglicher Atlas-Diagnosegeist behandeln.
 
 ## Audio
 
-DE LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+Das Tier ist keine Drohne. Die Drohne ist eine alte Wunde im Tier.
 
 ## Field Note
 
-DE LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+Das Tier ist keine Drohne. Die Drohne ist eine alte Wunde, um die das Tier überlebt hat.
 
 <!-- External Site; generated from P234_SENSOR_TAGGED_FAUNA/de_DE. -->

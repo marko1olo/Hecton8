@@ -39,7 +39,7 @@ namespace Hecton8.Meta
         {
             get
             {
-                RunModifierController runtime = GlobalRegistry.RunModifiers;
+                RunModifierController runtime = ResolveActiveRuntime();
                 return runtime != null && runtime._currentModifiers.isNightmareMode;
             }
         }
@@ -62,18 +62,17 @@ namespace Hecton8.Meta
 
         private void Awake()
         {
-            RunModifierController registered = GlobalRegistry.RunModifiers;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             ResetForCurrentContext();
         }
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             TryRegisterService();
             if (Application.isPlaying && !_serviceRegistered)
                 return;
@@ -124,9 +123,8 @@ namespace Hecton8.Meta
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null)
-                    UnregisterFromUpdateDispatcher();
-                else
+                UnregisterFromUpdateDispatcher();
+                if (currentService != null && isActiveAndEnabled)
                     TryRegisterWithUpdateDispatcher();
                 return;
             }
@@ -150,15 +148,46 @@ namespace Hecton8.Meta
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            RunModifierController registered = GlobalRegistry.RunModifiers;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterRunModifierRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.RunModifiers, this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            RunModifierController registered = GlobalRegistry.RunModifiers;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsRunModifierRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterRunModifierRuntime(registered);
+            return false;
+        }
+
+        private static RunModifierController ResolveActiveRuntime()
+        {
+            RunModifierController registered = GlobalRegistry.RunModifiers;
+            if (IsRunModifierRuntimeUsable(registered))
+                return registered;
+
+            if (!ReferenceEquals(registered, null))
+                GlobalRegistry.UnregisterRunModifierRuntime(registered);
+
+            return null;
+        }
+
+        private static bool IsRunModifierRuntimeUsable(RunModifierController controller)
+        {
+            return controller != null &&
+                   controller._serviceRegistered &&
+                   controller.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()

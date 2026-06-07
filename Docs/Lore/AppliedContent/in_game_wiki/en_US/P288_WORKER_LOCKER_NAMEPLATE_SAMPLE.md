@@ -7,6 +7,9 @@ poi_tags: poi.worker_locker_nameplate;poi.route_permission_tag
 biome_tags: biome.colony;biome.worker
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Worker Locker Nameplate Sample"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

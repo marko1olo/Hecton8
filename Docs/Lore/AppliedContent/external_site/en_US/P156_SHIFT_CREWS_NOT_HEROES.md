@@ -7,6 +7,9 @@ poi_tags: poi.shift_roster_wall;poi.crew_rotation_tags
 biome_tags: biome.industrial_shelf;biome.shallow_annex
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Shift Crews Not Heroes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

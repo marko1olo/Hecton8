@@ -7,6 +7,9 @@ poi_tags: poi.roster_size_sheet;poi.shift_board_frame
 biome_tags: biome.worker_locker;biome.p63_shallows
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Worker Roster Size Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

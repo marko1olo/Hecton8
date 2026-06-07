@@ -4,9 +4,9 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localized_pages: 439
-draft_machine_or_llm_pages: 439
-draft_marker_pages: 0
+localized_pages: 444
+draft_machine_or_llm_pages: 444
+draft_marker_pages: 27
 ---
 
 # Полевой архив HECTON-8
@@ -113,12 +113,13 @@ draft_marker_pages: 0
 - [Final Choice Payload](P100_FINAL_CHOICE_PAYLOAD.md) `P100_FINAL_CHOICE_PAYLOAD`
 - [Экономика маршрутов без FTL](P101_NO_FTL_ROUTE_ECONOMY.md) `P101_NO_FTL_ROUTE_ECONOMY`
 - [Эра beam-sail зондов](P102_BEAM_SAIL_PROBE_ERA.md) `P102_BEAM_SAIL_PROBE_ERA`
-- [Pellet-fusion грузовые рейсы](P103_PELLET_FUSION_FREIGHT.md) `P103_PELLET_FUSION_FREIGHT`
+- [Пеллетно-термоядерные грузовые рейсы](P103_PELLET_FUSION_FREIGHT.md) `P103_PELLET_FUSION_FREIGHT`
 - [RU LOC HOLD: RAN-B:H8 Public Catalog](P104_RAN_B_H8_PUBLIC_CATALOG.md) `P104_RAN_B_H8_PUBLIC_CATALOG`
 - [Black Keel как внутрисистемный tender](P105_BLACK_KEEL_IN_SYSTEM_TENDER.md) `P105_BLACK_KEEL_IN_SYSTEM_TENDER`
 - [Iliya Varnek: tide margin](P106_ILIYA_VARNEK_TIDE_MARGIN.md) `P106_ILIYA_VARNEK_TIDE_MARGIN`
 - [Selene Arendt: вес Atlas](P107_SELENE_ARENDT_ATLAS_WEIGHTING.md) `P107_SELENE_ARENDT_ATLAS_WEIGHTING`
 - [Noor Haldane: evac cert](P108_NOOR_HALDANE_EVAC_CERT.md) `P108_NOOR_HALDANE_EVAC_CERT`
+- [Журнал квитанций Тихой орбиты](P1090_SILENT_ORBIT_RECEIPT_LEDGER.md) `P1090_SILENT_ORBIT_RECEIPT_LEDGER`
 - [Marek Ibarra: loss conversion](P109_MAREK_IBARRA_LOSS_CONVERSION.md) `P109_MAREK_IBARRA_LOSS_CONVERSION`
 - [Vera Sato-Ren: return action](P110_VERA_SATO_REN_RETURN_ACTION.md) `P110_VERA_SATO_REN_RETURN_ACTION`
 - [Ручной bilge pump kit](P111_MANUAL_BILGE_PUMP_KIT.md) `P111_MANUAL_BILGE_PUMP_KIT`
@@ -126,11 +127,11 @@ draft_marker_pages: 0
 - [Low-power induction cutter](P113_LOW_POWER_INDUCTION_CUTTER.md) `P113_LOW_POWER_INDUCTION_CUTTER`
 - [Acoustic pinger line](P114_ACOUSTIC_PINGER_LINE.md) `P114_ACOUSTIC_PINGER_LINE`
 - [P-63 field fabricator](P115_P63_FIELD_FABRICATOR.md) `P115_P63_FIELD_FABRICATOR`
-- [Native sulfide salt stack](P116_NATIVE_SULFIDE_SALT_STACK.md) `P116_NATIVE_SULFIDE_SALT_STACK`
-- [Noble gas brine pockets](P117_NOBLE_GAS_BRINE_POCKETS.md) `P117_NOBLE_GAS_BRINE_POCKETS`
-- [Deep Reach pressure ceramics](P118_DEEP_REACH_PRESSURE_CERAMICS.md) `P118_DEEP_REACH_PRESSURE_CERAMICS`
-- [Atlas biofiber sealant](P119_ATLAS_BIOFIBER_SEALANT.md) `P119_ATLAS_BIOFIBER_SEALANT`
-- [Biometal sensor tags](P120_BIOMETAL_SENSOR_TAGS.md) `P120_BIOMETAL_SENSOR_TAGS`
+- [Самородная сульфидно-соляная гряда](P116_NATIVE_SULFIDE_SALT_STACK.md) `P116_NATIVE_SULFIDE_SALT_STACK`
+- [Карманы благородно-газового рассола](P117_NOBLE_GAS_BRINE_POCKETS.md) `P117_NOBLE_GAS_BRINE_POCKETS`
+- [Напорная керамика Deep Reach](P118_DEEP_REACH_PRESSURE_CERAMICS.md) `P118_DEEP_REACH_PRESSURE_CERAMICS`
+- [Биоволоконный герметик Atlas](P119_ATLAS_BIOFIBER_SEALANT.md) `P119_ATLAS_BIOFIBER_SEALANT`
+- [Биометаллические сенсорные метки](P120_BIOMETAL_SENSOR_TAGS.md) `P120_BIOMETAL_SENSOR_TAGS`
 - [Гражданско-корпоративный раскол доменов](P121_DOMAIN_CIVIC_CORPORATE_SPLIT.md) `P121_DOMAIN_CIVIC_CORPORATE_SPLIT`
 - [Юридическая лазейка мародеров](P122_MARAUDER_LEGAL_LOOPHOLE.md) `P122_MARAUDER_LEGAL_LOOPHOLE`
 - [Статус salvage-правды как доказательства](P123_SALVAGE_TRUTH_EVIDENCE_STATUS.md) `P123_SALVAGE_TRUTH_EVIDENCE_STATUS`
@@ -238,7 +239,7 @@ draft_marker_pages: 0
 - [Телеграф илового засадника](P230_SILT_AMBUSHER_TELEGRAPH.md) `P230_SILT_AMBUSHER_TELEGRAPH`
 - [Проводящая биопленка кабельной кожи](P231_CONDUCTIVE_BIOFILM_CABLE_SKIN.md) `P231_CONDUCTIVE_BIOFILM_CABLE_SKIN`
 - [Акустический орган-фильтр реле](P232_ACOUSTIC_FILTER_ORGAN_RELAY.md) `P232_ACOUSTIC_FILTER_ORGAN_RELAY`
-- [Раковинно-герметиковый рост по трещине](P233_SHELL_SEALANT_FRACTURE_GROWTH.md) `P233_SHELL_SEALANT_FRACTURE_GROWTH`
+- [Раковинный герметик в трещине](P233_SHELL_SEALANT_FRACTURE_GROWTH.md) `P233_SHELL_SEALANT_FRACTURE_GROWTH`
 - [Фауна с сенсорными метками](P234_SENSOR_TAGGED_FAUNA.md) `P234_SENSOR_TAGGED_FAUNA`
 - [Гнезда вент-микроузлов](P235_VENT_MICRONODE_NESTS.md) `P235_VENT_MICRONODE_NESTS`
 - [Ограничения интерьера тендера Black Keel](P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS.md) `P236_BLACK_KEEL_TENDER_INTERIOR_LIMITS`
@@ -450,5 +451,9 @@ draft_marker_pages: 0
 - [RU LOC HOLD: Первый ремонт PressureSeal](P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE.md) `P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE`
 - [RU LOC HOLD: Спойлерный шлюз](P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE.md) `P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE`
 - [RU LOC HOLD: Окно претензии Black Keel](P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE.md) `P464_BLACK_KEEL_CLAIM_WINDOW_BRIDGE`
+- [Геометрия окна эвакуации в Aegir](P621_AEGIR_RECOVERY_WINDOW_GEOMETRY.md) `P621_AEGIR_RECOVERY_WINDOW_GEOMETRY`
+- [Карта тени реле Kestrel](P622_KESTREL_RELAY_SHADOW_CHART.md) `P622_KESTREL_RELAY_SHADOW_CHART`
+- [Реестр следа пеллетной трассы](P623_PELLET_LANE_WAKE_LEDGER.md) `P623_PELLET_LANE_WAKE_LEDGER`
+- [Проводящая биота Кабельного леса](P624_CABLE_FOREST_CONDUCTIVE_BIOTA.md) `P624_CABLE_FOREST_CONDUCTIVE_BIOTA`
 
 <!-- Generated localized index for external_site/ru_RU. -->

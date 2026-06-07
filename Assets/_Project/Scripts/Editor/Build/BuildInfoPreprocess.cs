@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Threading.Tasks;
 using Hecton8.Build;
 using UnityEditor;
 using UnityEditor.Build;
@@ -14,6 +15,8 @@ namespace Hecton8.Editor.Build
     public sealed class BuildInfoPreprocess : IPreprocessBuildWithReport
     {
         private const string AssetPath = "Assets/_Project/Data/BuildInfo.asset";
+        private const int GitMetadataTimeoutMilliseconds = 2000;
+        private const int GitMetadataOutputDrainMilliseconds = 500;
 
         public int callbackOrder => -1000;
 
@@ -71,25 +74,113 @@ namespace Hecton8.Editor.Build
                     CreateNoWindow = true
                 };
 
-                using (Process process = Process.Start(info))
+                using (Process process = TryStartGitMetadataProcessNoThrow(info))
                 {
                     if (process == null)
                         return "unknown";
 
-                    if (!process.WaitForExit(2000))
+                    Task<string> outputTask;
+                    Task<string> errorTask;
+                    try
                     {
-                        process.Kill();
+                        outputTask = process.StandardOutput.ReadToEndAsync();
+                        errorTask = process.StandardError.ReadToEndAsync();
+                    }
+                    catch (Exception)
+                    {
+                        KillGitMetadataProcessNoThrow(process);
                         return "unknown";
                     }
 
-                    string output = process.StandardOutput.ReadToEnd();
-                    return process.ExitCode == 0 ? output.Trim() : "unknown";
+                    if (!TryWaitForGitMetadataProcess(process))
+                    {
+                        KillGitMetadataProcessNoThrow(process);
+                        return "unknown";
+                    }
+
+                    WaitForGitMetadataOutputDrain(outputTask, errorTask);
+                    string output = ReadProcessOutputTaskNoThrow(outputTask);
+                    return ReadProcessExitCodeNoThrow(process) == 0 ? output.Trim() : "unknown";
                 }
             }
             catch (Exception exception)
             {
                 Debug.LogWarning("[BuildInfoPreprocess] Git metadata unavailable: " + exception.Message);
                 return "unknown";
+            }
+        }
+
+        private static Process TryStartGitMetadataProcessNoThrow(ProcessStartInfo info)
+        {
+            try
+            {
+                return Process.Start(info);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private static bool TryWaitForGitMetadataProcess(Process process)
+        {
+            try
+            {
+                return process.WaitForExit(GitMetadataTimeoutMilliseconds);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static void WaitForGitMetadataOutputDrain(Task<string> outputTask, Task<string> errorTask)
+        {
+            try
+            {
+                Task.WaitAll(new Task[] { outputTask, errorTask }, GitMetadataOutputDrainMilliseconds);
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private static string ReadProcessOutputTaskNoThrow(Task<string> task)
+        {
+            if (task == null || !task.IsCompleted || task.IsCanceled || task.IsFaulted)
+                return string.Empty;
+
+            try
+            {
+                return task.Result ?? string.Empty;
+            }
+            catch (Exception)
+            {
+                return string.Empty;
+            }
+        }
+
+        private static int ReadProcessExitCodeNoThrow(Process process)
+        {
+            try
+            {
+                return process.ExitCode;
+            }
+            catch (Exception)
+            {
+                return -1;
+            }
+        }
+
+        private static void KillGitMetadataProcessNoThrow(Process process)
+        {
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill();
+            }
+            catch (Exception)
+            {
             }
         }
     }

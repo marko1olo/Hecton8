@@ -7,6 +7,9 @@ poi_tags: poi.high_risk_contract_board;poi.storm_window_selector
 biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Riskier Contract Seeds"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

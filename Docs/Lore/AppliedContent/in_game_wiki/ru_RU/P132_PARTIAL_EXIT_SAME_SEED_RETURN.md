@@ -7,6 +7,9 @@ poi_tags: poi.return_vector_marker;poi.black_keel_reentry_slot
 biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Частичный выход с возвратом в тот же seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.dead_claim_buoy;poi.marauder_cache
 biome_tags: biome.service_canyons;biome.drowned_infrastructure
 locale: de_DE
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Toter-Claim-Cache"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

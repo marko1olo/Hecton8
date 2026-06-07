@@ -205,8 +205,9 @@ namespace Hecton8.Core
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredSlowTickable = false;
-                TryRegisterSlowTickable();
+                TryUnregisterSlowTickable();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterSlowTickable();
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {

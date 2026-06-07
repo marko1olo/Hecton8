@@ -7,6 +7,9 @@ poi_tags: poi.route_law_plate;poi.domain_mark_terminal
 biome_tags: biome.black_keel_orbit;biome.shallow_annex
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Domain Civic-Corporate Split"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -259,7 +259,7 @@ namespace Hecton8.Vehicles.DropPod
                     RefreshSeatLockMotorRegistration();
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.Input:
                     RebindInputBlockService(currentService as IInputDeterminismService);
@@ -674,8 +674,8 @@ namespace Hecton8.Vehicles.DropPod
 
         private void QueueAudio(Vector3 position, uint eventId)
         {
-            IAudioService audio = _audioService;
-            if (!emitAudio || eventId == 0u || audio == null || !audio.IsInitialized || !DropPodSplineMath.IsFinite(position))
+            IAudioService audio = ResolveAudioService();
+            if (!emitAudio || eventId == 0u || audio == null || !DropPodSplineMath.IsFinite(position))
                 return;
 
             CoreAudioEvent audioEvent = new CoreAudioEvent(
@@ -811,8 +811,34 @@ namespace Hecton8.Vehicles.DropPod
             _playerCamera = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerCamera : null;
             _cameraTransform = _playerCamera != null ? _playerCamera.transform : null;
             _seatLockMotor = GlobalRegistry.PlayerSeatLockMotor;
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             CacheInputBlockServiceCold();
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void CacheInputBlockServiceCold()

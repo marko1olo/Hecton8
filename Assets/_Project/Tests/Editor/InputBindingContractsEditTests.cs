@@ -141,7 +141,70 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("return _loaded && !string.IsNullOrWhiteSpace(key)", source);
             StringAssert.Contains("DestroyDuplicateInstance", source);
             StringAssert.Contains("_serviceShutdownComplete = true;", source);
+            StringAssert.Contains("TryAbortForUsableExistingRuntime", source);
+            StringAssert.Contains("IsUserOptionsRuntimeUsable", source);
+            StringAssert.Contains("ReferenceEquals(registered, null) || ReferenceEquals(registered, this)", source);
+            StringAssert.Contains("BootstrapRegistryBridge.Unregister(BootstrapRegistryBridgeSlot.UserOptionsRuntime, registered);", source);
+            StringAssert.Contains("persistence._serviceRegistered", source);
+            StringAssert.Contains("persistence.isActiveAndEnabled", source);
+            StringAssert.Contains("!persistence._serviceShuttingDown", source);
+            StringAssert.DoesNotContain("registered != null && registered != this", source);
             Assert.Less(source.IndexOf("BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.UserOptionsRuntime", StringComparison.Ordinal), source.IndexOf("LoadFromDisk();", StringComparison.Ordinal));
+            Assert.Less(source.IndexOf("if (TryAbortForUsableExistingRuntime())", StringComparison.Ordinal), source.IndexOf("LoadFromDisk();", StringComparison.Ordinal));
+            int registerServiceIndex = source.IndexOf("private void RegisterService()", StringComparison.Ordinal);
+            int registerGateIndex = source.IndexOf("if (TryAbortForUsableExistingRuntime())", registerServiceIndex, StringComparison.Ordinal);
+            int registerCallIndex = source.IndexOf("BootstrapRegistryBridge.Register(BootstrapRegistryBridgeSlot.UserOptionsRuntime, this);", registerServiceIndex, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(registerGateIndex, registerServiceIndex);
+            Assert.Less(registerGateIndex, registerCallIndex);
+        }
+
+        [Test]
+        public void UserOptionsConsumersIgnoreStaleRuntimeOwners()
+        {
+            string settings = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "UI", "SettingsManager.cs"));
+            string localization = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "LocalizationManager.cs"));
+            string modSettings = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "ModdingAPI", "ModSettingsRegistry.cs"));
+            string pauseMenu = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "UI", "PauseMenuController.cs"));
+
+            StringAssert.Contains("IsUserOptionsPersistenceUsable", settings);
+            StringAssert.Contains("persistence.IsServiceReady", settings);
+            StringAssert.Contains("persistence.isActiveAndEnabled", settings);
+            StringAssert.Contains("if (IsUserOptionsPersistenceUsable(_persistence))", settings);
+            StringAssert.DoesNotContain("return TryAssignPersistence(GlobalRegistry.UserOptions, out changed);", settings);
+
+            StringAssert.Contains("CacheUserOptions(GlobalRegistry.UserOptions);", localization);
+            StringAssert.Contains("ResolveUserOptionsPersistence", localization);
+            StringAssert.Contains("IsUserOptionsRuntimeUsable", localization);
+            StringAssert.Contains("options.IsServiceReady", localization);
+            StringAssert.Contains("options.isActiveAndEnabled", localization);
+            StringAssert.Contains("IsLocalizationRuntimeUsable", localization);
+            StringAssert.Contains("localization._registeredLocalizationRuntime", localization);
+            StringAssert.Contains("localization.isActiveAndEnabled", localization);
+            StringAssert.Contains("GlobalRegistry.UnregisterLocalizationRuntime(registered);", localization);
+            StringAssert.Contains("GlobalRegistry.UnregisterBabelLocalizationRuntime(registered);", localization);
+            StringAssert.Contains("ReferenceEquals(ActiveRuntimeInstance, registered)", localization);
+            StringAssert.DoesNotContain("registered != null && registered != this", localization);
+            int localizationAwakeIndex = localization.IndexOf("private void Awake()", StringComparison.Ordinal);
+            int localizationGateIndex = localization.IndexOf("if (TryAbortForUsableExistingRuntime())", localizationAwakeIndex, StringComparison.Ordinal);
+            int localizationRegisterIndex = localization.IndexOf("GlobalRegistry.RegisterLocalizationRuntime(this);", localizationAwakeIndex, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(localizationGateIndex, localizationAwakeIndex);
+            Assert.Less(localizationGateIndex, localizationRegisterIndex);
+            StringAssert.DoesNotContain("_cachedUserOptions = GlobalRegistry.UserOptions;", localization);
+            StringAssert.DoesNotContain("_cachedUserOptions = currentService as UserOptionsPersistence;", localization);
+
+            StringAssert.Contains("CacheUserOptions(GlobalRegistry.UserOptions);", modSettings);
+            StringAssert.Contains("ResolveUserOptions()", modSettings);
+            StringAssert.Contains("IsUserOptionsRuntimeUsable", modSettings);
+            StringAssert.Contains("options.IsServiceReady", modSettings);
+            StringAssert.Contains("options.isActiveAndEnabled", modSettings);
+            StringAssert.DoesNotContain("s_userOptions = GlobalRegistry.UserOptions;", modSettings);
+            StringAssert.DoesNotContain("s_userOptions = currentService as UserOptionsPersistence;", modSettings);
+            StringAssert.DoesNotContain("UserOptionsPersistence options = s_userOptions;", modSettings);
+
+            StringAssert.Contains("Hecton8.Input.UserOptionsPersistence userOptions = Hecton8.Core.GlobalRegistry.UserOptions;", pauseMenu);
+            StringAssert.Contains("userOptions.IsServiceReady", pauseMenu);
+            StringAssert.Contains("userOptions.isActiveAndEnabled", pauseMenu);
+            StringAssert.DoesNotContain("Hecton8.Core.GlobalRegistry.UserOptions.Save();", pauseMenu);
         }
 
         [Test]

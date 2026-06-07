@@ -477,10 +477,10 @@ namespace Hecton8.QA
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    UnregisterTickLanes();
                     if (currentService == null || !_active || _faulted || _completed || !isActiveAndEnabled)
                         return;
 
-                    UnregisterTickLanes();
                     RegisterTickLanes();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:

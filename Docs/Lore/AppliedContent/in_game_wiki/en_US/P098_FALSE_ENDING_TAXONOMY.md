@@ -7,6 +7,9 @@ poi_tags: poi.false_ending_board;poi.material_exit_choice
 biome_tags: biome.payload_gantry;biome.carrier_link
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "False Ending Taxonomy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

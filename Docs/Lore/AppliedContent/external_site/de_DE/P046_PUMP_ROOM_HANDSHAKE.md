@@ -7,6 +7,9 @@ poi_tags: poi.pump_room;poi.sump_control
 biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: de_DE
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Pumpenraum-Handschlag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

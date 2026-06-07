@@ -114,8 +114,14 @@ namespace Hecton8.UI
             int gridCells = ResolveGridCells(qualityWeight);
             float updateInterval = ResolveUpdateIntervalSeconds(qualityWeight);
             _interpolationBlendWeight = ResolveInterpolationBlendWeight(qualityWeight);
-            if (_activeGridCells != gridCells)
+            bool gridChanged = _activeGridCells != gridCells;
+            if (gridChanged)
+            {
                 RebuildLineIndices(gridCells);
+                _hasCurrentSample = false;
+                _hasPreviousSample = false;
+                _interpolationAgeSeconds = 0f;
+            }
 
             _sampleAccumulator += safeDeltaTime;
             _interpolationAgeSeconds += safeDeltaTime;
@@ -205,6 +211,7 @@ namespace Hecton8.UI
                 _currentVertices[i] = Vector3.zero;
 
             UploadVertices(_currentVertices);
+            RefreshRuntimeMeshBounds();
             _interpolationAgeSeconds = 0f;
             _hasCurrentSample = true;
         }
@@ -411,7 +418,7 @@ namespace Hecton8.UI
                     MeshUpdateFlags.DontRecalculateBounds |
                     MeshUpdateFlags.DontValidateIndices |
                     MeshUpdateFlags.DontNotifyMeshUsers);
-                _runtimeMesh.bounds = new Bounds(Vector3.zero, new Vector3(displayRadiusMeters * 2f, displayRadiusMeters, displayRadiusMeters * 2f));
+                RefreshRuntimeMeshBounds();
                 RebuildLineIndices(ResolveGridCells(_cachedQualityWeight01));
             }
 
@@ -451,6 +458,23 @@ namespace Hecton8.UI
                    math.abs(lhs.g - rhs.g) <= 0.0001f &&
                    math.abs(lhs.b - rhs.b) <= 0.0001f &&
                    math.abs(lhs.a - rhs.a) <= 0.0001f;
+        }
+
+        private void RefreshRuntimeMeshBounds()
+        {
+            if (_runtimeMesh == null)
+                return;
+
+            float safeRadius = math.max(12f, sampleRadiusMeters);
+            float safeDisplayRadius = math.max(0.0001f, displayRadiusMeters);
+            float verticalExtent = math.max(1f, maxHeightDeltaMeters) *
+                                   safeDisplayRadius *
+                                   math.rcp(safeRadius) *
+                                   math.max(0.02f, verticalExaggeration);
+            float safeVerticalSize = math.max(safeDisplayRadius, verticalExtent + verticalExtent);
+            _runtimeMesh.bounds = new Bounds(
+                Vector3.zero,
+                new Vector3(safeDisplayRadius + safeDisplayRadius, safeVerticalSize, safeDisplayRadius + safeDisplayRadius));
         }
 
         private void TryRegisterTick()

@@ -7,6 +7,9 @@ poi_tags: poi.shallow_annex_p63_pump;poi.manual_bilge_kit
 biome_tags: biome.shallow_annex;biome.photic_shelf
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Shallow Annex P-63 Pump Room"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

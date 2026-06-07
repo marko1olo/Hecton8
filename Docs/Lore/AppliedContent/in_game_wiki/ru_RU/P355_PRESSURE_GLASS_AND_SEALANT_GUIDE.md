@@ -7,6 +7,9 @@ poi_tags: poi.pressure_glass_fracture;poi.sealant_growth_edge
 biome_tags: biome.geology;biome.atlas
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Pressure glass and sealant guide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

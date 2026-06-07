@@ -9,32 +9,34 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Sensor-Tagged Fauna"
+title: "حيوانات موسومة بالحساسات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Sensor-Tagged Fauna
+# حيوانات موسومة بالحساسات
 
-AR LOC HOLD: Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.
+الحيوانات الموسومة بالحساسات تبقي الحياة المتأثرة بـ Atlas واقعية. كانت Deep Reach تضع وسوما على الحيوانات ومستعمرات الأصداف وأنواع الطرق لمراقبة الحركة وتحمل الضغط والتلوث. بعد سنوات، لم تعد تلك الوسوم البيومعدنية عتادا نظيفا. صارت داخل حلقات نمو ومآخذ أصداف وندوب قديمة وأغطية معدنية، محمولة كجزء من الجسد الذي نجا حولها.
+
+هذا الفرق مهم. الكائن الموسوم ليس دمية. قد يرسل Atlas نبضة إلى الوسم، أو يسيء قراءة الرد، أو يستخدمه كمعلم تشخيصي ضعيف، لكن استجابة الأوامر غير موثوقة وغالبا غائبة. يجب على اللاعب قراءة الوسم كتاريخ صناعي: إشارة خافتة، جرح قديم، أثر مسؤولية، وأحيانا دليل على المكان الذي كانت Deep Reach تراقبه قبل فشل المستعمرة.
 
 ## Scanner
 
-AR LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+حيوانات موسومة بالحساسات // وسوم بيومعدنية قديمة داخل حلقات النمو والندوب ومآخذ الأصداف؛ الحيوان يحمل عتاد مراقبة كتاريخ جسدي، لا كطاعة.
 
 ## Terminal
 
-AR LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+ملاحظة وسم: استمرارية الإشارة ضعيفة، الاندماج البيولوجي عال، استجابة الأوامر غير موثوقة. يعامل كندبة سلبية، ومنارة متقطعة، وشبح تشخيص محتمل لـ Atlas.
 
 ## Audio
 
-AR LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+الحيوان ليس طائرة مسيرة. الطائرة المسيرة جرح قديم داخل الحيوان.
 
 ## Field Note
 
-AR LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+الحيوان ليس طائرة مسيرة. الطائرة المسيرة جرح قديم نجا الحيوان حوله.
 
 <!-- In-Game Wiki; generated from P234_SENSOR_TAGGED_FAUNA/ar_SA. -->

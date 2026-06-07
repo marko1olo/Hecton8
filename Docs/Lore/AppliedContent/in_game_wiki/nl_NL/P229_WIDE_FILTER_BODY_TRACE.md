@@ -9,32 +9,34 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Wide Filter Body Trace"
+title: "Spoor van het brede filterlichaam"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Wide Filter Body Trace
+# Spoor van het brede filterlichaam
 
-NL LOC HOLD: Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.
+Brede filterlichamen zijn het eerste bewijs dat de open afgrond tussen herkenningspunten niet leeg is. Ze bewegen door diep water als trage oogsters van planktonwolken, met lichamen breder dan kleine annexframes. Het dier jaagt niet op de Marauder; het verandert de kaart rond de Marauder. Wanneer het passeert, wordt zwevend leven dunner, sonarretouren smeren uit langs de lichaamsrand, en begraven industriële contouren kunnen enkele minuten verschijnen voordat het slib weer sluit.
+
+Daardoor is het organisme tegelijk gevaar en gereedschap. Zijn schaduw kan een serviceframe verbergen of een route open laten lijken waar het water in werkelijkheid vol bewegend weefsel zit. De juiste keuze is het spoor lezen: helder water achter de mond, vuile terugval aan de rand, akoestische stilte in de luwte van het lichaam. Zwem nooit onder de schaduw alleen om het wezen te zien. Volg de opening die het achterlaat alleen met stroom, lijn en een weg terug.
 
 ## Scanner
 
-NL LOC HOLD: A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.
+BREED FILTERLICHAAM // Een breed filterdier kruist de trog; plankton klaart achter hem op, sonar smeert uit langs de rand, en ruïnes kunnen onder zijn schaduw verschijnen of verdwijnen.
 
 ## Terminal
 
-NL LOC HOLD: CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.
+CONTACTBASIS: passage van een breed filterlichaam veroorzaakt lage planktondichtheid, uitgesmeerde randecho, drukstille nasleep en tijdelijke zichtcorridors. Niet onder de buiks schaduw volgen. Gebruik de akoestische opening pas nadat het achterste slib valt.
 
 ## Audio
 
-NL LOC HOLD: That is not a roar. That is the sound of the map being wiped clean.
+Dat is geen gebrul. Dat is het geluid van een kaart die wordt schoongeveegd.
 
 ## Field Note
 
-NL LOC HOLD: Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.
+Noem het geen baas. Noem het weer met een maag: traag, enorm, bruikbaar en onverschillig.
 
 <!-- In-Game Wiki; generated from P229_WIDE_FILTER_BODY_TRACE/nl_NL. -->

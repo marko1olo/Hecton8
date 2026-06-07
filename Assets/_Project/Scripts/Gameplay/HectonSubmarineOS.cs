@@ -337,19 +337,7 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(HectonSubmarineOsEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(HectonSubmarineOsEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseNativeQueues();
 
             _listeners.Clear();
             _pendingEventCount = 0;
@@ -527,29 +515,65 @@ namespace Hecton8.Gameplay
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
+            try
             {
-                _pendingEvents = new NativeQueue<SubmarineOsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] - deferred submarine OS event lane - owner: HectonSubmarineOsEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(HectonSubmarineOsEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<SubmarineOsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] - deferred submarine OS event lane - owner: HectonSubmarineOsEvents
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                }
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<SubmarineOsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] - next-frame submarine OS event lane prevents same-frame reentrant dispatch - owner: HectonSubmarineOsEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(HectonSubmarineOsEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<SubmarineOsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] - next-frame submarine OS event lane prevents same-frame reentrant dispatch - owner: HectonSubmarineOsEvents
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                }
             }
+            catch
+            {
+                ReleaseNativeQueues();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(HectonSubmarineOsEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeQueue(ref queue, label);
+            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
+            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(HectonSubmarineOsEvents), label);
+            queue.Dispose();
+            queue = default;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -808,6 +832,7 @@ namespace Hecton8.Gameplay
         private bool _vitalWarningActive;
         private bool _fatalImplosionLatched;
         private bool _multiSystemFailureLatched;
+        private bool _engineTelemetryMaskActive;
         private bool _subOsPowered = true;
         private bool _registeredUpdatable;
         private bool _registeredRenderable;
@@ -1065,6 +1090,9 @@ namespace Hecton8.Gameplay
             SubmarineCoreDirector submarineCore = _submarineCore;
             if (submarineCore != null && _atmosphereSystem == null)
                 _atmosphereSystem = submarineCore.AtmosphereSystem;
+
+            if (_atlas6Manager == null)
+                _atlas6Manager = Hecton8.Gameplay.Atlas6Liability.Atlas6CorporateLiabilityManager.ActiveRuntimeInstance;
         }
 
         private void RefreshColdRegistryReferences()
@@ -1192,6 +1220,21 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void TryUnregisterDispatcherTicks()
+        {
+            if (_registeredUpdatable)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredUpdatable = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+        }
+
         private void TryRegisterHotSwapListener()
         {
             if (_registeredHotSwapListener || !Application.isPlaying)
@@ -1218,8 +1261,7 @@ namespace Hecton8.Gameplay
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _runtimeDispatcherReady = currentService != null;
-                    _registeredUpdatable = false;
-                    _registeredSlowTick = false;
+                    TryUnregisterDispatcherTicks();
                     if (_runtimeDispatcherReady && isActiveAndEnabled)
                     {
                         if (_runtimeLifecycleStarted)
@@ -1393,6 +1435,18 @@ namespace Hecton8.Gameplay
             _engineHeatTrue01 = QuantizeHeat01(trueHeat01);
             _engineHeatMaskDelta01 = QuantizeHeat01(maskDelta01);
             _atlasTelemetryFlags = atlasTelemetryFlags;
+            bool nextEngineTelemetryMaskActive =
+                (atlasTelemetryFlags & Hecton8.Gameplay.Atlas6Liability.ThermalSheerManager.TelemetryFlagMasked) != 0u;
+            if (nextEngineTelemetryMaskActive != _engineTelemetryMaskActive)
+            {
+                _engineTelemetryMaskActive = nextEngineTelemetryMaskActive;
+                PublishLog(
+                    nextEngineTelemetryMaskActive
+                        ? HectonSubmarineOsLogCode.EngineTelemetryMasked
+                        : HectonSubmarineOsLogCode.EngineTelemetryRestored,
+                    nextEngineTelemetryMaskActive ? LogPriorityWarning : LogPriorityNormal);
+            }
+
             _lastHullSpeedMetersPerSecond = hullSpeedMetersPerSecond;
             ApplyEngineDiagnosticsShaderGlobal();
         }

@@ -7,6 +7,9 @@ poi_tags: poi.no_power_carryover_notice;poi.route_warning_card
 biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Dossier Knowledge Not Power"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

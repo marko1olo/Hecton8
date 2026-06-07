@@ -17,8 +17,7 @@ namespace Hecton8.Graphics.Culling
         private const int DefaultSortCapacity = 150000;
         private const int RadixHistogramCapacity = 256;
         private const int TelemetryCapacity = 300;
-        private const string NativeMemoryOwner = nameof(TBDRPipelineSurgeonRuntime);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const SystemID NativeMemoryOwner = SystemID.GraphicsScalability;
 
         [Header("Hard Limits")]
         [SerializeField, Min(1)]
@@ -506,34 +505,26 @@ namespace Hecton8.Graphics.Culling
 
             if (!_usesVaultStorage)
             {
-                _buffers.MockVisibleInstances = new NativeArray<PoiTransformDTO>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                _buffers.SortScratch = new NativeArray<PoiTransformDTO>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                _buffers.MeshVertexCounts = new NativeArray<uint>(256, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                _buffers.RadixHistogram = new NativeArray<int>(RadixHistogramCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                _buffers.VisibleCountOut = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                _buffers.MockQualitySignal = new NativeArray<TBDRMockQualityWeightSignal>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                _buffers.MockCamera = new NativeArray<MockCameraMatrix>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                _buffers.SourceFrustumPlanes = new NativeArray<float4>(6, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                _buffers.SqueezedFrustumPlanes = new NativeArray<float4>(6, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                _buffers.HzbVisibilityMask = new NativeArray<int>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                _buffers.IndirectDrawArgs = new NativeArray<TBDRIndirectDrawArgsDTO>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
-                RegisterFallbackBuffers();
+                try
+                {
+                    _buffers.MockVisibleInstances = CreateFallbackNativeArray<PoiTransformDTO>(capacity, nameof(RuntimeBufferSet.MockVisibleInstances)); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                    _buffers.SortScratch = CreateFallbackNativeArray<PoiTransformDTO>(capacity, nameof(RuntimeBufferSet.SortScratch)); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                    _buffers.MeshVertexCounts = CreateFallbackNativeArray<uint>(256, nameof(RuntimeBufferSet.MeshVertexCounts)); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                    _buffers.RadixHistogram = CreateFallbackNativeArray<int>(RadixHistogramCapacity, nameof(RuntimeBufferSet.RadixHistogram)); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                    _buffers.VisibleCountOut = CreateFallbackNativeArray<int>(1, nameof(RuntimeBufferSet.VisibleCountOut)); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                    _buffers.MockQualitySignal = CreateFallbackNativeArray<TBDRMockQualityWeightSignal>(1, nameof(RuntimeBufferSet.MockQualitySignal)); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                    _buffers.MockCamera = CreateFallbackNativeArray<MockCameraMatrix>(1, nameof(RuntimeBufferSet.MockCamera)); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                    _buffers.SourceFrustumPlanes = CreateFallbackNativeArray<float4>(6, nameof(RuntimeBufferSet.SourceFrustumPlanes)); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                    _buffers.SqueezedFrustumPlanes = CreateFallbackNativeArray<float4>(6, nameof(RuntimeBufferSet.SqueezedFrustumPlanes)); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                    _buffers.HzbVisibilityMask = CreateFallbackNativeArray<int>(capacity, nameof(RuntimeBufferSet.HzbVisibilityMask)); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                    _buffers.IndirectDrawArgs = CreateFallbackNativeArray<TBDRIndirectDrawArgsDTO>(1, nameof(RuntimeBufferSet.IndirectDrawArgs)); // COLD ALLOC FALLBACK: CI/mock path only; production path uses GlobalDataVault
+                }
+                catch
+                {
+                    DisposeFallbackBuffers();
+                    throw;
+                }
             }
-        }
-
-        private void RegisterFallbackBuffers()
-        {
-            RegisterFallbackNativeArray(_buffers.MockVisibleInstances, nameof(RuntimeBufferSet.MockVisibleInstances));
-            RegisterFallbackNativeArray(_buffers.SortScratch, nameof(RuntimeBufferSet.SortScratch));
-            RegisterFallbackNativeArray(_buffers.MeshVertexCounts, nameof(RuntimeBufferSet.MeshVertexCounts));
-            RegisterFallbackNativeArray(_buffers.RadixHistogram, nameof(RuntimeBufferSet.RadixHistogram));
-            RegisterFallbackNativeArray(_buffers.VisibleCountOut, nameof(RuntimeBufferSet.VisibleCountOut));
-            RegisterFallbackNativeArray(_buffers.MockQualitySignal, nameof(RuntimeBufferSet.MockQualitySignal));
-            RegisterFallbackNativeArray(_buffers.MockCamera, nameof(RuntimeBufferSet.MockCamera));
-            RegisterFallbackNativeArray(_buffers.SourceFrustumPlanes, nameof(RuntimeBufferSet.SourceFrustumPlanes));
-            RegisterFallbackNativeArray(_buffers.SqueezedFrustumPlanes, nameof(RuntimeBufferSet.SqueezedFrustumPlanes));
-            RegisterFallbackNativeArray(_buffers.HzbVisibilityMask, nameof(RuntimeBufferSet.HzbVisibilityMask));
-            RegisterFallbackNativeArray(_buffers.IndirectDrawArgs, nameof(RuntimeBufferSet.IndirectDrawArgs));
         }
 
         private void DisposeFallbackBuffers()
@@ -574,19 +565,18 @@ namespace Hecton8.Graphics.Culling
             handle = default;
         }
 
-        private static void RegisterFallbackNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        private static NativeArray<T> CreateFallbackNativeArray<T>(int length, string label) where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            NativeArray<T> array = H8Memory.Allocate<T>(length, NativeMemoryOwner, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            if (!array.IsCreated)
+                throw new InvalidOperationException($"H8Memory rejected TBDR fallback buffer allocation for {label}.");
+
+            return array;
         }
 
         private static void DisposeFallbackNativeArray<T>(ref NativeArray<T> array) where T : struct
         {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            H8Memory.Release(ref array, NativeMemoryOwner);
         }
 
         private void ResetVaultHandles()

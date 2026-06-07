@@ -495,8 +495,8 @@ namespace Hecton8.Celestial
         private const float SurfaceEclipseVisibilityFloor = 0.7f;
         private const float SurfaceEclipseSkyNightBlendCeiling = 0.22f;
         private const float SurfaceEclipseShaderOcclusionCeiling = 0.24f;
-        private const float SurfaceAegirAngularDiameterDegrees = 20f;
-        private const float SurfaceAegirFixedVerticalOffset = 0.0564f;
+        private const float SurfaceAegirAngularDiameterDegrees = 38f;
+        private const float SurfaceAegirFixedVerticalOffset = 0.135f;
         private static readonly Color SurfaceReadableSkyAmbientFloor = new Color(0.300f, 0.380f, 0.420f, 1f);
         private static readonly Color SurfaceReadableEquatorAmbientFloor = new Color(0.280f, 0.360f, 0.400f, 1f);
         private static readonly Color SurfaceReadableGroundAmbientFloor = new Color(0.220f, 0.280f, 0.300f, 1f);
@@ -713,9 +713,9 @@ namespace Hecton8.Celestial
         [HideInInspector]
         [SerializeField] private SkyColorProfile _dayProfile = new SkyColorProfile
         {
-            zenithColor  = new Color(0.05f, 0.08f, 0.25f, 1f),
-            horizonColor = new Color(0.4f, 0.35f, 0.5f, 1f),
-            nadirColor   = new Color(0.02f, 0.03f, 0.08f, 1f)
+            zenithColor  = new Color(0.10f, 0.16f, 0.50f, 1f),
+            horizonColor = new Color(0.68f, 0.62f, 0.82f, 1f),
+            nadirColor   = new Color(0.03f, 0.05f, 0.13f, 1f)
         };
 
         [HideInInspector]
@@ -737,7 +737,7 @@ namespace Hecton8.Celestial
         [Header("Horizon Response")]
         [HideInInspector]
         [Tooltip("Compresses horizon luminance so the sky and gas giant dissolve into the same atmospheric band instead of reading as separate layers.")]
-        [SerializeField, Range(0.25f, 1f)] private float _horizonBrightnessScale = 0.72f;
+        [SerializeField, Range(0.25f, 1f)] private float _horizonBrightnessScale = 0.88f;
         [HideInInspector]
         [Tooltip("Pulls the horizon tint back toward the zenith hue to avoid a chalk-white band near the waterline.")]
         [SerializeField, Range(0f, 1f)] private float _horizonZenithBlend = 0.3f;
@@ -1138,7 +1138,7 @@ namespace Hecton8.Celestial
         private const float FirmamentSurvivalMemoryMb = 2048f;
         private const float FirmamentOverkillMemoryMb = 12288f;
         private const float FirmamentUnknownMemoryBudget01 = 0.25f;
-        private const int BestVisualDefaultsVersion = 5;
+        private const int BestVisualDefaultsVersion = 6;
         private const float NightAtmosphereInscatterFloor = 0.001f;
         private const int AtmosphereGradientSampleCount = 8;
         private const int CelestialBlackBoxFrameCount = 300;
@@ -1911,19 +1911,15 @@ namespace Hecton8.Celestial
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                    {
-                        _registeredToTickManager = false;
-                        _registeredLateFrameTick = false;
-                        break;
-                    }
-
+                    TryUnregisterFromTickManager();
+                    TryUnregisterLateFrameTickable();
                     if (isActiveAndEnabled)
                     {
-                        TryUnregisterFromTickManager();
-                        TryUnregisterLateFrameTickable();
-                        TryRegisterToTickManager();
-                        TryRegisterLateFrameTickable();
+                        if (currentService != null)
+                        {
+                            TryRegisterToTickManager();
+                            TryRegisterLateFrameTickable();
+                        }
                     }
                     break;
             }
@@ -2691,6 +2687,15 @@ namespace Hecton8.Celestial
                 _surfaceHorizonMistShelfIntensity = 1f;
                 _surfaceHorizonMistShelfHeight = 0.16f;
                 _surfaceHorizonMistShelfSoftness = 0.1f;
+            }
+
+            if (_visualDefaultsVersion < 6)
+            {
+                _dayProfile = SkyColorProfile.Default(
+                    new Color(0.10f, 0.16f, 0.50f, 1f),
+                    new Color(0.68f, 0.62f, 0.82f, 1f),
+                    new Color(0.03f, 0.05f, 0.13f, 1f));
+                _horizonBrightnessScale = 0.88f;
             }
 
             _visualDefaultsVersion = BestVisualDefaultsVersion;

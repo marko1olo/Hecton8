@@ -7,6 +7,9 @@ poi_tags: poi.brine_vane_scan;poi.density_shear_sample
 biome_tags: biome.brine_canyon;biome.ecology
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Codex card: brine vane"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.atlas_policy_stamp;poi.infrastructure_proxy_clause
 biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Страховой статус Atlas и personhood"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

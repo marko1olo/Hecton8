@@ -146,7 +146,7 @@ MonoBehaviour:
   analysisCooldown: 0.4
   analysisMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 3178377
   feedbackInterval: 0.45
   _debugLastMessage: 
 --- !u!114 &8450286475632697858

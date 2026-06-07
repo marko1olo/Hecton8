@@ -7,6 +7,9 @@ poi_tags: poi.orbit_dossier;poi.signal_mast
 biome_tags: biome.storm_shelf;biome.orbit_window
 locale: ar_SA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "سلم أقمار Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

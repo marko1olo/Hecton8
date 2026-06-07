@@ -7,6 +7,9 @@ poi_tags: poi.blue_debt_receipt;poi.custody_grade_tag
 biome_tags: biome.brine_canyon;biome.claim_admin
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Квитанция custody-grade Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

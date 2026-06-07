@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Unity.Burst;
@@ -69,17 +70,30 @@ namespace Hecton8.World
             {
                 int safeCellCount = math.max(1, cellCount);
                 int safeCollapseCapacity = math.max(1, collapseOrderCapacity);
-                Grid = new NativeArray<GridCell>(safeCellCount, allocator, NativeArrayOptions.ClearMemory);
-                PropagationQueue = new NativeQueue<int3>(allocator);
-                RngState = new NativeArray<uint4>(1, allocator, NativeArrayOptions.ClearMemory);
-                CollapseOrder = new NativeParallelHashMap<int3, byte>(safeCollapseCapacity, allocator);
+                Grid = default;
+                PropagationQueue = default;
+                RngState = default;
+                CollapseOrder = default;
 
-                NativeAllocationLifetime lifetime = ResolveLifetime(allocator);
-                NativeMemorySentinel.RegisterNativeArray(Grid, nameof(TOOL_Procedural_Wreckage_Generator), nameof(Grid), lifetime);
-                NativeMemorySentinel.RegisterNativeQueue(PropagationQueue, safeCellCount, nameof(TOOL_Procedural_Wreckage_Generator), nameof(PropagationQueue), lifetime);
-                PrewarmQueue(ref PropagationQueue, safeCellCount);
-                NativeMemorySentinel.RegisterNativeArray(RngState, nameof(TOOL_Procedural_Wreckage_Generator), nameof(RngState), lifetime);
-                NativeMemorySentinel.RegisterNativeParallelHashMap(CollapseOrder, nameof(TOOL_Procedural_Wreckage_Generator), nameof(CollapseOrder), lifetime);
+                try
+                {
+                    Grid = new NativeArray<GridCell>(safeCellCount, allocator, NativeArrayOptions.ClearMemory);
+                    PropagationQueue = new NativeQueue<int3>(allocator);
+                    RngState = new NativeArray<uint4>(1, allocator, NativeArrayOptions.ClearMemory);
+                    CollapseOrder = new NativeParallelHashMap<int3, byte>(safeCollapseCapacity, allocator);
+
+                    NativeAllocationLifetime lifetime = ResolveLifetime(allocator);
+                    RegisterNativeArray(Grid, nameof(Grid), lifetime);
+                    RegisterNativeQueue(PropagationQueue, safeCellCount, nameof(PropagationQueue), lifetime);
+                    PrewarmQueue(ref PropagationQueue, safeCellCount);
+                    RegisterNativeArray(RngState, nameof(RngState), lifetime);
+                    RegisterNativeParallelHashMap(CollapseOrder, nameof(CollapseOrder), lifetime);
+                }
+                catch
+                {
+                    Dispose();
+                    throw;
+                }
             }
 
             public void Dispose()
@@ -128,6 +142,31 @@ namespace Hecton8.World
                 while (queue.TryDequeue(out _))
                 {
                 }
+            }
+
+            private static void RegisterNativeArray<T>(NativeArray<T> array, string label, NativeAllocationLifetime lifetime)
+                where T : struct
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, nameof(TOOL_Procedural_Wreckage_Generator), label, lifetime);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            }
+
+            private static void RegisterNativeQueue<T>(NativeQueue<T> queue, int expectedCapacity, string label, NativeAllocationLifetime lifetime)
+                where T : unmanaged
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeQueue(queue, expectedCapacity, nameof(TOOL_Procedural_Wreckage_Generator), label, lifetime);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            }
+
+            private static void RegisterNativeParallelHashMap<TKey, TValue>(NativeParallelHashMap<TKey, TValue> map, string label, NativeAllocationLifetime lifetime)
+                where TKey : unmanaged, IEquatable<TKey>
+                where TValue : unmanaged
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeParallelHashMap(map, nameof(TOOL_Procedural_Wreckage_Generator), label, lifetime);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
             }
         }
 

@@ -210,6 +210,7 @@ namespace Hecton8.World
     {
         private const string NativeMemoryOwner = nameof(WorldRegrowthSimulationMemory);
         private const SystemID NativeMemorySystemId = SystemID.WorldStreaming;
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const int BlackBoxCapacity = 300;
         private const int MaxGridDimension = 4096;
         private const int MaxCellCount = 1048576;
@@ -330,7 +331,15 @@ namespace Hecton8.World
                 return;
             }
 
-            RegisterNativeArrays();
+            try
+            {
+                RegisterNativeArrays();
+            }
+            catch
+            {
+                Dispose();
+                throw;
+            }
         }
 
         /// <summary>
@@ -375,19 +384,26 @@ namespace Hecton8.World
 
         private void RegisterNativeArrays()
         {
-            NativeMemorySentinel.RegisterNativeArray(SoilNutrients, NativeMemoryOwner, nameof(SoilNutrients), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(SoilNutrientsScratch, NativeMemoryOwner, nameof(SoilNutrientsScratch), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(TemperatureQ, NativeMemoryOwner, nameof(TemperatureQ), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(BiomeIds, NativeMemoryOwner, nameof(BiomeIds), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(ResourceStages, NativeMemoryOwner, nameof(ResourceStages), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(TombstoneAgeDays, NativeMemoryOwner, nameof(TombstoneAgeDays), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(RegrowthProgressQ, NativeMemoryOwner, nameof(RegrowthProgressQ), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(OreStockQ, NativeMemoryOwner, nameof(OreStockQ), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(FloraStockQ, NativeMemoryOwner, nameof(FloraStockQ), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(PreyBiomassQ, NativeMemoryOwner, nameof(PreyBiomassQ), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(PredatorBiomassQ, NativeMemoryOwner, nameof(PredatorBiomassQ), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(ApexRespawnDays, NativeMemoryOwner, nameof(ApexRespawnDays), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(BlackBox, NativeMemoryOwner, nameof(BlackBox), NativeAllocationLifetime.Scene);
+            RegisterNativeArray(SoilNutrients, nameof(SoilNutrients));
+            RegisterNativeArray(SoilNutrientsScratch, nameof(SoilNutrientsScratch));
+            RegisterNativeArray(TemperatureQ, nameof(TemperatureQ));
+            RegisterNativeArray(BiomeIds, nameof(BiomeIds));
+            RegisterNativeArray(ResourceStages, nameof(ResourceStages));
+            RegisterNativeArray(TombstoneAgeDays, nameof(TombstoneAgeDays));
+            RegisterNativeArray(RegrowthProgressQ, nameof(RegrowthProgressQ));
+            RegisterNativeArray(OreStockQ, nameof(OreStockQ));
+            RegisterNativeArray(FloraStockQ, nameof(FloraStockQ));
+            RegisterNativeArray(PreyBiomassQ, nameof(PreyBiomassQ));
+            RegisterNativeArray(PredatorBiomassQ, nameof(PredatorBiomassQ));
+            RegisterNativeArray(ApexRespawnDays, nameof(ApexRespawnDays));
+            RegisterNativeArray(BlackBox, nameof(BlackBox));
+        }
+
+        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            if (sentinelId <= 0)
+                throw new InvalidOperationException($"NativeMemorySentinel rejected regrowth simulation array registration for {label}.");
         }
 
         private void ReleaseUnregisteredNativeArrays()

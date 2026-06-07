@@ -228,7 +228,7 @@ namespace Hecton8.Vehicles.DropPod
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
             {
-                _audioService = currentService as IAudioService;
+                CacheAudioService(currentService as IAudioService);
                 return;
             }
 
@@ -458,9 +458,9 @@ namespace Hecton8.Vehicles.DropPod
 
         private void QueueAudio(Vector3 worldPosition, bool targetSealed)
         {
-            IAudioService audio = _audioService;
+            IAudioService audio = ResolveAudioService();
             uint eventId = targetSealed ? sealAudioEventId : unlockAudioEventId;
-            if (!emitAudio || eventId == 0u || audio == null || !audio.IsInitialized || !DropPodSplineMath.IsFinite(worldPosition))
+            if (!emitAudio || eventId == 0u || audio == null || !DropPodSplineMath.IsFinite(worldPosition))
                 return;
 
             CoreAudioEvent audioEvent = new CoreAudioEvent(
@@ -568,7 +568,33 @@ namespace Hecton8.Vehicles.DropPod
             if (physicalHandController == null)
                 physicalHandController = ComponentReferenceUtility.ResolveOwnedComponent<PhysicalHandController>(_cachedTransform);
 
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void CacheRotations()

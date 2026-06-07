@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Brine Vane Forests"
+title: "غابات زعانف المحلول الملحي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Brine Vane Forests
+# غابات زعانف المحلول الملحي
 
-AR LOC HOLD: Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.
+غابات زعانف المحلول الملحي هي أول بيئة في العمق المتوسط تجعل الفيزياء غير المرئية مرئية. إنها أغشية مسطحة من الملح والمعادن مشدودة على حدود بين المحلول الملحي والحرارة والضغط. من بعيد تبدو كأوراق باهتة في واد غارق؛ وعن قرب هي أدوات مسار. الصفيحة السليمة تعني أن الماء في الجانب الآخر ليس مختلفا فقط، بل صعب الدخول، وفيه قص كثافة يكفي لثني السونار وإخراج الجسم من trim. الحواف الممزقة تعني عبورا حديثا. الأطراف الملتفة تظهر أين تضعف الحدود إلى نافذة قص. يمكن جمع الأضلاع المعدنية الباهتة من الشرائط المتساقطة، لكن قطع الصفيحة الحية قد يغلق الممر الوحيد المقروء عبر جدار الوادي. اتبع الزعانف الممزقة حين تحتاج إلى طريق. تجنب الماء الأسود الطبقي الذي يمحو حوافها.
 
 ## Scanner
 
-AR LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+غابة زعانف المحلول الملحي // أغشية ملحية-معدنية تنمو على طول قص الكثافة. تظهر أين يثخن الماء إلى جدار وأين سينحني السونار.
 
 ## Terminal
 
-AR LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+خط أساس الوادي: الصفائح السليمة تحدد حدود كثافة صلبة. الحواف الممزقة والأطراف الملتفة تشير إلى نوافذ قص أو جيوب أقل ملوحة أو حركة حديثة. تجنب الماء الطبقي المعتم؛ يمكن أن يعمي السونار ويجر البذلة دون الطفو المتوقع.
 
 ## Audio
 
-AR LOC HOLD: The canyon has leaves because it has pressure gradients.
+للوادي أوراق لأن له تدرجات ضغط.
 
 ## Field Note
 
-AR LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+ليست أشجارا. إنها أوراق ضغط: أغشية تتغذى على التدرجات الكيميائية، ولا تتمزق إلا حيث شق مسار طريقه مؤخرا.
 
 <!-- In-Game Wiki; generated from P226_BRINE_VANE_FORESTS/ar_SA. -->

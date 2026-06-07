@@ -9,32 +9,34 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Sensor-Tagged Fauna"
+title: "Fauna met sensortags"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Sensor-Tagged Fauna
+# Fauna met sensortags
 
-NL LOC HOLD: Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets.
+Fauna met sensortags voorkomt dat HECTON-8s biomechanische laag simpele corruptiefictie wordt. De wezens worden niet magisch in drones veranderd. Het zijn dieren en kolonies die monitorhardware overleefden. De tag werd socket, litteken, groeiring, mineraalblaar of vals oog omdat het ecosysteem deed wat ecosystemen doen: rond schade groeien.
+
+Zo krijgt elke signaalspook geschiedenis. Een Marauder kan een zwakke Deep Reach-identificatie horen uit een schelpgrazer of een biometalen oogknoop zien knipperen op een lichaam dat commando's negeert. Het oude bedrijf laat nog steeds papierwerk achter in vlees, maar het vlees gehoorzaamt niet. Atlas kan het signaal benutten, niet het dier bezitten. Dat maakt de horror verdrietiger en sterker: industriële controle probeerde leven te markeren, leven overleefde, en het merkteken rapporteert nog steeds aan systemen die niet meer begrijpen wat ze horen.
 
 ## Scanner
 
-NL LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+FAUNA MET SENSORTAGS // Oude biometalen tags zitten in groeiringen, littekens en schelpsockets; het dier draagt monitorhardware als lichaamsgeschiedenis, niet als gehoorzaamheid.
 
 ## Terminal
 
-NL LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+TAGNOTITIE: signaalcontinuïteit zwak, biologische integratie hoog, commandoreactie onbetrouwbaar. Behandel als passief litteken, onderbroken baken en mogelijke Atlas-diagnosespook.
 
 ## Audio
 
-NL LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+Het dier is geen drone. De drone is een oude wond in het dier.
 
 ## Field Note
 
-NL LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+Het dier is geen drone. De drone is een oude wond waar het dier omheen overleefde.
 
 <!-- External Site; generated from P234_SENSOR_TAGGED_FAUNA/nl_NL. -->

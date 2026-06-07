@@ -252,7 +252,7 @@ namespace Hecton8.Construction
             if (!isActiveAndEnabled)
                 return;
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 if (_registeredLateFrameTick)
                 {
@@ -266,8 +266,12 @@ namespace Hecton8.Construction
                     _registeredSlowTick = false;
                 }
 
-                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+                if (currentService != null)
+                {
+                    _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+                    _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+                }
+
                 return;
             }
 

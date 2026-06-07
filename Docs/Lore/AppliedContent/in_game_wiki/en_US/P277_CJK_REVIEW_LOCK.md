@@ -7,6 +7,9 @@ poi_tags: poi.cjk_review_card;poi.cjk_wrap_sample
 biome_tags: biome.localization;biome.cjk
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "CJK Font And Width Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

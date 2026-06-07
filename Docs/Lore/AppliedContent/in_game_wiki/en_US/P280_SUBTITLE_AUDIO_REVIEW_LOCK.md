@@ -7,6 +7,9 @@ poi_tags: poi.subtitle_audio_review_card;poi.audio_source_label_sheet
 biome_tags: biome.localization;biome.audio
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Subtitle And Audio Timing Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,32 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Noble Gas Brine Pockets"
+title: "貴ガス塩水ポケット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Noble Gas Brine Pockets
+# 貴ガス塩水ポケット
 
-JP LOC HOLD: Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.
+貴ガス塩水ポケットは、HECTON-8の鉱物塩水の中に残った密封圧力記録である。有用なポケットとは水中のキセノンだけではない。ガス比、圧力曲線、温度の傷、鉱物の欠陥格子が一体で保たれ、地下で何が起きたかを証明できる状態だ。ポケットを抜気すれば価値と証拠の両方が壊れる。これらの試料が重要なのは、Deep Reachと後のAtlas工程が、正しい圧力履歴を持つ原料をXenon-Omegaへ押し込めるからだ。ただし未加工のポケットはそれ自体では宝ではなく、まだ地質である。
 
 ## Scanner
 
-JP LOC HOLD: Natural-to-process resource. Valuable only if pressure history survives extraction.
+貴ガス塩水ポケット // 鉱物塩水内の密封された圧力泡。圧力履歴が閉じている時だけ価値が残る。抜けば財産は天候になる。
 
 ## Terminal
 
-JP LOC HOLD: RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+資源分類: 天然/工程原料。圧力ベル抽出を使用。試料を抜気または加温するな。必須証拠: 圧力曲線、ガス比、鉱物欠陥マップ。
 
 ## Audio
 
-JP LOC HOLD: Open it wrong and the fortune becomes weather.
+Xenon-Omegaはここで、奇跡の鉱石ではなく閉じ込められた化学として始まる。
 
 ## Field Note
 
-JP LOC HOLD: This is where Xenon-Omega begins as chemistry, not magic.
+濃いか確かめるために開けるな。貧しいクルーはそうやって泡を作る。
 
 <!-- In-Game Wiki; generated from P117_NOBLE_GAS_BRINE_POCKETS/ja_JP. -->

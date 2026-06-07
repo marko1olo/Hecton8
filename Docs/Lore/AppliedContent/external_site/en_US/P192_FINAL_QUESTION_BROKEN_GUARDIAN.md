@@ -7,6 +7,9 @@ poi_tags: poi.atlas_guardian_status;poi.ocean_machine_quarantine_order
 biome_tags: biome.atlas_basin;biome.repair_ecology
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Final Question Broken Guardian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

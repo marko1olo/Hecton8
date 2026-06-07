@@ -9,32 +9,34 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Silt Ambusher Telegraph"
+title: "Vorwarnung des Schlamm-Lauerers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Silt Ambusher Telegraph
+# Vorwarnung des Schlamm-Lauerers
 
-DE LOC HOLD: Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact.
+Vorwarnung des Schlamm-Lauerers ist zugleich Kreaturenartikel und Fairnessregel für HECTON-8. Die tiefsten Zonen dürfen feindlich, dunkel und schwer lesbar sein, aber sie sollen den Spieler nicht mit unsichtbaren Würfen bestrafen. Ein Schlamm-Lauerer ist schrecklich, weil er fast Gelände ist: eine lebende Falle unter Sediment, wartend auf Vibration, Wärme und unvorsichtiges Gewicht. Er gehört in die Abyss, weil die Abyss ohnehin von Vertrauen in Sensoren handelt.
+
+Gute Platzierung liefert Beweise vor der Gefahr. Die Platte ist zu glatt. Kleine Kriecher fehlen. Der Rand bildet eine Sichel, die natürliche Ablagerung nicht erzeugt. Ein Puls kommt spät, niedrig und weich zurück. Eine Lampe fängt einen Atemzug Schlamm ein, wo keine Strömung sein sollte. Sobald der Spieler diese Zeichen kennt, wird jeder flache Fleck zur Frage statt zur Zufallsstrafe. Das ist der HECTON-8-Vertrag: Der Ozean darf grausam sein, aber er muss für aufmerksame Menschen lesbar bleiben.
 
 ## Scanner
 
-DE LOC HOLD: A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.
+SCHLAMM-LAUERBETT // Sauberer Schlamm, fehlende Weidetiere und eine niedrige Pulsrückgabe markieren eine lebende Falle, bevor die Platte aufbricht.
 
 ## Terminal
 
-DE LOC HOLD: CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.
+KONTAKTREGEL: Lauerbetten erfordern mindestens zwei Hinweise vor Kontakt: saubere Platte, fehlende Mikrofauna, sichelförmiger Rand, niedrige Pulsrückgabe oder verzögertes Schlammatmen. Wenn das Hinweisbudget scheitert, auf reine Spurbegegnung herabstufen.
 
 ## Audio
 
-DE LOC HOLD: Flat ground is a lie down here.
+Flacher Grund lügt hier unten. Such nach dem, was nicht darauf kriecht.
 
 ## Field Note
 
-DE LOC HOLD: Deep danger must telegraph. The player should learn the wrongness before paying for it.
+Die Abyss darf der Figur gegenüber unfair sein; das Spiel darf dem Spieler gegenüber nicht unfair sein. Jeder Hinterhalt muss lesbare Falschheit hinterlassen.
 
 <!-- External Site; generated from P230_SILT_AMBUSHER_TELEGRAPH/de_DE. -->

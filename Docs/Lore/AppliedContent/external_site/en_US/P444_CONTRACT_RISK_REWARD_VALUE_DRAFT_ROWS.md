@@ -7,6 +7,9 @@ poi_tags: poi.contract_risk_table_draft;poi.replay_seed_weight_card
 biome_tags: biome.contract_layer;biome.replay
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Contract Risk Reward Value Draft Rows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

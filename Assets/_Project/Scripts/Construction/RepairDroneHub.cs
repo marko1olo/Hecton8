@@ -327,15 +327,10 @@ namespace Hecton8.Construction
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                    {
-                        _registered = false;
-                    }
-                    else if (isActiveAndEnabled)
-                    {
-                        TryUnregister();
+                    bool shouldRestoreTick = currentService != null && isActiveAndEnabled;
+                    TryUnregister();
+                    if (shouldRestoreTick)
                         TryRegister();
-                    }
                     break;
                 case GlobalRegistryServiceSlot.PlayerInventory:
                     _cachedPlayerInventoryService = currentService as IPlayerInventoryService;

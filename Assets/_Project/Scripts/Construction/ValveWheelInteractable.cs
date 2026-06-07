@@ -98,9 +98,9 @@ namespace Hecton8.Construction
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            bool shouldRestoreTick = _registeredTick && _physicalGrabActive;
+            bool shouldRestoreTick = _physicalGrabActive;
+            TryUnregisterTick();
             _dispatcherAvailable = currentService != null;
-            _registeredTick = false;
             if (shouldRestoreTick && currentService != null && isActiveAndEnabled)
                 TryRegisterTick();
         }

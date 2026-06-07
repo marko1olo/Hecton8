@@ -6,7 +6,9 @@
 
 namespace Hecton8.Inventory
 {
+    using System;
     using Hecton8.Core;
+    using Hecton8.Core.Memory;
     using Unity.Collections;
     using Unity.Jobs;
     using Unity.Mathematics;
@@ -61,8 +63,7 @@ namespace Hecton8.Inventory
         private NativeArray<byte> _anchorFlags;
         private int _occupiedCells;
         private ulong _singleCellFreeMask;
-        private const string NativeMemoryOwner = nameof(InventoryGrid);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const SystemID NativeArrayOwnerSystem = SystemID.GameplayLoot;
 
         public int Columns => _columns;
         public int Rows => _rows;
@@ -91,16 +92,21 @@ namespace Hecton8.Inventory
             _rows = rows;
 
             int totalCells = columns * rows;
-            _cellAnchorIndices = new NativeArray<int>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _anchorHashIds = new NativeArray<int>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _anchorWidths = new NativeArray<byte>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _anchorHeights = new NativeArray<byte>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _anchorMaxStacks = new NativeArray<ushort>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _anchorWeights = new NativeArray<float>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _anchorCategoryIds = new NativeArray<byte>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _anchorRarityIds = new NativeArray<byte>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _anchorFlags = new NativeArray<byte>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            RegisterNativeMemorySentinel();
+            _cellAnchorIndices = H8Memory.Allocate<int>(totalCells, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorHashIds = H8Memory.Allocate<int>(totalCells, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorWidths = H8Memory.Allocate<byte>(totalCells, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorHeights = H8Memory.Allocate<byte>(totalCells, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorMaxStacks = H8Memory.Allocate<ushort>(totalCells, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorWeights = H8Memory.Allocate<float>(totalCells, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorCategoryIds = H8Memory.Allocate<byte>(totalCells, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorRarityIds = H8Memory.Allocate<byte>(totalCells, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorFlags = H8Memory.Allocate<byte>(totalCells, NativeArrayOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            if (totalCells > 0 && !AllNativeArraysCreated())
+            {
+                Dispose(default);
+                throw new InvalidOperationException("InventoryGrid native allocation failed.");
+            }
+
             _occupiedCells = 0;
             _singleCellFreeMask = BuildFirst64Mask(totalCells);
         }
@@ -129,17 +135,17 @@ namespace Hecton8.Inventory
             _singleCellFreeMask = 0UL;
         }
 
-        private void RegisterNativeMemorySentinel()
+        private bool AllNativeArraysCreated()
         {
-            NativeMemorySentinel.RegisterNativeArray(_cellAnchorIndices, NativeMemoryOwner, nameof(_cellAnchorIndices), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_anchorHashIds, NativeMemoryOwner, nameof(_anchorHashIds), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_anchorWidths, NativeMemoryOwner, nameof(_anchorWidths), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_anchorHeights, NativeMemoryOwner, nameof(_anchorHeights), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_anchorMaxStacks, NativeMemoryOwner, nameof(_anchorMaxStacks), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_anchorWeights, NativeMemoryOwner, nameof(_anchorWeights), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_anchorCategoryIds, NativeMemoryOwner, nameof(_anchorCategoryIds), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_anchorRarityIds, NativeMemoryOwner, nameof(_anchorRarityIds), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_anchorFlags, NativeMemoryOwner, nameof(_anchorFlags), NativeMemoryLifetime);
+            return _cellAnchorIndices.IsCreated &&
+                   _anchorHashIds.IsCreated &&
+                   _anchorWidths.IsCreated &&
+                   _anchorHeights.IsCreated &&
+                   _anchorMaxStacks.IsCreated &&
+                   _anchorWeights.IsCreated &&
+                   _anchorCategoryIds.IsCreated &&
+                   _anchorRarityIds.IsCreated &&
+                   _anchorFlags.IsCreated;
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array, ref JobHandle dependency, ref bool hasDependency) where T : struct
@@ -147,17 +153,14 @@ namespace Hecton8.Inventory
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
             if (hasDependency)
             {
-                dependency = array.Dispose(dependency);
+                dependency = H8Memory.Release(ref array, dependency, NativeArrayOwnerSystem);
             }
             else
             {
-                array.Dispose();
+                H8Memory.Release(ref array, NativeArrayOwnerSystem);
             }
-
-            array = default;
         }
 
         public bool HasAnchor(int anchorIndex)

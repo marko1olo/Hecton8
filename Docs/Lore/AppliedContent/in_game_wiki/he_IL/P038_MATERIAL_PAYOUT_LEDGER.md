@@ -7,6 +7,9 @@ poi_tags: poi.blue_debt_sample;poi.claim_accounting_terminal
 biome_tags: biome.resource_cache;biome.dead_claim
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "ספר תשלום חומרי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

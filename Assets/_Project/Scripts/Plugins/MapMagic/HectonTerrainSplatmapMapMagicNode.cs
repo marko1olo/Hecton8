@@ -239,10 +239,20 @@ namespace MapMagic.Nodes.MatrixGenerators
             out int weightsRegistrationId,
             out int slopeWeightsRegistrationId)
         {
-            heightsRegistrationId = NativeMemorySentinel.RegisterNativeArray(heights, NativeMemoryOwner, HeightLabel, NativeAllocationLifetime.TempJob);
-            sedimentRegistrationId = NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
-            weightsRegistrationId = NativeMemorySentinel.RegisterNativeArray(weights, NativeMemoryOwner, WeightsLabel, NativeAllocationLifetime.TempJob);
-            slopeWeightsRegistrationId = NativeMemorySentinel.RegisterNativeArray(slopeWeights, NativeMemoryOwner, SlopeWeightsLabel, NativeAllocationLifetime.TempJob);
+            heightsRegistrationId = RegisterTempJobArray(heights, HeightLabel);
+            sedimentRegistrationId = RegisterTempJobArray(sediment, SedimentLabel);
+            weightsRegistrationId = RegisterTempJobArray(weights, WeightsLabel);
+            slopeWeightsRegistrationId = RegisterTempJobArray(slopeWeights, SlopeWeightsLabel);
+        }
+
+        private static int RegisterTempJobArray<T>(NativeArray<T> array, string label)
+            where T : struct
+        {
+            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+            if (registrationId <= 0)
+                throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+
+            return registrationId;
         }
 
         private static void DisposeTracked<T>(ref NativeArray<T> array, ref int registrationId)

@@ -7,6 +7,9 @@ poi_tags: poi.seed_role_name_card;poi.proc_roster_rule
 biome_tags: biome.worker_locker;biome.dossier_archive
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Seed Role Name Grammar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

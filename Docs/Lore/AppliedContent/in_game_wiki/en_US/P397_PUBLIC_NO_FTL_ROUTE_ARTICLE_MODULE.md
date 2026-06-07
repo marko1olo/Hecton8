@@ -7,6 +7,9 @@ poi_tags: poi.public_transit_diagram;poi.no_ftl_article_panel
 biome_tags: biome.publication;biome.human_space
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "No-FTL Route Delay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

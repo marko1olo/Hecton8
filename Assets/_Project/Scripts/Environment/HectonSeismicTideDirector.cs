@@ -1516,9 +1516,7 @@ namespace Hecton8.Environment
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            _registeredUpdatable = false;
-            _registeredSlowTickable = false;
-            _registeredLateFrameTickable = false;
+            TryUnregisterTickLanes();
             if (currentService != null && _isInitialized && isActiveAndEnabled)
                 TryRegisterTickLanes();
         }

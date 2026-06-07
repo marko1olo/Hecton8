@@ -78,6 +78,7 @@ namespace Hecton8.Editor
         private const double RequestedPlaySeconds = 15.0;
         private const double SteadyStateWarmupSeconds = 5.0;
         private const double PhaseTimeoutSeconds = 90.0;
+        private const int BeeBackendKillWaitMilliseconds = 2000;
         private const int MaxFrameDeltaSamples = 4096;
         private const int MaxOnePercentWorstSamples = MaxFrameDeltaSamples / 100;
         private static readonly Encoding JsonEncoding = new UTF8Encoding(false);
@@ -563,15 +564,11 @@ namespace Hecton8.Editor
                 Process[] processes = Process.GetProcessesByName("bee_backend");
                 for (int i = 0; i < processes.Length; i++)
                 {
-                    using (Process process = processes[i])
-                    {
-                        if (process.HasExited)
-                            continue;
-
-                        process.Kill();
-                        process.WaitForExit(2000);
+                    Process process = processes[i];
+                    if (TryKillBeeBackendNoThrow(process))
                         killed++;
-                    }
+
+                    DisposeBeeBackendProcessNoThrow(process);
                 }
             }
             catch (Exception exception)
@@ -582,6 +579,40 @@ namespace Hecton8.Editor
             }
 
             return killed;
+        }
+
+        private static bool TryKillBeeBackendNoThrow(Process process)
+        {
+            try
+            {
+                if (process.HasExited)
+                    return false;
+
+                process.Kill();
+                process.WaitForExit(BeeBackendKillWaitMilliseconds);
+                return true;
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[CodexPlayModeLauncher] Failed to kill bee_backend: " + exception.Message);
+#endif
+                return false;
+            }
+        }
+
+        private static void DisposeBeeBackendProcessNoThrow(Process process)
+        {
+            try
+            {
+                process.Dispose();
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[CodexPlayModeLauncher] Failed to dispose bee_backend handle: " + exception.Message);
+#endif
+            }
         }
 
         private static void ForceLoadEntrySceneFromDisk()

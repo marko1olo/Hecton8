@@ -157,7 +157,7 @@ namespace Hecton8.UI
             if (_projectionScheduled)
                 return;
 
-            ISpatialAudioImpactEmitterReadModel audioManager = _cachedAudioManager;
+            ISpatialAudioImpactEmitterReadModel audioManager = ResolveImpactEmitterReadModel();
             if (audioManager == null)
             {
                 QueueHideDots();
@@ -721,18 +721,13 @@ namespace Hecton8.UI
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.Audio)
             {
-                _cachedAudioManager = currentService as ISpatialAudioImpactEmitterReadModel;
+                CacheImpactEmitterReadModel(currentService);
             }
-            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null)
-                {
-                    _registeredLateFrame = false;
-                    return;
-                }
-
                 UnregisterFromTickManager();
-                RegisterToTickManager();
+                if (currentService != null && isActiveAndEnabled)
+                    RegisterToTickManager();
             }
         }
 
@@ -756,7 +751,38 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedPlayerContext = GlobalRegistry.Player;
-            _cachedAudioManager = GlobalRegistry.Audio as ISpatialAudioImpactEmitterReadModel;
+            CacheImpactEmitterReadModel(GlobalRegistry.Audio);
+        }
+
+        private void CacheImpactEmitterReadModel(object audioRuntime)
+        {
+            _cachedAudioManager = IsAudioRuntimeObjectUsable(audioRuntime)
+                ? audioRuntime as ISpatialAudioImpactEmitterReadModel
+                : null;
+        }
+
+        private ISpatialAudioImpactEmitterReadModel ResolveImpactEmitterReadModel()
+        {
+            ISpatialAudioImpactEmitterReadModel audioManager = _cachedAudioManager;
+            if (IsAudioRuntimeObjectUsable(audioManager))
+                return audioManager;
+
+            _cachedAudioManager = null;
+            return null;
+        }
+
+        private static bool IsAudioRuntimeObjectUsable(object runtime)
+        {
+            if (runtime == null)
+                return false;
+
+            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+                return false;
+
+            if (runtime is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private static Canvas ResolveTargetCanvas(bool allowComponentFallback)

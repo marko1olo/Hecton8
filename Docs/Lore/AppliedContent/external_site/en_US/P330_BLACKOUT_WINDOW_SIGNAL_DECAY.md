@@ -7,6 +7,9 @@ poi_tags: poi.signal_decay_meter;poi.aegir_shadow_window
 biome_tags: biome.aegir;biome.comms
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Blackout Window Signal Decay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

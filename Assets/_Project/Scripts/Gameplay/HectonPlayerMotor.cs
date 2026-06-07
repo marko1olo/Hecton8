@@ -8,6 +8,7 @@ using Hecton8.Core.Contracts.Physics;
 using Hecton8.Physics.KCC;
 using Hecton8.World;
 using System.Runtime.CompilerServices;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -39,6 +40,7 @@ namespace Hecton8.Gameplay
             1f / (1f + HydrodynamicAddedMassAccelerationScale);
         private const float DirectionalDragDominantAxisThresholdSq = 100f;
         private const float DirectionalDragSpeedSqPolynomialScale = 0.01f;
+        private const int KccCollisionHitStride = 8;
 
         private Rigidbody _body;
         private CapsuleCollider _capsule;
@@ -52,9 +54,19 @@ namespace Hecton8.Gameplay
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IFluidDecalPresentationSink _fluidDecals;
         private IPhysicsService _physicsService;
+        private IDataVault _dataVault;
+        private VaultGenerationHandle<HydrodynamicKccCollisionHitDTO> _kccCollisionHitsHandle;
+        private VaultGenerationHandle<HydrodynamicKccDebugOutputDTO> _kccDebugOutputsHandle;
         private Vector3 _lastKnownLinearVelocity;
         private float _encumbranceMovementMultiplier = 1f;
         private float _wakeSiltEmissionCooldown;
+        private Vector3 _lastKccContactNormal;
+        private Vector3 _lastKccContactPoint;
+        private float _lastKccContactDistance;
+        private int _lastKccContactPhysicsFrame = -1;
+        private uint _lastKccContactShiftSequence;
+        private uint _lastKccContactBodyBindEpoch;
+        private bool _lastKccContactIsVoxel;
         private Vector3 _lastWallSlideNormal;
         private Vector3 _lastWallSlidePoint;
         private float _lastWallSlideBlockedSpeed;
@@ -148,6 +160,46 @@ namespace Hecton8.Gameplay
             slideAngleDegrees = _lastWallSlideAngleDegrees;
             velocityReduction01 = _lastWallSlideVelocityReduction01;
             isVoxelWall = _lastWallSlideIsVoxel;
+            return true;
+        }
+
+        internal bool TryGetRecentKinematicCollisionContact(
+            int maxPhysicsFrameAge,
+            out Vector3 normal,
+            out Vector3 point,
+            out float distance,
+            out int physicsFrame,
+            out bool isVoxelContact)
+        {
+            normal = Vector3.zero;
+            point = Vector3.zero;
+            distance = 0f;
+            physicsFrame = _lastKccContactPhysicsFrame;
+            isVoxelContact = false;
+
+            if (HectonFloatingOrigin.IsShiftInProgress)
+                return false;
+
+            if (_lastKccContactShiftSequence != HectonFloatingOrigin.CurrentShiftSequence)
+                return false;
+
+            if (_lastKccContactBodyBindEpoch != _bodyBindEpoch)
+                return false;
+
+            if (_lastKccContactPhysicsFrame < 0)
+                return false;
+
+            int age = SystemDispatcher.CurrentFrameIndex - _lastKccContactPhysicsFrame;
+            if (age < 0 || age > math.max(0, maxPhysicsFrameAge))
+                return false;
+
+            if (_lastKccContactNormal.sqrMagnitude <= MinVectorMagnitudeSq)
+                return false;
+
+            normal = _lastKccContactNormal;
+            point = _lastKccContactPoint;
+            distance = _lastKccContactDistance;
+            isVoxelContact = _lastKccContactIsVoxel;
             return true;
         }
 
@@ -250,6 +302,7 @@ namespace Hecton8.Gameplay
             TryUnregisterPostFixedTick();
             TryUnregisterMotorService();
             TryUnregisterHotSwap();
+            ResetKccContactState();
             ResetWallSlideContactState();
             ResetDisabledProbeState();
         }
@@ -261,6 +314,7 @@ namespace Hecton8.Gameplay
             TryUnregisterPostFixedTick();
             TryUnregisterMotorService();
             TryUnregisterHotSwap();
+            ResetKccContactState();
             ResetWallSlideContactState();
             ResetDisabledProbeState();
         }
@@ -300,8 +354,23 @@ namespace Hecton8.Gameplay
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object newService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterLateFrameTick();
+                TryUnregisterPostFixedTick();
+                if (newService != null && isActiveAndEnabled)
+                {
+                    TryRegisterLateFrameTick();
+                    TryRegisterPostFixedTick();
+                }
+
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
+                _dataVault = newService as IDataVault;
+                ResetKccContactState();
                 ResetDisabledProbeState();
                 return;
             }
@@ -672,6 +741,7 @@ namespace Hecton8.Gameplay
         public void ResetRuntimeState()
         {
             _isGrounded = false;
+            ResetKccContactState();
             ResetWallSlideContactState();
             _kinematicRepairSnapReady = false;
             _kinematicRepairSnapBodyBindEpoch = _bodyBindEpoch;
@@ -716,6 +786,7 @@ namespace Hecton8.Gameplay
 
         private void ResetBodyBoundCachedResults()
         {
+            ResetKccContactState();
             ResetWallSlideContactState();
             _kinematicRepairSnapReady = false;
             _kinematicRepairTargetProbe = default;
@@ -741,6 +812,7 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void PostFixedTick(float fixedDeltaTime)
         {
+            RefreshKccContactState();
             TryEmitWakeSiltDecal(fixedDeltaTime);
         }
 
@@ -850,6 +922,193 @@ namespace Hecton8.Gameplay
             _lastWallSlideShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             _lastWallSlideBodyBindEpoch = _bodyBindEpoch;
             _lastWallSlideIsVoxel = false;
+        }
+
+        private void ResetKccContactState()
+        {
+            ClearKccContactSample();
+            _kccCollisionHitsHandle = default;
+            _kccDebugOutputsHandle = default;
+        }
+
+        private void ClearKccContactSample()
+        {
+            _lastKccContactNormal = Vector3.zero;
+            _lastKccContactPoint = Vector3.zero;
+            _lastKccContactDistance = 0f;
+            _lastKccContactPhysicsFrame = -1;
+            _lastKccContactShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            _lastKccContactBodyBindEpoch = _bodyBindEpoch;
+            _lastKccContactIsVoxel = false;
+            ResetWallSlideContactState();
+        }
+
+        private void RefreshKccContactState()
+        {
+            if (!HydrodynamicKccOwnsCollision())
+            {
+                ResetKccContactState();
+                return;
+            }
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                ResetKccContactState();
+                return;
+            }
+
+            if (!TryReadKccDebugOutput(vault, out HydrodynamicKccDebugOutputDTO debug) ||
+                (debug.Flags & HydrodynamicKccMath.FlagCollision) == 0u ||
+                !HydrodynamicKccMath.IsFinite(debug.CollisionNormal) ||
+                math.lengthsq(debug.CollisionNormal) <= MinVectorMagnitudeSq)
+            {
+                ClearKccContactSample();
+                return;
+            }
+
+            Vector3 normal = SafeNormal(
+                new Vector3(debug.CollisionNormal.x, debug.CollisionNormal.y, debug.CollisionNormal.z),
+                Vector3.up);
+            Vector3 point = ResolveCurrentRuntimePosition(_body != null ? _body.position : Vector3.zero);
+            float distance = math.max(0f, math.isfinite(debug.HitDistance) ? debug.HitDistance : 0f);
+            bool isVoxel = false;
+
+            if (TryReadNearestKccCollisionHit(vault, out HydrodynamicKccCollisionHitDTO hit))
+            {
+                normal = SafeNormal(new Vector3(hit.Normal.x, hit.Normal.y, hit.Normal.z), normal);
+                point = SafeVelocity(new Vector3(hit.Point.x, hit.Point.y, hit.Point.z), point);
+                distance = math.max(0f, math.isfinite(hit.Distance) ? hit.Distance : distance);
+                isVoxel = (hit.Flags & HydrodynamicKccMath.HitFlagSdfSpeculative) != 0u;
+            }
+
+            _lastKccContactNormal = normal;
+            _lastKccContactPoint = point;
+            _lastKccContactDistance = distance;
+            _lastKccContactPhysicsFrame = SystemDispatcher.CurrentFrameIndex;
+            _lastKccContactShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            _lastKccContactBodyBindEpoch = _bodyBindEpoch;
+            _lastKccContactIsVoxel = isVoxel;
+
+            Vector3 velocity = ResolveCurrentLinearVelocity(Vector3.zero);
+            float blockedSpeed = math.max(0f, -math.dot((float3)velocity, (float3)normal));
+            bool wallContact = math.abs(normal.y) < 0.65f && blockedSpeed > DenormalVelocityFlushThresholdMetersPerSecond;
+            if (wallContact)
+            {
+                _lastWallSlideNormal = normal;
+                _lastWallSlidePoint = point;
+                _lastWallSlideBlockedSpeed = blockedSpeed;
+                _lastWallSlideAngleDegrees = math.degrees(math.acos(math.clamp(math.abs(normal.y), 0f, 1f)));
+                _lastWallSlideVelocityReduction01 = math.saturate(blockedSpeed / math.max(blockedSpeed + velocity.magnitude, 0.001f));
+                _lastWallSlidePhysicsFrame = _lastKccContactPhysicsFrame;
+                _lastWallSlideShiftSequence = _lastKccContactShiftSequence;
+                _lastWallSlideBodyBindEpoch = _lastKccContactBodyBindEpoch;
+                _lastWallSlideIsVoxel = isVoxel;
+            }
+            else
+            {
+                ResetWallSlideContactState();
+            }
+        }
+
+        private bool TryReadKccDebugOutput(IDataVault vault, out HydrodynamicKccDebugOutputDTO debug)
+        {
+            debug = default;
+            if (!EnsureKccDebugOutputHandle(vault))
+                return false;
+
+            if (!vault.TryReadOnlyHandle(in _kccDebugOutputsHandle, out NativeArray<HydrodynamicKccDebugOutputDTO>.ReadOnly debugOutputs) ||
+                !debugOutputs.IsCreated ||
+                debugOutputs.Length <= 0)
+            {
+                _kccDebugOutputsHandle = default;
+                return false;
+            }
+
+            debug = debugOutputs[0];
+            return true;
+        }
+
+        private bool TryReadNearestKccCollisionHit(IDataVault vault, out HydrodynamicKccCollisionHitDTO nearestHit)
+        {
+            nearestHit = default;
+            if (!EnsureKccCollisionHitsHandle(vault))
+                return false;
+
+            if (!vault.TryReadOnlyHandle(in _kccCollisionHitsHandle, out NativeArray<HydrodynamicKccCollisionHitDTO>.ReadOnly hits) ||
+                !hits.IsCreated ||
+                hits.Length <= 0)
+            {
+                _kccCollisionHitsHandle = default;
+                return false;
+            }
+
+            int hitCount = math.min(KccCollisionHitStride, hits.Length);
+            float nearestDistance = float.MaxValue;
+            bool found = false;
+            for (int i = 0; i < hitCount; i++)
+            {
+                HydrodynamicKccCollisionHitDTO candidate = hits[i];
+                if ((candidate.Flags & HydrodynamicKccMath.HitFlagValid) == 0u ||
+                    !HydrodynamicKccMath.IsFinite(candidate.Normal) ||
+                    math.lengthsq(candidate.Normal) <= MinVectorMagnitudeSq ||
+                    !HydrodynamicKccMath.IsFinite(candidate.Point))
+                {
+                    continue;
+                }
+
+                float distance = math.max(0f, math.isfinite(candidate.Distance) ? candidate.Distance : 0f);
+                if (found && distance >= nearestDistance)
+                    continue;
+
+                nearestDistance = distance;
+                nearestHit = candidate;
+                found = true;
+            }
+
+            return found;
+        }
+
+        private bool EnsureKccDebugOutputHandle(IDataVault vault)
+        {
+            if (IsVaultHandle(in _kccDebugOutputsHandle, BufferID.ShinobuHydroKccDebugOutputs, SystemID.Physics))
+                return true;
+
+            if (vault == null ||
+                !vault.TryGetGenerationHandle(BufferID.ShinobuHydroKccDebugOutputs, out _kccDebugOutputsHandle) ||
+                !IsVaultHandle(in _kccDebugOutputsHandle, BufferID.ShinobuHydroKccDebugOutputs, SystemID.Physics))
+            {
+                _kccDebugOutputsHandle = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool EnsureKccCollisionHitsHandle(IDataVault vault)
+        {
+            if (IsVaultHandle(in _kccCollisionHitsHandle, BufferID.ShinobuHydroKccResolvedHits, SystemID.Physics))
+                return true;
+
+            if (vault == null ||
+                !vault.TryGetGenerationHandle(BufferID.ShinobuHydroKccResolvedHits, out _kccCollisionHitsHandle) ||
+                !IsVaultHandle(in _kccCollisionHitsHandle, BufferID.ShinobuHydroKccResolvedHits, SystemID.Physics))
+            {
+                _kccCollisionHitsHandle = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID systemId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)systemId &&
+                   handle.Generation != 0u;
         }
 
         private void TryEmitWakeSiltDecal(float fixedDeltaTime)
@@ -1106,6 +1365,7 @@ namespace Hecton8.Gameplay
             _playerRuntimeContext = GlobalRegistry.Player;
             _fluidDecals = GlobalRegistry.FluidDecalPresentation;
             _physicsService = GlobalRegistry.Physics;
+            _dataVault = GlobalRegistry.DataVault;
         }
 
         private void TryUnregisterHotSwap()
@@ -1118,6 +1378,7 @@ namespace Hecton8.Gameplay
             _playerRuntimeContext = null;
             _fluidDecals = null;
             _physicsService = null;
+            _dataVault = null;
         }
 
         private IPhysicsService ResolvePhysicsService()

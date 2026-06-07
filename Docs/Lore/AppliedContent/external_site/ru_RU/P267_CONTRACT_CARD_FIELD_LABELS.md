@@ -7,6 +7,9 @@ poi_tags: poi.contract_field_label_card;poi.lien_severity_plate
 biome_tags: biome.ui;biome.contract
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Поля карточки контракта"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

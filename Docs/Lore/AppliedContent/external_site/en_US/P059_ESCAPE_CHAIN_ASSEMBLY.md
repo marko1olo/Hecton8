@@ -7,6 +7,9 @@ poi_tags: poi.ascent_cradle;poi.pressure_clamp
 biome_tags: biome.service_corridor;biome.machine_trench
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Escape Chain Assembly"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

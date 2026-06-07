@@ -7,6 +7,9 @@ poi_tags: poi.biofilm_cable;poi.acoustic_filter_colony
 biome_tags: biome.cable_reef;biome.repair_fauna
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Ремонтная экология"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

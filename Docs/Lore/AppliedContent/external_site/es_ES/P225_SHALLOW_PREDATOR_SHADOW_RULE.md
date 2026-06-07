@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Shallow Predator Shadow Rule"
+title: "Regla de sombra del depredador somero"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Shallow Predator Shadow Rule
+# Regla de sombra del depredador somero
 
-ES LOC HOLD: Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact.
+La Regla de sombra del depredador somero es una regla de lore y de encuentro, no un perfil de especie. Su trabajo es proteger el tono del shelf fótico: bello, legible, vivo y todavía capaz de matarte. El depredador llega mediante testigos. Los pastadores de vidrio dejan comida atrás y desaparecen. El bloom de deriva linterna sigue brillando pero pierde su charla particulada suave. Los arrecifes de pinzas de concha se aprietan sobre los cables como si toda la ruta hubiera tomado aire. Solo entonces una sombra se mueve por la luz. Ese orden importa porque hace que el océano se sienta sistémico en vez de teatral. El jugador no es castigado por un monstruo que se materializa de la nada; recibe presión de un conjunto de señales que podría haber aprendido a leer. Una buena implementación debe superponer pistas de audio, visuales y ecológicas para que la advertencia sobreviva a distintas pantallas, idiomas y necesidades de accesibilidad: tictacs ausentes, ruido de bloom cortado, silueta amplia, estela desplazada, animales de ruta fuera de fase. El ataque directo es la parte menos interesante. El momento más fuerte es cuando el objetivo de reparación sigue al alcance, el agua sigue hermosa y cada instrumento vivo dice que la ruta se ha vuelto cara.
 
 ## Scanner
 
-ES LOC HOLD: A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.
+SOMBRA DE DEPREDADOR SOMERO // Tictacs de pastadores ausentes, ruido de bloom rasgado y una sombra amplia en movimiento son el primer contacto. La presión de ruta llega antes del contacto de combate.
 
 ## Terminal
 
-ES LOC HOLD: CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.
+REGLA DE CONTACTO: la evidencia de depredador debe cambiar la elección de ruta antes de forzar daño. Escalonar como ausencia, silencio, silueta y estela; ataque directo solo tras ignorar o leer mal al menos dos pistas.
 
 ## Audio
 
-ES LOC HOLD: When the little mouths stop ticking, stop moving.
+Cuando las bocas pequeñas dejan de tictaquear, deja de moverte.
 
 ## Field Note
 
-ES LOC HOLD: Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.
+No le des primero una cara al depredador. Deja que el shelf se vuelva incorrecto: queda comida, el agua se ilumina, la vida pequeña se va, luego la sombra cruza la tarea.
 
 <!-- External Site; generated from P225_SHALLOW_PREDATOR_SHADOW_RULE/es_ES. -->

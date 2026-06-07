@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "CN LOC HOLD: Brine Vane Forests"
+title: "盐水叶片林"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# CN LOC HOLD: Brine Vane Forests
+# 盐水叶片林
 
-CN LOC HOLD: Brine Vane Forests turn density physics into readable world structure for mid-depth exploration.
+盐水叶片林是第一种把不可见物理变得可见的中深度生态。它们是平坦的盐-矿物膜，沿盐水、温度和压力之间的边界伸展。远看像淹没峡谷里的苍白叶子；近看则是路线仪器。完整膜片意味着另一侧的水不只是不同，而是难以进入，密度剪切足以弯折声纳并把身体拉离 trim。撕裂边缘表示最近有东西通过。卷曲尖端显示边界正在弱化成剪切窗口。苍白矿物肋可从脱落条带上采集，但切割活膜可能关闭穿过峡谷墙的唯一可读水道。需要路线时跟随撕裂叶片。避开会抹掉边缘的黑色层状水。
 
 ## Scanner
 
-CN LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+盐水叶片林 // 盐-矿物膜沿密度剪切生长。它们显示水在哪里变厚成墙，也显示声纳会在哪里弯折。
 
 ## Terminal
 
-CN LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+峡谷基线：完整叶片膜标记坚硬密度边界。撕裂边缘和卷曲尖端表示剪切窗口、低盐口袋或近期通行。避开不透明层状水；它会致盲声纳，并把潜水服拖到预期浮力以下。
 
 ## Audio
 
-CN LOC HOLD: The canyon has leaves because it has pressure gradients.
+峡谷有叶子，是因为峡谷有压力梯度。
 
 ## Field Note
 
-CN LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+它们不是树。它们是压力的叶子：以化学梯度为食的膜，只在最近有路线硬挤过去的地方撕裂。
 
 <!-- In-Game Wiki; generated from P226_BRINE_VANE_FORESTS/zh_CN. -->

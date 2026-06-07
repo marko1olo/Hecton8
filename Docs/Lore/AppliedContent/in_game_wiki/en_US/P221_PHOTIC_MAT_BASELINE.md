@@ -7,6 +7,9 @@ poi_tags: poi.photic_mat_scan_panel;poi.shallow_rock_scrape
 biome_tags: biome.photic_shelf;biome.shallow_reef
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Photic Mat Baseline"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -16,22 +19,22 @@ localization_flags: 0
 
 # Photic Mat Baseline
 
-Photic mats are why the early shelf can be bright without being safe. The film feeds on mineral runoff and light, skins shallow rock with oxygen-rich growth, and leaves salt-hard edges where pressure chemistry is wrong. Use the color as a route cue, but do not tear mats near seams or sealed equipment; the oxygen pocket can collapse into contamination.
+Photic mats are the first shallow life that can help the player breathe and still punish careless harvesting. The film grows where light, mineral runoff and slow water meet, skinning rock with oxygen-rich color. A healthy center reads soft and bright; a salt-hard rim means pressure chemistry or old infrastructure is stressing the pocket. The mat also changes sound: good growth dulls small impacts, while contaminated seams click and fizz under a scraper. Cut only loose fringe when you need fiber or oxygen chemistry. Tearing the bright center near a hatch, pipe or sealed panel can drop local oxygen and expose whatever the mat was holding down.
 
 ## Scanner
 
-Thin living mats brighten and oxygenate the first shelf. Hardened edges mark abnormal pressure chemistry.
+PHOTIC MAT // Mineral-fed living film over shallow rock. Bright bands oxygenate water; salt-hard rims flag stressed pressure chemistry and hidden seam leaks.
 
 ## Terminal
 
-ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.
+ECOLOGY BASELINE: maps oxygen skin, mineral runoff, acoustic dampening and salt-rim stress. Harvest loose fringe only. Tearing mats near seams or sealed equipment can collapse a pocket into contamination.
 
 ## Audio
 
-It looks clean because it is working hard. That is not the same as safe.
+It looks clean because it is working. That is not the same as safe.
 
 ## Field Note
 
-Read the color first, then the edge. Bright growth means oxygen exchange; salt-hard rims mean the chemistry is already under stress.
+Do not scrape the brightest patch first. Read the edge, bubbles and sound; the mat is a gauge before it is a resource.
 
 <!-- In-Game Wiki; generated from P221_PHOTIC_MAT_BASELINE/en_US. -->

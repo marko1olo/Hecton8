@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "Pilha de sais sulfetados nativos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# Pilha de sais sulfetados nativos
 
-PT LOC HOLD: Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.
+Pilhas de sais sulfetados nativos são uma das primeiras provas de que HECTON-8 não é só uma cena de crime corporativa. Elas crescem onde calor de respiradouros, vazamento de salmoura e crosta rica em metais se moem sob pressão, deixando sais verde-escuros em prateleiras, nervuras e chaminés quebradiças. Limpam condutores, acordam células emergenciais, ajustam fluxo cerâmico e matam ferramentas quando a tripulação as trata como minério comum. Devem aparecer antes da dívida azul: o jogador precisa aprender que a lua tinha química, valor e riscos próprios antes do carimbo da Deep Reach.
 
 ## Scanner
 
-PT LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+SAIS SULFETADOS NATIVOS // Cristais armados por respiradouros e crosta negra de salmoura, mais antigos que a Deep Reach. Molhados conduzem, mornos corroem, úteis antes de qualquer coisa ficar azul.
 
 ## Terminal
 
-PT LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+CLASSE DE RECURSO: geologia nativa. Usos: lavagem de condutores, química de célula emergencial, fluxo cerâmico, catalisador de corrosão. Isolar do ar de admissão quente; a poeira floresce como filme ácido no metal do traje.
 
 ## Audio
 
-PT LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+A lua não precisou de uma empresa para ser perigosa. Ela já conhecia química.
 
 ## Field Note
 
-PT LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+Se as luvas coçam, você já está atrasado. Enxágue, aterre, registre a parede.
 
 <!-- In-Game Wiki; generated from P116_NATIVE_SULFIDE_SALT_STACK/pt_BR. -->

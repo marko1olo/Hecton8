@@ -7,6 +7,9 @@ poi_tags: poi.freight_drive_plate;poi.seed_ship_manifest
 biome_tags: biome.carrier_link;biome.relay_shadow
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Pellet-Fusion Freight"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -16,15 +19,15 @@ localization_flags: 0
 
 # Pellet-Fusion Freight
 
-Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.
+Heavy interstellar travel is possible without FTL, but it is punishing. Beam-sail boost, pellet-fed fusion, shield mass, long coasts and braking architecture let seed payloads and later colony freight reach Aegir. The same logistics make rescue slow: every kilogram, berth, brake slot and survivor seat belongs to a schedule.
 
 ## Scanner
 
-Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Drive plate. Pellet-fed fusion freight crossed as infrastructure: boost, shield, coast, brake, and bill the loss.
 
 ## Terminal
 
-FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used beam-sail boost, pellet-fed fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
 
 ## Audio
 
@@ -32,6 +35,6 @@ A heavy ship is not a miracle. It is a mortgage with engines.
 
 ## Field Note
 
-Heavy transit should feel industrial and old, not heroic.
+Heavy transit is not heroic. It is an old route contract with heat scars.
 
 <!-- In-Game Wiki; generated from P103_PELLET_FUSION_FREIGHT/en_US. -->

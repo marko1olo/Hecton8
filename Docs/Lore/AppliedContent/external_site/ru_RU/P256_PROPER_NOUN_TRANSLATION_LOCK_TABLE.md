@@ -7,6 +7,9 @@ poi_tags: poi.localization_glossary_card;poi.name_lock_sheet
 biome_tags: biome.publication;biome.localization
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Таблица фиксации собственных имён"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

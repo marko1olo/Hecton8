@@ -7,6 +7,9 @@ poi_tags: poi.centauri_hardware_stamp;poi.compact_audit_tag
 biome_tags: biome.wreck_claim;biome.route_depot
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Легитимность Centauri Compact"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

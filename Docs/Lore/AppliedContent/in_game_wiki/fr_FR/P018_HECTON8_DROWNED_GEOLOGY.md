@@ -7,6 +7,9 @@ poi_tags: poi.geology_scanner;poi.brine_step
 biome_tags: biome.drowned_shelf;biome.brine_stairs
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Géologie noyée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

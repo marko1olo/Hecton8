@@ -112,6 +112,7 @@ namespace Hecton8.EditorTools
                     " wakeBudgetOffset=" + wakeBudgetOffset);
             }
 
+            EditorApplication.update -= RefreshReadout;
             EditorApplication.update += RefreshReadout;
         }
 

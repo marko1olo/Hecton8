@@ -124,7 +124,25 @@ namespace Hecton8.Modding
             if (!_resourceIndexByHash.IsCreated)
             {
                 _resourceIndexByHash = new NativeHashMap<uint, int>(ResourceCapacity, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[256] - O(1) resource hash to sidecar index - owner: ModResourceRegistry
-                NativeMemorySentinel.RegisterNativeHashMap(_resourceIndexByHash, nameof(ModResourceRegistry), nameof(_resourceIndexByHash), NativeAllocationLifetime.Session);
+                try
+                {
+                    int sentinelId = NativeMemorySentinel.RegisterNativeHashMap(
+                        _resourceIndexByHash,
+                        nameof(ModResourceRegistry),
+                        nameof(_resourceIndexByHash),
+                        NativeAllocationLifetime.Session);
+                    if (sentinelId <= 0)
+                        throw new System.InvalidOperationException("NativeMemorySentinel rejected ModResourceRegistry hash map registration.");
+                }
+                catch
+                {
+                    if (_resourceIndexByHash.IsCreated)
+                    {
+                        _resourceIndexByHash.Dispose();
+                        _resourceIndexByHash = default;
+                    }
+                    throw;
+                }
             }
         }
 

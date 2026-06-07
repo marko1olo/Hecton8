@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "Deep-Reach-Druckkeramik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# Deep-Reach-Druckkeramik
 
-DE LOC HOLD: Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities.
+Deep-Reach-Druckkeramik erklärt, warum die Kolonie überhaupt funktionieren konnte und warum ihre Reste noch immer tödlich sind. Deep Reach baute die Bodenindustrie nicht aus Inkompetenz. Die Firma lernte, lokale Tone, Sulfidflüsse und Schlottiegelhitze zu Keramikteilen zu verstärken, die Drücke überlebten, die gewöhnliches Metall nicht erträgt. Klemmringe hielten Habitatnähte. Dichtsitze zwangen Pumpen zur Ehrlichkeit. Schneidkontakte trugen Hitze durch Sole, ohne zu weichem Schrott zu werden. Die Isolation von Aufstiegswiegen kaufte kritische Minuten, wenn Starthardware sich eigentlich selbst hätte kochen müssen. Diese Kompetenz ist Teil des Horrors, kein Widerspruch dazu. Wer Druckkeramik birgt, hält den Beweis in Händen, dass Deep Reach diese Welt gut genug verstand, um Menschen am Leben zu halten, und dann Verfahren und Haftungen wählte, die Verlassenwerden profitabel machten. Das Material erinnert sich an beide Tatsachen. Es ist kostbar in einem Fluchtrezept und gefährlich in einem Wrack. Thermoschock kann eine Splitterblüte erzeugen: ein stiller weißer Riss öffnet sich zu messerscharfen Blütenblättern auf einer Ringfläche. Falsche Druckentlastung kann einen perfekten Dichtsitz in Schrapnell verwandeln. Diese Ressource soll industrielle Wahrheit zeigen, nicht generische Schurkenstruktur. Die Kolonie hing davon ab, weil es funktionierte. Der Spieler hängt aus demselben Grund davon ab.
 
 ## Scanner
 
-DE LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+DEEP-REACH-DRUCKKERAMIK // Lokaler Ton, Sulfidfluss und Schlottiegelhitze, geformt zu Klemmringen und Dichtsitzen. Hält Druck wunderschön; versagt bei Schock zu Messern.
 
 ## Terminal
 
-DE LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+RESSOURCENKLASSE: Deep-Reach-verstärkt. Nutzungen: Klemmringe, Dichtsitze, Schneidkontakte, Aufstiegswiegen-Isolation. Versagensmodus: Splitterblüte bei Thermoschock oder falscher Druckentlastung.
 
 ## Audio
 
-DE LOC HOLD: The company was good at building things. That is part of the crime.
+Deep Reach konnte Dinge bauen. Darum funktionierte die Lüge.
 
 ## Field Note
 
-DE LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+Klopf sie kalt an. Wenn sie hoch singt, nicht erhitzen.
 
 <!-- External Site; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/de_DE. -->

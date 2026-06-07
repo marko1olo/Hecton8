@@ -7,6 +7,9 @@ poi_tags: poi.public_moon_article_gate;poi.spoiler_boundary_stamp
 biome_tags: biome.public_archive;biome.relay_archive
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Moon Route Article Spoiler Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

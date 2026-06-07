@@ -7,6 +7,9 @@ poi_tags: poi.hatch_seal;poi.airlock_frame
 biome_tags: biome.drowned_colony;biome.service_corridor
 locale: nl_NL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Luikafdichtingsregister"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -305,6 +305,7 @@ namespace Hecton8.Interaction
         private const float MaximumSafeDeltaTime = 0.02f;
         private const float RadiansPerDegree = 0.0174532925f;
         private const int SuitOverlapCapacity = 8;
+        private const int SuitOverlapStaleFrameLimit = 4;
         private const int KinematicBridgeColdRetryIntervalFrames = 30;
         private const ulong KinematicBridgeMutationGuardMask = VRInteractionKinematicBridgeConstants.MutationGuardMask;
         private const float HeavyTwoHandMassThreshold = 20f;
@@ -448,20 +449,20 @@ namespace Hecton8.Interaction
         private float _handDamageHapticCooldownTimer;
         private uint _handFixedFrameIndex;
         private uint _lastSuitDamageFrame = uint.MaxValue;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private bool _suitOverlapSaturationLogged;
-#endif
         private FingerPoseData[] _fingerPoses;
         private FingerRayDefinition[] _fingerRayDefinitions;
         private FingerRayRuntime[] _fingerRayRuntime;
         private VRInteractionSocketDTO[] _kinematicSocketSnapshot;
         private Collider[] _suitOverlapResults;
+        private int[] _suitOverlapStaleFrames;
         private Quaternion[] _baseFingerLocalRotations;
         private string _cachedGrabbedBodyName;
         private Collider _activeBodyCollider;
         private Transform _suitHandTransform;
         private Rigidbody _suitHandBody;
         private SphereCollider _suitHandCollider;
+        private PhysicalHandSuitCollisionShellProxy _suitShellProxy;
         private Transform _cachedInteractionProbeColliderSource;
         private Collider _cachedInteractionProbeCollider;
         private IPhysicsService _physicsService;
@@ -509,6 +510,9 @@ namespace Hecton8.Interaction
         /// <summary>Authored side used as haptic fallback when the probe collider has no side tag/layer.</summary>
         public PhysicalHandSide HandSide => handSide;
 
+        /// <summary>True while transient hand poses need owner fixed-step advancement.</summary>
+        internal bool RequiresFixedTick => _harvestSnapActive;
+
         /// <summary>True while deferred finger jobs need a dispatcher-owned late-frame pass.</summary>
         internal bool RequiresLateFrameTick => _fingerPoseScheduled;
 
@@ -541,14 +545,19 @@ namespace Hecton8.Interaction
         public void SetSuitCollisionShellEnabled(bool enabled)
         {
             enableSuitCollisionShell = enabled;
+            if (!enabled)
+            {
+                DisableSuitCollisionShell(forceClear: true);
+                return;
+            }
+
             if (useKinematicSdfHandBridge)
             {
                 DisableSuitCollisionShell();
                 return;
             }
 
-            if (!enabled && _suitHandCollider != null)
-                _suitHandCollider.enabled = false;
+            EnsureSuitCollisionShell();
         }
 
         /// <summary>
@@ -1041,6 +1050,7 @@ namespace Hecton8.Interaction
             _submarineCoreDirector = null;
             _hasPlatformFrame = false;
             _hasXRIdleGripPoseSample = false;
+            _kinematicBridgeVault = null;
             _kinematicBridgeReady = false;
             DisableSuitCollisionShell();
             if (IsGrabbing)
@@ -1055,12 +1065,16 @@ namespace Hecton8.Interaction
             TryUnregisterHotSwapListener();
             DisposePersistentBuffers();
             DisableSuitCollisionShell();
+            if (_suitShellProxy != null)
+                _suitShellProxy.Shutdown();
+
             if (_suitHandTransform != null)
                 Destroy(_suitHandTransform.gameObject);
 
             _suitHandTransform = null;
             _suitHandBody = null;
             _suitHandCollider = null;
+            _suitShellProxy = null;
             _suitCollisionShellCreated = false;
             _suitOverlapResults = null;
             _suitOverlapSaturationLogged = false;
@@ -1114,6 +1128,14 @@ namespace Hecton8.Interaction
             if (serviceSlot == GlobalRegistryServiceSlot.Input)
             {
                 _inputDispatcher = currentService as InputDispatcher;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                _kinematicBridgeVault = currentService as IDataVault;
+                _kinematicBridgeReady = false;
+                _lastKinematicBridgeCacheAttempt = _kinematicBridgeCacheAttempt - KinematicBridgeColdRetryIntervalFrames;
                 return;
             }
 
@@ -1249,13 +1271,23 @@ namespace Hecton8.Interaction
                 _suitOverlapResults = new Collider[SuitOverlapCapacity];
             }
 
+            if (_suitOverlapStaleFrames == null || _suitOverlapStaleFrames.Length != SuitOverlapCapacity)
+            {
+                // COLD ALLOC: int[8] - stale-frame counters for physical hand suit contact candidates - owner: PhysicalHandController
+                _suitOverlapStaleFrames = new int[SuitOverlapCapacity];
+            }
+
             if (_suitCollisionShellCreated)
             {
                 if (_suitHandCollider != null)
                 {
+                    _suitHandCollider.isTrigger = true;
                     _suitHandCollider.radius = ResolveSuitCollisionProbeRadius();
                     _suitHandCollider.enabled = enableSuitCollisionShell;
                 }
+
+                if (_suitShellProxy != null)
+                    _suitShellProxy.Initialize(this);
 
                 return;
             }
@@ -1263,7 +1295,15 @@ namespace Hecton8.Interaction
             // COLD ALLOC: GameObject[1] - optional VR physical hand suit trigger shell - owner: PhysicalHandController
             GameObject shellObject = new GameObject("[PhysicalHandSuitCollisionShell]");
             shellObject.hideFlags = HideFlags.HideInHierarchy | HideFlags.DontSaveInEditor;
-            shellObject.layer = gameObject.layer;
+            if (!TryResolveSuitCollisionShellLayer(out int shellLayer))
+            {
+                enableSuitCollisionShell = false;
+                Destroy(shellObject);
+                DisableSuitCollisionShell(forceClear: true);
+                return;
+            }
+
+            shellObject.layer = shellLayer;
 
             _suitHandTransform = shellObject.transform;
             Transform reference = _runtimeGripPoint != null ? _runtimeGripPoint : _runtimeRoot;
@@ -1279,14 +1319,17 @@ namespace Hecton8.Interaction
             _suitHandBody.maxDepenetrationVelocity = 3f;
 
             _suitHandCollider = shellObject.AddComponent<SphereCollider>();
-            _suitHandCollider.isTrigger = false;
+            _suitHandCollider.isTrigger = true;
             _suitHandCollider.radius = ResolveSuitCollisionProbeRadius();
             _suitHandCollider.enabled = enableSuitCollisionShell;
+
+            _suitShellProxy = shellObject.AddComponent<PhysicalHandSuitCollisionShellProxy>();
+            _suitShellProxy.Initialize(this);
 
             _suitCollisionShellCreated = true;
         }
 
-        private void DisableSuitCollisionShell()
+        private void DisableSuitCollisionShell(bool forceClear = false)
         {
             bool disabledShell = false;
             if (_suitHandCollider != null && _suitHandCollider.enabled)
@@ -1295,7 +1338,7 @@ namespace Hecton8.Interaction
                 disabledShell = true;
             }
 
-            if (!_suitContactActive && !disabledShell && !_suitOverlapSaturationLogged)
+            if (!forceClear && !_suitContactActive && !disabledShell && !_suitOverlapSaturationLogged)
                 return;
 
             _suitContactActive = false;
@@ -1309,7 +1352,11 @@ namespace Hecton8.Interaction
                 return;
 
             for (int i = 0; i < _suitOverlapResults.Length; i++)
+            {
                 _suitOverlapResults[i] = null;
+                if (_suitOverlapStaleFrames != null && i < _suitOverlapStaleFrames.Length)
+                    _suitOverlapStaleFrames[i] = 0;
+            }
         }
 
         private void AdvanceHandHapticCooldowns(float dt)
@@ -1351,53 +1398,53 @@ namespace Hecton8.Interaction
                 shellTransform.SetPositionAndRotation(controllerPosition, controllerRotation);
             if (_suitHandCollider != null)
             {
+                _suitHandCollider.isTrigger = true;
                 _suitHandCollider.radius = radius;
-                _suitHandCollider.enabled = false;
+                _suitHandCollider.enabled = true;
             }
-
-            ClearSuitOverlapResults();
-            int overlapCount = Physics.OverlapSphereNonAlloc(
-                controllerPosition,
-                radius,
-                _suitOverlapResults,
-                suitCollisionMask.value,
-                QueryTriggerInteraction.Ignore);
-            int safeCount = math.min(overlapCount, _suitOverlapResults.Length);
-            _suitOverlapSaturationLogged = overlapCount >= _suitOverlapResults.Length;
 
             float radiusSq = radius * radius;
             float strongestPenetration = 0f;
             Vector3 strongestNormal = Vector3.zero;
+            int safeCount = _suitOverlapResults.Length;
             for (int i = 0; i < safeCount; i++)
             {
                 Collider collider = _suitOverlapResults[i];
-                if (collider == null ||
-                    ReferenceEquals(collider, _suitHandCollider) ||
-                    !collider.enabled)
+                if (!IsSuitCollisionCandidate(collider))
                 {
+                    _suitOverlapResults[i] = null;
+                    if (_suitOverlapStaleFrames != null && i < _suitOverlapStaleFrames.Length)
+                        _suitOverlapStaleFrames[i] = 0;
                     continue;
                 }
 
-                Vector3 closest = collider.ClosestPoint(controllerPosition);
-                if (!IsFinite(closest))
-                    continue;
+                if (!TryResolveApproxColliderShellContact(
+                        collider,
+                        controllerPosition,
+                        radius,
+                        radiusSq,
+                        out float penetration,
+                        out Vector3 normal))
+                {
+                    if (_suitOverlapStaleFrames != null &&
+                        i < _suitOverlapStaleFrames.Length &&
+                        ++_suitOverlapStaleFrames[i] > SuitOverlapStaleFrameLimit)
+                    {
+                        _suitOverlapResults[i] = null;
+                        _suitOverlapStaleFrames[i] = 0;
+                    }
 
-                Vector3 delta = controllerPosition - closest;
-                float distanceSq = delta.sqrMagnitude;
-                if (!math.isfinite(distanceSq) || distanceSq > radiusSq)
                     continue;
+                }
 
-                float distance = distanceSq > 0.000001f
-                    ? distanceSq * math.rsqrt(distanceSq)
-                    : 0f;
-                float penetration = radius - distance;
+                if (_suitOverlapStaleFrames != null && i < _suitOverlapStaleFrames.Length)
+                    _suitOverlapStaleFrames[i] = 0;
+
                 if (penetration <= strongestPenetration)
                     continue;
 
                 strongestPenetration = penetration;
-                strongestNormal = distance > 0.000001f
-                    ? delta * (1f / distance)
-                    : Vector3.up;
+                strongestNormal = normal;
             }
 
             _suitContactActive = strongestPenetration > 0f;
@@ -1406,6 +1453,130 @@ namespace Hecton8.Interaction
                 _handWallRecoilOffset = strongestNormal * math.min(HandWallRecoilMaxOffset, strongestPenetration * HandWallRecoilScale);
                 TryEnqueueSuitCollisionHaptic(strongestPenetration);
             }
+        }
+
+        internal void RegisterSuitShellCandidate(Collider collider)
+        {
+            if (_suitOverlapResults == null || !IsSuitCollisionCandidate(collider))
+                return;
+
+            int firstEmpty = -1;
+            for (int i = 0; i < _suitOverlapResults.Length; i++)
+            {
+                Collider existing = _suitOverlapResults[i];
+                if (ReferenceEquals(existing, collider))
+                {
+                    if (_suitOverlapStaleFrames != null && i < _suitOverlapStaleFrames.Length)
+                        _suitOverlapStaleFrames[i] = 0;
+
+                    return;
+                }
+
+                if (existing == null && firstEmpty < 0)
+                    firstEmpty = i;
+            }
+
+            if (firstEmpty >= 0)
+            {
+                _suitOverlapResults[firstEmpty] = collider;
+                if (_suitOverlapStaleFrames != null && firstEmpty < _suitOverlapStaleFrames.Length)
+                    _suitOverlapStaleFrames[firstEmpty] = 0;
+                return;
+            }
+
+            _suitOverlapSaturationLogged = true;
+        }
+
+        internal void UnregisterSuitShellCandidate(Collider collider)
+        {
+            if (_suitOverlapResults == null || collider == null)
+                return;
+
+            for (int i = 0; i < _suitOverlapResults.Length; i++)
+            {
+                if (ReferenceEquals(_suitOverlapResults[i], collider))
+                {
+                    _suitOverlapResults[i] = null;
+                    if (_suitOverlapStaleFrames != null && i < _suitOverlapStaleFrames.Length)
+                        _suitOverlapStaleFrames[i] = 0;
+                }
+            }
+        }
+
+        internal void ClearSuitShellCandidatesFromProxy()
+        {
+            ClearSuitOverlapResults();
+        }
+
+        private bool IsSuitCollisionCandidate(Collider collider)
+        {
+            if (collider == null ||
+                ReferenceEquals(collider, _suitHandCollider) ||
+                !collider.enabled ||
+                collider.isTrigger)
+            {
+                return false;
+            }
+
+            GameObject colliderObject = collider.gameObject;
+            if (colliderObject == null)
+                return false;
+
+            int layer = colliderObject.layer;
+            return layer >= 0 &&
+                   layer < 32 &&
+                   (suitCollisionMask.value & (1 << layer)) != 0;
+        }
+
+        private bool TryResolveSuitCollisionShellLayer(out int resolvedLayer)
+        {
+            resolvedLayer = HectonLayerMasks.Player;
+            int mask = suitCollisionMask.value;
+            int currentLayer = gameObject.layer;
+            int bestLayer = IsValidLayer(currentLayer) ? currentLayer : HectonLayerMasks.Player;
+            int bestScore = CountLayerMatrixContacts(bestLayer, mask);
+            TryPreferSuitCollisionShellLayer(HectonLayerMasks.Player, mask, ref bestLayer, ref bestScore);
+            TryPreferSuitCollisionShellLayer(HectonLayerMasks.FirstPersonTools, mask, ref bestLayer, ref bestScore);
+            TryPreferSuitCollisionShellLayer(HectonLayerMasks.Interactable, mask, ref bestLayer, ref bestScore);
+            TryPreferSuitCollisionShellLayer(HectonLayerMasks.Default, mask, ref bestLayer, ref bestScore);
+            if (bestScore <= 0)
+                return false;
+
+            resolvedLayer = bestLayer;
+            return true;
+        }
+
+        private static void TryPreferSuitCollisionShellLayer(int layer, int targetMask, ref int bestLayer, ref int bestScore)
+        {
+            int score = CountLayerMatrixContacts(layer, targetMask);
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestLayer = layer;
+            }
+        }
+
+        private static int CountLayerMatrixContacts(int shellLayer, int targetMask)
+        {
+            if (!IsValidLayer(shellLayer) || targetMask == 0)
+                return 0;
+
+            int score = 0;
+            for (int targetLayer = 0; targetLayer < 32; targetLayer++)
+            {
+                if ((targetMask & (1 << targetLayer)) == 0)
+                    continue;
+
+                if (!UnityEngine.Physics.GetIgnoreLayerCollision(shellLayer, targetLayer))
+                    score++;
+            }
+
+            return score;
+        }
+
+        private static bool IsValidLayer(int layer)
+        {
+            return layer >= 0 && layer < 32;
         }
 
         private void TryEnqueueSuitCollisionHaptic(float penetrationMeters)
@@ -1466,7 +1637,7 @@ namespace Hecton8.Interaction
                 return;
 
             _lastKinematicBridgeCacheAttempt = attempt;
-            if (_kinematicBridgeVault == null)
+            if (force || _kinematicBridgeVault == null)
                 _kinematicBridgeVault = GlobalRegistry.DataVault;
             if (_kinematicSdfReadModel == null)
             {
@@ -2622,14 +2793,7 @@ namespace Hecton8.Interaction
             if (!HasFingerPoseBuffers())
                 return;
 
-            Vector3 targetPosition = _activeBody.worldCenterOfMass;
-            Collider activeCollider = _activeBodyCollider;
-            if (activeCollider != null)
-            {
-                Vector3 closestPoint = activeCollider.ClosestPoint(_runtimeGripPoint.position);
-                if (IsFinite(closestPoint))
-                    targetPosition = closestPoint;
-            }
+            Vector3 targetPosition = ResolveFingerPoseTargetPoint(_activeBody, _activeBodyCollider, _runtimeGripPoint.position);
 
             SolveFingerPoseValues(
                 _runtimeGripPoint.position,
@@ -2657,6 +2821,339 @@ namespace Hecton8.Interaction
                 GlobalQualityWeight = ResolveGlobalQualityWeight01()
             };
             solver.Execute();
+        }
+
+        private static Vector3 ResolveFingerPoseTargetPoint(Rigidbody body, Collider activeCollider, Vector3 gripPosition)
+        {
+            if (activeCollider != null &&
+                TryResolveApproxColliderSurfacePoint(activeCollider, gripPosition, out Vector3 surfacePoint, out _, out _))
+            {
+                return surfacePoint;
+            }
+
+            if (body != null && IsFinite(body.worldCenterOfMass))
+                return body.worldCenterOfMass;
+
+            return IsFinite(gripPosition) ? gripPosition : Vector3.zero;
+        }
+
+        private static bool TryResolveApproxColliderShellContact(
+            Collider collider,
+            Vector3 samplePosition,
+            float radius,
+            float radiusSq,
+            out float penetration,
+            out Vector3 normal)
+        {
+            penetration = 0f;
+            normal = Vector3.zero;
+            if (collider == null ||
+                !collider.enabled ||
+                !IsFinite(samplePosition) ||
+                radius <= 0f ||
+                radiusSq <= 0f)
+            {
+                return false;
+            }
+
+            if (!TryResolveApproxColliderSurfacePoint(
+                    collider,
+                    samplePosition,
+                    out Vector3 surfacePoint,
+                    out normal,
+                    out bool sampleInside))
+            {
+                return false;
+            }
+
+            if (sampleInside)
+            {
+                penetration = radius;
+                return IsFinite(normal);
+            }
+
+            float3 delta = (float3)(samplePosition - surfacePoint);
+            float distanceSq = math.lengthsq(delta);
+            if (!math.isfinite(distanceSq) || distanceSq > radiusSq)
+                return false;
+
+            float distance = distanceSq > 0.000001f
+                ? distanceSq * math.rsqrt(distanceSq)
+                : 0f;
+            penetration = radius - distance;
+            if (penetration <= 0f || !math.isfinite(penetration))
+                return false;
+
+            if (distance > 0.000001f)
+            {
+                normal = (Vector3)(delta * math.rsqrt(distanceSq));
+                return IsFinite(normal);
+            }
+
+            normal = IsFinite(normal) ? normal : Vector3.up;
+            return true;
+        }
+
+        private static bool TryResolveApproxColliderSurfacePoint(
+            Collider collider,
+            Vector3 samplePosition,
+            out Vector3 surfacePoint,
+            out Vector3 surfaceNormal,
+            out bool sampleInside)
+        {
+            surfacePoint = Vector3.zero;
+            surfaceNormal = Vector3.up;
+            sampleInside = false;
+            if (collider == null || !collider.enabled || !IsFinite(samplePosition))
+                return false;
+
+            if (collider is BoxCollider boxCollider &&
+                TryResolveApproxBoxSurfacePoint(boxCollider, samplePosition, out surfacePoint, out surfaceNormal, out sampleInside))
+            {
+                return true;
+            }
+
+            if (collider is SphereCollider sphereCollider &&
+                TryResolveApproxSphereSurfacePoint(sphereCollider, samplePosition, out surfacePoint, out surfaceNormal, out sampleInside))
+            {
+                return true;
+            }
+
+            if (collider is CapsuleCollider capsuleCollider &&
+                TryResolveApproxCapsuleSurfacePoint(capsuleCollider, samplePosition, out surfacePoint, out surfaceNormal, out sampleInside))
+            {
+                return true;
+            }
+
+            return TryResolveApproxBoundsSurfacePoint(collider, samplePosition, out surfacePoint, out surfaceNormal, out sampleInside);
+        }
+
+        private static bool TryResolveApproxBoxSurfacePoint(
+            BoxCollider boxCollider,
+            Vector3 samplePosition,
+            out Vector3 surfacePoint,
+            out Vector3 surfaceNormal,
+            out bool sampleInside)
+        {
+            surfacePoint = Vector3.zero;
+            surfaceNormal = Vector3.up;
+            sampleInside = false;
+            Transform colliderTransform = boxCollider.transform;
+            if (colliderTransform == null || !IsFinite(samplePosition))
+                return false;
+
+            Vector3 localPosition = colliderTransform.InverseTransformPoint(samplePosition);
+            if (!IsFinite(localPosition))
+                return false;
+
+            float3 center = (float3)boxCollider.center;
+            float3 extents = math.max((float3)boxCollider.size * 0.5f, new float3(MinimumBoundsSpan * 0.5f));
+            float3 localDelta = (float3)localPosition - center;
+            float3 min = center - extents;
+            float3 max = center + extents;
+            float3 closest = math.clamp((float3)localPosition, min, max);
+            float3 delta = (float3)localPosition - closest;
+            float distanceSq = math.lengthsq(delta);
+            if (!math.isfinite(distanceSq))
+                return false;
+
+            if (distanceSq > 0.000001f)
+            {
+                surfacePoint = colliderTransform.TransformPoint((Vector3)closest);
+                surfaceNormal = NormalizeVectorApproxNoSqrt(colliderTransform.TransformDirection((Vector3)(delta * math.rsqrt(distanceSq))), Vector3.up);
+                return IsFinite(surfacePoint) && IsFinite(surfaceNormal);
+            }
+
+            sampleInside = true;
+            float3 axisPenetration = math.max(extents - math.abs(localDelta), new float3(MinimumDeltaTime));
+            float3 normal = ResolveDominantAxisNormal(localDelta, axisPenetration);
+            float3 point = center + new float3(
+                normal.x != 0f ? normal.x * extents.x : math.clamp(localDelta.x, -extents.x, extents.x),
+                normal.y != 0f ? normal.y * extents.y : math.clamp(localDelta.y, -extents.y, extents.y),
+                normal.z != 0f ? normal.z * extents.z : math.clamp(localDelta.z, -extents.z, extents.z));
+
+            surfacePoint = colliderTransform.TransformPoint((Vector3)point);
+            surfaceNormal = NormalizeVectorApproxNoSqrt(colliderTransform.TransformDirection((Vector3)normal), Vector3.up);
+            return IsFinite(surfacePoint) && IsFinite(surfaceNormal);
+        }
+
+        private static bool TryResolveApproxSphereSurfacePoint(
+            SphereCollider sphereCollider,
+            Vector3 samplePosition,
+            out Vector3 surfacePoint,
+            out Vector3 surfaceNormal,
+            out bool sampleInside)
+        {
+            surfacePoint = Vector3.zero;
+            surfaceNormal = Vector3.up;
+            sampleInside = false;
+            Transform colliderTransform = sphereCollider.transform;
+            if (colliderTransform == null || !IsFinite(samplePosition))
+                return false;
+
+            Vector3 center = colliderTransform.TransformPoint(sphereCollider.center);
+            if (!IsFinite(center))
+                return false;
+
+            float radius = math.max(MinimumBoundsSpan * 0.5f, sphereCollider.radius * ResolveMaxAbsScale(colliderTransform.lossyScale));
+            Vector3 delta = samplePosition - center;
+            float distanceSq = delta.sqrMagnitude;
+            if (!math.isfinite(distanceSq))
+                return false;
+
+            surfaceNormal = distanceSq > 0.000001f
+                ? (Vector3)((float3)delta * math.rsqrt(distanceSq))
+                : Vector3.up;
+            sampleInside = distanceSq <= radius * radius;
+            surfacePoint = center + (surfaceNormal * radius);
+            return IsFinite(surfacePoint) && IsFinite(surfaceNormal);
+        }
+
+        private static bool TryResolveApproxCapsuleSurfacePoint(
+            CapsuleCollider capsuleCollider,
+            Vector3 samplePosition,
+            out Vector3 surfacePoint,
+            out Vector3 surfaceNormal,
+            out bool sampleInside)
+        {
+            surfacePoint = Vector3.zero;
+            surfaceNormal = Vector3.up;
+            sampleInside = false;
+            Transform colliderTransform = capsuleCollider.transform;
+            if (colliderTransform == null || !IsFinite(samplePosition))
+                return false;
+
+            Vector3 center = colliderTransform.TransformPoint(capsuleCollider.center);
+            Vector3 axis = ResolveCapsuleWorldAxis(capsuleCollider, colliderTransform);
+            if (!IsFinite(center) || !IsFinite(axis) || axis.sqrMagnitude <= 0.000001f)
+                return false;
+
+            Vector3 scale = colliderTransform.lossyScale;
+            float axisScale = ResolveCapsuleAxisScale(capsuleCollider.direction, scale);
+            float radiusScale = ResolveCapsuleRadiusScale(capsuleCollider.direction, scale);
+            float radius = math.max(MinimumBoundsSpan * 0.5f, capsuleCollider.radius * radiusScale);
+            float height = math.max(radius * 2f, capsuleCollider.height * math.max(axisScale, MinimumDeltaTime));
+            float halfSegment = math.max(0f, (height * 0.5f) - radius);
+            Vector3 segmentA = center - axis * halfSegment;
+            Vector3 segmentB = center + axis * halfSegment;
+            Vector3 segment = segmentB - segmentA;
+            float segmentLengthSq = segment.sqrMagnitude;
+            float t = segmentLengthSq > 0.000001f
+                ? math.saturate(Vector3.Dot(samplePosition - segmentA, segment) / segmentLengthSq)
+                : 0.5f;
+            Vector3 closestAxisPoint = segmentA + segment * t;
+            Vector3 radial = samplePosition - closestAxisPoint;
+            float radialDistanceSq = radial.sqrMagnitude;
+            if (!math.isfinite(radialDistanceSq))
+                return false;
+
+            surfaceNormal = radialDistanceSq > 0.000001f
+                ? (Vector3)((float3)radial * math.rsqrt(radialDistanceSq))
+                : ResolveCapsuleFallbackNormal(axis);
+            sampleInside = radialDistanceSq <= radius * radius;
+            surfacePoint = closestAxisPoint + surfaceNormal * radius;
+            return IsFinite(surfacePoint) && IsFinite(surfaceNormal);
+        }
+
+        private static bool TryResolveApproxBoundsSurfacePoint(
+            Collider collider,
+            Vector3 samplePosition,
+            out Vector3 surfacePoint,
+            out Vector3 surfaceNormal,
+            out bool sampleInside)
+        {
+            surfacePoint = Vector3.zero;
+            surfaceNormal = Vector3.up;
+            sampleInside = false;
+            if (!TryResolveApproxColliderBounds(collider, out Bounds bounds) || !IsFinite(samplePosition))
+                return false;
+
+            float3 sample = (float3)samplePosition;
+            float3 center = (float3)bounds.center;
+            float3 extents = math.max((float3)bounds.extents, new float3(MinimumBoundsSpan * 0.5f));
+            float3 min = center - extents;
+            float3 max = center + extents;
+            float3 closest = math.clamp(sample, min, max);
+            float3 delta = sample - closest;
+            float distanceSq = math.lengthsq(delta);
+            if (!math.isfinite(distanceSq))
+                return false;
+
+            if (distanceSq > 0.000001f)
+            {
+                surfacePoint = (Vector3)closest;
+                surfaceNormal = (Vector3)(delta * math.rsqrt(distanceSq));
+                return IsFinite(surfacePoint) && IsFinite(surfaceNormal);
+            }
+
+            sampleInside = true;
+            float3 localDelta = sample - center;
+            float3 axisPenetration = math.max(extents - math.abs(localDelta), new float3(MinimumDeltaTime));
+            float3 normal = ResolveDominantAxisNormal(localDelta, axisPenetration);
+            float3 point = center + new float3(
+                normal.x != 0f ? normal.x * extents.x : math.clamp(localDelta.x, -extents.x, extents.x),
+                normal.y != 0f ? normal.y * extents.y : math.clamp(localDelta.y, -extents.y, extents.y),
+                normal.z != 0f ? normal.z * extents.z : math.clamp(localDelta.z, -extents.z, extents.z));
+
+            surfacePoint = (Vector3)point;
+            surfaceNormal = (Vector3)normal;
+            return IsFinite(surfacePoint) && IsFinite(surfaceNormal);
+        }
+
+        private static Vector3 ResolveCapsuleWorldAxis(CapsuleCollider capsuleCollider, Transform colliderTransform)
+        {
+            Vector3 localAxis = capsuleCollider.direction == 0
+                ? Vector3.right
+                : (capsuleCollider.direction == 2 ? Vector3.forward : Vector3.up);
+            return NormalizeVectorApproxNoSqrt(colliderTransform.TransformDirection(localAxis), Vector3.up);
+        }
+
+        private static float ResolveCapsuleAxisScale(int direction, Vector3 scale)
+        {
+            float3 absScale = math.abs((float3)scale);
+            if (direction == 0)
+                return math.max(absScale.x, MinimumDeltaTime);
+            if (direction == 2)
+                return math.max(absScale.z, MinimumDeltaTime);
+            return math.max(absScale.y, MinimumDeltaTime);
+        }
+
+        private static float ResolveCapsuleRadiusScale(int direction, Vector3 scale)
+        {
+            float3 absScale = math.abs((float3)scale);
+            if (direction == 0)
+                return math.max(math.max(absScale.y, absScale.z), MinimumDeltaTime);
+            if (direction == 2)
+                return math.max(math.max(absScale.x, absScale.y), MinimumDeltaTime);
+            return math.max(math.max(absScale.x, absScale.z), MinimumDeltaTime);
+        }
+
+        private static float ResolveMaxAbsScale(Vector3 scale)
+        {
+            float3 absScale = math.abs((float3)scale);
+            return math.max(math.cmax(absScale), MinimumDeltaTime);
+        }
+
+        private static Vector3 ResolveCapsuleFallbackNormal(Vector3 axis)
+        {
+            Vector3 candidate = Vector3.Cross(axis, Vector3.up);
+            if (candidate.sqrMagnitude <= 0.000001f)
+                candidate = Vector3.Cross(axis, Vector3.right);
+            return NormalizeVectorApproxNoSqrt(candidate, Vector3.up);
+        }
+
+        private static bool TryResolveApproxColliderBounds(Collider collider, out Bounds bounds)
+        {
+            bounds = default;
+            if (collider == null || !collider.enabled)
+                return false;
+
+            bounds = collider.bounds;
+            if (!IsFinite(bounds.center) || !IsFinite(bounds.extents))
+                return false;
+
+            float3 extents = (float3)bounds.extents;
+            return math.all(math.isfinite(extents)) && math.cmax(extents) > 0.000001f;
         }
 
         private void BreakGrip(PhysicalHandGrabEndReason reason)
@@ -3232,6 +3729,42 @@ namespace Hecton8.Interaction
             [FieldOffset(12)] public float3 TipNormal;
             [FieldOffset(24)] public float BendAngle;
             [FieldOffset(28)] private uint _pad0;
+        }
+    }
+
+    internal sealed class PhysicalHandSuitCollisionShellProxy : MonoBehaviour
+    {
+        private PhysicalHandController _owner;
+
+        internal void Initialize(PhysicalHandController owner)
+        {
+            _owner = owner;
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            _owner?.RegisterSuitShellCandidate(other);
+        }
+
+        private void OnTriggerStay(Collider other)
+        {
+            _owner?.RegisterSuitShellCandidate(other);
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            _owner?.UnregisterSuitShellCandidate(other);
+        }
+
+        private void OnDisable()
+        {
+            Shutdown();
+        }
+
+        internal void Shutdown()
+        {
+            _owner?.ClearSuitShellCandidatesFromProxy();
+            _owner = null;
         }
     }
 }

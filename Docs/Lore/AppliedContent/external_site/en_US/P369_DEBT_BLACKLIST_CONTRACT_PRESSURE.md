@@ -7,6 +7,9 @@ poi_tags: poi.blacklist_notice;poi.lien_adjustment_card
 biome_tags: biome.safe_module;biome.claim_route
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Debt Blacklist Contract Pressure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

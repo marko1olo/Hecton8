@@ -7,6 +7,9 @@ poi_tags: poi.seed_factory_log;poi.atlas_directive
 biome_tags: biome.drowned_colony;biome.deep_archive
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "דוקטרינת Seed Ship"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

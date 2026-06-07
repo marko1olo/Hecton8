@@ -27,7 +27,7 @@ namespace Hecton8.Scavenging
         order = 112)]
     public sealed class ResourceNodeTemplate : ScriptableObject
     {
-        private const int DefaultValidLayerMask = HectonLayerMasks.DataTemplateAuthoringMaskValue;
+        private const int DefaultValidLayerMask = HectonLayerMasks.TerrainSdfProbeLayerMaskValue;
 
         public enum HarvestToolClass : byte
         {
@@ -986,7 +986,7 @@ namespace Hecton8.Scavenging
             if (HectonLayerMasks.IsEverythingLayerMask(originalValidLayerMask))
             {
                 Hecton8.Core.H8Debug.LogWarning(
-                    "[ResourceNodeTemplate] validLayers was Everything (-1). Replaced with HectonLayerMasks.AllDefinedProjectLayersMask.",
+                    "[ResourceNodeTemplate] validLayers was Everything (-1). Replaced with HectonLayerMasks.TerrainSdfProbeLayerMask.",
                     this);
             }
 
@@ -996,7 +996,7 @@ namespace Hecton8.Scavenging
 
         private static int SanitizeValidLayerMask(int layerMask)
         {
-            return HectonLayerMasks.SanitizeAuthoringLayerMask(layerMask);
+            return HectonLayerMasks.ResolveResourceNodeHostLayerMask(layerMask);
         }
 
         private void CacheRuntimeNodePrefabCold()

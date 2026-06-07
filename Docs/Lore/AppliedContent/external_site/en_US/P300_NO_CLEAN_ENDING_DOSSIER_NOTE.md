@@ -7,6 +7,9 @@ poi_tags: poi.no_clean_ending_dossier_note;poi.outcome_hash_board
 biome_tags: biome.ending;biome.dossier
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "No Clean Ending Dossier Note"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

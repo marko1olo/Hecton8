@@ -7,6 +7,9 @@ poi_tags: poi.orbit_dossier;poi.signal_mast
 biome_tags: biome.storm_shelf;biome.orbit_window
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Лунная лестница Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

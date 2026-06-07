@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "Fret à fusion par pellets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# Fret à fusion par pellets
 
-FR LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for.
+Le fret à fusion par pellets est l'histoire industrielle derrière HECTON-8. Machines et fret lourd ont atteint Aegir parce qu'une infrastructure pouvait pousser, nourrir, protéger et freiner la masse pendant des décennies ; la route reste cruelle parce que la comptabilité survit plus longtemps que l'urgence.
 
 ## Scanner
 
-FR LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Plaque moteur. Le fret à fusion nourrie aux pellets a traversé comme infrastructure : poussée, blindage, dérive, freinage, pertes facturées.
 
 ## Terminal
 
-FR LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+DOCTRINE FRET : les charges seed de classe Atlas et le fret colonial utilisaient accélération par voile à faisceau, fusion nourrie aux pellets, freinage par voile magnétique et longs intervalles de dérive. Le vivant est arrivé après que les machines ont rendu la route facturable.
 
 ## Audio
 
-FR LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+Un navire lourd n'est pas un miracle. C'est une hypothèque avec des moteurs.
 
 ## Field Note
 
-FR LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+Le transit lourd n'est pas héroïque. C'est un vieux contrat de route avec des cicatrices de chaleur.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/fr_FR. -->

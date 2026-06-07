@@ -7,6 +7,9 @@ poi_tags: poi.ice_scatter_hazard_log;poi.debris_lane_warning
 biome_tags: biome.orbit;biome.system
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Ice Scatter Moon Hazard Role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

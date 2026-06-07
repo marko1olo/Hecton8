@@ -89,7 +89,7 @@ namespace Hecton8.World
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _tickRegistered = false;
+                TryUnregisterTick();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegisterTick();
             }

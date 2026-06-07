@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "מטען היתוך כדוריות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# מטען היתוך כדוריות
 
-HE LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for.
+מטען היתוך כדוריות הוא ההיסטוריה התעשייתית מאחורי HECTON-8. מכונות ומטען כבד הגיעו אל Aegir משום שתשתית יכלה במשך עשורים לדחוף, להזין, להגן ולבלום מסה; הנתיב נשאר אכזרי כי החשבונאות חיה יותר זמן מהחירום.
 
 ## Scanner
 
-HE LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+לוח הנעה. מטען היתוך מוזן כדוריות חצה כתשתית: דחיפה, מגן, שיוט, בלימה וחיוב הפסדים.
 
 ## Terminal
 
-HE LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+דוקטרינת מטען: מטעני seed מדרגת Atlas ומטען מושבה השתמשו בהאצת מפרש קרן, היתוך מוזן כדוריות, בלימת מפרש מגנטי ומרווחי שיוט ארוכים. מטען חי הגיע אחרי שמכונות הפכו את הנתיב לבר חיוב.
 
 ## Audio
 
-HE LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+ספינה כבדה אינה נס. זו משכנתא עם מנועים.
 
 ## Field Note
 
-HE LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+תעבורה כבדה אינה הירואית. זה חוזה נתיב ישן עם צלקות חום.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/he_IL. -->

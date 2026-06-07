@@ -1828,9 +1828,9 @@ namespace Hecton8.Tools
                     _brineDensityReadModel = currentService as IBrineFluidDensityReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredSlowTick = false;
-                    _registeredUpdate = false;
-                    _registeredLateFrame = false;
+                    TryUnregisterLateFrame();
+                    TryUnregisterUpdate();
+                    TryUnregisterSlowTick();
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegisterSlowTick();

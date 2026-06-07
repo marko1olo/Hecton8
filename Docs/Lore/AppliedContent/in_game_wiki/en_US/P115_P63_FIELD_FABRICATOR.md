@@ -7,6 +7,9 @@ poi_tags: poi.shallow_annex_p63_fabricator;poi.first_recipe_console
 biome_tags: biome.shallow_annex;biome.photic_shelf
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "P-63 Field Fabricator"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

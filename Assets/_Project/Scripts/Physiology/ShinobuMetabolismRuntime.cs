@@ -271,7 +271,12 @@ namespace Hecton8.Physiology
                 _thermodynamicsService = currentService as IThermodynamicsService;
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
                 _tickDispatcher = currentService as ITickDispatcher;
+                TryUnregisterTicks();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterTicks();
+            }
         }
 
         /// <inheritdoc />

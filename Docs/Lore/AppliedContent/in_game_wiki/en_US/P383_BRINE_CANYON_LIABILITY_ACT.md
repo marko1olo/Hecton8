@@ -7,6 +7,9 @@ poi_tags: poi.brine_canyon_pump_cathedral;poi.sensor_margin_room
 biome_tags: biome.brine_canyon;biome.industrial_shelf
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Brine Canyon Liability Act"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

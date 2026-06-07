@@ -7,6 +7,9 @@ poi_tags: poi.atlas_severance_key;poi.continuity_cut_warning
 biome_tags: biome.atlas_basin;biome.factory_temple
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Final Question Severance Mercy Theft"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

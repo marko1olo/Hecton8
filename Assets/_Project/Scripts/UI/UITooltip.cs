@@ -86,12 +86,8 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            UITooltip registered = GlobalRegistry.UITooltip;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             _canvas = ResolveNearestParentCanvas(transform);
             if (_canvas != null)
@@ -154,8 +150,9 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registered = false;
-                RefreshTickRegistration();
+                TryUnregister();
+                if (currentService != null)
+                    RefreshTickRegistration();
             }
         }
 
@@ -247,18 +244,37 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return false;
 
-            UITooltip registered = GlobalRegistry.UITooltip;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return false;
-            }
 
             GlobalRegistry.RegisterUITooltipRuntime(this);
             _runtimeRegistered = ReferenceEquals(GlobalRegistry.UITooltip, this);
             if (_runtimeRegistered)
                 s_activeRuntime = this;
             return _runtimeRegistered;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            UITooltip registered = GlobalRegistry.UITooltip;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsUITooltipRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterUITooltipRuntime(registered);
+            if (ReferenceEquals(s_activeRuntime, registered))
+                s_activeRuntime = null;
+            return false;
+        }
+
+        private static bool IsUITooltipRuntimeUsable(UITooltip tooltip)
+        {
+            return tooltip != null && tooltip._runtimeRegistered && tooltip.isActiveAndEnabled;
         }
 
         private void TryUnregisterRuntime()

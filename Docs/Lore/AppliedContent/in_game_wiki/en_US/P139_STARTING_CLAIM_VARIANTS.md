@@ -7,6 +7,9 @@ poi_tags: poi.claim_variant_selector;poi.salvage_origin_stamp
 biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Starting Claim Variants"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

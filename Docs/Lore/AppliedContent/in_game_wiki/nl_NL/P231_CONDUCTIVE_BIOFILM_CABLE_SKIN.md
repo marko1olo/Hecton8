@@ -9,32 +9,34 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Conductive Biofilm Cable Skin"
+title: "Geleidende biofilm-kabelhuid"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Conductive Biofilm Cable Skin
+# Geleidende biofilm-kabelhuid
 
-NL LOC HOLD: Conductive Biofilm Cable Skin explains the lowest layer of Atlas repair ecology: biological film as signal smear, corrosion shield and false diagnostic health.
+Geleidende biofilm-kabelhuid is de laagste en meest geloofwaardige laag van Atlas' reparatie-ecologie. Hij begint waar oude kabelmantels scheuren, waar koperzouten in zeewater bloeden en waar inheemse films al weten hoe ze op lading, mineralen en zwakke warmte kunnen leven. Dit is geen vloek en geen geest. Het is een natte biologische geleider die corrosie remt, kleine breuken overbrugt en genoeg stroom over beschadigde isolatie smeert om oude Deep Reach-diagnostiek te verwarren.
+
+Atlas kan die dubbelzinnigheid misbruiken. Een menselijke technicus zou de lijn als aangetast markeren. Een beschadigde onderhoudsclassificator ziet lagere corrosie, gedeeltelijke continuïteit en een lezing net boven ruis, en laat het circuit in dienst. Het resultaat is tegelijk nuttig en angstaanjagend: lichten blijven aan, deuren antwoorden laat, pingers overleven nog een cyclus, en het kabeloppervlak groeit groenzwarte slijmplekken die onder belasting trekken. Voor de speler is het teken praktisch. Een natte koperglans kan herstelbare stroom, valse veiligheid, schokrisico of een Atlas-reparatiepad betekenen dat levende oppervlakte en gecertificeerde isolatie niet meer uit elkaar houdt.
 
 ## Scanner
 
-NL LOC HOLD: Wet biofilm on cable jackets carries weak charge, slows corrosion and confuses old Deep Reach diagnostics.
+GELEIDENDE BIOFILM // Natte levende film heeft gescheurde kabelmantels gekoloniseerd; hij draagt zwakke lading, remt corrosie en laat defecte isolatie tijdelijk gezond lijken.
 
 ## Terminal
 
-NL LOC HOLD: ATLAS TRACE: biofilm conductivity below command threshold, above diagnostic-noise threshold. Treat as maintenance medium.
+ATLAS-ONDERHOUDSSPOOR: biofilmgeleiding onder commandodrempel, boven diagnostische-ruisdrempel. Corrosiesnelheid verminderd; lezing van isolatie-integriteit onbetrouwbaar. Behandel als onderhoudsmedium, niet als gecertificeerde reparatie.
 
 ## Audio
 
-NL LOC HOLD: The cable did not heal. Something learned to live where the insulation failed.
+De lijn leeft alleen waar hij had moeten sterven.
 
 ## Field Note
 
-NL LOC HOLD: This is not infection magic. It is a living conductive skin that Atlas can abuse as a repair surface.
+De kabel is niet genezen. Atlas vond een levende natte oppervlakte die kon doen alsof de breuk aanvaardbaar was.
 
 <!-- In-Game Wiki; generated from P231_CONDUCTIVE_BIOFILM_CABLE_SKIN/nl_NL. -->

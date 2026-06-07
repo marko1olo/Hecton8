@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Density Skater Fauna"
+title: "Dichteskater-Fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Density Skater Fauna
+# Dichteskater-Fauna
 
-DE LOC HOLD: Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.
+Dichteskater sind Mitteltiefen-Tiere, die den Solecanyon wie geschichtete Maschine statt leeres Volumen wirken lassen. Ihre Füße, Flossen oder Hakenpolster drücken auf Dichteflächen, die stark genug sind, kleine Körper sekundenlang zu tragen. Dem Auge scheinen sie durch offenes Wasser zu gleiten; dem Scanner hinterlassen sie Wellen, wo offenes Wasser keine Oberfläche haben sollte. Dieser Widerspruch ist der Hinweis. Eine Skaterspur kann ein Scherfenster, eine Solestufe, eine blinde Sonarkante oder eine Jagdroute größerer Tiere markieren. Das Tier ist keine Magie und kein Sicherheitsversprechen. Ein Anzug ist schwerer, lauter und für denselben Trick schlecht geformt. Nutze Skaterspuren, um die Schicht zu lesen. Nimm nicht an, dass du folgen kannst.
 
 ## Scanner
 
-DE LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+DICHTESKATER // Dünngliedrige Fauna läuft auf der Solegrenze wie auf einer Oberfläche und hinterlässt Wellen, wo Sonar offenes Wasser erwartet.
 
 ## Terminal
 
-DE LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+FAUNA-BASIS: Skaterkontakt steigt nahe gerissenen brine vanes, warmen Solestufen und toten Sonarkanten. Ihre Spur markiert ein Dichteshelf, keinen sicheren Stand. Nicht durch opake Schichten hinterherjagen.
 
 ## Audio
 
-DE LOC HOLD: Something is walking on the water inside the water.
+Etwas läuft auf dem Wasser im Wasser.
 
 ## Field Note
 
-DE LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+Sie schweben nicht. Sie laufen auf einer Grenze, durch die dein Anzug fallen kann.
 
 <!-- In-Game Wiki; generated from P227_DENSITY_SKATER_FAUNA/de_DE. -->

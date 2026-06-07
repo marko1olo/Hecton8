@@ -7,6 +7,9 @@ poi_tags: poi.rumor_family_card;poi.dead_claim_note
 biome_tags: biome.ui;biome.replay
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Rumor Family Ui Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

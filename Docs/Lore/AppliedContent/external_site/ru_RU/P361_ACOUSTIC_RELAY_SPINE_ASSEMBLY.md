@@ -7,6 +7,9 @@ poi_tags: poi.acoustic_relay_spine;poi.pinger_line_spool
 biome_tags: biome.shallow_shelf;biome.industrial_shelf
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Сборка акустического релейного хребта"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

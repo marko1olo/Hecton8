@@ -1,0 +1,2 @@
+packet_id,packet_hash_hex,packet_hash_uint,release_set,primary_component,primary_field,secondary_component,secondary_field,suggested_world_target,unlock_moment,notes
+P623_PELLET_LANE_WAKE_LEDGER,0x1C738CB9,477334713,RS127_PELLET_LANE_WAKE_LEDGER,NarrativeDiscovery,appliedLorePacketHash,MessageTerminal,appliedLorePacketHash,"poi.freight_drive_plate, poi.seed_ship_manifest, poi.luyten_packet_buffer",pellet_lane_wake_ledger,Authoring evidence only; runtime consumes baked packet hash and string-pool rows. Unity placement still requires an editor binding pass.

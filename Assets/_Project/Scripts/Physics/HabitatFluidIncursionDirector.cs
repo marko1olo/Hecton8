@@ -182,8 +182,18 @@ namespace Hecton8.Physics
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredFixed = false;
-                _registeredPostFixed = false;
+                if (_registeredFixed)
+                {
+                    GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                    _registeredFixed = false;
+                }
+
+                if (_registeredPostFixed)
+                {
+                    GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+                    _registeredPostFixed = false;
+                }
+
                 if (currentService != null && isActiveAndEnabled)
                 {
                     bool fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);

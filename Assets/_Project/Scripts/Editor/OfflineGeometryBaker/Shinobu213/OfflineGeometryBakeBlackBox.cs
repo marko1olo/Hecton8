@@ -102,17 +102,8 @@ namespace Hecton8.Editor.OfflineGeometry
 
         internal static void Dispose()
         {
-            try
-            {
-                UnregisterNativeMemorySentinel();
-            }
-            finally
-            {
-                if (_ring.IsCreated)
-                    _ring.Dispose();
-                _ring = default;
-                _cursor = 0;
-            }
+            DisposeTrackedNativeArray(ref _ring);
+            _cursor = 0;
         }
 
         private static void EnsureAllocated()
@@ -120,29 +111,59 @@ namespace Hecton8.Editor.OfflineGeometry
             if (_ring.IsCreated)
                 return;
 
-            // COLD ALLOC: NativeArray<OfflineGeometryBakeTelemetryEntry>[300] - editor bake black-box ring - owner: OfflineGeometryBakeBlackBox
-            _ring = new NativeArray<OfflineGeometryBakeTelemetryEntry>(RingCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _ring = AllocateTrackedNativeArray<OfflineGeometryBakeTelemetryEntry>(
+                RingCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory,
+                "OfflineGeometryBakeBlackBox.Ring"); // COLD ALLOC: NativeArray<OfflineGeometryBakeTelemetryEntry>[300] - editor bake black-box ring - owner: OfflineGeometryBakeBlackBox
             OfflineGeometryBakeTelemetryEntry sentinel = default;
             sentinel.StateHash = 0x53483231u;
             for (int i = 0; i < RingCapacity; i++)
                 _ring[i] = sentinel;
             _cursor = 0;
+        }
+
+        private static NativeArray<T> AllocateTrackedNativeArray<T>(int length, Allocator allocator, NativeArrayOptions options, string label) where T : struct
+        {
+            if (length <= 0)
+                return default;
+
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[SHINOBU_213] NativeArray allocation failed for " + label + ".");
+
             try
             {
-                RegisterNativeMemorySentinel();
+                RegisterNativeMemorySentinel(array, label, ResolveNativeAllocationLifetimeName(allocator));
             }
             catch
             {
-                _ring.Dispose();
-                _ring = default;
-                _cursor = 0;
+                array.Dispose();
                 throw;
+            }
+
+            return array;
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                UnregisterNativeMemorySentinel(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
             }
         }
 
-        private static void RegisterNativeMemorySentinel()
+        private static void RegisterNativeMemorySentinel<T>(NativeArray<T> array, string label, string lifetimeName) where T : struct
         {
-            if (!_ring.IsCreated || _sentinelRegistered)
+            if (!array.IsCreated || _sentinelRegistered)
                 return;
 
             Type sentinelType = FindType("Hecton8.Core.NativeMemorySentinel");
@@ -154,18 +175,18 @@ namespace Hecton8.Editor.OfflineGeometry
             if (method == null)
                 throw new InvalidOperationException("[SHINOBU_213] NativeMemorySentinel.RegisterNativeArray unavailable.");
 
-            object lifetime = Enum.Parse(lifetimeType, "Session");
-            object id = method.MakeGenericMethod(typeof(OfflineGeometryBakeTelemetryEntry)).Invoke(
+            object lifetime = Enum.Parse(lifetimeType, lifetimeName);
+            object id = method.MakeGenericMethod(typeof(T)).Invoke(
                 null,
-                new object[] { _ring, "SHINOBU_213", "OfflineGeometryBakeBlackBox.Ring", lifetime });
+                new object[] { array, "SHINOBU_213", label, lifetime });
             _sentinelRegistered = id is int value && value != 0;
             if (!_sentinelRegistered)
                 throw new InvalidOperationException("[SHINOBU_213] NativeMemorySentinel rejected black-box ring registration.");
         }
 
-        private static void UnregisterNativeMemorySentinel()
+        private static void UnregisterNativeMemorySentinel<T>(NativeArray<T> array) where T : struct
         {
-            if (!_ring.IsCreated || !_sentinelRegistered)
+            if (!array.IsCreated || !_sentinelRegistered)
                 return;
 
             Type sentinelType = FindType("Hecton8.Core.NativeMemorySentinel");
@@ -175,11 +196,26 @@ namespace Hecton8.Editor.OfflineGeometry
 
             try
             {
-                method.MakeGenericMethod(typeof(OfflineGeometryBakeTelemetryEntry)).Invoke(null, new object[] { _ring });
+                method.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { array });
             }
             finally
             {
                 _sentinelRegistered = false;
+            }
+        }
+
+        private static string ResolveNativeAllocationLifetimeName(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return "Temp";
+                case Allocator.TempJob:
+                    return "TempJob";
+                case Allocator.Persistent:
+                    return "Session";
+                default:
+                    return "Session";
             }
         }
 

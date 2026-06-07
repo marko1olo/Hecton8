@@ -72,7 +72,7 @@ namespace Hecton8.Inventory
         private const uint InventoryBlackBoxDumpVersion = 1u;
         private const uint InventoryBlackBoxDumpMagic = 0x494E5638u;
         private const uint SalinityCorrosionBlackBoxDumpMagic = 0x53434F52u;
-        private const string InventoryBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1317_Inventory.bin";
+        private const string InventoryBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_INVENTORY_BLACKBOX.bin";
         private const int PendingScavengingItemSignalCapacity = 128;
         private const int PendingInventoryCommandSignalCapacity = 16;
         private const float SalinityCorrosionFrostTickSeconds = 5f;
@@ -84,8 +84,8 @@ namespace Hecton8.Inventory
         private const string NativeMemoryOwner = nameof(PlayerInventory);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const int InventoryShadowBufferBytes = SaveData.InventoryShadowPayloadMaxBytes;
-        private const uint Fnv1a32Offset = 2166136261u;
-        private const uint Fnv1a32Prime = 16777619u;
+        private const uint Fnv1a32Offset = SaveData.InventoryShadowPayloadHashSeed;
+        private const uint Fnv1a32Prime = SaveData.InventoryShadowPayloadHashPrime;
         private const byte ItemGeneticsSupportedFlagsMask = SaveData.InventoryItemGeneticsSupportedFlagsMask;
         private const ulong LegacyGlowGeneMask = (ulong)GeneticTraitProfile.GeneticTraitMask.Bioluminescent;
         private const ulong LegacyToxicGeneMask = (ulong)GeneticTraitProfile.GeneticTraitMask.Toxic;
@@ -1346,7 +1346,7 @@ namespace Hecton8.Inventory
 
         private void OnDisable()
         {
-            _pendingScavengingItemSignalCount = 0;
+            ApplyDeferredScavengingLootOracleSignals();
             _pendingInventoryCommandCount = 0;
             TryUnregisterPhysicsImpactListener();
             TryUnregisterSaveParticipant();
@@ -1390,7 +1390,7 @@ namespace Hecton8.Inventory
                     CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _cachedAudioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.Save:
                     TryUnregisterSaveParticipant();
@@ -1440,10 +1440,36 @@ namespace Hecton8.Inventory
             CachePlayerRuntimeContext(GlobalRegistry.Player);
             if (_traumaDispatcher == null)
                 TryGetComponent(out _traumaDispatcher);
-            _cachedAudioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _cachedSaveService = GlobalRegistry.Save;
             _cachedDataVault = GlobalRegistry.DataVault;
             _cachedPhysicsStateEvents = GlobalRegistry.PhysicsStateEvents;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _cachedAudioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
@@ -2276,6 +2302,7 @@ namespace Hecton8.Inventory
             if (data == null)
                 return;
 
+            ApplyDeferredScavengingLootOracleSignals();
             if (_isDirty || !_inventoryShadowValid)
                 RefreshInventoryShadowBufferFromRuntime();
 
@@ -5214,6 +5241,14 @@ namespace Hecton8.Inventory
                 if (pending[i].ItemHash != signal.ItemHash)
                     continue;
 
+                if (pending[i].OreHash != signal.OreHash ||
+                    pending[i].SourceKind != signal.SourceKind ||
+                    pending[i].Flags != signal.Flags ||
+                    !AreSamePendingScavengingSourcePosition(in pending[i].PositionAup, in signal.PositionAup))
+                {
+                    continue;
+                }
+
                 int mergedQuantity = pending[i].Quantity + signal.Quantity;
                 pending[i].Quantity = (ushort)math.min(ushort.MaxValue, mergedQuantity);
                 pending[i].Frame = pending[i].Frame >= signal.Frame ? pending[i].Frame : signal.Frame;
@@ -5223,6 +5258,19 @@ namespace Hecton8.Inventory
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool AreSamePendingScavengingSourcePosition(
+            in AbsoluteUniversePosition left,
+            in AbsoluteUniversePosition right)
+        {
+            return left.GridX == right.GridX &&
+                   left.GridY == right.GridY &&
+                   left.GridZ == right.GridZ &&
+                   left.LocalX == right.LocalX &&
+                   left.LocalY == right.LocalY &&
+                   left.LocalZ == right.LocalZ;
+        }
+
         private void ApplyDeferredScavengingLootOracleSignals()
         {
             int count = _pendingScavengingItemSignalCount;
@@ -5230,20 +5278,73 @@ namespace Hecton8.Inventory
                 return;
 
             ItemAcquiredSignal[] pending = _pendingScavengingItemSignals;
-            _pendingScavengingItemSignalCount = 0;
             if (pending == null)
+            {
+                _pendingScavengingItemSignalCount = 0;
                 return;
+            }
 
-            for (int i = 0; i < count; i++)
+            int safeCount = math.min(count, pending.Length);
+            int retainedCount = 0;
+            for (int i = 0; i < safeCount; i++)
             {
                 ItemAcquiredSignal signal = pending[i];
+                int requestedQuantity = signal.Quantity;
+                if (signal.ItemHash == 0u || requestedQuantity <= 0)
+                    continue;
+
                 TryAddItemWithStateInternal(
                     unchecked((int)signal.ItemHash),
-                    signal.Quantity,
+                    requestedQuantity,
                     0UL,
                     DefaultQualityMilli,
-                    out _);
+                    out int addedQuantity);
+
+                int clampedAddedQuantity = math.clamp(addedQuantity, 0, requestedQuantity);
+                int remainingQuantity = requestedQuantity - clampedAddedQuantity;
+                if (remainingQuantity <= 0)
+                    continue;
+
+                if (TryRegisterPendingScavengingWorldDrop(in signal, remainingQuantity))
+                    continue;
+
+                signal.Quantity = (ushort)math.min(ushort.MaxValue, remainingQuantity);
+                pending[retainedCount++] = signal;
             }
+
+            for (int i = retainedCount; i < safeCount; i++)
+                pending[i] = default;
+
+            _pendingScavengingItemSignalCount = retainedCount;
+        }
+
+        private bool TryRegisterPendingScavengingWorldDrop(in ItemAcquiredSignal signal, int quantity)
+        {
+            if (quantity <= 0 || signal.ItemHash == 0u || itemCatalog == null)
+                return false;
+
+            IPersistentDroppedItemRegistry persistentWorldRegistry = _cachedPersistentWorldRegistry;
+            if (persistentWorldRegistry == null)
+            {
+                persistentWorldRegistry = GlobalRegistry.PersistentDroppedItems;
+                _cachedPersistentWorldRegistry = persistentWorldRegistry;
+            }
+
+            if (persistentWorldRegistry == null)
+                return false;
+
+            ItemData item = itemCatalog.FindByHash(unchecked((int)signal.ItemHash));
+            if (item == null ||
+                !signal.PositionAup.TryToRuntimeFloat3(out float3 runtimePosition) ||
+                !math.all(math.isfinite(runtimePosition)))
+            {
+                return false;
+            }
+
+            return persistentWorldRegistry.TryRegisterDroppedItem(
+                item,
+                quantity,
+                new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
         }
 
         private void CaptureInventoryCommandSignals()
@@ -5985,6 +6086,7 @@ namespace Hecton8.Inventory
                     writeCursor = rowEnd;
                 }
 
+                NativeFaultDumpWriter.TryWriteAll(BuildInventoryBlackBoxDumpRelativePath(DateTime.UtcNow.Ticks), payload, writeCursor);
                 NativeFaultDumpWriter.TryWriteAll(InventoryBlackBoxDumpRelativePath, payload, writeCursor);
             }
             finally
@@ -5994,6 +6096,11 @@ namespace Hecton8.Inventory
                     nameof(PlayerInventory),
                     "InventoryBlackBoxDumpPayload");
             }
+        }
+
+        private static string BuildInventoryBlackBoxDumpRelativePath(long utcTicks)
+        {
+            return "Docs/AgentLogs/Dump_INVENTORY_BLACKBOX_" + utcTicks.ToString("X16") + ".bin";
         }
 
         private static unsafe void WriteSalinityCorrosionTelemetryEntry(byte* destination, ref int cursor, SalinityCorrosionTelemetryEntry entry)
@@ -6300,7 +6407,8 @@ namespace Hecton8.Inventory
                 dispatcher.OnTraumaThresholdCrossed(TraumaLevel.Critical);
             }
 
-            if (_cachedAudioService is ISpatialAudioInventoryRunawaySink inventoryAudio)
+            IAudioService audioService = ResolveAudioService();
+            if (audioService is ISpatialAudioInventoryRunawaySink inventoryAudio)
                 inventoryAudio.QueueInventoryRunawayExplosion(transform.position, ThermalRunawayAudioVolume);
         }
 

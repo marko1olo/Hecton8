@@ -25,7 +25,11 @@ namespace Hecton8.Editor.OfflineGeometry
             var session = new InteriorClutterBlackBoxSession
             {
                 // COLD ALLOC: NativeArray<InteriorClutterTelemetryEntry>[300] - per-bake editor black-box session - owner: InteriorClutterForge
-                _ring = new NativeArray<InteriorClutterTelemetryEntry>(InteriorClutterForgeConstants.TelemetryFrames, Allocator.TempJob, NativeArrayOptions.UninitializedMemory),
+                _ring = InteriorClutterForge.AllocateTrackedNativeArray<InteriorClutterTelemetryEntry>(
+                    InteriorClutterForgeConstants.TelemetryFrames,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(_ring)),
                 _cursor = 0,
                 _written = 0
             };
@@ -114,9 +118,7 @@ namespace Hecton8.Editor.OfflineGeometry
 
         public void Dispose()
         {
-            if (_ring.IsCreated)
-                _ring.Dispose();
-            _ring = default;
+            InteriorClutterForge.DisposeTrackedNativeArray(ref _ring);
         }
     }
 
@@ -147,7 +149,7 @@ namespace Hecton8.Editor.OfflineGeometry
 
                     length = (int)stream.Length;
                     // COLD ALLOC: NativeArray<byte>[csvLength] - editor CSV staging for atlas profiles - owner: InteriorAtlasProfileCsv
-                    bytes = new NativeArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    bytes = InteriorClutterForge.AllocateTrackedNativeArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory, nameof(bytes));
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(bytes);
                     Span<byte> span = new Span<byte>(ptr, length);
                     int totalRead = 0;
@@ -183,8 +185,7 @@ namespace Hecton8.Editor.OfflineGeometry
             }
             finally
             {
-                if (bytes.IsCreated)
-                    bytes.Dispose();
+                InteriorClutterForge.DisposeTrackedNativeArray(ref bytes);
             }
 
             if (profiles.Count == 0)
@@ -354,9 +355,9 @@ namespace Hecton8.Editor.OfflineGeometry
             try
             {
                 // COLD ALLOC: NativeArray<InteriorClutterAtlasRect>[materials.Count] - editor atlas rect feed - owner: InteriorMaterialAtlasBuilder
-                nativeRects = new NativeArray<InteriorClutterAtlasRect>(rects.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                nativeRects = InteriorClutterForge.AllocateTrackedNativeArray<InteriorClutterAtlasRect>(rects.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(nativeRects));
                 // COLD ALLOC: NativeArray<InteriorClutterAtlasColor>[materials.Count] - editor atlas color feed - owner: InteriorMaterialAtlasBuilder
-                nativeColors = new NativeArray<InteriorClutterAtlasColor>(rects.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                nativeColors = InteriorClutterForge.AllocateTrackedNativeArray<InteriorClutterAtlasColor>(rects.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(nativeColors));
                 for (int i = 0; i < rects.Count; i++)
                 {
                     Material material = i < materials.Count ? materials[i] : null;
@@ -375,8 +376,8 @@ namespace Hecton8.Editor.OfflineGeometry
             }
             finally
             {
-                if (nativeColors.IsCreated) nativeColors.Dispose();
-                if (nativeRects.IsCreated) nativeRects.Dispose();
+                InteriorClutterForge.DisposeTrackedNativeArray(ref nativeColors);
+                InteriorClutterForge.DisposeTrackedNativeArray(ref nativeRects);
             }
 
             bool copiedAny = false;
@@ -531,7 +532,7 @@ namespace Hecton8.Editor.OfflineGeometry
             try
             {
                 // COLD ALLOC: NativeArray<uint>[atlas pixels] - editor atlas texel staging, one channel at a time - owner: InteriorMaterialAtlasBuilder
-                pixels = new NativeArray<uint>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                pixels = InteriorClutterForge.AllocateTrackedNativeArray<uint>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(pixels));
                 JobHandle solidFillHandle = new FillAtlasSolidJob
                 {
                     Pixels = pixels,
@@ -559,8 +560,7 @@ namespace Hecton8.Editor.OfflineGeometry
             }
             finally
             {
-                if (pixels.IsCreated)
-                    pixels.Dispose();
+                InteriorClutterForge.DisposeTrackedNativeArray(ref pixels);
             }
         }
 

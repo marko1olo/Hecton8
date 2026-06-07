@@ -7,6 +7,9 @@ poi_tags: poi.contract_officer_desk;poi.procedure_hold
 biome_tags: biome.admin_deck;biome.drowned_office
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Процедурная задержка Павла Сорна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

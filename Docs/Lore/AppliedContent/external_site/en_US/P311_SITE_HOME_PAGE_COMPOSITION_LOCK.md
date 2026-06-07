@@ -7,6 +7,9 @@ poi_tags: poi.site_home_composition_card;poi.pressure_hero_image_brief
 biome_tags: biome.publication;biome.site
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Public Opening Composition Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

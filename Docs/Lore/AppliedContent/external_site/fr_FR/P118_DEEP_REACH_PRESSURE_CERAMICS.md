@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "Céramique de pression Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# Céramique de pression Deep Reach
 
-FR LOC HOLD: Deep Reach Pressure Ceramics separates corporate engineering from pure evil. The company made working materials and then used that competence to justify lethal priorities.
+La céramique de pression Deep Reach explique pourquoi la colonie pouvait fonctionner, et pourquoi ses restes sont encore mortels. Deep Reach n'a pas bâti une industrie du fond par incompétence. La compagnie a appris à amplifier les argiles locales, les flux sulfurés et la chaleur des forges d'évent en pièces céramiques capables de survivre à des pressions que le métal ordinaire ne tolérerait pas. Les bagues de serrage tenaient les joints d'habitat. Les sièges de joint forçaient les pompes à rester honnêtes. Les contacts de coupe portaient la chaleur dans la saumure sans devenir de la ferraille molle. L'isolation des berceaux d'ascension achetait quelques minutes critiques quand le matériel de lancement aurait dû se cuire lui-même. Cette compétence fait partie de l'horreur, elle ne la contredit pas. Le joueur qui récupère de la céramique de pression manipule la preuve que Deep Reach comprenait assez ce monde pour garder des gens en vie, puis a choisi des procédures et des responsabilités qui rendaient l'abandon rentable. Le matériau se souvient des deux faits. Il est précieux dans une recette d'évasion et dangereux dans une épave. Le choc thermique peut produire une floraison d'éclats : une fracture blanche et silencieuse s'ouvre en pétales de couteau sur la face d'une bague. Une mauvaise détente peut changer un siège parfait en shrapnel. Cette ressource doit montrer une vérité industrielle, pas une texture de méchant générique. La colonie en dépendait parce qu'elle fonctionnait. Le joueur en dépend pour la même raison.
 
 ## Scanner
 
-FR LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+CERAMIQUE DE PRESSION DEEP REACH // Argile locale, flux sulfuré et chaleur de forge d'évent transformés en bagues de serrage et sièges de joint. Tient magnifiquement la pression ; devient couteaux sous choc.
 
 ## Terminal
 
-FR LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+CLASSE RESSOURCE : amplifiée par Deep Reach. Usages : bagues de serrage, sièges de joint, contacts de coupe, isolation de berceau d'ascension. Mode de rupture : floraison d'éclats sous choc thermique ou mauvaise détente.
 
 ## Audio
 
-FR LOC HOLD: The company was good at building things. That is part of the crime.
+Deep Reach savait construire. C'est pour cela que le mensonge a tenu.
 
 ## Field Note
 
-FR LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+Frappe-la à froid. Si elle chante haut, ne la chauffe pas.
 
 <!-- External Site; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/fr_FR. -->

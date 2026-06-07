@@ -3288,10 +3288,12 @@ namespace Hecton8.World
                 return false;
 
             _scavengerBatchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for scavenger scatter - owner: SargassumGlobalDragManager
-            using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(
-                       ScavengerBrgMetadataPlaceholderCount,
-                       Allocator.Temp,
-                       NativeArrayOptions.ClearMemory))
+            NativeArray<MetadataValue> batchMetadata = H8Memory.Allocate<MetadataValue>(
+                ScavengerBrgMetadataPlaceholderCount,
+                VaultOwnerSystemId,
+                Allocator.Temp,
+                NativeArrayOptions.ClearMemory);
+            try
             {
                 if (!batchMetadata.IsCreated || batchMetadata.Length < ScavengerBrgMetadataPlaceholderCount)
                 {
@@ -3300,6 +3302,11 @@ namespace Hecton8.World
                 }
 
                 _scavengerBatchId = _scavengerBatchRendererGroup.AddBatch(batchMetadata, _scavengerBatchHandleBuffer.bufferHandle);
+            }
+            finally
+            {
+                if (batchMetadata.IsCreated)
+                    H8Memory.Release(ref batchMetadata, VaultOwnerSystemId);
             }
 
             if (!_scavengerBatchId.Equals(default))

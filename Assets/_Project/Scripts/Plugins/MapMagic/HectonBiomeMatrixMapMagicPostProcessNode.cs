@@ -164,8 +164,18 @@ namespace MapMagic.Nodes.MatrixGenerators
             out int bufferARegistrationId,
             out int bufferBRegistrationId)
         {
-            bufferARegistrationId = NativeMemorySentinel.RegisterNativeArray(bufferA, NativeMemoryOwner, BufferALabel, NativeAllocationLifetime.TempJob);
-            bufferBRegistrationId = NativeMemorySentinel.RegisterNativeArray(bufferB, NativeMemoryOwner, BufferBLabel, NativeAllocationLifetime.TempJob);
+            bufferARegistrationId = RegisterTempJobArray(bufferA, BufferALabel);
+            bufferBRegistrationId = RegisterTempJobArray(bufferB, BufferBLabel);
+        }
+
+        private static int RegisterTempJobArray<T>(NativeArray<T> array, string label)
+            where T : struct
+        {
+            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+            if (registrationId <= 0)
+                throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+
+            return registrationId;
         }
 
         private static void DisposeTracked(ref NativeArray<float> array, ref int registrationId)

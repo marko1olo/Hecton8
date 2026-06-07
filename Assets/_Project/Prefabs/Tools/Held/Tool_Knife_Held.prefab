@@ -61,7 +61,7 @@ MonoBehaviour:
   criticalHealthThreshold: 0.35
   hitMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 2121609
   feedbackInterval: 0.35
 --- !u!114 &640171460863245110
 MonoBehaviour:

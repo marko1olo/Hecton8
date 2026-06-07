@@ -7,6 +7,9 @@ poi_tags: poi.sonar_pylon;poi.return_beacon
 biome_tags: biome.shallow_wreck;biome.service_canyon
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Route de retour sonar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,34 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Sensor-Tagged Fauna"
+title: "Фауна із сенсорними мітками"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Sensor-Tagged Fauna
+# Фауна із сенсорними мітками
 
-UA LOC HOLD: Sensor-Tagged Fauna keeps HECTON-8's biomechanical layer grounded. Old biometal monitoring tags become shell sockets, scars and signal ghosts, giving creatures industrial history without turning them into simple puppets.
+Фауна із сенсорними мітками не дає біомеханічному шару HECTON-8 стати простою історією про псування. Істоти не магічно перетворені на дронів. Це тварини й колонії, які пережили обладнання спостереження. Мітка стала гніздом, шрамом, кільцем росту, мінеральним пухирем або фальшивим оком, бо екосистема зробила те, що роблять екосистеми: виросла навколо пошкодження.
+
+Так кожен сигнальний привид отримує історію. Marauder може почути слабкий ідентифікатор Deep Reach зсередини мушлевого травоїда або побачити, як біометалевий очний вузол блимає на тілі, що ігнорує команди. Стара корпорація все ще лишає паперовий слід у плоті, але плоть не слухається. Atlas може використати сигнал, але не володіти твариною. Це робить жах сумнішим і сильнішим: промисловий контроль намагався позначити життя, життя вижило, а мітка досі звітує системам, які вже не розуміють, що чують.
 
 ## Scanner
 
-UA LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+ФАУНА ІЗ СЕНСОРНИМИ МІТКАМИ // Старі біометалеві мітки сидять у кільцях росту, шрамах і мушлевих гніздах; тварина носить обладнання спостереження як історію тіла, не як послух.
 
 ## Terminal
 
-UA LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+НОТАТКА МІТКИ: неперервність сигналу слабка, біологічна інтеграція висока, командна відповідь ненадійна. Вважати пасивним шрамом, переривчастим маяком і можливим діагностичним привидом Atlas.
 
 ## Audio
 
-UA LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+Тварина не дрон. Дрон - стара рана всередині тварини.
 
 ## Field Note
 
-UA LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+Тварина не дрон. Дрон - стара рана, навколо якої тварина вижила.
 
 <!-- External Site; generated from P234_SENSOR_TAGGED_FAUNA/uk_UA. -->

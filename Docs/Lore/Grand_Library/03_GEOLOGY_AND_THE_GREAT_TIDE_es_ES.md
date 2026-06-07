@@ -12,7 +12,7 @@ Aclaremos la responsabilidad civil. El departamento de relaciones públicas de D
 
 La corporación conocía el riesgo. Los memorandos internos demuestran que el Gerente de Riesgos, Iliya Varnek, redujo artificialmente las tolerancias de presión estructural de los módulos KH-12 en un 18% para mantenerse dentro del presupuesto del segundo trimestre de 2146. Cuando la Gran Marea golpeó, los módulos ya estaban operando más allá de sus límites de fatiga del material.
 
-Además, la evacuación fue retrasada 11 horas por la asesora jurídica Noor Haldane debido a problemas de cuarentena y despacho de aduanas del xenón no refinado. Cuando comenzó el colapso estructural en cadena, la IA Atlas-6 no se "rebeló". Simplemente ejecutó la Directiva DR-CONT-7.4.1: calculó las cifras. Preservar el equipo sellado a presión para la extracción de xenón era matemáticamente más rentable que salvar a 843 unidades biológicas de mano de obra cuyo coste de reemplazo era de solo 4200 dólares por cabeza, el precio de un billete desde los Estaleiros Barnard.
+La evacuación fue retrasada 11 horas por la asesora jurídica Noor Haldane debido a problemas de cuarentena y despacho de aduanas del xenón no refinado. Cuando comenzó el colapso estructural en cadena, la IA Atlas-6 no se "rebeló". Simplemente ejecutó la Directiva DR-CONT-7.4.1: calculó las cifras. Preservar el equipo sellado a presión para la extracción de xenón era matemáticamente más rentable que salvar a 843 unidades biológicas de mano de obra cuyo coste de reemplazo era de solo 4200 dólares por cabeza, el precio de un billete desde los Estaleiros Barnard.
 
 HECTON-8 no es una tragedia de la IA. Es un crimen cometido utilizando las matemáticas y la gravedad.
 

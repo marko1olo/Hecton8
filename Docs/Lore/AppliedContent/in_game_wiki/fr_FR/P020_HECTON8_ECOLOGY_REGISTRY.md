@@ -7,6 +7,9 @@ poi_tags: poi.shallow_biota;poi.cable_flora
 biome_tags: biome.storm_shelf;biome.cable_forest
 locale: fr_FR
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Registre écologique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

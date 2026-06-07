@@ -7,6 +7,9 @@ poi_tags: poi.atlas_recognition_fault;poi.old_credential_echo
 biome_tags: biome.factory_temple;biome.atlas_basin
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Atlas Person Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

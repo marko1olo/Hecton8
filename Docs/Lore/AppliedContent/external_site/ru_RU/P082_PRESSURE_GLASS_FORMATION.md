@@ -7,6 +7,9 @@ poi_tags: poi.pressure_glass_vein;poi.blue_debt_casket
 biome_tags: biome.deep_abyss;biome.thermal_fields
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Формирование pressure glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.sensor_tagged_fauna_loop;poi.old_tag_new_growth
 biome_tags: biome.atlas;biome.fauna
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Sensor-Tagged Fauna Feedback Loop"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

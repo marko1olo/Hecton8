@@ -9,32 +9,34 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Wide Filter Body Trace"
+title: "Trace du grand corps filtreur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Wide Filter Body Trace
+# Trace du grand corps filtreur
 
-FR LOC HOLD: Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.
+Les grands corps filtreurs prouvent d'abord que l'abysse ouvert entre les repères n'est pas vide. Ils avancent dans l'eau profonde comme de lentes moissonneuses de nuages de plancton, avec un corps plus large que de petits modules annexes. L'animal ne chasse pas le Marauder; il modifie la carte autour du Marauder. Après son passage, la vie en suspension se raréfie, les retours sonar bavent le long de son bord, et des contours industriels enfouis peuvent apparaître quelques minutes avant que le limon se referme.
+
+L'organisme devient donc à la fois danger et outil. Son ombre peut cacher une ossature de service ou faire paraître ouverte une route où l'eau est en fait pleine de tissu en mouvement. La bonne lecture est celle du sillage: eau claire derrière la bouche, retombée sale sur le bord, silence acoustique dans l'abri du corps. Ne nage jamais sous l'ombre seulement pour voir la créature. Suis le vide qu'elle laisse uniquement avec de l'énergie, une ligne et un retour possible.
 
 ## Scanner
 
-FR LOC HOLD: A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.
+GRAND CORPS FILTREUR // Un vaste animal filtreur traverse la tranchée; le plancton s'éclaircit derrière lui, le sonar bave sur son bord, et les ruines peuvent apparaître ou disparaître sous son ombre.
 
 ## Terminal
 
-FR LOC HOLD: CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.
+BASE DE CONTACT: le passage d'un grand corps filtreur produit faible densité de plancton, bavure d'écho sur le bord, sillage silencieux en pression et couloirs temporaires de visibilité. Ne pas poursuivre sous l'ombre ventrale. Utiliser le vide acoustique seulement après la chute du limon arrière.
 
 ## Audio
 
-FR LOC HOLD: That is not a roar. That is the sound of the map being wiped clean.
+Ce n'est pas un rugissement. C'est le son d'une carte qu'on efface.
 
 ## Field Note
 
-FR LOC HOLD: Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.
+Ne l'appelle pas un boss. Appelle-le une météo avec un estomac: lente, immense, utile et indifférente.
 
 <!-- In-Game Wiki; generated from P229_WIDE_FILTER_BODY_TRACE/fr_FR. -->

@@ -7,6 +7,9 @@ poi_tags: poi.knowledge_flag_manifest;poi.save_profile_stamp
 biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Флаги знания профиля"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

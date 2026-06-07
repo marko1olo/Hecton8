@@ -7,6 +7,9 @@ poi_tags: poi.acoustic_pinger_spool;poi.return_line_anchor
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Acoustic pinger line"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

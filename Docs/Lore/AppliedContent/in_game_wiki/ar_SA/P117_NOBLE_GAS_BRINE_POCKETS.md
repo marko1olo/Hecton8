@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Noble Gas Brine Pockets"
+title: "جيوب محلول ملحي بغازات نبيلة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Noble Gas Brine Pockets
+# جيوب محلول ملحي بغازات نبيلة
 
-AR LOC HOLD: Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.
+جيوب المحلول الملحي بالغازات النبيلة هي سجلات ضغط مختومة داخل محاليل HECTON-8 المعدنية. الجيب المفيد ليس مجرد زينون في الماء؛ إنه نسبة غازات ومنحنى ضغط وندبة حرارة وشبكة عيوب معدنية بقيت معا طويلا بما يكفي لإثبات ما حدث تحت الأرض. تنفيس الجيب يدمر القيمة والدليل معا. تصبح هذه العينات مهمة لأن عمليات Deep Reach ثم Atlas تستطيع دفع اللقيم ذي تاريخ الضغط الصحيح نحو Xenon-Omega، لكن الجيب الخام يبقى جيولوجيا، وليس كنزا بحد ذاته.
 
 ## Scanner
 
-AR LOC HOLD: Natural-to-process resource. Valuable only if pressure history survives extraction.
+جيب محلول ملحي بغازات نبيلة // فقاعة ضغط مختومة داخل محلول معدني. لا تبقى القيمة إلا إذا بقي تاريخ الضغط مختوما؛ افتحها فيصير الحظ طقسا.
 
 ## Terminal
 
-AR LOC HOLD: RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+فئة المورد: مادة أصلية/لقيم معالجة. استخدم الاستخراج بجرس الضغط. لا تنفس العينة ولا تسخنها. الأدلة المطلوبة: منحنى الضغط، نسبة الغازات، خريطة عيوب المعدن.
 
 ## Audio
 
-AR LOC HOLD: Open it wrong and the fortune becomes weather.
+تبدأ Xenon-Omega هنا ككيمياء محبوسة، لا كخام معجزة.
 
 ## Field Note
 
-AR LOC HOLD: This is where Xenon-Omega begins as chemistry, not magic.
+لا تفتح الجيب لترى إن كان غنيا. هكذا تصنع الطواقم الفقيرة فقاعات.
 
 <!-- In-Game Wiki; generated from P117_NOBLE_GAS_BRINE_POCKETS/ar_SA. -->

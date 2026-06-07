@@ -488,7 +488,9 @@ namespace Hecton8.World.ProceduralWreckage
             int activeRuleCount = 0;
             uint version = 0u;
             bool swappedEndian = false;
-            NativeArray<WreckageRuleDTO> parsedRules = new NativeArray<WreckageRuleDTO>(ruleCapacity, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            if (!TryAllocateScratch(ruleCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<WreckageRuleDTO> parsedRules))
+                return false;
+
             try
             {
                 activeRuleCount = TryApplyBinaryRules(fileBytes.Slice(0, length), parsedRules, out version, out swappedEndian);
@@ -500,8 +502,7 @@ namespace Hecton8.World.ProceduralWreckage
             }
             finally
             {
-                if (parsedRules.IsCreated)
-                    parsedRules.Dispose();
+                ReleaseScratch(ref parsedRules);
             }
 
             uint payloadHash = HashBytesFromSpan(fileBytes.Slice(0, length)) ^ version ^ (swappedEndian ? 0xB16B00B5u : 0u);
@@ -531,7 +532,9 @@ namespace Hecton8.World.ProceduralWreckage
                 return false;
 
             int ruleCount = 0;
-            NativeArray<WreckageRuleDTO> parsedRules = new NativeArray<WreckageRuleDTO>(ruleCapacity, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            if (!TryAllocateScratch(ruleCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<WreckageRuleDTO> parsedRules))
+                return false;
+
             try
             {
                 ruleCount = TryApplyCsvRules(fileBytes.Slice(0, length), parsedRules);
@@ -543,8 +546,7 @@ namespace Hecton8.World.ProceduralWreckage
             }
             finally
             {
-                if (parsedRules.IsCreated)
-                    parsedRules.Dispose();
+                ReleaseScratch(ref parsedRules);
             }
 
             uint payloadHash = HashBytesFromSpan(fileBytes.Slice(0, length));
@@ -864,10 +866,14 @@ namespace Hecton8.World.ProceduralWreckage
             if (vault == null || handle.BufferID == 0u)
                 return false;
 
-            NativeArray<WreckageRuleDTO> scratch = new NativeArray<WreckageRuleDTO>(
-                ProceduralWreckageConstants.MaxModuleRules,
-                Allocator.Temp,
-                NativeArrayOptions.UninitializedMemory);
+            if (!TryAllocateScratch(
+                    ProceduralWreckageConstants.MaxModuleRules,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<WreckageRuleDTO> scratch))
+            {
+                return false;
+            }
+
             try
             {
                 GenerateEmergencyMockWreckRules(scratch);
@@ -876,9 +882,25 @@ namespace Hecton8.World.ProceduralWreckage
             }
             finally
             {
-                if (scratch.IsCreated)
-                    scratch.Dispose();
+                ReleaseScratch(ref scratch);
             }
+        }
+
+        private static bool TryAllocateScratch<T>(
+            int length,
+            NativeArrayOptions options,
+            out NativeArray<T> array) where T : struct
+        {
+            array = H8Memory.Allocate<T>(length, WreckageVaultOwner, Allocator.Temp, options);
+            return array.IsCreated;
+        }
+
+        private static void ReleaseScratch<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            H8Memory.Release(ref array, WreckageVaultOwner);
         }
 
         private static bool TryCopyBytesToVault(

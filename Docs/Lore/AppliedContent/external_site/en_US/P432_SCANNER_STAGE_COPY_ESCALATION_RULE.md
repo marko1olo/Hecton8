@@ -7,6 +7,9 @@ poi_tags: poi.scanner_stage_rule;poi.scan_stage_badge
 biome_tags: biome.scanner_ui;biome.deep_ecology
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Scanner Stage Copy Escalation Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

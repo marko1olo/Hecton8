@@ -2048,6 +2048,14 @@ namespace Hecton8.Visor
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterLateFrameTick();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterLateFrameTick();
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Audio)
             {
                 CacheAudioService(currentService as IAudioService);
@@ -2096,8 +2104,41 @@ namespace Hecton8.Visor
 
         private void CacheAudioService(IAudioService audioService)
         {
-            _audioService = audioService != null && audioService.IsInitialized ? audioService : null;
+            if (!IsAudioServiceUsable(audioService))
+            {
+                ClearCachedAudioService();
+                return;
+            }
+
+            _audioService = audioService;
             _spatialAudioEmitterReadModel = _audioService as ISpatialAudioWorldEmitterReadModel;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            ClearCachedAudioService();
+            return null;
+        }
+
+        private void ClearCachedAudioService()
+        {
+            _audioService = null;
+            _spatialAudioEmitterReadModel = null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerRuntimeContext)
@@ -2118,8 +2159,7 @@ namespace Hecton8.Visor
 
         private void ClearCachedRegistryServices()
         {
-            _audioService = null;
-            _spatialAudioEmitterReadModel = null;
+            ClearCachedAudioService();
             _playerRuntimeContext = null;
             _playerTransform = null;
             _playerMovement = null;
@@ -4227,7 +4267,7 @@ namespace Hecton8.Visor
             if (abyssalAnchorReturnClip == null || response01 <= 0f)
                 return;
 
-            Hecton8.Core.IAudioService audioManager = _audioService;
+            Hecton8.Core.IAudioService audioManager = ResolveAudioService();
             if (audioManager == null)
                 return;
 

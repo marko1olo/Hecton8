@@ -9,32 +9,32 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "Balises sensorielles biométal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# Balises sensorielles biométal
 
-FR LOC HOLD: Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.
+Les balises sensorielles biométal sont de petites écailles télémétriques trouvées dans la faune, la croissance de câble et l'écologie de réparation. Elles peuvent affiner pingers et routes de scanner, mais chaque balise utile est aussi une preuve : Atlas utilisait des porteurs vivants pour étendre un réseau de maintenance endommagé.
 
 ## Scanner
 
-FR LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+BALISES SENSORIELLES BIOMÉTAL // Fines écailles métalliques poussées dans poisson, kelp de câble et tissu de réparation. Améliorent l'accord du pinger; récoltées chaudes, Atlas peut entendre le porteur manquant.
 
 ## Terminal
 
-FR LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+CLASSE RESSOURCE : altérée par Atlas / sensible comme preuve. Usages : focus de pinger, treillis de scanner, confiance de route, paquets de preuve. Récolte froide conseillée. Risques : hausse d'attention, faux retours de porteur, faune blessée.
 
 ## Audio
 
-FR LOC HOLD: The fish is not a drone. The tag does not know the difference.
+Le poisson n'est pas un drone. La balise continue pourtant de rapporter.
 
 ## Field Note
 
-FR LOC HOLD: Make resource extraction feel like evidence handling.
+Si elle clignote sous la lame, enregistre avant de couper.
 
 <!-- In-Game Wiki; generated from P120_BIOMETAL_SENSOR_TAGS/fr_FR. -->

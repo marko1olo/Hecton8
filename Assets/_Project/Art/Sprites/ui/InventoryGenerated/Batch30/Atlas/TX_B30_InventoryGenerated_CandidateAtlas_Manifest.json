@@ -1,0 +1,205 @@
+{
+  "atlas": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Atlas/TX_B30_InventoryGenerated_CandidateAtlas_512xCells.png",
+  "cellSizePx": 512,
+  "columns": 5,
+  "entries": [
+    {
+      "atlas_rect_px": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "content_bounds_in_cell_px": [
+        171,
+        62,
+        341,
+        450
+      ],
+      "coverage": 0.1998,
+      "index": 0,
+      "name": "DRAFT_TX_B30_IsolatedInventory_01_OxygenMicroTank_Alpha512",
+      "source": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_01_OxygenMicroTank_Alpha512.png",
+      "touches_cell_edge": false
+    },
+    {
+      "atlas_rect_px": [
+        512,
+        0,
+        512,
+        512
+      ],
+      "content_bounds_in_cell_px": [
+        62,
+        85,
+        450,
+        427
+      ],
+      "coverage": 0.3531,
+      "index": 1,
+      "name": "DRAFT_TX_B30_IsolatedInventory_02_PressureRegulatorModule_Alpha512",
+      "source": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_02_PressureRegulatorModule_Alpha512.png",
+      "touches_cell_edge": false
+    },
+    {
+      "atlas_rect_px": [
+        1024,
+        0,
+        512,
+        512
+      ],
+      "content_bounds_in_cell_px": [
+        61,
+        77,
+        450,
+        434
+      ],
+      "coverage": 0.3671,
+      "index": 2,
+      "name": "DRAFT_TX_B30_IsolatedInventory_03_PressureSalvageCaseA_Alpha512",
+      "source": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_03_PressureSalvageCaseA_Alpha512.png",
+      "touches_cell_edge": false
+    },
+    {
+      "atlas_rect_px": [
+        1536,
+        0,
+        512,
+        512
+      ],
+      "content_bounds_in_cell_px": [
+        62,
+        117,
+        450,
+        395
+      ],
+      "coverage": 0.2317,
+      "index": 3,
+      "name": "DRAFT_TX_B30_IsolatedInventory_04_FoldedMultitoolA_Alpha512",
+      "source": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_04_FoldedMultitoolA_Alpha512.png",
+      "touches_cell_edge": false
+    },
+    {
+      "atlas_rect_px": [
+        2048,
+        0,
+        512,
+        512
+      ],
+      "content_bounds_in_cell_px": [
+        62,
+        128,
+        450,
+        384
+      ],
+      "coverage": 0.2115,
+      "index": 4,
+      "name": "DRAFT_TX_B30_IsolatedInventory_05_FoldedMultitoolB_Alpha512",
+      "source": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_05_FoldedMultitoolB_Alpha512.png",
+      "touches_cell_edge": false
+    },
+    {
+      "atlas_rect_px": [
+        0,
+        512,
+        512,
+        512
+      ],
+      "content_bounds_in_cell_px": [
+        62,
+        97,
+        450,
+        415
+      ],
+      "coverage": 0.2808,
+      "index": 5,
+      "name": "DRAFT_TX_B30_IsolatedInventory_06_PowerCoilCartridge_Alpha512",
+      "source": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_06_PowerCoilCartridge_Alpha512.png",
+      "touches_cell_edge": false
+    },
+    {
+      "atlas_rect_px": [
+        512,
+        512,
+        512,
+        512
+      ],
+      "content_bounds_in_cell_px": [
+        62,
+        93,
+        450,
+        419
+      ],
+      "coverage": 0.3467,
+      "index": 6,
+      "name": "DRAFT_TX_B30_IsolatedInventory_07_ThermalControlModule_Alpha512",
+      "source": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_07_ThermalControlModule_Alpha512.png",
+      "touches_cell_edge": false
+    },
+    {
+      "atlas_rect_px": [
+        1024,
+        512,
+        512,
+        512
+      ],
+      "content_bounds_in_cell_px": [
+        62,
+        120,
+        449,
+        391
+      ],
+      "coverage": 0.2983,
+      "index": 7,
+      "name": "DRAFT_TX_B30_IsolatedInventory_08_BeaconPuck_Alpha512",
+      "source": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_08_BeaconPuck_Alpha512.png",
+      "touches_cell_edge": false
+    },
+    {
+      "atlas_rect_px": [
+        1536,
+        512,
+        512,
+        512
+      ],
+      "content_bounds_in_cell_px": [
+        62,
+        108,
+        450,
+        404
+      ],
+      "coverage": 0.2173,
+      "index": 8,
+      "name": "DRAFT_TX_B30_IsolatedInventory_09_SampleVialRack_Alpha512",
+      "source": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_09_SampleVialRack_Alpha512.png",
+      "touches_cell_edge": false
+    },
+    {
+      "atlas_rect_px": [
+        2048,
+        512,
+        512,
+        512
+      ],
+      "content_bounds_in_cell_px": [
+        62,
+        113,
+        450,
+        398
+      ],
+      "coverage": 0.2681,
+      "index": 9,
+      "name": "DRAFT_TX_B30_IsolatedInventory_10_AlloyIngot_Alpha512",
+      "source": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_10_AlloyIngot_Alpha512.png",
+      "touches_cell_edge": false
+    }
+  ],
+  "evidenceClass": "STATIC_SOURCE_DRAFT_NO_UNITY_IMPORT",
+  "rows": 2,
+  "scaledAtlases": [
+    "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Atlas/TX_B30_InventoryGenerated_CandidateAtlas_512xCells_256xCells.png"
+  ],
+  "schema": "hecton8.inventory_atlas_bake.v1",
+  "source": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512",
+  "tool": "Tools/InventoryAtlasBaker.py"
+}

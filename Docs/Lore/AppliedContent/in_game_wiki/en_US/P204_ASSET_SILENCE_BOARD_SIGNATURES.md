@@ -7,6 +7,9 @@ poi_tags: poi.asset_silence_board;poi.redaction_vote_card
 biome_tags: biome.claim_admin;biome.worker_locker
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Asset Silence Board Signatures"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

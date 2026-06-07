@@ -109,7 +109,9 @@ namespace Hecton8.Vehicles.Automation.Editor
 
         private void OnEnable()
         {
+            SceneView.duringSceneGui -= OnSceneGui;
             SceneView.duringSceneGui += OnSceneGui;
+            EditorApplication.update -= OnEditorPulse;
             EditorApplication.update += OnEditorPulse;
         }
 

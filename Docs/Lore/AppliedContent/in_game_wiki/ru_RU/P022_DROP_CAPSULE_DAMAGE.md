@@ -7,6 +7,9 @@ poi_tags: poi.drop_capsule;poi.crash_shelter
 biome_tags: biome.crash_shelf;biome.shallow_repair
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Повреждение спусковой капсулы"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

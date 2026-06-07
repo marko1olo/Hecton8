@@ -143,10 +143,7 @@ namespace Hecton8.Interaction
             bool shouldRestoreTick = (_registeredTick && !_tickDormant)
                 || hasPendingRuntimeWork
                 || (_registeredLateFrame && !_lateFrameRetirePending);
-            _registeredTick = false;
-            _registeredLateFrame = false;
-            _tickDormant = false;
-            _lateFrameRetirePending = false;
+            TryUnregisterTick(false);
             if (shouldRestoreTick && currentService != null && isActiveAndEnabled)
                 TryRegisterTick();
         }

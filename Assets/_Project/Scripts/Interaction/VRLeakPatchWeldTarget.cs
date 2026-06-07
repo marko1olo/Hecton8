@@ -347,8 +347,8 @@ namespace Hecton8.Interaction
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredPhysicsPayloadReader = false;
-                _registeredPatchHoldDecayTick = false;
+                TryUnregisterPhysicsPayloadReader();
+                TryUnregisterPatchHoldDecayTick();
                 if (currentService != null && isActiveAndEnabled)
                 {
                     TryRegisterPhysicsPayloadReader();

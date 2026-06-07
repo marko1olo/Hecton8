@@ -29,7 +29,13 @@ namespace Hecton8.Core
         {
             lock (_gate)
             {
+                if (_thread != null && !_thread.IsAlive)
+                    _thread = null;
+
                 if (Volatile.Read(ref _running) != 0)
+                    return;
+
+                if (_thread != null && _thread.IsAlive)
                     return;
 
                 try
@@ -63,16 +69,34 @@ namespace Hecton8.Core
             {
                 Volatile.Write(ref _running, 0);
                 thread = _thread;
-                _thread = null;
             }
+
+            if (!TryJoinHeartbeatThreadNoThrow(thread))
+                return;
+
+            lock (_gate)
+            {
+                if (ReferenceEquals(_thread, thread))
+                    _thread = null;
+            }
+        }
+
+        private static bool TryJoinHeartbeatThreadNoThrow(Thread thread)
+        {
+            if (thread == null || !thread.IsAlive)
+                return true;
+
+            if (ReferenceEquals(Thread.CurrentThread, thread))
+                return false;
 
             try
             {
-                if (thread != null && thread.IsAlive)
-                    thread.Join(StopJoinMilliseconds);
+                thread.Join(StopJoinMilliseconds);
+                return !thread.IsAlive;
             }
             catch (Exception)
             {
+                return false;
             }
         }
 

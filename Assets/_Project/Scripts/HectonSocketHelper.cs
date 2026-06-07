@@ -57,7 +57,7 @@ namespace Hecton8.Building
         [SerializeField] private float snapRayDistance = 2f;
 
         [Tooltip("Layer mask dlya poverhnostnogo proba pri Snap to Surface.")]
-        [SerializeField] private LayerMask snapLayerMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask snapLayerMask = Hecton8.Core.HectonLayerMasks.FieldToolSurfaceLayerMask;
 
 #if UNITY_EDITOR
         // ══════════════════════════════════════════════════════════

@@ -204,14 +204,13 @@ namespace Hecton8.Editor
 
             try
             {
-                before = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                heightA = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                heightB = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                sediment = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                wear = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                metricBlocks = new NativeArray<HydraulicErosionMetricBlock>(blockCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                metricSummary = new NativeArray<HydraulicErosionMetricBlock>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                RegisterTempJobBuffers(before, heightA, heightB, sediment, wear, metricBlocks, metricSummary);
+                before = AllocateTrackedTempJobArray<float>(pixelCount, NativeArrayOptions.UninitializedMemory, BeforeLabel);
+                heightA = AllocateTrackedTempJobArray<float>(pixelCount, NativeArrayOptions.UninitializedMemory, HeightALabel);
+                heightB = AllocateTrackedTempJobArray<float>(pixelCount, NativeArrayOptions.UninitializedMemory, HeightBLabel);
+                sediment = AllocateTrackedTempJobArray<float>(pixelCount, NativeArrayOptions.ClearMemory, SedimentLabel);
+                wear = AllocateTrackedTempJobArray<float>(pixelCount, NativeArrayOptions.ClearMemory, WearLabel);
+                metricBlocks = AllocateTrackedTempJobArray<HydraulicErosionMetricBlock>(blockCount, NativeArrayOptions.UninitializedMemory, MetricBlocksLabel);
+                metricSummary = AllocateTrackedTempJobArray<HydraulicErosionMetricBlock>(1, NativeArrayOptions.UninitializedMemory, MetricSummaryLabel);
 
                 handle = new ErosionFractalHeightmapJob
                 {
@@ -479,42 +478,41 @@ namespace Hecton8.Editor
             builder.Append(value.ToString("0.######", CultureInfo.InvariantCulture));
         }
 
-        private static void RegisterTempJobBuffers(
-            NativeArray<float> before,
-            NativeArray<float> heightA,
-            NativeArray<float> heightB,
-            NativeArray<float> sediment,
-            NativeArray<float> wear,
-            NativeArray<HydraulicErosionMetricBlock> metricBlocks,
-            NativeArray<HydraulicErosionMetricBlock> metricSummary)
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, NativeArrayOptions options, string label) where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(before, NativeMemoryOwner, BeforeLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(metricBlocks, NativeMemoryOwner, MetricBlocksLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(metricSummary, NativeMemoryOwner, MetricSummaryLabel, NativeAllocationLifetime.TempJob);
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[HydraulicErosionSmokeTester] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("[HydraulicErosionSmokeTester] NativeMemorySentinel rejected NativeArray registration for " + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
         }
 
-        private static void DisposeTracked(ref NativeArray<float> array)
+        private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
-        }
-
-        private static void DisposeTracked(ref NativeArray<HydraulicErosionMetricBlock> array)
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
         }
 
         private static void Swap(ref NativeArray<float> current, ref NativeArray<float> next)

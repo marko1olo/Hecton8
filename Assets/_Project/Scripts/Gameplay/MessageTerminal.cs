@@ -406,8 +406,34 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void CacheRegistryServicesCold()
         {
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _localizationManager = GlobalRegistry.LocalizationText;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -447,15 +473,14 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _localizationManager = currentService as ILocalizationTextReadModel;
                     RebuildLocalizedTextCache();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registered = false;
-                    _registeredLateFrame = false;
+                    TryUnregister();
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;
@@ -1181,7 +1206,7 @@ namespace Hecton8.Gameplay
 
         private void QueueStaticAudio(AudioClip clip, float volume)
         {
-            if (clip == null || _audioService == null)
+            if (clip == null || ResolveAudioService() == null)
                 return;
 
             float safeVolume = Sanitize01(volume);
@@ -1214,7 +1239,7 @@ namespace Hecton8.Gameplay
             float volume1 = _pendingStaticAudioVolume1;
             ClearQueuedStaticAudio();
 
-            IAudioService audioService = _audioService;
+            IAudioService audioService = ResolveAudioService();
             if (audioService == null)
                 return;
 

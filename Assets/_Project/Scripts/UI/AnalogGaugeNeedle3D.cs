@@ -126,11 +126,12 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-            {
-                TryUnregisterTickManager();
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            TryUnregisterTickManager();
+            if (currentService != null && isActiveAndEnabled)
                 TryRegisterTickManager();
-            }
         }
 
         public void SetTargetValue(float value)

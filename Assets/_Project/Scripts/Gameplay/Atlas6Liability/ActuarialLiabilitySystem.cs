@@ -11,11 +11,16 @@ namespace Hecton8.Gameplay.Atlas6Liability
     /// </summary>
     public class ActuarialLiabilitySystem
     {
+        private const int RecoveredWorkerTagHashCapacity = 1024;
+        private static readonly uint UnreadableWorkerTagHash = Atlas6LiabilityTelemetry.ComputeStableHash("UNREADABLE");
+
         public int RecoveredWorkerTags { get; private set; }
         public float CorporateHostilityIndex { get; private set; }
         public float CorporateCreditBalance { get; private set; }
         private bool _actuarialThreatRaised;
         private readonly Atlas6LiabilityTelemetry _telemetry;
+        private readonly uint[] _recoveredWorkerTagHashes;
+        private int _recoveredWorkerTagHashCount;
 
         // Thresholds
         private readonly int _actuarialThreatThreshold = 5; // 5 tags recovered makes you a threat
@@ -31,6 +36,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
         public ActuarialLiabilitySystem(Atlas6LiabilityTelemetry telemetry = null)
         {
             _telemetry = telemetry;
+            _recoveredWorkerTagHashes = new uint[RecoveredWorkerTagHashCapacity]; // COLD ALLOC: uint[1024] - recovered worker tag dedupe table, covers Atlas-6 casualty count - owner: ActuarialLiabilitySystem
         }
 
         public void Initialize(float startingCredit)
@@ -39,17 +45,44 @@ namespace Hecton8.Gameplay.Atlas6Liability
             CorporateHostilityIndex = 0f;
             CorporateCreditBalance = math.isfinite(startingCredit) ? math.max(0f, startingCredit) : 0f;
             _actuarialThreatRaised = false;
+            Array.Clear(_recoveredWorkerTagHashes, 0, _recoveredWorkerTagHashCount);
+            _recoveredWorkerTagHashCount = 0;
         }
 
         /// <summary>
         /// Called when the player scans a corpse ID.
         /// The water owns the claim; recovering it angers Atlas-6.
         /// </summary>
-        public void RegisterWorkerTagRecovery(string workerId)
+        public bool RegisterWorkerTagRecovery(string workerId)
         {
             if (string.IsNullOrWhiteSpace(workerId))
-                workerId = "UNREADABLE";
+                return RegisterWorkerTagRecoveryHash(UnreadableWorkerTagHash);
 
+            return RegisterWorkerTagRecoveryHash(Atlas6LiabilityTelemetry.ComputeStableHash(workerId));
+        }
+
+        public bool RegisterWorkerTagRecoveryHash(uint workerTagHash)
+        {
+            if (workerTagHash == 0u)
+                workerTagHash = UnreadableWorkerTagHash;
+
+            if (HasRecoveredWorkerTag(workerTagHash))
+                return false;
+
+            if (_recoveredWorkerTagHashCount >= _recoveredWorkerTagHashes.Length)
+            {
+                _telemetry?.Record(
+                    Atlas6LiabilityEventCode.WorkerTagRecovered,
+                    Atlas6LiabilityEventSeverity.Warning,
+                    Atlas6LiabilityTelemetry.ActuarialContextHash,
+                    subjectHash: workerTagHash,
+                    value0: RecoveredWorkerTags,
+                    value1: CorporateHostilityIndex,
+                    faultFlags: Atlas6LiabilityFaultFlags.InvalidRangeInput);
+                return false;
+            }
+
+            _recoveredWorkerTagHashes[_recoveredWorkerTagHashCount++] = workerTagHash;
             RecoveredWorkerTags++;
 
             // Base hostility increase
@@ -58,13 +91,62 @@ namespace Hecton8.Gameplay.Atlas6Liability
                 Atlas6LiabilityEventCode.WorkerTagRecovered,
                 Atlas6LiabilityEventSeverity.Warning,
                 Atlas6LiabilityTelemetry.ActuarialContextHash,
-                subjectHash: Atlas6LiabilityTelemetry.ComputeStableHash(workerId),
+                subjectHash: workerTagHash,
                 value0: RecoveredWorkerTags,
                 value1: CorporateHostilityIndex);
 
             OnCorporateHostilityIncreased?.Invoke(CorporateHostilityIndex);
 
             EvaluateActuarialThreatStatus();
+            return true;
+        }
+
+        public int CopyRecoveredWorkerTagHashesTo(uint[] destination, int maxCount)
+        {
+            if (destination == null || maxCount <= 0)
+                return 0;
+
+            int safeCount = math.min(
+                _recoveredWorkerTagHashCount,
+                math.min(maxCount, destination.Length));
+            for (int i = 0; i < safeCount; i++)
+                destination[i] = _recoveredWorkerTagHashes[i];
+
+            return safeCount;
+        }
+
+        public void RestoreState(
+            float corporateCreditBalance,
+            float corporateHostilityIndex,
+            uint[] recoveredWorkerTagHashes,
+            int recoveredWorkerTagCount)
+        {
+            CorporateCreditBalance = math.isfinite(corporateCreditBalance)
+                ? math.max(0f, corporateCreditBalance)
+                : 0f;
+            CorporateHostilityIndex = math.isfinite(corporateHostilityIndex)
+                ? math.max(0f, corporateHostilityIndex)
+                : 0f;
+            RecoveredWorkerTags = 0;
+            Array.Clear(_recoveredWorkerTagHashes, 0, _recoveredWorkerTagHashCount);
+            _recoveredWorkerTagHashCount = 0;
+
+            int sourceLength = recoveredWorkerTagHashes != null ? recoveredWorkerTagHashes.Length : 0;
+            int safeCount = math.clamp(
+                recoveredWorkerTagCount,
+                0,
+                math.min(sourceLength, _recoveredWorkerTagHashes.Length));
+            for (int i = 0; i < safeCount; i++)
+            {
+                uint workerTagHash = recoveredWorkerTagHashes[i];
+                if (workerTagHash == 0u || HasRecoveredWorkerTag(workerTagHash))
+                    continue;
+
+                _recoveredWorkerTagHashes[_recoveredWorkerTagHashCount++] = workerTagHash;
+                RecoveredWorkerTags++;
+            }
+
+            _actuarialThreatRaised = IsPlayerActuarialThreat;
         }
 
         /// <summary>
@@ -101,15 +183,19 @@ namespace Hecton8.Gameplay.Atlas6Liability
                 return;
             }
 
-            CorporateCreditBalance -= deduction;
+            float safeBalance = math.isfinite(CorporateCreditBalance)
+                ? math.max(0f, CorporateCreditBalance)
+                : 0f;
+            float appliedDeduction = math.min(safeBalance, deduction);
+            CorporateCreditBalance = math.max(0f, safeBalance - appliedDeduction);
 
             _telemetry?.Record(
                 Atlas6LiabilityEventCode.CorporateCreditDeducted,
                 Atlas6LiabilityEventSeverity.Critical,
                 Atlas6LiabilityTelemetry.ActuarialContextHash,
-                value0: deduction,
+                value0: appliedDeduction,
                 value1: CorporateCreditBalance);
-            OnCorporateCreditDeducted?.Invoke(deduction);
+            OnCorporateCreditDeducted?.Invoke(appliedDeduction);
         }
 
         private void EvaluateActuarialThreatStatus()
@@ -129,6 +215,17 @@ namespace Hecton8.Gameplay.Atlas6Liability
 
             OnPlayerFlaggedAsActuarialThreat?.Invoke();
             OnDroneRepairCyclesHalted?.Invoke();
+        }
+
+        private bool HasRecoveredWorkerTag(uint workerTagHash)
+        {
+            for (int i = 0; i < _recoveredWorkerTagHashCount; i++)
+            {
+                if (_recoveredWorkerTagHashes[i] == workerTagHash)
+                    return true;
+            }
+
+            return false;
         }
     }
 }

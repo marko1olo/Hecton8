@@ -538,21 +538,22 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
-            if (!isActiveAndEnabled)
-                return;
-
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService != null)
+                TryUnregisterUpdatable();
+                TryUnregisterSlowTickable();
+
+                if (currentService != null && isActiveAndEnabled)
                 {
-                    TryUnregisterUpdatable();
-                    TryUnregisterSlowTickable();
                     TryRegisterUpdatable();
                     TryRegisterSlowTickable();
                 }
 
                 return;
             }
+
+            if (!isActiveAndEnabled)
+                return;
 
             if (serviceSlot == GlobalRegistryServiceSlot.PlayerInventory)
             {
@@ -860,7 +861,7 @@ namespace Hecton8.Core
                 flags |= (uint)PlayerRuntimeSnapshotFlags.HasTransport;
             if (_traumaDispatcher != null)
                 flags |= (uint)PlayerRuntimeSnapshotFlags.HasTrauma;
-            if (_playerMovement != null && _playerMovement.CurrentDepth > 0f)
+            if (_playerMovement != null && (_playerMovement.CurrentDepth > 0f || _playerMovement.IsPlayerSubmerged))
                 flags |= (uint)PlayerRuntimeSnapshotFlags.Underwater;
 
             PlayerMovementRuntimeState movementState = default;

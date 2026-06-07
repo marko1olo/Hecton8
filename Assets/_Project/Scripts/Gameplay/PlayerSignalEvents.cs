@@ -222,47 +222,7 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingTraumaHudSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerSignalEvents), nameof(_pendingTraumaHudSignals));
-                _pendingTraumaHudSignals.Dispose();
-                _pendingTraumaHudSignals = default;
-            }
-
-            if (_nextFrameTraumaHudSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerSignalEvents), nameof(_nextFrameTraumaHudSignals));
-                _nextFrameTraumaHudSignals.Dispose();
-                _nextFrameTraumaHudSignals = default;
-            }
-
-            if (_pendingInteractionSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerSignalEvents), nameof(_pendingInteractionSignals));
-                _pendingInteractionSignals.Dispose();
-                _pendingInteractionSignals = default;
-            }
-
-            if (_nextFrameInteractionSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerSignalEvents), nameof(_nextFrameInteractionSignals));
-                _nextFrameInteractionSignals.Dispose();
-                _nextFrameInteractionSignals = default;
-            }
-
-            if (_pendingToolDepletedSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerSignalEvents), nameof(_pendingToolDepletedSignals));
-                _pendingToolDepletedSignals.Dispose();
-                _pendingToolDepletedSignals = default;
-            }
-
-            if (_nextFrameToolDepletedSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerSignalEvents), nameof(_nextFrameToolDepletedSignals));
-                _nextFrameToolDepletedSignals.Dispose();
-                _nextFrameToolDepletedSignals = default;
-            }
+            ReleaseNativeQueues();
 
             _pendingTraumaHudSignalCount = 0;
             _nextFrameTraumaHudSignalCount = 0;
@@ -467,72 +427,96 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying)
                 return;
 
-            if (!_pendingTraumaHudSignals.IsCreated)
+            try
             {
-                _pendingTraumaHudSignals = new NativeQueue<TraumaHudSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<TraumaHudSignal>[16] - deferred trauma HUD lane - owner: PlayerSignalEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingTraumaHudSignals,
-                    PendingTraumaHudCapacity,
-                    nameof(PlayerSignalEvents),
-                    nameof(_pendingTraumaHudSignals),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingTraumaHudSignals, PendingTraumaHudCapacity);
+                if (!_pendingTraumaHudSignals.IsCreated)
+                {
+                    _pendingTraumaHudSignals = new NativeQueue<TraumaHudSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<TraumaHudSignal>[16] - deferred trauma HUD lane - owner: PlayerSignalEvents
+                    RegisterNativeQueue(ref _pendingTraumaHudSignals, PendingTraumaHudCapacity, nameof(_pendingTraumaHudSignals));
+                    PrewarmQueue(ref _pendingTraumaHudSignals, PendingTraumaHudCapacity);
+                }
+                if (!_nextFrameTraumaHudSignals.IsCreated)
+                {
+                    _nextFrameTraumaHudSignals = new NativeQueue<TraumaHudSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<TraumaHudSignal>[16] - next-frame trauma HUD lane - owner: PlayerSignalEvents
+                    RegisterNativeQueue(ref _nextFrameTraumaHudSignals, PendingTraumaHudCapacity, nameof(_nextFrameTraumaHudSignals));
+                    PrewarmQueue(ref _nextFrameTraumaHudSignals, PendingTraumaHudCapacity);
+                }
+                if (!_pendingInteractionSignals.IsCreated)
+                {
+                    _pendingInteractionSignals = new NativeQueue<PlayerInteractionStressSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerInteractionStressSignal>[16] - deferred interaction stress lane - owner: PlayerSignalEvents
+                    RegisterNativeQueue(ref _pendingInteractionSignals, PendingInteractionSignalCapacity, nameof(_pendingInteractionSignals));
+                    PrewarmQueue(ref _pendingInteractionSignals, PendingInteractionSignalCapacity);
+                }
+                if (!_nextFrameInteractionSignals.IsCreated)
+                {
+                    _nextFrameInteractionSignals = new NativeQueue<PlayerInteractionStressSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerInteractionStressSignal>[16] - next-frame interaction stress lane - owner: PlayerSignalEvents
+                    RegisterNativeQueue(ref _nextFrameInteractionSignals, PendingInteractionSignalCapacity, nameof(_nextFrameInteractionSignals));
+                    PrewarmQueue(ref _nextFrameInteractionSignals, PendingInteractionSignalCapacity);
+                }
+                if (!_pendingToolDepletedSignals.IsCreated)
+                {
+                    _pendingToolDepletedSignals = new NativeQueue<PlayerToolDepletedSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerToolDepletedSignal>[16] - deferred tool depletion lane - owner: PlayerSignalEvents
+                    RegisterNativeQueue(ref _pendingToolDepletedSignals, PendingToolDepletedCapacity, nameof(_pendingToolDepletedSignals));
+                    PrewarmQueue(ref _pendingToolDepletedSignals, PendingToolDepletedCapacity);
+                }
+                if (!_nextFrameToolDepletedSignals.IsCreated)
+                {
+                    _nextFrameToolDepletedSignals = new NativeQueue<PlayerToolDepletedSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerToolDepletedSignal>[16] - next-frame tool depletion lane - owner: PlayerSignalEvents
+                    RegisterNativeQueue(ref _nextFrameToolDepletedSignals, PendingToolDepletedCapacity, nameof(_nextFrameToolDepletedSignals));
+                    PrewarmQueue(ref _nextFrameToolDepletedSignals, PendingToolDepletedCapacity);
+                }
             }
-            if (!_nextFrameTraumaHudSignals.IsCreated)
+            catch
             {
-                _nextFrameTraumaHudSignals = new NativeQueue<TraumaHudSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<TraumaHudSignal>[16] - next-frame trauma HUD lane - owner: PlayerSignalEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameTraumaHudSignals,
-                    PendingTraumaHudCapacity,
-                    nameof(PlayerSignalEvents),
-                    nameof(_nextFrameTraumaHudSignals),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameTraumaHudSignals, PendingTraumaHudCapacity);
+                ReleaseNativeQueues();
+                _pendingTraumaHudSignalCount = 0;
+                _nextFrameTraumaHudSignalCount = 0;
+                _pendingInteractionSignalCount = 0;
+                _nextFrameInteractionSignalCount = 0;
+                _pendingToolDepletedSignalCount = 0;
+                _nextFrameToolDepletedSignalCount = 0;
+                throw;
             }
-            if (!_pendingInteractionSignals.IsCreated)
-            {
-                _pendingInteractionSignals = new NativeQueue<PlayerInteractionStressSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerInteractionStressSignal>[16] - deferred interaction stress lane - owner: PlayerSignalEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingInteractionSignals,
-                    PendingInteractionSignalCapacity,
-                    nameof(PlayerSignalEvents),
-                    nameof(_pendingInteractionSignals),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingInteractionSignals, PendingInteractionSignalCapacity);
-            }
-            if (!_nextFrameInteractionSignals.IsCreated)
-            {
-                _nextFrameInteractionSignals = new NativeQueue<PlayerInteractionStressSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerInteractionStressSignal>[16] - next-frame interaction stress lane - owner: PlayerSignalEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameInteractionSignals,
-                    PendingInteractionSignalCapacity,
-                    nameof(PlayerSignalEvents),
-                    nameof(_nextFrameInteractionSignals),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameInteractionSignals, PendingInteractionSignalCapacity);
-            }
-            if (!_pendingToolDepletedSignals.IsCreated)
-            {
-                _pendingToolDepletedSignals = new NativeQueue<PlayerToolDepletedSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerToolDepletedSignal>[16] - deferred tool depletion lane - owner: PlayerSignalEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingToolDepletedSignals,
-                    PendingToolDepletedCapacity,
-                    nameof(PlayerSignalEvents),
-                    nameof(_pendingToolDepletedSignals),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingToolDepletedSignals, PendingToolDepletedCapacity);
-            }
-            if (!_nextFrameToolDepletedSignals.IsCreated)
-            {
-                _nextFrameToolDepletedSignals = new NativeQueue<PlayerToolDepletedSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerToolDepletedSignal>[16] - next-frame tool depletion lane - owner: PlayerSignalEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameToolDepletedSignals,
-                    PendingToolDepletedCapacity,
-                    nameof(PlayerSignalEvents),
-                    nameof(_nextFrameToolDepletedSignals),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameToolDepletedSignals, PendingToolDepletedCapacity);
-            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(PlayerSignalEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeQueue(ref queue, label);
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            ReleaseNativeQueue(ref _pendingTraumaHudSignals, nameof(_pendingTraumaHudSignals));
+            ReleaseNativeQueue(ref _nextFrameTraumaHudSignals, nameof(_nextFrameTraumaHudSignals));
+            ReleaseNativeQueue(ref _pendingInteractionSignals, nameof(_pendingInteractionSignals));
+            ReleaseNativeQueue(ref _nextFrameInteractionSignals, nameof(_nextFrameInteractionSignals));
+            ReleaseNativeQueue(ref _pendingToolDepletedSignals, nameof(_pendingToolDepletedSignals));
+            ReleaseNativeQueue(ref _nextFrameToolDepletedSignals, nameof(_nextFrameToolDepletedSignals));
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerSignalEvents), label);
+            queue.Dispose();
+            queue = default;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)

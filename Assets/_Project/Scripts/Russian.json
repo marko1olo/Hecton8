@@ -542,6 +542,8 @@
   "ITEM_TOOL_SALVAGE_SAMPLER_NAME": "Otbornik obraztsov",
   "ITEM_TOOL_SCANNER_DESCRIPTION": "Dalnoboynyy analizator fauny, flory, signatur oblomkov i sledov tehnologiy.",
   "ITEM_TOOL_SCANNER_NAME": "Gidroakusticheskiy skaner",
+  "ITEM_TOOL_SEAFLOOR_DRILL_DESCRIPTION": "Udarnoe burovoe ustroystvo dlya vskrytiya mineralnyh uzlov i plotnyh donnyh otlozheniy.",
+  "ITEM_TOOL_SEAFLOOR_DRILL_NAME": "Bur morskogo dna",
   "ITEM_TOOL_STUN_PISTOL_DESCRIPTION": "Kompaktnoe elektricheskoe oruzhie dlya neletalnogo sderzhivaniya agressivnoy fauny i vyshedshih iz stroya dronov.",
   "ITEM_TOOL_STUN_PISTOL_NAME": "Paralizator",
   "ITEM_TUNGSTEN_CHUNK_DESCRIPTION": "Tyazhelyy instrumentalnyy metall dlya rezakov, puskateley i udaroprochnyh mehanizmov.",

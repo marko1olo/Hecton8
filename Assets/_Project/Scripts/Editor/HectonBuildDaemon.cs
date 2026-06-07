@@ -14,6 +14,7 @@ namespace Hecton8.Editor
         private const double BeePollIntervalSeconds = 2.0;
         private const double KillCooldownSeconds = 10.0;
         private const double BeeCpuProgressEpsilonSeconds = 0.05;
+        private const int BeeBackendKillWaitMilliseconds = 2000;
 
         private static bool _reloadOrCompileObserved;
         private static bool _killAttemptedThisCycle;
@@ -141,14 +142,14 @@ namespace Hecton8.Editor
                 bool found = false;
                 for (int i = 0; i < processes.Length; i++)
                 {
-                    using (Process process = processes[i])
+                    Process process = processes[i];
+                    if (TryReadBeeBackendCpuSeconds(process, out double processCpuSeconds))
                     {
-                        if (process.HasExited)
-                            continue;
-
                         found = true;
-                        cpuSeconds += process.TotalProcessorTime.TotalSeconds;
+                        cpuSeconds += processCpuSeconds;
                     }
+
+                    DisposeBeeBackendProcessNoThrow(process);
                 }
 
                 return found;
@@ -168,15 +169,11 @@ namespace Hecton8.Editor
                 Process[] processes = Process.GetProcessesByName("bee_backend");
                 for (int i = 0; i < processes.Length; i++)
                 {
-                    using (Process process = processes[i])
-                    {
-                        if (process.HasExited)
-                            continue;
-
-                        process.Kill();
-                        process.WaitForExit(2000);
+                    Process process = processes[i];
+                    if (TryKillBeeBackendNoThrow(process, "[HectonBuildDaemon] bee_backend kill failed: "))
                         killed++;
-                    }
+
+                    DisposeBeeBackendProcessNoThrow(process);
                 }
             }
             catch (Exception exception)
@@ -185,6 +182,54 @@ namespace Hecton8.Editor
             }
 
             return killed;
+        }
+
+        private static bool TryReadBeeBackendCpuSeconds(Process process, out double cpuSeconds)
+        {
+            cpuSeconds = 0.0;
+            try
+            {
+                if (process.HasExited)
+                    return false;
+
+                cpuSeconds = process.TotalProcessorTime.TotalSeconds;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                H8Debug.LogWarning("[HectonBuildDaemon] bee_backend probe failed: " + exception.Message);
+                return false;
+            }
+        }
+
+        private static bool TryKillBeeBackendNoThrow(Process process, string logPrefix)
+        {
+            try
+            {
+                if (process.HasExited)
+                    return false;
+
+                process.Kill();
+                process.WaitForExit(BeeBackendKillWaitMilliseconds);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                H8Debug.LogWarning(logPrefix + exception.Message);
+                return false;
+            }
+        }
+
+        private static void DisposeBeeBackendProcessNoThrow(Process process)
+        {
+            try
+            {
+                process.Dispose();
+            }
+            catch (Exception exception)
+            {
+                H8Debug.LogWarning("[HectonBuildDaemon] bee_backend dispose failed: " + exception.Message);
+            }
         }
     }
 }

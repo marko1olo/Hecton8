@@ -7,6 +7,9 @@ poi_tags: poi.material_payout_record;poi.keelmark_receipt
 biome_tags: biome.ending;biome.contract
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Material Payout Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

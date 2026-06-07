@@ -7,6 +7,9 @@ poi_tags: poi.shift_board;poi.transit_gate
 biome_tags: biome.drowned_colony;biome.service_canyon
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "근무판 경로 보류"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

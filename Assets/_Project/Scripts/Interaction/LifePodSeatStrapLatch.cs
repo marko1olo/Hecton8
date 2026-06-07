@@ -68,6 +68,7 @@ namespace Hecton8.Interaction
         private bool _dispatcherAvailable;
         private bool _strapVisualDirty;
         private bool _contactThisTick;
+        private int _lastSampleFrame = -1;
         private float _holdProgressSeconds;
         private float _resolvedRequiredHoldSeconds = MinimumHoldSeconds;
         private float _resolvedHoldDecaySecondsPerSecond;
@@ -123,6 +124,7 @@ namespace Hecton8.Interaction
             if (_highlighter != null)
                 _highlighter.SetHighlight(false);
             _contactThisTick = false;
+            _lastSampleFrame = -1;
             _holdProgressSeconds = 0f;
         }
 
@@ -137,6 +139,7 @@ namespace Hecton8.Interaction
             if (_highlighter != null)
                 _highlighter.SetHighlight(false);
             _contactThisTick = false;
+            _lastSampleFrame = -1;
             _holdProgressSeconds = 0f;
         }
 
@@ -227,6 +230,12 @@ namespace Hecton8.Interaction
             if (_latched || !IsFinite(handPosition))
                 return _latched;
 
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
+            int resolvedSampleFrame = sampleFrame >= 0 ? sampleFrame : currentFrame;
+            if (resolvedSampleFrame > currentFrame || resolvedSampleFrame < _lastSampleFrame)
+                return false;
+
+            _lastSampleFrame = resolvedSampleFrame;
             QueueHoldSample(handPosition, fallbackHandSide);
             return true;
         }
@@ -279,6 +288,7 @@ namespace Hecton8.Interaction
             _latched = false;
             _holdProgressSeconds = 0f;
             _contactThisTick = false;
+            _lastSampleFrame = -1;
             if (_highlighter != null)
                 _highlighter.SetHighlight(false);
             if (strapVisual != null && _idleRotationCached)
@@ -472,6 +482,7 @@ namespace Hecton8.Interaction
         private void ClearTransientHoldStateForLostDispatcherRoute()
         {
             _contactThisTick = false;
+            _lastSampleFrame = -1;
             _holdProgressSeconds = 0f;
             _tickDormant = false;
         }

@@ -7,6 +7,9 @@ poi_tags: poi.blue_debt_receipt;poi.custody_grade_tag
 biome_tags: biome.brine_canyon;biome.claim_admin
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Blue Debt Custody Grade Receipt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

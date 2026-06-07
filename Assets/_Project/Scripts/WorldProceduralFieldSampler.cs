@@ -2574,15 +2574,18 @@ namespace Hecton8.World
             PrepareBurstData();
 
             // COLD SYNC JOB: prewarm Burst compilation and worker setup before player activation so the first runtime scatter pass does not absorb one-time compilation debt.
-            NativeArray<CellInputData> warmupInputs = new NativeArray<CellInputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CellInputData>[1] - Burst prewarm input lane - owner: WorldProceduralFieldSampler
-            NativeArray<CellOutputData> warmupOutputs = new NativeArray<CellOutputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CellOutputData>[1] - Burst prewarm output lane - owner: WorldProceduralFieldSampler
-            NativeArray<BiomeInfluenceCell> warmupInfluences = new NativeArray<BiomeInfluenceCell>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BiomeInfluenceCell>[1] - Burst prewarm biome influence lane - owner: WorldProceduralFieldSampler
-            RegisterTrackedNativeArray(warmupInputs, nameof(warmupInputs), NativeMemoryTempJobLifetime);
-            RegisterTrackedNativeArray(warmupOutputs, nameof(warmupOutputs), NativeMemoryTempJobLifetime);
-            RegisterTrackedNativeArray(warmupInfluences, nameof(warmupInfluences), NativeMemoryTempJobLifetime);
-
+            NativeArray<CellInputData> warmupInputs = default;
+            NativeArray<CellOutputData> warmupOutputs = default;
+            NativeArray<BiomeInfluenceCell> warmupInfluences = default;
             try
             {
+                warmupInputs = new NativeArray<CellInputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CellInputData>[1] - Burst prewarm input lane - owner: WorldProceduralFieldSampler
+                RegisterTrackedNativeArray(warmupInputs, nameof(warmupInputs), NativeMemoryTempJobLifetime);
+                warmupOutputs = new NativeArray<CellOutputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CellOutputData>[1] - Burst prewarm output lane - owner: WorldProceduralFieldSampler
+                RegisterTrackedNativeArray(warmupOutputs, nameof(warmupOutputs), NativeMemoryTempJobLifetime);
+                warmupInfluences = new NativeArray<BiomeInfluenceCell>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BiomeInfluenceCell>[1] - Burst prewarm biome influence lane - owner: WorldProceduralFieldSampler
+                RegisterTrackedNativeArray(warmupInfluences, nameof(warmupInfluences), NativeMemoryTempJobLifetime);
+
                 BeginScatterSamplingFrame();
                 warmupInputs[0] = new CellInputData
                 {
@@ -3064,23 +3067,53 @@ namespace Hecton8.World
                     NativeArrayOptions.UninitializedMemory,
                     out NativeArray<CaveEntranceHintData> caveEntranceHints))
             {
+                _burstCaveEntranceHintCount = 0;
                 return;
             }
 
-            _burstCaveEntranceHintCount = _caveEntranceHintBakeCount;
+            _burstCaveEntranceHintCount = 0;
             for (int i = 0; i < _caveEntranceHintBakeCount; i++)
             {
                 WorldCaveDirector.CaveEntranceHint hint = _caveEntranceHintBakeList[i];
-                caveEntranceHints[i] = new CaveEntranceHintData
-                {
-                    SurfacePosition = hint.SurfacePosition,
-                    InteriorPosition = hint.InteriorPosition,
-                    EntranceRadius = hint.EntranceRadius,
-                    InfluenceRadius = hint.InfluenceRadius
-                };
+                if (!TryBuildCaveEntranceHintData(in hint, out CaveEntranceHintData hintData))
+                    continue;
+
+                caveEntranceHints[_burstCaveEntranceHintCount++] = hintData;
             }
 
             _isDataDirty = false;
+        }
+
+        private static bool TryBuildCaveEntranceHintData(
+            in WorldCaveDirector.CaveEntranceHint hint,
+            out CaveEntranceHintData hintData)
+        {
+            hintData = default;
+            float3 surfacePosition = hint.SurfacePosition;
+            float3 interiorPosition = hint.InteriorPosition;
+            if (!IsFinite(surfacePosition) ||
+                !IsFinite(interiorPosition) ||
+                !math.isfinite(hint.EntranceRadius) ||
+                !math.isfinite(hint.InfluenceRadius) ||
+                hint.EntranceRadius <= 0f ||
+                hint.InfluenceRadius <= 0f)
+            {
+                return false;
+            }
+
+            hintData = new CaveEntranceHintData
+            {
+                SurfacePosition = surfacePosition,
+                InteriorPosition = interiorPosition,
+                EntranceRadius = math.clamp(hint.EntranceRadius, 0.01f, 24f),
+                InfluenceRadius = math.clamp(hint.InfluenceRadius, 0.01f, 128f)
+            };
+            return true;
+        }
+
+        private static bool IsFinite(float3 value)
+        {
+            return math.all(math.isfinite(value));
         }
 
         public CellSamplingContext PrecomputeCellContext(Vector3 position)
@@ -5398,11 +5431,13 @@ namespace Hecton8.World
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.RegisterNativeArray(
+            int sentinelId = NativeMemorySentinel.RegisterNativeArray(
                 array,
                 NativeMemoryOwner,
                 label,
                 lifetime);
+            if (sentinelId <= 0)
+                throw new System.InvalidOperationException($"NativeMemorySentinel rejected field sampler native array registration for {label}.");
         }
 
         private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct

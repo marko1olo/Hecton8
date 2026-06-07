@@ -9,32 +9,34 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Wide Filter Body Trace"
+title: "עקבת גוף סינון רחב"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Wide Filter Body Trace
+# עקבת גוף סינון רחב
 
-HE LOC HOLD: Wide Filter Body Trace keeps HECTON-8's largest fauna grounded. The creature is not a boss reveal; it is moving ecology that clears plankton, bends sonar and changes how the player reads the deep.
+עקבת גוף סינון רחב היא הדרך שבה HECTON-8 מטפלת בפאונה ענקית בלי להפוך אותה לחשיפת בוס מבוימת. גוף סינון רחב הוא אקולוגיה נעה: חזית מזג אוויר חיה בתהום, הרועה ענני פלנקטון, מנקה נתיבי ראות, מעוותת סונאר וחושפת לרגעים את הגיאומטריה של חומרת המושבה הנטושה. השחקן צריך להרגיש קנה מידה מפני שכללי הניווט משתנים, לא מפני שהמצלמה נעצרת להתפעל ממפלצת.
+
+מתחת לגוף, הצליל מאבד קצוות קשים. בשוליים, ההדים מתקפלים. מאחוריו, האוקיינוס נעשה נקי באופן לא טבעי, ומסילות ישנות, צלעות צינור או מגדלי שירות יכולים להופיע במקום שבו המפה הייתה ריקה. השימושיות הזאת היא המלכודת. אותו שובל שמגלה מסלול יכול למשוך Marauder עמוס אל מים עמוקים פתוחים בלי קיר, בלי רצפה ובלי קו חזרה אמין. החיה נשארת אדישה. היא אינה רעה, אינה מאולפת ואינה מחכה לשחקן. זה האוקיינוס שמוכיח שידע הישרדות כולל גם סבלנות: לחכות למעבר, לקרוא את פער הפלנקטון, לסמן את החורבה ולעזוב לפני שהסחף חוזר.
 
 ## Scanner
 
-HE LOC HOLD: A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.
+גוף סינון רחב // חיית סינון רחבה חוצה את התעלה; מאחוריה הפלנקטון מתדלדל, הסונאר נמרח בשוליים, וחורבות עשויות להופיע או להיעלם תחת הצל שלה.
 
 ## Terminal
 
-HE LOC HOLD: CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.
+בסיס מגע: מעבר גוף סינון רחב יוצר צפיפות פלנקטון נמוכה, מריחת הד בשוליים, שובל שקט בלחץ ומסדרונות ראות זמניים. אין לרדוף מתחת לצל הגחוני. להשתמש בפער האקוסטי רק אחרי שהסחף האחורי נופל.
 
 ## Audio
 
-HE LOC HOLD: That is not a roar. That is the sound of the map being wiped clean.
+זה לא שאגה. זה הצליל של מפה שנמחקת עד ניקיון.
 
 ## Field Note
 
-HE LOC HOLD: Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.
+אל תקרא לזה בוס. קרא לזה מזג אוויר עם קיבה: איטי, ענק, שימושי ואדיש.
 
 <!-- External Site; generated from P229_WIDE_FILTER_BODY_TRACE/he_IL. -->

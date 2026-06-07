@@ -7,6 +7,9 @@ poi_tags: poi.seed_ship_archive;poi.braking_debris_marker
 biome_tags: biome.archive;biome.colony
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Seed Ship Braking Architecture"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

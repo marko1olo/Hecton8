@@ -43,22 +43,22 @@ Material:
     m_Floats:
     - _AmbientStrength: 0.48
     - _BiolumPulseSharpness: 2.4
-    - _BiomeTintStrength: 0.34
+    - _BiomeTintStrength: 0.18
     - _Cull: 0
-    - _EmissionStrength: 0.72
+    - _EmissionStrength: 0.32
     - _MatCapStrength: 0.42
     - _MetallicBoost: 0
     - _NormalScale: 0.84
     - _RimStrength: 0.22
     - _SeedOffsetScale: 1.4
-    - _SmoothnessBoost: 0.88
+    - _SmoothnessBoost: 0.58
     - _SubsurfaceStrength: 0.32
     - _TriplanarScale: 0.46
     - _TriplanarSharpness: 4.3
     m_Colors:
-    - _BaseColor: {r: 0.64, g: 0.82, b: 0.62, a: 1}
-    - _EmissionColor: {r: 0.14, g: 0.68, b: 0.62, a: 1}
-    - _RootTint: {r: 0.1, g: 0.22, b: 0.14, a: 1}
-    - _TipTint: {r: 0.28, g: 0.92, b: 0.84, a: 1}
+    - _BaseColor: {r: 0.48, g: 0.58, b: 0.52, a: 1}
+    - _EmissionColor: {r: 0.08, g: 0.36, b: 0.42, a: 1}
+    - _RootTint: {r: 0.14, g: 0.2, b: 0.18, a: 1}
+    - _TipTint: {r: 0.42, g: 0.68, b: 0.64, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

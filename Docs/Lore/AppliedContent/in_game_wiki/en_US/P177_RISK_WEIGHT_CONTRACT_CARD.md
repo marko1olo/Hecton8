@@ -7,6 +7,9 @@ poi_tags: poi.risk_weight_card;poi.lien_multiplier_plate
 biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Risk Weight Contract Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -59,12 +59,8 @@ namespace Hecton8.Modding
 
         private void Awake()
         {
-            ModWorldPersistenceManager registered = GlobalRegistry.ModWorldPersistence;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             InitializeService();
         }
@@ -72,6 +68,9 @@ namespace Hecton8.Modding
         private void OnEnable()
         {
             if (_serviceShuttingDown)
+                return;
+
+            if (TryAbortForUsableExistingRuntime())
                 return;
 
             SceneManager.sceneLoaded += HandleSceneLoaded;
@@ -116,6 +115,9 @@ namespace Hecton8.Modding
             if (_serviceShuttingDown || !Application.isPlaying)
                 return;
 
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             if (!ReferenceEquals(GlobalRegistry.ModWorldPersistence, this))
                 GlobalRegistry.RegisterModWorldPersistenceRuntime(this);
 
@@ -123,6 +125,30 @@ namespace Hecton8.Modding
             TryRegisterHotSwapListener();
             RefreshColdRegistryDependencies();
             TryRegisterWithSaveManager();
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            ModWorldPersistenceManager registered = GlobalRegistry.ModWorldPersistence;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsModWorldPersistenceRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterModWorldPersistenceRuntime(registered);
+            return false;
+        }
+
+        private static bool IsModWorldPersistenceRuntimeUsable(ModWorldPersistenceManager manager)
+        {
+            return manager != null &&
+                   manager._serviceRegistered &&
+                   !manager._serviceShuttingDown &&
+                   manager.isActiveAndEnabled;
         }
 
         public void OnServiceShutdown()

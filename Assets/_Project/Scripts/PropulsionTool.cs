@@ -139,7 +139,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float pushForce = 85f;
         [SerializeField] private float pullForce = 62f;
         [SerializeField] private float maxTargetMass = 400f;
-        [SerializeField] private LayerMask targetMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask targetMask = Hecton8.Core.HectonLayerMasks.FieldToolSurfaceLayerMask;
         [SerializeField] private float feedbackInterval = 0.35f;
         [SerializeField] private float holdDistance = 3.8f;
         [SerializeField] private float holdSpringForce = 92f;
@@ -716,7 +716,12 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            return RequestPrimarySurfaceHit(origin, forward, range, targetMask.value, QueryTriggerInteraction.Ignore, out hit);
+            return RequestPrimarySurfaceHit(origin, forward, range, ResolveTargetSurfaceMask(), QueryTriggerInteraction.Ignore, out hit);
+        }
+
+        private int ResolveTargetSurfaceMask()
+        {
+            return HectonLayerMasks.ResolveSurfaceInteractionLayerMask(targetMask.value);
         }
 
         private bool TryResolveToolPose(out Vector3 origin, out Vector3 forward)

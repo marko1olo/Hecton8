@@ -7,6 +7,9 @@ poi_tags: poi.ren_okoye_density_slate;poi.brine_route_pinboard
 biome_tags: biome.brine_canyon;biome.density_ladder
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Ren Okoye/Brine Map"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

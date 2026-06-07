@@ -41,7 +41,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float sampleDamage = 18f;
         [SerializeField] private float sampleImpulse = 1.5f;
         [SerializeField] private float sampleCooldown = 0.3f;
-        [SerializeField] private LayerMask samplingMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask samplingMask = Hecton8.Core.HectonLayerMasks.FieldToolSurfaceLayerMask;
         [SerializeField] private float feedbackInterval = 0.45f;
 
         private float _cooldown;
@@ -482,7 +482,13 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            return RequestPrimarySurfaceHit(origin, direction, samplingRange, samplingMask.value, QueryTriggerInteraction.Collide, out hit);
+            return RequestPrimarySurfaceHit(
+                origin,
+                direction,
+                samplingRange,
+                HectonLayerMasks.ResolveSurfaceInteractionLayerMask(samplingMask.value),
+                QueryTriggerInteraction.Collide,
+                out hit);
         }
 
         private bool TryResolveSamplingRay(out Vector3 origin, out Vector3 direction)

@@ -29,14 +29,14 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Cutoff: 0.31
+    - _Cutoff: 0.36
     - _EdgeFade: 0.2
-    - _HorizonFade: 0.05
-    - _Opacity: 0.46
-    - _Softness: 0.5
+    - _HorizonFade: 0.16
+    - _Opacity: 0.42
+    - _Softness: 0.58
     - _TopFade: 0.18
     m_Colors:
     - _Scroll: {r: 0.0026, g: 0.00055, b: 0, a: 0}
-    - _Tint: {r: 0.82, g: 0.91, b: 1, a: 0.48}
+    - _Tint: {r: 0.84, g: 0.92, b: 1, a: 0.44}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

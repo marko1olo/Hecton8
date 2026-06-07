@@ -185,10 +185,9 @@ namespace Hecton8.Input
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            if (currentService != null)
+            TryUnregisterDispatcherSystem();
+            if (currentService != null && isActiveAndEnabled)
                 TryRegisterDispatcherSystem();
-            else
-                _registered = false;
         }
 
         public void PreSimulationTick(in DispatcherTimingDTO timing)
@@ -387,6 +386,15 @@ namespace Hecton8.Input
                 return;
 
             _registered = GlobalRegistry.TryRegisterDispatcherSystem(this);
+        }
+
+        private void TryUnregisterDispatcherSystem()
+        {
+            if (!_registered)
+                return;
+
+            GlobalRegistry.UnregisterDispatcherSystem(this);
+            _registered = false;
         }
 
         private void TryRegisterHotSwapListener()

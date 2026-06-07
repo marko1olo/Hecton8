@@ -7,6 +7,9 @@ poi_tags: poi.public_deep_reach_article;poi.shell_chain_card
 biome_tags: biome.publication;biome.deep_reach_pressure
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Deep Reach Public Dossier Article"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -157,7 +157,7 @@ namespace Hecton8.Interaction
             if (_interactionSound == null)
                 return;
 
-            Hecton8.Core.IAudioService audioManager = _audioService;
+            Hecton8.Core.IAudioService audioManager = ResolveAudioService();
             if (audioManager == null)
                 return;
 
@@ -199,7 +199,7 @@ namespace Hecton8.Interaction
                     _saveService = currentService as ISaveService;
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as Hecton8.Core.IAudioService;
+                    CacheAudioService(currentService as Hecton8.Core.IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _localization = currentService as ILocalizationTextReadModel;
@@ -211,8 +211,34 @@ namespace Hecton8.Interaction
         private void CacheRegistryServicesCold()
         {
             _saveService = GlobalRegistry.Save;
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _localization = GlobalRegistry.LocalizationText;
+        }
+
+        private void CacheAudioService(Hecton8.Core.IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private Hecton8.Core.IAudioService ResolveAudioService()
+        {
+            Hecton8.Core.IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(Hecton8.Core.IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()

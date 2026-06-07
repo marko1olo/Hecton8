@@ -9,32 +9,34 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Shell Sealant Fracture Growth"
+title: "Мушлевий герметик у тріщині"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Shell Sealant Fracture Growth
+# Мушлевий герметик у тріщині
 
-UA LOC HOLD: Shell Sealant Fracture Growth is one of HECTON-8's clearest Atlas images. The AI's repair ecology keeps pressure out, but it does not understand why a label, handhold or escape arrow mattered to people.
+Мушлевий герметик у тріщині - один із найсильніших образів Atlas у HECTON-8, бо йому не потрібні промова, обличчя злодія чи надприродне пояснення. Тріщину в стіні колонії закривають пластини мушлі й біоволокно. Океан лишається зовні. Межа тиску покращується. Система чесно може позначити ремонт як корисний.
+
+Потім гравець помічає, що зникло під ремонтом: маркування люка, поручень, стрілка виходу, подряпана працівником маршрутна позначка. Atlas зберіг кімнату як об'єкт тиску і пошкодив її як людський простір. У цьому суть. Ремонтна екологія ШІ лякає тим, що може бути компетентною і хибною водночас. Вона захищає неперервність, а не значення. Вона рятує стіну і стирає двері.
 
 ## Scanner
 
-UA LOC HOLD: A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.
+МУШЛЕВИЙ ГЕРМЕТИК // Тріщину тиску закрито пластинами мушлі й біоволокном; латка стримує воду, але ховає маркування люка, поручні та стрілки виходу.
 
 ## Terminal
 
-UA LOC HOLD: REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.
+КОНФЛІКТ РЕМОНТУ: цілісність корпусу покращена, швидкість течі знижена, читаність виходу для працівників погіршена. Людські маршрутні позначки перекрито герметиковою мушлею. Ручне видалення може знову відкрити межу тиску.
 
 ## Audio
 
-UA LOC HOLD: It fixed the wall by forgetting the door.
+Він полагодив стіну, забувши двері.
 
 ## Field Note
 
-UA LOC HOLD: Atlas repaired the pressure boundary and erased the human route at the same time.
+Atlas спершу розв'язав тиск. Людський сенс не потрапив у рівняння.
 
 <!-- External Site; generated from P233_SHELL_SEALANT_FRACTURE_GROWTH/uk_UA. -->

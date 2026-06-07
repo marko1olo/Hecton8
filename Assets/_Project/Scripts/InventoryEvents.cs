@@ -218,26 +218,7 @@ namespace Hecton8.Inventory
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(InventoryEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(InventoryEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
-
-            if (_queuedEventKeys.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashSet(nameof(InventoryEvents), nameof(_queuedEventKeys));
-                _queuedEventKeys.Dispose();
-                _queuedEventKeys = default;
-            }
+            ReleaseNativeState();
 
             _listeners.Clear();
             ClearReferenceSlots();
@@ -558,39 +539,100 @@ namespace Hecton8.Inventory
             if (!Application.isPlaying)
                 return;
 
-            if (!_pendingEvents.IsCreated)
+            try
             {
-                _pendingEvents = new NativeQueue<InventoryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] — deferred inventory event lane flushed by SystemDispatcher LateUpdate — owner: InventoryEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(InventoryEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<InventoryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] — deferred inventory event lane flushed by SystemDispatcher LateUpdate — owner: InventoryEvents
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                }
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<InventoryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] — next-frame inventory event lane prevents same-frame reentrant dispatch — owner: InventoryEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(InventoryEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
-            }
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<InventoryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] — next-frame inventory event lane prevents same-frame reentrant dispatch — owner: InventoryEvents
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                }
 
-            if (!_queuedEventKeys.IsCreated)
-            {
-                _queuedEventKeys = new NativeParallelHashSet<ulong>(EventDedupCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeParallelHashSet<ulong>[128] - per-frame inventory duplicate suppression keys - owner: InventoryEvents
-                NativeMemorySentinel.RegisterNativeParallelHashSet(
-                    _queuedEventKeys,
-                    nameof(InventoryEvents),
-                    nameof(_queuedEventKeys),
-                    NativeAllocationLifetime.Session);
+                if (!_queuedEventKeys.IsCreated)
+                {
+                    _queuedEventKeys = new NativeParallelHashSet<ulong>(EventDedupCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeParallelHashSet<ulong>[128] - per-frame inventory duplicate suppression keys - owner: InventoryEvents
+                    RegisterNativeHashSet(ref _queuedEventKeys, nameof(_queuedEventKeys));
+                }
             }
+            catch
+            {
+                ReleaseNativeState();
+                ClearReferenceSlots();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                _dedupFrame = -1;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(InventoryEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeQueue(ref queue, label);
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void RegisterNativeHashSet<T>(ref NativeParallelHashSet<T> hashSet, string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeParallelHashSet(
+                hashSet,
+                nameof(InventoryEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeHashSet(ref hashSet, label);
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeState()
+        {
+            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
+            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+            ReleaseNativeHashSet(ref _queuedEventKeys, nameof(_queuedEventKeys));
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(InventoryEvents), label);
+            queue.Dispose();
+            queue = default;
+        }
+
+        private static void ReleaseNativeHashSet<T>(ref NativeParallelHashSet<T> hashSet, string label)
+            where T : unmanaged
+        {
+            if (!hashSet.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeParallelHashSet(nameof(InventoryEvents), label);
+            hashSet.Dispose();
+            hashSet = default;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)

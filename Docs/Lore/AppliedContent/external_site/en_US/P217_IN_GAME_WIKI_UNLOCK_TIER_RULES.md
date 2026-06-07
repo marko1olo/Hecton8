@@ -7,6 +7,9 @@ poi_tags: poi.codex_unlock_tier_card;poi.packet_unlock_gate
 biome_tags: biome.dossier_archive;biome.p63_shallows
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "PDA Unlock Tier Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

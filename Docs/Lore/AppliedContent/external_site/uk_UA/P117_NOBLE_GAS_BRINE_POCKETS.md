@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Noble Gas Brine Pockets"
+title: "Кармани благородно-газового розсолу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Noble Gas Brine Pockets
+# Кармани благородно-газового розсолу
 
-UA LOC HOLD: Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process.
+Кармани благородно-газового розсолу задають тверду наукову основу синьої економіки HECTON-8. Цінне тут не світний камінь і не магічний ізотоп. Це запечатана історія тиску: благородні гази, спіймані в мінеральному розсолі й замкнені у слідах клатратів, мікротріщинах і дефектних решітках, які мають сенс тільки якщо зразок піднято цілим. Неуважний екіпаж чує шипіння кармана й думає, що знайшов гроші. Зазвичай він просто перетворив гроші на погоду. Тому польовий видобуток використовує тискові дзвони, повільний тепловий захист і доказову реєстрацію до будь-яких претензій переробника. Газове співвідношення важливе, але так само важливо, як воно стало таким. Зразок без доведеної кривої тиску лишається низькосортною сировиною, навіть якщо лічильник ксенону виглядає багатим. Цей ресурс пояснює гравцю, чому Xenon-Omega - результат процесу, а не колекційний мінерал. Deep Reach не знайшла чудо-камінь. Вона навчилася визначати, які запечатані історії можна вичавити в борговий матеріал. Atlas пізніше класифікувала ці історії пошкодженими пріоритетами. Сам карман старший і дивніший за обидві системи: бульбашка геології, що все ще намагається не стати погодою.
 
 ## Scanner
 
-UA LOC HOLD: Natural-to-process resource. Valuable only if pressure history survives extraction.
+КАРМАН БЛАГОРОДНО-ГАЗОВОГО РОЗСОЛУ // Запечатана бульбашка тиску в мінеральному розсолі. Цінність живе лише поки історія тиску замкнена; стравиш її - і статок стане погодою.
 
 ## Terminal
 
-UA LOC HOLD: RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+КЛАС РЕСУРСУ: природна/процесна сировина. Використовувати видобуток тисковим дзвоном. Не стравлювати й не гріти зразок. Обов'язкові докази: крива тиску, газове співвідношення, карта дефектів мінералу.
 
 ## Audio
 
-UA LOC HOLD: Open it wrong and the fortune becomes weather.
+Xenon-Omega починається тут як замкнена хімія, а не як чудо-руда.
 
 ## Field Note
 
-UA LOC HOLD: This is where Xenon-Omega begins as chemistry, not magic.
+Не відкривай карман, щоб перевірити, чи він багатий. Так бідні екіпажі роблять бульбашки.
 
 <!-- External Site; generated from P117_NOBLE_GAS_BRINE_POCKETS/uk_UA. -->

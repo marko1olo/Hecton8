@@ -7,6 +7,9 @@ poi_tags: poi.carrier_contract;poi.claim_pool_ledger
 biome_tags: biome.crash_shelf;biome.surface_weather
 locale: de_DE
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Black-Keel-Gewahrsam"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

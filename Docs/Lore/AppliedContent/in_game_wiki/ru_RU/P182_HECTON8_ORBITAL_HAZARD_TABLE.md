@@ -7,6 +7,9 @@ poi_tags: poi.eclipse_window_chart;poi.radiation_shutter_clock
 biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Таблица орбитальных опасностей HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

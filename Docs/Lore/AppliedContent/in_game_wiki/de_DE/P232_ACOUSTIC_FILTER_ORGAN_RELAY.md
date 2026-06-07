@@ -9,32 +9,34 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Acoustic Filter Organ Relay"
+title: "Akustischer Filterorgan-Relay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Acoustic Filter Organ Relay
+# Akustischer Filterorgan-Relay
 
-DE LOC HOLD: Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.
+Akustische Filterorgan-Relays verwandeln HECTON-8s Sonarsprache in Körperhorror, ohne den wissenschaftlichen Ton zu brechen. Um alte Relaisrohre wächst Kiemenwandgewebe zu Schallwänden, Falten und nassen Kammern. Das Gewebe spricht nicht. Es verändert Impedanz. Breites Pumpenrauschen stirbt darin. Schmale Pingerimpulse passieren. Rückechos kommen phasenverschoben zurück, aber wiederholbar genug, damit Atlas sie nutzen und ein aufmerksamer Marauder sie lernen kann.
+
+Das zählt, weil eine Lüge, die sich wiederholt, nicht zufällig ist. Ein Gang hinter dem Organ kann kürzer, breiter oder blockiert erscheinen, bis der Spieler lernt, welche Frequenz den lebenden Filter übersteht. Atlas nutzt das Relais, weil es Signal unter Druck besser bewahrt als kaputte Hardware allein. Der Spieler nutzt es als Beweis: Wenn derselbe Sonarfehler bei derselben Pulsbreite erscheint, ist der Raum nicht verflucht. Er filtert. Das macht das Relais nützlich, ekelhaft und fair.
 
 ## Scanner
 
-DE LOC HOLD: Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
+AKUSTISCHES FILTERORGAN // Kiemenwandgewebe ist um Relaisrohre gewachsen; es dämpft Pumpendröhnen, lässt schmale Pingerimpulse durch und faltet Sonar in wiederholbare Lügen.
 
 ## Terminal
 
-DE LOC HOLD: RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
+RELAISNOTIZ: lebende Schallwand lässt Pinger-Klassenimpulse durch, weist breites Pumpenrauschen ab und verschiebt Rückecho-Phasen. Nachgelagerte Karten als bedingt wahr markieren.
 
 ## Audio
 
-DE LOC HOLD: The room is listening with meat and pipe.
+Der Raum hört mit Fleisch und Rohr.
 
 ## Field Note
 
-DE LOC HOLD: Atlas does not need language here. It needs filters, pulses and living baffles.
+Atlas braucht hier keine Stimme. Es braucht ein Organ, das den richtigen Klang überleben lässt.
 
 <!-- In-Game Wiki; generated from P232_ACOUSTIC_FILTER_ORGAN_RELAY/de_DE. -->

@@ -898,45 +898,21 @@ namespace Hecton8.Gameplay
                 try
                 {
                     if (!State.IsCreated)
-                    {
-                        State = new NativeArray<PlayerKinematicState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                        NativeMemorySentinel.RegisterNativeArray(State, nameof(SomaticKinematicsRuntime), nameof(State), NativeAllocationLifetime.Scene);
-                    }
+                        State = CreateNativeArray<PlayerKinematicState>(1, nameof(State));
                     if (!Sphere.IsCreated)
-                    {
-                        Sphere = new NativeArray<PlayerBoundingSphere>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                        NativeMemorySentinel.RegisterNativeArray(Sphere, nameof(SomaticKinematicsRuntime), nameof(Sphere), NativeAllocationLifetime.Scene);
-                    }
+                        Sphere = CreateNativeArray<PlayerBoundingSphere>(1, nameof(Sphere));
                     if (!HandHistory.IsCreated)
-                    {
-                        HandHistory = new NativeArray<SomaticHandStrokeSample>(HandHistoryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                        NativeMemorySentinel.RegisterNativeArray(HandHistory, nameof(SomaticKinematicsRuntime), nameof(HandHistory), NativeAllocationLifetime.Scene);
-                    }
+                        HandHistory = CreateNativeArray<SomaticHandStrokeSample>(HandHistoryCapacity, nameof(HandHistory));
                     if (!Tuning.IsCreated)
-                    {
-                        Tuning = new NativeArray<SomaticKinematicsTuningData>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                        NativeMemorySentinel.RegisterNativeArray(Tuning, nameof(SomaticKinematicsRuntime), nameof(Tuning), NativeAllocationLifetime.Scene);
-                    }
+                        Tuning = CreateNativeArray<SomaticKinematicsTuningData>(1, nameof(Tuning));
                     if (!DragLut.IsCreated)
-                    {
-                        DragLut = new NativeArray<float>(DragLutCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                        NativeMemorySentinel.RegisterNativeArray(DragLut, nameof(SomaticKinematicsRuntime), nameof(DragLut), NativeAllocationLifetime.Scene);
-                    }
+                        DragLut = CreateNativeArray<float>(DragLutCapacity, nameof(DragLut));
                     if (!SignalScratch.IsCreated)
-                    {
-                        SignalScratch = new NativeArray<SomaticKinematicSignalScratch>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                        NativeMemorySentinel.RegisterNativeArray(SignalScratch, nameof(SomaticKinematicsRuntime), nameof(SignalScratch), NativeAllocationLifetime.Scene);
-                    }
+                        SignalScratch = CreateNativeArray<SomaticKinematicSignalScratch>(1, nameof(SignalScratch));
                     if (!BlackBox.IsCreated)
-                    {
-                        BlackBox = new NativeArray<SomaticKinematicBlackBoxEntry>(BlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                        NativeMemorySentinel.RegisterNativeArray(BlackBox, nameof(SomaticKinematicsRuntime), nameof(BlackBox), NativeAllocationLifetime.Scene);
-                    }
+                        BlackBox = CreateNativeArray<SomaticKinematicBlackBoxEntry>(BlackBoxCapacity, nameof(BlackBox));
                     if (!BlackBoxCursor.IsCreated)
-                    {
-                        BlackBoxCursor = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                        NativeMemorySentinel.RegisterNativeArray(BlackBoxCursor, nameof(SomaticKinematicsRuntime), nameof(BlackBoxCursor), NativeAllocationLifetime.Scene);
-                    }
+                        BlackBoxCursor = CreateNativeArray<int>(1, nameof(BlackBoxCursor));
                 }
                 catch
                 {
@@ -964,9 +940,16 @@ namespace Hecton8.Gameplay
                 if (!array.IsCreated)
                     return;
 
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                array.Dispose();
-                array = default;
+                H8Memory.Release(ref array, VaultOwnerSystem);
+            }
+
+            private static NativeArray<T> CreateNativeArray<T>(int length, string label) where T : struct
+            {
+                NativeArray<T> array = H8Memory.Allocate<T>(length, VaultOwnerSystem, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                if (!array.IsCreated)
+                    throw new InvalidOperationException($"{nameof(SomaticKinematicsRuntime)} native allocation failed for {label}.");
+
+                return array;
             }
         }
 

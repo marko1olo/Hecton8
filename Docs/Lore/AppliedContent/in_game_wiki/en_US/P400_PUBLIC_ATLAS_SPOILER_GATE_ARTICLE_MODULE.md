@@ -7,6 +7,9 @@ poi_tags: poi.public_atlas_spoiler_gate;poi.factory_temple_teaser
 biome_tags: biome.publication;biome.atlas_basin
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Atlas Access Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

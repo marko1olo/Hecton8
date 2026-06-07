@@ -122,16 +122,20 @@ namespace Hecton8.Plugins.Steam
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
-                currentService == null ||
-                _shutdownRequested ||
-                !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
             {
                 return;
             }
 
             bool wasRegistered = _registeredFrostTick;
             UnregisterFrostTick();
+            if (currentService == null ||
+                _shutdownRequested ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
             if (wasRegistered)
                 RegisterFrostTick();
         }
@@ -161,12 +165,21 @@ namespace Hecton8.Plugins.Steam
             if (Interlocked.CompareExchange(ref _state, StateBooting, StateNotStarted) != StateNotStarted)
                 return;
 
-            _initThread = new Thread(InitializeSteamworksBackground)
+            try
             {
-                IsBackground = true,
-                Name = "Hecton8 Steam Init"
-            }; // COLD ALLOC: Thread[1] - Steamworks border initialization lane - owner: SteamManager
-            _initThread.Start();
+                Thread thread = new Thread(InitializeSteamworksBackground)
+                {
+                    IsBackground = true,
+                    Name = "Hecton8 Steam Init"
+                }; // COLD ALLOC: Thread[1] - Steamworks border initialization lane - owner: SteamManager
+                _initThread = thread;
+                thread.Start();
+            }
+            catch (Exception)
+            {
+                _initThread = null;
+                Volatile.Write(ref _state, _shutdownRequested ? StateShutdown : StateFailed);
+            }
         }
 
         private void InitializeSteamworksBackground()

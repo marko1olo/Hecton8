@@ -432,8 +432,8 @@ namespace Hecton8.Audio.Prologue
             if (!_prologueArmed)
                 return;
 
-            IAudioService audioService = _audioService;
-            if (audioService == null || !audioService.IsInitialized)
+            IAudioService audioService = ResolveAudioService();
+            if (audioService == null)
                 return;
 
             bool nonFiniteGuard = !math.isfinite(_velocityMetersPerSecond) ||
@@ -562,7 +562,7 @@ namespace Hecton8.Audio.Prologue
             if (!Application.isPlaying || !HasActiveTransitionState())
                 return;
 
-            TryQueueNeutralTransition(_audioService);
+            TryQueueNeutralTransition(ResolveAudioService());
         }
 
         private void ResetPreviousAudioService(IAudioService previousAudioService, object currentService)
@@ -589,7 +589,7 @@ namespace Hecton8.Audio.Prologue
 
         private bool TryQueueNeutralTransition(IAudioService audioService)
         {
-            if (audioService == null || !audioService.IsInitialized)
+            if (!IsAudioServiceUsable(audioService))
                 return false;
 
             AudioTransitionState state = default;
@@ -613,7 +613,28 @@ namespace Hecton8.Audio.Prologue
 
         private void CacheAudioService(IAudioService audioService)
         {
-            _audioService = audioService;
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void RefreshRuntimeServicesCold()

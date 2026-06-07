@@ -7,6 +7,9 @@ poi_tags: poi.quarantine_review_clock;poi.biological_pressure_hold
 biome_tags: biome.colony;biome.abyssal_machine_field
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Доказательство задержки карантинного release"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.atlas_policy_stamp;poi.infrastructure_proxy_clause
 biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Atlas Insurance Personhood Status"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

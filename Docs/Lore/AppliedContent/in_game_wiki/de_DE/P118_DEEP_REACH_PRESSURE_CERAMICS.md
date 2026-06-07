@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "Deep-Reach-Druckkeramik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# Deep-Reach-Druckkeramik
 
-DE LOC HOLD: Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.
+Deep-Reach-Druckkeramik besteht aus lokalen HECTON-8-Mineralen, die durch Öfen, Katalysatorbäder und Schlottiegelzyklen gezwungen wurden, bis sie Druck halten konnten, bei dem Metall kriechen oder fressen würde. Man findet sie in Klemmringen, Dichtsitzen, Schneidkontakten und Aufstiegswiegen-Isolation, wodurch sie für Reparaturen und Fluchtkettenbau entscheidend ist. Ihre Gefahr liegt nicht darin, dass sie böses Material wäre. Ihre Gefahr ist Kompetenz unter schlechter Verwahrung: Ein Ring kann jahrelang halten und dann bei Hitzeschock oder falscher Druckfolge in schneidende Splitter aufblühen.
 
 ## Scanner
 
-DE LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+DEEP-REACH-DRUCKKERAMIK // Lokaler Ton, Sulfidfluss und Schlottiegelhitze, geformt zu Klemmringen und Dichtsitzen. Hält Druck wunderschön; versagt bei Schock zu Messern.
 
 ## Terminal
 
-DE LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+RESSOURCENKLASSE: Deep-Reach-verstärkt. Nutzungen: Klemmringe, Dichtsitze, Schneidkontakte, Aufstiegswiegen-Isolation. Versagensmodus: Splitterblüte bei Thermoschock oder falscher Druckentlastung.
 
 ## Audio
 
-DE LOC HOLD: The company was good at building things. That is part of the crime.
+Deep Reach konnte Dinge bauen. Darum funktionierte die Lüge.
 
 ## Field Note
 
-DE LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+Klopf sie kalt an. Wenn sie hoch singt, nicht erhitzen.
 
 <!-- In-Game Wiki; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/de_DE. -->

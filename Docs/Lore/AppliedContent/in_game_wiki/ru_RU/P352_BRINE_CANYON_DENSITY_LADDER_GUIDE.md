@@ -7,6 +7,9 @@ poi_tags: poi.brine_density_slate;poi.current_shelf_marker
 biome_tags: biome.brine;biome.geology
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Brine canyon density ladder guide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

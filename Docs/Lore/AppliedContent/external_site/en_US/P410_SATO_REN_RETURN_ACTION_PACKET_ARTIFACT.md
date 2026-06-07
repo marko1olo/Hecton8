@@ -7,6 +7,9 @@ poi_tags: poi.sato_ren_return_packet;poi.recovery_compliance_payload_order
 biome_tags: biome.present_signal_window;biome.orbital_link
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Sato-Ren Return Packet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

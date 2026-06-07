@@ -7,6 +7,9 @@ poi_tags: poi.atlas_basin_gate;poi.payload_authority_socket
 biome_tags: biome.atlas_basin;biome.factory_temple
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Atlas Basin Payload Act"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

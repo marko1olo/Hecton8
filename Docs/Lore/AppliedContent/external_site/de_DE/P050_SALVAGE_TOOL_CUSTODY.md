@@ -7,6 +7,9 @@ poi_tags: poi.tool_custody;poi.salvage_locker
 biome_tags: biome.drowned_colony;biome.deep_colony
 locale: de_DE
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Bergungswerkzeug-Kustodie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

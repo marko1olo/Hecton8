@@ -1,4 +1,9 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
+using Hecton8.Editor.GeologyForge;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -12,6 +17,7 @@ namespace Hecton8.Tests.Editor
         private const string TypesPath = "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeTypes.cs";
         private const string LayoutValidatorPath = "Assets/_Project/Scripts/Editor/GeologyForge/GeologyVertexLayoutValidator.cs";
         private const string WindowPath = "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeWindow.cs";
+        private const string TopographyForgeGeneratorPath = "Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeGenerator.cs";
         private const string CsvPath = "Assets/_Project/Data/Geology/geology_generation_profiles.csv";
         private const string PrefabFolder = "Assets/_Project/BakedGeometry/Geology/Prefabs";
         private const string GeologyForgeFolder = "Assets/_Project/Scripts/Editor/GeologyForge";
@@ -311,6 +317,95 @@ namespace Hecton8.Tests.Editor
 
             Assert.Throws<AssertionException>(() =>
                 AssertHotMethodBodyClean("interpolation-probe.cs", RemoveCommentsAndStringLiterals(source), "Execute"));
+        }
+
+        [Test]
+        public void RuntimeMeshGenerationScannerDowngradesOnlyEditorGuardedFindings()
+        {
+            string tempPath = Path.Combine(
+                Path.GetTempPath(),
+                "hecton_runtime_mesh_scanner_probe_" + Guid.NewGuid().ToString("N") + ".cs");
+            File.WriteAllText(
+                tempPath,
+                "using UnityEngine;\n" +
+                "internal sealed class Probe : MonoBehaviour\n" +
+                "{\n" +
+                "#if UNITY_EDITOR\n" +
+                "    private void EditorOnly()\n" +
+                "    {\n" +
+                "        Mesh mesh = new Mesh();\n" +
+                "    }\n" +
+                "#if HECTON_AUTHORING_PREVIEW\n" +
+                "    private void NestedEditorOnly()\n" +
+                "    {\n" +
+                "        Mesh mesh = new Mesh();\n" +
+                "    }\n" +
+                "#endif\n" +
+                "#if UNITY_EDITOR && HECTON_AUTHORING_PREVIEW\n" +
+                "    private void CompoundEditorOnly()\n" +
+                "    {\n" +
+                "        Mesh mesh = new Mesh();\n" +
+                "    }\n" +
+                "#endif\n" +
+                "#endif\n" +
+                "#if UNITY_EDITOR || DEVELOPMENT_BUILD\n" +
+                "    private void EditorOrDevelopmentBuild()\n" +
+                "    {\n" +
+                "        Mesh mesh = new Mesh();\n" +
+                "    }\n" +
+                "#endif\n" +
+                "#if NOT_UNITY_EDITOR\n" +
+                "    private void NotUnityEditorCustomSymbol()\n" +
+                "    {\n" +
+                "        Mesh mesh = new Mesh();\n" +
+                "    }\n" +
+                "#endif\n" +
+                "    [ContextMenu(\"Preview\")]\n" +
+                "    private void Preview()\n" +
+                "    {\n" +
+                "        if (Application.isPlaying)\n" +
+                "            return;\n" +
+                "        Mesh mesh = new Mesh();\n" +
+                "    }\n" +
+                "    private void RuntimeBuild()\n" +
+                "    {\n" +
+                "        Mesh mesh = new Mesh();\n" +
+                "    }\n" +
+                "    private void RuntimeMaterialReference()\n" +
+                "    {\n" +
+                "        asset.material = null;\n" +
+                "    }\n" +
+                "}\n");
+
+            try
+            {
+                IList findings = ScanRuntimeMeshProbe(tempPath);
+
+                AssertFinding(findings, "EditorOnly", "RUNTIME_MESH_ALLOCATION", editorCompileGuarded: true, editorPlayModeBlocked: false);
+                AssertFinding(findings, "NestedEditorOnly", "RUNTIME_MESH_ALLOCATION", editorCompileGuarded: true, editorPlayModeBlocked: false);
+                AssertFinding(findings, "CompoundEditorOnly", "RUNTIME_MESH_ALLOCATION", editorCompileGuarded: true, editorPlayModeBlocked: false);
+                AssertFinding(findings, "EditorOrDevelopmentBuild", "RUNTIME_MESH_ALLOCATION", editorCompileGuarded: false, editorPlayModeBlocked: false);
+                AssertFinding(findings, "NotUnityEditorCustomSymbol", "RUNTIME_MESH_ALLOCATION", editorCompileGuarded: false, editorPlayModeBlocked: false);
+                AssertFinding(findings, "Preview", "RUNTIME_MESH_ALLOCATION", editorCompileGuarded: false, editorPlayModeBlocked: true);
+                AssertFinding(findings, "RuntimeBuild", "RUNTIME_MESH_ALLOCATION", editorCompileGuarded: false, editorPlayModeBlocked: false);
+                AssertFinding(findings, "RuntimeMaterialReference", "MATERIAL_PROPERTY_REFERENCE", editorCompileGuarded: false, editorPlayModeBlocked: false);
+            }
+            finally
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+        }
+
+        [Test]
+        public void TopographyForgeNativeArraysUseSentinelWrapper()
+        {
+            string source = ReadProjectFile(TopographyForgeGeneratorPath);
+            StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(", source);
+            StringAssert.Contains("NativeMemorySentinel.UnregisterNativeArray(array)", source);
+            Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<"));
+            StringAssert.Contains("NativeArray<T> array = new NativeArray<T>(length, allocator, options);", source);
+            StringAssert.DoesNotContain("heights = new NativeArray<float>", source);
         }
 
         [Test]
@@ -813,6 +908,63 @@ namespace Hecton8.Tests.Editor
         {
             string fullPath = Path.Combine(Directory.GetCurrentDirectory(), projectRelativePath.Replace('/', Path.DirectorySeparatorChar));
             return File.ReadAllText(fullPath);
+        }
+
+        private static int CountOccurrences(string haystack, string needle)
+        {
+            int count = 0;
+            int searchStart = 0;
+            while (searchStart < haystack.Length)
+            {
+                int index = haystack.IndexOf(needle, searchStart, StringComparison.Ordinal);
+                if (index < 0)
+                    return count;
+
+                count++;
+                searchStart = index + needle.Length;
+            }
+
+            return count;
+        }
+
+        private static IList ScanRuntimeMeshProbe(string path)
+        {
+            Type scannerType = typeof(GeologyForgeConstants).Assembly.GetType("Hecton8.Editor.GeologyForge.RuntimeMeshGenerationScanner");
+            Assert.NotNull(scannerType);
+            Type findingType = scannerType.GetNestedType("Finding", BindingFlags.NonPublic | BindingFlags.Public);
+            Assert.NotNull(findingType);
+            Type listType = typeof(List<>).MakeGenericType(findingType);
+            IList findings = (IList)Activator.CreateInstance(listType);
+            MethodInfo scanFile = scannerType.GetMethod("ScanFile", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(scanFile);
+
+            scanFile.Invoke(null, new object[] { path, findings });
+            return findings;
+        }
+
+        private static void AssertFinding(
+            IList findings,
+            string method,
+            string kind,
+            bool editorCompileGuarded,
+            bool editorPlayModeBlocked)
+        {
+            for (int i = 0; i < findings.Count; i++)
+            {
+                object finding = findings[i];
+                Type findingType = finding.GetType();
+                if (!string.Equals((string)findingType.GetField("Method").GetValue(finding), method, StringComparison.Ordinal) ||
+                    !string.Equals((string)findingType.GetField("Kind").GetValue(finding), kind, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                Assert.AreEqual(editorCompileGuarded, (bool)findingType.GetField("EditorCompileGuarded").GetValue(finding), method);
+                Assert.AreEqual(editorPlayModeBlocked, (bool)findingType.GetField("EditorPlayModeBlocked").GetValue(finding), method);
+                return;
+            }
+
+            Assert.Fail("Missing scanner finding " + method + " / " + kind);
         }
     }
 }

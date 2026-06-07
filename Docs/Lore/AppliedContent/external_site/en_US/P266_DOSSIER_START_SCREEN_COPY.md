@@ -7,6 +7,9 @@ poi_tags: poi.dossier_start_copy_card;poi.marauder_profile_slate
 biome_tags: biome.ui;biome.dossier
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Dossier Start Screen Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,34 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "CN LOC HOLD: Silt Ambusher Telegraph"
+title: "淤泥伏击者预兆"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# CN LOC HOLD: Silt Ambusher Telegraph
+# 淤泥伏击者预兆
 
-CN LOC HOLD: Silt Ambusher Telegraph defines fair deep creature contact through environmental clues.
+淤泥伏击者让低能见度深区变得恐怖，但不让它变得随意。它们埋在细沉积物的平板下，而那里按理说应有落下的有机尘喂养微型生物。真正的伏击床太干净。啃食的小生物会避开它。细小的滤丝停在边缘。扫描脉冲返回得低而迟，因为动物上层膜会先吸收声音，然后埋在下面的肌肉才作出回应。
+
+规则很简单：玩家必须能在接触前学到危险。仅仅一块干净板面还不够。它要和缺失的生命、月牙形接缝、错误脉冲、淤泥的缓慢呼吸或灯光下的压力抽动配对。如果这些迹象不存在，遭遇就应保持为痕迹，而不是攻击。恐惧来自那个瞬间：你意识到海底一直在明处撒谎。
 
 ## Scanner
 
-CN LOC HOLD: A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.
+淤泥伏击床 // 过于干净的淤泥、缺失的啃食生物和低脉冲回波，会在板面打开前标记一座活陷阱。
 
 ## Terminal
 
-CN LOC HOLD: CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.
+接触规则：伏击床在接触前至少需要两个提示：干净板面、缺失微型生物、月牙形边缘、低脉冲回波或延迟的淤泥呼吸。若提示预算不足，降级为仅有痕迹的遭遇。
 
 ## Audio
 
-CN LOC HOLD: Flat ground is a lie down here.
+这里的平地会说谎。看它上面没有什么在爬。
 
 ## Field Note
 
-CN LOC HOLD: Deep danger must telegraph. The player should learn the wrongness before paying for it.
+深渊可以对角色不公平；游戏不能对玩家不公平。每一次伏击都必须留下可读的异样。
 
 <!-- In-Game Wiki; generated from P230_SILT_AMBUSHER_TELEGRAPH/zh_CN. -->

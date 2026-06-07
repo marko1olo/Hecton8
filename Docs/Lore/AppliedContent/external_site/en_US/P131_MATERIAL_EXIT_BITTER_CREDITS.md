@@ -7,6 +7,9 @@ poi_tags: poi.ascent_mass_invoice;poi.blue_debt_sale_receipt
 biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Material Exit Bitter Credits"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

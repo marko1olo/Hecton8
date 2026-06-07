@@ -2515,11 +2515,19 @@ namespace Hecton8.Gameplay
 
         private void UnregisterFromLateFrame()
         {
+            UnregisterFromLateFrame(clearPendingPresentation: true);
+        }
+
+        private void UnregisterFromLateFrame(bool clearPendingPresentation)
+        {
             if (!_registeredLateFrame)
                 return;
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
             _registeredLateFrame = false;
+            if (!clearPendingPresentation)
+                return;
+
             _headlightClearGlobalsDirty = false;
             _headlightPresentationDirty = false;
             _hudPresentationDirty = false;
@@ -2535,19 +2543,23 @@ namespace Hecton8.Gameplay
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _dispatcherAvailable = currentService != null;
-                if (currentService == null)
-                {
-                    _registeredTick = false;
-                    _registeredLateFrame = false;
-                    return;
-                }
+                bool needsTick = _registeredTick || IsEquipped;
+                bool needsLateFrame = _registeredLateFrame ||
+                                      IsEquipped ||
+                                      _headlightClearGlobalsDirty ||
+                                      _headlightPresentationDirty ||
+                                      _hudPresentationDirty ||
+                                      _headlightDefaultsRestoreDirty ||
+                                      _unregisterLateFrameAfterHeadlightClear;
 
-                if (isActiveAndEnabled && IsEquipped)
-                {
+                UnregisterFromTick();
+                UnregisterFromLateFrame(clearPendingPresentation: false);
+                _dispatcherAvailable = currentService != null;
+                if (currentService != null && isActiveAndEnabled && IsEquipped && needsTick)
                     RegisterToTick();
+
+                if (currentService != null && isActiveAndEnabled && needsLateFrame)
                     RegisterToLateFrame();
-                }
 
                 return;
             }

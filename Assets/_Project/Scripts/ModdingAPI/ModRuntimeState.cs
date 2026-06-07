@@ -78,6 +78,12 @@ namespace Hecton8.Modding
         private const string SaveDictionaryPrefix = "m8v1:";
         private const string EngineStorageKeyPrefix = "hecton.internal.";
         private const string EngineStorageOwnerId = "hecton.internal.engine_save_owner";
+        private const string NativeMemoryOwner = nameof(ModSaveStateStore);
+        private const string ModPayloadWriteBufferLabel = "modPayloadWriteBuffer";
+        private const string ModPayloadReadBufferLabel = "modPayloadReadBuffer";
+        private const string NativeMemoryRegistrationFailureMessage = "NativeMemorySentinel registration failed for ModSaveStateStore temp buffer.";
+        private const string NativeMemoryRestoreFailureMessage = "NativeMemorySentinel restore failed after ModSaveStateStore native disposal fault.";
+        private const NativeAllocationLifetime NativeTempMemoryLifetime = NativeAllocationLifetime.Temp;
         private static readonly uint EngineStorageOwnerHash = ModCommandDispatcher.ComputeModHash(EngineStorageOwnerId);
 
         // COLD ALLOC: Dictionary<string,string>[64] — custom mod save payload map persisted inside SaveData — owner: ModSaveStateStore
@@ -304,10 +310,9 @@ namespace Hecton8.Modding
             NativeArray<byte> payloadBytes = default;
             try
             {
-                payloadBytes = new NativeArray<byte>(
+                payloadBytes = CreateTempNativeArrayBuffer(
                     math.max(1, SaveBinaryStorage.ModPayloadMaxBytes),
-                    Allocator.Temp,
-                    NativeArrayOptions.UninitializedMemory);
+                    ModPayloadWriteBufferLabel);
 
                 for (int i = 0; i < _customModData.Count; i++)
                 {
@@ -353,8 +358,7 @@ namespace Hecton8.Modding
             }
             finally
             {
-                if (payloadBytes.IsCreated)
-                    payloadBytes.Dispose();
+                DisposeTempNativeArrayBuffer(ref payloadBytes, ModPayloadWriteBufferLabel);
             }
 
             return string.IsNullOrEmpty(error);
@@ -369,10 +373,9 @@ namespace Hecton8.Modding
             NativeArray<byte> payloadBytes = default;
             try
             {
-                payloadBytes = new NativeArray<byte>(
+                payloadBytes = CreateTempNativeArrayBuffer(
                     math.max(1, SaveBinaryStorage.ModPayloadMaxBytes),
-                    Allocator.Temp,
-                    NativeArrayOptions.UninitializedMemory);
+                    ModPayloadReadBufferLabel);
 
                 return SaveBinaryStorage.TryReadIndexedModPayloads(
                     absoluteSavePath,
@@ -383,8 +386,7 @@ namespace Hecton8.Modding
             }
             finally
             {
-                if (payloadBytes.IsCreated)
-                    payloadBytes.Dispose();
+                DisposeTempNativeArrayBuffer(ref payloadBytes, ModPayloadReadBufferLabel);
             }
         }
 
@@ -573,6 +575,76 @@ namespace Hecton8.Modding
             }
 
             return new string(_decodeCharScratch, 0, charCount);
+        }
+
+        private static NativeArray<byte> CreateTempNativeArrayBuffer(int length, string label)
+        {
+            NativeArray<byte> buffer = new NativeArray<byte>(
+                math.max(1, length),
+                Allocator.Temp,
+                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[length] - isolated mod save payload staging buffer - owner: ModSaveStateStore
+            try
+            {
+                RegisterTempNativeArrayBuffer(buffer, label);
+                return buffer;
+            }
+            catch
+            {
+                if (buffer.IsCreated)
+                    buffer.Dispose();
+                throw;
+            }
+        }
+
+        private static void RegisterTempNativeArrayBuffer(NativeArray<byte> buffer, string label)
+        {
+            if (!buffer.IsCreated)
+                return;
+
+            int registrationId = NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime);
+            if (registrationId <= 0)
+                throw new System.InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+        }
+
+        private static void DisposeTempNativeArrayBuffer(ref NativeArray<byte> buffer, string label)
+        {
+            if (!buffer.IsCreated)
+                return;
+
+            bool sentinelUnregistered = false;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(buffer);
+                sentinelUnregistered = true;
+                buffer.Dispose();
+                buffer = default;
+            }
+            catch (System.Exception disposalException)
+            {
+                RestoreTempNativeArrayBufferSentinelOrThrow(buffer, label, sentinelUnregistered, disposalException);
+                throw;
+            }
+        }
+
+        private static void RestoreTempNativeArrayBufferSentinelOrThrow(
+            NativeArray<byte> buffer,
+            string label,
+            bool sentinelUnregistered,
+            System.Exception disposalException)
+        {
+            if (!sentinelUnregistered || !buffer.IsCreated)
+                return;
+
+            try
+            {
+                int registrationId = NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime);
+                if (registrationId <= 0)
+                    throw new System.InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
+            }
+            catch (System.Exception restoreException)
+            {
+                throw new System.AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
+            }
         }
     }
 

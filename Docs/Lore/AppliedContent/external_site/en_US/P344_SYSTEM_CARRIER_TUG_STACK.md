@@ -7,6 +7,9 @@ poi_tags: poi.black_keel_stack_spec;poi.claim_pool_tug_record
 biome_tags: biome.orbit;biome.contract
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "System Carrier Tug Stack"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

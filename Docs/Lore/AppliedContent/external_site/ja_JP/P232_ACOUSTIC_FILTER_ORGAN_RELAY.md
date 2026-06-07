@@ -9,32 +9,34 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Acoustic Filter Organ Relay"
+title: "音響フィルター器官リレー"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JP LOC HOLD: Acoustic Filter Organ Relay
+# 音響フィルター器官リレー
 
-JP LOC HOLD: Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence.
+音響フィルター器官リレーは、ソナーゲームプレイと Atlas の生体機械的恐怖をつなぐ橋である。HECTON-8 の放棄されたシステムに、壁の中の喋る怪物は必要ない。必要なのは、死んだ電子機器よりも肉、管、圧力の方が経路問題をうまく解くことがあるため、生きた音響フィルターを取り込んだ損傷インフラだ。
+
+リレー器官は湿った鰓壁のように管の周囲へ育つ。ポンプの轟音を鈍らせ、細いピンガーパルスを通し、エコーを一貫した形で曲げる。これはレベル設計に強い規則を与える。音は嘘をついてよいが、パターンを持って嘘をつくべきだ。プレイヤーは、どの反応が折り畳まれているか、どの通路が位相ずれで隠れているだけか、Atlas が生物を機材として受け入れて生かした保守ルートがどれかを学べる。恐怖は、部屋に声があることではない。人間がその部屋を何のために必要としたか理解しないまま、聞き、経路を作り、修理できることだ。
 
 ## Scanner
 
-JP LOC HOLD: Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
+音響フィルター器官 // 鰓壁状の組織がリレー管の周囲に育っている。ポンプの轟音を弱め、細いピンガー信号を通し、ソナーを反復可能な嘘へ折り曲げる。
 
 ## Terminal
 
-JP LOC HOLD: RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
+リレーノート: 生きたバッフルはピンガークラスのパルスを通し、広帯域のポンプ騒音を拒み、戻りエコーの位相をずらす。下流マップは条件付き真として扱う。
 
 ## Audio
 
-JP LOC HOLD: The room is listening with meat and pipe.
+この部屋は肉と管で聞いている。
 
 ## Field Note
 
-JP LOC HOLD: Atlas does not need language here. It needs filters, pulses and living baffles.
+ここで Atlas に声は必要ない。必要なのは、正しい音だけを生き残らせる器官だ。
 
 <!-- External Site; generated from P232_ACOUSTIC_FILTER_ORGAN_RELAY/ja_JP. -->

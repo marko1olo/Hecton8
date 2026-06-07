@@ -9,32 +9,34 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Silt Ambusher Telegraph"
+title: "Ознаки мулового засідника"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Silt Ambusher Telegraph
+# Ознаки мулового засідника
 
-UA LOC HOLD: Silt Ambusher Telegraph is a creature-design rule for HECTON-8's low-visibility zones. Threats stay frightening because they are systemic and readable: missing microfauna, wrong surface geometry and acoustic warning before impact.
+Ознаки мулового засідника - це і стаття про істоту, і правило чесності для HECTON-8. Найглибші зони можуть бути ворожими, темними і важкими для читання, але вони не мають карати гравця невидимими кидками. Муловий засідник страшний тому, що він майже рельєф: жива пастка, похована під осадом, що чекає вібрації, тепла й необережної ваги. Він належить безодні, бо безодня вже говорить про довіру до сенсорів.
+
+Добре розміщення дає докази до небезпеки. Плита надто гладка. Малі повзуни зникли. Обід утворює серп, якого не створює природне осідання. Імпульс повертається пізно, низько і м'яко. Лампа ловить один подих мулу там, де не мав би рухатися потік. Коли гравець знає ці знаки, кожна рівна пляма стає питанням, а не випадковим покаранням. Це контракт HECTON-8: океан може бути жорстоким, але він має бути читаним для уважного.
 
 ## Scanner
 
-UA LOC HOLD: A suspiciously clean silt plate, absent microfauna and low pulse return mark an ambusher before contact.
+ЛОЖЕ МУЛОВОГО ЗАСІДНИКА // Чистий мул, відсутні дрібні пасовиська і низьке імпульсне повернення позначають живу пастку до відкриття плити.
 
 ## Terminal
 
-UA LOC HOLD: CONTACT RULE: silt ambusher beds require sonar warning, disturbed-edge silhouette or missing-life clue.
+ПРАВИЛО КОНТАКТУ: ложа засідників потребують щонайменше двох ознак до контакту: чиста плита, відсутня мікрофауна, серпоподібний край, низьке імпульсне повернення або запізніле дихання мулу. Якщо бюджет ознак не виконано, понизити до зустрічі лише зі слідом.
 
 ## Audio
 
-UA LOC HOLD: Flat ground is a lie down here.
+Рівне дно тут бреше. Дивись, що по ньому не повзає.
 
 ## Field Note
 
-UA LOC HOLD: Deep danger must telegraph. The player should learn the wrongness before paying for it.
+Безодня може бути несправедливою до персонажа; гра не може бути несправедливою до гравця. Кожна засада має лишити читану неправильність.
 
 <!-- External Site; generated from P230_SILT_AMBUSHER_TELEGRAPH/uk_UA. -->

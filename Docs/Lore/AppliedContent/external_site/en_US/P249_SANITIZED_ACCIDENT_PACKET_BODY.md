@@ -7,6 +7,9 @@ poi_tags: poi.deep_reach_accident_packet;poi.public_report_cache
 biome_tags: biome.deep_reach_pressure;biome.shallow_annex_p63
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Sanitized Accident Packet Body"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

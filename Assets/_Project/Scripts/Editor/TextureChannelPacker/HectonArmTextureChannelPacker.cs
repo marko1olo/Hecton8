@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Burst.Intrinsics;
 using Unity.Collections;
@@ -42,6 +43,7 @@ namespace Hecton8.EditorTools
         private const string PackingReportPath = "Docs/Reports/TEXTURE_PACKING_REPORT.json";
         private const string LayoutReportPath = "Docs/Reports/TEXTURE_PACKER_LAYOUT_REPORT.json";
         private const string MockReportPath = "Docs/Reports/TEXTURE_PACKER_MOCK_BENCHMARK.json";
+        private const string NativeMemoryOwner = nameof(HectonArmTextureChannelPacker);
         private static readonly Encoding TextEncoding = new UTF8Encoding(false);
         private const int DefaultMaxTextureSize = 2048;
         private const int JobBatchSize = 128;
@@ -143,10 +145,10 @@ namespace Hecton8.EditorTools
 
             try
             {
-                aoPixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[pixelCount] - editor AO source buffer - owner: HectonArmTextureChannelPacker
-                roughnessPixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[pixelCount] - editor roughness source buffer - owner: HectonArmTextureChannelPacker
-                metallicPixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[pixelCount] - editor metallic source buffer - owner: HectonArmTextureChannelPacker
-                armPixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[pixelCount] - editor packed ARM output buffer - owner: HectonArmTextureChannelPacker
+                aoPixels = AllocateTrackedTempJobArray<Color32>(pixelCount, nameof(aoPixels));
+                roughnessPixels = AllocateTrackedTempJobArray<Color32>(pixelCount, nameof(roughnessPixels));
+                metallicPixels = AllocateTrackedTempJobArray<Color32>(pixelCount, nameof(metallicPixels));
+                armPixels = AllocateTrackedTempJobArray<Color32>(pixelCount, nameof(armPixels));
 
                 JobHandle aoHandle = PrepareSource(request.AoTexture, width, height, new Color32(255, 255, 255, 255), aoPixels, ref aoSnapshot);
                 JobHandle roughnessHandle = PrepareSource(request.RoughnessTexture, width, height, new Color32(166, 166, 166, 255), roughnessPixels, ref roughnessSnapshot);
@@ -179,8 +181,8 @@ namespace Hecton8.EditorTools
 
                 if ((request.Config.Flags & FlagGenerateNormals) != 0u && request.AlbedoTexture != null)
                 {
-                    albedoPixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[pixelCount] - editor albedo source buffer - owner: HectonArmTextureChannelPacker
-                    normalPixels = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[pixelCount] - editor generated normal buffer - owner: HectonArmTextureChannelPacker
+                    albedoPixels = AllocateTrackedTempJobArray<Color32>(pixelCount, nameof(albedoPixels));
+                    normalPixels = AllocateTrackedTempJobArray<Color32>(pixelCount, nameof(normalPixels));
                     JobHandle albedoHandle = PrepareSource(request.AlbedoTexture, width, height, new Color32(128, 128, 128, 255), albedoPixels, ref albedoSnapshot);
                     JobHandle normalHandle = new GenerateSobelNormalsJob
                     {
@@ -241,19 +243,46 @@ namespace Hecton8.EditorTools
                 DestroyImmediateIfNeeded(roughnessSnapshot);
                 DestroyImmediateIfNeeded(metallicSnapshot);
                 DestroyImmediateIfNeeded(albedoSnapshot);
-                if (aoPixels.IsCreated)
-                    aoPixels.Dispose();
-                if (roughnessPixels.IsCreated)
-                    roughnessPixels.Dispose();
-                if (metallicPixels.IsCreated)
-                    metallicPixels.Dispose();
-                if (albedoPixels.IsCreated)
-                    albedoPixels.Dispose();
-                if (armPixels.IsCreated)
-                    armPixels.Dispose();
-                if (normalPixels.IsCreated)
-                    normalPixels.Dispose();
+                DisposeTrackedNativeArray(ref aoPixels);
+                DisposeTrackedNativeArray(ref roughnessPixels);
+                DisposeTrackedNativeArray(ref metallicPixels);
+                DisposeTrackedNativeArray(ref albedoPixels);
+                DisposeTrackedNativeArray(ref armPixels);
+                DisposeTrackedNativeArray(ref normalPixels);
             }
+        }
+
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(
+            int length,
+            string label,
+            NativeArrayOptions options = NativeArrayOptions.UninitializedMemory)
+            where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(math.max(1, length), Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
 
         private static Texture2D BuildArmTextureAsset(
@@ -336,59 +365,73 @@ namespace Hecton8.EditorTools
                 {
                     int width = math.max(1, previousWidth >> 1);
                     int height = math.max(1, previousHeight >> 1);
-                    NativeArray<Color32> currentArm = new NativeArray<Color32>(width * height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[mip] - editor ARM mip buffer - owner: HectonArmTextureChannelPacker
+                    NativeArray<Color32> currentArm = default;
                     NativeArray<Color32> currentNormal = default;
-
-                    new GenerateArmMipJob
+                    bool transferredCurrentArm = false;
+                    bool transferredCurrentNormal = false;
+                    try
                     {
-                        Source = previousArm,
-                        NormalSource = hasNormalPixels ? previousNormal : default,
-                        Output = currentArm,
-                        SourceWidth = previousWidth,
-                        SourceHeight = previousHeight,
-                        OutputWidth = width,
-                        OutputHeight = height,
-                        HasNormalSource = hasNormalPixels ? 1 : 0
-                    // Editor mip materialization boundary: each mip buffer must be complete before Texture2D consumes it.
-                    }.Schedule(currentArm.Length, JobBatchSize).Complete();
-
-                    texture.SetPixelData(currentArm, mip);
-
-                    if (hasNormalPixels)
-                    {
-                        currentNormal = new NativeArray<Color32>(width * height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[mip] - editor normal mip buffer - owner: HectonArmTextureChannelPacker
-                        new GenerateNormalMipJob
+                        currentArm = AllocateTrackedTempJobArray<Color32>(width * height, "armMip");
+                        new GenerateArmMipJob
                         {
-                            Source = previousNormal,
-                            Output = currentNormal,
+                            Source = previousArm,
+                            NormalSource = hasNormalPixels ? previousNormal : default,
+                            Output = currentArm,
                             SourceWidth = previousWidth,
                             SourceHeight = previousHeight,
                             OutputWidth = width,
-                            OutputHeight = height
-                        // Editor mip materialization boundary: normal variance must be finalized before SetPixelData.
-                        }.Schedule(currentNormal.Length, JobBatchSize).Complete();
+                            OutputHeight = height,
+                            HasNormalSource = hasNormalPixels ? 1 : 0
+                        // Editor mip materialization boundary: each mip buffer must be complete before Texture2D consumes it.
+                        }.Schedule(currentArm.Length, JobBatchSize).Complete();
+
+                        texture.SetPixelData(currentArm, mip);
+
+                        if (hasNormalPixels)
+                        {
+                            currentNormal = AllocateTrackedTempJobArray<Color32>(width * height, "normalMip");
+                            new GenerateNormalMipJob
+                            {
+                                Source = previousNormal,
+                                Output = currentNormal,
+                                SourceWidth = previousWidth,
+                                SourceHeight = previousHeight,
+                                OutputWidth = width,
+                                OutputHeight = height
+                            // Editor mip materialization boundary: normal variance must be finalized before SetPixelData.
+                            }.Schedule(currentNormal.Length, JobBatchSize).Complete();
+                        }
+
+                        if (ownsPreviousArm)
+                            DisposeTrackedNativeArray(ref previousArm);
+                        if (ownsPreviousNormal)
+                            DisposeTrackedNativeArray(ref previousNormal);
+
+                        previousArm = currentArm;
+                        previousNormal = currentNormal;
+                        transferredCurrentArm = true;
+                        transferredCurrentNormal = hasNormalPixels;
+                        ownsPreviousArm = true;
+                        ownsPreviousNormal = hasNormalPixels;
+                        previousWidth = width;
+                        previousHeight = height;
+                        mip++;
                     }
-
-                    if (ownsPreviousArm && previousArm.IsCreated)
-                        previousArm.Dispose();
-                    if (ownsPreviousNormal && previousNormal.IsCreated)
-                        previousNormal.Dispose();
-
-                    previousArm = currentArm;
-                    previousNormal = currentNormal;
-                    ownsPreviousArm = true;
-                    ownsPreviousNormal = hasNormalPixels;
-                    previousWidth = width;
-                    previousHeight = height;
-                    mip++;
+                    finally
+                    {
+                        if (!transferredCurrentArm)
+                            DisposeTrackedNativeArray(ref currentArm);
+                        if (!transferredCurrentNormal)
+                            DisposeTrackedNativeArray(ref currentNormal);
+                    }
                 }
             }
             finally
             {
-                if (ownsPreviousArm && previousArm.IsCreated)
-                    previousArm.Dispose();
-                if (ownsPreviousNormal && previousNormal.IsCreated)
-                    previousNormal.Dispose();
+                if (ownsPreviousArm)
+                    DisposeTrackedNativeArray(ref previousArm);
+                if (ownsPreviousNormal)
+                    DisposeTrackedNativeArray(ref previousNormal);
             }
         }
 
@@ -406,31 +449,42 @@ namespace Hecton8.EditorTools
                 {
                     int width = math.max(1, previousWidth >> 1);
                     int height = math.max(1, previousHeight >> 1);
-                    NativeArray<Color32> current = new NativeArray<Color32>(width * height, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[mip] - editor normal mip buffer - owner: HectonArmTextureChannelPacker
-                    new GenerateNormalMipJob
+                    NativeArray<Color32> current = default;
+                    bool transferredCurrent = false;
+                    try
                     {
-                        Source = previous,
-                        Output = current,
-                        SourceWidth = previousWidth,
-                        SourceHeight = previousHeight,
-                        OutputWidth = width,
-                        OutputHeight = height
-                    // Editor mip materialization boundary: generated normal mips are immediately serialized into Texture2D.
-                    }.Schedule(current.Length, JobBatchSize).Complete();
-                    texture.SetPixelData(current, mip);
-                    if (ownsPrevious && previous.IsCreated)
-                        previous.Dispose();
-                    previous = current;
-                    ownsPrevious = true;
-                    previousWidth = width;
-                    previousHeight = height;
-                    mip++;
+                        current = AllocateTrackedTempJobArray<Color32>(width * height, "normalMip");
+                        new GenerateNormalMipJob
+                        {
+                            Source = previous,
+                            Output = current,
+                            SourceWidth = previousWidth,
+                            SourceHeight = previousHeight,
+                            OutputWidth = width,
+                            OutputHeight = height
+                        // Editor mip materialization boundary: generated normal mips are immediately serialized into Texture2D.
+                        }.Schedule(current.Length, JobBatchSize).Complete();
+                        texture.SetPixelData(current, mip);
+                        if (ownsPrevious)
+                            DisposeTrackedNativeArray(ref previous);
+                        previous = current;
+                        transferredCurrent = true;
+                        ownsPrevious = true;
+                        previousWidth = width;
+                        previousHeight = height;
+                        mip++;
+                    }
+                    finally
+                    {
+                        if (!transferredCurrent)
+                            DisposeTrackedNativeArray(ref current);
+                    }
                 }
             }
             finally
             {
-                if (ownsPrevious && previous.IsCreated)
-                    previous.Dispose();
+                if (ownsPrevious)
+                    DisposeTrackedNativeArray(ref previous);
             }
         }
 
@@ -500,12 +554,12 @@ namespace Hecton8.EditorTools
 
             try
             {
-                ao = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[4K] - editor mock AO - owner: HectonArmTextureChannelPacker
-                roughness = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[4K] - editor mock roughness - owner: HectonArmTextureChannelPacker
-                metallic = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[4K] - editor mock metallic - owner: HectonArmTextureChannelPacker
-                albedo = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[4K] - editor mock albedo - owner: HectonArmTextureChannelPacker
-                output = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[4K] - editor mock output - owner: HectonArmTextureChannelPacker
-                normals = new NativeArray<Color32>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Color32>[4K] - editor mock normals - owner: HectonArmTextureChannelPacker
+                ao = AllocateTrackedTempJobArray<Color32>(pixelCount, nameof(ao));
+                roughness = AllocateTrackedTempJobArray<Color32>(pixelCount, nameof(roughness));
+                metallic = AllocateTrackedTempJobArray<Color32>(pixelCount, nameof(metallic));
+                albedo = AllocateTrackedTempJobArray<Color32>(pixelCount, nameof(albedo));
+                output = AllocateTrackedTempJobArray<Color32>(pixelCount, nameof(output));
+                normals = AllocateTrackedTempJobArray<Color32>(pixelCount, nameof(normals));
 
                 JobHandle mockHandle = new GenerateMockTexturePackJob
                 {
@@ -552,18 +606,12 @@ namespace Hecton8.EditorTools
             }
             finally
             {
-                if (ao.IsCreated)
-                    ao.Dispose();
-                if (roughness.IsCreated)
-                    roughness.Dispose();
-                if (metallic.IsCreated)
-                    metallic.Dispose();
-                if (albedo.IsCreated)
-                    albedo.Dispose();
-                if (output.IsCreated)
-                    output.Dispose();
-                if (normals.IsCreated)
-                    normals.Dispose();
+                DisposeTrackedNativeArray(ref ao);
+                DisposeTrackedNativeArray(ref roughness);
+                DisposeTrackedNativeArray(ref metallic);
+                DisposeTrackedNativeArray(ref albedo);
+                DisposeTrackedNativeArray(ref output);
+                DisposeTrackedNativeArray(ref normals);
             }
         }
 
@@ -1297,8 +1345,11 @@ namespace Hecton8.EditorTools
         internal const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_214.bin";
         internal const int RingCapacity = 300;
         private const int RingLength = RingCapacity;
+        private const string NativeMemoryOwner = nameof(TexturePackerBlackBox);
+        private const string RingLabel = "ring";
 
         private static NativeArray<TexturePackerTelemetryEntry> _ring;
+        private static int _ringSentinelId;
         private static int _cursor;
         private static bool _registered;
 
@@ -1405,7 +1456,33 @@ namespace Hecton8.EditorTools
         {
             RegisterLifecycle();
             if (!_ring.IsCreated)
-                _ring = new NativeArray<TexturePackerTelemetryEntry>(RingLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<Telemetry>[300] - editor forensic ring - owner: TexturePackerBlackBox
+            {
+                try
+                {
+                    _ring = new NativeArray<TexturePackerTelemetryEntry>(RingLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<Telemetry>[300] - editor forensic ring - owner: TexturePackerBlackBox
+                    _ringSentinelId = NativeMemorySentinel.RegisterNativeArray(
+                        _ring,
+                        NativeMemoryOwner,
+                        RingLabel,
+                        NativeAllocationLifetime.Session);
+                    if (_ringSentinelId <= 0)
+                        throw new InvalidOperationException($"Native memory sentinel registration failed for {RingLabel}.");
+                }
+                catch
+                {
+                    if (_ring.IsCreated)
+                    {
+                        if (_ringSentinelId > 0)
+                            NativeMemorySentinel.Unregister(_ringSentinelId);
+                        else
+                            NativeMemorySentinel.UnregisterNativeArray(_ring);
+                        _ring.Dispose();
+                    }
+                    _ring = default;
+                    _ringSentinelId = 0;
+                    throw;
+                }
+            }
         }
 
         private static void RegisterLifecycle()
@@ -1423,7 +1500,16 @@ namespace Hecton8.EditorTools
         private static void Dispose()
         {
             if (_ring.IsCreated)
+            {
+                if (_ringSentinelId > 0)
+                    NativeMemorySentinel.Unregister(_ringSentinelId);
+                else
+                    NativeMemorySentinel.UnregisterNativeArray(_ring);
+                _ringSentinelId = 0;
                 _ring.Dispose();
+                _ring = default;
+            }
+
             _cursor = 0;
             _registered = false;
         }

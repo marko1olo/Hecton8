@@ -7,6 +7,9 @@ poi_tags: poi.impact_fracture_map;poi.tidal_heat_core_note
 biome_tags: biome.drowned_geology;biome.brine_canyon
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Collision-Fractured Moon"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

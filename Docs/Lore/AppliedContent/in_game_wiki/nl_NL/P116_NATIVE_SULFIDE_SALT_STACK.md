@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "Natieve sulfidezoutstapel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# Natieve sulfidezoutstapel
 
-NL LOC HOLD: Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.
+Natieve sulfidezoutstapels zijn een van de eerste bewijzen dat HECTON-8 niet alleen een plaats delict van bedrijven is. Ze groeien waar ventwarmte, pekellekkage en metaalrijke korst onder druk tegen elkaar schuren en zwartgroene zouten achterlaten op richels, ribben en broze schoorstenen. Ze reinigen geleiders, wekken noodcellen, stemmen keramische flux af en slopen gereedschap als een ploeg ze behandelt als gewone erts. Ze moeten vóór blauwe schuld verschijnen: de speler leert dat de maan eigen chemie, waarde en gevaren had voordat Deep Reach er een claimstempel op zette.
 
 ## Scanner
 
-NL LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+NATIEVE SULFIDEZOUTEN // Door venten opgebouwde kristallen en zwarte pekelkorst, ouder dan Deep Reach. Nat geleidend, warm bijtend, bruikbaar voordat iets blauw wordt.
 
 ## Terminal
 
-NL LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+GRONDSTOFKLASSE: natieve geologie. Gebruik: geleiderwas, noodcelchemie, keramische flux, corrosiekatalysator. Wegsluiten van warme inlaatlucht; stof bloeit uit tot zuurfilm op pakmetaal.
 
 ## Audio
 
-NL LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+De maan had geen bedrijf nodig om gevaarlijk te zijn. Ze kende chemie al.
 
 ## Field Note
 
-NL LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+Als je handschoenen jeuken, ben je al te laat. Spoel, aard, log de wand.
 
 <!-- In-Game Wiki; generated from P116_NATIVE_SULFIDE_SALT_STACK/nl_NL. -->

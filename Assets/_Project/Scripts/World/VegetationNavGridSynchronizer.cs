@@ -2203,15 +2203,43 @@ namespace Hecton8.World
 
             DisposeNativeArray(ref _abyssalPathTelemetryDumpPayload);
 
-            _abyssalPathTelemetryDumpPayload = new NativeArray<byte>(
-                AbyssalPathTelemetryDumpPayloadBytes,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _abyssalPathTelemetryDumpPayload,
-                NativeMemoryOwner,
-                nameof(_abyssalPathTelemetryDumpPayload),
-                NativeMemoryLifetime);
+            NativeArray<byte> replacement = default;
+            try
+            {
+                replacement = new NativeArray<byte>(
+                    AbyssalPathTelemetryDumpPayloadBytes,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory);
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    replacement,
+                    NativeMemoryOwner,
+                    nameof(_abyssalPathTelemetryDumpPayload),
+                    NativeMemoryLifetime);
+                if (sentinelId <= 0)
+                    return false;
+
+                _abyssalPathTelemetryDumpPayload = replacement;
+                replacement = default;
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                if (replacement.IsCreated)
+                {
+                    try
+                    {
+                        NativeMemorySentinel.UnregisterNativeArray(replacement);
+                    }
+                    finally
+                    {
+                        replacement.Dispose();
+                    }
+                }
+            }
+
             return _abyssalPathTelemetryDumpPayload.IsCreated &&
                    _abyssalPathTelemetryDumpPayload.Length >= AbyssalPathTelemetryDumpPayloadBytes;
         }

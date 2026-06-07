@@ -829,12 +829,8 @@ namespace Hecton8.Audio
         private void Awake()
         {
             // ── Singleton ──
-            AcousticZoneController registered = s_activeRuntimeInstance ?? GlobalRegistry.AcousticZone;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             _stateInitialized = false;
             _registeredToTickManager = false;
@@ -848,6 +844,9 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             TryRegisterService();
@@ -1084,17 +1083,54 @@ namespace Hecton8.Audio
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            AcousticZoneController registered = s_activeRuntimeInstance ?? GlobalRegistry.AcousticZone;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterAcousticZoneRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.AcousticZone, this);
             if (_serviceRegistered)
                 s_activeRuntimeInstance = this;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            AcousticZoneController active = s_activeRuntimeInstance;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsAcousticZoneRuntimeUsable(active))
+                {
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntimeInstance, active))
+                    s_activeRuntimeInstance = null;
+                if (ReferenceEquals(GlobalRegistry.AcousticZone, active))
+                    GlobalRegistry.UnregisterAcousticZoneRuntime(active);
+            }
+
+            AcousticZoneController registered = GlobalRegistry.AcousticZone;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsAcousticZoneRuntimeUsable(registered))
+            {
+                s_activeRuntimeInstance = registered;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterAcousticZoneRuntime(registered);
+            if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                s_activeRuntimeInstance = null;
+            return false;
+        }
+
+        private static bool IsAcousticZoneRuntimeUsable(AcousticZoneController controller)
+        {
+            return controller != null &&
+                   controller._serviceRegistered &&
+                   controller.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()
@@ -1135,6 +1171,14 @@ namespace Hecton8.Audio
 
         private void CacheAudioService(IAudioService audioService)
         {
+            if (!IsAudioServiceUsable(audioService))
+            {
+                _cachedAudioService = null;
+                _cachedSpatialAudioEmitterReadModel = null;
+                _nextAudioServiceResolveFrame = 0;
+                return;
+            }
+
             _cachedAudioService = audioService;
             _cachedSpatialAudioEmitterReadModel = audioService as ISpatialAudioWorldEmitterReadModel;
             _nextAudioServiceResolveFrame = 0;
@@ -1211,8 +1255,11 @@ namespace Hecton8.Audio
         {
             int frame = SystemDispatcher.CurrentFrameIndex;
             IAudioService audioService = _cachedAudioService;
-            if (audioService != null && audioService.IsInitialized)
+            if (IsAudioServiceUsable(audioService))
                 return audioService;
+
+            _cachedAudioService = null;
+            _cachedSpatialAudioEmitterReadModel = null;
 
             if (frame < _nextAudioServiceResolveFrame)
                 return null;
@@ -1224,6 +1271,9 @@ namespace Hecton8.Audio
         private ISpatialAudioWorldEmitterReadModel ResolveSpatialAudioEmitterReadModel()
         {
             IAudioService audioService = ResolveAudioService();
+            if (audioService == null)
+                return null;
+
             ISpatialAudioWorldEmitterReadModel spatialAudioReadModel = _cachedSpatialAudioEmitterReadModel;
             if (spatialAudioReadModel != null)
                 return spatialAudioReadModel;
@@ -1231,6 +1281,17 @@ namespace Hecton8.Audio
             spatialAudioReadModel = audioService as ISpatialAudioWorldEmitterReadModel;
             _cachedSpatialAudioEmitterReadModel = spatialAudioReadModel;
             return spatialAudioReadModel;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         public void Tick(float deltaTime)

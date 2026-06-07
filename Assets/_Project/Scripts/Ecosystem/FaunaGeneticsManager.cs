@@ -38,12 +38,8 @@ namespace Hecton8.Ecosystem
 
         private void Awake()
         {
-            FaunaGeneticsManager registered = GlobalRegistry.FaunaGenetics;
-            if (registered != null && registered != this)
-            {
-                SuppressDuplicateService();
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             CacheRunModifiersCold();
             if (_worldSeed == 0)
@@ -53,6 +49,9 @@ namespace Hecton8.Ecosystem
         private void OnEnable()
         {
             if (_duplicateServiceSuppressed)
+                return;
+
+            if (TryAbortForUsableExistingRuntime())
                 return;
 
             TryRegisterService();
@@ -88,15 +87,35 @@ namespace Hecton8.Ecosystem
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            FaunaGeneticsManager registered = GlobalRegistry.FaunaGenetics;
-            if (registered != null && registered != this)
-            {
-                SuppressDuplicateService();
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterFaunaGeneticsRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.FaunaGenetics, this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            FaunaGeneticsManager registered = GlobalRegistry.FaunaGenetics;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsFaunaGeneticsRuntimeUsable(registered))
+            {
+                SuppressDuplicateService();
+                return true;
+            }
+
+            GlobalRegistry.UnregisterFaunaGeneticsRuntime(registered);
+            return false;
+        }
+
+        private static bool IsFaunaGeneticsRuntimeUsable(FaunaGeneticsManager manager)
+        {
+            return manager != null &&
+                   manager._serviceRegistered &&
+                   !manager._duplicateServiceSuppressed &&
+                   manager.isActiveAndEnabled;
         }
 
         private void SuppressDuplicateService()

@@ -7,6 +7,9 @@ poi_tags: poi.atlas_severance_record;poi.factory_temple_cut_log
 biome_tags: biome.ending;biome.atlas
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Atlas Severance Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

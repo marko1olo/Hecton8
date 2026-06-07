@@ -7,6 +7,9 @@ poi_tags: poi.suboffice_name_seed_card;poi.loss_desk_badge
 biome_tags: biome.claim_admin;biome.relay_archive
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Seed-правило персонала suboffice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

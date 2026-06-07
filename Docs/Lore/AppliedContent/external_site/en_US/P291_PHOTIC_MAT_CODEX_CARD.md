@@ -7,6 +7,9 @@ poi_tags: poi.photic_mat_scan_patch;poi.oxygen_color_sample
 biome_tags: biome.photic_shelf;biome.ecology
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Photic Mat Codex Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

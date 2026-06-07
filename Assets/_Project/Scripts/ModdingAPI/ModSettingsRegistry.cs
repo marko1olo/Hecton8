@@ -104,7 +104,7 @@ namespace Hecton8.Modding
 
         internal static void BindRegistryServicesCold()
         {
-            s_userOptions = GlobalRegistry.UserOptions;
+            CacheUserOptions(GlobalRegistry.UserOptions);
         }
 
         internal static void OnGlobalRegistryServiceReplaced(
@@ -112,7 +112,7 @@ namespace Hecton8.Modding
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.UserOptionsRuntime)
-                s_userOptions = currentService as UserOptionsPersistence;
+                CacheUserOptions(currentService as UserOptionsPersistence);
         }
 
         internal static void RegisterToggle(string modId, string settingName, bool defaultValue, Action<bool> onValueChanged)
@@ -121,7 +121,7 @@ namespace Hecton8.Modding
                 return;
 
             string storageKey = BuildStorageKey(compoundHash);
-            UserOptionsPersistence options = s_userOptions;
+            UserOptionsPersistence options = ResolveUserOptions();
             bool value = options != null ? options.GetBool(storageKey, defaultValue) : defaultValue;
 
             SettingEntry entry = new SettingEntry
@@ -152,7 +152,7 @@ namespace Hecton8.Modding
             float safeDefault = Mathf.Clamp(defaultValue, safeMin, safeMax);
 
             string storageKey = BuildStorageKey(compoundHash);
-            UserOptionsPersistence options = s_userOptions;
+            UserOptionsPersistence options = ResolveUserOptions();
             float value = options != null
                 ? Mathf.Clamp(options.GetFloat(storageKey, safeDefault), safeMin, safeMax)
                 : safeDefault;
@@ -217,7 +217,7 @@ namespace Hecton8.Modding
             entry.BoolValue = value;
             _entries[index] = entry;
 
-            UserOptionsPersistence options = s_userOptions;
+            UserOptionsPersistence options = ResolveUserOptions();
             if (options != null)
             {
                 options.SetBool(entry.StorageKey, value);
@@ -245,7 +245,7 @@ namespace Hecton8.Modding
             entry.FloatValue = clamped;
             _entries[index] = entry;
 
-            UserOptionsPersistence options = s_userOptions;
+            UserOptionsPersistence options = ResolveUserOptions();
             if (options != null)
             {
                 options.SetFloat(entry.StorageKey, clamped);
@@ -264,7 +264,7 @@ namespace Hecton8.Modding
             if (!TryGetEntry(modId, settingName, out int index))
                 return false;
 
-            UserOptionsPersistence options = s_userOptions;
+            UserOptionsPersistence options = ResolveUserOptions();
             if (options == null)
                 return false;
 
@@ -274,6 +274,28 @@ namespace Hecton8.Modding
             SettingEntry entry = _entries[index];
             ModRegistryEvents.NotifySettingsRegistryChanged(entry.ModHash, entry.KeyHash);
             return true;
+        }
+
+        private static UserOptionsPersistence ResolveUserOptions()
+        {
+            UserOptionsPersistence cachedOptions = s_userOptions;
+            if (IsUserOptionsRuntimeUsable(cachedOptions))
+                return cachedOptions;
+
+            CacheUserOptions(GlobalRegistry.UserOptions);
+            return s_userOptions;
+        }
+
+        private static void CacheUserOptions(UserOptionsPersistence options)
+        {
+            s_userOptions = IsUserOptionsRuntimeUsable(options) ? options : null;
+        }
+
+        private static bool IsUserOptionsRuntimeUsable(UserOptionsPersistence options)
+        {
+            return options != null &&
+                   options.IsServiceReady &&
+                   options.isActiveAndEnabled;
         }
 
         private static void AddOrUpdateEntry(uint compoundHash, SettingEntry entry)

@@ -1,6 +1,7 @@
 using System;
 using GPUInstancer;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -19,6 +20,7 @@ namespace Hecton8.World
             private const int InitialGridPlacementBucketCapacity = 512;
             private const int InitialGridPlacementBucketListCapacity = 8;
             private const string NativeMemoryOwner = "WorldProceduralScatterDirector.ScatterWorkingMemory";
+            private const SystemID NativeArrayOwner = SystemID.WorldProceduralFieldSampler;
             private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
             private const Allocator DataVaultExemptScatterSpatialAllocator = Allocator.Persistent;
             private const Allocator DataVaultExemptScatterCandidateScratchAllocator = Allocator.Persistent;
@@ -151,24 +153,33 @@ namespace Hecton8.World
                 PrewarmPlacementPool();
                 PrewarmGridPlacementBuckets();
 
+                try
+                {
+
                 // COLD ALLOC: NativeList<ScatterPlacementSpatialMetadata>[16384] — native scatter spacing cache — owner: WorldProceduralScatterDirector.ScatterWorkingMemory
-                GridPlacementSpatialMetadata = new NativeList<ScatterPlacementSpatialMetadata>(InitialGridPlacementNativeCapacity, DataVaultExemptScatterSpatialAllocator);
+                    GridPlacementSpatialMetadata = new NativeList<ScatterPlacementSpatialMetadata>(InitialGridPlacementNativeCapacity, DataVaultExemptScatterSpatialAllocator);
                 // COLD ALLOC: NativeParallelMultiHashMap<int, float3>[16384] — native scatter cell position buckets — owner: WorldProceduralScatterDirector.ScatterWorkingMemory
-                GridPlacementPositionBuckets = new NativeParallelMultiHashMap<int, float3>(InitialGridPlacementNativeCapacity, DataVaultExemptScatterSpatialAllocator);
+                    GridPlacementPositionBuckets = new NativeParallelMultiHashMap<int, float3>(InitialGridPlacementNativeCapacity, DataVaultExemptScatterSpatialAllocator);
                 // COLD ALLOC: NativeParallelMultiHashMap<int, int>[16384] — native scatter cell metadata buckets — owner: WorldProceduralScatterDirector.ScatterWorkingMemory
-                GridPlacementMetadataBuckets = new NativeParallelMultiHashMap<int, int>(InitialGridPlacementNativeCapacity, DataVaultExemptScatterSpatialAllocator);
+                    GridPlacementMetadataBuckets = new NativeParallelMultiHashMap<int, int>(InitialGridPlacementNativeCapacity, DataVaultExemptScatterSpatialAllocator);
                 // COLD ALLOC: NativeArray<int>[1] — candidate acceptance result scratch — owner: WorldProceduralScatterDirector.ScatterWorkingMemory
-                CandidateAcceptanceResult = new NativeArray<int>(1, DataVaultExemptScatterCandidateScratchAllocator, NativeArrayOptions.ClearMemory);
-                CandidateAcceptanceBatchInputs = new NativeList<ScatterCellCandidateAcceptanceInput>(InitialCandidateAcceptanceBatchCapacity, DataVaultExemptScatterCandidateScratchAllocator);
-                CandidateAcceptanceBatchResults = new NativeList<byte>(InitialCandidateAcceptanceBatchCapacity, DataVaultExemptScatterCandidateScratchAllocator);
-                CandidateAcceptanceBatchPendingMetadata = new NativeList<ScatterPlacementSpatialMetadata>(InitialCandidateAcceptanceBatchCapacity, DataVaultExemptScatterCandidateScratchAllocator);
-                CandidateAcceptanceBatchPendingPositionBuckets = new NativeParallelMultiHashMap<int, float3>(InitialCandidateAcceptanceBatchCapacity, DataVaultExemptScatterCandidateScratchAllocator);
-                CandidateAcceptanceBatchPendingMetadataBuckets = new NativeParallelMultiHashMap<int, int>(InitialCandidateAcceptanceBatchCapacity, DataVaultExemptScatterCandidateScratchAllocator);
-                CandidateAcceptanceClusterAccentCountsScratch = new NativeArray<int>(_ClusterAccentRoleCount, DataVaultExemptScatterCandidateScratchAllocator, NativeArrayOptions.ClearMemory);
-                CandidateAcceptanceStructureAccentCountsScratch = new NativeArray<int>(_StructureAccentRoleCount, DataVaultExemptScatterCandidateScratchAllocator, NativeArrayOptions.ClearMemory);
-                CandidateAcceptanceClusterAccentRoleMaxRatiosScratch = new NativeArray<float>(_ClusterAccentRoleCount, DataVaultExemptScatterCandidateScratchAllocator, NativeArrayOptions.ClearMemory);
-                CandidateAcceptanceStructureAccentRoleMaxCountsScratch = new NativeArray<int>(_StructureAccentRoleCount, DataVaultExemptScatterCandidateScratchAllocator, NativeArrayOptions.ClearMemory);
-                RegisterNativeMemorySentinel();
+                    CandidateAcceptanceResult = AllocateNativeArray<int>(1, NativeArrayOptions.ClearMemory, nameof(CandidateAcceptanceResult));
+                    CandidateAcceptanceBatchInputs = new NativeList<ScatterCellCandidateAcceptanceInput>(InitialCandidateAcceptanceBatchCapacity, DataVaultExemptScatterCandidateScratchAllocator);
+                    CandidateAcceptanceBatchResults = new NativeList<byte>(InitialCandidateAcceptanceBatchCapacity, DataVaultExemptScatterCandidateScratchAllocator);
+                    CandidateAcceptanceBatchPendingMetadata = new NativeList<ScatterPlacementSpatialMetadata>(InitialCandidateAcceptanceBatchCapacity, DataVaultExemptScatterCandidateScratchAllocator);
+                    CandidateAcceptanceBatchPendingPositionBuckets = new NativeParallelMultiHashMap<int, float3>(InitialCandidateAcceptanceBatchCapacity, DataVaultExemptScatterCandidateScratchAllocator);
+                    CandidateAcceptanceBatchPendingMetadataBuckets = new NativeParallelMultiHashMap<int, int>(InitialCandidateAcceptanceBatchCapacity, DataVaultExemptScatterCandidateScratchAllocator);
+                    CandidateAcceptanceClusterAccentCountsScratch = AllocateNativeArray<int>(_ClusterAccentRoleCount, NativeArrayOptions.ClearMemory, nameof(CandidateAcceptanceClusterAccentCountsScratch));
+                    CandidateAcceptanceStructureAccentCountsScratch = AllocateNativeArray<int>(_StructureAccentRoleCount, NativeArrayOptions.ClearMemory, nameof(CandidateAcceptanceStructureAccentCountsScratch));
+                    CandidateAcceptanceClusterAccentRoleMaxRatiosScratch = AllocateNativeArray<float>(_ClusterAccentRoleCount, NativeArrayOptions.ClearMemory, nameof(CandidateAcceptanceClusterAccentRoleMaxRatiosScratch));
+                    CandidateAcceptanceStructureAccentRoleMaxCountsScratch = AllocateNativeArray<int>(_StructureAccentRoleCount, NativeArrayOptions.ClearMemory, nameof(CandidateAcceptanceStructureAccentRoleMaxCountsScratch));
+                    RegisterNativeMemorySentinel();
+                }
+                catch
+                {
+                    Dispose();
+                    throw;
+                }
             }
 
             private void PrewarmPlacementPool()
@@ -521,29 +532,35 @@ namespace Hecton8.World
 
             private void RegisterNativeMemorySentinel()
             {
-                NativeMemorySentinel.RegisterNativeList(GridPlacementSpatialMetadata, NativeMemoryOwner, nameof(GridPlacementSpatialMetadata), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeParallelMultiHashMap(GridPlacementPositionBuckets, NativeMemoryOwner, nameof(GridPlacementPositionBuckets), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeParallelMultiHashMap(GridPlacementMetadataBuckets, NativeMemoryOwner, nameof(GridPlacementMetadataBuckets), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(CandidateAcceptanceResult, NativeMemoryOwner, nameof(CandidateAcceptanceResult), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeList(CandidateAcceptanceBatchInputs, NativeMemoryOwner, nameof(CandidateAcceptanceBatchInputs), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeList(CandidateAcceptanceBatchResults, NativeMemoryOwner, nameof(CandidateAcceptanceBatchResults), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeList(CandidateAcceptanceBatchPendingMetadata, NativeMemoryOwner, nameof(CandidateAcceptanceBatchPendingMetadata), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeParallelMultiHashMap(CandidateAcceptanceBatchPendingPositionBuckets, NativeMemoryOwner, nameof(CandidateAcceptanceBatchPendingPositionBuckets), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeParallelMultiHashMap(CandidateAcceptanceBatchPendingMetadataBuckets, NativeMemoryOwner, nameof(CandidateAcceptanceBatchPendingMetadataBuckets), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(CandidateAcceptanceClusterAccentCountsScratch, NativeMemoryOwner, nameof(CandidateAcceptanceClusterAccentCountsScratch), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(CandidateAcceptanceStructureAccentCountsScratch, NativeMemoryOwner, nameof(CandidateAcceptanceStructureAccentCountsScratch), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(CandidateAcceptanceClusterAccentRoleMaxRatiosScratch, NativeMemoryOwner, nameof(CandidateAcceptanceClusterAccentRoleMaxRatiosScratch), NativeMemoryLifetime);
-                NativeMemorySentinel.RegisterNativeArray(CandidateAcceptanceStructureAccentRoleMaxCountsScratch, NativeMemoryOwner, nameof(CandidateAcceptanceStructureAccentRoleMaxCountsScratch), NativeMemoryLifetime);
+                RegisterNativeList(GridPlacementSpatialMetadata, nameof(GridPlacementSpatialMetadata));
+                RegisterNativeParallelMultiHashMap(GridPlacementPositionBuckets, nameof(GridPlacementPositionBuckets));
+                RegisterNativeParallelMultiHashMap(GridPlacementMetadataBuckets, nameof(GridPlacementMetadataBuckets));
+                RegisterNativeList(CandidateAcceptanceBatchInputs, nameof(CandidateAcceptanceBatchInputs));
+                RegisterNativeList(CandidateAcceptanceBatchResults, nameof(CandidateAcceptanceBatchResults));
+                RegisterNativeList(CandidateAcceptanceBatchPendingMetadata, nameof(CandidateAcceptanceBatchPendingMetadata));
+                RegisterNativeParallelMultiHashMap(CandidateAcceptanceBatchPendingPositionBuckets, nameof(CandidateAcceptanceBatchPendingPositionBuckets));
+                RegisterNativeParallelMultiHashMap(CandidateAcceptanceBatchPendingMetadataBuckets, nameof(CandidateAcceptanceBatchPendingMetadataBuckets));
+            }
+
+            private static void RegisterNativeList<T>(NativeList<T> list, string label) where T : unmanaged
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeList(list, NativeMemoryOwner, label, NativeMemoryLifetime);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"NativeMemorySentinel rejected scatter working memory list registration for {label}.");
+            }
+
+            private static void RegisterNativeParallelMultiHashMap<TKey, TValue>(NativeParallelMultiHashMap<TKey, TValue> map, string label)
+                where TKey : unmanaged, IEquatable<TKey>
+                where TValue : unmanaged
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeParallelMultiHashMap(map, NativeMemoryOwner, label, NativeMemoryLifetime);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException($"NativeMemorySentinel rejected scatter working memory multi-hash-map registration for {label}.");
             }
 
             private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
             {
-                if (!array.IsCreated)
-                    return;
-
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                array.Dispose();
-                array = default;
+                H8Memory.Release(ref array, NativeArrayOwner);
             }
 
             private static void DisposeNativeList<T>(ref NativeList<T> list, string label) where T : unmanaged
@@ -577,8 +594,22 @@ namespace Hecton8.World
                     DisposeNativeArray(ref array);
 
                 // COLD ALLOC: NativeArray<T>[NextPowerOfTwo(requiredCapacity)] — scatter sampling working memory — owner: WorldProceduralScatterDirector.ScatterWorkingMemory
-                array = new NativeArray<T>(Mathf.NextPowerOfTwo(requiredCapacity), DataVaultExemptScatterCandidateScratchAllocator, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+                array = H8Memory.Allocate<T>(
+                    Mathf.NextPowerOfTwo(requiredCapacity),
+                    NativeArrayOwner,
+                    DataVaultExemptScatterCandidateScratchAllocator,
+                    NativeArrayOptions.UninitializedMemory);
+                if (!array.IsCreated)
+                    throw new InvalidOperationException($"H8Memory rejected scatter working memory array allocation for {label}.");
+            }
+
+            private static NativeArray<T> AllocateNativeArray<T>(int length, NativeArrayOptions options, string label) where T : struct
+            {
+                NativeArray<T> array = H8Memory.Allocate<T>(length, NativeArrayOwner, DataVaultExemptScatterCandidateScratchAllocator, options);
+                if (!array.IsCreated)
+                    throw new InvalidOperationException($"H8Memory rejected scatter working memory array allocation for {label}.");
+
+                return array;
             }
 
             private static void EnsureCandidateMapInitialized(ref FastCandidateMap map, int capacity)

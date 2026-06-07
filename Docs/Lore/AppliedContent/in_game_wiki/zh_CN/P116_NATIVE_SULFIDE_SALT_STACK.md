@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "天然硫化盐堆"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# 天然硫化盐堆
 
-CN LOC HOLD: Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.
+天然硫化盐堆是HECTON-8并不只是企业犯罪现场的最早证据之一。它们生长在喷口热流、卤水渗漏和富金属地壳长期受压摩擦的地方，在岩架、肋状岩壁和脆弱烟囱上留下黑绿色盐层。它们能清洗导体、唤醒应急电池、调校陶瓷助熔剂，也会在船员把它当普通矿石时毁掉工具。它应该在蓝债之前出现：玩家需要先明白，这颗月亮在Deep Reach盖章之前就已有自己的化学、价值和危险。
 
 ## Scanner
 
-CN LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+天然硫化盐 // 喷口架出的晶体与黑色卤水壳，早于Deep Reach。湿时导电，受热腐蚀，在任何东西变蓝之前就已经有用。
 
 ## Terminal
 
-CN LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+资源类别：天然地质。用途：导体清洗、应急电池化学、陶瓷助熔剂、腐蚀催化剂。远离温热进气；粉尘会在潜服金属上开成酸膜。
 
 ## Audio
 
-CN LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+这颗月亮不需要公司教它危险。它早就懂化学。
 
 ## Field Note
 
-CN LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+如果手套开始发痒，你已经晚了。冲洗、接地、把那面岩壁记入日志。
 
 <!-- In-Game Wiki; generated from P116_NATIVE_SULFIDE_SALT_STACK/zh_CN. -->

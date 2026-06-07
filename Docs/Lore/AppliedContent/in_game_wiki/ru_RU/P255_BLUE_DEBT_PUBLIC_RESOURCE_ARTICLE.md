@@ -7,6 +7,9 @@ poi_tags: poi.public_blue_debt_article;poi.sample_case_site_card
 biome_tags: biome.publication;biome.resource_custody
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Публичный материал ресурса blue debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

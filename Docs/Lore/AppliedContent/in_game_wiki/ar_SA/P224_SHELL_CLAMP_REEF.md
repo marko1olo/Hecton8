@@ -9,32 +9,32 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Shell Clamp Reef"
+title: "شعاب المشابك الصدفية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Shell Clamp Reef
+# شعاب المشابك الصدفية
 
-AR LOC HOLD: Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.
+شعاب المشابك الصدفية هي أول مكان يتوقف فيه الرف الضحل عن فصل الحياة المحلية عن حطام البشر. المشابك الصدفية ليست ذكية وليست نسيج Atlas؛ إنها تتبع الرشح المعدني والدفء والاهتزاز وضغط التيار. وهذا يكفي لكي تمسك بالبازلت وأغلفة الكابلات القديمة وصفائح الكبسولة ودرزات pressure glass بصبر مخيف. بالنسبة إلى اللاعب، يمكن للشعاب أن تكون علامة مسار ومصدر جمع وتحذيرا بنيويا في الوقت نفسه. الأصداف الخارجية الميتة تعطي حبيبات نافعة لمادة الإحكام والحشو الخزفي. قد يكون القلب الحي يؤدي عملا: يهدئ كابلا، يقسي حاملة متشققة، أو يبطئ تسربا لم يسمه scanner بعد. اقطع الكتلة الخطأ، ولن تهاجم الشعاب. البيئة تفقد دعامة فحسب.
 
 ## Scanner
 
-AR LOC HOLD: Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.
+شعاب المشابك الصدفية // مشابك صدفية محلية تمسك بالصخر وأغلفة الكابلات وصفائح الكبسولة ودرزات pressure glass. قبلت الشعاب الآلات كركيزة.
 
 ## Terminal
 
-AR LOC HOLD: REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.
+خط أساس الشعاب: يزداد الالتصاق على أغلفة الكابلات المهترئة، ومعدن الدرز الدافئ، وحواف pressure glass ذات الرشح المعدني. اجمع الأصداف الخارجية الميتة فقط. قطع المشابك الحية قرب خطوط الخدمة قد يفتح تسربات أو يجذب انتباه فاونا الإصلاح.
 
 ## Audio
 
-AR LOC HOLD: The reef has learned the shape of bolts.
+تعلمت الشعاب شكل البراغي.
 
 ## Field Note
 
-AR LOC HOLD: Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.
+لا تقتلع أول مشبك تصل إليه. قد تكون كتلة حية تثبت كابلا، أو تغلق تسربا شعريا، أو تعلم مرساة مسار.
 
 <!-- In-Game Wiki; generated from P224_SHELL_CLAMP_REEF/ar_SA. -->

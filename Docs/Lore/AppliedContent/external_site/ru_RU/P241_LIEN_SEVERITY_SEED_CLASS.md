@@ -7,6 +7,9 @@ poi_tags: poi.claim_card_lien_strip;poi.black_keel_tariff_stamp
 biome_tags: biome.claim_admin;biome.carrier_interface
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Класс долгового давления seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

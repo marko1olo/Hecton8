@@ -7,6 +7,9 @@ poi_tags: poi.preserve_quarantine_socket;poi.ocean_machine_custody_mark
 biome_tags: biome.atlas_basin;biome.factory_temple
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Payload Preserve Quarantine Receiver Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

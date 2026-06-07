@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Vent Anchor Colonies"
+title: "Kolonie kotwic wentowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Vent Anchor Colonies
+# Kolonie kotwic wentowych
 
-PL LOC HOLD: Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.
+Kolonie kotwic wentowych wyjaśniają, dlaczego Marauder nie rozwiąże wszystkich napraw, zostając płytko. Kolonie rosną tam, gdzie wenty termalne wciskają ciepło i chemię siarczków w warstwy solanki. Ich żebrowane ciała łapią minerały, chłodzą się w płyty i chronią drobną faunę wentową na krawędzi śmiertelnej wody. To czyni je cennymi, ale nie magiczną rudą. Odrzucone żebra mogą zasilać pressure-ceramic filler, cold-sealant grit i filtry chemiczne. Żywe gorące żebra mogą szybko zabić kombinezon albo pęknąć głowicę narzędzia szokiem termicznym. Właściwy odczyt to cierpliwość: przeskanować bloom cieplny, czekać na ostudzoną krawędź, ciąć tylko odrzucone płyty i zostawić aktywne gardło w spokoju, chyba że cel jest wart ryzyka.
 
 ## Scanner
 
-PL LOC HOLD: Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.
+KOLONIA KOTWIC WENTOWYCH // Żebrowane kolonie zamykają się wokół wentów termalnych, łapią siarczki i hodują chemię potrzebną do napraw głębinowych.
 
 ## Terminal
 
-PL LOC HOLD: RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.
+BAZA ZASOBU: kolonie zwiększają szansę cold-sealant grit, pressure-ceramic precursor i sulfide salt. Bloom termiczny pozostaje śmiertelny; próbki brać tylko z ostudzonych żeber i odrzuconych płyt.
 
 ## Audio
 
-PL LOC HOLD: Every good repair part is sitting in water that wants to cook you.
+Każda dobra część naprawcza leży w wodzie, która chce cię ugotować.
 
 ## Field Note
 
-PL LOC HOLD: Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.
+Kotwica wentowa to znak zasobu, ostrzeżenie cieplne, krawędź schronienia i dowód, że forge chemistry ma żywe ręce wokół siebie.
 
 <!-- In-Game Wiki; generated from P228_VENT_ANCHOR_COLONIES/pl_PL. -->

@@ -7,6 +7,9 @@ poi_tags: poi.tau_ceti_packet_notary;poi.relay_leak_window
 biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Public Ledger Leak Route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -2115,6 +2115,14 @@ namespace Hecton8.Rendering
                 NativeArrayOptions.UninitializedMemory);
             try
             {
+                payload = H8Memory.Allocate<byte>(
+                    byteCount,
+                    OwnerSystemId,
+                    Allocator.Temp,
+                    NativeArrayOptions.UninitializedMemory);
+                if (!payload.IsCreated)
+                    return;
+
                 byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                 WriteUInt32LittleEndian(target, 0, BlackBoxDumpMagic);
                 WriteUInt32LittleEndian(target, 4, BlackBoxDumpVersion);

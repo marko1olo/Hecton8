@@ -331,6 +331,8 @@ namespace Hecton8.Core
         private const int HeaderSizeBytes = 128;
         private const int SegmentHeaderSizeBytes = 64;
         private const int ReplayVersion = 3;
+        private const int WriterJoinMilliseconds = 250;
+        private const SystemID NativeMemoryOwner = SystemID.CoreDiagnostics;
         private const long ReplayFileCapacityBytes = 499L * 1024L * 1024L;
         private const ulong ReplayMagic = 0x48385245504C4159ul;
         private const ulong FnvOffset = 14695981039346656037ul;
@@ -822,7 +824,14 @@ namespace Hecton8.Core
                 _registeredLateFrame = 0;
             }
 
-            StopWriterThread();
+            if (!StopWriterThread())
+            {
+                if (ReferenceEquals(_activeRecorder, this))
+                    _activeRecorder = null;
+                _initialized = 0;
+                return;
+            }
+
             DisposeReplayFile();
             DisposeNativeBuffers();
 
@@ -955,20 +964,20 @@ namespace Hecton8.Core
 
             try
             {
-                _sources = AllocateNativeArray<NativeAllocationSnapshotSource>(MaxSnapshotSources, nameof(_sources), NativeArrayOptions.UninitializedMemory);
-                _snapshotScratch = AllocateNativeArray<byte>(SnapshotScratchBytes, nameof(_snapshotScratch), NativeArrayOptions.UninitializedMemory);
-                _sourceHashes = AllocateNativeArray<ReplaySourceHash>(MaxSnapshotSources, nameof(_sourceHashes), NativeArrayOptions.ClearMemory);
-                _inputJournal = AllocateNativeArray<DodReplayInputEvent>(InputJournalCapacity, nameof(_inputJournal), NativeArrayOptions.ClearMemory);
-                _jobProfiles = AllocateNativeArray<DodReplayJobProfileRecord>(SidecarCapacity, nameof(_jobProfiles), NativeArrayOptions.ClearMemory);
-                _panicRecords = AllocateNativeArray<DodReplayBurstPanicRecord>(SidecarCapacity, nameof(_panicRecords), NativeArrayOptions.ClearMemory);
-                _panicPayloadBytes = AllocateNativeArray<byte>(PanicPayloadCapacity * PanicPayloadStrideBytes, nameof(_panicPayloadBytes), NativeArrayOptions.ClearMemory);
-                _aupDriftRecords = AllocateNativeArray<DodReplayAupDriftRecord>(SidecarCapacity, nameof(_aupDriftRecords), NativeArrayOptions.ClearMemory);
-                _aupDriftStates = AllocateNativeArray<AupDriftState>(AupTrackedSubjectCapacity, nameof(_aupDriftStates), NativeArrayOptions.ClearMemory);
-                _ghostRecords = AllocateNativeArray<DodReplayEntityGhostRecord>(GhostCapacity, nameof(_ghostRecords), NativeArrayOptions.ClearMemory);
-                _logisticFlowRecords = AllocateNativeArray<DodReplayLogisticFlowRecord>(SidecarCapacity, nameof(_logisticFlowRecords), NativeArrayOptions.ClearMemory);
-                _atmosphereRecords = AllocateNativeArray<DodReplayAtmosphereCellRecord>(SidecarCapacity, nameof(_atmosphereRecords), NativeArrayOptions.ClearMemory);
-                _vramRecords = AllocateNativeArray<DodReplayVramAllocationRecord>(SidecarCapacity, nameof(_vramRecords), NativeArrayOptions.ClearMemory);
-                _physicsSmokeRecords = AllocateNativeArray<DodReplayPhysicsSmokeRecord>(SidecarCapacity, nameof(_physicsSmokeRecords), NativeArrayOptions.ClearMemory);
+                _nativeBuffers.Sources = AllocateNativeArray<NativeAllocationSnapshotSource>(MaxSnapshotSources, nameof(_nativeBuffers.Sources), NativeArrayOptions.UninitializedMemory);
+                _nativeBuffers.SnapshotScratch = AllocateNativeArray<byte>(SnapshotScratchBytes, nameof(_nativeBuffers.SnapshotScratch), NativeArrayOptions.UninitializedMemory);
+                _nativeBuffers.SourceHashes = AllocateNativeArray<ReplaySourceHash>(MaxSnapshotSources, nameof(_nativeBuffers.SourceHashes), NativeArrayOptions.ClearMemory);
+                _nativeBuffers.InputJournal = AllocateNativeArray<DodReplayInputEvent>(InputJournalCapacity, nameof(_nativeBuffers.InputJournal), NativeArrayOptions.ClearMemory);
+                _nativeBuffers.JobProfiles = AllocateNativeArray<DodReplayJobProfileRecord>(SidecarCapacity, nameof(_nativeBuffers.JobProfiles), NativeArrayOptions.ClearMemory);
+                _nativeBuffers.PanicRecords = AllocateNativeArray<DodReplayBurstPanicRecord>(SidecarCapacity, nameof(_nativeBuffers.PanicRecords), NativeArrayOptions.ClearMemory);
+                _nativeBuffers.PanicPayloadBytes = AllocateNativeArray<byte>(PanicPayloadCapacity * PanicPayloadStrideBytes, nameof(_nativeBuffers.PanicPayloadBytes), NativeArrayOptions.ClearMemory);
+                _nativeBuffers.AupDriftRecords = AllocateNativeArray<DodReplayAupDriftRecord>(SidecarCapacity, nameof(_nativeBuffers.AupDriftRecords), NativeArrayOptions.ClearMemory);
+                _nativeBuffers.AupDriftStates = AllocateNativeArray<AupDriftState>(AupTrackedSubjectCapacity, nameof(_nativeBuffers.AupDriftStates), NativeArrayOptions.ClearMemory);
+                _nativeBuffers.GhostRecords = AllocateNativeArray<DodReplayEntityGhostRecord>(GhostCapacity, nameof(_nativeBuffers.GhostRecords), NativeArrayOptions.ClearMemory);
+                _nativeBuffers.LogisticFlowRecords = AllocateNativeArray<DodReplayLogisticFlowRecord>(SidecarCapacity, nameof(_nativeBuffers.LogisticFlowRecords), NativeArrayOptions.ClearMemory);
+                _nativeBuffers.AtmosphereRecords = AllocateNativeArray<DodReplayAtmosphereCellRecord>(SidecarCapacity, nameof(_nativeBuffers.AtmosphereRecords), NativeArrayOptions.ClearMemory);
+                _nativeBuffers.VramRecords = AllocateNativeArray<DodReplayVramAllocationRecord>(SidecarCapacity, nameof(_nativeBuffers.VramRecords), NativeArrayOptions.ClearMemory);
+                _nativeBuffers.PhysicsSmokeRecords = AllocateNativeArray<DodReplayPhysicsSmokeRecord>(SidecarCapacity, nameof(_nativeBuffers.PhysicsSmokeRecords), NativeArrayOptions.ClearMemory);
 
                 _writerSignal = new AutoResetEvent(false); // COLD ALLOC: AutoResetEvent[1] - SPSC writer wake signal - owner: DodReplayRecorder
                 InitializeReplayFile();
@@ -991,8 +1000,10 @@ namespace Hecton8.Core
         private static NativeArray<T> AllocateNativeArray<T>(int length, string label, NativeArrayOptions options)
             where T : struct
         {
-            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, (NativeArrayOptions)options);
-            NativeMemorySentinel.RegisterNativeArray(array, nameof(DodReplayRecorder), label, NativeAllocationLifetime.Session);
+            NativeArray<T> array = H8Memory.Allocate<T>(length, NativeMemoryOwner, Allocator.Persistent, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException($"H8Memory rejected DodReplayRecorder allocation for {label}.");
+
             return array;
         }
 
@@ -1019,7 +1030,7 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled || _initialized == 0)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             if (_registeredLateFrame != 0)
@@ -1027,6 +1038,9 @@ namespace Hecton8.Core
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
                 _registeredLateFrame = 0;
             }
+
+            if (currentService == null || !isActiveAndEnabled || _initialized == 0)
+                return;
 
             TryRegisterLateFrameTickable();
         }
@@ -1414,12 +1428,17 @@ namespace Hecton8.Core
                 long droppedBytes = 0L;
                 uint flags = forced ? SnapshotFlagForced : 0u;
                 int sourceCount = NativeMemorySentinel.CopySnapshotSources(_sources, _recorderOwnerHash);
+                sourceCount = H8Memory.CopySnapshotSources(_sources, sourceCount, _recorderOwnerHash);
 
                 for (int i = 0; i < sourceCount; i++)
                 {
                     NativeAllocationSnapshotSource source = _sources[i];
-                    if (source.SourcePointerValue == 0ul || source.Bytes <= 0L)
+                    if (source.SourcePointerValue == 0ul ||
+                        source.Bytes <= 0L ||
+                        IsRecorderNativeBufferSource(source.SourcePointerValue))
+                    {
                         continue;
+                    }
 
                     totalSourceBytes += source.Bytes;
                     if (!TryAppendNativeSegment(
@@ -1541,6 +1560,33 @@ namespace Hecton8.Core
             }
 
             return true;
+        }
+
+        private bool IsRecorderNativeBufferSource(ulong pointerValue)
+        {
+            return pointerValue == GetNativeArrayPointerValue(_sources) ||
+                   pointerValue == GetNativeArrayPointerValue(_snapshotScratch) ||
+                   pointerValue == GetNativeArrayPointerValue(_sourceHashes) ||
+                   pointerValue == GetNativeArrayPointerValue(_inputJournal) ||
+                   pointerValue == GetNativeArrayPointerValue(_jobProfiles) ||
+                   pointerValue == GetNativeArrayPointerValue(_panicRecords) ||
+                   pointerValue == GetNativeArrayPointerValue(_panicPayloadBytes) ||
+                   pointerValue == GetNativeArrayPointerValue(_aupDriftRecords) ||
+                   pointerValue == GetNativeArrayPointerValue(_aupDriftStates) ||
+                   pointerValue == GetNativeArrayPointerValue(_ghostRecords) ||
+                   pointerValue == GetNativeArrayPointerValue(_logisticFlowRecords) ||
+                   pointerValue == GetNativeArrayPointerValue(_atmosphereRecords) ||
+                   pointerValue == GetNativeArrayPointerValue(_vramRecords) ||
+                   pointerValue == GetNativeArrayPointerValue(_physicsSmokeRecords);
+        }
+
+        private static ulong GetNativeArrayPointerValue<T>(NativeArray<T> array)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return 0ul;
+
+            return unchecked((ulong)((IntPtr)array.GetUnsafeReadOnlyPtr()).ToInt64());
         }
 
         private void AppendSidecarSegments(
@@ -1857,15 +1903,17 @@ namespace Hecton8.Core
             }
         }
 
-        private void StopWriterThread()
+        private bool StopWriterThread()
         {
             Volatile.Write(ref _writerShouldStop, 1);
             SignalWriterNoThrow();
 
-            TryJoinWriterNoThrow(_writerThread);
+            if (!TryJoinWriterNoThrow(_writerThread))
+                return false;
 
             _writerThread = null;
             DisposeWriterSignalNoThrow();
+            return true;
         }
 
         private bool SignalWriterNoThrow()
@@ -1889,11 +1937,13 @@ namespace Hecton8.Core
         {
             if (thread == null || !thread.IsAlive)
                 return true;
+            if (ReferenceEquals(Thread.CurrentThread, thread))
+                return false;
 
             try
             {
-                thread.Join(250);
-                return true;
+                thread.Join(WriterJoinMilliseconds);
+                return !thread.IsAlive;
             }
             catch (Exception)
             {
@@ -1957,7 +2007,9 @@ namespace Hecton8.Core
 
         private void ShutdownAllocatedReplayStateAfterInitializeFailure()
         {
-            StopWriterThread();
+            if (!StopWriterThread())
+                return;
+
             DisposeReplayFile();
             DisposeNativeBuffers();
             if (ReferenceEquals(_activeRecorder, this))
@@ -1967,47 +2019,26 @@ namespace Hecton8.Core
 
         private void DisposeNativeBuffers()
         {
-            DisposeNativeArray(ref _sources);
-            DisposeNativeArray(ref _snapshotScratch);
-            DisposeNativeArray(ref _sourceHashes);
-            DisposeNativeArray(ref _inputJournal);
-            DisposeNativeArray(ref _jobProfiles);
-            DisposeNativeArray(ref _panicRecords);
-            DisposeNativeArray(ref _panicPayloadBytes);
-            DisposeNativeArray(ref _aupDriftRecords);
-            DisposeNativeArray(ref _aupDriftStates);
-            DisposeNativeArray(ref _ghostRecords);
-            DisposeNativeArray(ref _logisticFlowRecords);
-            DisposeNativeArray(ref _atmosphereRecords);
-            DisposeNativeArray(ref _vramRecords);
-            DisposeNativeArray(ref _physicsSmokeRecords);
+            DisposeNativeArray(ref _nativeBuffers.Sources);
+            DisposeNativeArray(ref _nativeBuffers.SnapshotScratch);
+            DisposeNativeArray(ref _nativeBuffers.SourceHashes);
+            DisposeNativeArray(ref _nativeBuffers.InputJournal);
+            DisposeNativeArray(ref _nativeBuffers.JobProfiles);
+            DisposeNativeArray(ref _nativeBuffers.PanicRecords);
+            DisposeNativeArray(ref _nativeBuffers.PanicPayloadBytes);
+            DisposeNativeArray(ref _nativeBuffers.AupDriftRecords);
+            DisposeNativeArray(ref _nativeBuffers.AupDriftStates);
+            DisposeNativeArray(ref _nativeBuffers.GhostRecords);
+            DisposeNativeArray(ref _nativeBuffers.LogisticFlowRecords);
+            DisposeNativeArray(ref _nativeBuffers.AtmosphereRecords);
+            DisposeNativeArray(ref _nativeBuffers.VramRecords);
+            DisposeNativeArray(ref _nativeBuffers.PhysicsSmokeRecords);
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array)
             where T : struct
         {
-            if (!array.IsCreated)
-                return;
-
-            try
-            {
-                NativeMemorySentinel.UnregisterNativeArray(array);
-            }
-            catch (Exception)
-            {
-            }
-
-            try
-            {
-                array.Dispose();
-            }
-            catch (Exception)
-            {
-            }
-            finally
-            {
-                array = default;
-            }
+            H8Memory.Release(ref array, NativeMemoryOwner);
         }
 
         private sealed class DodReplayNativeBufferSet

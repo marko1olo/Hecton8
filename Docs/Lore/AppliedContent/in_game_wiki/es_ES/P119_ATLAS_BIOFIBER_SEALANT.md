@@ -9,32 +9,32 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Sellador de biofibra Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Sellador de biofibra Atlas
 
-ES LOC HOLD: Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.
+El sellador de biofibra Atlas es un error útil. Crece en ecología de reparación donde tejido vivo, cubierta de cable rota y costura con fuga fueron clasificados como el mismo tipo de herida. Una tira preparada puede sellar equipo de supervivencia o juntas flexibles de presión bajo el agua, pero el almacenamiento templado puede despertar crecimiento que busca costuras y firmas vitales falsas.
 
 ## Scanner
 
-ES LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+SELLADOR DE BIOFIBRA ATLAS // Fibra húmeda de reparación criada donde cubierta de cable, tejido herido y junta de casco recibieron la misma clase de fallo. Adhiere bajo presión; puede seguir creciendo tras la cosecha.
 
 ## Terminal
 
-ES LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+CLASE DE RECURSO: ecología de reparación alterada por Atlas. Sujetar en frío antes de retirar. Usos: costuras húmedas, rasgaduras de traje, cubiertas de cable, juntas flexibles de presión. Riesgos: firma vital falsa, eco de sensor, búsqueda activa de costuras en almacenamiento.
 
 ## Audio
 
-ES LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+No sabe distinguir entre una fuga, un corte y una boca. Atlas le enseñó que las tres cosas eran aberturas que había que cerrar.
 
 ## Field Note
 
-ES LOC HOLD: Useful body horror: the player wants it and distrusts it.
+Un buen sellador se seca. Este escucha dónde habrá otro agujero.
 
 <!-- In-Game Wiki; generated from P119_ATLAS_BIOFIBER_SEALANT/es_ES. -->

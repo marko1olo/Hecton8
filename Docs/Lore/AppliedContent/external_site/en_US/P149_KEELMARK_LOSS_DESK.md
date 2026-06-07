@@ -7,6 +7,9 @@ poi_tags: poi.keelmark_loss_desk_stamp;poi.unrecovered_body_category
 biome_tags: biome.black_keel_orbit;biome.shallow_annex
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Keelmark Loss Desk"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

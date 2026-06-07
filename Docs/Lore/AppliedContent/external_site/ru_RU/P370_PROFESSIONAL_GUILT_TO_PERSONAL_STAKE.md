@@ -7,6 +7,9 @@ poi_tags: poi.professional_guilt_note;poi.old_signature_match
 biome_tags: biome.colony;biome.atlas_basin
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Профессиональная вина как личная ставка"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

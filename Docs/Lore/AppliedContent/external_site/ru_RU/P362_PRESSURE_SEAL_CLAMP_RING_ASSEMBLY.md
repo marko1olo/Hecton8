@@ -7,6 +7,9 @@ poi_tags: poi.pressure_clamp_ring;poi.cold_sealant_patch
 biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Сборка прижимного кольца герметизации"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

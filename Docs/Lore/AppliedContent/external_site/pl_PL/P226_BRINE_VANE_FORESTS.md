@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Brine Vane Forests"
+title: "Lasy solankowych łopat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Brine Vane Forests
+# Lasy solankowych łopat
 
-PL LOC HOLD: Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure.
+Lasy solankowych łopat są miejscem, gdzie HECTON-8 przestaje pozwalać wodzie zachowywać się jak pusta przestrzeń. W kanionie woda staje się architekturą: warstwy gęstości piętrzą się jak ściany, sonar ugina się wokół niewidzialnych półek, a nieostrożne zejście może umieścić kombinezon poniżej oczekiwanej wyporności, zanim głębokościomierz zabrzmi dramatycznie. Solankowe łopaty czynią tę matematykę widzialną. Nie są ziemskimi roślinami ani mówiącą obcą rafą. Są solno-mineralnymi membranami rosnącymi tam, gdzie gradienty chemiczne nadal je karmią, dość płaskimi, by wyglądać botanicznie, i dość fizycznymi, by im ufać. Żywy arkusz mówi: tędy nie przechodź. Rozdarta krawędź mówi: coś niedawno przeszło. Zawinięty koniec mówi: granica słabnie. Blade żebro mówi: membrana zrzuciła materiał, może użyteczny dla chemii solanki, grysu uszczelniającego albo kalibracji czujnika gęstości. Dobry projekt kanionu powinien kazać graczom nawigować po tych znakach, nie po strzałkach: dryfować wzdłuż nienaruszonej ściany, znaleźć rozdartą paszczę, zobaczyć wygięcie sonaru, poczuć zmianę trimu kombinezonu i zrozumieć, że ocean nie blokuje drogi ze złośliwości. On słucha ciśnienia. Dlatego lasy solankowych łopat są piękne w chłodniejszy sposób niż fotyczny shelf. Nie witają. Są czytelne.
 
 ## Scanner
 
-PL LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+LAS SOLANKOWYCH ŁOPAT // Membrany solno-mineralne rosną wzdłuż ścinania gęstości. Pokazują, gdzie woda gęstnieje w ścianę i gdzie sonar się ugnie.
 
 ## Terminal
 
-PL LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+BAZA KANIONU: nienaruszone arkusze łopat oznaczają twarde granice gęstości. Poszarpane krawędzie i zawinięte końce wskazują okna ścinania, mniej słone kieszenie albo niedawny ruch. Unikaj nieprzezroczystej warstwowej wody; może oślepić sonar i ściągnąć kombinezon poniżej oczekiwanej wyporności.
 
 ## Audio
 
-PL LOC HOLD: The canyon has leaves because it has pressure gradients.
+Kanion ma liście, bo ma gradienty ciśnienia.
 
 ## Field Note
 
-PL LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+To nie są drzewa. To liście ciśnienia: membrany karmiące się gradientami chemicznymi, rozdarte tylko tam, gdzie trasa niedawno przebiła się przez nie.
 
 <!-- External Site; generated from P226_BRINE_VANE_FORESTS/pl_PL. -->

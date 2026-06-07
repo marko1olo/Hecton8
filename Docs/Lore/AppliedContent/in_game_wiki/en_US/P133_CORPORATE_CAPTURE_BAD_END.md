@@ -7,6 +7,9 @@ poi_tags: poi.deep_reach_pickup_contract;poi.clean_room_transfer_tag
 biome_tags: biome.black_keel_orbit;biome.industrial_shelf
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Corporate Capture Bad End"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

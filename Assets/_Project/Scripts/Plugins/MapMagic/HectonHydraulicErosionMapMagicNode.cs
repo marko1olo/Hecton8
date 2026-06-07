@@ -552,11 +552,21 @@ namespace MapMagic.Nodes.MatrixGenerators
             out int siltRegistrationId,
             out int wearRegistrationId)
         {
-            heightARegistrationId = NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
-            heightBRegistrationId = NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
-            sedimentRegistrationId = NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
-            siltRegistrationId = NativeMemorySentinel.RegisterNativeArray(silt, NativeMemoryOwner, SiltLabel, NativeAllocationLifetime.TempJob);
-            wearRegistrationId = NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
+            heightARegistrationId = RegisterTempJobArray(heightA, HeightALabel);
+            heightBRegistrationId = RegisterTempJobArray(heightB, HeightBLabel);
+            sedimentRegistrationId = RegisterTempJobArray(sediment, SedimentLabel);
+            siltRegistrationId = RegisterTempJobArray(silt, SiltLabel);
+            wearRegistrationId = RegisterTempJobArray(wear, WearLabel);
+        }
+
+        private static int RegisterTempJobArray<T>(NativeArray<T> array, string label)
+            where T : struct
+        {
+            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+            if (registrationId <= 0)
+                throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+
+            return registrationId;
         }
 
         private static void PublishColdPathBudgetWarnings(int cellCount, int resolvedDroplets, bool isDraft)

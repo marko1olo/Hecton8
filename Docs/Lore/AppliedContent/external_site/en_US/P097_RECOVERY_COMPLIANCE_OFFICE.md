@@ -7,6 +7,9 @@ poi_tags: poi.recovery_compliance_packet;poi.proxy_authority_window
 biome_tags: biome.drowned_admin;biome.carrier_link
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Recovery Compliance Office"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

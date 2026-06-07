@@ -423,6 +423,7 @@ namespace Hecton8.UI
         private static void ResetCatalogRegistry()
         {
             _registeredCatalogTabs.Clear();
+            ClearCachedRuntimeServices();
         }
 
         private void TryRegisterCatalogTab()
@@ -522,7 +523,7 @@ namespace Hecton8.UI
         {
             if (_selectedIndex < 0 || _selectedIndex >= CatalogCount) return;
 
-            AudioLogSystem system = s_cachedAudioLogs;
+            AudioLogSystem system = ResolveAudioLogSystem();
             if (system == null) return;
 
             AudioLogData log = GetLog(_selectedIndex);
@@ -611,7 +612,7 @@ namespace Hecton8.UI
 
         private void HandlePlaybackStarted(float durationSeconds)
         {
-            AudioLogSystem system = s_cachedAudioLogs;
+            AudioLogSystem system = ResolveAudioLogSystem();
             AudioLogData data = system != null ? system.CurrentLog : null;
             _playbackRemaining = durationSeconds > 0f ? durationSeconds : (data != null ? data.Duration : 0f);
             if (_subtitleLabel != null && data != null)
@@ -700,16 +701,11 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (currentService == null)
-                {
-                    _registeredLateFrame = false;
-                    return;
-                }
-
+                TryUnregister();
                 if (isActiveAndEnabled)
                 {
-                    TryUnregister();
-                    TryRegister();
+                    if (currentService != null)
+                        TryRegister();
                 }
 
                 return;
@@ -726,7 +722,7 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.AudioLogRuntime)
             {
-                s_cachedAudioLogs = currentService as AudioLogSystem;
+                CacheAudioLogSystem(currentService as AudioLogSystem);
                 _dirty = true;
                 RefreshPlayButton();
                 return;
@@ -765,8 +761,36 @@ namespace Hecton8.UI
         {
             s_cachedLocalization = GlobalRegistry.LocalizationMadnessPresentation;
             s_cachedLoreDatabase = GlobalRegistry.LoreDatabaseReadModel;
-            s_cachedAudioLogs = GlobalRegistry.AudioLogs;
+            CacheAudioLogSystem(GlobalRegistry.AudioLogs);
             s_cachedPlayerContext = GlobalRegistry.Player;
+        }
+
+        private static void ClearCachedRuntimeServices()
+        {
+            s_cachedLocalization = null;
+            s_cachedLoreDatabase = null;
+            s_cachedAudioLogs = null;
+            s_cachedPlayerContext = null;
+        }
+
+        private static void CacheAudioLogSystem(AudioLogSystem audioLogSystem)
+        {
+            s_cachedAudioLogs = IsAudioLogSystemUsable(audioLogSystem) ? audioLogSystem : null;
+        }
+
+        private static AudioLogSystem ResolveAudioLogSystem()
+        {
+            AudioLogSystem audioLogSystem = s_cachedAudioLogs;
+            if (IsAudioLogSystemUsable(audioLogSystem))
+                return audioLogSystem;
+
+            s_cachedAudioLogs = null;
+            return null;
+        }
+
+        private static bool IsAudioLogSystemUsable(AudioLogSystem audioLogSystem)
+        {
+            return audioLogSystem != null && audioLogSystem.isActiveAndEnabled;
         }
 
         // --------------------------------------------------------------------------
@@ -1267,7 +1291,7 @@ namespace Hecton8.UI
 
         private void RefreshRowHighlights()
         {
-            AudioLogSystem system = s_cachedAudioLogs;
+            AudioLogSystem system = ResolveAudioLogSystem();
             string playingId = system != null && system.IsPlaying && system.CurrentLog != null
                 ? system.CurrentLog.logId
                 : null;
@@ -1293,7 +1317,7 @@ namespace Hecton8.UI
 
         private void RefreshPlayButton()
         {
-            AudioLogSystem system = s_cachedAudioLogs;
+            AudioLogSystem system = ResolveAudioLogSystem();
             AudioLogData selectedLog = GetSelectedLog();
             bool isDiscovered = selectedLog != null && IsCatalogLogUnlocked(_selectedIndex);
             bool isPlaying = system != null && system.IsPlaying;
@@ -1699,7 +1723,7 @@ namespace Hecton8.UI
 
             if (_subtitleLabel != null)
             {
-                AudioLogSystem system = s_cachedAudioLogs;
+                AudioLogSystem system = ResolveAudioLogSystem();
                 AudioLogData subtitleLog = system != null && system.IsPlaying ? system.CurrentLog : GetSelectedLog();
                 if (_prevSubtitleLength > 0)
                 {
@@ -2447,7 +2471,7 @@ namespace Hecton8.UI
 
             public void OnPointerClick(UnityEngine.EventSystems.PointerEventData e)
             {
-                AudioLogSystem sys = PDADataLogTab.s_cachedAudioLogs;
+                AudioLogSystem sys = PDADataLogTab.ResolveAudioLogSystem();
                 if (sys != null && sys.IsPlaying)
                     sys.StopPlayback();
                 else

@@ -206,6 +206,21 @@ namespace Hecton8.Gameplay.Atlas6Liability
             return true;
         }
 
+        public void RestoreState(
+            ExtractionCarrierState carrierState,
+            float biomatterExposureLevel,
+            bool isHaldaneLockoutActive)
+        {
+            CarrierState = IsKnownCarrierState(carrierState)
+                ? carrierState
+                : ExtractionCarrierState.Offline;
+            BiomatterExposureLevel = math.isfinite(biomatterExposureLevel)
+                ? math.clamp(biomatterExposureLevel, 0f, _fatalExposureThreshold)
+                : 0f;
+            IsHaldaneLockoutActive = isHaldaneLockoutActive;
+            _haldaneLockoutRaised = IsHaldaneLockoutActive;
+        }
+
         private bool RaiseHaldaneLockout()
         {
             IsHaldaneLockoutActive = true;
@@ -232,6 +247,12 @@ namespace Hecton8.Gameplay.Atlas6Liability
                 faultFlags: Atlas6LiabilityFaultFlags.EventConsumerNotified);
             OnQuarantineLockoutHaldane?.Invoke();
             return false; // Player is trapped
+        }
+
+        private static bool IsKnownCarrierState(ExtractionCarrierState carrierState)
+        {
+            return carrierState >= ExtractionCarrierState.Offline &&
+                   carrierState <= ExtractionCarrierState.Extracting;
         }
     }
 }

@@ -7,6 +7,9 @@ poi_tags: poi.claim_license_beacon;poi.salvage_lien_console
 biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Юридическая лазейка мародеров"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

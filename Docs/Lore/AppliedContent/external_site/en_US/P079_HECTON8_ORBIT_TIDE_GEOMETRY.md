@@ -7,6 +7,9 @@ poi_tags: poi.tide_geometry_panel;poi.orbital_timing_core
 biome_tags: biome.surface_relay;biome.tide_pump
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "HECTON-8 Orbit / Tide Geometry"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

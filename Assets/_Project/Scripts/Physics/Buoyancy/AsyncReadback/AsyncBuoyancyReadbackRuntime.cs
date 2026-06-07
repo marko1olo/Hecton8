@@ -944,10 +944,12 @@ namespace Hecton8.Physics
                 return ReadbackDispatchStatus.Unavailable;
 
             ref AsyncGPUReadbackRequest requestRef = ref ResolveReadbackRequestRef(slot);
-            ref NativeArray<ReadbackRequestDTO> readbackDataRef = ref ResolveReadbackDataRef(slot);
             ref int countRef = ref ResolveReadbackCountRef(slot);
             ref uint frameRef = ref ResolveReadbackFrameRef(slot);
-            EnsureReadbackData(ref readbackDataRef, ResolveReadbackDataLabel(slot));
+            if (!EnsureReadbackData(slot))
+                return ReadbackDispatchStatus.Unavailable;
+
+            ref NativeArray<ReadbackRequestDTO> readbackDataRef = ref ResolveReadbackDataRef(slot);
             requestRef = AsyncGPUReadback.RequestIntoNativeArray(ref readbackDataRef, requestBuffer, readbackBytes, 0, null);
             if (requestRef.hasError)
                 return ReadbackDispatchStatus.Unavailable;
@@ -1466,12 +1468,7 @@ namespace Hecton8.Physics
 
         private static void DisposeReadbackData(ref NativeArray<ReadbackRequestDTO> data)
         {
-            if (data.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(data);
-                data.Dispose();
-                data = default;
-            }
+            H8Memory.Release(ref data, SystemID.Physics);
         }
 
         private static void DisposeRequestBuffer(ref GraphicsBuffer buffer)
@@ -1546,26 +1543,46 @@ namespace Hecton8.Physics
             return ref _readbackData.Data2;
         }
 
-        private static void EnsureReadbackData(ref NativeArray<ReadbackRequestDTO> data, string label)
-        {
-            if (data.IsCreated && data.Length >= AsyncBuoyancyReadbackConstants.RequestCapacity)
-                return;
-
-            DisposeReadbackData(ref data);
-            data = new NativeArray<ReadbackRequestDTO>(
-                AsyncBuoyancyReadbackConstants.RequestCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ReadbackRequestDTO>[request capacity] - async buoyancy readback target - owner: AsyncBuoyancyReadbackRuntime
-            NativeMemorySentinel.RegisterNativeArray(data, nameof(AsyncBuoyancyReadbackRuntime), label, NativeAllocationLifetime.Scene);
-        }
-
-        private static string ResolveReadbackDataLabel(int slot)
+        private bool EnsureReadbackData(int slot)
         {
             if (slot == 0)
-                return "_readbackData0";
+            {
+                if (_readbackData.Data0.IsCreated && _readbackData.Data0.Length >= AsyncBuoyancyReadbackConstants.RequestCapacity)
+                    return true;
+
+                H8Memory.Release(ref _readbackData.Data0, SystemID.Physics);
+                _readbackData.Data0 = H8Memory.Allocate<ReadbackRequestDTO>(
+                    AsyncBuoyancyReadbackConstants.RequestCapacity,
+                    SystemID.Physics,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+                return _readbackData.Data0.IsCreated && _readbackData.Data0.Length >= AsyncBuoyancyReadbackConstants.RequestCapacity;
+            }
+
             if (slot == 1)
-                return "_readbackData1";
-            return "_readbackData2";
+            {
+                if (_readbackData.Data1.IsCreated && _readbackData.Data1.Length >= AsyncBuoyancyReadbackConstants.RequestCapacity)
+                    return true;
+
+                H8Memory.Release(ref _readbackData.Data1, SystemID.Physics);
+                _readbackData.Data1 = H8Memory.Allocate<ReadbackRequestDTO>(
+                    AsyncBuoyancyReadbackConstants.RequestCapacity,
+                    SystemID.Physics,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+                return _readbackData.Data1.IsCreated && _readbackData.Data1.Length >= AsyncBuoyancyReadbackConstants.RequestCapacity;
+            }
+
+            if (_readbackData.Data2.IsCreated && _readbackData.Data2.Length >= AsyncBuoyancyReadbackConstants.RequestCapacity)
+                return true;
+
+            H8Memory.Release(ref _readbackData.Data2, SystemID.Physics);
+            _readbackData.Data2 = H8Memory.Allocate<ReadbackRequestDTO>(
+                AsyncBuoyancyReadbackConstants.RequestCapacity,
+                SystemID.Physics,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            return _readbackData.Data2.IsCreated && _readbackData.Data2.Length >= AsyncBuoyancyReadbackConstants.RequestCapacity;
         }
 
         private ref int ResolveReadbackCountRef(int slot)

@@ -7,6 +7,9 @@ poi_tags: poi.orbital_window_clock;poi.aegir_magnetic_forecast
 biome_tags: biome.orbit;biome.aegir
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Протокол orbital recovery window"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

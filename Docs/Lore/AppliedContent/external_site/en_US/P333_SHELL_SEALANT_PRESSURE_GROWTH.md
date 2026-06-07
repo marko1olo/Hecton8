@@ -7,6 +7,9 @@ poi_tags: poi.shell_sealant_growth;poi.fracture_lip_biomatter
 biome_tags: biome.atlas;biome.hardware
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Shell Sealant Pressure Growth"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

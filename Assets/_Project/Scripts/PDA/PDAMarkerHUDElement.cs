@@ -216,6 +216,12 @@ namespace Hecton8.PDA
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    UnregisterFromTickManager();
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegisterWithTickManager();
+                    break;
+
                 case GlobalRegistryServiceSlot.PDAMarkerRuntime:
                     _cachedMarkerRegistry = currentService as PDAMarkerRegistry;
                     _markerRegistryColdResolved = true;

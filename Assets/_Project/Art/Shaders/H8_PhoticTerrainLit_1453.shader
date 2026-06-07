@@ -3,10 +3,10 @@ Shader "Hecton8/World/PhoticTerrainLit1453"
     Properties
     {
         _BaseMap ("Base Map", 2D) = "white" {}
-        _Tint ("Tint", Color) = (0.92, 0.98, 0.88, 1.0)
-        _ShadowTint ("Water Shadow Tint", Color) = (0.18, 0.36, 0.34, 1.0)
-        _RidgeTint ("Ridge Mineral Tint", Color) = (0.72, 0.92, 0.84, 1.0)
-        _CausticColor ("Caustic Color", Color) = (0.72, 1.0, 0.86, 1.0)
+        _Tint ("Tint", Color) = (0.86, 0.90, 0.91, 1.0)
+        _ShadowTint ("Water Shadow Tint", Color) = (0.11, 0.17, 0.21, 1.0)
+        _RidgeTint ("Ridge Mineral Tint", Color) = (0.70, 0.76, 0.78, 1.0)
+        _CausticColor ("Caustic Color", Color) = (0.58, 0.82, 1.0, 1.0)
         _CausticStrength ("Caustic Strength", Range(0.0, 1.5)) = 0.34
         _TextureScale ("Texture Scale", Range(0.02, 4.0)) = 0.22
         _FillLight ("Fill Light", Range(0.0, 2.0)) = 0.88
@@ -116,9 +116,9 @@ Shader "Hecton8/World/PhoticTerrainLit1453"
                 half caustic = CausticLine(input.positionWS.xz, 0.42h, 1.1h) + CausticLine(input.positionWS.xz + 19.3h, 0.71h, 3.4h) * 0.55h;
                 half wet = pow(saturate(1.0h - abs(n.y)), 3.0h) * _WetSpec;
                 half3 col = shaded + _CausticColor.rgb * caustic * _CausticStrength * saturate(input.color.a);
-                col += half3(0.18h, 0.24h, 0.22h) * wet;
+                col += half3(0.17h, 0.22h, 0.24h) * wet;
 
-                return half4(max(col, half3(0.11h, 0.17h, 0.15h)), 1.0h);
+                return half4(max(col, half3(0.11h, 0.16h, 0.18h)), 1.0h);
             }
             ENDHLSL
         }

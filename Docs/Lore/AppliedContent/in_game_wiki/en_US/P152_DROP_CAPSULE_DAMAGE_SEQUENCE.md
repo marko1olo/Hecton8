@@ -7,6 +7,9 @@ poi_tags: poi.drop_capsule_damage_panel;poi.warped_crush_frame
 biome_tags: biome.crash_shelf;biome.photic_shelf
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Drop Capsule Damage Sequence"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

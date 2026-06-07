@@ -1,0 +1,170 @@
+{
+  "contactSheet": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/IsolatedInventory_CleanContactSheet.png",
+  "evidenceClass": "STATIC_SOURCE_DRAFT_NO_UNITY_IMPORT",
+  "items": [
+    {
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_01_OxygenMicroTank_Alpha512.png",
+      "coverage": 0.3567,
+      "index": 1,
+      "matte_touches_crop_edge": false,
+      "name": "OxygenMicroTank",
+      "note": "static alpha candidate; Unity import/proof not run",
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/RawCrops/RAW_DRAFT_TX_B30_IsolatedInventory_01_OxygenMicroTank.png",
+      "rect": [
+        105,
+        30,
+        545,
+        640
+      ],
+      "status": "OK"
+    },
+    {
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_02_PressureRegulatorModule_Alpha512.png",
+      "coverage": 0.4513,
+      "index": 2,
+      "matte_touches_crop_edge": false,
+      "name": "PressureRegulatorModule",
+      "note": "static alpha candidate; Unity import/proof not run",
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/RawCrops/RAW_DRAFT_TX_B30_IsolatedInventory_02_PressureRegulatorModule.png",
+      "rect": [
+        665,
+        20,
+        1370,
+        645
+      ],
+      "status": "OK"
+    },
+    {
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_03_PressureSalvageCaseA_Alpha512.png",
+      "coverage": 0.5032,
+      "index": 3,
+      "matte_touches_crop_edge": false,
+      "name": "PressureSalvageCaseA",
+      "note": "static alpha candidate; Unity import/proof not run",
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/RawCrops/RAW_DRAFT_TX_B30_IsolatedInventory_03_PressureSalvageCaseA.png",
+      "rect": [
+        1425,
+        20,
+        2215,
+        650
+      ],
+      "status": "OK"
+    },
+    {
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_04_FoldedMultitoolA_Alpha512.png",
+      "coverage": 0.3262,
+      "index": 4,
+      "matte_touches_crop_edge": false,
+      "name": "FoldedMultitoolA",
+      "note": "static alpha candidate; Unity import/proof not run",
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/RawCrops/RAW_DRAFT_TX_B30_IsolatedInventory_04_FoldedMultitoolA.png",
+      "rect": [
+        2215,
+        40,
+        2795,
+        480
+      ],
+      "status": "OK"
+    },
+    {
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_05_FoldedMultitoolB_Alpha512.png",
+      "coverage": 0.3305,
+      "index": 5,
+      "matte_touches_crop_edge": false,
+      "name": "FoldedMultitoolB",
+      "note": "static alpha candidate; Unity import/proof not run",
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/RawCrops/RAW_DRAFT_TX_B30_IsolatedInventory_05_FoldedMultitoolB.png",
+      "rect": [
+        55,
+        555,
+        760,
+        1060
+      ],
+      "status": "OK"
+    },
+    {
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_06_PowerCoilCartridge_Alpha512.png",
+      "coverage": 0.3597,
+      "index": 6,
+      "matte_touches_crop_edge": false,
+      "name": "PowerCoilCartridge",
+      "note": "static alpha candidate; Unity import/proof not run",
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/RawCrops/RAW_DRAFT_TX_B30_IsolatedInventory_06_PowerCoilCartridge.png",
+      "rect": [
+        980,
+        515,
+        1735,
+        1042
+      ],
+      "status": "OK"
+    },
+    {
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_07_ThermalControlModule_Alpha512.png",
+      "coverage": 0.4236,
+      "index": 7,
+      "matte_touches_crop_edge": false,
+      "name": "ThermalControlModule",
+      "note": "static alpha candidate; Unity import/proof not run",
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/RawCrops/RAW_DRAFT_TX_B30_IsolatedInventory_07_ThermalControlModule.png",
+      "rect": [
+        2045,
+        510,
+        2790,
+        1070
+      ],
+      "status": "OK"
+    },
+    {
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_08_BeaconPuck_Alpha512.png",
+      "coverage": 0.3736,
+      "index": 8,
+      "matte_touches_crop_edge": false,
+      "name": "BeaconPuck",
+      "note": "static alpha candidate; Unity import/proof not run",
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/RawCrops/RAW_DRAFT_TX_B30_IsolatedInventory_08_BeaconPuck.png",
+      "rect": [
+        0,
+        1025,
+        760,
+        1536
+      ],
+      "status": "OK"
+    },
+    {
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_09_SampleVialRack_Alpha512.png",
+      "coverage": 0.2901,
+      "index": 9,
+      "matte_touches_crop_edge": false,
+      "name": "SampleVialRack",
+      "note": "static alpha candidate; Unity import/proof not run",
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/RawCrops/RAW_DRAFT_TX_B30_IsolatedInventory_09_SampleVialRack.png",
+      "rect": [
+        1115,
+        925,
+        1950,
+        1536
+      ],
+      "status": "OK"
+    },
+    {
+      "alpha512": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/Alpha512/DRAFT_TX_B30_IsolatedInventory_10_AlloyIngot_Alpha512.png",
+      "coverage": 0.4285,
+      "index": 10,
+      "matte_touches_crop_edge": false,
+      "name": "AlloyIngot",
+      "note": "generator mark excluded by crop",
+      "raw": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean/RawCrops/RAW_DRAFT_TX_B30_IsolatedInventory_10_AlloyIngot.png",
+      "rect": [
+        2115,
+        1060,
+        2650,
+        1505
+      ],
+      "status": "OK"
+    }
+  ],
+  "output": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/BakedIsolatedObjects_Clean",
+  "schema": "hecton8.inventory_isolated_object_bake.v1",
+  "source": "Docs/GeneratedAssets/Gemini/Outputs/Batch30/InventoryIsolatedObjects_20260607/TX_B30_InventoryIsolatedObjects_Source_20260607_Gemini.png",
+  "tool": "Tools/InventoryIsolatedObjectBaker.py"
+}

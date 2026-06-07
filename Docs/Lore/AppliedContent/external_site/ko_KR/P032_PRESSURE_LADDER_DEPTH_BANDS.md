@@ -7,6 +7,9 @@ poi_tags: poi.depth_gate;poi.pressure_bulkhead
 biome_tags: biome.crash_shelf;biome.service_canyon
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "압력 사다리"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

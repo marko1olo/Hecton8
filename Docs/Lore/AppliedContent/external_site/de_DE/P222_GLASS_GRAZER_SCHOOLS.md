@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Glass Grazer Schools"
+title: "Glasgraser-Schwärme"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Glass Grazer Schools
+# Glasgraser-Schwärme
 
-DE LOC HOLD: Glass Grazer Schools are HECTON-8's first non-hostile fauna with mechanical value. Their translucent bodies and scraping behavior expose pressure-glass film, recent route disturbance and the sound language of the shallow shelf.
+Glasgraser-Schwärme sind HECTON-8s erste Lektion in Tierverhalten als Instrumentierung. Die Graser sind keine Haustiere, keine Beutebeutel und keine harmlose Dekoration. Es sind kleine durchsichtige Schalenfresser, die den flachen Shelf lesbar machen, indem sie Mineralfilm zu hellen Bahnen abschaben. Ein lebender Schwarm zeigt dem Marauder, wo Pressure Glass wächst, welche Naht zu warm ist, wo eine Strömung gerade gekippt ist und wo seit Kurzem kein Raubtier vorbeigekommen ist. Der wichtige Moment ist meist die Abwesenheit: Der Film bleibt, die kleinen Schalenmäuler hören auf zu ticken, und eine saubere Route fühlt sich plötzlich falsch an. Dieses Schweigen gehört direkt zur Grammatik des Flachwasser-Raubtiers, in der Gefahr zuerst als fehlende Fauna, gebrochener Bloom-Lärm und Schatten über einem schönen Riff ankommt. Gute Platzierung sollte den Spieler mit dem Körper lernen lassen: zur blassen Schablinie schwimmen, hören, wie das Ticken an der Schale schärfer wird, die klare Zone um warmes Dichtmittel bemerken und dann sehen, wie der Schwarm wegklappt, bevor das Sonar weiß warum. Glasgraser lassen HECTON-8 lebendig wirken, weil sie nützlich, zerbrechlich und ehrlich sind. Sie erklären den Ozean nicht. Sie legen frei, was der Ozean gerade getan hat.
 
 ## Scanner
 
-DE LOC HOLD: Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.
+GLASGRASER-SCHWARM // Durchsichtige Schalenfresser schaben Mineralfilm von Pressure Glass und den Rändern photischer Matten. Ihr Ticken öffnet helle Routennarben; plötzliches Schweigen ist Raubtierdokumentation.
 
 ## Terminal
 
-DE LOC HOLD: FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.
+FAUNA-BASIS: nicht feindlicher Grasercluster. Pressure-Glass-Film, frischen Mineralbloom, Strömungsstörung und Verdrängung durch Raubtiere verfolgen. Abwesenheit nach aktivem Fressen ist eine Routenwarnung, kein leerer Spawnpunkt.
 
 ## Audio
 
-DE LOC HOLD: Hear the ticking on the shell? That is lunch, map and warning in the same sound.
+Hörst du das Ticken auf der Schale? Das ist Mahlzeit, Karte und Warnung im selben Klang.
 
 ## Field Note
 
-DE LOC HOLD: Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.
+Jage dem Schwarm nicht nach. Lies, was er freilegt: frischen Film, alte Schabspur, Umgehung von warmem Dichtmittel und die leere Bahn, die die Tiere nicht kreuzen wollen.
 
 <!-- External Site; generated from P222_GLASS_GRAZER_SCHOOLS/de_DE. -->

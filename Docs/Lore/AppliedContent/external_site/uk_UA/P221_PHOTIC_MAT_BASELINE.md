@@ -9,32 +9,32 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Photic Mat Baseline"
+title: "Базовий фотичний мат"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Photic Mat Baseline
+# Базовий фотичний мат
 
-UA LOC HOLD: Photic Mat Baseline is the public ecology anchor for HECTON-8's opening zone. The shallow shelf is colorful and readable, but every bright surface is a survival instrument: algae-mineral film, oxygen exchange, acoustic texture and early evidence that the moon's ocean is already industrially altered.
+Базовий фотичний мат перетворює красу HECTON-8 на практичне правило. Мат - не декорація. Це живий датчик, який робить ранній шельф читаним: колір показує кисневий обмін, твердість краю - хімію тиску, ритм бульбашок - рух води, акустична фактура - приховані шви. Тому перші яскраві камені мають одночасно приваблювати й насторожувати. Застряглий Marauder може взяти з краю мата волокно, прекурсори герметика або аварійний показ кисню, але кожен зріз змінює кишеню. Найбезпечніший збір - вільна бахрома подалі від металу, люкових швів і старих труб Deep Reach. Найгірший збір - красивий центр, бо саме він зазвичай працює найсильніше. Гарне розміщення навчає без лекції: здоровий мат світиться на чистому камені; напружений нарощує білі соляні краї навколо течій тиску; отруєний виглядає надто гладким і звучить неправильно під інструментом. Мілкий шельф лишається яскравим, бо життя там працює. Він лишається напруженим, бо гравець може зламати цю роботу одним жадібним шкребком.
 
 ## Scanner
 
-UA LOC HOLD: Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.
+ФОТИЧНИЙ МАТ // Жива мінеральна плівка на мілководному камені. Яскраві смуги насичують воду киснем; соляні тверді краї позначають напружену хімію тиску й приховані течі швів.
 
 ## Terminal
 
-UA LOC HOLD: ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.
+ЕКОЛОГІЧНА БАЗА: карта кисневої шкіри, мінерального стоку, акустичного гасіння й стресу соляних країв. Збирати лише вільну бахрому. Розрив матів біля швів або герметичного обладнання може звалити кишеню в забруднення.
 
 ## Audio
 
-UA LOC HOLD: It looks clean because it is working hard. That is not the same as safe.
+Він виглядає чистим, бо працює. Це не те саме, що безпечний.
 
 ## Field Note
 
-UA LOC HOLD: Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.
+Не шкреби найяскравіше місце першим. Читай край, бульбашки й звук; мат - датчик раніше, ніж ресурс.
 
 <!-- External Site; generated from P221_PHOTIC_MAT_BASELINE/uk_UA. -->

@@ -308,7 +308,7 @@ namespace Hecton8.Gameplay
                 UpdateBeaconLight();
             }
 
-            IAudioService audioService = _audioService;
+            IAudioService audioService = ResolveAudioService();
             if (_pendingDeployAudio)
             {
                 _pendingDeployAudio = false;
@@ -641,7 +641,7 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _localization = currentService as ILocalizationTextReadModel;
@@ -653,9 +653,7 @@ namespace Hecton8.Gameplay
                     _physicsService = currentService as IPhysicsService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registered = false;
-                    _registeredFixed = false;
-                    _registeredLateFrame = false;
+                    TryUnregisterTickSystems();
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegisterTickSystems();
@@ -667,9 +665,35 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _audioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _localization = GlobalRegistry.LocalizationText;
             _physicsService = GlobalRegistry.Physics;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()

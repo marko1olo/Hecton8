@@ -24,19 +24,19 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: f423facb87a22fe49b436302764cb854, type: 3}
+        m_Texture: {fileID: 2800000, guid: eb30ac09ce33c84408ff0ffe91546d16, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _CausticStrength: 0.2
-    - _FillLight: 1.2
-    - _TextureScale: 0.11
-    - _WetSpec: 0.18
+    - _FillLight: 1.06
+    - _TextureScale: 0.18
+    - _WetSpec: 0.26
     m_Colors:
-    - _CausticColor: {r: 0.72, g: 0.9, b: 1, a: 1}
-    - _RidgeTint: {r: 0.84, g: 0.79, b: 0.66, a: 1}
-    - _ShadowTint: {r: 0.18, g: 0.22, b: 0.22, a: 1}
-    - _Tint: {r: 0.7, g: 0.68, b: 0.6, a: 1}
+    - _CausticColor: {r: 0.58, g: 0.82, b: 1, a: 1}
+    - _RidgeTint: {r: 0.7, g: 0.76, b: 0.78, a: 1}
+    - _ShadowTint: {r: 0.11, g: 0.17, b: 0.21, a: 1}
+    - _Tint: {r: 0.82, g: 0.88, b: 0.9, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

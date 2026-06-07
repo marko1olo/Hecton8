@@ -59,7 +59,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private PlayerTransportCoordinator playerTransportCoordinator;
         [Tooltip("Forward probe distance for zero-GC field loadout advice published before UI late-frame presentation.")]
         [SerializeField] private float fieldLoadoutAdviceRange = 18f;
-        [SerializeField] private LayerMask fieldLoadoutAdviceMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask fieldLoadoutAdviceMask = Hecton8.Core.HectonLayerMasks.FieldToolScanLayerMask;
 
         [Header("── Tool Prefabs (sloty 1-4) ──────────────────")]
         [Tooltip("Prefaby instrumentov, privyazannye k knopkam 1-4. " +
@@ -104,6 +104,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>Tekuschiy aktivnyy ekzemplyar instrumenta (iz pula).</summary>
         private GameObject _currentInstance;
+        private IObjectPoolService _currentInstancePool;
 
         /// <summary>Komponent PlayerTool na tekuschem ekzemplyare.</summary>
         private PlayerTool _currentTool;
@@ -149,6 +150,7 @@ namespace Hecton8.Gameplay
         private int _pendingToolSpawnSlotIndex;
         private bool _pendingToolPoolDespawn;
         private GameObject _pendingToolPoolDespawnInstance;
+        private IObjectPoolService _pendingToolPoolDespawnOwner;
         private Transform _pendingToolPoseTransform;
         private PhysicalToolGripOffsets _pendingToolGripOffsets;
         private bool _pendingToolPoseFlush;
@@ -307,7 +309,7 @@ namespace Hecton8.Gameplay
                 _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
-        private void TryUnregisterFromTickManager()
+        private void TryUnregisterFromTickManager(bool clearPendingPresentation = true)
         {
             if (!_registeredToTick && !_registeredToLateFrame)
                 return;
@@ -319,10 +321,13 @@ namespace Hecton8.Gameplay
 
             _registeredToTick = false;
             _registeredToLateFrame = false;
-            _pendingToolPoseFlush = false;
-            _pendingToolPoseTransform = null;
-            _pendingToolGripOffsets = null;
-            _hasPendingHandAnchorLocalPosition = false;
+            if (clearPendingPresentation)
+            {
+                _pendingToolPoseFlush = false;
+                _pendingToolPoseTransform = null;
+                _pendingToolGripOffsets = null;
+                _hasPendingHandAnchorLocalPosition = false;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1285,10 +1290,23 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Player:
-                    ClearRuntimeContextOwnedReferences(previousService as IPlayerRuntimeContext);
-                    _playerRuntimeService = currentService as IPlayerRuntimeContext;
+                    IPlayerRuntimeContext previousPlayerContext = previousService as IPlayerRuntimeContext;
+                    IPlayerRuntimeContext currentPlayerContext = currentService as IPlayerRuntimeContext;
+                    bool previousOwnedThis = previousPlayerContext != null && ReferenceEquals(previousPlayerContext.ToolManager, this);
+                    bool currentOwnsThis = currentPlayerContext != null && ReferenceEquals(currentPlayerContext.ToolManager, this);
+                    if (previousOwnedThis && !currentOwnsThis)
+                        ResetToolLifecycleForPlayerContextLoss();
+
+                    ClearRuntimeContextOwnedReferences(previousPlayerContext);
+                    _playerRuntimeService = currentPlayerContext;
                     RebindRuntimeContextFromPlayerService(_playerRuntimeService);
                     PublishRuntimeContextState();
+                    break;
+
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregisterFromTickManager(clearPendingPresentation: false);
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegisterToTickManager();
                     break;
 
                 case GlobalRegistryServiceSlot.Input:
@@ -1345,6 +1363,26 @@ namespace Hecton8.Gameplay
                 playerTransportCoordinator = null;
             if (ReferenceEquals(handAnchor, previousContext.HandAnchor))
                 handAnchor = null;
+        }
+
+        private void ResetToolLifecycleForPlayerContextLoss()
+        {
+            _pendingSwapExecution = false;
+            _pendingCurrentToolDespawn = false;
+            _pendingToolSpawnExecution = false;
+            _pendingToolSpawnPrefab = null;
+            _pendingToolSpawnSlotIndex = -1;
+            _pendingToolPoseFlush = false;
+            _pendingToolPoseTransform = null;
+            _pendingToolGripOffsets = null;
+            _hasPendingHandAnchorLocalPosition = false;
+            _pendingSlotIndex = -1;
+            _swapState = SwapState.Idle;
+            _swapProgress = 0f;
+            ClearBatterySiphonLockout();
+            FlushPendingToolPoolDespawn();
+            DespawnCurrentToolImmediate();
+            PublishRuntimeContextState();
         }
 
         private void RebindRuntimeContextFromPlayerService(IPlayerRuntimeContext playerContext)
@@ -1469,7 +1507,7 @@ namespace Hecton8.Gameplay
             if (FieldLoadoutAdvisor.TryBuildForwardSnapshot(
                     origin,
                     fieldLoadoutAdviceRange,
-                    fieldLoadoutAdviceMask,
+                    ResolveFieldLoadoutAdviceMask(),
                     out FieldLoadoutAdvisor.ForwardLoadoutSnapshot snapshot))
             {
                 _cachedFieldLoadoutAdvice = snapshot;
@@ -1479,6 +1517,13 @@ namespace Hecton8.Gameplay
 
             _cachedFieldLoadoutAdvice = default;
             _cachedFieldLoadoutAdviceValid = false;
+        }
+
+        private LayerMask ResolveFieldLoadoutAdviceMask()
+        {
+            LayerMask resolvedMask = default;
+            resolvedMask.value = HectonLayerMasks.ResolveFieldToolScanLayerMask(fieldLoadoutAdviceMask.value);
+            return resolvedMask;
         }
 
         private void ClearCachedFieldLoadoutAdvice()
@@ -1875,6 +1920,7 @@ namespace Hecton8.Gameplay
                 prefab,
                 handAnchor.position,
                 handAnchor.rotation);
+            _currentInstancePool = _currentInstance != null ? pool : null;
 
             if (_currentInstance == null)
             {
@@ -1985,8 +2031,9 @@ namespace Hecton8.Gameplay
             if (_currentInstance != null)
             {
                 _currentInstance.transform.SetParent(null, false);
-                QueueToolPoolDespawn(_currentInstance);
+                QueueToolPoolDespawn(_currentInstance, _currentInstancePool);
                 _currentInstance = null;
+                _currentInstancePool = null;
             }
 
             _currentSlotIndex = -1;
@@ -1994,12 +2041,13 @@ namespace Hecton8.Gameplay
             PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonActiveSlotChanged);
         }
 
-        private void QueueToolPoolDespawn(GameObject instance)
+        private void QueueToolPoolDespawn(GameObject instance, IObjectPoolService owningPool)
         {
             if (instance == null)
                 return;
 
             _pendingToolPoolDespawnInstance = instance;
+            _pendingToolPoolDespawnOwner = owningPool;
             _pendingToolPoolDespawn = true;
         }
 
@@ -2009,12 +2057,14 @@ namespace Hecton8.Gameplay
                 return;
 
             GameObject instance = _pendingToolPoolDespawnInstance;
+            IObjectPoolService owningPool = _pendingToolPoolDespawnOwner;
             _pendingToolPoolDespawnInstance = null;
+            _pendingToolPoolDespawnOwner = null;
             _pendingToolPoolDespawn = false;
             if (instance == null)
                 return;
 
-            IObjectPoolService pool = _objectPool;
+            IObjectPoolService pool = owningPool ?? _objectPool;
             if (pool != null)
                 pool.Despawn(instance);
         }
@@ -2040,13 +2090,14 @@ namespace Hecton8.Gameplay
                 // Ottseplyaem ot anchor pered despavnom
                 _currentInstance.transform.SetParent(null, false);
 
-                IObjectPoolService pool = _objectPool;
+                IObjectPoolService pool = _currentInstancePool ?? _objectPool;
                 if (pool != null)
                 {
                     pool.Despawn(_currentInstance);
                 }
 
                 _currentInstance = null;
+                _currentInstancePool = null;
             }
 
             _currentSlotIndex = -1;

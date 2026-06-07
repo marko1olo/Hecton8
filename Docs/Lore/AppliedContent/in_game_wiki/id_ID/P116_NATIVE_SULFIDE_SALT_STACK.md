@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Native Sulfide Salt Stack"
+title: "Tumpukan Garam Sulfida Alami"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Native Sulfide Salt Stack
+# Tumpukan Garam Sulfida Alami
 
-ID LOC HOLD: Native sulfide salts are baseline HECTON-8 geology. They support batteries, ceramics, conductor cleaning and corrosive hazards. They should appear before blue debt so the player learns that the moon has real chemistry, not only corporate horror material.
+Tumpukan garam sulfida alami adalah salah satu bukti awal bahwa HECTON-8 bukan sekadar tempat kejahatan korporat. Ia tumbuh di tempat panas ventilasi, rembesan brine, dan kerak kaya logam saling menggesek di bawah tekanan, meninggalkan garam hitam kehijauan pada ambang, rusuk, dan cerobong rapuh. Ia membersihkan konduktor, membangunkan sel darurat, menyetel fluks keramik, dan merusak alat jika kru memperlakukannya seperti bijih biasa. Sumber daya ini sebaiknya muncul sebelum blue debt: pemain perlu tahu bahwa bulan ini punya kimia, nilai, dan bahaya sendiri sebelum Deep Reach memberi cap klaim.
 
 ## Scanner
 
-ID LOC HOLD: Natural resource. Useful, corrosive, older than Deep Reach.
+GARAM SULFIDA ALAMI // Kristal yang disusun ventilasi panas dan kerak brine hitam, lebih tua dari Deep Reach. Basah menghantar listrik, hangat mengikis logam, berguna sebelum apa pun menjadi biru.
 
 ## Terminal
 
-ID LOC HOLD: RESOURCE CLASS: native. Sulfide salts, metal ions, brine crusts. Uses: conductor wash, corrosion catalysts, ceramic flux, battery emergency chemistry.
+KELAS SUMBER DAYA: geologi alami. Kegunaan: pencuci konduktor, kimia sel darurat, fluks keramik, katalis korosi. Jauhkan dari udara masuk yang hangat; debu mekar menjadi film asam pada logam setelan.
 
 ## Audio
 
-ID LOC HOLD: The moon was valuable before anyone taught it to be monstrous.
+Bulan ini tidak butuh perusahaan untuk menjadi berbahaya. Ia sudah mengenal kimia.
 
 ## Field Note
 
-ID LOC HOLD: Not every resource should be spooky. Some are just geology that can still kill you.
+Kalau sarung tangan mulai gatal, kamu sudah terlambat. Bilas, bumikan, catat dindingnya.
 
 <!-- In-Game Wiki; generated from P116_NATIVE_SULFIDE_SALT_STACK/id_ID. -->

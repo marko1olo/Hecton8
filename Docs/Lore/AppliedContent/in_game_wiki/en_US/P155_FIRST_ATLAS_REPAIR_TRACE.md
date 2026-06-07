@@ -7,6 +7,9 @@ poi_tags: poi.life_sealed_machine_joint;poi.sensor_tagged_fauna
 biome_tags: biome.photic_shelf;biome.cable_reef
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "First Atlas Repair Trace"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

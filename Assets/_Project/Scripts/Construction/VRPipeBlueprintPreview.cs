@@ -147,10 +147,7 @@ namespace Hecton8.Construction
             object previousService,
             object currentService)
         {
-            if (!isActiveAndEnabled)
-                return;
-
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 if (_registeredLateFrame)
                 {
@@ -158,9 +155,13 @@ namespace Hecton8.Construction
                     _registeredLateFrame = false;
                 }
 
-                TryRegisterRuntime();
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterRuntime();
                 return;
             }
+
+            if (!isActiveAndEnabled)
+                return;
 
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {

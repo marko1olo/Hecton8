@@ -186,29 +186,89 @@ namespace Hecton8.World
 
             if (visibleInstanceCount > 0)
             {
-                output.visibleInstances = (int*)UnsafeUtility.Malloc(
-                    sizeof(int) * visibleInstanceCount,
+                output.visibleInstances = (int*)AllocateDirectDrawBytes(
+                    visibleInstanceCount,
+                    sizeof(int),
                     UnsafeUtility.AlignOf<int>(),
-                    Allocator.TempJob);
+                    nameof(output.visibleInstances));
             }
 
             if (drawCommandCount > 0)
             {
-                output.drawCommands = (BatchDrawCommand*)UnsafeUtility.Malloc(
-                    UnsafeUtility.SizeOf<BatchDrawCommand>() * drawCommandCount,
-                    UnsafeUtility.AlignOf<BatchDrawCommand>(),
-                    Allocator.TempJob);
+                try
+                {
+                    output.drawCommands = (BatchDrawCommand*)AllocateDirectDrawBytes(
+                        drawCommandCount,
+                        UnsafeUtility.SizeOf<BatchDrawCommand>(),
+                        UnsafeUtility.AlignOf<BatchDrawCommand>(),
+                        nameof(output.drawCommands));
+                }
+                catch
+                {
+                    FreeDirectDrawOutputBeforeHandoff(ref output);
+                    throw;
+                }
             }
 
             if (drawRangeCount > 0)
             {
-                output.drawRanges = (BatchDrawRange*)UnsafeUtility.Malloc(
-                    UnsafeUtility.SizeOf<BatchDrawRange>() * drawRangeCount,
-                    UnsafeUtility.AlignOf<BatchDrawRange>(),
-                    Allocator.TempJob);
+                try
+                {
+                    output.drawRanges = (BatchDrawRange*)AllocateDirectDrawBytes(
+                        drawRangeCount,
+                        UnsafeUtility.SizeOf<BatchDrawRange>(),
+                        UnsafeUtility.AlignOf<BatchDrawRange>(),
+                        nameof(output.drawRanges));
+                }
+                catch
+                {
+                    FreeDirectDrawOutputBeforeHandoff(ref output);
+                    throw;
+                }
             }
 
             return output;
+        }
+
+        private static unsafe void* AllocateDirectDrawBytes(
+            int count,
+            int stride,
+            int alignment,
+            string label)
+        {
+            if (count <= 0 || stride <= 0)
+                return null;
+
+            long bytes = (long)count * stride;
+            if (bytes <= 0L || bytes > int.MaxValue)
+                throw new System.InvalidOperationException($"BRG direct draw allocation size is invalid for {label}.");
+
+            void* pointer = UnsafeUtility.Malloc(bytes, alignment, Allocator.TempJob);
+            if (pointer == null)
+                throw new System.InvalidOperationException($"BRG direct draw allocation failed for {label}.");
+
+            return pointer;
+        }
+
+        private static unsafe void FreeDirectDrawOutputBeforeHandoff(ref BatchCullingOutputDrawCommands output)
+        {
+            if (output.visibleInstances != null)
+            {
+                UnsafeUtility.Free(output.visibleInstances, Allocator.TempJob);
+                output.visibleInstances = null;
+            }
+
+            if (output.drawCommands != null)
+            {
+                UnsafeUtility.Free(output.drawCommands, Allocator.TempJob);
+                output.drawCommands = null;
+            }
+
+            if (output.drawRanges != null)
+            {
+                UnsafeUtility.Free(output.drawRanges, Allocator.TempJob);
+                output.drawRanges = null;
+            }
         }
 
         /// <summary>

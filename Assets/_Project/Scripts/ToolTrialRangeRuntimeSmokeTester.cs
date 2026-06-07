@@ -698,7 +698,9 @@ namespace Hecton8.Gameplay
         {
             PositionPlayerForTarget(target, distance);
 
-            if (!FieldLoadoutAdvisor.TryBuildForwardAdvice(playerRoot, 18f, Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask, out FieldLoadoutAdvisor.LoadoutAdvice advice))
+            LayerMask adviceMask = default;
+            adviceMask.value = HectonLayerMasks.FieldToolScanLayerMask;
+            if (!FieldLoadoutAdvisor.TryBuildForwardAdvice(playerRoot, 18f, adviceMask, out FieldLoadoutAdvisor.LoadoutAdvice advice))
             {
                 LogSmokeWarning("[TrialRangeSmoke] Loadout advice did not resolve.");
                 return false;

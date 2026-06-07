@@ -9,32 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Shell Clamp Reef"
+title: "Reef Shell Clamp"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Shell Clamp Reef
+# Reef Shell Clamp
 
-ID LOC HOLD: Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.
+Reef shell clamp adalah tempat pertama shelf dangkal berhenti memisahkan kehidupan lokal dari rongsokan manusia. Shell clamp tidak cerdas dan bukan jaringan Atlas; mereka mengikuti rembesan mineral, panas, getaran, dan tekanan arus. Itu cukup bagi mereka untuk mencengkeram basalt, jaket kabel tua, pelat kapsul, dan seam pressure glass dengan kesabaran menakutkan. Bagi pemain, reef bisa menjadi penanda rute, sumber panen, dan peringatan struktural sekaligus. Cangkang luar yang mati berguna sebagai grit untuk sealant dan filler keramik. Inti hidup mungkin sedang bekerja: menahan kabel tetap diam, menguatkan bracket retak, atau memperlambat kebocoran yang belum dinamai scanner. Potong klaster yang salah, dan reef tidak menyerang. Lingkungan hanya kehilangan penyangga.
 
 ## Scanner
 
-ID LOC HOLD: Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.
+REEF SHELL CLAMP // Cangkang penjepit lokal mengikat batu, jaket kabel, pelat kapsul, dan seam pressure glass. Reef telah menerima mesin sebagai substrat.
 
 ## Terminal
 
-ID LOC HOLD: REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.
+DASAR REEF: adhesi meningkat pada jaket kabel aus, logam seam hangat, dan tepi pressure glass dengan rembesan mineral. Panen hanya cangkang luar yang mati. Memotong clamp hidup dekat jalur servis bisa membuka bocor atau menarik perhatian fauna perbaikan.
 
 ## Audio
 
-ID LOC HOLD: The reef has learned the shape of bolts.
+Reef telah mempelajari bentuk baut.
 
 ## Field Note
 
-ID LOC HOLD: Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.
+Jangan congkel clamp pertama yang bisa kau capai. Klaster hidup mungkin sedang menahan kabel, menutup kebocoran rambut, atau menandai jangkar rute.
 
 <!-- In-Game Wiki; generated from P224_SHELL_CLAMP_REEF/id_ID. -->

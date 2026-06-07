@@ -7,6 +7,9 @@ poi_tags: poi.brine_pump_cathedral;poi.density_ladder_window
 biome_tags: biome.brine_canyon;biome.pump_station
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Brine Canyon Pump Cathedral POI Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

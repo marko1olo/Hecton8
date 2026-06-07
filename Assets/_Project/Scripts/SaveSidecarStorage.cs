@@ -11,6 +11,8 @@ namespace Hecton8.SaveSystem
     {
         private const int NullCollectionCount = -1;
         private const string NativeMemoryOwner = nameof(SaveSidecarStorage);
+        private const string NativeMemoryRegistrationFailureMessage = "NativeMemorySentinel registration failed for SaveSidecarStorage temp buffer.";
+        private const string NativeMemoryRestoreFailureMessage = "NativeMemorySentinel restore failed after SaveSidecarStorage native disposal fault.";
         private const NativeAllocationLifetime NativeTempMemoryLifetime = NativeAllocationLifetime.Temp;
         private static string s_persistentDataPathRoot;
 
@@ -54,7 +56,7 @@ namespace Hecton8.SaveSystem
                 + GetStringByteCount(metadata.Checksum);
 
             NativeArray<byte> buffer = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[byteCount] — metadata sidecar write staging buffer — owner: SaveSidecarStorage
-            RegisterTempBuffer(buffer, "metadataWriteBuffer");
+            RegisterTempNativeArrayBuffer(buffer, "metadataWriteBuffer");
             try
             {
                 byte* bufferPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
@@ -83,7 +85,7 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                DisposeTempBuffer(ref buffer);
+                DisposeTempNativeArrayBuffer(ref buffer, "metadataWriteBuffer");
             }
         }
 
@@ -108,7 +110,7 @@ namespace Hecton8.SaveSystem
             }
 
             NativeArray<byte> buffer = new NativeArray<byte>((int)fileLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[fileLength] — metadata sidecar read staging buffer — owner: SaveSidecarStorage
-            RegisterTempBuffer(buffer, "metadataReadBuffer");
+            RegisterTempNativeArrayBuffer(buffer, "metadataReadBuffer");
             try
             {
                 byte* bufferPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
@@ -130,7 +132,7 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                DisposeTempBuffer(ref buffer);
+                DisposeTempNativeArrayBuffer(ref buffer, "metadataReadBuffer");
             }
         }
 
@@ -156,7 +158,7 @@ namespace Hecton8.SaveSystem
                 GetStringByteCount(record.LastRepairMessage);
 
             NativeArray<byte> buffer = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[byteCount] — maintenance sidecar write staging buffer — owner: SaveSidecarStorage
-            RegisterTempBuffer(buffer, "maintenanceWriteBuffer");
+            RegisterTempNativeArrayBuffer(buffer, "maintenanceWriteBuffer");
             try
             {
                 byte* bufferPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
@@ -193,7 +195,7 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                DisposeTempBuffer(ref buffer);
+                DisposeTempNativeArrayBuffer(ref buffer, "maintenanceWriteBuffer");
             }
         }
 
@@ -225,7 +227,7 @@ namespace Hecton8.SaveSystem
             }
 
             NativeArray<byte> buffer = new NativeArray<byte>((int)fileLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[fileLength] — maintenance sidecar read staging buffer — owner: SaveSidecarStorage
-            RegisterTempBuffer(buffer, "maintenanceReadBuffer");
+            RegisterTempNativeArrayBuffer(buffer, "maintenanceReadBuffer");
             try
             {
                 byte* bufferPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
@@ -244,7 +246,7 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                DisposeTempBuffer(ref buffer);
+                DisposeTempNativeArrayBuffer(ref buffer, "maintenanceReadBuffer");
             }
         }
 
@@ -321,22 +323,55 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static void RegisterTempBuffer(NativeArray<byte> buffer, string label)
+        private static void RegisterTempNativeArrayBuffer(NativeArray<byte> buffer, string label)
         {
             if (!buffer.IsCreated)
                 return;
 
-            NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime);
+            int registrationId = NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime);
+            if (registrationId <= 0)
+                throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
         }
 
-        private static void DisposeTempBuffer(ref NativeArray<byte> buffer)
+        private static void DisposeTempNativeArrayBuffer(ref NativeArray<byte> buffer, string label)
         {
             if (!buffer.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(buffer);
-            buffer.Dispose();
-            buffer = default;
+            bool sentinelUnregistered = false;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(buffer);
+                sentinelUnregistered = true;
+                buffer.Dispose();
+                buffer = default;
+            }
+            catch (Exception disposalException)
+            {
+                RestoreTempNativeArrayBufferSentinelOrThrow(buffer, label, sentinelUnregistered, disposalException);
+                throw;
+            }
+        }
+
+        private static void RestoreTempNativeArrayBufferSentinelOrThrow(
+            NativeArray<byte> buffer,
+            string label,
+            bool sentinelUnregistered,
+            Exception disposalException)
+        {
+            if (!sentinelUnregistered || !buffer.IsCreated)
+                return;
+
+            try
+            {
+                int registrationId = NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime);
+                if (registrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
+            }
+            catch (Exception restoreException)
+            {
+                throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
+            }
         }
 
         private static bool FinalizeMetadata(ref SaveMetadata metadata, float posX, float posY, float posZ, SidecarReader reader, out string error)

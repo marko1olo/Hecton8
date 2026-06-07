@@ -7,6 +7,9 @@ poi_tags: poi.public_ledger_payload_gate;poi.tau_ceti_notary_burst
 biome_tags: biome.relay_archive;biome.public_archive
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Final Question Public Truth Lost Control"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

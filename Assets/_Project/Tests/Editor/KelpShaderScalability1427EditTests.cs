@@ -263,6 +263,30 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void SettingsManager_RuntimeOwnerGateClearsStaleRegistryOwner()
+        {
+            string manager = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "SettingsManager.cs");
+            string awake = ExtractMethodBody(manager, "private void Awake()");
+            string register = ExtractMethodBody(manager, "private void TryRegisterToGlobalRegistry()");
+            string gate = ExtractMethodBody(manager, "private bool TryAbortForUsableExistingRuntime()");
+            string usable = ExtractMethodBody(manager, "private static bool IsSettingsRuntimeUsable(");
+
+            Assert.That(awake, Does.Contain("if (TryAbortForUsableExistingRuntime())"));
+            Assert.That(register, Does.Contain("if (TryAbortForUsableExistingRuntime())"));
+            Assert.That(register.IndexOf("if (TryAbortForUsableExistingRuntime())", System.StringComparison.Ordinal), Is.LessThan(register.IndexOf("GlobalRegistry.RegisterSettingsRuntime(this);", System.StringComparison.Ordinal)));
+            Assert.That(gate, Does.Contain("SettingsManager registered = GlobalRegistry.Settings"));
+            Assert.That(gate, Does.Contain("ReferenceEquals(registered, null)"));
+            Assert.That(gate, Does.Contain("ReferenceEquals(registered, this)"));
+            Assert.That(gate, Does.Contain("if (IsSettingsRuntimeUsable(registered))"));
+            Assert.That(gate, Does.Contain("Destroy(gameObject);"));
+            Assert.That(gate, Does.Contain("GlobalRegistry.UnregisterSettingsRuntime(registered);"));
+            Assert.That(gate, Does.Contain("s_runtimeInstance = null"));
+            Assert.That(usable, Does.Contain("settings != null && settings._serviceRegistered && settings.isActiveAndEnabled"));
+            Assert.That(awake, Does.Not.Contain("registered != null && registered != this"));
+            Assert.That(register, Does.Not.Contain("registered != null && registered != this"));
+        }
+
+        [Test]
         public void DeployableSdfDrill_VisualCarveCadenceScalesByContinuousWeight()
         {
             string runtime = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "Mining", "DeployableSdfDrillRuntime.cs");
@@ -2026,6 +2050,539 @@ namespace Hecton8.Tests.Editor
             Assert.That(slowBody, Does.Contain("ResolvePlayerContext();"));
             Assert.That(registerBody, Does.Contain("TryRegisterSlowTickable(this, PriorityLayer.Environment)"));
             Assert.That(resolveBody, Does.Contain("BootstrapState.CurrentPlayerTransform"));
+            Assert.That(source, Does.Contain("float safeGlobalIntensity = ClampFinite(globalIntensity, 1f, 0f, MaxGlobalIntensity);"));
+            Assert.That(source, Does.Contain("_rootCount = Mathf.Clamp("));
+            Assert.That(source, Does.Contain("Mathf.RoundToInt(safeMaxRootCount * safeGlobalIntensity)"));
+            Assert.That(source, Does.Contain("int resolvedRootCount = 0;"));
+            Assert.That(source, Does.Contain("_rootLengths[i] = 0f;"));
+            Assert.That(source, Does.Contain("if (resolvedRootCount > 0)"));
+            Assert.That(source, Does.Contain("if (!IsFiniteVector3(anchorLocal) || !IsFiniteVector3(anchorWS))"));
+            Assert.That(source, Does.Contain("if (!math.isfinite(rootLength) || rootLength <= 0f)"));
+            Assert.That(source, Does.Contain("return IsFiniteVector3(position) ? position : Vector3.zero;"));
+            Assert.That(source, Does.Contain("private static bool IsFiniteBounds(Bounds bounds)"));
+            Assert.That(source, Does.Contain("private static float ClampFinite(float value, float fallback, float minimum, float maximum)"));
+            Assert.That(source, Does.Not.Contain("Mathf.Clamp01(globalIntensity)"));
+            Assert.That(source, Does.Not.Contain("Mathf.Max(0f, config.swayAmplitude) * Mathf.Max(0.1f, globalIntensity)"));
+        }
+
+        [Test]
+        public void CaveGraphEntrances_SanitizePresetRadiusAndFunnelBeforeEmission()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "CaveGraphGenerator.cs");
+            string entranceBody = ExtractMethodBody(source, "static int GenerateEntrances(");
+
+            Assert.That(source, Does.Contain("const float DEFAULT_ENTRANCE_RADIUS = 3f;"));
+            Assert.That(source, Does.Contain("const float MAX_ENTRANCE_FUNNEL_LENGTH = 40f;"));
+            Assert.That(source, Does.Contain("static float ClampFinite(float value, float fallback, float minimum, float maximum)"));
+            Assert.That(source, Does.Contain("static bool IsFinite(float3 value)"));
+
+            Assert.That(entranceBody, Does.Contain("int minEntrances = math.clamp(preset.minEntrances, 1, MAX_ENTRANCES);"));
+            Assert.That(entranceBody, Does.Contain("int maxEntrances = math.clamp(preset.maxEntrances, minEntrances, MAX_ENTRANCES);"));
+            Assert.That(entranceBody, Does.Contain("float safeEntranceRadius = ClampFinite(preset.entranceRadius"));
+            Assert.That(entranceBody, Does.Contain("float safeEntranceFunnelLength = ClampFinite("));
+            Assert.That(entranceBody, Does.Contain("float safeEdgeMargin = ClampFinite(edgeMargin"));
+            Assert.That(entranceBody, Does.Contain("if (!IsFinite(roomPos) || !IsFinite(rooms[r].radii))"));
+            Assert.That(entranceBody, Does.Contain("float xzMargin = math.min(safeEdgeMargin + safeEntranceRadius"));
+            Assert.That(entranceBody, Does.Contain("float radius = safeEntranceRadius * rng.NextFloat(0.8f, 1.2f);"));
+            Assert.That(entranceBody, Does.Contain("float funnelLen = safeEntranceFunnelLength * rng.NextFloat(0.8f, 1.2f);"));
+            Assert.That(entranceBody, Does.Contain("if (!math.isfinite(distToRoom))"));
+
+            Assert.That(entranceBody, Does.Not.Contain("rng.NextInt(preset.minEntrances, preset.maxEntrances + 1)"));
+            Assert.That(entranceBody, Does.Not.Contain("edgeMargin + preset.entranceRadius"));
+            Assert.That(entranceBody, Does.Not.Contain("preset.entranceRadius * rng.NextFloat"));
+            Assert.That(entranceBody, Does.Not.Contain("preset.entranceFunnelLength * rng.NextFloat"));
+        }
+
+        [Test]
+        public void WorldProceduralFieldSampler_CaveEntranceHintsFailClosedBeforeBurstPublish()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "WorldProceduralFieldSampler.cs");
+            string prepareBody = ExtractMethodBody(source, "public void PrepareBurstData()");
+            string builderBody = ExtractMethodBody(source, "private static bool TryBuildCaveEntranceHintData(");
+
+            Assert.That(source, Does.Contain("private static bool TryBuildCaveEntranceHintData("));
+            Assert.That(source, Does.Contain("private static bool IsFinite(float3 value)"));
+            Assert.That(prepareBody, Does.Contain("_burstCaveEntranceHintCount = 0;"));
+            Assert.That(prepareBody, Does.Contain("if (!TryBuildCaveEntranceHintData(in hint, out CaveEntranceHintData hintData))"));
+            Assert.That(prepareBody, Does.Contain("caveEntranceHints[_burstCaveEntranceHintCount++] = hintData;"));
+            Assert.That(builderBody, Does.Contain("!IsFinite(surfacePosition)"));
+            Assert.That(builderBody, Does.Contain("!IsFinite(interiorPosition)"));
+            Assert.That(builderBody, Does.Contain("math.clamp(hint.EntranceRadius, 0.01f, 24f)"));
+            Assert.That(builderBody, Does.Contain("math.clamp(hint.InfluenceRadius, 0.01f, 128f)"));
+
+            Assert.That(prepareBody, Does.Not.Contain("_burstCaveEntranceHintCount = _caveEntranceHintBakeCount;"));
+            Assert.That(prepareBody, Does.Not.Contain("caveEntranceHints[i] = new CaveEntranceHintData"));
+        }
+
+        [Test]
+        public void VoxelSeamDirector_CaveEntranceBuildSanitizesFiniteInputs()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "VoxelSeamDirector.cs");
+            string shouldCreateBody = ExtractMethodBody(source, "public static bool ShouldCreateCaveMouth(");
+            string buildBody = ExtractMethodBody(source, "public static CaveEntrance BuildCaveEntrance(");
+            string normalBody = ExtractMethodBody(source, "public static Vector3 ResolveTerrainNormalAtSeam(");
+            string splatBody = ExtractMethodBody(source, "public static bool ResolveTerrainSplatColorAtSeam(");
+
+            Assert.That(source, Does.Contain("private static float ClampFinite(float value, float fallback, float minimum, float maximum)"));
+            Assert.That(source, Does.Contain("private static float SaturateFinite(float value)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector3 value)"));
+            Assert.That(source, Does.Contain("private static Color SanitizeColor(Color value, Color fallback)"));
+
+            Assert.That(shouldCreateBody, Does.Contain("!math.isfinite(slopeDegrees)"));
+            Assert.That(normalBody, Does.Contain("if (!IsFinite(absoluteUniversePosition))"));
+            Assert.That(normalBody, Does.Contain("float safeSeamBlendRadius = ClampFinite(seamBlendRadius"));
+            Assert.That(splatBody, Does.Contain("if (!IsFinite(absoluteUniversePosition))"));
+            Assert.That(splatBody, Does.Contain("terrainColor = SanitizeColor(terrainColor, Color.clear);"));
+            Assert.That(splatBody, Does.Contain("blend = SaturateFinite(confidence);"));
+
+            Assert.That(buildBody, Does.Contain("Vector3 safeSurfacePosition = IsFinite(runtimeSurfacePosition) ? runtimeSurfacePosition : Vector3.zero;"));
+            Assert.That(buildBody, Does.Contain("Vector3 safeVolumeCenter = IsFinite(runtimeVolumeCenter)"));
+            Assert.That(buildBody, Does.Contain("float safeVoxelY = ClampFinite(math.abs(voxelSize.y)"));
+            Assert.That(buildBody, Does.Contain("float safeBlendWeight = SaturateFinite(blendWeight);"));
+            Assert.That(buildBody, Does.Contain("float safeSeamBlendRadius = ClampFinite(seamBlendRadius"));
+            Assert.That(buildBody, Does.Contain("float safeTerrainCut = ClampFinite(suggestedTerrainCut"));
+            Assert.That(buildBody, Does.Contain("float inwardSq = IsFinite(inward) ? inward.sqrMagnitude : 0f;"));
+            Assert.That(buildBody, Does.Contain("!math.isfinite(inwardSq)"));
+            Assert.That(buildBody, Does.Contain("float terrainNormalSq = IsFinite(terrainNormal) ? terrainNormal.sqrMagnitude : 0f;"));
+            Assert.That(buildBody, Does.Contain("terrainSplatColor = SanitizeColor(sampledSplatColor, Color.clear);"));
+            Assert.That(buildBody, Does.Contain("surfacePosition = safeSurfacePosition"));
+
+            Assert.That(buildBody, Does.Not.Contain("Vector3 inward = runtimeVolumeCenter - runtimeSurfacePosition;"));
+            Assert.That(buildBody, Does.Not.Contain("Mathf.Clamp01(blendWeight)"));
+            Assert.That(buildBody, Does.Not.Contain("surfacePosition = runtimeSurfacePosition"));
+        }
+
+        [Test]
+        public void HectonVoxelEngine_CaveEntrancesSanitizeBeforeSdfAndTerrainHoleUse()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "HectonVoxelEngine.cs");
+            string densityJob = ExtractTypeBody(source, "public struct VoxelDensityJob");
+            string edgeSealBody = ExtractMethodBody(densityJob, "float ApplyEdgeSeal(");
+            string skirtBody = ExtractMethodBody(densityJob, "float EvaluateEntranceSkirtSDF(");
+            string entranceBody = ExtractMethodBody(densityJob, "float EvaluateEntrance(");
+            string maskBody = ExtractMethodBody(densityJob, "float EvaluateCaveMouthSdfPerturbationMask(");
+            string safeEntranceBody = ExtractMethodBody(densityJob, "bool TryResolveSafeEntrance(");
+            string maskPayloadBody = ExtractMethodBody(densityJob, "bool TryResolveSafeEntranceMouthMask(");
+            string colorJob = ExtractTypeBody(source, "public struct VoxelColorJob");
+            string colorBody = ExtractMethodBody(colorJob, "bool TryResolveCaveMouthTerrainColor(");
+            string colorPayloadBody = ExtractMethodBody(colorJob, "bool TryResolveCaveMouthTerrainColorPayload(");
+            string terrainHoleBody = ExtractMethodBody(source, "void RegisterEntranceTerrainHoles(");
+            string terrainHoleHelperBody = ExtractMethodBody(source, "private static bool TryResolveSafeEntranceTerrainHole(");
+
+            Assert.That(densityJob, Does.Contain("private const float MaxSafeEntranceRadius = 32f;"));
+            Assert.That(densityJob, Does.Contain("private const float MaxSafeEntranceFunnelLength = 128f;"));
+            Assert.That(densityJob, Does.Contain("bool TryResolveSafeEntrance("));
+            Assert.That(densityJob, Does.Contain("bool TryResolveSafeEntranceMouthMask("));
+            Assert.That(densityJob, Does.Contain("static bool TryNormalizeFinite(float3 value, out float3 normalized)"));
+            Assert.That(densityJob, Does.Contain("static bool IsFinite(float3 value)"));
+
+            Assert.That(edgeSealBody, Does.Contain("TryResolveSafeEntrance(in entrance"));
+            Assert.That(edgeSealBody, Does.Contain("float influenceRadius = math.max(radius * 2.6f, innerRadius + funnelLength * 0.35f);"));
+            Assert.That(edgeSealBody, Does.Contain("float2 horizontalDelta = wp.xz - surfacePosition.xz;"));
+            Assert.That(edgeSealBody, Does.Contain("if (direction.y > 0.3f)"));
+            Assert.That(skirtBody, Does.Contain("TryResolveSafeEntrance(in entrance"));
+            Assert.That(skirtBody, Does.Contain("float3 innerPoint = surfacePosition + direction * funnelLength;"));
+            Assert.That(entranceBody, Does.Contain("TryResolveSafeEntrance(in entrance"));
+            Assert.That(entranceBody, Does.Contain("return 99999f;"));
+            Assert.That(entranceBody, Does.Contain("float3 innerPoint = surfacePosition + direction * funnelLength;"));
+            Assert.That(maskBody, Does.Contain("TryResolveSafeEntranceMouthMask(in entrance"));
+            Assert.That(maskBody, Does.Contain("float distanceSq = math.lengthsq(wp - surfacePosition);"));
+
+            Assert.That(safeEntranceBody, Does.Contain("!IsFinite(surfacePosition)"));
+            Assert.That(safeEntranceBody, Does.Contain("!TryNormalizeFinite(entrance.inwardDirection, out float3 baseDirection)"));
+            Assert.That(safeEntranceBody, Does.Contain("math.clamp(entrance.radius, MinSafeEntranceRadius, MaxSafeEntranceRadius)"));
+            Assert.That(safeEntranceBody, Does.Contain("math.clamp(entrance.funnelLength, MinSafeEntranceFunnelLength, MaxSafeEntranceFunnelLength)"));
+            Assert.That(safeEntranceBody, Does.Contain("direction = ResolveSafeEntranceDirection(entrance, baseDirection);"));
+            Assert.That(maskPayloadBody, Does.Contain("!IsFinite(entrance.inwardDirection)"));
+            Assert.That(maskPayloadBody, Does.Contain("directionSq <= 0.0001f"));
+
+            Assert.That(colorJob, Does.Contain("private const float MaxSafeCaveMouthColorRadius = 32f;"));
+            Assert.That(colorJob, Does.Contain("bool TryResolveCaveMouthTerrainColorPayload("));
+            Assert.That(colorJob, Does.Contain("float ResolveSafeVoxelStep()"));
+            Assert.That(colorJob, Does.Contain("static float SaturateFinite(float value)"));
+            Assert.That(colorJob, Does.Contain("static float4 SaturateFinite(float4 value)"));
+            Assert.That(colorJob, Does.Contain("static bool IsFinite(float4 value)"));
+            Assert.That(colorBody, Does.Contain("TryResolveCaveMouthTerrainColorPayload("));
+            Assert.That(colorBody, Does.Contain("float safeVoxelStep = ResolveSafeVoxelStep();"));
+            Assert.That(colorBody, Does.Contain("float distanceSq = math.lengthsq(position - surfacePosition);"));
+            Assert.That(colorBody, Does.Contain("terrainColor = safeTerrainSplatColor;"));
+            Assert.That(colorPayloadBody, Does.Contain("!IsFinite(surfacePosition)"));
+            Assert.That(colorPayloadBody, Does.Contain("!IsFinite(entrance.terrainSplatColor)"));
+            Assert.That(colorPayloadBody, Does.Contain("blend = math.max(SaturateFinite(entrance.terrainSplatBlend), SaturateFinite(entrance.terrainSplatColor.w));"));
+            Assert.That(colorPayloadBody, Does.Contain("math.clamp(entrance.radius, MinSafeCaveMouthColorRadius, MaxSafeCaveMouthColorRadius)"));
+            Assert.That(colorPayloadBody, Does.Contain("terrainColor = SaturateFinite(entrance.terrainSplatColor);"));
+            Assert.That(colorPayloadBody, Does.Contain("terrainColor.w = blend;"));
+
+            Assert.That(source, Does.Contain("private const float MaxRuntimeCaveEntranceHoleRadius = 96f;"));
+            Assert.That(source, Does.Contain("private static bool TryResolveSafeEntranceTerrainHole("));
+            Assert.That(terrainHoleBody, Does.Contain("TryResolveSafeEntranceTerrainHole("));
+            Assert.That(terrainHoleHelperBody, Does.Contain("!IsFiniteFloat3(entrance.surfacePosition)"));
+            Assert.That(terrainHoleHelperBody, Does.Contain("!IsFiniteFloat3(entrance.inwardDirection)"));
+            Assert.That(terrainHoleHelperBody, Does.Contain("math.clamp("));
+            Assert.That(terrainHoleHelperBody, Does.Contain("TryResolveLocalDeltaFloat3(runtimeSurfaceDelta"));
+            Assert.That(terrainHoleHelperBody, Does.Contain("return IsFiniteVector(runtimeSurfacePosition);"));
+
+            Assert.That(densityJob, Does.Not.Contain("ResolveEntranceDirection("));
+            Assert.That(edgeSealBody, Does.Not.Contain("entrance.radius * 2.6f"));
+            Assert.That(edgeSealBody, Does.Not.Contain("wp.xz - entrance.surfacePosition.xz"));
+            Assert.That(skirtBody, Does.Not.Contain("entrance.surfacePosition + direction * entrance.funnelLength"));
+            Assert.That(entranceBody, Does.Not.Contain("entrance.surfacePosition + direction * entrance.funnelLength"));
+            Assert.That(maskBody, Does.Not.Contain("float radius = math.max(entrance.radius, voxelStep);"));
+            Assert.That(colorBody, Does.Not.Contain("math.saturate(math.max(entrance.terrainSplatBlend, entrance.terrainSplatColor.w))"));
+            Assert.That(colorBody, Does.Not.Contain("float radius = math.max(entrance.radius, voxelStep);"));
+            Assert.That(colorBody, Does.Not.Contain("position - entrance.surfacePosition"));
+            Assert.That(colorBody, Does.Not.Contain("terrainColor = math.saturate(entrance.terrainSplatColor);"));
+            Assert.That(terrainHoleBody, Does.Not.Contain("float radius = math.max(entrance.radius, entrance.innerRadius) + holePadding;"));
+            Assert.That(terrainHoleBody, Does.Not.Contain("ToDouble3(entrance.surfacePosition) + capturedTotalOffset"));
+        }
+
+        [Test]
+        public void HectonVoxelEngine_SpawnPointRouteFailsClosedOnInvalidInputs()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "HectonVoxelEngine.cs");
+            string spawnJob = ExtractTypeBody(source, "public struct VoxelSpawnPointJob");
+            string addBody = ExtractMethodBody(spawnJob, "void TryAddSpawnPoint(");
+            string hashBody = ExtractMethodBody(spawnJob, "static uint SpatialHash(");
+            string registerBody = ExtractMethodBody(source, "void RegisterPipelineSpawnPoints(");
+
+            Assert.That(spawnJob, Does.Contain("private const float MaxSafeSpawnPointCoordinate = 1048576f;"));
+            Assert.That(spawnJob, Does.Contain("static bool TryNormalizeFinite(float3 value, out float3 normalized)"));
+            Assert.That(spawnJob, Does.Contain("static float ClampFinite(float value, float fallback, float minimum, float maximum)"));
+            Assert.That(spawnJob, Does.Contain("static bool IsFinite(float3 value)"));
+            Assert.That(addBody, Does.Contain("!IsFinite(pos)"));
+            Assert.That(addBody, Does.Contain("math.any(math.abs(pos) > new float3(MaxSafeSpawnPointCoordinate))"));
+            Assert.That(addBody, Does.Contain("!TryNormalizeFinite(nrm, out float3 normal)"));
+            Assert.That(addBody, Does.Contain("float safeFloorNormalThreshold = ClampFinite(floorNormalThreshold, 0.75f, -1f, 1f);"));
+            Assert.That(addBody, Does.Contain("if (!math.isfinite(upDot) || upDot < safeFloorNormalThreshold)"));
+            Assert.That(addBody, Does.Contain("if (!math.isfinite(minInteriorDepth) || minInteriorDepth > 1f)"));
+            Assert.That(addBody, Does.Contain("float safeMinInteriorDepth = math.max(minInteriorDepth, 0f);"));
+            Assert.That(addBody, Does.Contain("if (!IsFinite(volumeCenter) || !math.isfinite(volumeHalfExtent) || volumeHalfExtent <= 0f)"));
+            Assert.That(addBody, Does.Contain("float distanceSq = math.lengthsq(pos - volumeCenter);"));
+            Assert.That(addBody, Does.Contain("float safeKeepFraction = ClampFinite(keepFraction, 0f, 0f, 1f);"));
+            Assert.That(addBody, Does.Contain("if (safeKeepFraction <= 0f)"));
+            Assert.That(addBody, Does.Contain("if (hashNormalized > safeKeepFraction)"));
+            Assert.That(hashBody, Does.Contain("float3 safePoint = math.clamp("));
+            Assert.That(hashBody, Does.Contain("new float3(MaxSafeSpawnPointCoordinate)"));
+            Assert.That(hashBody, Does.Contain("int3 ip = (int3)math.floor(safePoint * 10f);"));
+
+            Assert.That(registerBody, Does.Contain("!IsFiniteVector(worldCenter)"));
+            Assert.That(registerBody, Does.Contain("!math.all(math.isfinite(capturedTotalOffset))"));
+            Assert.That(registerBody, Does.Contain("!math.all(math.isfinite(committedTotalOffset))"));
+            Assert.That(registerBody, Does.Contain("if (!math.all(math.isfinite(absoluteUniverseCenter)))"));
+            Assert.That(registerBody, Does.Contain("float tileSize = math.isfinite(mapMagicTileSize) && mapMagicTileSize > 0f ? mapMagicTileSize : 999f;"));
+
+            Assert.That(addBody, Does.Not.Contain("float upDot = math.dot(nrm, new float3(0, 1, 0));"));
+            Assert.That(addBody, Does.Not.Contain("if (upDot < floorNormalThreshold)"));
+            Assert.That(addBody, Does.Not.Contain("if (minInteriorDepth > 0f)"));
+            Assert.That(addBody, Does.Not.Contain("hashNormalized > keepFraction"));
+            Assert.That(hashBody, Does.Not.Contain("int3 ip = (int3)math.floor(p * 10f);"));
+            Assert.That(registerBody, Does.Not.Contain("float tileSize = mapMagicTileSize > 0f ? mapMagicTileSize : 999f;"));
+        }
+
+        [Test]
+        public void HectonVoxelEngine_CaveGraphSdfSanitizesNodesTunnelsAndStructures()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "HectonVoxelEngine.cs");
+            string densityJob = ExtractTypeBody(source, "public struct VoxelDensityJob");
+            string caveBody = ExtractMethodBody(densityJob, "void EvaluateCaveSDF(");
+            string partitionBody = ExtractMethodBody(densityJob, "bool TryGetPartitionRange(");
+            string structuresBody = ExtractMethodBody(densityJob, "void EvaluateStructuresSDF(");
+            string nodeHelperBody = ExtractMethodBody(densityJob, "bool TryResolveSafeNode(");
+            string tunnelHelperBody = ExtractMethodBody(densityJob, "bool TryResolveSafeTunnel(");
+            string structureHelperBody = ExtractMethodBody(densityJob, "bool TryResolveSafeStructure(");
+
+            Assert.That(densityJob, Does.Contain("private const float MaxSafeGraphRadius = 256f;"));
+            Assert.That(densityJob, Does.Contain("private const float MaxSafeGraphBlendRadius = 96f;"));
+            Assert.That(densityJob, Does.Contain("private const float MaxSafeTunnelScale = 8f;"));
+            Assert.That(densityJob, Does.Contain("private const float MaxSafeTunnelWarpAmount = 64f;"));
+            Assert.That(densityJob, Does.Contain("bool TryResolveSafeNode("));
+            Assert.That(densityJob, Does.Contain("bool TryResolveSafeTunnel("));
+            Assert.That(densityJob, Does.Contain("bool TryResolveSafeStructure("));
+            Assert.That(densityJob, Does.Contain("static float ClampFinite(float value, float fallback, float minimum, float maximum)"));
+            Assert.That(densityJob, Does.Contain("static float3 ClampFinite(float3 value, float3 fallback, float minimum, float maximum)"));
+            Assert.That(densityJob, Does.Contain("static bool IsFinite(float value)"));
+
+            Assert.That(caveBody, Does.Contain("TryGetPartitionRange(nodeBucketOffsets, nodeBucketIndices, wp"));
+            Assert.That(caveBody, Does.Contain("TryGetPartitionRange(tunnelBucketOffsets, tunnelBucketIndices, wp"));
+            Assert.That(caveBody, Does.Contain("int nodeIndex = nodeBucketIndices[i];"));
+            Assert.That(caveBody, Does.Contain("if ((uint)nodeIndex >= (uint)caveNodes.Length)"));
+            Assert.That(caveBody, Does.Contain("TryResolveSafeNode(in caveNodes[nodeIndex], out CaveNode node)"));
+            Assert.That(caveBody, Does.Contain("TryResolveSafeNode(in caveNodes[i], out CaveNode node)"));
+            Assert.That(caveBody, Does.Contain("int tunnelIndex = tunnelBucketIndices[i];"));
+            Assert.That(caveBody, Does.Contain("if ((uint)tunnelIndex >= (uint)caveTunnels.Length)"));
+            Assert.That(caveBody, Does.Contain("TryResolveSafeTunnel(in caveTunnels[tunnelIndex], out CaveTunnel tunnel)"));
+            Assert.That(caveBody, Does.Contain("TryResolveSafeTunnel(in caveTunnels[i], out CaveTunnel tunnel)"));
+            Assert.That(structuresBody, Does.Contain("TryResolveSafeStructure(in caveStructures[i], out CaveStructure s)"));
+            Assert.That(partitionBody, Does.Contain("!bucketIndices.IsCreated"));
+            Assert.That(partitionBody, Does.Contain("int rangeStart = bucketOffsets[bucketIndex];"));
+            Assert.That(partitionBody, Does.Contain("int rangeEnd = bucketOffsets[bucketIndex + 1];"));
+            Assert.That(partitionBody, Does.Contain("rangeStart < 0 || rangeEnd < rangeStart || rangeEnd > bucketIndices.Length"));
+
+            Assert.That(nodeHelperBody, Does.Contain("!IsFinite(source.position)"));
+            Assert.That(nodeHelperBody, Does.Contain("!IsFinite(source.radii)"));
+            Assert.That(nodeHelperBody, Does.Contain("math.cmin(source.radii) <= 0f"));
+            Assert.That(nodeHelperBody, Does.Contain("node.radii = ClampFinite(source.radii"));
+            Assert.That(nodeHelperBody, Does.Contain("node.blendRadius = ClampFinite(source.blendRadius"));
+            Assert.That(nodeHelperBody, Does.Contain("node.noiseScale = ClampFinite(source.noiseScale"));
+            Assert.That(nodeHelperBody, Does.Contain("node.noiseAmplitude = ClampFinite(source.noiseAmplitude"));
+
+            Assert.That(tunnelHelperBody, Does.Contain("!IsFinite(source.pointA)"));
+            Assert.That(tunnelHelperBody, Does.Contain("!IsFinite(source.pointB)"));
+            Assert.That(tunnelHelperBody, Does.Contain("!IsFinite(source.radiusA)"));
+            Assert.That(tunnelHelperBody, Does.Contain("source.radiusA <= 0f"));
+            Assert.That(tunnelHelperBody, Does.Contain("tunnel.radiusA = ClampFinite(source.radiusA"));
+            Assert.That(tunnelHelperBody, Does.Contain("tunnel.heightScale = ClampFinite(source.heightScale"));
+            Assert.That(tunnelHelperBody, Does.Contain("tunnel.warpAmount = ClampFinite(source.warpAmount"));
+
+            Assert.That(structureHelperBody, Does.Contain("!IsFinite(source.position)"));
+            Assert.That(structureHelperBody, Does.Contain("!IsFinite(source.size)"));
+            Assert.That(structureHelperBody, Does.Contain("math.cmax(source.size) <= 0f"));
+            Assert.That(structureHelperBody, Does.Contain("structure.pointB = IsFinite(source.pointB) ? source.pointB : source.position;"));
+            Assert.That(structureHelperBody, Does.Contain("structure.size = ClampFinite(source.size"));
+            Assert.That(structureHelperBody, Does.Contain("structure.blendRadius = ClampFinite(source.blendRadius"));
+            Assert.That(structureHelperBody, Does.Contain("structure.noiseAmount = ClampFinite(source.noiseAmount"));
+
+            Assert.That(caveBody, Does.Not.Contain("CaveNode node = caveNodes[nodeBucketIndices[i]];"));
+            Assert.That(caveBody, Does.Not.Contain("EvaluateRoom(warpedPos, absoluteWp, caveNodes[i]"));
+            Assert.That(caveBody, Does.Not.Contain("caveNodes[i].blendRadius"));
+            Assert.That(caveBody, Does.Not.Contain("CaveTunnel tunnel = caveTunnels[tunnelBucketIndices[i]];"));
+            Assert.That(caveBody, Does.Not.Contain("EvaluateTunnel(warpedPos, absoluteWp, wp, caveTunnels[i])"));
+            Assert.That(caveBody, Does.Not.Contain("caveTunnels[i].blendRadius"));
+            Assert.That(caveBody, Does.Not.Contain("TryGetPartitionRange(nodeBucketOffsets, wp"));
+            Assert.That(caveBody, Does.Not.Contain("TryGetPartitionRange(tunnelBucketOffsets, wp"));
+            Assert.That(structuresBody, Does.Not.Contain("CaveStructure s = caveStructures[i];"));
+        }
+
+        [Test]
+        public void HectonVoxelEngine_SpatialBucketsSanitizeGraphBoundsBeforePartitioning()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "HectonVoxelEngine.cs");
+            string nodeBucketBody = ExtractMethodBody(source, "bool BuildNodeSpatialBuckets(");
+            string tunnelBucketBody = ExtractMethodBody(source, "bool BuildTunnelSpatialBuckets(");
+            string nodeBoundsBody = ExtractMethodBody(source, "private static bool TryResolveNodePartitionBounds(");
+            string tunnelBoundsBody = ExtractMethodBody(source, "private static bool TryResolveTunnelPartitionBounds(");
+
+            Assert.That(source, Does.Contain("private const float MaxRuntimeCaveGraphBucketRadius = 256f;"));
+            Assert.That(source, Does.Contain("private const float MaxRuntimeCaveGraphBucketBlendRadius = 96f;"));
+            Assert.That(source, Does.Contain("private const float MaxRuntimeCaveGraphBucketWarpMeters = 64f;"));
+            Assert.That(source, Does.Contain("private static bool TryResolveNodePartitionBounds("));
+            Assert.That(source, Does.Contain("private static bool TryResolveTunnelPartitionBounds("));
+            Assert.That(source, Does.Contain("private static float ClampRuntimeFinite("));
+
+            Assert.That(nodeBucketBody, Does.Contain("TryResolveNodePartitionBounds(in nodes[nodeIndex], data, out float3 boundsMin, out float3 boundsMax)"));
+            Assert.That(tunnelBucketBody, Does.Contain("TryResolveTunnelPartitionBounds(in tunnels[tunnelIndex], data, out float3 boundsMin, out float3 boundsMax)"));
+            Assert.That(nodeBoundsBody, Does.Contain("!IsFiniteFloat3(node.position)"));
+            Assert.That(nodeBoundsBody, Does.Contain("!IsFiniteFloat3(node.radii)"));
+            Assert.That(nodeBoundsBody, Does.Contain("math.cmin(node.radii) <= 0f"));
+            Assert.That(nodeBoundsBody, Does.Contain("math.clamp("));
+            Assert.That(nodeBoundsBody, Does.Contain("ClampRuntimeFinite(node.noiseAmplitude"));
+            Assert.That(nodeBoundsBody, Does.Contain("ClampRuntimeFinite(node.blendRadius"));
+            Assert.That(nodeBoundsBody, Does.Contain("ClampRuntimeFinite(data.CaveParams.warpAmplitude"));
+            Assert.That(nodeBoundsBody, Does.Contain("return IsFiniteFloat3(boundsMin) && IsFiniteFloat3(boundsMax);"));
+
+            Assert.That(tunnelBoundsBody, Does.Contain("!IsFiniteFloat3(tunnel.pointA)"));
+            Assert.That(tunnelBoundsBody, Does.Contain("!IsFiniteFloat3(tunnel.pointB)"));
+            Assert.That(tunnelBoundsBody, Does.Contain("!math.isfinite(tunnel.radiusA)"));
+            Assert.That(tunnelBoundsBody, Does.Contain("tunnel.radiusA <= 0f"));
+            Assert.That(tunnelBoundsBody, Does.Contain("ClampRuntimeFinite(tunnel.radiusA"));
+            Assert.That(tunnelBoundsBody, Does.Contain("ClampRuntimeFinite(tunnel.blendRadius"));
+            Assert.That(tunnelBoundsBody, Does.Contain("ClampRuntimeFinite(tunnel.warpAmount"));
+            Assert.That(tunnelBoundsBody, Does.Contain("return IsFiniteFloat3(boundsMin) && IsFiniteFloat3(boundsMax);"));
+
+            Assert.That(nodeBucketBody, Does.Not.Contain("CaveNode node = nodes[nodeIndex];"));
+            Assert.That(nodeBucketBody, Does.Not.Contain("float maxRadius = math.cmax(node.radii);"));
+            Assert.That(nodeBucketBody, Does.Not.Contain("node.position - new float3(maxRadius + inflation)"));
+            Assert.That(tunnelBucketBody, Does.Not.Contain("CaveTunnel tunnel = tunnels[tunnelIndex];"));
+            Assert.That(tunnelBucketBody, Does.Not.Contain("float maxRadius = math.max(tunnel.radiusA, tunnel.radiusB);"));
+            Assert.That(tunnelBucketBody, Does.Not.Contain("math.min(tunnel.pointA, tunnel.pointB) - new float3(inflation)"));
+        }
+
+        [Test]
+        public void HectonVoxelVolume_CapturesOnlySafeCaveGraphSnapshots()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "HectonVoxelVolume.cs");
+            string configureBody = ExtractMethodBody(source, "public void ConfigureRuntimeData(");
+            string nodeHelperBody = ExtractMethodBody(source, "private static bool TryBuildRuntimeNodeSnapshot(");
+            string tunnelHelperBody = ExtractMethodBody(source, "private static bool TryBuildRuntimeTunnelSnapshot(");
+            string structureHelperBody = ExtractMethodBody(source, "private static bool TryBuildRuntimeStructureSnapshot(");
+            string helperBody = ExtractMethodBody(source, "private static bool TryBuildRuntimeEntranceSnapshot(");
+
+            Assert.That(source, Does.Contain("private const float MaxRuntimeEntranceSnapshotRadius = 32f;"));
+            Assert.That(source, Does.Contain("private const float MaxRuntimeEntranceSnapshotFunnelLength = 128f;"));
+            Assert.That(source, Does.Contain("private const float MaxRuntimeGraphRadius = 256f;"));
+            Assert.That(source, Does.Contain("private const float MaxRuntimeGraphBlendRadius = 96f;"));
+            Assert.That(source, Does.Contain("private const float MaxRuntimeTunnelScale = 8f;"));
+            Assert.That(source, Does.Contain("private static bool TryResolveRuntimeSnapshotOffset("));
+            Assert.That(source, Does.Contain("private static bool TryBuildRuntimeNodeSnapshot("));
+            Assert.That(source, Does.Contain("private static bool TryBuildRuntimeTunnelSnapshot("));
+            Assert.That(source, Does.Contain("private static bool TryBuildRuntimeStructureSnapshot("));
+            Assert.That(source, Does.Contain("private static bool TryBuildRuntimeEntranceSnapshot("));
+            Assert.That(source, Does.Contain("private static bool TryNormalizeFinite(float3 value, out float3 normalized)"));
+            Assert.That(source, Does.Contain("private static float3 ClampFinite(float3 value, float3 fallback, float minimum, float maximum)"));
+            Assert.That(source, Does.Contain("private static float4 SaturateFinite(float4 value)"));
+
+            Assert.That(configureBody, Does.Contain("CaveNode[] nodeSnapshots = new CaveNode[nodes.Length];"));
+            Assert.That(configureBody, Does.Contain("int validNodeCount = 0;"));
+            Assert.That(configureBody, Does.Contain("if (!TryBuildRuntimeNodeSnapshot(in nodes[i], absoluteUniverseOffset, out CaveNode snapshot))"));
+            Assert.That(configureBody, Does.Contain("nodeSnapshots[validNodeCount++] = snapshot;"));
+            Assert.That(configureBody, Does.Contain("Array.Resize(ref nodeSnapshots, validNodeCount);"));
+            Assert.That(configureBody, Does.Contain("_nodes = nodeSnapshots;"));
+            Assert.That(configureBody, Does.Contain("CaveTunnel[] tunnelSnapshots = new CaveTunnel[tunnels.Length];"));
+            Assert.That(configureBody, Does.Contain("int validTunnelCount = 0;"));
+            Assert.That(configureBody, Does.Contain("if (!TryBuildRuntimeTunnelSnapshot(in tunnels[i], absoluteUniverseOffset, out CaveTunnel snapshot))"));
+            Assert.That(configureBody, Does.Contain("tunnelSnapshots[validTunnelCount++] = snapshot;"));
+            Assert.That(configureBody, Does.Contain("Array.Resize(ref tunnelSnapshots, validTunnelCount);"));
+            Assert.That(configureBody, Does.Contain("_tunnels = tunnelSnapshots;"));
+            Assert.That(configureBody, Does.Contain("CaveEntrance[] entranceSnapshots = new CaveEntrance[entrances.Length];"));
+            Assert.That(configureBody, Does.Contain("int validEntranceCount = 0;"));
+            Assert.That(configureBody, Does.Contain("if (!TryBuildRuntimeEntranceSnapshot(in entrances[i], absoluteUniverseOffset, out CaveEntrance snapshot))"));
+            Assert.That(configureBody, Does.Contain("entranceSnapshots[validEntranceCount++] = snapshot;"));
+            Assert.That(configureBody, Does.Contain("Array.Resize(ref entranceSnapshots, validEntranceCount);"));
+            Assert.That(configureBody, Does.Contain("_entrances = entranceSnapshots;"));
+            Assert.That(configureBody, Does.Contain("CaveStructure[] structureSnapshots = new CaveStructure[structures.Length];"));
+            Assert.That(configureBody, Does.Contain("int validStructureCount = 0;"));
+            Assert.That(configureBody, Does.Contain("if (!TryBuildRuntimeStructureSnapshot(in structures[i], absoluteUniverseOffset, out CaveStructure snapshot))"));
+            Assert.That(configureBody, Does.Contain("structureSnapshots[validStructureCount++] = snapshot;"));
+            Assert.That(configureBody, Does.Contain("Array.Resize(ref structureSnapshots, validStructureCount);"));
+            Assert.That(configureBody, Does.Contain("_structures = structureSnapshots;"));
+
+            Assert.That(nodeHelperBody, Does.Contain("!IsFinite(source.position)"));
+            Assert.That(nodeHelperBody, Does.Contain("!IsFinite(source.radii)"));
+            Assert.That(nodeHelperBody, Does.Contain("math.cmin(source.radii) <= 0f"));
+            Assert.That(nodeHelperBody, Does.Contain("snapshot.radii = radii;"));
+            Assert.That(nodeHelperBody, Does.Contain("snapshot.blendRadius = ClampFinite(source.blendRadius"));
+            Assert.That(nodeHelperBody, Does.Contain("snapshot.noiseScale = ClampFinite(source.noiseScale"));
+            Assert.That(tunnelHelperBody, Does.Contain("!IsFinite(source.pointA)"));
+            Assert.That(tunnelHelperBody, Does.Contain("!IsFinite(source.pointB)"));
+            Assert.That(tunnelHelperBody, Does.Contain("source.radiusA <= 0f"));
+            Assert.That(tunnelHelperBody, Does.Contain("snapshot.radiusA = ClampFinite(source.radiusA"));
+            Assert.That(tunnelHelperBody, Does.Contain("snapshot.heightScale = ClampFinite(source.heightScale"));
+            Assert.That(tunnelHelperBody, Does.Contain("snapshot.warpAmount = ClampFinite(source.warpAmount"));
+            Assert.That(structureHelperBody, Does.Contain("!IsFinite(source.position)"));
+            Assert.That(structureHelperBody, Does.Contain("!IsFinite(source.size)"));
+            Assert.That(structureHelperBody, Does.Contain("math.cmax(source.size) <= 0f"));
+            Assert.That(structureHelperBody, Does.Contain("float3 pointB = IsFinite(source.pointB) ? source.pointB + offset : position;"));
+            Assert.That(structureHelperBody, Does.Contain("snapshot.size = size;"));
+            Assert.That(structureHelperBody, Does.Contain("snapshot.noiseAmount = ClampFinite(source.noiseAmount"));
+
+            Assert.That(helperBody, Does.Contain("!TryResolveRuntimeSnapshotOffset(absoluteUniverseOffset, out float3 offset)"));
+            Assert.That(helperBody, Does.Contain("!IsFinite(source.surfacePosition)"));
+            Assert.That(helperBody, Does.Contain("!IsFinite(source.inwardDirection)"));
+            Assert.That(helperBody, Does.Contain("!TryNormalizeFinite(source.inwardDirection, out float3 inwardDirection)"));
+            Assert.That(helperBody, Does.Contain("float3 surfacePosition = source.surfacePosition + offset;"));
+            Assert.That(helperBody, Does.Contain("snapshot.inwardDirection = inwardDirection;"));
+            Assert.That(helperBody, Does.Contain("math.clamp(source.radius, MinRuntimeEntranceSnapshotRadius, MaxRuntimeEntranceSnapshotRadius)"));
+            Assert.That(helperBody, Does.Contain("math.clamp(source.funnelLength, MinRuntimeEntranceSnapshotFunnelLength, MaxRuntimeEntranceSnapshotFunnelLength)"));
+            Assert.That(helperBody, Does.Contain("snapshot.terrainNormalBlend = SaturateFinite(source.terrainNormalBlend);"));
+            Assert.That(helperBody, Does.Contain("if (IsFinite(source.terrainSplatColor))"));
+            Assert.That(helperBody, Does.Contain("snapshot.terrainSplatColor = SaturateFinite(source.terrainSplatColor);"));
+            Assert.That(helperBody, Does.Contain("snapshot.terrainSplatBlend = SaturateFinite(source.terrainSplatBlend);"));
+            Assert.That(helperBody, Does.Contain("snapshot.terrainSplatColor = float4.zero;"));
+            Assert.That(helperBody, Does.Contain("snapshot.terrainSplatBlend = 0f;"));
+
+            Assert.That(configureBody, Does.Not.Contain("snapshot.position += (Unity.Mathematics.float3)absoluteUniverseOffset;"));
+            Assert.That(configureBody, Does.Not.Contain("snapshot.pointA += (Unity.Mathematics.float3)absoluteUniverseOffset;"));
+            Assert.That(configureBody, Does.Not.Contain("snapshot.pointB += (Unity.Mathematics.float3)absoluteUniverseOffset;"));
+            Assert.That(configureBody, Does.Not.Contain("snapshot.surfacePosition += (Unity.Mathematics.float3)absoluteUniverseOffset;"));
+            Assert.That(configureBody, Does.Not.Contain("_entrances = new CaveEntrance[entrances.Length];"));
+            Assert.That(configureBody, Does.Not.Contain("_nodes = new CaveNode[nodes.Length];"));
+            Assert.That(configureBody, Does.Not.Contain("_tunnels = new CaveTunnel[tunnels.Length];"));
+            Assert.That(configureBody, Does.Not.Contain("_structures = new CaveStructure[structures.Length];"));
+        }
+
+        [Test]
+        public void CaveDressingRuntimeBuilders_SanitizeFiniteTransformAndMaterialPayloads()
+        {
+            string sanitizer = ReadProjectFile("Assets", "_Project", "Scripts", "CaveDressingRuntimeSanitizer.cs");
+            string wall = ReadProjectFile("Assets", "_Project", "Scripts", "CaveWallGrowthRuntimeBuilder.cs");
+            string tissue = ReadProjectFile("Assets", "_Project", "Scripts", "CaveGlowingTissueRuntimeBuilder.cs");
+            string remnant = ReadProjectFile("Assets", "_Project", "Scripts", "CaveServiceRemnantRuntimeBuilder.cs");
+            string shelf = ReadProjectFile("Assets", "_Project", "Scripts", "CaveSedimentShelfRuntimeBuilder.cs");
+            string caveDirector = ReadProjectFile("Assets", "_Project", "Scripts", "WorldCaveDirector.cs");
+
+            Assert.That(sanitizer, Does.Contain("internal static class CaveDressingRuntimeSanitizer"));
+            Assert.That(sanitizer, Does.Contain("internal const float MaxGlobalIntensity = 1.25f;"));
+            Assert.That(sanitizer, Does.Contain("internal static bool IsFinite(Bounds bounds)"));
+            Assert.That(sanitizer, Does.Contain("internal static Color SanitizeColor(Color value, Color fallback)"));
+
+            Assert.That(wall, Does.Contain("!CaveDressingRuntimeSanitizer.IsFinite(volumeBounds)"));
+            Assert.That(wall, Does.Contain("float safeGlobalIntensity = CaveDressingRuntimeSanitizer.ClampFinite("));
+            Assert.That(wall, Does.Contain("CaveDressingRuntimeSanitizer.SeedPosition(volume.transform.position)"));
+            Assert.That(wall, Does.Contain("CaveDressingRuntimeSanitizer.SanitizeColor(config.growthColor"));
+            Assert.That(wall, Does.Contain("!CaveDressingRuntimeSanitizer.IsFinite(localPosition)"));
+            Assert.That(wall, Does.Contain("if (primitiveObject.activeSelf)"));
+
+            Assert.That(tissue, Does.Contain("!CaveDressingRuntimeSanitizer.IsFinite(volumeBounds)"));
+            Assert.That(tissue, Does.Contain("CaveDressingRuntimeSanitizer.SanitizeColor(config.baseColor"));
+            Assert.That(tissue, Does.Contain("CaveDressingRuntimeSanitizer.SanitizeColor(config.glowColor"));
+            Assert.That(tissue, Does.Contain("!CaveDressingRuntimeSanitizer.IsFinite(localScale)"));
+            Assert.That(tissue, Does.Contain("primitiveObject.SetActive(false);"));
+
+            Assert.That(remnant, Does.Contain("CaveDressingRuntimeSanitizer.ClampFinite(config.minScale"));
+            Assert.That(remnant, Does.Contain("CaveDressingRuntimeSanitizer.SanitizeColor(config.accentColor"));
+            Assert.That(remnant, Does.Contain("if (!CaveDressingRuntimeSanitizer.IsFinite(boundsSize))"));
+            Assert.That(remnant, Does.Contain("primitiveObject.SetActive(false);"));
+
+            Assert.That(shelf, Does.Contain("CaveDressingRuntimeSanitizer.ClampFinite(config.scaleRange.x"));
+            Assert.That(shelf, Does.Contain("CaveDressingRuntimeSanitizer.ClampFinite(config.floorOffset"));
+            Assert.That(shelf, Does.Contain("CaveDressingRuntimeSanitizer.SanitizeColor(config.tint"));
+            Assert.That(shelf, Does.Contain("CaveDressingRuntimeSanitizer.SaturateFinite(config.opacity"));
+            Assert.That(shelf, Does.Contain("DisableCachedPrimitive(primitiveObjects, i);"));
+
+            Assert.That(caveDirector, Does.Contain("!CaveDressingRuntimeSanitizer.IsFinite(volumeBounds)"));
+            Assert.That(caveDirector, Does.Contain("DisableFungiObject(fungiGO);"));
+            Assert.That(caveDirector, Does.Contain("float particleSize = CaveDressingRuntimeSanitizer.ClampFinite(config.particleSize"));
+            Assert.That(caveDirector, Does.Contain("float lifetime = CaveDressingRuntimeSanitizer.ClampFinite(config.lifetime"));
+            Assert.That(caveDirector, Does.Contain("float density = CaveDressingRuntimeSanitizer.SaturateFinite(config.density"));
+            Assert.That(caveDirector, Does.Contain("float emissionRate = CaveDressingRuntimeSanitizer.ClampFinite(config.emissionRate"));
+            Assert.That(caveDirector, Does.Contain("Color glowColor = CaveDressingRuntimeSanitizer.SanitizeColor(config.glowColor"));
+            Assert.That(caveDirector, Does.Contain("instance.preset == null"));
+            Assert.That(caveDirector, Does.Contain("float mood = CaveDressingRuntimeSanitizer.SaturateFinite(instance.preset.moodLevel);"));
+            Assert.That(caveDirector, Does.Contain("float hazard = CaveDressingRuntimeSanitizer.SaturateFinite(instance.preset.hazardLevel);"));
+            Assert.That(caveDirector, Does.Contain("!CaveDressingRuntimeSanitizer.IsFinite(position)"));
+            Assert.That(caveDirector, Does.Contain("!CaveDressingRuntimeSanitizer.IsFinite(inwardDirection)"));
+            Assert.That(caveDirector, Does.Contain("marker.SetActive(false);"));
+            Assert.That(caveDirector, Does.Contain("math.isfinite(inwardDirectionSq)"));
+            Assert.That(caveDirector, Does.Contain("if (entranceLight == null)"));
+            Assert.That(caveDirector, Does.Contain("if (ps == null)"));
+            Assert.That(caveDirector, Does.Contain("float safeEntranceRadius = CaveDressingRuntimeSanitizer.ClampFinite("));
+            Assert.That(caveDirector, Does.Contain("DisableEntranceQualityObject(entranceQualityGO);"));
+            Assert.That(caveDirector, Does.Contain("sphereCollider.radius = safeEntranceRadius * 2f;"));
+            Assert.That(caveDirector, Does.Contain("entranceGlow.range = safeEntranceRadius * 3f;"));
+            Assert.That(caveDirector, Does.Contain("if (instance.volume == null || preset == null) return;"));
+            Assert.That(caveDirector, Does.Contain("if (dressingConfig == null)"));
+            Assert.That(caveDirector, Does.Contain("dressingConfig.mineralCrust != null && dressingConfig.mineralCrust.enabled"));
+            Assert.That(caveDirector, Does.Contain("dressingConfig.deepFungi != null && dressingConfig.deepFungi.enabled"));
+            Assert.That(caveDirector, Does.Contain("float crustIntensity = CaveDressingRuntimeSanitizer.SaturateFinite(config.intensity, 0f) *"));
+            Assert.That(caveDirector, Does.Contain("float roughnessBoost = CaveDressingRuntimeSanitizer.SaturateFinite(config.roughnessBoost);"));
+            Assert.That(caveDirector, Does.Contain("Color crustTint = CaveDressingRuntimeSanitizer.SanitizeColor(config.tint"));
+            Assert.That(caveDirector, Does.Contain("_CaveSurfacePropertyBlock.SetFloat(_CrustIntensityId, crustIntensity);"));
+            Assert.That(caveDirector, Does.Contain("private static bool TryBuildEntranceHint(in CaveEntrance entrance, out CaveEntranceHint hint)"));
+            Assert.That(caveDirector, Does.Contain("int validHintCount = 0;"));
+            Assert.That(caveDirector, Does.Contain("CaveEntranceHint[] hints = new CaveEntranceHint[validHintCount]"));
+            Assert.That(caveDirector, Does.Contain("Vector3 inwardDirection = (Vector3)entrance.inwardDirection;"));
+            Assert.That(caveDirector, Does.Contain("!CaveDressingRuntimeSanitizer.IsFinite(surfacePosition)"));
+            Assert.That(caveDirector, Does.Contain("float directionSq = inwardDirection.sqrMagnitude;"));
+            Assert.That(caveDirector, Does.Contain("Vector3 safeDirection = inwardDirection * math.rsqrt(directionSq);"));
+            Assert.That(caveDirector, Does.Contain("float influenceRadius = CaveDressingRuntimeSanitizer.ClampFinite("));
+
+            Assert.That(wall, Does.Not.Contain("Mathf.Clamp(globalIntensity, 0.1f, 1.25f)"));
+            Assert.That(tissue, Does.Not.Contain("Mathf.Clamp(globalIntensity, 0.1f, 1.25f)"));
+            Assert.That(remnant, Does.Not.Contain("Mathf.Clamp(globalIntensity, 0.1f, 1.25f)"));
+            Assert.That(shelf, Does.Not.Contain("Mathf.Clamp(globalIntensity, 0.1f, 1.25f)"));
+            Assert.That(caveDirector, Does.Not.Contain("Mathf.Clamp01(config.verticalBias)"));
+            Assert.That(caveDirector, Does.Not.Contain("main.startLifetime = config.lifetime"));
+            Assert.That(caveDirector, Does.Not.Contain("float mood = instance.preset.moodLevel;"));
+            Assert.That(caveDirector, Does.Not.Contain("float hazard = instance.preset.hazardLevel;"));
+            Assert.That(caveDirector, Does.Not.Contain("sphereCollider.radius = preset.entranceRadius * 2f;"));
+            Assert.That(caveDirector, Does.Not.Contain("entranceGlow.range = preset.entranceRadius * 3f;"));
+            Assert.That(caveDirector, Does.Not.Contain("_CaveSurfacePropertyBlock.SetFloat(_CrustIntensityId, config.intensity * config.scale);"));
+            Assert.That(caveDirector, Does.Not.Contain("_CaveSurfacePropertyBlock.SetColor(_CrustColorId, config.tint);"));
+            Assert.That(caveDirector, Does.Not.Contain("if (dressingConfig.mineralCrust.enabled)"));
+            Assert.That(caveDirector, Does.Not.Contain("if (dressingConfig.deepFungi.enabled)"));
+            Assert.That(caveDirector, Does.Not.Contain("CaveEntranceHint[] hints = new CaveEntranceHint[entrances.Length]"));
+            Assert.That(caveDirector, Does.Not.Contain("surfacePosition + ((Vector3)entrance.inwardDirection * entrance.funnelLength)"));
+            Assert.That(caveDirector, Does.Not.Contain("Mathf.Max(entrance.radius * 2.5f, entrance.funnelLength + entrance.innerRadius)"));
         }
 
         [Test]
@@ -3850,10 +4407,16 @@ namespace Hecton8.Tests.Editor
             string registerLateBody = ExtractMethodBody(source, "private void TryRegisterLateFrame()");
             string serviceBody = ExtractMethodBody(source, "private void TryRegisterService()");
             string hotSwapBody = ExtractMethodBody(source, "private void TryRegisterHotSwapListener()");
+            string ownerGateBody = ExtractMethodBody(source, "private bool TryAbortForUsableExistingRuntime()");
+            string ownerUsableBody = ExtractMethodBody(source, "private static bool IsAmbientWaterMotionRuntimeUsable(");
 
             Assert.That(source, Does.Contain("private bool _runtimeWaterMotionCallbacksActive;"));
             Assert.That(awakeBody, Does.Contain("_runtimeWaterMotionCallbacksActive = Application.isPlaying;"));
             Assert.That(onEnableBody, Does.Contain("_runtimeWaterMotionCallbacksActive = Application.isPlaying;"));
+            Assert.That(onEnableBody, Does.Contain("if (TryAbortForUsableExistingRuntime())"));
+            Assert.That(onEnableBody.IndexOf("_runtimeWaterMotionCallbacksActive = Application.isPlaying;", System.StringComparison.Ordinal), Is.LessThan(onEnableBody.IndexOf("if (TryAbortForUsableExistingRuntime())", System.StringComparison.Ordinal)));
+            Assert.That(onEnableBody.IndexOf("if (TryAbortForUsableExistingRuntime())", System.StringComparison.Ordinal), Is.LessThan(onEnableBody.IndexOf("CacheRegistryServicesCold();", System.StringComparison.Ordinal)));
+            Assert.That(onEnableBody.IndexOf("if (TryAbortForUsableExistingRuntime())", System.StringComparison.Ordinal), Is.LessThan(onEnableBody.IndexOf("BiomeMatrixEvents.Register(this);", System.StringComparison.Ordinal)));
             Assert.That(onEnableBody, Does.Contain("if (_runtimeWaterMotionCallbacksActive)"));
             Assert.That(onDisableBody, Does.Contain("_runtimeWaterMotionCallbacksActive = false;"));
             Assert.That(onDestroyBody, Does.Contain("_runtimeWaterMotionCallbacksActive = false;"));
@@ -3864,6 +4427,21 @@ namespace Hecton8.Tests.Editor
             AssertHotBodyUsesRuntimeLatch(registerLateBody, "_runtimeWaterMotionCallbacksActive");
             AssertHotBodyUsesRuntimeLatch(serviceBody, "_runtimeWaterMotionCallbacksActive");
             AssertHotBodyUsesRuntimeLatch(hotSwapBody, "_runtimeWaterMotionCallbacksActive");
+            Assert.That(awakeBody, Does.Contain("if (TryAbortForUsableExistingRuntime())"));
+            Assert.That(serviceBody, Does.Contain("if (TryAbortForUsableExistingRuntime())"));
+            Assert.That(serviceBody.IndexOf("if (TryAbortForUsableExistingRuntime())", System.StringComparison.Ordinal), Is.LessThan(serviceBody.IndexOf("GlobalRegistry.RegisterAmbientWaterMotionRuntime(this);", System.StringComparison.Ordinal)));
+            Assert.That(ownerGateBody, Does.Contain("AmbientWaterMotionManager active = s_activeRuntime"));
+            Assert.That(ownerGateBody, Does.Contain("AmbientWaterMotionManager registered = GlobalRegistry.AmbientWaterMotion"));
+            Assert.That(ownerGateBody, Does.Contain("if (IsAmbientWaterMotionRuntimeUsable(active))"));
+            Assert.That(ownerGateBody, Does.Contain("if (IsAmbientWaterMotionRuntimeUsable(registered))"));
+            Assert.That(ownerGateBody, Does.Contain("GlobalRegistry.UnregisterAmbientWaterMotionRuntime(active);"));
+            Assert.That(ownerGateBody, Does.Contain("GlobalRegistry.UnregisterAmbientWaterMotionRuntime(registered);"));
+            Assert.That(ownerGateBody, Does.Contain("s_activeRuntime = null"));
+            Assert.That(ownerUsableBody, Does.Contain("manager._serviceRegistered"));
+            Assert.That(ownerUsableBody, Does.Contain("manager._runtimeWaterMotionCallbacksActive"));
+            Assert.That(ownerUsableBody, Does.Contain("manager.isActiveAndEnabled"));
+            Assert.That(awakeBody, Does.Not.Contain("registered != null && registered != this"));
+            Assert.That(serviceBody, Does.Not.Contain("registered != null && registered != this"));
         }
 
         private static string ReadShader(string shaderFile)

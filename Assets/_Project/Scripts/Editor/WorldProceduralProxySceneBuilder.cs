@@ -20,6 +20,7 @@ namespace Hecton8.EditorTools
         private const float ProxySnapRaycastDistanceMeters = 240f;
         private const float ProxySnapMaxTiltDegrees = 35f;
         private const float ProxySnapMinimumNormalUpDot = 0.2f;
+        private const string NativeMemoryOwner = nameof(WorldProceduralProxySceneBuilder);
 
         [MenuItem("Hecton/Authoring/Rebuild Procedural Proxy Scene", priority = 179)]
         public static void RebuildProceduralProxyScene()
@@ -268,8 +269,8 @@ namespace Hecton8.EditorTools
             normal = Vector3.up;
             Vector3 origin = position + (Vector3.up * ProxySnapRaycastElevationMeters);
             float distance = ProxySnapRaycastElevationMeters + ProxySnapRaycastDistanceMeters;
-            NativeArray<RaycastCommand> commands = new NativeArray<RaycastCommand>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<RaycastHit> hits = new NativeArray<RaycastHit>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<RaycastCommand> commands = AllocateTrackedNativeArray<RaycastCommand>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory, nameof(commands));
+            NativeArray<RaycastHit> hits = AllocateTrackedNativeArray<RaycastHit>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory, nameof(hits));
 
             try
             {
@@ -292,10 +293,63 @@ namespace Hecton8.EditorTools
             }
             finally
             {
-                if (commands.IsCreated)
-                    commands.Dispose();
-                if (hits.IsCreated)
-                    hits.Dispose();
+                DisposeTrackedNativeArray(ref commands);
+                DisposeTrackedNativeArray(ref hits);
+            }
+        }
+
+        private static NativeArray<T> AllocateTrackedNativeArray<T>(int length, Allocator allocator, NativeArrayOptions options, string label) where T : struct
+        {
+            if (length <= 0)
+                return default;
+
+            NativeArray<T> array = new NativeArray<T>(length, allocator, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[WorldProceduralProxySceneBuilder] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, ResolveNativeAllocationLifetime(allocator));
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("[WorldProceduralProxySceneBuilder] NativeMemorySentinel rejected NativeArray registration for " + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
+        }
+
+        private static NativeAllocationLifetime ResolveNativeAllocationLifetime(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return NativeAllocationLifetime.Temp;
+                case Allocator.TempJob:
+                    return NativeAllocationLifetime.TempJob;
+                case Allocator.Persistent:
+                    return NativeAllocationLifetime.Session;
+                default:
+                    return NativeAllocationLifetime.Session;
             }
         }
 

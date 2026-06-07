@@ -7,6 +7,9 @@ poi_tags: poi.lantern_drift_scan;poi.false_safe_light
 biome_tags: biome.photic_shelf;biome.light
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Lantern Drift Codex Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

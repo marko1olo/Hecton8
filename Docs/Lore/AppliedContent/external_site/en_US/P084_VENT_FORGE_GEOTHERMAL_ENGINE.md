@@ -7,6 +7,9 @@ poi_tags: poi.vent_forge_manifold;poi.thermal_cycle_meter
 biome_tags: biome.thermal_fields;biome.factory_temple
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Vent Forge Geothermal Engine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.site_atlas_spoiler_gate_layout;poi.redacted_factory_temple_image
 biome_tags: biome.publication;biome.atlas
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Atlas Spoiler Composition Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -271,24 +271,58 @@ namespace Hecton8.EditorTools
             Mesh existing = AssetDatabase.LoadAssetAtPath<Mesh>(assetPath);
             if (existing != null)
             {
-                // Obnovlyaem suschestvuyuschiy asset
-                existing.Clear();
-                List<Vector3> vertices = new List<Vector3>(mesh.vertexCount);
-                List<int> triangles = new List<int>((int)mesh.GetIndexCount(0));
-                mesh.GetVertices(vertices);
-                mesh.GetTriangles(triangles, 0);
-                existing.SetVertices(vertices);
-                existing.SetTriangles(triangles, 0);
-                existing.RecalculateNormals();
-                existing.RecalculateBounds();
-                existing.Optimize();
-                existing.name = assetName;
-                EditorUtility.SetDirty(existing);
-                return existing;
+                try
+                {
+                    CopyMeshData(mesh, existing);
+                    existing.name = assetName;
+                    EditorUtility.SetDirty(existing);
+                    return existing;
+                }
+                finally
+                {
+                    if (!ReferenceEquals(mesh, existing))
+                        ReleaseTemporaryMesh(mesh);
+                }
             }
 
             AssetDatabase.CreateAsset(mesh, assetPath);
             return mesh;
+        }
+
+        private static void CopyMeshData(Mesh source, Mesh target)
+        {
+            target.Clear();
+            target.indexFormat = source.indexFormat;
+
+            List<Vector3> vertices = new List<Vector3>(source.vertexCount);
+            List<int> triangles = new List<int>();
+            source.GetVertices(vertices);
+            target.SetVertices(vertices);
+
+            int subMeshCount = Mathf.Max(1, source.subMeshCount);
+            target.subMeshCount = subMeshCount;
+            for (int subMeshIndex = 0; subMeshIndex < subMeshCount; subMeshIndex++)
+            {
+                triangles.Clear();
+                if (subMeshIndex < source.subMeshCount)
+                    source.GetTriangles(triangles, subMeshIndex);
+                target.SetTriangles(triangles, subMeshIndex, false);
+            }
+
+            target.RecalculateNormals();
+            target.RecalculateBounds();
+            target.Optimize();
+        }
+
+        private static void ReleaseTemporaryMesh(Mesh mesh)
+        {
+            if (mesh == null)
+                return;
+
+            if (Application.isPlaying)
+                UnityEngine.Object.Destroy(mesh);
+            else
+                UnityEngine.Object.DestroyImmediate(mesh);
         }
 
         // ── Folder utility ────────────────────────────────────────

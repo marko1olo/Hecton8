@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Vent Anchor Colonies"
+title: "Ventanker-kolonies"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Vent Anchor Colonies
+# Ventanker-kolonies
 
-NL LOC HOLD: Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.
+Ventanker-kolonies verklaren waarom de Marauder niet elk reparatieprobleem kan oplossen door ondiep te blijven. Ze groeien waar thermale vents hitte en sulfidechemie in pekellagen duwen. Hun geribde lichamen vangen mineralen, koelen in platen en beschutten kleine ventfauna aan de rand van dodelijk water. Dat maakt ze waardevol zonder ze magisch erts te maken. Afgeworpen ribben kunnen pressure-ceramic filler, cold-sealant grit en chemische filters voeden. Levende hete ribben kunnen een pak snel doden of een gereedschapskop laten barsten door thermische schok. De juiste lezing is geduld: scan de thermale bloom, wacht op de gekoelde rand, snijd alleen afgeworpen platen en laat de actieve keel met rust tenzij het doel het risico waard is.
 
 ## Scanner
 
-NL LOC HOLD: Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.
+VENTANKER-KOLONIE // Geribde kolonies vergrendelen rond thermale vents, vangen sulfiden en groeien de chemie voor diepterepairs.
 
 ## Terminal
 
-NL LOC HOLD: RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.
+RESOURCE-BASIS: kolonies verhogen kans op cold-sealant grit, pressure-ceramic precursor en sulfide salt. Thermale bloom blijft dodelijk; neem alleen monsters van gekoelde ribben en afgeworpen platen.
 
 ## Audio
 
-NL LOC HOLD: Every good repair part is sitting in water that wants to cook you.
+Elk goed reparatieonderdeel ligt in water dat je wil koken.
 
 ## Field Note
 
-NL LOC HOLD: Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.
+Een ventanker is een hulpbronteken, hittewaarschuwing, schuilrand en bewijs dat forge chemistry levende handen eromheen heeft.
 
 <!-- In-Game Wiki; generated from P228_VENT_ANCHOR_COLONIES/nl_NL. -->

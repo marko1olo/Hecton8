@@ -338,138 +338,138 @@
       "localized": {
         "en_US": {
           "title": "Pellet-Fusion Freight",
-          "scanner": "Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.",
-          "field_note": "Heavy transit should feel industrial and old, not heroic.",
-          "terminal": "FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
+          "scanner": "Drive plate. Pellet-fed fusion freight crossed as infrastructure: boost, shield, coast, brake, and bill the loss.",
+          "field_note": "Heavy transit is not heroic. It is an old route contract with heat scars.",
+          "terminal": "FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used beam-sail boost, pellet-fed fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
           "audio": "A heavy ship is not a miracle. It is a mortgage with engines.",
-          "in_game_wiki": "Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.",
-          "external_site": "Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for."
+          "in_game_wiki": "Heavy interstellar travel is possible without FTL, but it is punishing. Beam-sail boost, pellet-fed fusion, shield mass, long coasts and braking architecture let seed payloads and later colony freight reach Aegir. The same logistics make rescue slow: every kilogram, berth, brake slot and survivor seat belongs to a schedule.",
+          "external_site": "Pellet-fusion freight is the industrial history behind HECTON-8. Machines and heavy cargo reached Aegir because infrastructure could push, feed, shield and brake mass over decades; the route remains cruel because the accounting survives longer than the emergency."
         },
         "ru_RU": {
-          "title": "Pellet-fusion грузовые рейсы",
-          "scanner": "Drive plate. Тяжелые корабли пересекали маршрут как staged freight: разгон, coast, торможение, учет потерь.",
-          "field_note": "Тяжелый transit должен ощущаться индустриальным и старым, а не героическим.",
-          "terminal": "FREIGHT DOCTRINE: Atlas-class seed payloads и colony freight использовали external staging, pellet-beam assisted fusion, magsail braking и длинные coast intervals. Living cargo прибыл после того, как машины сделали маршрут оплачиваемым.",
-          "audio": "Тяжелый корабль - не чудо. Это ипотека с двигателями.",
-          "in_game_wiki": "Тяжелый межзвездный полет возможен, но жесток. Pellet-beam assisted fusion, external staging, длинные coasts и тормозная инфраструктура позволили Atlas-class seed payloads и позднему colony freight дойти до Aegir без FTL. Та же логистика делает спасение медленным и политически условным.",
-          "external_site": "Pellet-fusion грузовые рейсы задают индустриальную историю кораблей за HECTON-8. Маршрут правдоподобен, потому что машины и тяжелый груз двигались через staged infrastructure; он остается жестоким, потому что каждый килограмм, braking window и survivor seat попадает в учет."
+          "title": "Draft RU localization pending native pass. Пеллетно-термоядерные грузовые рейсы",
+          "scanner": "Draft RU localization pending native pass. Пластина двигателя. Пеллетно-термоядерные грузовики шли как инфраструктура: разгон, щит, дрейф, торможение и счёт за потери.",
+          "field_note": "Draft RU localization pending native pass. Тяжёлый транзит не героичен. Это старый маршрутный контракт с тепловыми шрамами.",
+          "terminal": "Draft RU localization pending native pass. ГРУЗОВАЯ ДОКТРИНА: seed-грузы класса Atlas и колониальный фрахт использовали разгон лучевым парусом, пеллетное термоядерное питание, магнитопарусное торможение и долгие интервалы дрейфа. Живой груз прибыл после того, как машины сделали маршрут оплачиваемым.",
+          "audio": "Draft RU localization pending native pass. Тяжёлый корабль не чудо. Это ипотека с двигателями.",
+          "in_game_wiki": "Draft RU localization pending native pass. Тяжёлый межзвёздный перелёт возможен без FTL, но он жесток. Разгон лучевым парусом, пеллетное термоядерное питание, масса защиты, долгий дрейф и тормозная архитектура довели seed-грузы и поздний колониальный фрахт до Aegir. Та же логистика делает спасение медленным: каждый килограмм, койка, тормозной слот и место выжившего принадлежат расписанию.",
+          "external_site": "Draft RU localization pending native pass. Пеллетно-термоядерный фрахт это индустриальная история за HECTON-8. Машины и тяжёлый груз добрались до Aegir потому, что инфраструктура могла десятилетиями толкать, кормить, защищать и тормозить массу; маршрут остаётся жестоким, потому что учёт живёт дольше аварии."
         },
         "ja_JP": {
-          "title": "Pellet-Fusion Freight",
-          "scanner": "JP LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.",
-          "field_note": "JP LOC HOLD: Heavy transit should feel industrial and old, not heroic.",
-          "terminal": "JP LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
-          "audio": "JP LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.",
-          "in_game_wiki": "JP LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.",
-          "external_site": "JP LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for."
+          "title": "Draft JA localization pending native pass. ペレット核融合貨物",
+          "scanner": "Draft JA localization pending native pass. ドライブプレート。ペレット供給式核融合貨物はインフラとして渡った。加速、遮蔽、巡航、制動、損失請求。",
+          "field_note": "Draft JA localization pending native pass. 重輸送は英雄譚ではない。熱傷だらけの古い航路契約だ。",
+          "terminal": "Draft JA localization pending native pass. 貨物ドクトリン: Atlas級seed payloadと植民地貨物はビームセイル加速、ペレット供給式核融合、磁気帆制動、長い巡航間隔を使った。生きた貨物は、機械が航路を請求可能にしてから到着した。",
+          "audio": "Draft JA localization pending native pass. 重い船は奇跡ではない。エンジン付きの抵当だ。",
+          "in_game_wiki": "Draft JA localization pending native pass. 重い恒星間移動はFTLなしでも可能だが苛酷だ。ビームセイル加速、ペレット供給式核融合、遮蔽質量、長い巡航、制動設備がseed payloadと後の植民地貨物をAegirへ運んだ。同じ物流が救助を遅くする。すべてのキログラム、寝台、制動枠、生存者席は予定表に属する。",
+          "external_site": "Draft JA localization pending native pass. ペレット核融合貨物はHECTON-8の背後にある産業史だ。機械と重貨物がAegirに届いたのは、インフラが何十年もかけて質量を押し、食わせ、守り、止められたからだ。航路が残酷なのは、会計が緊急事態より長く生きるからである。"
         },
         "zh_CN": {
-          "title": "Pellet-Fusion Freight",
-          "scanner": "CN LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.",
-          "field_note": "CN LOC HOLD: Heavy transit should feel industrial and old, not heroic.",
-          "terminal": "CN LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
-          "audio": "CN LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.",
-          "in_game_wiki": "CN LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.",
-          "external_site": "CN LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for."
+          "title": "Draft ZH localization pending native pass. 弹丸聚变货运",
+          "scanner": "Draft ZH localization pending native pass. 驱动板。弹丸供料聚变货运以基础设施形式穿越：加速、护盾、巡航、制动，并核算损失。",
+          "field_note": "Draft ZH localization pending native pass. 重型运输不是英雄故事。它是一份带热疤的旧航线合同。",
+          "terminal": "Draft ZH localization pending native pass. 货运 doctrine：Atlas 级 seed 载荷和殖民地货运使用光束帆加速、弹丸供料聚变、磁帆制动和漫长巡航间隔。活体货物是在机器把航线变成可计费路线后才抵达的。",
+          "audio": "Draft ZH localization pending native pass. 重型飞船不是奇迹。它是带发动机的抵押贷款。",
+          "in_game_wiki": "Draft ZH localization pending native pass. 没有 FTL 也能进行重型星际航行，但代价严酷。光束帆加速、弹丸供料聚变、护盾质量、漫长巡航和制动架构把 seed 载荷及后来的殖民货运送到 Aegir。同一套物流也让救援变慢：每一公斤、床位、制动槽和幸存者座位都属于时间表。",
+          "external_site": "Draft ZH localization pending native pass. 弹丸聚变货运是 HECTON-8 背后的工业航运史。机器和重货物能抵达 Aegir，是因为基础设施可以用几十年推动、供料、防护并制动质量；这条航线仍然残酷，因为账目比紧急事件活得更久。"
         },
         "fr_FR": {
-          "title": "Pellet-Fusion Freight",
-          "scanner": "FR LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.",
-          "field_note": "FR LOC HOLD: Heavy transit should feel industrial and old, not heroic.",
-          "terminal": "FR LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
-          "audio": "FR LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.",
-          "in_game_wiki": "FR LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.",
-          "external_site": "FR LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for."
+          "title": "Draft FR localization pending native pass. Fret à fusion par pellets",
+          "scanner": "Draft FR localization pending native pass. Plaque moteur. Le fret à fusion nourrie aux pellets a traversé comme infrastructure : poussée, blindage, dérive, freinage, pertes facturées.",
+          "field_note": "Draft FR localization pending native pass. Le transit lourd n'est pas héroïque. C'est un vieux contrat de route avec des cicatrices de chaleur.",
+          "terminal": "Draft FR localization pending native pass. DOCTRINE FRET : les charges seed de classe Atlas et le fret colonial utilisaient accélération par voile à faisceau, fusion nourrie aux pellets, freinage par voile magnétique et longs intervalles de dérive. Le vivant est arrivé après que les machines ont rendu la route facturable.",
+          "audio": "Draft FR localization pending native pass. Un navire lourd n'est pas un miracle. C'est une hypothèque avec des moteurs.",
+          "in_game_wiki": "Draft FR localization pending native pass. Le voyage interstellaire lourd est possible sans FTL, mais il punit. Accélération par voile à faisceau, fusion nourrie aux pellets, masse de blindage, longues dérives et architecture de freinage ont porté les charges seed puis le fret colonial jusqu'à Aegir. La même logistique ralentit le secours : chaque kilogramme, couchette, créneau de freinage et siège survivant appartient à un calendrier.",
+          "external_site": "Draft FR localization pending native pass. Le fret à fusion par pellets est l'histoire industrielle derrière HECTON-8. Machines et fret lourd ont atteint Aegir parce qu'une infrastructure pouvait pousser, nourrir, protéger et freiner la masse pendant des décennies ; la route reste cruelle parce que la comptabilité survit plus longtemps que l'urgence."
         },
         "es_ES": {
-          "title": "Pellet-Fusion Freight",
-          "scanner": "ES LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.",
-          "field_note": "ES LOC HOLD: Heavy transit should feel industrial and old, not heroic.",
-          "terminal": "ES LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
-          "audio": "ES LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.",
-          "in_game_wiki": "ES LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.",
-          "external_site": "ES LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for."
+          "title": "Draft ES localization pending native pass. Flete de fusión por pellets",
+          "scanner": "Draft ES localization pending native pass. Placa de motor. El flete con fusión alimentada por pellets cruzó como infraestructura: impulso, escudo, deriva, frenado y pérdidas facturadas.",
+          "field_note": "Draft ES localization pending native pass. El tránsito pesado no es heroico. Es un contrato de ruta viejo con cicatrices de calor.",
+          "terminal": "Draft ES localization pending native pass. DOCTRINA DE FLETE: cargas seed clase Atlas y flete colonial usaron impulso de vela de haz, fusión alimentada por pellets, frenado con vela magnética e intervalos largos de deriva. La carga viva llegó después de que las máquinas hicieron facturable la ruta.",
+          "audio": "Draft ES localization pending native pass. Una nave pesada no es un milagro. Es una hipoteca con motores.",
+          "in_game_wiki": "Draft ES localization pending native pass. El viaje interestelar pesado es posible sin FTL, pero castiga. Impulso de vela de haz, fusión alimentada por pellets, masa de escudo, largas derivas y arquitectura de frenado llevaron cargas seed y luego flete colonial hasta Aegir. La misma logística vuelve lento el rescate: cada kilogramo, litera, ranura de frenado y asiento de superviviente pertenece a un horario.",
+          "external_site": "Draft ES localization pending native pass. El flete de fusión por pellets es la historia industrial detrás de HECTON-8. Máquinas y carga pesada llegaron a Aegir porque la infraestructura podía empujar, alimentar, proteger y frenar masa durante décadas; la ruta sigue siendo cruel porque la contabilidad sobrevive más que la emergencia."
         },
         "de_DE": {
-          "title": "Pellet-Fusion Freight",
-          "scanner": "DE LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.",
-          "field_note": "DE LOC HOLD: Heavy transit should feel industrial and old, not heroic.",
-          "terminal": "DE LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
-          "audio": "DE LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.",
-          "in_game_wiki": "DE LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.",
-          "external_site": "DE LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for."
+          "title": "Draft DE localization pending native pass. Pelletfusions-Fracht",
+          "scanner": "Draft DE localization pending native pass. Antriebsplatte. Pelletgespeiste Fusionsfracht kreuzte als Infrastruktur: Schub, Schild, Drift, Bremsen und Verlustabrechnung.",
+          "field_note": "Draft DE localization pending native pass. Schwerer Transit ist nicht heroisch. Er ist ein alter Routenvertrag mit Hitznarben.",
+          "terminal": "Draft DE localization pending native pass. FRACHTDOKTRIN: Seed-Nutzlasten der Atlas-Klasse und Koloniefracht nutzten Strahlsegel-Boost, pelletgespeiste Fusion, Magnetsegelbremsen und lange Driftintervalle. Lebende Fracht kam an, nachdem Maschinen die Route abrechenbar gemacht hatten.",
+          "audio": "Draft DE localization pending native pass. Ein schweres Schiff ist kein Wunder. Es ist eine Hypothek mit Triebwerken.",
+          "in_game_wiki": "Draft DE localization pending native pass. Schwerer interstellarer Flug ist ohne FTL möglich, aber brutal. Strahlsegel-Boost, pelletgespeiste Fusion, Schildmasse, lange Drifts und Bremsarchitektur brachten Seed-Nutzlasten und spätere Koloniefracht nach Aegir. Dieselbe Logistik macht Rettung langsam: jedes Kilogramm, jeder Liegeplatz, Bremsslot und Überlebendensitz gehört zu einem Fahrplan.",
+          "external_site": "Draft DE localization pending native pass. Pelletfusions-Fracht ist die industrielle Geschichte hinter HECTON-8. Maschinen und schwere Fracht erreichten Aegir, weil Infrastruktur über Jahrzehnte Masse schieben, füttern, schützen und bremsen konnte; die Route bleibt grausam, weil die Buchhaltung länger lebt als der Notfall."
         },
         "pl_PL": {
-          "title": "Pellet-Fusion Freight",
-          "scanner": "PL LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.",
-          "field_note": "PL LOC HOLD: Heavy transit should feel industrial and old, not heroic.",
-          "terminal": "PL LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
-          "audio": "PL LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.",
-          "in_game_wiki": "PL LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.",
-          "external_site": "PL LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for."
+          "title": "Draft PL localization pending native pass. Fracht fuzyjny na pelletach",
+          "scanner": "Draft PL localization pending native pass. Płyta napędu. Fracht z fuzją karmioną pelletami szedł jako infrastruktura: rozpęd, osłona, dryf, hamowanie i rozliczenie strat.",
+          "field_note": "Draft PL localization pending native pass. Ciężki tranzyt nie jest heroiczny. To stary kontrakt trasy z bliznami po cieple.",
+          "terminal": "Draft PL localization pending native pass. DOKTRYNA FRACHTU: ładunki seed klasy Atlas i fracht kolonialny używały rozpędu żaglem wiązkowym, fuzji karmionej pelletami, hamowania żaglem magnetycznym i długich interwałów dryfu. Żywy ładunek przybył po tym, jak maszyny uczyniły trasę rozliczalną.",
+          "audio": "Draft PL localization pending native pass. Ciężki statek nie jest cudem. To hipoteka z silnikami.",
+          "in_game_wiki": "Draft PL localization pending native pass. Ciężka podróż międzygwiezdna bez FTL jest możliwa, ale karze. Rozpęd żaglem wiązkowym, fuzja karmiona pelletami, masa osłon, długie dryfy i architektura hamowania zaniosły ładunki seed i późniejszy fracht kolonialny do Aegir. Ta sama logistyka spowalnia ratunek: każdy kilogram, koja, slot hamowania i miejsce ocalałego należy do harmonogramu.",
+          "external_site": "Draft PL localization pending native pass. Fracht fuzyjny na pelletach to przemysłowa historia za HECTON-8. Maszyny i ciężki ładunek dotarły do Aegir, bo infrastruktura mogła przez dekady pchać, karmić, chronić i hamować masę; trasa pozostaje okrutna, bo księgowość żyje dłużej niż awaria."
         },
         "uk_UA": {
-          "title": "Pellet-Fusion Freight",
-          "scanner": "UA LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.",
-          "field_note": "UA LOC HOLD: Heavy transit should feel industrial and old, not heroic.",
-          "terminal": "UA LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
-          "audio": "UA LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.",
-          "in_game_wiki": "UA LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.",
-          "external_site": "UA LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for."
+          "title": "Draft UK localization pending native pass. Пелетно-термоядерний фрахт",
+          "scanner": "Draft UK localization pending native pass. Пластина двигуна. Пелетно-термоядерний фрахт ішов як інфраструктура: розгін, щит, дрейф, гальмування і рахунок за втрати.",
+          "field_note": "Draft UK localization pending native pass. Важкий транзит не героїчний. Це старий маршрутний контракт із тепловими шрамами.",
+          "terminal": "Draft UK localization pending native pass. ВАНТАЖНА ДОКТРИНА: seed-вантажі класу Atlas і колоніальний фрахт використовували розгін променевим вітрилом, пелетне термоядерне живлення, магнітопарусне гальмування і довгі інтервали дрейфу. Живий вантаж прибув після того, як машини зробили маршрут оплачуваним.",
+          "audio": "Draft UK localization pending native pass. Важкий корабель не диво. Це іпотека з двигунами.",
+          "in_game_wiki": "Draft UK localization pending native pass. Важкий міжзоряний переліт можливий без FTL, але він жорстокий. Розгін променевим вітрилом, пелетне термоядерне живлення, маса захисту, довгий дрейф і гальмівна архітектура довели seed-вантажі та пізній колоніальний фрахт до Aegir. Та сама логістика робить порятунок повільним: кожен кілограм, койка, гальмівний слот і місце вцілілого належать розкладу.",
+          "external_site": "Draft UK localization pending native pass. Пелетно-термоядерний фрахт це індустріальна історія за HECTON-8. Машини й важкий вантаж дісталися Aegir тому, що інфраструктура могла десятиліттями штовхати, живити, захищати й гальмувати масу; маршрут лишається жорстоким, бо облік живе довше за аварію."
         },
         "ar_SA": {
-          "title": "Pellet-Fusion Freight",
-          "scanner": "AR LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.",
-          "field_note": "AR LOC HOLD: Heavy transit should feel industrial and old, not heroic.",
-          "terminal": "AR LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
-          "audio": "AR LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.",
-          "in_game_wiki": "AR LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.",
-          "external_site": "AR LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for."
+          "title": "Draft AR localization pending native pass. شحن الاندماج بالحبيبات",
+          "scanner": "Draft AR localization pending native pass. صفيحة دفع. عبر شحن الاندماج المغذى بالحبيبات كبنية تحتية: دفع، درع، انجراف، كبح، وفاتورة خسائر.",
+          "field_note": "Draft AR localization pending native pass. العبور الثقيل ليس بطولياً. إنه عقد مسار قديم بندوب حرارة.",
+          "terminal": "Draft AR localization pending native pass. عقيدة الشحن: استخدمت حمولات seed من فئة Atlas وشحن المستعمرة دفع الشراع الشعاعي، والاندماج المغذى بالحبيبات، والكبح بالشراع المغناطيسي، وفترات انجراف طويلة. وصلت الحمولة الحية بعد أن جعلت الآلات المسار قابلاً للفوترة.",
+          "audio": "Draft AR localization pending native pass. السفينة الثقيلة ليست معجزة. إنها رهن بمحركات.",
+          "in_game_wiki": "Draft AR localization pending native pass. السفر بين النجوم الثقيل ممكن من دون FTL، لكنه قاسٍ. دفع الشراع الشعاعي، والاندماج المغذى بالحبيبات، وكتلة الدرع، والانجراف الطويل، وبنية الكبح حملت حمولات seed ثم شحن المستعمرة إلى Aegir. اللوجستيات نفسها تجعل الإنقاذ بطيئاً: كل كيلوغرام وسرير وفتحة كبح ومقعد ناجٍ يتبع جدولاً.",
+          "external_site": "Draft AR localization pending native pass. شحن الاندماج بالحبيبات هو التاريخ الصناعي خلف HECTON-8. وصلت الآلات والشحن الثقيل إلى Aegir لأن البنية التحتية استطاعت على مدى عقود أن تدفع الكتلة وتغذيها وتحميها وتكبحها؛ يبقى المسار قاسياً لأن الحساب يعيش أطول من الطارئ."
         },
         "id_ID": {
-          "title": "Pellet-Fusion Freight",
-          "scanner": "ID LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.",
-          "field_note": "ID LOC HOLD: Heavy transit should feel industrial and old, not heroic.",
-          "terminal": "ID LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
-          "audio": "ID LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.",
-          "in_game_wiki": "ID LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.",
-          "external_site": "ID LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for."
+          "title": "Draft ID localization pending native pass. Kargo Fusi Pelet",
+          "scanner": "Draft ID localization pending native pass. Pelat penggerak. Kargo fusi makan pelet menyeberang sebagai infrastruktur: dorong, perisai, luncur, rem, dan tagih kerugian.",
+          "field_note": "Draft ID localization pending native pass. Transit berat bukan heroik. Itu kontrak rute tua dengan bekas panas.",
+          "terminal": "Draft ID localization pending native pass. DOKTRIN KARGO: muatan seed kelas Atlas dan kargo koloni memakai dorongan layar berkas, fusi makan pelet, pengereman magsail, dan interval luncur panjang. Kargo hidup tiba setelah mesin membuat rute bisa ditagih.",
+          "audio": "Draft ID localization pending native pass. Kapal berat bukan keajaiban. Itu hipotek dengan mesin.",
+          "in_game_wiki": "Draft ID localization pending native pass. Perjalanan antarbintang berat mungkin tanpa FTL, tetapi menghukum. Dorongan layar berkas, fusi makan pelet, massa perisai, luncur panjang, dan arsitektur pengereman membawa muatan seed lalu kargo koloni ke Aegir. Logistik yang sama membuat penyelamatan lambat: setiap kilogram, ranjang, slot pengereman, dan kursi penyintas milik jadwal.",
+          "external_site": "Draft ID localization pending native pass. Kargo fusi pelet adalah sejarah industri di balik HECTON-8. Mesin dan kargo berat mencapai Aegir karena infrastruktur mampu selama puluhan tahun mendorong, memberi makan, melindungi, dan mengerem massa; rute tetap kejam karena akuntansi hidup lebih lama daripada keadaan darurat."
         },
         "ko_KR": {
-          "title": "Pellet-Fusion Freight",
-          "scanner": "KO LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.",
-          "field_note": "KO LOC HOLD: Heavy transit should feel industrial and old, not heroic.",
-          "terminal": "KO LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
-          "audio": "KO LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.",
-          "in_game_wiki": "KO LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.",
-          "external_site": "KO LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for."
+          "title": "Draft KO localization pending native pass. 펠릿 핵융합 화물",
+          "scanner": "Draft KO localization pending native pass. 추진판. 펠릿 공급 핵융합 화물은 인프라로 건넜다. 가속, 차폐, 순항, 제동, 손실 청구.",
+          "field_note": "Draft KO localization pending native pass. 중량 수송은 영웅적이지 않다. 열 흉터가 난 오래된 항로 계약이다.",
+          "terminal": "Draft KO localization pending native pass. 화물 교리: Atlas급 seed 적재물과 식민지 화물은 빔 세일 가속, 펠릿 공급 핵융합, 자기돛 제동, 긴 순항 간격을 사용했다. 살아 있는 화물은 기계가 항로를 청구 가능하게 만든 뒤 도착했다.",
+          "audio": "Draft KO localization pending native pass. 무거운 배는 기적이 아니다. 엔진 달린 저당권이다.",
+          "in_game_wiki": "Draft KO localization pending native pass. FTL 없이도 중량 항성간 이동은 가능하지만 가혹하다. 빔 세일 가속, 펠릿 공급 핵융합, 차폐 질량, 긴 순항, 제동 구조가 seed 적재물과 이후 식민지 화물을 Aegir까지 운반했다. 같은 물류가 구조를 늦춘다. 모든 킬로그램, 침상, 제동 슬롯, 생존자 좌석은 일정표에 속한다.",
+          "external_site": "Draft KO localization pending native pass. 펠릿 핵융합 화물은 HECTON-8 뒤의 산업 선박 역사다. 기계와 중화물이 Aegir에 도달한 것은 인프라가 수십 년 동안 질량을 밀고, 먹이고, 보호하고, 멈출 수 있었기 때문이다. 항로가 잔혹한 것은 회계가 비상사태보다 오래 살아남기 때문이다."
         },
         "he_IL": {
-          "title": "Pellet-Fusion Freight",
-          "scanner": "HE LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.",
-          "field_note": "HE LOC HOLD: Heavy transit should feel industrial and old, not heroic.",
-          "terminal": "HE LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
-          "audio": "HE LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.",
-          "in_game_wiki": "HE LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.",
-          "external_site": "HE LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for."
+          "title": "Draft HE localization pending native pass. מטען היתוך כדוריות",
+          "scanner": "Draft HE localization pending native pass. לוח הנעה. מטען היתוך מוזן כדוריות חצה כתשתית: דחיפה, מגן, שיוט, בלימה וחיוב הפסדים.",
+          "field_note": "Draft HE localization pending native pass. תעבורה כבדה אינה הירואית. זה חוזה נתיב ישן עם צלקות חום.",
+          "terminal": "Draft HE localization pending native pass. דוקטרינת מטען: מטעני seed מדרגת Atlas ומטען מושבה השתמשו בהאצת מפרש קרן, היתוך מוזן כדוריות, בלימת מפרש מגנטי ומרווחי שיוט ארוכים. מטען חי הגיע אחרי שמכונות הפכו את הנתיב לבר חיוב.",
+          "audio": "Draft HE localization pending native pass. ספינה כבדה אינה נס. זו משכנתא עם מנועים.",
+          "in_game_wiki": "Draft HE localization pending native pass. מסע בין-כוכבי כבד אפשרי בלי FTL, אבל הוא מעניש. האצת מפרש קרן, היתוך מוזן כדוריות, מסת מיגון, שיוט ארוך וארכיטקטורת בלימה הביאו מטעני seed ומטען מושבה מאוחר יותר אל Aegir. אותה לוגיסטיקה מאטה חילוץ: כל קילוגרם, דרגש, חריץ בלימה ומושב ניצול שייכים ללוח זמנים.",
+          "external_site": "Draft HE localization pending native pass. מטען היתוך כדוריות הוא ההיסטוריה התעשייתית מאחורי HECTON-8. מכונות ומטען כבד הגיעו אל Aegir משום שתשתית יכלה במשך עשורים לדחוף, להזין, להגן ולבלום מסה; הנתיב נשאר אכזרי כי החשבונאות חיה יותר זמן מהחירום."
         },
         "pt_BR": {
-          "title": "Pellet-Fusion Freight",
-          "scanner": "PT LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.",
-          "field_note": "PT LOC HOLD: Heavy transit should feel industrial and old, not heroic.",
-          "terminal": "PT LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
-          "audio": "PT LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.",
-          "in_game_wiki": "PT LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.",
-          "external_site": "PT LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for."
+          "title": "Draft PT-BR localization pending native pass. Frete de fusão por pellets",
+          "scanner": "Draft PT-BR localization pending native pass. Placa de motor. Frete com fusão alimentada por pellets cruzou como infraestrutura: impulso, escudo, deriva, frenagem e cobrança de perdas.",
+          "field_note": "Draft PT-BR localization pending native pass. Trânsito pesado não é heroico. É um contrato de rota velho com cicatrizes de calor.",
+          "terminal": "Draft PT-BR localization pending native pass. DOUTRINA DE FRETE: cargas seed classe Atlas e frete colonial usaram impulso de vela de feixe, fusão alimentada por pellets, frenagem por vela magnética e longos intervalos de deriva. A carga viva chegou depois que máquinas tornaram a rota faturável.",
+          "audio": "Draft PT-BR localization pending native pass. Uma nave pesada não é milagre. É uma hipoteca com motores.",
+          "in_game_wiki": "Draft PT-BR localization pending native pass. Viagem interestelar pesada é possível sem FTL, mas pune. Impulso de vela de feixe, fusão alimentada por pellets, massa de escudo, longas derivas e arquitetura de frenagem levaram cargas seed e depois frete colonial até Aegir. A mesma logística torna o resgate lento: cada quilograma, leito, vaga de frenagem e assento de sobrevivente pertence a um cronograma.",
+          "external_site": "Draft PT-BR localization pending native pass. Frete de fusão por pellets é a história industrial por trás de HECTON-8. Máquinas e carga pesada chegaram a Aegir porque infraestrutura podia por décadas empurrar, alimentar, proteger e frear massa; a rota continua cruel porque a contabilidade vive mais que a emergência."
         },
         "nl_NL": {
-          "title": "Pellet-Fusion Freight",
-          "scanner": "NL LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.",
-          "field_note": "NL LOC HOLD: Heavy transit should feel industrial and old, not heroic.",
-          "terminal": "NL LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.",
-          "audio": "NL LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.",
-          "in_game_wiki": "NL LOC HOLD: Heavy interstellar travel is possible but punishing. Pellet-beam assisted fusion, external staging, long coasts and braking infrastructure let Atlas-class seed payloads and later colony freight reach Aegir without FTL. The same logistics make rescue slow and politically conditional.",
-          "external_site": "NL LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for."
+          "title": "Draft NL localization pending native pass. Pelletfusie-vracht",
+          "scanner": "Draft NL localization pending native pass. Aandrijfplaat. Pelletgevoede fusievracht stak over als infrastructuur: boost, schild, drift, remmen en verlies afrekenen.",
+          "field_note": "Draft NL localization pending native pass. Zwaar transit is niet heroïsch. Het is een oud routecontract met hittesporen.",
+          "terminal": "Draft NL localization pending native pass. VRACHTDOCTRINE: Atlas-klasse seed-ladingen en kolonievracht gebruikten straalzeilboost, pelletgevoede fusie, magnetzeilremmen en lange driftintervallen. Levende vracht arriveerde nadat machines de route factureerbaar maakten.",
+          "audio": "Draft NL localization pending native pass. Een zwaar schip is geen wonder. Het is een hypotheek met motoren.",
+          "in_game_wiki": "Draft NL localization pending native pass. Zware interstellaire reis is mogelijk zonder FTL, maar hard. Straalzeilboost, pelletgevoede fusie, schildmassa, lange drift en remarchitectuur brachten seed-ladingen en latere kolonievracht naar Aegir. Dezelfde logistiek maakt redding traag: elke kilo, slaapplaats, remslot en overlevendenstoel hoort bij een schema.",
+          "external_site": "Draft NL localization pending native pass. Pelletfusie-vracht is de industriële geschiedenis achter HECTON-8. Machines en zware vracht bereikten Aegir omdat infrastructuur decennialang massa kon duwen, voeden, beschermen en remmen; de route blijft wreed omdat boekhouding langer leeft dan de noodsituatie."
         }
       }
     },

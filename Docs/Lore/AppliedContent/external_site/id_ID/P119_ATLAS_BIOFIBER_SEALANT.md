@@ -9,32 +9,32 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Sealant Biofiber Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Sealant Biofiber Atlas
 
-ID LOC HOLD: Atlas Biofiber Sealant is one of HECTON-8's clearest biomechanical resources: a crafting material that makes the player benefit from the same misclassification that horrified them.
+Sealant biofiber Atlas membuat pemain mendapat keuntungan dari kesalahan klasifikasi yang sama yang membuat koloni dalam terasa keliru. Atlas tidak menciptakan biologi dari ketiadaan; ia menemukan zona perbaikan basah, jaket kabel, jaringan cangkok, dan bahan gasket, lalu mengurutkannya menurut fungsi, bukan asal. Jika sesuatu bocor, terbuka, atau berdarah, logika pemeliharaan yang rusak meminta penutupan. Hasilnya bukan bagian monster dan bukan alat bersih. Ini tambalan hidup siap tekanan yang mencengkeram sambungan, mengisi robekan setelan, dan menempel pada kulit kabel karena semuanya menyerupai satu instruksi: tutup bukaan sebelum sistem kehilangan lebih banyak massa. Kru yang baik memanennya dingin, menjepitnya rata, dan menyimpannya di balik liner sensor mati. Kru yang buruk membiarkannya hangat lalu menemukan tambalan merayap menuju mouthpiece, asupan pompa, atau robekan sarung tangan terdekat. Horornya praktis. Kau butuh segel itu. Kau juga harus ingat bahwa segel itu masih mencoba memperbaiki dunia yang tidak lagi tahu apa yang harus dihitung sebagai tubuh.
 
 ## Scanner
 
-ID LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+SEALANT BIOFIBER ATLAS // Serat perbaikan basah yang tumbuh saat jaket kabel, jaringan luka, dan gasket lambung diberi kelas kegagalan yang sama. Merekat di bawah tekanan; dapat terus tumbuh setelah dipanen.
 
 ## Terminal
 
-ID LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+KELAS SUMBER DAYA: ekologi perbaikan yang diubah Atlas. Jepit dingin sebelum dilepas. Kegunaan: tambalan sambungan basah, robekan setelan, jaket kabel, sendi fleksibel tekanan. Risiko: tanda hidup palsu, gema sensor, pencarian sambungan aktif dalam penyimpanan.
 
 ## Audio
 
-ID LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+Ia tidak tahu bedanya kebocoran, sayatan, dan mulut. Atlas mengajarinya bahwa ketiganya adalah bukaan yang harus ditutup.
 
 ## Field Note
 
-ID LOC HOLD: Useful body horror: the player wants it and distrusts it.
+Sealant yang baik mengering. Yang ini mendengar lubang berikutnya.
 
 <!-- External Site; generated from P119_ATLAS_BIOFIBER_SEALANT/id_ID. -->

@@ -1,0 +1,866 @@
+{
+  "schema": "H8.APPLIED_LORE_PACKET_BUNDLE.V0",
+  "release_set_id": "RS150_DROWNED_WORKER_ROOM_ARTICLES",
+  "status": "source_candidate_pending_importer_audit_route_card_bake_data_monolith_bake_unity_placement_and_native_localization",
+  "evidence_class": "STATIC_SOURCE",
+  "runtime_contract": {
+    "authoring_only": true,
+    "runtime_reads_json": false,
+    "runtime_reads_markdown": false,
+    "runtime_ready": false,
+    "native_localization_ready": false,
+    "data_monolith_ready": false,
+    "h8bin_ready": false,
+    "unity_placement_ready": false,
+    "generated_page_ready": false,
+    "publication_ready": false
+  },
+  "packets": [
+    {
+      "packet_id": "P800_WORKER_LOCKER_SEAL_FAILURE",
+      "release_set_id": "RS150_DROWNED_WORKER_ROOM_ARTICLES",
+      "article_id": "applied_lore.worker_locker_seal_failure",
+      "title_key": "LORE_DROWNED_WORKER_ROOM_WORKER_LOCKER_SEAL_FAILURE_TITLE",
+      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/HECTON8_Field_Atlas.md",
+        "Docs/Lore/ContentPacks/CP03_Drowned_Colony_Barnard_Hook.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "codex",
+        "pda_log",
+        "environmental_label"
+      ],
+      "unlock": {
+        "primary": "unlock.worker_locker_seal_failure",
+        "secondary": [
+          "unlock.first_worker_locker_scan",
+          "unlock.first_inward_seal_failure",
+          "unlock.first_drowned_worker_room"
+        ],
+        "poi_tags": [
+          "poi.worker_locker_row",
+          "poi.drowned_worker_room",
+          "poi.pressure_failure_evidence"
+        ],
+        "biome_tags": [
+          "biome.drowned_colony",
+          "biome.worker_room",
+          "biome.first_human_evidence"
+        ],
+        "first_20_boundary": "Gives the first worker room physical evidence before exposition if the drowned shelf is reached early."
+      },
+      "metadata": {
+        "source_voice_by_surface": {
+          "scanner": "Locker Object Scan",
+          "codex": "PDA Evidence Summary",
+          "pda_log": "Locker Row Note",
+          "environmental_label": "Locker Label"
+        },
+        "spoiler_tier": "0",
+        "depth_band": "drowned_shelf_worker_room",
+        "route_moment": "first_worker_locker_scan",
+        "truth_payload": "The locker seal failed inward from outside pressure and personal contents remained in place.",
+        "player_question": "Can the player read damage direction before treating the locker as salvage?"
+      },
+      "localized": {
+        "en_US": {
+          "title": "Worker Locker Seal Failure",
+          "scanner": "WORKER LOCKER // Seal failed inward from outside pressure. Personal contents undisturbed.",
+          "codex": "The seal failed inward. The locker was not pried open and not emptied before the room flooded. A meal tin, patched suit layer, and tool tag remain where a worker left them.",
+          "pda_log": "Locker row note: seal direction inward pressure failure; contents present; forced entry not indicated. Hold salvage count until route status confirms custody.",
+          "environmental_label": "WORKER LOCKER // SEAL FAILED INWARD // CONTENTS UNDISTURBED"
+        },
+        "ar_SA": {
+          "title": "Draft ar_SA localization pending native pass. Worker Locker Seal Failure",
+          "scanner": "Draft ar_SA localization pending native pass. Locker seal failed inward; contents remain.",
+          "codex": "Draft ar_SA localization pending native pass. Pressure broke the locker before anyone emptied it.",
+          "pda_log": "Draft ar_SA localization pending native pass. Hold salvage count until custody is known.",
+          "environmental_label": "Draft ar_SA localization pending native pass. Seal failed inward."
+        },
+        "de_DE": {
+          "title": "Draft de_DE localization pending native pass. Worker Locker Seal Failure",
+          "scanner": "Draft de_DE localization pending native pass. Locker seal failed inward; contents remain.",
+          "codex": "Draft de_DE localization pending native pass. Pressure broke the locker before anyone emptied it.",
+          "pda_log": "Draft de_DE localization pending native pass. Hold salvage count until custody is known.",
+          "environmental_label": "Draft de_DE localization pending native pass. Seal failed inward."
+        },
+        "es_ES": {
+          "title": "Draft es_ES localization pending native pass. Worker Locker Seal Failure",
+          "scanner": "Draft es_ES localization pending native pass. Locker seal failed inward; contents remain.",
+          "codex": "Draft es_ES localization pending native pass. Pressure broke the locker before anyone emptied it.",
+          "pda_log": "Draft es_ES localization pending native pass. Hold salvage count until custody is known.",
+          "environmental_label": "Draft es_ES localization pending native pass. Seal failed inward."
+        },
+        "fr_FR": {
+          "title": "Draft fr_FR localization pending native pass. Worker Locker Seal Failure",
+          "scanner": "Draft fr_FR localization pending native pass. Locker seal failed inward; contents remain.",
+          "codex": "Draft fr_FR localization pending native pass. Pressure broke the locker before anyone emptied it.",
+          "pda_log": "Draft fr_FR localization pending native pass. Hold salvage count until custody is known.",
+          "environmental_label": "Draft fr_FR localization pending native pass. Seal failed inward."
+        },
+        "he_IL": {
+          "title": "Draft he_IL localization pending native pass. Worker Locker Seal Failure",
+          "scanner": "Draft he_IL localization pending native pass. Locker seal failed inward; contents remain.",
+          "codex": "Draft he_IL localization pending native pass. Pressure broke the locker before anyone emptied it.",
+          "pda_log": "Draft he_IL localization pending native pass. Hold salvage count until custody is known.",
+          "environmental_label": "Draft he_IL localization pending native pass. Seal failed inward."
+        },
+        "id_ID": {
+          "title": "Draft id_ID localization pending native pass. Worker Locker Seal Failure",
+          "scanner": "Draft id_ID localization pending native pass. Locker seal failed inward; contents remain.",
+          "codex": "Draft id_ID localization pending native pass. Pressure broke the locker before anyone emptied it.",
+          "pda_log": "Draft id_ID localization pending native pass. Hold salvage count until custody is known.",
+          "environmental_label": "Draft id_ID localization pending native pass. Seal failed inward."
+        },
+        "ja_JP": {
+          "title": "Draft ja_JP localization pending native pass. Worker Locker Seal Failure",
+          "scanner": "Draft ja_JP localization pending native pass. Locker seal failed inward; contents remain.",
+          "codex": "Draft ja_JP localization pending native pass. Pressure broke the locker before anyone emptied it.",
+          "pda_log": "Draft ja_JP localization pending native pass. Hold salvage count until custody is known.",
+          "environmental_label": "Draft ja_JP localization pending native pass. Seal failed inward."
+        },
+        "ko_KR": {
+          "title": "Draft ko_KR localization pending native pass. Worker Locker Seal Failure",
+          "scanner": "Draft ko_KR localization pending native pass. Locker seal failed inward; contents remain.",
+          "codex": "Draft ko_KR localization pending native pass. Pressure broke the locker before anyone emptied it.",
+          "pda_log": "Draft ko_KR localization pending native pass. Hold salvage count until custody is known.",
+          "environmental_label": "Draft ko_KR localization pending native pass. Seal failed inward."
+        },
+        "nl_NL": {
+          "title": "Draft nl_NL localization pending native pass. Worker Locker Seal Failure",
+          "scanner": "Draft nl_NL localization pending native pass. Locker seal failed inward; contents remain.",
+          "codex": "Draft nl_NL localization pending native pass. Pressure broke the locker before anyone emptied it.",
+          "pda_log": "Draft nl_NL localization pending native pass. Hold salvage count until custody is known.",
+          "environmental_label": "Draft nl_NL localization pending native pass. Seal failed inward."
+        },
+        "pl_PL": {
+          "title": "Draft pl_PL localization pending native pass. Worker Locker Seal Failure",
+          "scanner": "Draft pl_PL localization pending native pass. Locker seal failed inward; contents remain.",
+          "codex": "Draft pl_PL localization pending native pass. Pressure broke the locker before anyone emptied it.",
+          "pda_log": "Draft pl_PL localization pending native pass. Hold salvage count until custody is known.",
+          "environmental_label": "Draft pl_PL localization pending native pass. Seal failed inward."
+        },
+        "pt_BR": {
+          "title": "Draft pt_BR localization pending native pass. Worker Locker Seal Failure",
+          "scanner": "Draft pt_BR localization pending native pass. Locker seal failed inward; contents remain.",
+          "codex": "Draft pt_BR localization pending native pass. Pressure broke the locker before anyone emptied it.",
+          "pda_log": "Draft pt_BR localization pending native pass. Hold salvage count until custody is known.",
+          "environmental_label": "Draft pt_BR localization pending native pass. Seal failed inward."
+        },
+        "ru_RU": {
+          "title": "Draft ru_RU localization pending native pass. Worker Locker Seal Failure",
+          "scanner": "Draft ru_RU localization pending native pass. Locker seal failed inward; contents remain.",
+          "codex": "Draft ru_RU localization pending native pass. Pressure broke the locker before anyone emptied it.",
+          "pda_log": "Draft ru_RU localization pending native pass. Hold salvage count until custody is known.",
+          "environmental_label": "Draft ru_RU localization pending native pass. Seal failed inward."
+        },
+        "uk_UA": {
+          "title": "Draft uk_UA localization pending native pass. Worker Locker Seal Failure",
+          "scanner": "Draft uk_UA localization pending native pass. Locker seal failed inward; contents remain.",
+          "codex": "Draft uk_UA localization pending native pass. Pressure broke the locker before anyone emptied it.",
+          "pda_log": "Draft uk_UA localization pending native pass. Hold salvage count until custody is known.",
+          "environmental_label": "Draft uk_UA localization pending native pass. Seal failed inward."
+        },
+        "zh_CN": {
+          "title": "Draft zh_CN localization pending native pass. Worker Locker Seal Failure",
+          "scanner": "Draft zh_CN localization pending native pass. Locker seal failed inward; contents remain.",
+          "codex": "Draft zh_CN localization pending native pass. Pressure broke the locker before anyone emptied it.",
+          "pda_log": "Draft zh_CN localization pending native pass. Hold salvage count until custody is known.",
+          "environmental_label": "Draft zh_CN localization pending native pass. Seal failed inward."
+        }
+      }
+    },
+    {
+      "packet_id": "P801_PRESSURE_BUNK_AIR_TALLY",
+      "release_set_id": "RS150_DROWNED_WORKER_ROOM_ARTICLES",
+      "article_id": "applied_lore.pressure_bunk_air_tally",
+      "title_key": "LORE_DROWNED_WORKER_ROOM_PRESSURE_BUNK_AIR_TALLY_TITLE",
+      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/HECTON8_Field_Atlas.md",
+        "Docs/Lore/ContentPacks/CP03_Drowned_Colony_Barnard_Hook.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "codex",
+        "pda_log",
+        "environmental_label"
+      ],
+      "unlock": {
+        "primary": "unlock.pressure_bunk_air_tally",
+        "secondary": [
+          "unlock.first_pressure_bunk_scan",
+          "unlock.first_air_cycle_tally",
+          "unlock.first_empty_mask_clip"
+        ],
+        "poi_tags": [
+          "poi.pressure_bunk_row",
+          "poi.air_tally_marks",
+          "poi.empty_mask_clip"
+        ],
+        "biome_tags": [
+          "biome.drowned_colony",
+          "biome.worker_room",
+          "biome.habitation_pressure"
+        ],
+        "first_20_boundary": "Adds readable human-room evidence after crash-shelf survival without exposition."
+      },
+      "metadata": {
+        "source_voice_by_surface": {
+          "scanner": "Pressure Bunk Scan",
+          "codex": "PDA Habitation Evidence",
+          "pda_log": "Bunk Row Pressure Note",
+          "environmental_label": "Bunk Label"
+        },
+        "spoiler_tier": "0",
+        "depth_band": "drowned_shelf_worker_room",
+        "route_moment": "first_pressure_bunk_scan",
+        "truth_payload": "Someone counted air cycles into the bunk rim and stopped before an alarm reset.",
+        "player_question": "Can the player infer routine and interruption from pressure-room marks?"
+      },
+      "localized": {
+        "en_US": {
+          "title": "Pressure Bunk Air Tally",
+          "scanner": "PRESSURE BUNK // Air tally scratched into bunk rim. Last marks stop before alarm reset.",
+          "codex": "The bunk seal still holds a stale pressure line. Someone counted air cycles into the rim with the edge of a service key. The final count ends cleanly.",
+          "pda_log": "Pressure check, bunk row C: seal bead intact; air tally present; mask clip empty; alarm reset record missing.",
+          "environmental_label": "PRESSURE BUNK C-12 // AIR TALLY PRESENT // MASK CLIP EMPTY"
+        },
+        "ar_SA": {
+          "title": "Draft ar_SA localization pending native pass. Pressure Bunk Air Tally",
+          "scanner": "Draft ar_SA localization pending native pass. Air tally marks stop before alarm reset.",
+          "codex": "Draft ar_SA localization pending native pass. A bunk rim preserves counted air cycles.",
+          "pda_log": "Draft ar_SA localization pending native pass. Seal intact, tally present, mask clip empty.",
+          "environmental_label": "Draft ar_SA localization pending native pass. Air tally present."
+        },
+        "de_DE": {
+          "title": "Draft de_DE localization pending native pass. Pressure Bunk Air Tally",
+          "scanner": "Draft de_DE localization pending native pass. Air tally marks stop before alarm reset.",
+          "codex": "Draft de_DE localization pending native pass. A bunk rim preserves counted air cycles.",
+          "pda_log": "Draft de_DE localization pending native pass. Seal intact, tally present, mask clip empty.",
+          "environmental_label": "Draft de_DE localization pending native pass. Air tally present."
+        },
+        "es_ES": {
+          "title": "Draft es_ES localization pending native pass. Pressure Bunk Air Tally",
+          "scanner": "Draft es_ES localization pending native pass. Air tally marks stop before alarm reset.",
+          "codex": "Draft es_ES localization pending native pass. A bunk rim preserves counted air cycles.",
+          "pda_log": "Draft es_ES localization pending native pass. Seal intact, tally present, mask clip empty.",
+          "environmental_label": "Draft es_ES localization pending native pass. Air tally present."
+        },
+        "fr_FR": {
+          "title": "Draft fr_FR localization pending native pass. Pressure Bunk Air Tally",
+          "scanner": "Draft fr_FR localization pending native pass. Air tally marks stop before alarm reset.",
+          "codex": "Draft fr_FR localization pending native pass. A bunk rim preserves counted air cycles.",
+          "pda_log": "Draft fr_FR localization pending native pass. Seal intact, tally present, mask clip empty.",
+          "environmental_label": "Draft fr_FR localization pending native pass. Air tally present."
+        },
+        "he_IL": {
+          "title": "Draft he_IL localization pending native pass. Pressure Bunk Air Tally",
+          "scanner": "Draft he_IL localization pending native pass. Air tally marks stop before alarm reset.",
+          "codex": "Draft he_IL localization pending native pass. A bunk rim preserves counted air cycles.",
+          "pda_log": "Draft he_IL localization pending native pass. Seal intact, tally present, mask clip empty.",
+          "environmental_label": "Draft he_IL localization pending native pass. Air tally present."
+        },
+        "id_ID": {
+          "title": "Draft id_ID localization pending native pass. Pressure Bunk Air Tally",
+          "scanner": "Draft id_ID localization pending native pass. Air tally marks stop before alarm reset.",
+          "codex": "Draft id_ID localization pending native pass. A bunk rim preserves counted air cycles.",
+          "pda_log": "Draft id_ID localization pending native pass. Seal intact, tally present, mask clip empty.",
+          "environmental_label": "Draft id_ID localization pending native pass. Air tally present."
+        },
+        "ja_JP": {
+          "title": "Draft ja_JP localization pending native pass. Pressure Bunk Air Tally",
+          "scanner": "Draft ja_JP localization pending native pass. Air tally marks stop before alarm reset.",
+          "codex": "Draft ja_JP localization pending native pass. A bunk rim preserves counted air cycles.",
+          "pda_log": "Draft ja_JP localization pending native pass. Seal intact, tally present, mask clip empty.",
+          "environmental_label": "Draft ja_JP localization pending native pass. Air tally present."
+        },
+        "ko_KR": {
+          "title": "Draft ko_KR localization pending native pass. Pressure Bunk Air Tally",
+          "scanner": "Draft ko_KR localization pending native pass. Air tally marks stop before alarm reset.",
+          "codex": "Draft ko_KR localization pending native pass. A bunk rim preserves counted air cycles.",
+          "pda_log": "Draft ko_KR localization pending native pass. Seal intact, tally present, mask clip empty.",
+          "environmental_label": "Draft ko_KR localization pending native pass. Air tally present."
+        },
+        "nl_NL": {
+          "title": "Draft nl_NL localization pending native pass. Pressure Bunk Air Tally",
+          "scanner": "Draft nl_NL localization pending native pass. Air tally marks stop before alarm reset.",
+          "codex": "Draft nl_NL localization pending native pass. A bunk rim preserves counted air cycles.",
+          "pda_log": "Draft nl_NL localization pending native pass. Seal intact, tally present, mask clip empty.",
+          "environmental_label": "Draft nl_NL localization pending native pass. Air tally present."
+        },
+        "pl_PL": {
+          "title": "Draft pl_PL localization pending native pass. Pressure Bunk Air Tally",
+          "scanner": "Draft pl_PL localization pending native pass. Air tally marks stop before alarm reset.",
+          "codex": "Draft pl_PL localization pending native pass. A bunk rim preserves counted air cycles.",
+          "pda_log": "Draft pl_PL localization pending native pass. Seal intact, tally present, mask clip empty.",
+          "environmental_label": "Draft pl_PL localization pending native pass. Air tally present."
+        },
+        "pt_BR": {
+          "title": "Draft pt_BR localization pending native pass. Pressure Bunk Air Tally",
+          "scanner": "Draft pt_BR localization pending native pass. Air tally marks stop before alarm reset.",
+          "codex": "Draft pt_BR localization pending native pass. A bunk rim preserves counted air cycles.",
+          "pda_log": "Draft pt_BR localization pending native pass. Seal intact, tally present, mask clip empty.",
+          "environmental_label": "Draft pt_BR localization pending native pass. Air tally present."
+        },
+        "ru_RU": {
+          "title": "Draft ru_RU localization pending native pass. Pressure Bunk Air Tally",
+          "scanner": "Draft ru_RU localization pending native pass. Air tally marks stop before alarm reset.",
+          "codex": "Draft ru_RU localization pending native pass. A bunk rim preserves counted air cycles.",
+          "pda_log": "Draft ru_RU localization pending native pass. Seal intact, tally present, mask clip empty.",
+          "environmental_label": "Draft ru_RU localization pending native pass. Air tally present."
+        },
+        "uk_UA": {
+          "title": "Draft uk_UA localization pending native pass. Pressure Bunk Air Tally",
+          "scanner": "Draft uk_UA localization pending native pass. Air tally marks stop before alarm reset.",
+          "codex": "Draft uk_UA localization pending native pass. A bunk rim preserves counted air cycles.",
+          "pda_log": "Draft uk_UA localization pending native pass. Seal intact, tally present, mask clip empty.",
+          "environmental_label": "Draft uk_UA localization pending native pass. Air tally present."
+        },
+        "zh_CN": {
+          "title": "Draft zh_CN localization pending native pass. Pressure Bunk Air Tally",
+          "scanner": "Draft zh_CN localization pending native pass. Air tally marks stop before alarm reset.",
+          "codex": "Draft zh_CN localization pending native pass. A bunk rim preserves counted air cycles.",
+          "pda_log": "Draft zh_CN localization pending native pass. Seal intact, tally present, mask clip empty.",
+          "environmental_label": "Draft zh_CN localization pending native pass. Air tally present."
+        }
+      }
+    },
+    {
+      "packet_id": "P802_SHIFT_BOARD_C12_ROUTE_HOLD",
+      "release_set_id": "RS150_DROWNED_WORKER_ROOM_ARTICLES",
+      "article_id": "applied_lore.shift_board_c12_route_hold",
+      "title_key": "LORE_DROWNED_WORKER_ROOM_SHIFT_BOARD_C12_ROUTE_HOLD_TITLE",
+      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/HECTON8_Field_Atlas.md",
+        "Docs/Lore/ContentPacks/CP03_Drowned_Colony_Barnard_Hook.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "codex",
+        "pda_log",
+        "environmental_label"
+      ],
+      "unlock": {
+        "primary": "unlock.shift_board_c12_route_hold",
+        "secondary": [
+          "unlock.first_shift_board_scan",
+          "unlock.first_missing_return_stamp",
+          "unlock.first_pump_spine_route_name"
+        ],
+        "poi_tags": [
+          "poi.shift_board_c12",
+          "poi.pump_spine_route",
+          "poi.south_lock_route",
+          "poi.aquaculture_intake_route"
+        ],
+        "biome_tags": [
+          "biome.drowned_colony",
+          "biome.worker_room",
+          "biome.route_board"
+        ],
+        "first_20_boundary": "Gives the first worker-room route board a practical navigation and evidence role."
+      },
+      "metadata": {
+        "source_voice_by_surface": {
+          "scanner": "Shift Board Scan",
+          "codex": "PDA Route Evidence",
+          "pda_log": "Shift Board Transcription",
+          "environmental_label": "Route Board Label"
+        },
+        "spoiler_tier": "0",
+        "depth_band": "drowned_shelf_worker_room",
+        "route_moment": "first_shift_board_scan",
+        "truth_payload": "The shift board preserves route holds and missing return stamps without explaining the whole failure.",
+        "player_question": "Which named worker routes should the player remember after leaving the room?"
+      },
+      "localized": {
+        "en_US": {
+          "title": "Shift Board C-12 Route Hold",
+          "scanner": "SHIFT BOARD C-12 // Return stamps missing on pump spine and south lock. Evac drill postponed.",
+          "codex": "Route Board C-12 lists ordinary work: pump spine check, south lock grease, aquaculture intake filter, heater coil inventory. Two return stamps are missing.",
+          "pda_log": "Shift board transcription: pump spine outbound; south lock outbound; aquaculture intake delayed; heater coil inventory incomplete; evacuation drill postponed.",
+          "environmental_label": "SHIFT BOARD C-12 // ROUTE HOLDS ACTIVE // RETURN STAMPS MISSING"
+        },
+        "ar_SA": {
+          "title": "Draft ar_SA localization pending native pass. Shift Board C-12 Route Hold",
+          "scanner": "Draft ar_SA localization pending native pass. Pump spine and south lock return stamps are missing.",
+          "codex": "Draft ar_SA localization pending native pass. The board lists ordinary work that never closed.",
+          "pda_log": "Draft ar_SA localization pending native pass. Route holds remain active.",
+          "environmental_label": "Draft ar_SA localization pending native pass. Route holds active."
+        },
+        "de_DE": {
+          "title": "Draft de_DE localization pending native pass. Shift Board C-12 Route Hold",
+          "scanner": "Draft de_DE localization pending native pass. Pump spine and south lock return stamps are missing.",
+          "codex": "Draft de_DE localization pending native pass. The board lists ordinary work that never closed.",
+          "pda_log": "Draft de_DE localization pending native pass. Route holds remain active.",
+          "environmental_label": "Draft de_DE localization pending native pass. Route holds active."
+        },
+        "es_ES": {
+          "title": "Draft es_ES localization pending native pass. Shift Board C-12 Route Hold",
+          "scanner": "Draft es_ES localization pending native pass. Pump spine and south lock return stamps are missing.",
+          "codex": "Draft es_ES localization pending native pass. The board lists ordinary work that never closed.",
+          "pda_log": "Draft es_ES localization pending native pass. Route holds remain active.",
+          "environmental_label": "Draft es_ES localization pending native pass. Route holds active."
+        },
+        "fr_FR": {
+          "title": "Draft fr_FR localization pending native pass. Shift Board C-12 Route Hold",
+          "scanner": "Draft fr_FR localization pending native pass. Pump spine and south lock return stamps are missing.",
+          "codex": "Draft fr_FR localization pending native pass. The board lists ordinary work that never closed.",
+          "pda_log": "Draft fr_FR localization pending native pass. Route holds remain active.",
+          "environmental_label": "Draft fr_FR localization pending native pass. Route holds active."
+        },
+        "he_IL": {
+          "title": "Draft he_IL localization pending native pass. Shift Board C-12 Route Hold",
+          "scanner": "Draft he_IL localization pending native pass. Pump spine and south lock return stamps are missing.",
+          "codex": "Draft he_IL localization pending native pass. The board lists ordinary work that never closed.",
+          "pda_log": "Draft he_IL localization pending native pass. Route holds remain active.",
+          "environmental_label": "Draft he_IL localization pending native pass. Route holds active."
+        },
+        "id_ID": {
+          "title": "Draft id_ID localization pending native pass. Shift Board C-12 Route Hold",
+          "scanner": "Draft id_ID localization pending native pass. Pump spine and south lock return stamps are missing.",
+          "codex": "Draft id_ID localization pending native pass. The board lists ordinary work that never closed.",
+          "pda_log": "Draft id_ID localization pending native pass. Route holds remain active.",
+          "environmental_label": "Draft id_ID localization pending native pass. Route holds active."
+        },
+        "ja_JP": {
+          "title": "Draft ja_JP localization pending native pass. Shift Board C-12 Route Hold",
+          "scanner": "Draft ja_JP localization pending native pass. Pump spine and south lock return stamps are missing.",
+          "codex": "Draft ja_JP localization pending native pass. The board lists ordinary work that never closed.",
+          "pda_log": "Draft ja_JP localization pending native pass. Route holds remain active.",
+          "environmental_label": "Draft ja_JP localization pending native pass. Route holds active."
+        },
+        "ko_KR": {
+          "title": "Draft ko_KR localization pending native pass. Shift Board C-12 Route Hold",
+          "scanner": "Draft ko_KR localization pending native pass. Pump spine and south lock return stamps are missing.",
+          "codex": "Draft ko_KR localization pending native pass. The board lists ordinary work that never closed.",
+          "pda_log": "Draft ko_KR localization pending native pass. Route holds remain active.",
+          "environmental_label": "Draft ko_KR localization pending native pass. Route holds active."
+        },
+        "nl_NL": {
+          "title": "Draft nl_NL localization pending native pass. Shift Board C-12 Route Hold",
+          "scanner": "Draft nl_NL localization pending native pass. Pump spine and south lock return stamps are missing.",
+          "codex": "Draft nl_NL localization pending native pass. The board lists ordinary work that never closed.",
+          "pda_log": "Draft nl_NL localization pending native pass. Route holds remain active.",
+          "environmental_label": "Draft nl_NL localization pending native pass. Route holds active."
+        },
+        "pl_PL": {
+          "title": "Draft pl_PL localization pending native pass. Shift Board C-12 Route Hold",
+          "scanner": "Draft pl_PL localization pending native pass. Pump spine and south lock return stamps are missing.",
+          "codex": "Draft pl_PL localization pending native pass. The board lists ordinary work that never closed.",
+          "pda_log": "Draft pl_PL localization pending native pass. Route holds remain active.",
+          "environmental_label": "Draft pl_PL localization pending native pass. Route holds active."
+        },
+        "pt_BR": {
+          "title": "Draft pt_BR localization pending native pass. Shift Board C-12 Route Hold",
+          "scanner": "Draft pt_BR localization pending native pass. Pump spine and south lock return stamps are missing.",
+          "codex": "Draft pt_BR localization pending native pass. The board lists ordinary work that never closed.",
+          "pda_log": "Draft pt_BR localization pending native pass. Route holds remain active.",
+          "environmental_label": "Draft pt_BR localization pending native pass. Route holds active."
+        },
+        "ru_RU": {
+          "title": "Draft ru_RU localization pending native pass. Shift Board C-12 Route Hold",
+          "scanner": "Draft ru_RU localization pending native pass. Pump spine and south lock return stamps are missing.",
+          "codex": "Draft ru_RU localization pending native pass. The board lists ordinary work that never closed.",
+          "pda_log": "Draft ru_RU localization pending native pass. Route holds remain active.",
+          "environmental_label": "Draft ru_RU localization pending native pass. Route holds active."
+        },
+        "uk_UA": {
+          "title": "Draft uk_UA localization pending native pass. Shift Board C-12 Route Hold",
+          "scanner": "Draft uk_UA localization pending native pass. Pump spine and south lock return stamps are missing.",
+          "codex": "Draft uk_UA localization pending native pass. The board lists ordinary work that never closed.",
+          "pda_log": "Draft uk_UA localization pending native pass. Route holds remain active.",
+          "environmental_label": "Draft uk_UA localization pending native pass. Route holds active."
+        },
+        "zh_CN": {
+          "title": "Draft zh_CN localization pending native pass. Shift Board C-12 Route Hold",
+          "scanner": "Draft zh_CN localization pending native pass. Pump spine and south lock return stamps are missing.",
+          "codex": "Draft zh_CN localization pending native pass. The board lists ordinary work that never closed.",
+          "pda_log": "Draft zh_CN localization pending native pass. Route holds remain active.",
+          "environmental_label": "Draft zh_CN localization pending native pass. Route holds active."
+        }
+      }
+    },
+    {
+      "packet_id": "P803_MESS_HEATER_LUNCH_TOKEN",
+      "release_set_id": "RS150_DROWNED_WORKER_ROOM_ARTICLES",
+      "article_id": "applied_lore.mess_heater_lunch_token",
+      "title_key": "LORE_DROWNED_WORKER_ROOM_MESS_HEATER_LUNCH_TOKEN_TITLE",
+      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/HECTON8_Field_Atlas.md",
+        "Docs/Lore/ContentPacks/CP03_Drowned_Colony_Barnard_Hook.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "codex",
+        "pda_log",
+        "environmental_label"
+      ],
+      "unlock": {
+        "primary": "unlock.mess_heater_lunch_token",
+        "secondary": [
+          "unlock.first_mess_heater_scan",
+          "unlock.first_lunch_token",
+          "unlock.first_heater_coil_salvage_note"
+        ],
+        "poi_tags": [
+          "poi.mess_heater",
+          "poi.lunch_token",
+          "poi.heater_coil_failure"
+        ],
+        "biome_tags": [
+          "biome.drowned_colony",
+          "biome.worker_room",
+          "biome.habitation_evidence"
+        ],
+        "first_20_boundary": "Makes the first human-room food and heat object useful as survival salvage and social evidence."
+      },
+      "metadata": {
+        "source_voice_by_surface": {
+          "scanner": "Mess Heater Scan",
+          "codex": "PDA Habitation Evidence",
+          "pda_log": "Mess Appliance Tag",
+          "environmental_label": "Appliance Label"
+        },
+        "spoiler_tier": "0",
+        "depth_band": "drowned_shelf_worker_room",
+        "route_moment": "first_mess_heater_scan",
+        "truth_payload": "A lunch token remains clipped to a failed heater after water crossed the coil housing.",
+        "player_question": "Can a mundane object make the worker room feel used without a speech?"
+      },
+      "localized": {
+        "en_US": {
+          "title": "Mess Heater Lunch Token",
+          "scanner": "MESS HEATER // Lunch token still clipped. Heat coil failed after waterline crossed.",
+          "codex": "Salt entered through the lower seam, crossed the coil housing, and locked the meal tray in place. A lunch token remains clipped to the rail, unspent.",
+          "pda_log": "Mess appliance tag: heater coil failed after waterline breach; meal rail locked; lunch token present; credit strip swollen.",
+          "environmental_label": "MESS HEATER // COIL FAILURE // LUNCH TOKEN PRESENT"
+        },
+        "ar_SA": {
+          "title": "Draft ar_SA localization pending native pass. Mess Heater Lunch Token",
+          "scanner": "Draft ar_SA localization pending native pass. Lunch token clipped; heater coil failed.",
+          "codex": "Draft ar_SA localization pending native pass. Water crossed the coil housing before the meal rail was used.",
+          "pda_log": "Draft ar_SA localization pending native pass. Heater coil failed and lunch token remains.",
+          "environmental_label": "Draft ar_SA localization pending native pass. Lunch token present."
+        },
+        "de_DE": {
+          "title": "Draft de_DE localization pending native pass. Mess Heater Lunch Token",
+          "scanner": "Draft de_DE localization pending native pass. Lunch token clipped; heater coil failed.",
+          "codex": "Draft de_DE localization pending native pass. Water crossed the coil housing before the meal rail was used.",
+          "pda_log": "Draft de_DE localization pending native pass. Heater coil failed and lunch token remains.",
+          "environmental_label": "Draft de_DE localization pending native pass. Lunch token present."
+        },
+        "es_ES": {
+          "title": "Draft es_ES localization pending native pass. Mess Heater Lunch Token",
+          "scanner": "Draft es_ES localization pending native pass. Lunch token clipped; heater coil failed.",
+          "codex": "Draft es_ES localization pending native pass. Water crossed the coil housing before the meal rail was used.",
+          "pda_log": "Draft es_ES localization pending native pass. Heater coil failed and lunch token remains.",
+          "environmental_label": "Draft es_ES localization pending native pass. Lunch token present."
+        },
+        "fr_FR": {
+          "title": "Draft fr_FR localization pending native pass. Mess Heater Lunch Token",
+          "scanner": "Draft fr_FR localization pending native pass. Lunch token clipped; heater coil failed.",
+          "codex": "Draft fr_FR localization pending native pass. Water crossed the coil housing before the meal rail was used.",
+          "pda_log": "Draft fr_FR localization pending native pass. Heater coil failed and lunch token remains.",
+          "environmental_label": "Draft fr_FR localization pending native pass. Lunch token present."
+        },
+        "he_IL": {
+          "title": "Draft he_IL localization pending native pass. Mess Heater Lunch Token",
+          "scanner": "Draft he_IL localization pending native pass. Lunch token clipped; heater coil failed.",
+          "codex": "Draft he_IL localization pending native pass. Water crossed the coil housing before the meal rail was used.",
+          "pda_log": "Draft he_IL localization pending native pass. Heater coil failed and lunch token remains.",
+          "environmental_label": "Draft he_IL localization pending native pass. Lunch token present."
+        },
+        "id_ID": {
+          "title": "Draft id_ID localization pending native pass. Mess Heater Lunch Token",
+          "scanner": "Draft id_ID localization pending native pass. Lunch token clipped; heater coil failed.",
+          "codex": "Draft id_ID localization pending native pass. Water crossed the coil housing before the meal rail was used.",
+          "pda_log": "Draft id_ID localization pending native pass. Heater coil failed and lunch token remains.",
+          "environmental_label": "Draft id_ID localization pending native pass. Lunch token present."
+        },
+        "ja_JP": {
+          "title": "Draft ja_JP localization pending native pass. Mess Heater Lunch Token",
+          "scanner": "Draft ja_JP localization pending native pass. Lunch token clipped; heater coil failed.",
+          "codex": "Draft ja_JP localization pending native pass. Water crossed the coil housing before the meal rail was used.",
+          "pda_log": "Draft ja_JP localization pending native pass. Heater coil failed and lunch token remains.",
+          "environmental_label": "Draft ja_JP localization pending native pass. Lunch token present."
+        },
+        "ko_KR": {
+          "title": "Draft ko_KR localization pending native pass. Mess Heater Lunch Token",
+          "scanner": "Draft ko_KR localization pending native pass. Lunch token clipped; heater coil failed.",
+          "codex": "Draft ko_KR localization pending native pass. Water crossed the coil housing before the meal rail was used.",
+          "pda_log": "Draft ko_KR localization pending native pass. Heater coil failed and lunch token remains.",
+          "environmental_label": "Draft ko_KR localization pending native pass. Lunch token present."
+        },
+        "nl_NL": {
+          "title": "Draft nl_NL localization pending native pass. Mess Heater Lunch Token",
+          "scanner": "Draft nl_NL localization pending native pass. Lunch token clipped; heater coil failed.",
+          "codex": "Draft nl_NL localization pending native pass. Water crossed the coil housing before the meal rail was used.",
+          "pda_log": "Draft nl_NL localization pending native pass. Heater coil failed and lunch token remains.",
+          "environmental_label": "Draft nl_NL localization pending native pass. Lunch token present."
+        },
+        "pl_PL": {
+          "title": "Draft pl_PL localization pending native pass. Mess Heater Lunch Token",
+          "scanner": "Draft pl_PL localization pending native pass. Lunch token clipped; heater coil failed.",
+          "codex": "Draft pl_PL localization pending native pass. Water crossed the coil housing before the meal rail was used.",
+          "pda_log": "Draft pl_PL localization pending native pass. Heater coil failed and lunch token remains.",
+          "environmental_label": "Draft pl_PL localization pending native pass. Lunch token present."
+        },
+        "pt_BR": {
+          "title": "Draft pt_BR localization pending native pass. Mess Heater Lunch Token",
+          "scanner": "Draft pt_BR localization pending native pass. Lunch token clipped; heater coil failed.",
+          "codex": "Draft pt_BR localization pending native pass. Water crossed the coil housing before the meal rail was used.",
+          "pda_log": "Draft pt_BR localization pending native pass. Heater coil failed and lunch token remains.",
+          "environmental_label": "Draft pt_BR localization pending native pass. Lunch token present."
+        },
+        "ru_RU": {
+          "title": "Draft ru_RU localization pending native pass. Mess Heater Lunch Token",
+          "scanner": "Draft ru_RU localization pending native pass. Lunch token clipped; heater coil failed.",
+          "codex": "Draft ru_RU localization pending native pass. Water crossed the coil housing before the meal rail was used.",
+          "pda_log": "Draft ru_RU localization pending native pass. Heater coil failed and lunch token remains.",
+          "environmental_label": "Draft ru_RU localization pending native pass. Lunch token present."
+        },
+        "uk_UA": {
+          "title": "Draft uk_UA localization pending native pass. Mess Heater Lunch Token",
+          "scanner": "Draft uk_UA localization pending native pass. Lunch token clipped; heater coil failed.",
+          "codex": "Draft uk_UA localization pending native pass. Water crossed the coil housing before the meal rail was used.",
+          "pda_log": "Draft uk_UA localization pending native pass. Heater coil failed and lunch token remains.",
+          "environmental_label": "Draft uk_UA localization pending native pass. Lunch token present."
+        },
+        "zh_CN": {
+          "title": "Draft zh_CN localization pending native pass. Mess Heater Lunch Token",
+          "scanner": "Draft zh_CN localization pending native pass. Lunch token clipped; heater coil failed.",
+          "codex": "Draft zh_CN localization pending native pass. Water crossed the coil housing before the meal rail was used.",
+          "pda_log": "Draft zh_CN localization pending native pass. Heater coil failed and lunch token remains.",
+          "environmental_label": "Draft zh_CN localization pending native pass. Lunch token present."
+        }
+      }
+    },
+    {
+      "packet_id": "P804_BARNARD_TOOL_MARK_FIRST_TRACE",
+      "release_set_id": "RS150_DROWNED_WORKER_ROOM_ARTICLES",
+      "article_id": "applied_lore.barnard_tool_mark_first_trace",
+      "title_key": "LORE_DROWNED_WORKER_ROOM_BARNARD_TOOL_MARK_FIRST_TRACE_TITLE",
+      "status": "source_candidate_pending_importer_audit_route_card_bake_and_unity_placement",
+      "canon_owner": [
+        "Docs/Lore/Canon_Locks.md",
+        "Docs/Lore/Lore_Bible.md",
+        "Docs/Lore/Lore_Content_System.md",
+        "Docs/Lore/Lore_Localization_Model.md",
+        "Docs/Lore/HECTON8_Field_Atlas.md",
+        "Docs/Lore/ContentPacks/CP03_Drowned_Colony_Barnard_Hook.md"
+      ],
+      "runtime_contract": {
+        "authoring_only": true,
+        "runtime_reads_json": false,
+        "runtime_reads_markdown": false,
+        "runtime_ready": false,
+        "data_monolith_ready": false,
+        "h8bin_ready": false,
+        "unity_placement_ready": false
+      },
+      "surfaces": [
+        "scanner",
+        "codex",
+        "pda_log",
+        "environmental_label"
+      ],
+      "unlock": {
+        "primary": "unlock.barnard_tool_mark_first_trace",
+        "secondary": [
+          "unlock.first_barnard_tool_mark_scan",
+          "unlock.first_non_deep_reach_tool_issue",
+          "unlock.first_worker_made_repair_trace"
+        ],
+        "poi_tags": [
+          "poi.barnard_tool_plate",
+          "poi.worker_tool_mark",
+          "poi.non_standard_issue"
+        ],
+        "biome_tags": [
+          "biome.drowned_colony",
+          "biome.worker_room",
+          "biome.barnard_trace"
+        ],
+        "first_20_boundary": "Introduces Barnard personal-professional recognition through a small object without a bloodline plot."
+      },
+      "metadata": {
+        "source_voice_by_surface": {
+          "scanner": "Barnard Tool Mark Scan",
+          "codex": "PDA Origin Inference",
+          "pda_log": "Tool Tag Recovery",
+          "environmental_label": "Tool Plate Label"
+        },
+        "spoiler_tier": "0",
+        "depth_band": "drowned_shelf_worker_room",
+        "route_moment": "first_barnard_trace_scan",
+        "truth_payload": "The tool mark is Barnard Yards second-grade alloy and not Deep Reach issue.",
+        "player_question": "Can the player recognize origin and repair culture without a speech?"
+      },
+      "localized": {
+        "en_US": {
+          "title": "Barnard Tool Mark First Trace",
+          "scanner": "BARNARD TOOL MARK // Cheap alloy, familiar cut pattern. Not Deep Reach issue.",
+          "codex": "The stamp is small enough to miss under salt bloom: Barnard Yards alloy, second-grade, cut with the old pressure die. Deep Reach did not issue this tool.",
+          "pda_log": "Tool tag recovery: Barnard Yards second-grade alloy; old pressure die cut; not Deep Reach issue; repaired twice before drowning.",
+          "environmental_label": "BARNARD TOOL MARK // NON-STANDARD ISSUE // REPAIRED TWICE"
+        },
+        "ar_SA": {
+          "title": "Draft ar_SA localization pending native pass. Barnard Tool Mark First Trace",
+          "scanner": "Draft ar_SA localization pending native pass. Barnard tool mark; not Deep Reach issue.",
+          "codex": "Draft ar_SA localization pending native pass. The small stamp matches Barnard Yards alloy and cut pattern.",
+          "pda_log": "Draft ar_SA localization pending native pass. Tool tag marks non-standard issue and repeated repair.",
+          "environmental_label": "Draft ar_SA localization pending native pass. Barnard tool mark."
+        },
+        "de_DE": {
+          "title": "Draft de_DE localization pending native pass. Barnard Tool Mark First Trace",
+          "scanner": "Draft de_DE localization pending native pass. Barnard tool mark; not Deep Reach issue.",
+          "codex": "Draft de_DE localization pending native pass. The small stamp matches Barnard Yards alloy and cut pattern.",
+          "pda_log": "Draft de_DE localization pending native pass. Tool tag marks non-standard issue and repeated repair.",
+          "environmental_label": "Draft de_DE localization pending native pass. Barnard tool mark."
+        },
+        "es_ES": {
+          "title": "Draft es_ES localization pending native pass. Barnard Tool Mark First Trace",
+          "scanner": "Draft es_ES localization pending native pass. Barnard tool mark; not Deep Reach issue.",
+          "codex": "Draft es_ES localization pending native pass. The small stamp matches Barnard Yards alloy and cut pattern.",
+          "pda_log": "Draft es_ES localization pending native pass. Tool tag marks non-standard issue and repeated repair.",
+          "environmental_label": "Draft es_ES localization pending native pass. Barnard tool mark."
+        },
+        "fr_FR": {
+          "title": "Draft fr_FR localization pending native pass. Barnard Tool Mark First Trace",
+          "scanner": "Draft fr_FR localization pending native pass. Barnard tool mark; not Deep Reach issue.",
+          "codex": "Draft fr_FR localization pending native pass. The small stamp matches Barnard Yards alloy and cut pattern.",
+          "pda_log": "Draft fr_FR localization pending native pass. Tool tag marks non-standard issue and repeated repair.",
+          "environmental_label": "Draft fr_FR localization pending native pass. Barnard tool mark."
+        },
+        "he_IL": {
+          "title": "Draft he_IL localization pending native pass. Barnard Tool Mark First Trace",
+          "scanner": "Draft he_IL localization pending native pass. Barnard tool mark; not Deep Reach issue.",
+          "codex": "Draft he_IL localization pending native pass. The small stamp matches Barnard Yards alloy and cut pattern.",
+          "pda_log": "Draft he_IL localization pending native pass. Tool tag marks non-standard issue and repeated repair.",
+          "environmental_label": "Draft he_IL localization pending native pass. Barnard tool mark."
+        },
+        "id_ID": {
+          "title": "Draft id_ID localization pending native pass. Barnard Tool Mark First Trace",
+          "scanner": "Draft id_ID localization pending native pass. Barnard tool mark; not Deep Reach issue.",
+          "codex": "Draft id_ID localization pending native pass. The small stamp matches Barnard Yards alloy and cut pattern.",
+          "pda_log": "Draft id_ID localization pending native pass. Tool tag marks non-standard issue and repeated repair.",
+          "environmental_label": "Draft id_ID localization pending native pass. Barnard tool mark."
+        },
+        "ja_JP": {
+          "title": "Draft ja_JP localization pending native pass. Barnard Tool Mark First Trace",
+          "scanner": "Draft ja_JP localization pending native pass. Barnard tool mark; not Deep Reach issue.",
+          "codex": "Draft ja_JP localization pending native pass. The small stamp matches Barnard Yards alloy and cut pattern.",
+          "pda_log": "Draft ja_JP localization pending native pass. Tool tag marks non-standard issue and repeated repair.",
+          "environmental_label": "Draft ja_JP localization pending native pass. Barnard tool mark."
+        },
+        "ko_KR": {
+          "title": "Draft ko_KR localization pending native pass. Barnard Tool Mark First Trace",
+          "scanner": "Draft ko_KR localization pending native pass. Barnard tool mark; not Deep Reach issue.",
+          "codex": "Draft ko_KR localization pending native pass. The small stamp matches Barnard Yards alloy and cut pattern.",
+          "pda_log": "Draft ko_KR localization pending native pass. Tool tag marks non-standard issue and repeated repair.",
+          "environmental_label": "Draft ko_KR localization pending native pass. Barnard tool mark."
+        },
+        "nl_NL": {
+          "title": "Draft nl_NL localization pending native pass. Barnard Tool Mark First Trace",
+          "scanner": "Draft nl_NL localization pending native pass. Barnard tool mark; not Deep Reach issue.",
+          "codex": "Draft nl_NL localization pending native pass. The small stamp matches Barnard Yards alloy and cut pattern.",
+          "pda_log": "Draft nl_NL localization pending native pass. Tool tag marks non-standard issue and repeated repair.",
+          "environmental_label": "Draft nl_NL localization pending native pass. Barnard tool mark."
+        },
+        "pl_PL": {
+          "title": "Draft pl_PL localization pending native pass. Barnard Tool Mark First Trace",
+          "scanner": "Draft pl_PL localization pending native pass. Barnard tool mark; not Deep Reach issue.",
+          "codex": "Draft pl_PL localization pending native pass. The small stamp matches Barnard Yards alloy and cut pattern.",
+          "pda_log": "Draft pl_PL localization pending native pass. Tool tag marks non-standard issue and repeated repair.",
+          "environmental_label": "Draft pl_PL localization pending native pass. Barnard tool mark."
+        },
+        "pt_BR": {
+          "title": "Draft pt_BR localization pending native pass. Barnard Tool Mark First Trace",
+          "scanner": "Draft pt_BR localization pending native pass. Barnard tool mark; not Deep Reach issue.",
+          "codex": "Draft pt_BR localization pending native pass. The small stamp matches Barnard Yards alloy and cut pattern.",
+          "pda_log": "Draft pt_BR localization pending native pass. Tool tag marks non-standard issue and repeated repair.",
+          "environmental_label": "Draft pt_BR localization pending native pass. Barnard tool mark."
+        },
+        "ru_RU": {
+          "title": "Draft ru_RU localization pending native pass. Barnard Tool Mark First Trace",
+          "scanner": "Draft ru_RU localization pending native pass. Barnard tool mark; not Deep Reach issue.",
+          "codex": "Draft ru_RU localization pending native pass. The small stamp matches Barnard Yards alloy and cut pattern.",
+          "pda_log": "Draft ru_RU localization pending native pass. Tool tag marks non-standard issue and repeated repair.",
+          "environmental_label": "Draft ru_RU localization pending native pass. Barnard tool mark."
+        },
+        "uk_UA": {
+          "title": "Draft uk_UA localization pending native pass. Barnard Tool Mark First Trace",
+          "scanner": "Draft uk_UA localization pending native pass. Barnard tool mark; not Deep Reach issue.",
+          "codex": "Draft uk_UA localization pending native pass. The small stamp matches Barnard Yards alloy and cut pattern.",
+          "pda_log": "Draft uk_UA localization pending native pass. Tool tag marks non-standard issue and repeated repair.",
+          "environmental_label": "Draft uk_UA localization pending native pass. Barnard tool mark."
+        },
+        "zh_CN": {
+          "title": "Draft zh_CN localization pending native pass. Barnard Tool Mark First Trace",
+          "scanner": "Draft zh_CN localization pending native pass. Barnard tool mark; not Deep Reach issue.",
+          "codex": "Draft zh_CN localization pending native pass. The small stamp matches Barnard Yards alloy and cut pattern.",
+          "pda_log": "Draft zh_CN localization pending native pass. Tool tag marks non-standard issue and repeated repair.",
+          "environmental_label": "Draft zh_CN localization pending native pass. Barnard tool mark."
+        }
+      }
+    }
+  ]
+}

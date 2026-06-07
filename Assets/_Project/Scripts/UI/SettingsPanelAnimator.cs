@@ -116,15 +116,9 @@ namespace Hecton8.UI
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            if (currentService == null)
+            Unregister();
+            if (currentService != null && isActiveAndEnabled)
             {
-                _registered = false;
-                return;
-            }
-
-            if (isActiveAndEnabled)
-            {
-                Unregister();
                 if (_state != State.Idle)
                     TryRegister();
             }

@@ -7,6 +7,9 @@ poi_tags: poi.probe_map_stamp;poi.beam_sail_archive
 biome_tags: biome.relay_shadow;biome.moon_ladder
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Beam-Sail Probe Era"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

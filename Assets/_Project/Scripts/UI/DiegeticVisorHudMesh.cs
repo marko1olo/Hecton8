@@ -715,6 +715,11 @@ namespace Hecton8.UI
                     nameof(DiegeticVisorHudMesh),
                     BlackBoxDumpPayloadLabel,
                     NativeArrayOptions.UninitializedMemory);
+                if (!payload.IsCreated)
+                {
+                    _blackBoxDumpQueued = true;
+                    return;
+                }
 
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                 Span<byte> header = new Span<byte>(payloadPtr, headerBytes);

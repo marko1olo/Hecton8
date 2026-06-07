@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Density Skater Fauna"
+title: "Dichtheidsskater-fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Density Skater Fauna
+# Dichtheidsskater-fauna
 
-NL LOC HOLD: Density Skater Fauna are mid-depth creatures built around real density-layer behavior rather than fantasy levitation.
+Dichtheidsskaters zijn middeldiepe dieren die de pekelcanyon laten voelen als gelaagde machine in plaats van leeg volume. Hun voeten, vinnen of haakpads drukken op dichtheidsgrenzen die sterk genoeg zijn om kleine lichamen secondenlang te dragen. Voor het oog lijken ze door open water te glijden; voor de scanner laten ze rimpels achter waar open water geen oppervlak zou moeten hebben. Die tegenspraak is de aanwijzing. Een skaterspoor kan een scheringsvenster, pekeltrap, blinde sonarrand of jachtbaan van grotere wezens markeren. Het dier is geen magie en geen veiligheidsbelofte. Een pak is zwaarder, luider en slecht gevormd voor dezelfde truc. Gebruik skatersporen om de laag te lezen. Ga er niet van uit dat je kunt volgen.
 
 ## Scanner
 
-NL LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+DICHTHEIDSSKATER // Dunpotige fauna rijdt op het pekelvlak als op een oppervlak en laat rimpels achter waar sonar open water verwacht.
 
 ## Terminal
 
-NL LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+FAUNA-BASIS: skatercontact stijgt bij gescheurde brine vanes, warme pekeltrappen en dode sonarranden. Hun spoor markeert een dichtheidsshelf, geen veilige steun. Jaag niet door ondoorzichtige lagen.
 
 ## Audio
 
-NL LOC HOLD: Something is walking on the water inside the water.
+Iets loopt op het water in het water.
 
 ## Field Note
 
-NL LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+Ze zweven niet. Ze lopen op een grens waar jouw pak doorheen kan vallen.
 
 <!-- In-Game Wiki; generated from P227_DENSITY_SKATER_FAUNA/nl_NL. -->

@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS171_FIRST_FAUNA_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1140_SCALE_SHEAR_LINE",
+    "P1141_BURROW_SILT_PLUME",
+    "P1142_BITE_PATTERN_CALCIUM_EDGE",
+    "P1143_MOLTED_SKIN_SALT_RING",
+    "P1144_EMPTY_EGG_CASE_SEAM"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1140_SCALE_SHEAR_LINE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1141_BURROW_SILT_PLUME.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1142_BITE_PATTERN_CALCIUM_EDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1143_MOLTED_SKIN_SALT_RING.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1144_EMPTY_EGG_CASE_SEAM.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

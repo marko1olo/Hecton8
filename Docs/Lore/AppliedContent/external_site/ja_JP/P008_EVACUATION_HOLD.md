@@ -7,6 +7,9 @@ poi_tags: poi.evac_gate;poi.medical_route_lock
 biome_tags: biome.deep_abyss;biome.drowned_colony
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "退避保留"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

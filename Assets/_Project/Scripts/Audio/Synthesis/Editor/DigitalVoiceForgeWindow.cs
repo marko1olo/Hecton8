@@ -56,15 +56,12 @@ namespace Hecton8.Audio.Synthesis.Editor
         private void OnDisable()
         {
             EditorApplication.update -= Tick;
-            if (_process != null && !_process.HasExited)
-                _process.Kill();
-            if (_process != null)
-            {
-                _process.OutputDataReceived -= OnProcessOutputData;
-                _process.ErrorDataReceived -= OnProcessErrorData;
-                _process.Dispose();
-            }
-            _process = null;
+            Process process = _process;
+            if (process == null)
+                return;
+
+            KillBakeProcessNoThrow(process);
+            DisposeRunningBakeProcessNoThrow(process);
         }
 
         private void BuildUi()
@@ -111,8 +108,13 @@ namespace Hecton8.Audio.Synthesis.Editor
 
         private void StartBake()
         {
-            if (_process != null && !_process.HasExited)
-                return;
+            if (_process != null)
+            {
+                if (IsProcessRunning(_process))
+                    return;
+
+                DisposeRunningBakeProcessNoThrow(_process);
+            }
 
             string repo = Directory.GetCurrentDirectory();
             string script = Path.Combine(repo, "Tools", "voice_baker.py");
@@ -137,19 +139,23 @@ namespace Hecton8.Audio.Synthesis.Editor
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
+
             lock (_processOutputLock)
             {
                 _stdout.Length = 0;
                 _stderr.Length = 0;
             }
-            _process = Process.Start(psi);
-            if (_process != null)
+
+            Process process = TryStartBakeProcess(psi);
+            if (process == null)
             {
-                _process.OutputDataReceived += OnProcessOutputData;
-                _process.ErrorDataReceived += OnProcessErrorData;
-                _process.BeginOutputReadLine();
-                _process.BeginErrorReadLine();
+                _progress.value = 0f;
+                _progress.title = "Failed";
+                _status.text = "voice_baker.py failed to start.";
+                return;
             }
+
+            _process = process;
             _startedAt = EditorApplication.timeSinceStartup;
             _progress.title = "Baking";
             _progress.value = 12f;
@@ -158,11 +164,12 @@ namespace Hecton8.Audio.Synthesis.Editor
 
         private void Tick()
         {
-            if (_process != null)
+            Process process = _process;
+            if (process != null)
             {
                 double elapsed = EditorApplication.timeSinceStartup - _startedAt;
                 _progress.value = (float)math.min(95.0, 12.0 + elapsed * 18.0);
-                if (_process.HasExited)
+                if (!IsProcessRunning(process))
                 {
                     string stdout;
                     string stderr;
@@ -171,11 +178,9 @@ namespace Hecton8.Audio.Synthesis.Editor
                         stdout = _stdout.ToString();
                         stderr = _stderr.ToString();
                     }
-                    int code = _process.ExitCode;
-                    _process.OutputDataReceived -= OnProcessOutputData;
-                    _process.ErrorDataReceived -= OnProcessErrorData;
-                    _process.Dispose();
-                    _process = null;
+
+                    int code = ReadExitCodeNoThrow(process);
+                    DisposeRunningBakeProcessNoThrow(process);
                     _progress.value = code == 0 ? 100f : 0f;
                     _progress.title = code == 0 ? "Baked" : "Failed";
                     _status.text = code == 0 ? stdout.Trim() : stderr.Trim();
@@ -217,6 +222,95 @@ namespace Hecton8.Audio.Synthesis.Editor
                 return;
             lock (_processOutputLock)
                 _stderr.AppendLine(e.Data);
+        }
+
+        private Process TryStartBakeProcess(ProcessStartInfo psi)
+        {
+            Process process = null;
+            try
+            {
+                process = Process.Start(psi);
+                if (process == null)
+                    return null;
+
+                process.OutputDataReceived += OnProcessOutputData;
+                process.ErrorDataReceived += OnProcessErrorData;
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+                return process;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError("[DigitalVoiceForgeWindow] voice_baker.py launch failed: " + exception.Message);
+                if (process != null)
+                {
+                    process.OutputDataReceived -= OnProcessOutputData;
+                    process.ErrorDataReceived -= OnProcessErrorData;
+                    KillBakeProcessNoThrow(process);
+                    DisposeProcessNoThrow(process);
+                }
+
+                return null;
+            }
+        }
+
+        private void DisposeRunningBakeProcessNoThrow(Process process)
+        {
+            if (ReferenceEquals(_process, process))
+                _process = null;
+
+            process.OutputDataReceived -= OnProcessOutputData;
+            process.ErrorDataReceived -= OnProcessErrorData;
+            DisposeProcessNoThrow(process);
+        }
+
+        private static bool IsProcessRunning(Process process)
+        {
+            try
+            {
+                return !process.HasExited;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static int ReadExitCodeNoThrow(Process process)
+        {
+            try
+            {
+                return process.ExitCode;
+            }
+            catch (Exception)
+            {
+                return -1;
+            }
+        }
+
+        private static void KillBakeProcessNoThrow(Process process)
+        {
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[DigitalVoiceForgeWindow] voice_baker.py cleanup failed: " + exception.Message);
+            }
+        }
+
+        private static void DisposeProcessNoThrow(Process process)
+        {
+            try
+            {
+                process.Dispose();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[DigitalVoiceForgeWindow] voice_baker.py dispose failed: " + exception.Message);
+            }
         }
 
         private static string ResolvePythonExecutable()

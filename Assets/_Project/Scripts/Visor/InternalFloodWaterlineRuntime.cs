@@ -527,7 +527,7 @@ namespace Hecton8.Visor
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredLateFrameTick = false;
+                    UnregisterRuntime();
                     if (currentService != null && isActiveAndEnabled && _isInitialized)
                         RegisterRuntime();
                     return;

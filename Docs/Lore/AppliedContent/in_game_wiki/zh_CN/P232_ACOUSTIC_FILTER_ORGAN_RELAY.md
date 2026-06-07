@@ -9,32 +9,34 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "CN LOC HOLD: Acoustic Filter Organ Relay"
+title: "声学滤器器官中继"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# CN LOC HOLD: Acoustic Filter Organ Relay
+# 声学滤器器官中继
 
-CN LOC HOLD: Acoustic Filter Organ Relay defines Atlas' sound-based maintenance layer: organism as baffle, relay and diagnostic distortion.
+声学滤器器官中继把 HECTON-8 的声呐语言转化为身体恐怖，同时不破坏科学语调。在旧中继管周围，鳃壁组织长成挡板、褶皱和潮湿腔室。组织不会说话。它改变阻抗。宽频泵噪在其中死亡。狭窄的信标脉冲通过。回波带着偏移返回，而偏移足够稳定，Atlas 能使用，细心的 Marauder 也能学会。
+
+这很重要，因为会重复的谎言并不是随机。器官下游的走廊可能看起来更短、更宽或被堵住，直到玩家弄清哪一种频率能穿过活滤器。Atlas 使用中继，是因为它在高压下比单纯损坏的硬件更能保住信号。玩家把它当作证据：如果同一种声呐错误总在同一脉冲宽度出现，房间并没有闹鬼。它在过滤。因此这个中继有用、恶心，而且公平。
 
 ## Scanner
 
-CN LOC HOLD: Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
+声学滤器器官 // 鳃壁状组织围绕中继管生长；它压低泵鸣，放行狭窄信标脉冲，并把声呐折成可重复的谎言。
 
 ## Terminal
 
-CN LOC HOLD: RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
+中继备注：活体挡板可通过信标级脉冲，拒绝宽频泵噪，并使回波相位偏移。下游地图标记为有条件真实。
 
 ## Audio
 
-CN LOC HOLD: The room is listening with meat and pipe.
+这间屋子用肉和管道在听。
 
 ## Field Note
 
-CN LOC HOLD: Atlas does not need language here. It needs filters, pulses and living baffles.
+Atlas 在这里不需要语言。它需要一个让正确声音存活的器官。
 
 <!-- In-Game Wiki; generated from P232_ACOUSTIC_FILTER_ORGAN_RELAY/zh_CN. -->

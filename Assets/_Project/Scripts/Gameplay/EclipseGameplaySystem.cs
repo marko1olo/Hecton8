@@ -101,19 +101,7 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(EclipseGameplayEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(EclipseGameplayEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseNativeQueues();
 
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
@@ -320,29 +308,65 @@ namespace Hecton8.Gameplay
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
+            try
             {
-                _pendingEvents = new NativeQueue<DeferredEclipseGameplayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<DeferredEclipseGameplayEventPayload>[16] — deferred eclipse gameplay lane flushed by SystemDispatcher — owner: EclipseGameplayEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    ExpectedPendingEventCapacity,
-                    nameof(EclipseGameplayEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, ExpectedPendingEventCapacity);
-            }
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<DeferredEclipseGameplayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<DeferredEclipseGameplayEventPayload>[16] — deferred eclipse gameplay lane flushed by SystemDispatcher — owner: EclipseGameplayEvents
+                    RegisterNativeQueue(ref _pendingEvents, ExpectedPendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, ExpectedPendingEventCapacity);
+                }
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<DeferredEclipseGameplayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<DeferredEclipseGameplayEventPayload>[16] — next-frame eclipse gameplay lane prevents same-frame reentrant dispatch — owner: EclipseGameplayEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    ExpectedPendingEventCapacity,
-                    nameof(EclipseGameplayEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, ExpectedPendingEventCapacity);
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<DeferredEclipseGameplayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<DeferredEclipseGameplayEventPayload>[16] — next-frame eclipse gameplay lane prevents same-frame reentrant dispatch — owner: EclipseGameplayEvents
+                    RegisterNativeQueue(ref _nextFrameEvents, ExpectedPendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, ExpectedPendingEventCapacity);
+                }
             }
+            catch
+            {
+                ReleaseNativeQueues();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(EclipseGameplayEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeQueue(ref queue, label);
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
+            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(EclipseGameplayEvents), label);
+            queue.Dispose();
+            queue = default;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -428,6 +452,7 @@ namespace Hecton8.Gameplay
         private float _currentAcousticPitchShiftCents;
         private float _pendingBiolumMultiplier = 1f;
         private bool _biolumMultiplierShaderDirty;
+        private ISpatialAudioEnvironmentModulationSink _spatialAudioSink;
 
         private static readonly uint _EclipseGameplayContextHash =
             unchecked((uint)LocHash.Compute("EclipseGameplaySystem"));
@@ -455,6 +480,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            CacheSpatialAudioSink(GlobalRegistry.Audio);
             TryRegisterRuntime();
             TryRegisterHotSwapListener();
             TryRegister();
@@ -471,6 +497,7 @@ namespace Hecton8.Gameplay
             _currentBiolumMultiplier = 1f;
             Shader.SetGlobalFloat(_ShaderBiolumMultiplier, 1f);
             PublishEclipseAcousticPitchShift(0f);
+            _spatialAudioSink = null;
         }
 
         private void OnDestroy()
@@ -690,7 +717,8 @@ namespace Hecton8.Gameplay
                 return;
 
             _currentAcousticPitchShiftCents = clampedCents;
-            if (GlobalRegistry.Audio is ISpatialAudioEnvironmentModulationSink spatialAudio)
+            ISpatialAudioEnvironmentModulationSink spatialAudio = ResolveSpatialAudioSink();
+            if (spatialAudio != null)
                 spatialAudio.SetEclipseAcousticPitchShiftCents(clampedCents);
         }
 
@@ -769,11 +797,52 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+            {
+                CacheSpatialAudioSink(currentService);
+                float cachedCents = _currentAcousticPitchShiftCents;
+                _currentAcousticPitchShiftCents = float.NaN;
+                PublishEclipseAcousticPitchShift(cachedCents);
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             TryUnregister();
-            TryRegister();
+            if (currentService != null && isActiveAndEnabled)
+                TryRegister();
+        }
+
+        private void CacheSpatialAudioSink(object audioRuntime)
+        {
+            _spatialAudioSink = IsAudioRuntimeObjectUsable(audioRuntime)
+                ? audioRuntime as ISpatialAudioEnvironmentModulationSink
+                : null;
+        }
+
+        private ISpatialAudioEnvironmentModulationSink ResolveSpatialAudioSink()
+        {
+            ISpatialAudioEnvironmentModulationSink spatialAudioSink = _spatialAudioSink;
+            if (IsAudioRuntimeObjectUsable(spatialAudioSink))
+                return spatialAudioSink;
+
+            _spatialAudioSink = null;
+            return null;
+        }
+
+        private static bool IsAudioRuntimeObjectUsable(object runtime)
+        {
+            if (runtime == null)
+                return false;
+
+            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+                return false;
+
+            if (runtime is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()

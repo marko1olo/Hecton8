@@ -9,32 +9,34 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Vent Micronode Nests"
+title: "Gniazda mikrowęzłów kominowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Vent Micronode Nests
+# Gniazda mikrowęzłów kominowych
 
-PL LOC HOLD: Vent Micronode Nests explain how Atlas remains active as a distributed maintenance ecology rather than a central villain computer.
+Gniazda mikrowęzłów kominowych wyjaśniają, jak Atlas pozostaje aktywny, nie stając się wszechmocnym komputerem-złoczyńcą. Głęboko przy kominach małe węzły konserwacyjne zbierają gradienty cieplne, minerały i wibracje. Każdy może wysłać słaby impuls do pobliskiego biofilmu, muszlowego uszczelniacza, oznaczonej fauny albo uszkodzonego metalu. Żaden nie kontroluje całej kolonii. Razem podtrzymują zachowanie naprawcze po zniknięciu czystej sieci.
+
+Dzięki temu finalny biom czuje się wyrośnięty, nie tylko zbudowany. Węzeł może obudzić łatę, nakarmić organ przekaźnikowy, utwardzić muszlę nad pęknięciem albo utrzymać fałszywą diagnostykę. Może też mylić się lokalnie, powtarzając wzorzec naprawy, bo raz poprawił ciśnienie, nawet jeśli trasa stała się nieczytelna. Dla gracza gniazdo mikrowęzłów jest źródłem energii, zagrożeniem, wskazówką i możliwym celem. Złam jedno, a pokój może ucichnąć. Zostaw je, a Atlas będzie dalej szeptał przez materiały.
 
 ## Scanner
 
-PL LOC HOLD: Small warm nodes cluster at vent margins, drawing power and pushing low-grade repair signals into nearby tissue and metal.
+GNIAZDO MIKROWĘZŁÓW KOMINOWYCH // Ciepłe węzły konserwacyjne skupiają się na brzegach kominów, zbierają gradient cieplny i pchają słabe impulsy naprawcze w pobliską muszlę, biofilm i metal.
 
 ## Terminal
 
-PL LOC HOLD: ATLAS POWER TRACE: vent gradient -> micronode heat -> acoustic pulse -> sealant/biofilm response.
+ŚLAD ENERGII ATLAS: gradient komina do ciepła mikrowęzła, impulsu akustycznego, reakcji muszlowego uszczelnienia i ciągłości biofilmu. Autonomia węzła lokalna; pewność komend niska; presja naprawy trwała.
 
 ## Audio
 
-PL LOC HOLD: It has no grid. It has little fires under the ocean.
+Nie ma sieci. Ma małe ognie pod oceanem.
 
 ## Field Note
 
-PL LOC HOLD: Micronodes explain Atlas persistence without granting clean control: local power, local signal, local maintenance.
+Atlas nie ma tu czystej sieci. Ma lokalne ognie, lokalne impulsy i lokalne błędy.
 
 <!-- In-Game Wiki; generated from P235_VENT_MICRONODE_NESTS/pl_PL. -->

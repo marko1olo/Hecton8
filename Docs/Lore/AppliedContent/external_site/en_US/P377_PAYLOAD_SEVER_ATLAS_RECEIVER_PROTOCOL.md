@@ -7,6 +7,9 @@ poi_tags: poi.atlas_severance_key;poi.factory_temple_cutline
 biome_tags: biome.atlas_basin;biome.factory_temple
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Payload Sever Atlas Receiver Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

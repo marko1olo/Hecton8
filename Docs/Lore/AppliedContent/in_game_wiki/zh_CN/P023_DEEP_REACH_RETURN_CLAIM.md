@@ -7,6 +7,9 @@ poi_tags: poi.deep_reach_contract;poi.relay_instruction
 biome_tags: biome.drowned_colony;biome.deep_relay
 locale: zh_CN
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Deep Reach返还主张"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

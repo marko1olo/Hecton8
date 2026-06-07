@@ -212,7 +212,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float repairSpeed = 20f;
 
         [Tooltip("Sloi, po kotorym rabotaet remontnyy luch.")]
-        [SerializeField] private LayerMask repairMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [SerializeField] private LayerMask repairMask = Hecton8.Core.HectonLayerMasks.FieldToolSurfaceLayerMask;
 
         [Header("── Visuals ───────────────────────────────────")]
         [SerializeField] private LineRenderer repairLine;
@@ -544,25 +544,20 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                        return;
-
                     bool needsLateFrame = _lateFrameRegistered ||
                                           _powerIndicatorDirty ||
                                           _repairVisualStateDirty ||
                                           _beamVisualDirty ||
                                           _pendingSparkEmit;
                     TryUnregisterLateFrameTick();
-                    if (needsLateFrame)
+                    if (currentService != null && isActiveAndEnabled && needsLateFrame)
                         TryRegisterLateFrameTick();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     RebindRepairVault(currentService as IDataVault);
                     break;
                 case GlobalRegistryServiceSlot.Audio:
-                    _cachedRepairAudioMixerGroup = currentService is IAudioService audioService
-                        ? audioService.AmbientGroup
-                        : null;
+                    CacheRepairAudioMixerGroup(currentService as IAudioService);
                     if (repairLoopAudio != null)
                         repairLoopAudio.outputAudioMixerGroup = null;
                     TryAssignRepairAudioMixerRoute();
@@ -605,8 +600,25 @@ namespace Hecton8.Gameplay
 
         private void CacheRepairAudioCold()
         {
-            IAudioService audioService = GlobalRegistry.Audio;
-            _cachedRepairAudioMixerGroup = audioService != null ? audioService.AmbientGroup : null;
+            CacheRepairAudioMixerGroup(GlobalRegistry.Audio);
+        }
+
+        private void CacheRepairAudioMixerGroup(IAudioService audioService)
+        {
+            _cachedRepairAudioMixerGroup = IsAudioServiceUsable(audioService)
+                ? audioService.AmbientGroup
+                : null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private static void CacheRepairLocalizationCold()
@@ -2472,7 +2484,12 @@ namespace Hecton8.Gameplay
         {
             hit = default;
             return TryResolveRepairRay(out Vector3 origin, out Vector3 direction) &&
-                   RequestPrimarySurfaceHit(origin, direction, ResolveRuntimeRepairRange(), repairMask.value, QueryTriggerInteraction.Ignore, out hit);
+                   RequestPrimarySurfaceHit(origin, direction, ResolveRuntimeRepairRange(), ResolveRepairSurfaceMask(), QueryTriggerInteraction.Ignore, out hit);
+        }
+
+        private int ResolveRepairSurfaceMask()
+        {
+            return HectonLayerMasks.ResolveSurfaceInteractionLayerMask(repairMask.value);
         }
 
         private bool TryResolveRepairRay(out Vector3 origin, out Vector3 direction)

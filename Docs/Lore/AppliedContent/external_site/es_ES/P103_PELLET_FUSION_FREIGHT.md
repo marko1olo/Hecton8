@@ -9,32 +9,32 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "Flete de fusión por pellets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# Flete de fusión por pellets
 
-ES LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for.
+El flete de fusión por pellets es la historia industrial detrás de HECTON-8. Máquinas y carga pesada llegaron a Aegir porque la infraestructura podía empujar, alimentar, proteger y frenar masa durante décadas; la ruta sigue siendo cruel porque la contabilidad sobrevive más que la emergencia.
 
 ## Scanner
 
-ES LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+Placa de motor. El flete con fusión alimentada por pellets cruzó como infraestructura: impulso, escudo, deriva, frenado y pérdidas facturadas.
 
 ## Terminal
 
-ES LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+DOCTRINA DE FLETE: cargas seed clase Atlas y flete colonial usaron impulso de vela de haz, fusión alimentada por pellets, frenado con vela magnética e intervalos largos de deriva. La carga viva llegó después de que las máquinas hicieron facturable la ruta.
 
 ## Audio
 
-ES LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+Una nave pesada no es un milagro. Es una hipoteca con motores.
 
 ## Field Note
 
-ES LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+El tránsito pesado no es heroico. Es un contrato de ruta viejo con cicatrices de calor.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/es_ES. -->

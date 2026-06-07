@@ -9,32 +9,34 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Wide Filter Body Trace"
+title: "עקבת גוף סינון רחב"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Wide Filter Body Trace
+# עקבת גוף סינון רחב
 
-HE LOC HOLD: Wide Filter Body Trace defines large fauna as environmental pressure that changes routes and sensor trust.
+גופי סינון רחבים הם ההוכחה הראשונה לכך שהתהום הפתוחה בין נקודות הציון אינה ריקה. הם נעים במים עמוקים כמו קוצרי ענני פלנקטון איטיים, עם גוף רחב ממסגרות נספח קטנות. החיה אינה צדה את Marauder; היא משנה את המפה סביב Marauder. כשהיא עוברת, החיים התלויים במים מידלדלים, החזרי הסונאר נמרחים לאורך שפת הגוף, וקווי מתאר תעשייתיים קבורים עשויים להופיע לכמה דקות לפני שהסחף נסגר שוב.
+
+לכן האורגניזם הוא גם סכנה וגם כלי. הצל שלו יכול להסתיר מסגרת שירות או לגרום למסלול להיראות פתוח במקום שבו המים מלאים למעשה ברקמה נעה. הפעולה הנכונה היא לקרוא את השובל: מים צלולים מאחורי הפה, נפילה מלוכלכת בשוליים, שקט אקוסטי במחסה הגוף. אל תשחה מתחת לצל רק כדי לראות את היצור. עקוב אחרי הפער שהוא משאיר רק אם יש לך כוח, קו ודרך חזרה.
 
 ## Scanner
 
-HE LOC HOLD: A wide filter body clears plankton, bends sonar and can hide or reveal industrial ruins by passing over them.
+גוף סינון רחב // חיית סינון רחבה חוצה את התעלה; מאחוריה הפלנקטון מתדלדל, הסונאר נמרח בשוליים, וחורבות עשויות להופיע או להיעלם תחת הצל שלה.
 
 ## Terminal
 
-HE LOC HOLD: CONTACT NOTE: do not pursue wide filter body shadow. Use the acoustic gap it leaves.
+בסיס מגע: מעבר גוף סינון רחב יוצר צפיפות פלנקטון נמוכה, מריחת הד בשוליים, שובל שקט בלחץ ומסדרונות ראות זמניים. אין לרדוף מתחת לצל הגחוני. להשתמש בפער האקוסטי רק אחרי שהסחף האחורי נופל.
 
 ## Audio
 
-HE LOC HOLD: That is not a roar. That is the sound of the map being wiped clean.
+זה לא שאגה. זה הצליל של מפה שנמחקת עד ניקיון.
 
 ## Field Note
 
-HE LOC HOLD: Treat the large filter organism as moving weather. It changes visibility, sound and risk without becoming a scripted monster set-piece.
+אל תקרא לזה בוס. קרא לזה מזג אוויר עם קיבה: איטי, ענק, שימושי ואדיש.
 
 <!-- In-Game Wiki; generated from P229_WIDE_FILTER_BODY_TRACE/he_IL. -->

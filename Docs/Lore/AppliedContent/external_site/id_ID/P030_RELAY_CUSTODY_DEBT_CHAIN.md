@@ -7,6 +7,9 @@ poi_tags: poi.claim_pool_ledger;poi.relay_packet
 biome_tags: biome.crash_shelf;biome.service_canyon
 locale: id_ID
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Rantai Utang Relay Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

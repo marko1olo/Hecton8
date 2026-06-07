@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Density Skater Fauna"
+title: "Faune des patineurs de densité"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Density Skater Fauna
+# Faune des patineurs de densité
 
-FR LOC HOLD: Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes.
+La Faune des patineurs de densité transforme l'une des idées hard-sci-fi les plus étranges de HECTON-8 en rencontre compréhensible sans conférence : l'eau peut contenir des surfaces. Dans le canyon de saumure, salinité, température et pression s'empilent en plateaux de densité. De petits animaux les exploitent comme les insectes de surface exploitent la tension, sauf que la surface est enterrée dans l'océan. Le résultat doit être étrange mais juste. Un patineur traverse un vide apparent ; le sonar montre une ride ; le trim de la combinaison vacille ; le joueur comprend qu'une frontière existe là. L'écriture et le placement doivent résister à la lévitation fantastique. Le patineur ne flotte pas parce que le monde oublie la physique. Il vit parce que la physique est précise. Son trajet peut mener vers des brine vanes déchirées, des poches moins salées, des marches chaudes ou des voies d'embuscade. Il peut aussi tromper : ce qui porte un animal léger peut lâcher un Marauder chargé dans de l'eau noire stratifiée. La valeur de design n'est pas la créature seule, mais la leçon. Le canyon n'est pas un espace ouvert. C'est une machine d'eau empilée, et chaque petit corps qui la traverse dessine la carte en mouvement.
 
 ## Scanner
 
-FR LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+PATINEUR DE DENSITÉ // Une faune aux membres fins glisse sur l'interface de saumure comme sur une surface, laissant des rides là où le sonar attend de l'eau ouverte.
 
 ## Terminal
 
-FR LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+FAUNE DE BASE : les contacts de patineurs augmentent près des brine vanes déchirées, des marches de saumure chaude et des bords morts du sonar. Leur sillage marque un plateau de densité, pas un appui sûr. Ne poursuis pas à travers les couches opaques.
 
 ## Audio
 
-FR LOC HOLD: Something is walking on the water inside the water.
+Quelque chose marche sur l'eau à l'intérieur de l'eau.
 
 ## Field Note
 
-FR LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+Ils ne lévitent pas. Ils marchent sur une frontière à travers laquelle ta combinaison peut tomber.
 
 <!-- External Site; generated from P227_DENSITY_SKATER_FAUNA/fr_FR. -->

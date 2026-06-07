@@ -206,22 +206,13 @@ namespace Hecton8.Construction
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            if (_registeredLateFrameTick)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrameTick = false;
-            }
+            UnregisterDispatcherTickLanes();
 
-            if (_registeredSlowTick)
-            {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = false;
-            }
-
-            RegisterRuntime();
+            if (currentService != null && isActiveAndEnabled && (_registeredService || !_registeredSlowTick || !_registeredLateFrameTick))
+                RegisterRuntime();
         }
 
         public void SlowTick()
@@ -566,6 +557,18 @@ namespace Hecton8.Construction
 
         private void UnregisterRuntime()
         {
+            UnregisterDispatcherTickLanes();
+
+            if (_registeredService)
+            {
+                SubmarineElectrolysisModule.ClearPipeGraphFromActiveModules(this);
+                GlobalRegistry.UnregisterFluidPipeGraphService(this);
+                _registeredService = false;
+            }
+        }
+
+        private void UnregisterDispatcherTickLanes()
+        {
             if (_registeredLateFrameTick)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -576,13 +579,6 @@ namespace Hecton8.Construction
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
-            }
-
-            if (_registeredService)
-            {
-                SubmarineElectrolysisModule.ClearPipeGraphFromActiveModules(this);
-                GlobalRegistry.UnregisterFluidPipeGraphService(this);
-                _registeredService = false;
             }
         }
 

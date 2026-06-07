@@ -166,19 +166,7 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(FirstHourEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(FirstHourEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseNativeQueues();
 
             _listeners.Clear();
             Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
@@ -333,29 +321,65 @@ namespace Hecton8.Gameplay
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
+            try
             {
-                _pendingEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — deferred first-hour milestone lane flushed by SystemDispatcher LateUpdate — owner: FirstHourEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(FirstHourEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — deferred first-hour milestone lane flushed by SystemDispatcher LateUpdate — owner: FirstHourEvents
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                }
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — next-frame first-hour milestone lane prevents same-frame reentrant dispatch — owner: FirstHourEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(FirstHourEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — next-frame first-hour milestone lane prevents same-frame reentrant dispatch — owner: FirstHourEvents
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                }
             }
+            catch
+            {
+                ReleaseNativeQueues();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(FirstHourEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeQueue(ref queue, label);
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
+            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(FirstHourEvents), label);
+            queue.Dispose();
+            queue = default;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -739,6 +763,8 @@ namespace Hecton8.Gameplay
         [Tooltip("First-hour craft milestone result: pressure route component.")]
         [SerializeField] private string firstCraftResultItemId4 = "Comp_PressureSeal";
 
+        [SerializeField] private string firstCraftResultItemId5 = "Item_Tool_SeafloorDrill";
+
         [Header("-- Retention Nudges -------------------------")]
         [Tooltip("When to remind the player about the first core resource if they are still drifting.")]
         [SerializeField] private float firstResourceReminderTime = 480f;
@@ -803,6 +829,7 @@ namespace Hecton8.Gameplay
         private int _firstCraftResultItemHash2;
         private int _firstCraftResultItemHash3;
         private int _firstCraftResultItemHash4;
+        private int _firstCraftResultItemHash5;
         private bool _hotSwapRegistered;
         private bool _saveRegistered;
         private ISaveService _saveService;
@@ -987,13 +1014,13 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterLateFrameTick()
         {
-            if (_lateFrameRegistered || !Application.isPlaying)
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
-        private void TryUnregisterLateFrameTick()
+        private void TryUnregisterLateFrameTick(bool clearQueuedNotifications = true)
         {
             if (_lateFrameRegistered)
             {
@@ -1001,7 +1028,8 @@ namespace Hecton8.Gameplay
                 _lateFrameRegistered = false;
             }
 
-            ClearQueuedNotifications();
+            if (clearQueuedNotifications)
+                ClearQueuedNotifications();
         }
 
         private unsafe bool QueueNotification(ReadOnlySpan<char> message, NotificationEventSeverity severity)
@@ -1128,8 +1156,8 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registered = false;
-                    _lateFrameRegistered = false;
+                    TryUnregister();
+                    TryUnregisterLateFrameTick(clearQueuedNotifications: false);
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegister();
@@ -1146,7 +1174,7 @@ namespace Hecton8.Gameplay
                     _cachedEmergencyRelayDirector = currentService as IEmergencyRelayRouteReadModel;
                     break;
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
-                    _cachedAudioLogSystem = currentService as IAudioLogRuntime;
+                    CacheAudioLogSystem(currentService as IAudioLogRuntime);
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     CachePlayerContext(currentService as IPlayerRuntimeContext);
@@ -1167,7 +1195,7 @@ namespace Hecton8.Gameplay
             _cachedQuestManager = GlobalRegistry.QuestSystem;
             _cachedAtlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignalReadModel;
             _cachedEmergencyRelayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelayReadModel;
-            _cachedAudioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogRuntime;
+            CacheAudioLogSystem(Hecton8.Core.GlobalRegistry.AudioLogRuntime);
             CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
             _saveService = Hecton8.Core.GlobalRegistry.Save;
@@ -1183,6 +1211,32 @@ namespace Hecton8.Gameplay
             _survivalSystem = null;
             _cachedLocalization = null;
             _saveService = null;
+        }
+
+        private void CacheAudioLogSystem(IAudioLogRuntime audioLogSystem)
+        {
+            _cachedAudioLogSystem = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null;
+        }
+
+        private IAudioLogRuntime ResolveAudioLogSystem()
+        {
+            IAudioLogRuntime audioLogSystem = _cachedAudioLogSystem;
+            if (IsAudioLogRuntimeUsable(audioLogSystem))
+                return audioLogSystem;
+
+            _cachedAudioLogSystem = null;
+            return null;
+        }
+
+        private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogSystem)
+        {
+            if (audioLogSystem == null)
+                return false;
+
+            if (audioLogSystem is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void CachePlayerContext(IPlayerRuntimeContext playerContext)
@@ -1360,7 +1414,8 @@ namespace Hecton8.Gameplay
                     item.MatchesPersistentHash(_firstCraftResultItemHash1) ||
                     item.MatchesPersistentHash(_firstCraftResultItemHash2) ||
                     item.MatchesPersistentHash(_firstCraftResultItemHash3) ||
-                    item.MatchesPersistentHash(_firstCraftResultItemHash4));
+                    item.MatchesPersistentHash(_firstCraftResultItemHash4) ||
+                    item.MatchesPersistentHash(_firstCraftResultItemHash5));
         }
 
         private bool IsAcceptedFirstCraftResultHash(uint itemHash)
@@ -1370,7 +1425,8 @@ namespace Hecton8.Gameplay
                     MatchesCachedHash(itemHash, _firstCraftResultItemHash1) ||
                     MatchesCachedHash(itemHash, _firstCraftResultItemHash2) ||
                     MatchesCachedHash(itemHash, _firstCraftResultItemHash3) ||
-                    MatchesCachedHash(itemHash, _firstCraftResultItemHash4));
+                    MatchesCachedHash(itemHash, _firstCraftResultItemHash4) ||
+                    MatchesCachedHash(itemHash, _firstCraftResultItemHash5));
         }
 
         private static bool MatchesCachedHash(uint itemHash, int cachedHash)
@@ -1494,7 +1550,7 @@ namespace Hecton8.Gameplay
 
         private void SynchronizeContextFromRuntimeSystems()
         {
-            IAudioLogRuntime audioLogSystem = _cachedAudioLogSystem;
+            IAudioLogRuntime audioLogSystem = ResolveAudioLogSystem();
             if (audioLogSystem != null && audioLogSystem.DiscoveredAudioLogCount > 0)
                 _hasLoreRouteContact = true;
 
@@ -2194,6 +2250,7 @@ namespace Hecton8.Gameplay
             _firstCraftResultItemHash2 = ComputeOptionalHash(firstCraftResultItemId2);
             _firstCraftResultItemHash3 = ComputeOptionalHash(firstCraftResultItemId3);
             _firstCraftResultItemHash4 = ComputeOptionalHash(firstCraftResultItemId4);
+            _firstCraftResultItemHash5 = ComputeOptionalHash(firstCraftResultItemId5);
         }
 
         private static int ComputeOptionalHash(string value)

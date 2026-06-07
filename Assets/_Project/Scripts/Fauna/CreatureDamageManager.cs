@@ -113,14 +113,17 @@ namespace Hecton8.AI
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            s_shaderClearProxyRegistered = false;
+            TryUnregisterShaderClearProxyFromDispatcher();
+            TryUnregisterLateFrame();
+            if (currentService == null || !isActiveAndEnabled)
+                return;
+
             if (s_shaderClearPending)
                 QueueShaderClearGlobalsForLateFrame();
 
-            TryUnregisterLateFrame();
             if (_woundCount > 0 && !_tickSleeping && ReferenceEquals(s_activeOwner, this))
                 TryRegisterLateFrame();
         }
@@ -373,6 +376,15 @@ namespace Hecton8.AI
             s_shaderClearProxyRegistered = s_shaderClearProxyRegistered || accepted;
         }
 
+        private static void TryUnregisterShaderClearProxyFromDispatcher()
+        {
+            if (!s_shaderClearProxyRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(s_shaderClearProxy, PriorityLayer.Environment);
+            s_shaderClearProxyRegistered = false;
+        }
+
         private sealed class ShaderClearLateFrameProxy : ILateFrameTickable
         {
             public void LateFrameTick()
@@ -390,11 +402,7 @@ namespace Hecton8.AI
 
             private static void TryUnregisterShaderClearProxy()
             {
-                if (!s_shaderClearProxyRegistered)
-                    return;
-
-                GlobalRegistry.UnregisterLateFrameTickable(s_shaderClearProxy, PriorityLayer.Environment);
-                s_shaderClearProxyRegistered = false;
+                TryUnregisterShaderClearProxyFromDispatcher();
             }
         }
     }

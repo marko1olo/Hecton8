@@ -19,11 +19,14 @@ namespace Hecton8.SaveSystem
             value.currentLifeLowestEnergyNormalized = Sanitize01(value.currentLifeLowestEnergyNormalized, 1f);
             value.currentLifeLowestIntegrityNormalized = Sanitize01(value.currentLifeLowestIntegrityNormalized, 1f);
 
-            value.bleedingSecondsRemaining = SanitizeNonNegativeFinite(value.bleedingSecondsRemaining);
-            value.bleedingDamagePerSecond = SanitizeNonNegativeFinite(value.bleedingDamagePerSecond);
-            value.bleedingSeverity01 = Sanitize01(value.bleedingSeverity01, 0f);
-            value.fractureSecondsRemaining = SanitizeNonNegativeFinite(value.fractureSecondsRemaining);
-            value.fracturePenalty01 = Sanitize01(value.fracturePenalty01, 0f);
+            value.injuryFlags = (byte)(value.injuryFlags & SaveData.PlayerInjurySupportedFlagMask);
+            bool hasBleeding = (value.injuryFlags & SaveData.PlayerInjuryBleedingFlag) != 0;
+            bool hasFracture = (value.injuryFlags & SaveData.PlayerInjuryFractureFlag) != 0;
+            value.bleedingSecondsRemaining = hasBleeding ? SanitizeNonNegativeFinite(value.bleedingSecondsRemaining) : 0f;
+            value.bleedingDamagePerSecond = hasBleeding ? SanitizeNonNegativeFinite(value.bleedingDamagePerSecond) : 0f;
+            value.bleedingSeverity01 = hasBleeding ? Sanitize01(value.bleedingSeverity01, 0f) : 0f;
+            value.fractureSecondsRemaining = hasFracture ? SanitizeNonNegativeFinite(value.fractureSecondsRemaining) : 0f;
+            value.fracturePenalty01 = hasFracture ? Sanitize01(value.fracturePenalty01, 0f) : 0f;
             value.environmentTemperature = SanitizeFinite(value.environmentTemperature, 0f);
             value.coldStressSeverity01 = Sanitize01(value.coldStressSeverity01, 0f);
             value.heatStressSeverity01 = Sanitize01(value.heatStressSeverity01, 0f);
@@ -32,12 +35,30 @@ namespace Hecton8.SaveSystem
                 0f,
                 SaveData.PlayerStatsNitrogenBuildUpHardCap);
 
-            SanitizePosition(ref value.lastDeathPosX, ref value.lastDeathPosY, ref value.lastDeathPosZ);
-            value.lastDeathLifeDurationSeconds = SanitizeNonNegativeFinite(value.lastDeathLifeDurationSeconds);
-            value.lastDeathPeakDepthMeters = SanitizeNonNegativeFinite(value.lastDeathPeakDepthMeters);
-            value.lastDeathLowestOxygenNormalized = Sanitize01(value.lastDeathLowestOxygenNormalized, 1f);
-            value.lastDeathLowestEnergyNormalized = Sanitize01(value.lastDeathLowestEnergyNormalized, 1f);
-            value.lastDeathLowestIntegrityNormalized = Sanitize01(value.lastDeathLowestIntegrityNormalized, 1f);
+            if (value.hasLastDeathRecord)
+            {
+                value.lastDeathCause = value.lastDeathCause <= SaveData.PlayerLastDeathCauseMaxKnown
+                    ? value.lastDeathCause
+                    : (byte)0;
+                SanitizePosition(ref value.lastDeathPosX, ref value.lastDeathPosY, ref value.lastDeathPosZ);
+                value.lastDeathLifeDurationSeconds = SanitizeNonNegativeFinite(value.lastDeathLifeDurationSeconds);
+                value.lastDeathPeakDepthMeters = SanitizeNonNegativeFinite(value.lastDeathPeakDepthMeters);
+                value.lastDeathLowestOxygenNormalized = Sanitize01(value.lastDeathLowestOxygenNormalized, 1f);
+                value.lastDeathLowestEnergyNormalized = Sanitize01(value.lastDeathLowestEnergyNormalized, 1f);
+                value.lastDeathLowestIntegrityNormalized = Sanitize01(value.lastDeathLowestIntegrityNormalized, 1f);
+            }
+            else
+            {
+                value.lastDeathCause = 0;
+                value.lastDeathPosX = 0f;
+                value.lastDeathPosY = 0f;
+                value.lastDeathPosZ = 0f;
+                value.lastDeathLifeDurationSeconds = 0d;
+                value.lastDeathPeakDepthMeters = 0d;
+                value.lastDeathLowestOxygenNormalized = 0f;
+                value.lastDeathLowestEnergyNormalized = 0f;
+                value.lastDeathLowestIntegrityNormalized = 0f;
+            }
 
             SanitizePosition(ref value.posX, ref value.posY, ref value.posZ);
             SanitizeQuaternion(ref value.rotX, ref value.rotY, ref value.rotZ, ref value.rotW);

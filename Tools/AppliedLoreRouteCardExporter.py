@@ -94,8 +94,11 @@ def iter_route_card_sources(root: Path) -> list[Path]:
     return sorted(route_dir.glob("*_route_cards.csv"), key=lambda path: path.name.lower())
 
 
-def export_route_cards(root: Path) -> int:
-    output_path = root / "Assets" / "_SourceData" / "DataMonolith" / "Narrative" / "applied_lore_route_cards.csv"
+def route_card_output_path(root: Path) -> Path:
+    return root / "Assets" / "_SourceData" / "DataMonolith" / "Narrative" / "applied_lore_route_cards.csv"
+
+
+def render_route_card_export(root: Path) -> tuple[int, str]:
     input_paths = iter_route_card_sources(root)
     if not input_paths:
         raise ValueError("Missing route-card source CSV files.")
@@ -167,19 +170,49 @@ def export_route_cards(root: Path) -> int:
     writer.writeheader()
     writer.writerows(output_rows)
 
-    text = buffer.getvalue()
+    return len(output_rows), buffer.getvalue()
+
+
+def route_card_export_current(root: Path) -> tuple[int, bool]:
+    count, text = render_route_card_export(root)
+    output_path = route_card_output_path(root)
+    return count, output_path.exists() and output_path.read_text(encoding="utf-8") == text
+
+
+def check_route_card_export(root: Path) -> int:
+    count, current = route_card_export_current(root)
+    if not current:
+        raise ValueError(f"AppliedLore route-card export is stale: {route_card_output_path(root)}")
+    return count
+
+
+def export_route_cards(root: Path, *, dry_run: bool = False) -> int:
+    count, text = render_route_card_export(root)
+    output_path = route_card_output_path(root)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    if not output_path.exists() or output_path.read_text(encoding="utf-8") != text:
+    if not dry_run and (not output_path.exists() or output_path.read_text(encoding="utf-8") != text):
         output_path.write_text(text, encoding="utf-8", newline="")
 
-    return len(output_rows)
+    return count
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="Repository root.")
+    parser.add_argument("--check", action="store_true", help="Fail if the generated route-card export is stale.")
+    parser.add_argument("--dry-run", action="store_true", help="Validate and compare without writing the export.")
     args = parser.parse_args()
-    count = export_route_cards(Path(args.root).resolve())
+    root = Path(args.root).resolve()
+    if args.check:
+        count = check_route_card_export(root)
+        print(f"applied_lore_route_cards={count} export_current=1")
+        return 0
+    if args.dry_run:
+        count, current = route_card_export_current(root)
+        print(f"applied_lore_route_cards={count} export_current={int(current)} would_write={int(not current)}")
+        return 0
+
+    count = export_route_cards(root)
     print(f"applied_lore_route_cards={count}")
     return 0
 

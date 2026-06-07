@@ -7,6 +7,9 @@ poi_tags: poi.stack_limit_table_draft;poi.containment_case_label
 biome_tags: biome.resource_tables;biome.claim_admin
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Черновые строки лимитов стаков"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

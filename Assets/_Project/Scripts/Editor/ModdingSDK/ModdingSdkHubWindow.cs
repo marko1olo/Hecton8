@@ -72,22 +72,12 @@ namespace Hecton8.Editor.ModdingSDK
         private void OnDisable()
         {
             EditorApplication.update -= PollRunningValidator;
-            if (_runningValidatorProcess == null)
+            DiagnosticsProcess process = _runningValidatorProcess;
+            if (process == null)
                 return;
 
-            try
-            {
-                if (!_runningValidatorProcess.HasExited)
-                    _runningValidatorProcess.Kill();
-            }
-            catch (Exception exception)
-            {
-                Debug.LogWarning("[ModdingSdkHubWindow] Validator cleanup failed: " + exception.Message);
-            }
-            finally
-            {
-                DisposeRunningValidator();
-            }
+            KillValidatorProcessNoThrow(process);
+            DisposeRunningValidator();
         }
 
         private void DrawPrimaryActions()
@@ -270,6 +260,7 @@ namespace Hecton8.Editor.ModdingSDK
             {
                 _lastValidatorSummary = "Validator launch failed: " + exception.Message;
                 _lastValidatorFailed = true;
+                KillValidatorProcessNoThrow(_runningValidatorProcess);
                 DisposeRunningValidator();
                 Debug.LogError("[ModdingSdkHubWindow] Static validator launch failed: " + exception);
             }
@@ -336,16 +327,45 @@ namespace Hecton8.Editor.ModdingSDK
         private void DisposeRunningValidator()
         {
             EditorApplication.update -= PollRunningValidator;
-            if (_runningValidatorProcess != null)
+            DiagnosticsProcess process = _runningValidatorProcess;
+            _runningValidatorProcess = null;
+            if (process != null)
             {
-                _runningValidatorProcess.Dispose();
-                _runningValidatorProcess = null;
+                DisposeValidatorProcessNoThrow(process);
             }
 
             _runningValidatorStdout = null;
             _runningValidatorStderr = null;
             _runningValidatorCompleted = false;
             _runningValidatorExitCode = -1;
+        }
+
+        private static void KillValidatorProcessNoThrow(DiagnosticsProcess process)
+        {
+            if (process == null)
+                return;
+
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[ModdingSdkHubWindow] Validator cleanup failed: " + exception.Message);
+            }
+        }
+
+        private static void DisposeValidatorProcessNoThrow(DiagnosticsProcess process)
+        {
+            try
+            {
+                process.Dispose();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[ModdingSdkHubWindow] Validator dispose failed: " + exception.Message);
+            }
         }
 
         internal static string CreateExternalStarterKit()

@@ -9,32 +9,32 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Lantern Drift Bloom"
+title: "פריחת סחף פנסים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Lantern Drift Bloom
+# פריחת סחף פנסים
 
-HE LOC HOLD: Lantern Drift Bloom turns shallow beauty into a route decision: more light, less stealth, different navigation risk.
+פריחת סחף פנסים היא אירוע נראות של פלנקטון במדף הפוטי. היא מציירת קווי זרם, פסולת מרחפת, קשתות כבל וסכנות קטנות עם שיניים לפני שמנורה הייתה מוצאת אותן. לכן bloom שימושי לניווט, אך אינו תאורת נחמה. תאים שהופרעו פועמים ומעבירים רטט דרך רשת המזון; cutter, משאבה, pinger או מדחף רשלני יכולים להשאיר מאחורי השחקן שובל אקוסטי בוהק. הזוהר יכול גם לשטח ניגודיות, ולהסתיר קוצים קטנים ו-shell clamps שבורים בתוך יותר מדי יופי. התייחס ל-bloom כהחלטת נתיב: היסחף איתו כשצריך קווי מתאר, חתוך דרכו כשהשקט חשוב, ואל תעבוד בקול במרכז אלא אם אתה רוצה חברה.
 
 ## Scanner
 
-HE LOC HOLD: A bright plankton drift outlines current, masks small hazards and can pull predators toward tool noise.
+פריחת סחף פנסים // פלנקטון ביולומינסנטי מסמן את הזרם ברצועות. הוא מתאר מים בטוחים וסכנות קטנות, אבל רעש כלי הופך את ה-bloom לשובל מואר.
 
 ## Terminal
 
-HE LOC HOLD: VISIBILITY NOTE: lantern bloom improves outline read but raises acoustic attention if disturbed by cutter, pump or pinger.
+אירוע נראות: bloom משפר קריאת צללית ומעקב זרם, אך מצמצם התגנבות. הפרעה מ-cutter, משאבה, pinger, מדחף או פגיעת גוף יכולה למשוך מסננים, רועים וטורפי מים רדודים לאורך השובל המואר.
 
 ## Audio
 
-HE LOC HOLD: Pretty water is still water. It carries your noise.
+מים יפים הם עדיין מים. הם נושאים את הרעש שלך.
 
 ## Field Note
 
-HE LOC HOLD: Lantern drift is not decoration. It is a visibility event with acoustic consequences.
+אור כאן אינו נחמה. במי bloom, כל פעימת cutter, שיעול משאבה והחזר pinger נעים רחוק יותר מהמנורה שלך.
 
 <!-- In-Game Wiki; generated from P223_LANTERN_DRIFT_BLOOM/he_IL. -->

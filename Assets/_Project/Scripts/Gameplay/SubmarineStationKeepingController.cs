@@ -291,11 +291,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             TryUnregister();
-            TryRegister();
+            if (currentService != null && isActiveAndEnabled)
+                TryRegister();
         }
 
         private void TryRegisterHotSwapListener()

@@ -2,7 +2,7 @@
 
 > **Source:** Luyten Committee Open Investigation, Case No. CF-2148-0071. Evidence Exhibit 44-B: Audit Log of Atlas-6 Core.  
 > **Speaker:** Chief Auditor E. Rostova.  
-> **Reviewer note:** Deep Reach claims the disaster was an AI malfunction. This audit log proves that the 843 fatalities were a calculated execution of corporate directives.
+> **Reviewer note:** Deep Reach claims the disaster was caused by an AI malfunction. This audit log proves that the 843 fatalities were a calculated execution of corporate directives.
 
 ---
 

@@ -9,32 +9,32 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Shallow Predator Shadow Rule"
+title: "Reguła cienia płytkowodnego drapieżnika"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Shallow Predator Shadow Rule
+# Reguła cienia płytkowodnego drapieżnika
 
-PL LOC HOLD: Shallow Predator Shadow Rule keeps HECTON-8 from becoming a monster gallery. The first predator is designed through missing fauna, altered sound and silhouette pressure before direct contact.
+Reguła cienia płytkowodnego drapieżnika jest zasadą lore i spotkania, nie profilem gatunku. Jej zadaniem jest chronić ton fotycznego shelfu: piękny, czytelny, żywy i wciąż zdolny cię zabić. Drapieżnik przychodzi przez świadków. Szklani pasacze zostawiają jedzenie i znikają. Bloom latarniowego dryfu nadal świeci, ale traci miękki cząsteczkowy szmer. Rafy zacisków muszlowych napinają się na kablach, jakby cała trasa wzięła oddech. Dopiero wtedy cień rusza przez światło. Ta kolejność ma znaczenie, bo sprawia, że ocean jest systemowy, nie teatralny. Gracza nie karze potwór materializujący się znikąd; gracza dociska zestaw znaków, które mógł nauczyć się czytać. Dobra implementacja powinna warstwować sygnały audio, wizualne i ekologiczne tak, by ostrzeżenie przetrwało różne ekrany, języki i potrzeby dostępności: brakujące tykanie, ucięty szum bloom, szeroka sylwetka, przesunięty ślad, fauna trasy poruszająca się poza fazą. Bezpośredni atak jest najmniej ciekawą częścią. Silniejszy jest moment, gdy cel naprawy wciąż jest osiągalny, woda wciąż zachwyca, a każdy żywy instrument mówi, że trasa stała się kosztowna.
 
 ## Scanner
 
-PL LOC HOLD: A missing grazer band, a cut in bloom noise and a broad shadow are the first predator warning.
+CIEŃ PŁYTKOWODNEGO DRAPIEŻNIKA // Brak tykania pasaczy, rozdarty szum bloom i szeroki ruchomy cień są pierwszym kontaktem. Presja trasy przychodzi przed kontaktem bojowym.
 
 ## Terminal
 
-PL LOC HOLD: CONTACT RULE: shallow predator evidence should pressure route choice before forcing combat.
+REGUŁA KONTAKTU: dowody drapieżnika powinny zmienić wybór trasy przed wymuszeniem obrażeń. Stopniować jako nieobecność, ciszę, sylwetkę i ślad; bezpośredni atak dopiero po zignorowaniu lub błędnym odczycie co najmniej dwóch wskazówek.
 
 ## Audio
 
-PL LOC HOLD: When the little mouths stop ticking, stop moving.
+Gdy małe pyski przestają tykać, przestań się ruszać.
 
 ## Field Note
 
-PL LOC HOLD: Do not reveal the shallow predator as a face first. Reveal absence, sound gap, silhouette, then consequence.
+Nie dawaj drapieżnikowi najpierw twarzy. Niech shelf stanie się błędny: jedzenie zostaje, woda jaśnieje, małe życie odchodzi, potem cień przecina zadanie.
 
 <!-- External Site; generated from P225_SHALLOW_PREDATOR_SHADOW_RULE/pl_PL. -->

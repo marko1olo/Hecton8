@@ -36,18 +36,12 @@ namespace Hecton8.Debugging
             routedNode = -1;
             depositedUnits = 0;
 
-            NativeArray<int> edgeOffsets = new NativeArray<int>(4, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[4] - smoke CSR offsets - owner: AutomationSmokeTester
-            NativeArray<int> edgeDestinations = new NativeArray<int>(2, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[2] - smoke CSR destinations - owner: AutomationSmokeTester
-            NativeArray<byte> storageCapacityByNode = new NativeArray<byte>(3, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[3] - smoke storage flags - owner: AutomationSmokeTester
-            NativeArray<byte> visited = new NativeArray<byte>(3, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[3] - smoke BFS visited set - owner: AutomationSmokeTester
-            NativeArray<int> queue = new NativeArray<int>(3, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[3] - smoke BFS queue - owner: AutomationSmokeTester
-            NativeArray<int> result = new NativeArray<int>(1, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - smoke BFS result cell - owner: AutomationSmokeTester
-            RegisterTempArray(edgeOffsets, nameof(edgeOffsets));
-            RegisterTempArray(edgeDestinations, nameof(edgeDestinations));
-            RegisterTempArray(storageCapacityByNode, nameof(storageCapacityByNode));
-            RegisterTempArray(visited, nameof(visited));
-            RegisterTempArray(queue, nameof(queue));
-            RegisterTempArray(result, nameof(result));
+            NativeArray<int> edgeOffsets = AllocateTrackedTempArray<int>(4, nameof(edgeOffsets), NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[4] - smoke CSR offsets - owner: AutomationSmokeTester
+            NativeArray<int> edgeDestinations = AllocateTrackedTempArray<int>(2, nameof(edgeDestinations), NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[2] - smoke CSR destinations - owner: AutomationSmokeTester
+            NativeArray<byte> storageCapacityByNode = AllocateTrackedTempArray<byte>(3, nameof(storageCapacityByNode), NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[3] - smoke storage flags - owner: AutomationSmokeTester
+            NativeArray<byte> visited = AllocateTrackedTempArray<byte>(3, nameof(visited), NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[3] - smoke BFS visited set - owner: AutomationSmokeTester
+            NativeArray<int> queue = AllocateTrackedTempArray<int>(3, nameof(queue), NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[3] - smoke BFS queue - owner: AutomationSmokeTester
+            NativeArray<int> result = AllocateTrackedTempArray<int>(1, nameof(result), NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - smoke BFS result cell - owner: AutomationSmokeTester
 
             try
             {
@@ -85,9 +79,25 @@ namespace Hecton8.Debugging
             }
         }
 
-        private static void RegisterTempArray<T>(NativeArray<T> array, string label) where T : struct
+        private static NativeArray<T> AllocateTrackedTempArray<T>(int length, string label, NativeArrayOptions options) where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Temp);
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.Temp, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Temp);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+
+            array.Dispose();
+            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
         }
 
         private static void DisposeTempArray<T>(ref NativeArray<T> array) where T : struct
@@ -95,9 +105,15 @@ namespace Hecton8.Debugging
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
         }
     }
 }

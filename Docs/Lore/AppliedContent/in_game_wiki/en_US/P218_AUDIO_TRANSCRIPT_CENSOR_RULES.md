@@ -7,6 +7,9 @@ poi_tags: poi.audio_censor_strip;poi.subtitle_damage_band
 biome_tags: biome.dossier_archive;biome.relay_spine
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Audio Transcript Censor Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

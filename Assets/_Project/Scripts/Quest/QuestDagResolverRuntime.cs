@@ -597,11 +597,31 @@ namespace Hecton8.Quest
             _triggerSpatialHash = new NativeParallelMultiHashMap<int, int>(
                 spatialHashCapacity,
                 Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[triggerCapacity*27] - expanded trigger-cell occupancy, quest truth remains in GlobalDataVault - owner: QuestDagResolverService
-            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(
-                _triggerSpatialHash,
-                OwnerLabel,
-                SpatialHashLabel,
-                NativeAllocationLifetime.Session);
+            int triggerSpatialHashSentinelId = 0;
+            try
+            {
+                triggerSpatialHashSentinelId = NativeMemorySentinel.RegisterNativeParallelMultiHashMap(
+                    _triggerSpatialHash,
+                    OwnerLabel,
+                    SpatialHashLabel,
+                    NativeAllocationLifetime.Session);
+                if (triggerSpatialHashSentinelId <= 0)
+                    throw new InvalidOperationException("Native memory sentinel registration failed for quest DAG trigger spatial hash.");
+            }
+            catch
+            {
+                if (_triggerSpatialHash.IsCreated)
+                {
+                    if (triggerSpatialHashSentinelId > 0)
+                        NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(OwnerLabel, SpatialHashLabel);
+
+                    _triggerSpatialHash.Dispose();
+                    _triggerSpatialHash = default;
+                }
+
+                throw;
+            }
+
             SignalBus<StateChangedSignal>.Configure(
                 expectedCapacity: 256,
                 maxFrameSignals: 512,

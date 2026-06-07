@@ -7,6 +7,9 @@ poi_tags: poi.domain_tool_stamp;poi.route_cargo_tag
 biome_tags: biome.crash_shelf;biome.drowned_colony
 locale: ja_JP
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "2190年のドメイン印"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

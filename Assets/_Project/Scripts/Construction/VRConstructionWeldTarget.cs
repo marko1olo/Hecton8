@@ -486,10 +486,22 @@ namespace Hecton8.Construction
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Logistics)
+            if (serviceSlot == GlobalRegistryServiceSlot.Logistics)
+            {
+                _constructionLogistics = currentService as ILogisticsService;
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            _constructionLogistics = currentService as ILogisticsService;
+            bool shouldRestoreTick = !_complete && (_weldGlowRemainingSeconds > 0f || HasWeldCoolingWork());
+            TryUnregisterWeldGlowTick();
+            if (!shouldRestoreTick || currentService == null || !isActiveAndEnabled)
+                return;
+
+            _weldGlowTickSleeping = false;
+            TryRegisterWeldGlowTick();
         }
 
         private static bool IsFiniteVector(Vector3 value)

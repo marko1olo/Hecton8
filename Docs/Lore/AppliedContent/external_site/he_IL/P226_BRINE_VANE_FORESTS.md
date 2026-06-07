@@ -9,32 +9,32 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Brine Vane Forests"
+title: "יערות מניפות תמלחת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Brine Vane Forests
+# יערות מניפות תמלחת
 
-HE LOC HOLD: Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure.
+יערות מניפות התמלחת הם המקום שבו HECTON-8 מפסיק לתת למים להתנהג כמו חלל ריק. בקניון, מים הופכים לארכיטקטורה: שכבות צפיפות נערמות כקירות, סונאר מתכופף סביב מדפים בלתי נראים, וירידה רשלנית יכולה לשים חליפה מתחת לציפה הצפויה לפני שמד העומק נעשה דרמטי. מניפות תמלחת הופכות את המתמטיקה הזאת לנראית. הן אינן צמחי כדור הארץ ואינן שונית חייזרית מדברת. הן ממברנות מלח-מינרל הגדלות במקום שבו מדרגים כימיים ממשיכים להזין אותן, שטוחות מספיק להיראות בוטניות ופיזיות מספיק כדי לסמוך עליהן. יריעה חיה אומרת: אל תחצה כאן. קצה קרוע אומר: משהו חצה לאחרונה. קצה מסתלסל אומר: הגבול נחלש. צלע חיוורת אומרת: הממברנה השילה חומר, אולי שימושי לכימיית תמלחת, גרגרי איטום או כיול חיישן צפיפות. עיצוב קניון טוב צריך לגרום לשחקנים לנווט לפי הסימנים האלה ולא לפי חצים: להיסחף לאורך קיר שלם, למצוא את הפה הקרוע, לראות את הסונאר מתעוות, להרגיש את trim החליפה משתנה, ולהבין שהאוקיינוס אינו חוסם את הדרך מרשעות. הוא מציית ללחץ. לכן יערות מניפות תמלחת יפים בדרך קרה יותר מהמדף הפוטי. הם אינם מקבלים פנים. הם קריאים.
 
 ## Scanner
 
-HE LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+יער מניפות תמלחת // ממברנות מלח-מינרל גדלות לאורך גזירת צפיפות. הן מראות איפה המים מתעבים לקיר ואיפה הסונאר יתכופף.
 
 ## Terminal
 
-HE LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+קו בסיס קניון: יריעות מניפה שלמות מסמנות גבולות צפיפות קשים. קצוות קרועים וקצוות מסתלסלים מציינים חלונות גזירה, כיסים דלי מלח או תנועה אחרונה. הימנע ממים שכבתיים אטומים; הם יכולים לעוור סונאר ולמשוך חליפה מתחת לציפה הצפויה.
 
 ## Audio
 
-HE LOC HOLD: The canyon has leaves because it has pressure gradients.
+לקניון יש עלים כי יש לו מדרגי לחץ.
 
 ## Field Note
 
-HE LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+אלה אינם עצים. אלה עלי לחץ: ממברנות הניזונות ממדרגים כימיים, קרועות רק במקום שבו נתיב נדחק לאחרונה דרכן.
 
 <!-- External Site; generated from P226_BRINE_VANE_FORESTS/he_IL. -->

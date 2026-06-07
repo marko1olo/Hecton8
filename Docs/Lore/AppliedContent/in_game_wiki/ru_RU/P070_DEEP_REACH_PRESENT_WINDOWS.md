@@ -7,6 +7,9 @@ poi_tags: poi.live_window_queue;poi.proxy_ai_notice
 biome_tags: biome.relay_spine;biome.surface_relay
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Текущие окна Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.factory_temple_entry_fragment;poi.living_iron_threshold
 biome_tags: biome.factory_temple;biome.atlas
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Фрагмент входа factory-temple"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

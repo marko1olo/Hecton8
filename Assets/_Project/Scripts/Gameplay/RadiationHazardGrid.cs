@@ -248,26 +248,35 @@ namespace Hecton8.Gameplay
                 return;
 
             if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition sourceAup))
+            {
+                UnregisterSource(sourceId);
                 return;
+            }
 
             RegisterSource(sourceId, in sourceAup, intensity, radiusMeters);
         }
 
         public static void RegisterSource(int sourceId, in AbsoluteUniversePosition sourceAup, float intensity, float radiusMeters)
         {
-            if (!Application.isPlaying || sourceId == 0 || !AbsoluteUniversePosition.IsFinite(in sourceAup))
+            if (!Application.isPlaying || sourceId == 0)
                 return;
 
-            float safeIntensity = NormalizeSourceIntensity(intensity);
-            float safeRadius = math.isfinite(radiusMeters) && radiusMeters > 0f
-                ? math.max(0.5f, radiusMeters)
-                : DefaultSourceRadiusMeters;
-            if (safeIntensity <= 0f)
+            if (!AbsoluteUniversePosition.IsFinite(in sourceAup))
             {
                 UnregisterSource(sourceId);
                 return;
             }
 
+            float safeIntensity = NormalizeSourceIntensity(intensity);
+            if (safeIntensity <= 0f ||
+                !math.isfinite(radiusMeters) ||
+                radiusMeters <= 0f)
+            {
+                UnregisterSource(sourceId);
+                return;
+            }
+
+            float safeRadius = math.max(0.5f, radiusMeters);
             RadiationSourceSignal signal = new RadiationSourceSignal
             {
                 PositionAup = sourceAup,
@@ -1401,6 +1410,33 @@ namespace Hecton8.Gameplay
             _saveService = null;
         }
 
+        private void TryUnregisterDispatcherLanes()
+        {
+            if (_registeredSimulationPhase && _simulationPhase != null)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_simulationPhase);
+                _registeredSimulationPhase = false;
+            }
+
+            if (_registeredPostSimulationPhase && _postSimulationPhase != null)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_postSimulationPhase);
+                _registeredPostSimulationPhase = false;
+            }
+
+            if (_registeredVisualSyncPhase && _visualSyncPhase != null)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_visualSyncPhase);
+                _registeredVisualSyncPhase = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+        }
+
         private void RefreshColdRegistryReferences()
         {
             if (!_registeredSave)
@@ -1436,10 +1472,7 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredSimulationPhase = false;
-                    _registeredPostSimulationPhase = false;
-                    _registeredVisualSyncPhase = false;
-                    _registeredSlowTick = false;
+                    TryUnregisterDispatcherLanes();
                     if (currentService != null)
                         TryRegisterRuntimeLanes();
                     break;

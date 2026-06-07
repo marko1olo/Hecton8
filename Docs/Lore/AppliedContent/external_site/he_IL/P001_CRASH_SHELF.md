@@ -7,6 +7,9 @@ poi_tags: poi.crash_shelf;poi.service_buoy
 biome_tags: biome.shallow_reef;biome.storm_shelf
 locale: he_IL
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "מדף ההתרסקות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

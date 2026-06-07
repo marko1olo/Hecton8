@@ -2022,10 +2022,13 @@ namespace Hecton8.Core.Diagnostics
             if (thread == null || !thread.IsAlive)
                 return true;
 
+            if (ReferenceEquals(Thread.CurrentThread, thread))
+                return false;
+
             try
             {
                 thread.Join(WorkerJoinMilliseconds);
-                return true;
+                return !thread.IsAlive;
             }
             catch (Exception)
             {

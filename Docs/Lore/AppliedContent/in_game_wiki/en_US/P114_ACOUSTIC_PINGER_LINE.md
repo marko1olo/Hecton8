@@ -7,6 +7,9 @@ poi_tags: poi.acoustic_pinger_spool;poi.return_line_anchor
 biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Acoustic Pinger Line"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

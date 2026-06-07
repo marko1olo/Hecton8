@@ -7,6 +7,9 @@ poi_tags: poi.stack_limit_table_draft;poi.containment_case_label
 biome_tags: biome.resource_tables;biome.claim_admin
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Stack Limit Value Draft Rows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.pump_room;poi.sump_control
 biome_tags: biome.pressure_hab;biome.drowned_colony
 locale: uk_UA
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Pump Room Handshake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

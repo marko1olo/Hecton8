@@ -1,0 +1,32 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS140_CRASH_SHELF_OBJECT_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P660_EMERGENCY_FLOAT_CRATE_INVENTORY",
+    "P661_HEAT_SHIELD_TEETH_SALVAGE_TRAIL",
+    "P662_BROKEN_UPLINK_CORE_FRACTURE",
+    "P663_SHALLOW_SERVICE_BUOY_SALTED_RECEIVER",
+    "P664_HALO_SARGASSUM_OXYGEN_LURE"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS140_CRASH_SHELF_OBJECT_ARTICLES.packets.json",
+    "Docs/Lore/AppliedContent/production_packets/P660_EMERGENCY_FLOAT_CRATE_INVENTORY.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P661_HEAT_SHIELD_TEETH_SALVAGE_TRAIL.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P662_BROKEN_UPLINK_CORE_FRACTURE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P663_SHALLOW_SERVICE_BUOY_SALTED_RECEIVER.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P664_HALO_SARGASSUM_OXYGEN_LURE.production.md"
+  ],
+  "canonical_importer_sources": [
+    "Docs/Lore/AppliedContent/packets/RS140_CRASH_SHELF_OBJECT_ARTICLES.packets.json"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

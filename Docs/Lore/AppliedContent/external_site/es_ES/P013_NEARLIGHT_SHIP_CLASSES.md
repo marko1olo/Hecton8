@@ -7,6 +7,9 @@ poi_tags: poi.transit_manifest;poi.sleeper_tag
 biome_tags: biome.drowned_colony;biome.crash_shelf
 locale: es_ES
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Clases de naves nearlight"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -580,8 +580,7 @@ namespace Hecton8.World
                     _sargassumDrag = currentService as SargassumGlobalDragManager;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _lateFrameRegistered = false;
-                    _slowTickRegistered = false;
+                    TryUnregister();
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;

@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pellet-Fusion Freight"
+title: "شحن الاندماج بالحبيبات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Pellet-Fusion Freight
+# شحن الاندماج بالحبيبات
 
-AR LOC HOLD: Pellet-Fusion Freight defines the industrial ship history behind HECTON-8. The route is plausible because machines and heavy cargo moved through staged infrastructure; it remains cruel because every kilogram, braking window and survivor seat is accounted for.
+شحن الاندماج بالحبيبات هو التاريخ الصناعي خلف HECTON-8. وصلت الآلات والشحن الثقيل إلى Aegir لأن البنية التحتية استطاعت على مدى عقود أن تدفع الكتلة وتغذيها وتحميها وتكبحها؛ يبقى المسار قاسياً لأن الحساب يعيش أطول من الطارئ.
 
 ## Scanner
 
-AR LOC HOLD: Drive plate. Heavy ships crossed as staged freight: boost, coast, brake, account for losses.
+صفيحة دفع. عبر شحن الاندماج المغذى بالحبيبات كبنية تحتية: دفع، درع، انجراف، كبح، وفاتورة خسائر.
 
 ## Terminal
 
-AR LOC HOLD: FREIGHT DOCTRINE: Atlas-class seed payloads and colony freight used external staging, pellet-beam assisted fusion, magsail braking and long coast intervals. Living cargo arrived after machines made the route billable.
+عقيدة الشحن: استخدمت حمولات seed من فئة Atlas وشحن المستعمرة دفع الشراع الشعاعي، والاندماج المغذى بالحبيبات، والكبح بالشراع المغناطيسي، وفترات انجراف طويلة. وصلت الحمولة الحية بعد أن جعلت الآلات المسار قابلاً للفوترة.
 
 ## Audio
 
-AR LOC HOLD: A heavy ship is not a miracle. It is a mortgage with engines.
+السفينة الثقيلة ليست معجزة. إنها رهن بمحركات.
 
 ## Field Note
 
-AR LOC HOLD: Heavy transit should feel industrial and old, not heroic.
+العبور الثقيل ليس بطولياً. إنه عقد مسار قديم بندوب حرارة.
 
 <!-- External Site; generated from P103_PELLET_FUSION_FREIGHT/ar_SA. -->

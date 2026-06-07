@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Glass Grazer Schools"
+title: "Ławice szklanych pasaczy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Glass Grazer Schools
+# Ławice szklanych pasaczy
 
-PL LOC HOLD: Glass Grazer Schools are early fauna that teach the player to read living movement as resource evidence and predator context.
+Szklani pasacze to pierwsze płytkowodne zwierzęta, które czynią piękno użytecznym, ale nie czynią shelfu bezpiecznym. Ich przezroczyste skorupy i twarde grzebienie gębowe zeskrobują film mineralny z pressure glass, luźnych mat fotycznych i starych płaszczy kablowych. Żerująca ławica zostawia blade pasy, pokazujące świeży prąd, nowy wzrost i najspokojniejszą linię wokół zabrudzonego szwu. Patrz na krawędź ławicy, nie w środek: unikają ciepłego uszczelniacza, kwaśnych wycieków solanki i powierzchni niosących drift sygnału zgodny z Atlas. Jeśli tykanie milknie, a jedzenie zostaje, coś większego zmieniło wodę. Oczyszczony pas jest dowodem, nie pozwoleniem na sprint.
 
 ## Scanner
 
-PL LOC HOLD: Small transparent grazers scrape mineral film from pressure glass and leave readable route scars.
+ŁAWICA SZKLANYCH PASACZY // Przezroczyste, skorupiaste żerowce zeskrobują film mineralny z pressure glass i krawędzi mat fotycznych. Ich tykanie otwiera jasne blizny szlakowe; nagła cisza to dane o drapieżniku.
 
 ## Terminal
 
-PL LOC HOLD: FAUNA: glass grazers avoid warm sealant and cluster on fresh mineral film. Their absence is also data.
+BAZOWA FAUNA: nieagresywny klaster pasaczy. Śledzić film pressure glass, świeży nalot mineralny, zaburzenie prądu i wyparcie przez drapieżnika. Zniknięcie po aktywnym żerowaniu to ostrzeżenie szlaku, nie pusty punkt odrodzenia.
 
 ## Audio
 
-PL LOC HOLD: Hear the ticking on the shell? That is lunch, map and warning in the same sound.
+Słyszysz tykanie na skorupie? To posiłek, mapa i ostrzeżenie w jednym dźwięku.
 
 ## Field Note
 
-PL LOC HOLD: Grazer school: harmless alone, useful as a moving swatch for pressure-glass growth, predator attention and recent water disturbance.
+Nie goń ławicy. Czytaj to, co odsłania: świeży film, stare zeskrobanie, omijanie ciepłego uszczelniacza i pusty pas, którego zwierzęta nie chcą przeciąć.
 
 <!-- In-Game Wiki; generated from P222_GLASS_GRAZER_SCHOOLS/pl_PL. -->

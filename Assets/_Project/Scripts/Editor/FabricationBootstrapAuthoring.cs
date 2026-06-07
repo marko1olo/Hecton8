@@ -19,6 +19,7 @@ namespace Hecton8.EditorTools
         private const string FlashlightItemPath = "Assets/_Project/Data/Items/Tools/Item_Tool_Flashlight.asset";
         private const string ScannerItemPath = "Assets/_Project/Data/Items/Tools/Item_Tool_Scanner.asset";
         private const string RepairItemPath = "Assets/_Project/Data/Items/Tools/Item_Tool_Repair.asset";
+        private const string SeafloorDrillItemPath = "Assets/_Project/Data/Items/Tools/Item_Tool_SeafloorDrill.asset";
         private const string CopperWirePath = "Assets/_Project/Data/Items/Resources/Components/Comp_CopperWire.asset";
         private const string GlassPanelPath = "Assets/_Project/Data/Items/Resources/Components/Comp_GlassPanel.asset";
         private const string FiberMeshPath = "Assets/_Project/Data/Items/Resources/Components/Comp_FiberMesh.asset";
@@ -41,9 +42,15 @@ namespace Hecton8.EditorTools
         private const string RecipeFieldMedGelPath = "Assets/_Project/Data/Crafting/Recipes/Recipe_FieldMedGel.asset";
         private const string RecipeElectrolyteAmpoulePath = "Assets/_Project/Data/Crafting/Recipes/Recipe_ElectrolyteAmpoule.asset";
         private const string RecipePowerCouplerPath = "Assets/_Project/Data/Crafting/Recipes/Recipe_PowerCoupler.asset";
+        private const string RecipeSeafloorDrillPath = "Assets/_Project/Data/Crafting/Recipes/Recipe_SeafloorDrill.asset";
 
         private const string TrialRootName = "Fabrication_Trial";
         private const string TrialFabricatorName = "Trial_Fabricator";
+        private const string AssemblyPreviewChildName = "Assembly_Preview";
+        private const string OutputSocketChildName = "Output_Socket";
+        private const string DeconstructOutputSocketChildName = "Deconstruct_Output_Socket";
+        private const string AssemblyHologramShaderPath = "Assets/_Project/Art/Shaders/Hecton_HologramAssembly.shader";
+        private const string AssemblyHologramMaterialPath = "Assets/_Project/Art/Materials/MAT_FabricatorAssembly_Hologram.asset";
 
         private const string WorldRootName = "--- WORLD ---";
         private const string OutpostRootName = "Fabrication_Outpost";
@@ -62,6 +69,7 @@ namespace Hecton8.EditorTools
             ItemData flashlight = AssetDatabase.LoadAssetAtPath<ItemData>(FlashlightItemPath);
             ItemData scanner = AssetDatabase.LoadAssetAtPath<ItemData>(ScannerItemPath);
             ItemData repair = AssetDatabase.LoadAssetAtPath<ItemData>(RepairItemPath);
+            ItemData seafloorDrill = AssetDatabase.LoadAssetAtPath<ItemData>(SeafloorDrillItemPath);
             ItemData copperWire = AssetDatabase.LoadAssetAtPath<ItemData>(CopperWirePath);
             ItemData glassPanel = AssetDatabase.LoadAssetAtPath<ItemData>(GlassPanelPath);
             ItemData fiberMesh = AssetDatabase.LoadAssetAtPath<ItemData>(FiberMeshPath);
@@ -96,6 +104,12 @@ namespace Hecton8.EditorTools
                 powerCouplerRecipe == null)
             {
                 Debug.LogError("[FabricationBootstrap] Missing required ItemData assets. Starter fabrication kit was not rebuilt.");
+                return;
+            }
+
+            if (seafloorDrill == null)
+            {
+                Debug.LogError("[FabricationBootstrap] Missing seafloor drill route assets. Starter fabrication kit was not rebuilt.");
                 return;
             }
 
@@ -166,6 +180,17 @@ namespace Hecton8.EditorTools
                 new InventoryCost { item = batteryCell, amount = 1 },
                 new InventoryCost { item = fiberMesh, amount = 1 });
 
+            RecipeData seafloorDrillRecipe = CreateOrUpdateRecipe(
+                "Recipe_SeafloorDrill.asset",
+                "Seafloor Drill",
+                "Field drill for opening hard seabed resource veins without collapsing the early copper route.",
+                "scan.resource_node",
+                FabricationGroup.Tools,
+                seafloorDrill,
+                1,
+                new InventoryCost { item = glassPanel, amount = 1 },
+                new InventoryCost { item = fiberMesh, amount = 1 });
+
             RecipeData[] starterRecipes =
             {
                 copperWireRecipe,
@@ -187,7 +212,8 @@ namespace Hecton8.EditorTools
                 samplerRecipe,
                 flashlightRecipe,
                 scannerRecipe,
-                repairRecipe
+                repairRecipe,
+                seafloorDrillRecipe
             };
 
             CreateOrUpdateSceneFabricator(
@@ -225,6 +251,7 @@ namespace Hecton8.EditorTools
             RecipeData flashlightRecipe = AssetDatabase.LoadAssetAtPath<RecipeData>($"{RecipesFolder}/Recipe_Flashlight.asset");
             RecipeData scannerRecipe = AssetDatabase.LoadAssetAtPath<RecipeData>($"{RecipesFolder}/Recipe_Scanner.asset");
             RecipeData repairRecipe = AssetDatabase.LoadAssetAtPath<RecipeData>($"{RecipesFolder}/Recipe_RepairTool.asset");
+            RecipeData seafloorDrillRecipe = AssetDatabase.LoadAssetAtPath<RecipeData>(RecipeSeafloorDrillPath);
             RecipeData structuralBracketRecipe = AssetDatabase.LoadAssetAtPath<RecipeData>($"{RecipesFolder}/Recipe_StructuralBracket.asset");
             RecipeData pumpRotorRecipe = AssetDatabase.LoadAssetAtPath<RecipeData>($"{RecipesFolder}/Recipe_PumpRotor.asset");
             RecipeData emergencyO2Recipe = AssetDatabase.LoadAssetAtPath<RecipeData>($"{RecipesFolder}/Recipe_EmergencyO2Canister.asset");
@@ -238,6 +265,7 @@ namespace Hecton8.EditorTools
             ValidateRecipe(flashlightRecipe, "scan.resource_node", ref errors);
             ValidateRecipe(scannerRecipe, "scan.expedition_contact", ref errors);
             ValidateRecipe(repairRecipe, "scan.structure_relay", ref errors);
+            ValidateRecipe(seafloorDrillRecipe, "scan.resource_node", ref errors);
             ValidateRecipe(structuralBracketRecipe, string.Empty, ref errors);
             ValidateRecipe(pumpRotorRecipe, string.Empty, ref errors);
             ValidateRecipe(emergencyO2Recipe, string.Empty, ref errors);
@@ -312,20 +340,29 @@ namespace Hecton8.EditorTools
                 }
             }
 
-            GameObject existing = GameObject.Find($"{rootPath}/{fabricatorName}");
-            if (existing != null)
-                UnityEngine.Object.DestroyImmediate(existing);
-
-            GameObject station = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            station.name = fabricatorName;
-            station.transform.SetParent(root.transform, false);
-            station.transform.position = worldPosition;
-            station.transform.localScale = localScale;
+            GameObject station = GameObject.Find($"{rootPath}/{fabricatorName}");
+            bool createdStation = station == null;
+            if (createdStation)
+            {
+                station = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                station.name = fabricatorName;
+                station.transform.SetParent(root.transform, false);
+                station.transform.position = worldPosition;
+                station.transform.localScale = localScale;
+            }
 
             if (station.TryGetComponent(out Renderer renderer))
                 renderer.sharedMaterial = AssetDatabase.GetBuiltinExtraResource<Material>("Default-Material.mat");
 
-            Fabricator fabricator = station.AddComponent<Fabricator>();
+            EnsureCollider(station);
+            EnsureMeshFallback(station, out Mesh fallbackMesh);
+            EnsureAssemblyPreviewHost(station, out MeshFilter previewMeshFilter, out MeshRenderer previewRenderer);
+            Transform outputSocket = EnsureChildTransform(station.transform, OutputSocketChildName, new Vector3(0f, 0.55f, 0.7f));
+            Transform deconstructOutputSocket = EnsureChildTransform(station.transform, DeconstructOutputSocketChildName, new Vector3(0f, 0.45f, -0.65f));
+
+            if (!station.TryGetComponent(out Fabricator fabricator))
+                fabricator = station.AddComponent<Fabricator>();
+
             SerializedObject so = new SerializedObject(fabricator);
             SerializedProperty recipesProp = so.FindProperty("availableRecipes");
             recipesProp.arraySize = recipes.Length;
@@ -336,8 +373,16 @@ namespace Hecton8.EditorTools
             if (nameProp != null)
                 nameProp.stringValue = displayName;
 
+            SetObjectReference(so, "assemblyFallbackMesh", fallbackMesh);
+            SetObjectReference(so, "assemblyPreviewMeshFilter", previewMeshFilter);
+            SetObjectReference(so, "assemblyPreviewRenderer", previewRenderer);
+            SetObjectReference(so, "hologramAssemblyMaterial", ResolveAssemblyHologramMaterial());
+            SetObjectReference(so, "outputSocket", outputSocket);
+            SetObjectReference(so, "deconstructOutputSocket", deconstructOutputSocket);
+
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(fabricator);
+            EditorUtility.SetDirty(station);
         }
 
         private static void ValidateSceneFabricator(string rootPath, string fabricatorName, ref int errors)
@@ -370,6 +415,149 @@ namespace Hecton8.EditorTools
                 Debug.LogError($"[FabricationBootstrap] {fabricatorName} has incomplete recipe list.", fabricatorTransform.gameObject);
                 errors++;
             }
+
+            SerializedObject so = new SerializedObject(fabricator);
+            if (so.FindProperty("assemblyFallbackMesh")?.objectReferenceValue == null)
+            {
+                Debug.LogError($"[FabricationBootstrap] {fabricatorName} is missing required assembly fallback mesh.", fabricatorTransform.gameObject);
+                errors++;
+            }
+
+            if (so.FindProperty("assemblyPreviewMeshFilter")?.objectReferenceValue == null ||
+                so.FindProperty("assemblyPreviewRenderer")?.objectReferenceValue == null)
+            {
+                Debug.LogError($"[FabricationBootstrap] {fabricatorName} is missing assembly preview host references.", fabricatorTransform.gameObject);
+                errors++;
+            }
+
+            if (so.FindProperty("hologramAssemblyMaterial")?.objectReferenceValue == null)
+            {
+                Debug.LogError($"[FabricationBootstrap] {fabricatorName} is missing assembly hologram material.", fabricatorTransform.gameObject);
+                errors++;
+            }
+
+            if (so.FindProperty("outputSocket")?.objectReferenceValue == null ||
+                so.FindProperty("deconstructOutputSocket")?.objectReferenceValue == null)
+            {
+                Debug.LogError($"[FabricationBootstrap] {fabricatorName} is missing physical output sockets.", fabricatorTransform.gameObject);
+                errors++;
+            }
+        }
+
+        private static void EnsureCollider(GameObject station)
+        {
+            if (station == null)
+                return;
+
+            if (!station.TryGetComponent(out Collider _))
+            {
+                BoxCollider collider = station.AddComponent<BoxCollider>();
+                collider.size = new Vector3(1.2f, 1.15f, 1.2f);
+                collider.center = new Vector3(0f, 0.55f, 0f);
+            }
+        }
+
+        private static void EnsureMeshFallback(GameObject station, out Mesh fallbackMesh)
+        {
+            fallbackMesh = null;
+            if (station == null)
+                return;
+
+            if (!station.TryGetComponent(out MeshFilter meshFilter))
+            {
+                GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                MeshFilter primitiveFilter = primitive.GetComponent<MeshFilter>();
+                fallbackMesh = primitiveFilter != null ? primitiveFilter.sharedMesh : null;
+                UnityEngine.Object.DestroyImmediate(primitive);
+
+                meshFilter = station.AddComponent<MeshFilter>();
+                meshFilter.sharedMesh = fallbackMesh;
+            }
+            else
+            {
+                fallbackMesh = meshFilter.sharedMesh;
+            }
+
+            if (fallbackMesh == null)
+            {
+                GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                MeshFilter primitiveFilter = primitive.GetComponent<MeshFilter>();
+                fallbackMesh = primitiveFilter != null ? primitiveFilter.sharedMesh : null;
+                UnityEngine.Object.DestroyImmediate(primitive);
+                meshFilter.sharedMesh = fallbackMesh;
+            }
+
+            if (!station.TryGetComponent(out MeshRenderer meshRenderer))
+                meshRenderer = station.AddComponent<MeshRenderer>();
+
+            if (meshRenderer.sharedMaterial == null)
+                meshRenderer.sharedMaterial = AssetDatabase.GetBuiltinExtraResource<Material>("Default-Material.mat");
+        }
+
+        private static void EnsureAssemblyPreviewHost(GameObject station, out MeshFilter previewMeshFilter, out MeshRenderer previewRenderer)
+        {
+            previewMeshFilter = null;
+            previewRenderer = null;
+            if (station == null)
+                return;
+
+            Transform preview = EnsureChildTransform(station.transform, AssemblyPreviewChildName, new Vector3(0f, 1.35f, 0.25f));
+            if (!preview.TryGetComponent(out previewMeshFilter))
+                previewMeshFilter = preview.gameObject.AddComponent<MeshFilter>();
+
+            if (!preview.TryGetComponent(out previewRenderer))
+                previewRenderer = preview.gameObject.AddComponent<MeshRenderer>();
+
+            previewRenderer.enabled = false;
+            previewRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            previewRenderer.receiveShadows = false;
+
+            Material material = ResolveAssemblyHologramMaterial();
+            if (material != null)
+                previewRenderer.sharedMaterial = material;
+        }
+
+        private static Transform EnsureChildTransform(Transform parent, string childName, Vector3 localPosition)
+        {
+            Transform child = parent.Find(childName);
+            if (child == null)
+            {
+                GameObject childObject = new GameObject(childName);
+                child = childObject.transform;
+                child.SetParent(parent, false);
+            }
+
+            child.localPosition = localPosition;
+            child.localRotation = Quaternion.identity;
+            child.localScale = Vector3.one;
+            return child;
+        }
+
+        private static Material ResolveAssemblyHologramMaterial()
+        {
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(AssemblyHologramMaterialPath);
+            if (material != null)
+                return material;
+
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(AssemblyHologramShaderPath);
+            if (shader == null)
+                return null;
+
+            EnsureFolder("Assets/_Project/Art");
+            EnsureFolder("Assets/_Project/Art/Materials");
+            material = new Material(shader)
+            {
+                name = "MAT_FabricatorAssembly_Hologram"
+            };
+            AssetDatabase.CreateAsset(material, AssemblyHologramMaterialPath);
+            return material;
+        }
+
+        private static void SetObjectReference(SerializedObject so, string propertyName, UnityEngine.Object value)
+        {
+            SerializedProperty property = so.FindProperty(propertyName);
+            if (property != null)
+                property.objectReferenceValue = value;
         }
 
         private static void ValidateRecipe(RecipeData recipe, string expectedScanEntryId, ref int errors)

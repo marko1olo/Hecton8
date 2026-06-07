@@ -168,7 +168,7 @@ MonoBehaviour:
   damagePerSecond: 25
   cuttableLayer:
     serializedVersion: 2
-    m_Bits: 524287
+    m_Bits: 2121609
   overheatTime: 5
   cooldownRate: 0.3
   overheatLockoutTime: 2

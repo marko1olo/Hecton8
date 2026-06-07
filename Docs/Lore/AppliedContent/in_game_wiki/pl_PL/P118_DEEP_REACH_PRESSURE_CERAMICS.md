@@ -9,32 +9,32 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "Ceramika ciśnieniowa Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# Ceramika ciśnieniowa Deep Reach
 
-PL LOC HOLD: Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.
+Ceramika ciśnieniowa Deep Reach to lokalne minerały HECTON-8 przepchnięte przez piece, kąpiele katalityczne i cykle kuźni kominowych, aż potrafiły utrzymać ciśnienie tam, gdzie metal by pełzł albo się zatarł. Pojawia się w pierścieniach zaciskowych, gniazdach uszczelnień, stykach przecinaków i izolacji kolebek wznoszenia, więc jest kluczowa dla napraw i budowy łańcucha ucieczki. Jej zagrożeniem nie jest zły materiał. Zagrożeniem jest kompetencja pod złą opieką: pierścień może trzymać latami, a potem rozkwitnąć tnącymi odłamkami, gdy załoga uderzy go ciepłem albo źle wypuści ciśnienie.
 
 ## Scanner
 
-PL LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+CERAMIKA CIŚNIENIOWA DEEP REACH // Lokalna glina, topnik siarczkowy i ciepło kuźni kominowej zmienione w pierścienie zaciskowe i gniazda uszczelnień. Pięknie trzyma ciśnienie; po szoku pęka w noże.
 
 ## Terminal
 
-PL LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+KLASA ZASOBU: wzmocnione przez Deep Reach. Zastosowania: pierścienie zaciskowe, gniazda uszczelnień, styki przecinaków, izolacja kolebki wznoszenia. Tryb awarii: rozkwit odłamków przy szoku termicznym lub złym zwolnieniu ciśnienia.
 
 ## Audio
 
-PL LOC HOLD: The company was good at building things. That is part of the crime.
+Deep Reach umiało budować rzeczy. Dlatego kłamstwo zadziałało.
 
 ## Field Note
 
-PL LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+Stuknij na zimno. Jeśli śpiewa wysoko, nie podgrzewaj.
 
 <!-- In-Game Wiki; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/pl_PL. -->

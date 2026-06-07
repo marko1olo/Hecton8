@@ -253,6 +253,14 @@ namespace Hecton8.UI
 
         private void UnregisterFromTickManager()
         {
+            UnregisterDispatcherTicks();
+            _presentationDirty = false;
+            _visualStyleDirty = false;
+            _textDirty = false;
+        }
+
+        private void UnregisterDispatcherTicks()
+        {
             if (_registeredToLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
@@ -264,10 +272,6 @@ namespace Hecton8.UI
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
                 _registeredToTickManager = false;
             }
-
-            _presentationDirty = false;
-            _visualStyleDirty = false;
-            _textDirty = false;
         }
 
         private void RefreshColdRegistryReferences()
@@ -293,8 +297,7 @@ namespace Hecton8.UI
                     }
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredToTickManager = false;
-                    _registeredToLateFrame = false;
+                    UnregisterDispatcherTicks();
                     if (currentService != null)
                         RegisterToTickManager();
                     break;

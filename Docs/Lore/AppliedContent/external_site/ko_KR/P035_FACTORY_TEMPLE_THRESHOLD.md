@@ -7,6 +7,9 @@ poi_tags: poi.factory_threshold;poi.atlas_gate
 biome_tags: biome.bottom_factory;biome.atlas_zone
 locale: ko_KR
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "공장-사원 문턱"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

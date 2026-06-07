@@ -7,6 +7,9 @@ poi_tags: poi.moon_ladder_public_band;poi.hecton8_mid_orbit_card
 biome_tags: biome.aegir_system;biome.publication
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "HECTON-8 Moon Ladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

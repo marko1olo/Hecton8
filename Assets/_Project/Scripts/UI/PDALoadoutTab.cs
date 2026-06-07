@@ -351,11 +351,9 @@ namespace Hecton8.UI
                         RefreshAll();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService != null)
-                    {
-                        UnregisterFromLateFrameManager();
+                    UnregisterFromLateFrameManager();
+                    if (currentService != null && isActiveAndEnabled)
                         RegisterToLateFrameManager();
-                    }
                     break;
             }
         }
@@ -373,10 +371,10 @@ namespace Hecton8.UI
             if (loadoutPresets == null || loadoutPresets.Length < 4)
                 loadoutPresets = new ToolLoadoutPreset[4];
 
-            TryAssignPreset(ref loadoutPresets[0], "Assets/_Project/Data/Tools/Presets/Preset_Exploration.asset");
-            TryAssignPreset(ref loadoutPresets[1], "Assets/_Project/Data/Tools/Presets/Preset_Construction.asset");
-            TryAssignPreset(ref loadoutPresets[2], "Assets/_Project/Data/Tools/Presets/Preset_FieldRecovery.asset");
-            TryAssignPreset(ref loadoutPresets[3], "Assets/_Project/Data/Tools/Presets/Preset_Defense.asset");
+            TryAssignPreset(ref loadoutPresets[0], "Assets/_Project/Data/Tools/Presets/Preset_Loadout_Exploration.asset");
+            TryAssignPreset(ref loadoutPresets[1], "Assets/_Project/Data/Tools/Presets/Preset_Loadout_Construction.asset");
+            TryAssignPreset(ref loadoutPresets[2], "Assets/_Project/Data/Tools/Presets/Preset_Loadout_FieldRecovery.asset");
+            TryAssignPreset(ref loadoutPresets[3], "Assets/_Project/Data/Tools/Presets/Preset_Loadout_Defense.asset");
         }
 
         private static void TryAssignPreset(ref ToolLoadoutPreset target, string path)
@@ -1721,7 +1719,7 @@ namespace Hecton8.UI
 
         private void RegisterToLateFrameManager()
         {
-            if (_registeredToLateFrameDispatcher || !Application.isPlaying)
+            if (_registeredToLateFrameDispatcher || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredToLateFrameDispatcher = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);

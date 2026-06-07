@@ -274,8 +274,8 @@ namespace Hecton8.Narrative
                     RebindDataVaultCold(currentService is IDataVault currentVault ? currentVault : null, ensureBuffers: true);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registered = false;
-                    _lateFrameRegistered = false;
+                    TryUnregister();
+                    TryUnregisterLateFrame();
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegister();
@@ -578,7 +578,8 @@ namespace Hecton8.Narrative
             if (clip == null)
                 return false;
 
-            bool bitCrushRouteAvailable = preferBitCrush && _cachedNarrativeAudioSink != null;
+            ISpatialAudioNarrativeRadioSink narrativeAudioSink = ResolveNarrativeAudioSink();
+            bool bitCrushRouteAvailable = preferBitCrush && narrativeAudioSink != null;
             AudioGlitchParametersDTO safeGlitch = AudioGlitchParametersDTO.Sanitize(in glitch);
             _pendingPlaybackClip = clip;
             _pendingPlaybackVolume = Sanitize01(volume);
@@ -607,7 +608,7 @@ namespace Hecton8.Narrative
             if (playbackClip == null)
                 return;
 
-            ISpatialAudioNarrativeRadioSink narrativeAudioSink = _cachedNarrativeAudioSink;
+            ISpatialAudioNarrativeRadioSink narrativeAudioSink = ResolveNarrativeAudioSink();
             if (narrativeAudioSink != null)
             {
                 narrativeAudioSink.SetNarrativeRadioInterference(math.max(interference01, GlitchBandPassTo01(glitch.BandPassByte)));
@@ -615,7 +616,7 @@ namespace Hecton8.Narrative
                     return;
             }
 
-            IAudioService audioManager = _cachedAudioService;
+            IAudioService audioManager = ResolveAudioService();
             if (audioManager != null)
                 audioManager.PlayStatic2D(playbackClip, volume);
         }
@@ -640,7 +641,7 @@ namespace Hecton8.Narrative
             if (!_isPlaying)
                 return;
 
-            ISpatialAudioNarrativeRadioSink narrativeAudioSink = _cachedNarrativeAudioSink;
+            ISpatialAudioNarrativeRadioSink narrativeAudioSink = ResolveNarrativeAudioSink();
             if (narrativeAudioSink == null)
                 return;
 
@@ -689,7 +690,7 @@ namespace Hecton8.Narrative
             if (!_pendingGlitchResetDirty)
                 return;
 
-            ISpatialAudioNarrativeRadioSink narrativeAudioSink = _cachedNarrativeAudioSink;
+            ISpatialAudioNarrativeRadioSink narrativeAudioSink = ResolveNarrativeAudioSink();
             if (narrativeAudioSink == null)
             {
                 TryRegisterLateFrame();
@@ -1762,25 +1763,88 @@ namespace Hecton8.Narrative
 
         private void CacheAudioService(IAudioService audioService)
         {
+            if (!IsAudioServiceUsable(audioService))
+            {
+                _cachedAudioService = null;
+                _cachedNarrativeAudioSink = null;
+                return;
+            }
+
             _cachedAudioService = audioService;
-            _cachedNarrativeAudioSink = audioService as ISpatialAudioNarrativeRadioSink;
+            ISpatialAudioNarrativeRadioSink narrativeAudioSink = audioService as ISpatialAudioNarrativeRadioSink;
+            _cachedNarrativeAudioSink = IsNarrativeAudioSinkUsable(narrativeAudioSink) ? narrativeAudioSink : null;
 
             if (_cachedNarrativeAudioSink != null && (_isPlaying || _pendingGlitchResetDirty))
                 TryRegisterLateFrame();
         }
 
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _cachedAudioService = null;
+            _cachedNarrativeAudioSink = null;
+            return null;
+        }
+
+        private ISpatialAudioNarrativeRadioSink ResolveNarrativeAudioSink()
+        {
+            IAudioService audioService = ResolveAudioService();
+            if (audioService == null)
+                return null;
+
+            ISpatialAudioNarrativeRadioSink narrativeAudioSink = _cachedNarrativeAudioSink;
+            if (IsNarrativeAudioSinkUsable(narrativeAudioSink))
+                return narrativeAudioSink;
+
+            narrativeAudioSink = audioService as ISpatialAudioNarrativeRadioSink;
+            _cachedNarrativeAudioSink = IsNarrativeAudioSinkUsable(narrativeAudioSink) ? narrativeAudioSink : null;
+            return _cachedNarrativeAudioSink;
+        }
+
         private void ResetPreviousNarrativeRadioSink(ISpatialAudioNarrativeRadioSink previousSink, object currentService)
         {
-            if (previousSink == null || ReferenceEquals(previousSink, currentService))
+            if (previousSink == null ||
+                ReferenceEquals(previousSink, currentService) ||
+                !IsNarrativeAudioSinkUsable(previousSink))
+            {
                 return;
+            }
 
             ResetNarrativeRadioSink(previousSink);
         }
 
         private void ResetNarrativeRadioSink(ISpatialAudioNarrativeRadioSink narrativeAudioSink)
         {
+            if (!IsNarrativeAudioSinkUsable(narrativeAudioSink))
+                return;
+
             narrativeAudioSink.SetNarrativeRadioInterference(ResolveNarrativeRadioInterference01());
             narrativeAudioSink.SetNarrativeRadioGlitch(0f, 0f, 0f, Sanitize01(HomeostasisBrain.GlobalQualityWeight));
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static bool IsNarrativeAudioSinkUsable(ISpatialAudioNarrativeRadioSink narrativeAudioSink)
+        {
+            if (narrativeAudioSink == null)
+                return false;
+
+            if (narrativeAudioSink is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterSaveParticipant()
@@ -1832,14 +1896,25 @@ namespace Hecton8.Narrative
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.AudioLogs != null && !ReferenceEquals(GlobalRegistry.AudioLogs, this))
+            AudioLogSystem registeredAudioLogs = GlobalRegistry.AudioLogs;
+            if (!ReferenceEquals(registeredAudioLogs, null) && !ReferenceEquals(registeredAudioLogs, this))
             {
-                Destroy(gameObject);
-                return;
+                if (IsAudioLogSystemUsable(registeredAudioLogs))
+                {
+                    Destroy(gameObject);
+                    return;
+                }
+
+                GlobalRegistry.UnregisterAudioLogRuntime(registeredAudioLogs);
             }
 
             GlobalRegistry.RegisterAudioLogRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.AudioLogs, this);
+        }
+
+        private static bool IsAudioLogSystemUsable(AudioLogSystem audioLogSystem)
+        {
+            return audioLogSystem != null && audioLogSystem.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()

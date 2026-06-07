@@ -7,6 +7,9 @@ poi_tags: poi.shallow_biota;poi.cable_flora
 biome_tags: biome.storm_shelf;biome.cable_forest
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Регистр экологии"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -1853,12 +1853,15 @@ namespace Hecton8.Physics.Exosuit
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             TryUnregisterPostFixed();
             TryUnregisterFixed();
             TryUnregisterLateFrame();
+            if (currentService == null || !isActiveAndEnabled)
+                return;
+
             TryRegisterFixed();
             TryRegisterPostFixed();
             TryRegisterLateFrame();

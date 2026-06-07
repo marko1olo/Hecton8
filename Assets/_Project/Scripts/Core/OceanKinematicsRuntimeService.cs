@@ -182,17 +182,17 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
-                currentService == null ||
-                !_isInitialized ||
-                !isActiveAndEnabled)
-            {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
-            }
 
             TryUnregisterUpdatable();
-            TryRegisterUpdatable();
-            RequestProviderRefresh();
+            if (currentService != null &&
+                _isInitialized &&
+                isActiveAndEnabled)
+            {
+                TryRegisterUpdatable();
+                RequestProviderRefresh();
+            }
         }
 
         private void RegisterProviderInternal(IHectonOceanKinematics provider)

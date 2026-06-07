@@ -9,32 +9,32 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Noble Gas Brine Pockets"
+title: "贵气卤水囊"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Noble Gas Brine Pockets
+# 贵气卤水囊
 
-CN LOC HOLD: Noble gas brine pockets are the natural feedstock that made Xenon-Omega plausible. They are not blue debt by themselves. Value depends on pressure history, mineral defects, brine chemistry and later Deep Reach or Atlas processing.
+贵气卤水囊是HECTON-8矿物卤水中的密封压力记录。有用的水囊不只是水里的氙；它是气体比例、压力曲线、温度伤痕和矿物缺陷晶格被共同保留下来的证据，足以证明地下曾经发生过什么。放气会同时毁掉价值和证据。这些样本之所以重要，是因为Deep Reach以及后来的Atlas工艺能够把具有正确压力历史的原料推向Xenon-Omega；但原始水囊本身仍是地质，不是天然宝物。
 
 ## Scanner
 
-CN LOC HOLD: Natural-to-process resource. Valuable only if pressure history survives extraction.
+贵气卤水囊 // 矿物卤水中的密封压力泡。只有压力历史保持封闭，价值才存在；一旦放气，财富就变成天气。
 
 ## Terminal
 
-CN LOC HOLD: RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+资源类别：天然/工艺原料。使用压力钟抽取。不得放气或加热样本。必需证据：压力曲线、气体比例、矿物缺陷图。
 
 ## Audio
 
-CN LOC HOLD: Open it wrong and the fortune becomes weather.
+Xenon-Omega从这里开始，是被困住的化学，不是奇迹矿石。
 
 ## Field Note
 
-CN LOC HOLD: This is where Xenon-Omega begins as chemistry, not magic.
+不要为了看看它富不富就打开它。穷船员就是这样制造气泡的。
 
 <!-- In-Game Wiki; generated from P117_NOBLE_GAS_BRINE_POCKETS/zh_CN. -->

@@ -130,16 +130,11 @@ namespace Hecton8.Gameplay
             {
                 if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
                 {
+                    UnregisterTick();
+                    UnregisterLateFrameTick();
                     _dispatcherAvailable = currentService != null;
-                    if (currentService == null)
+                    if (_dispatcherAvailable && isActiveAndEnabled)
                     {
-                        _registered = false;
-                        _lateFrameRegistered = false;
-                    }
-                    else if (isActiveAndEnabled)
-                    {
-                        UnregisterTick();
-                        UnregisterLateFrameTick();
                         RegisterTick();
                         RegisterLateFrameTick();
                     }

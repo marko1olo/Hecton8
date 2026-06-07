@@ -354,7 +354,7 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
-                    _cachedAudioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.NativeInputManagerRuntime:
                     _cachedNativeInputManager = currentService as INativeInputManagerRuntime;
@@ -421,16 +421,47 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _cachedAudioService = GlobalRegistry.Audio;
+            CacheAudioService(GlobalRegistry.Audio);
             _cachedNativeInputManager = GlobalRegistry.NativeInputRuntime;
             _cachedPhysicsService = GlobalRegistry.Physics;
         }
 
         private void ClearCachedRegistryServices()
         {
-            _cachedAudioService = null;
+            ClearCachedAudioService();
             _cachedNativeInputManager = null;
             _cachedPhysicsService = null;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _cachedAudioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            ClearCachedAudioService();
+            return null;
+        }
+
+        private void ClearCachedAudioService()
+        {
+            _cachedAudioService = null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -789,7 +820,7 @@ namespace Hecton8.Gameplay
             BaseAirlockEvents.TryRaiseCycleStarted(this, player);
 
             // Play cycle start sound
-            IAudioService audio = _cachedAudioService;
+            IAudioService audio = ResolveAudioService();
             if (cycleStartSound != null &&
                 audio != null &&
                 TryResolveBulkheadAudioRuntimePosition(out Vector3 audioPosition))
@@ -1530,7 +1561,7 @@ namespace Hecton8.Gameplay
             if (_pendingCycleEndSound)
             {
                 _pendingCycleEndSound = false;
-                IAudioService audio = _cachedAudioService;
+                IAudioService audio = ResolveAudioService();
                 if (cycleEndSound != null && audio != null)
                     audio.PlayAtPoint(cycleEndSound, _pendingCycleEndAudioPosition);
             }

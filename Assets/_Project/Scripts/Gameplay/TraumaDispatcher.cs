@@ -353,7 +353,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _spatialAudioSink = GlobalRegistry.Audio as ISpatialAudioEnvironmentModulationSink;
+            CacheSpatialAudioSink(GlobalRegistry.Audio);
             _pdaCorrosionSink = GlobalRegistry.PdaCorrosionPresentationSink;
         }
 
@@ -382,16 +382,14 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
-                    _spatialAudioSink = currentService as ISpatialAudioEnvironmentModulationSink;
+                    CacheSpatialAudioSink(currentService);
                     PublishParasiteAudioLoad(_activeHabitatModule != null ? _activeHabitatModule.AttachedParasiteCount : 0);
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _pdaCorrosionSink = currentService as IPdaCorrosionPresentationSink;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredSlowTick = false;
-                    _registeredLateFrame = false;
-                    _lastPhysicsEventSnapshotGeneration = 0;
+                    TryUnregister();
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;
@@ -767,8 +765,40 @@ namespace Hecton8.Gameplay
                 return;
 
             _parasiteAudioLoadDirty = false;
-            if (_spatialAudioSink != null)
-                _spatialAudioSink.SetParasiteRoomAcousticLoad(_pendingParasiteAudioLoad);
+            ISpatialAudioEnvironmentModulationSink spatialAudioSink = ResolveSpatialAudioSink();
+            if (spatialAudioSink != null)
+                spatialAudioSink.SetParasiteRoomAcousticLoad(_pendingParasiteAudioLoad);
+        }
+
+        private void CacheSpatialAudioSink(object audioRuntime)
+        {
+            _spatialAudioSink = IsAudioRuntimeObjectUsable(audioRuntime)
+                ? audioRuntime as ISpatialAudioEnvironmentModulationSink
+                : null;
+        }
+
+        private ISpatialAudioEnvironmentModulationSink ResolveSpatialAudioSink()
+        {
+            ISpatialAudioEnvironmentModulationSink spatialAudioSink = _spatialAudioSink;
+            if (IsAudioRuntimeObjectUsable(spatialAudioSink))
+                return spatialAudioSink;
+
+            _spatialAudioSink = null;
+            return null;
+        }
+
+        private static bool IsAudioRuntimeObjectUsable(object runtime)
+        {
+            if (runtime == null)
+                return false;
+
+            if (runtime is IAudioService audioService && !audioService.IsInitialized)
+                return false;
+
+            if (runtime is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private bool HasSealedHelmetProtection()

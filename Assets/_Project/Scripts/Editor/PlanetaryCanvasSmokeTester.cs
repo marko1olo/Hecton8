@@ -12,6 +12,8 @@ namespace Hecton8.Editor
 {
     public static class PlanetaryCanvasSmokeTester
     {
+        private const string NativeMemoryOwner = nameof(PlanetaryCanvasSmokeTester);
+        private const string InfluenceCellsLabel = "influenceCells";
         private const float BorderEpsilon = 0.000001f;
         private const byte ExpectedBiome42VisualFamilyId = 5; // Volcanic
         private const byte ExpectedBiome43VisualFamilyId = 1; // Rock
@@ -48,20 +50,13 @@ namespace Hecton8.Editor
                 WorldProceduralFieldSampler.BiomeBorderOverlapMeters);
 
             NativeArray<WorldProceduralFieldSampler.BiomeInfluenceCell> influenceCells = default;
-            bool influenceCellsRegistered = false;
             try
             {
                 // COLD ALLOC: NativeArray<BiomeInfluenceCell>[1] - editor-only 50m biome border blend smoke assertion - owner: PlanetaryCanvasSmokeTester
-                influenceCells = new NativeArray<WorldProceduralFieldSampler.BiomeInfluenceCell>(
+                influenceCells = AllocateTrackedTempJobArray<WorldProceduralFieldSampler.BiomeInfluenceCell>(
                     1,
-                    Allocator.TempJob,
-                    NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    influenceCells,
-                    nameof(PlanetaryCanvasSmokeTester),
-                    nameof(influenceCells),
-                    NativeAllocationLifetime.TempJob);
-                influenceCellsRegistered = true;
+                    NativeArrayOptions.UninitializedMemory,
+                    InfluenceCellsLabel);
                 influenceCells[0] = WorldProceduralFieldSampler.BiomeInfluenceCell.CreateFromBiomeIds(
                     42,
                     43,
@@ -78,13 +73,44 @@ namespace Hecton8.Editor
             }
             finally
             {
-                if (influenceCells.IsCreated)
-                {
-                    if (influenceCellsRegistered)
-                        NativeMemorySentinel.UnregisterNativeArray(influenceCells);
+                DisposeTracked(ref influenceCells);
+            }
+        }
 
-                    influenceCells.Dispose();
-                }
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, NativeArrayOptions options, string label) where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            if (!array.IsCreated)
+                throw new InvalidOperationException("[PlanetaryCanvasSmokeTester] NativeArray allocation failed for " + label + ".");
+
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId <= 0)
+                    throw new InvalidOperationException("[PlanetaryCanvasSmokeTester] NativeMemorySentinel rejected NativeArray registration for " + label + ".");
+            }
+            catch
+            {
+                array.Dispose();
+                throw;
+            }
+
+            return array;
+        }
+
+        private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
             }
         }
     }

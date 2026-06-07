@@ -286,19 +286,7 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerExpressionEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerExpressionEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseNativeQueues();
 
             _listeners.Clear();
             ClearReferenceSlots();
@@ -313,29 +301,66 @@ namespace Hecton8.Gameplay
 
         private static void EnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
+            try
             {
-                _pendingEvents = new NativeQueue<PlayerExpressionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerExpressionEventPayload>[8] - deferred player-expression lane flushed by SystemDispatcher LateUpdate - owner: PlayerExpressionEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(PlayerExpressionEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
+                if (!_pendingEvents.IsCreated)
+                {
+                    _pendingEvents = new NativeQueue<PlayerExpressionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerExpressionEventPayload>[8] - deferred player-expression lane flushed by SystemDispatcher LateUpdate - owner: PlayerExpressionEvents
+                    RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents));
+                    PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                }
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<PlayerExpressionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerExpressionEventPayload>[8] - next-frame player-expression lane prevents same-frame reentrant dispatch - owner: PlayerExpressionEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(PlayerExpressionEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                if (!_nextFrameEvents.IsCreated)
+                {
+                    _nextFrameEvents = new NativeQueue<PlayerExpressionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerExpressionEventPayload>[8] - next-frame player-expression lane prevents same-frame reentrant dispatch - owner: PlayerExpressionEvents
+                    RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents));
+                    PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                }
             }
+            catch
+            {
+                ReleaseNativeQueues();
+                ClearReferenceSlots();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(PlayerExpressionEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeQueue(ref queue, label);
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            ReleaseNativeQueue(ref _pendingEvents, nameof(_pendingEvents));
+            ReleaseNativeQueue(ref _nextFrameEvents, nameof(_nextFrameEvents));
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerExpressionEvents), label);
+            queue.Dispose();
+            queue = default;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -577,12 +602,8 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            PlayerExpressionManager registered = s_activeRuntimeInstance ?? GlobalRegistry.PlayerExpression;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             AutoResolveReferences();
 
@@ -598,6 +619,9 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             CachePlayerRuntimeContext(GlobalRegistry.Player);
             AutoResolveReferences();
             TryRegisterService();
@@ -642,14 +666,54 @@ namespace Hecton8.Gameplay
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            PlayerExpressionManager registered = s_activeRuntimeInstance ?? GlobalRegistry.PlayerExpression;
-            if (registered != null && registered != this)
+            if (TryAbortForUsableExistingRuntime())
                 return;
 
             GlobalRegistry.RegisterPlayerExpressionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PlayerExpression, this);
             if (_serviceRegistered)
                 s_activeRuntimeInstance = this;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            PlayerExpressionManager active = s_activeRuntimeInstance;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsPlayerExpressionRuntimeUsable(active))
+                {
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                if (ReferenceEquals(s_activeRuntimeInstance, active))
+                    s_activeRuntimeInstance = null;
+
+                if (ReferenceEquals(GlobalRegistry.PlayerExpression, active))
+                    GlobalRegistry.UnregisterPlayerExpressionRuntime(active);
+            }
+
+            PlayerExpressionManager registered = GlobalRegistry.PlayerExpression;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsPlayerExpressionRuntimeUsable(registered))
+            {
+                s_activeRuntimeInstance = registered;
+                Destroy(gameObject);
+                return true;
+            }
+
+            if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                s_activeRuntimeInstance = null;
+
+            GlobalRegistry.UnregisterPlayerExpressionRuntime(registered);
+            return false;
+        }
+
+        private static bool IsPlayerExpressionRuntimeUsable(PlayerExpressionManager manager)
+        {
+            return manager != null && manager._serviceRegistered && manager.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()
@@ -899,13 +963,13 @@ namespace Hecton8.Gameplay
             ApplyProfileInternal(profileIndex, false, false);
         }
 
-        private void AutoResolveReferences()
+        private void AutoResolveReferences(bool replaceExisting = false)
         {
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            if (toolManager == null && playerContext != null)
+            if ((toolManager == null || replaceExisting) && playerContext != null)
                 toolManager = playerContext.ToolManager;
 
-            if (playerMovement == null && playerContext != null)
+            if ((playerMovement == null || replaceExisting) && playerContext != null)
                 playerMovement = playerContext.PlayerMovement;
 
             if (hudNotification == null)
@@ -970,7 +1034,7 @@ namespace Hecton8.Gameplay
             {
                 case GlobalRegistryServiceSlot.Player:
                     CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
-                    AutoResolveReferences();
+                    AutoResolveReferences(replaceExisting: true);
                     ApplyPendingRuntimeBindings();
                     SyncDiagnostics();
                     break;

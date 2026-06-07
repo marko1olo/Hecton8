@@ -7,6 +7,9 @@ poi_tags: poi.pump_room_log;poi.manual_valve
 biome_tags: biome.pump_annex;biome.shallow_wreck
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Насос 63 Рена Окойе"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

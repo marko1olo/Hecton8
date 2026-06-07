@@ -3085,8 +3085,6 @@ namespace Hecton8.Core.Contracts.Signals
         private static bool EnsureInitializedForCrashDumpRoute()
         {
             IDataVault vault = _vault;
-            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                vault = latest;
             if (vault == null)
                 return false;
 

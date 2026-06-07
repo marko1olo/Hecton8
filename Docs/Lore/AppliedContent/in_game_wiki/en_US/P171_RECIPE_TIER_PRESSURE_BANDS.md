@@ -7,6 +7,9 @@ poi_tags: poi.recipe_tier_plate;poi.depth_rated_workbench
 biome_tags: biome.photic_shelf;biome.brine_canyon
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Recipe Tier Pressure Bands"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

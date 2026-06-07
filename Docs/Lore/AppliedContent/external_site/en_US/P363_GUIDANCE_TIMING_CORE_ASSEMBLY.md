@@ -7,6 +7,9 @@ poi_tags: poi.guidance_timing_core;poi.orbit_window_chart
 biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Guidance Timing Core Assembly"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

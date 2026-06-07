@@ -7,6 +7,9 @@ poi_tags: poi.black_keel_limit_notice;poi.tender_maintenance_tag
 biome_tags: biome.carrier_link;biome.shallow_annex
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Black Keel как внутрисистемный tender"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

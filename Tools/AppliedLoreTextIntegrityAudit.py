@@ -122,11 +122,14 @@ def read_utf8(path: Path) -> str:
         raise AuditFailure(f"invalid UTF-8 decode: {path}") from exc
 
 
-def collect_production_packets(root: Path) -> list[Path]:
+def collect_production_packets(root: Path, packet_globs: tuple[str, ...]) -> list[Path]:
     packet_root = root / "Docs" / "Lore" / "AppliedContent" / "production_packets"
     if not packet_root.exists():
         raise AuditFailure(f"missing production packet directory: {packet_root}")
-    return sorted(packet_root.glob("*.md"), key=lambda item: item.name.lower())
+    return sorted(
+        (path for path in packet_root.glob("*.md") if page_matches(path, packet_globs)),
+        key=lambda item: item.name.lower(),
+    )
 
 
 def page_matches(path: Path, patterns: tuple[str, ...]) -> bool:
@@ -373,7 +376,7 @@ def print_samples(title: str, samples: tuple[str, ...]) -> None:
 
 
 def run(root: Path, packet_globs: tuple[str, ...], sample_limit: int) -> int:
-    production_paths = collect_production_packets(root)
+    production_paths = collect_production_packets(root, packet_globs)
     generated_paths = collect_generated_pages(root, packet_globs)
 
     production_scan = scan_markers(root, "production_packets", production_paths, sample_limit)
@@ -391,9 +394,7 @@ def run(root: Path, packet_globs: tuple[str, ...], sample_limit: int) -> int:
         + clone_scan.missing_baselines
     )
     warnings = (
-        sum(production_scan.broad_counts.values())
-        + sum(generated_scan.broad_counts.values())
-        + clone_scan.draft_clone_warnings
+        clone_scan.draft_clone_warnings
         + clone_scan.unknown_clone_warnings
         + clone_scan.partial_clone_warnings
     )

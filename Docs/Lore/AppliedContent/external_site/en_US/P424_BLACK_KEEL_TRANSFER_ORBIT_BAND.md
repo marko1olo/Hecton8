@@ -7,6 +7,9 @@ poi_tags: poi.black_keel_transfer_band;poi.carrier_custody_orbit
 biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Black Keel Transfer Band"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

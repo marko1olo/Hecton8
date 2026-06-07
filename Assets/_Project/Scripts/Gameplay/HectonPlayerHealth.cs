@@ -270,8 +270,9 @@ namespace Hecton8.Gameplay
 
             if (blocksNarrativeQueue)
             {
-                if (_audioLogs != null)
-                    _audioLogs.NotifyAtmosphericWarningStarted(glitchDuration);
+                IAudioLogRuntime audioLogs = ResolveAudioLogSystem();
+                if (audioLogs != null)
+                    audioLogs.NotifyAtmosphericWarningStarted(glitchDuration);
             }
 
             PlayerSignalEvents.TryRaiseTraumaHudSignal(new TraumaHudSignal(glitchIntensity, glitchDuration, 1f, Mathf.Clamp01(HealthPercent), true));
@@ -438,6 +439,7 @@ namespace Hecton8.Gameplay
             TryUnregisterHotSwapListener();
             _pendingSurvivalGraceHeartbeatPulse = false;
             _pendingLeviathanTraumaRoar = false;
+            ClearCachedRegistryServices();
         }
 
         private void OnDestroy()
@@ -448,6 +450,7 @@ namespace Hecton8.Gameplay
             TryUnregisterHotSwapListener();
             _pendingSurvivalGraceHeartbeatPulse = false;
             _pendingLeviathanTraumaRoar = false;
+            ClearCachedRegistryServices();
         }
 
         /// <summary>Updates low-frequency status and physiology bridge timers.</summary>
@@ -752,7 +755,7 @@ namespace Hecton8.Gameplay
 
         private void PlaySurvivalGraceHeartbeatPulse()
         {
-            if (_audioService == null || survivalGraceHeartbeatClip == null)
+            if (ResolveAudioService() == null || survivalGraceHeartbeatClip == null)
                 return;
 
             _pendingSurvivalGraceHeartbeatPulse = true;
@@ -773,7 +776,7 @@ namespace Hecton8.Gameplay
             _pendingSurvivalGraceHeartbeatPulse = false;
             _pendingLeviathanTraumaRoar = false;
 
-            IAudioService audioService = _audioService;
+            IAudioService audioService = ResolveAudioService();
             if (heartbeat && audioService != null && survivalGraceHeartbeatClip != null)
                 audioService.PlayStatic2D(survivalGraceHeartbeatClip, survivalGraceHeartbeatVolume);
 
@@ -1022,8 +1025,66 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _audioService = GlobalRegistry.Audio;
-            _audioLogs = GlobalRegistry.AudioLogRuntime;
+            CacheAudioService(GlobalRegistry.Audio);
+            CacheAudioLogSystem(GlobalRegistry.AudioLogRuntime);
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _audioService = null;
+            _audioLogs = null;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = IsAudioServiceUsable(audioService) ? audioService : null;
+        }
+
+        private IAudioService ResolveAudioService()
+        {
+            IAudioService audioService = _audioService;
+            if (IsAudioServiceUsable(audioService))
+                return audioService;
+
+            _audioService = null;
+            return null;
+        }
+
+        private static bool IsAudioServiceUsable(IAudioService audioService)
+        {
+            if (audioService == null || !audioService.IsInitialized)
+                return false;
+
+            if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private void CacheAudioLogSystem(IAudioLogRuntime audioLogSystem)
+        {
+            _audioLogs = IsAudioLogRuntimeUsable(audioLogSystem) ? audioLogSystem : null;
+        }
+
+        private IAudioLogRuntime ResolveAudioLogSystem()
+        {
+            IAudioLogRuntime audioLogSystem = _audioLogs;
+            if (IsAudioLogRuntimeUsable(audioLogSystem))
+                return audioLogSystem;
+
+            _audioLogs = null;
+            return null;
+        }
+
+        private static bool IsAudioLogRuntimeUsable(IAudioLogRuntime audioLogSystem)
+        {
+            if (audioLogSystem == null)
+                return false;
+
+            if (audioLogSystem is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1059,15 +1120,15 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Audio:
-                    _audioService = currentService as IAudioService;
+                    CacheAudioService(currentService as IAudioService);
                     break;
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
-                    _audioLogs = currentService as IAudioLogRuntime;
+                    CacheAudioLogSystem(currentService as IAudioLogRuntime);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredToSlowTickManager = false;
-                    _registeredToLateFrameTick = false;
-                    if (currentService != null)
+                    TryUnregisterFromSlowTickManager();
+                    TryUnregisterLateFrameTickable();
+                    if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegisterToSlowTickManager();
                         if (_pendingSurvivalGraceHeartbeatPulse || _pendingLeviathanTraumaRoar)

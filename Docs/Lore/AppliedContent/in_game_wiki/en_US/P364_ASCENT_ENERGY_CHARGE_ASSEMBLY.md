@@ -7,6 +7,9 @@ poi_tags: poi.ascent_charge_cradle;poi.vent_forge_heat_cell
 biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Ascent Energy Charge Assembly"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -218,22 +218,12 @@ namespace Hecton8.Editor.ModdingSDK
         private void OnDisable()
         {
             EditorApplication.update -= PollRunningTool;
-            if (_runningToolProcess == null)
+            DiagnosticsProcess process = _runningToolProcess;
+            if (process == null)
                 return;
 
-            try
-            {
-                if (!_runningToolProcess.HasExited)
-                    _runningToolProcess.Kill();
-            }
-            catch (Exception exception)
-            {
-                Debug.LogWarning("[ExternalStarterKitWorkbenchWindow] Tool cleanup failed: " + exception.Message);
-            }
-            finally
-            {
-                DisposeRunningTool();
-            }
+            KillToolProcessNoThrow(process);
+            DisposeRunningTool();
         }
 
         private void OnGUI()
@@ -2600,6 +2590,7 @@ namespace Hecton8.Editor.ModdingSDK
             {
                 _toolSummary = "Tool launch failed: " + exception.Message;
                 _toolSummaryIsError = true;
+                KillToolProcessNoThrow(_runningToolProcess);
                 DisposeRunningTool();
                 Debug.LogError("[ExternalStarterKitWorkbenchWindow] Tool launch failed: " + exception);
             }
@@ -2669,10 +2660,11 @@ namespace Hecton8.Editor.ModdingSDK
         private void DisposeRunningTool()
         {
             EditorApplication.update -= PollRunningTool;
-            if (_runningToolProcess != null)
+            DiagnosticsProcess process = _runningToolProcess;
+            _runningToolProcess = null;
+            if (process != null)
             {
-                _runningToolProcess.Dispose();
-                _runningToolProcess = null;
+                DisposeToolProcessNoThrow(process);
             }
 
             _runningToolStdout = null;
@@ -2681,6 +2673,34 @@ namespace Hecton8.Editor.ModdingSDK
             _runningToolReloadAfterSuccess = false;
             _runningToolCompleted = false;
             _runningToolExitCode = -1;
+        }
+
+        private static void KillToolProcessNoThrow(DiagnosticsProcess process)
+        {
+            if (process == null)
+                return;
+
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[ExternalStarterKitWorkbenchWindow] Tool cleanup failed: " + exception.Message);
+            }
+        }
+
+        private static void DisposeToolProcessNoThrow(DiagnosticsProcess process)
+        {
+            try
+            {
+                process.Dispose();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[ExternalStarterKitWorkbenchWindow] Tool dispose failed: " + exception.Message);
+            }
         }
 
         private static string BuildToolSummary(int exitCode, string stdout, string stderr)

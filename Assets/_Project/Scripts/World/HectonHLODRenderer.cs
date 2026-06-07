@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Unity.Collections;
 using System;
 using Unity.Jobs;
@@ -16,6 +17,7 @@ namespace Hecton8.World
     public sealed class HectonHLODRenderer : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int BrgMetadataPlaceholderCount = 1;
+        private const SystemID NativeMemoryOwner = SystemID.GraphicsScalability;
 
         private static readonly int InstanceMatricesId = Shader.PropertyToID("_HectonHLODInstanceMatrices");
         private static readonly int InstanceFadeId = Shader.PropertyToID("_HectonHLODInstanceFade");
@@ -236,11 +238,12 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-            {
-                _isRegistered = false;
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            UnregisterTick();
+            if (currentService != null && isActiveAndEnabled)
                 RegisterTick();
-            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -273,9 +276,25 @@ namespace Hecton8.World
                 });
 
                 _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for HLOD renderer - owner: HectonHLODRenderer
-                using (NativeArray<MetadataValue> batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Temp, NativeArrayOptions.ClearMemory))
+                NativeArray<MetadataValue> batchMetadata = H8Memory.Allocate<MetadataValue>(
+                    BrgMetadataPlaceholderCount,
+                    NativeMemoryOwner,
+                    Allocator.Temp,
+                    NativeArrayOptions.ClearMemory);
+                try
                 {
+                    if (!batchMetadata.IsCreated)
+                    {
+                        ReleaseResources();
+                        return;
+                    }
+
                     _batchId = _batchRendererGroup.AddBatch(batchMetadata, _batchHandleBuffer.bufferHandle);
+                }
+                finally
+                {
+                    if (batchMetadata.IsCreated)
+                        H8Memory.Release(ref batchMetadata, NativeMemoryOwner);
                 }
                 _registeredDrawBoundsValid = false;
                 SetBatchGlobalBoundsIfChanged(ResolveDrawBounds());

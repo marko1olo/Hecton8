@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Shell Clamp Reef"
+title: "Schelpklemrif"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Shell Clamp Reef
+# Schelpklemrif
 
-NL LOC HOLD: Shell Clamp Reef shows the first boundary blur: native organisms colonize metal before Atlas turns that habit into repair logic.
+Schelpklemriffen zijn de eerste plek waar de ondiepe shelf ophoudt inheems leven en menselijk wrakhout gescheiden te houden. De schelpklemmen zijn niet intelligent en geen Atlas-weefsel; ze volgen mineraalsijpeling, warmte, trilling en stromingsdruk. Dat is genoeg om basalt, oude kabelmantels, capsuleplaten en pressure-glass-naden met angstaanjagend geduld vast te grijpen. Voor de speler kan een rif tegelijk routemarkering, oogstbron en structurele waarschuwing zijn. Dode buitenschalen leveren bruikbaar grit voor kit en keramische vulling. De levende kern kan aan het werk zijn: een kabel stilhouden, een gebarsten beugel verstijven of een lek vertragen dat de scanner nog niet heeft benoemd. Snijd de verkeerde cluster weg en het rif valt niet aan. De omgeving verliest gewoon een steun.
 
 ## Scanner
 
-NL LOC HOLD: Shell clamps bind to rock, cable and capsule plating; the shallow reef already accepts machinery as habitat.
+SCHELPKLEMRIF // Inheemse schelpklemmen binden rots, kabelmantels, capsuleplaten en pressure-glass-naden. Het rif heeft machines als substraat geaccepteerd.
 
 ## Terminal
 
-NL LOC HOLD: REEF NOTE: shell clamp adhesion rises near worn cable jackets and exposed pressure-glass seams.
+RIF-BASIS: hechting stijgt op versleten kabelmantels, warm naadmetaal en pressure-glass-randen met mineraalsijpeling. Oogst alleen dode buitenschalen. Levende klemmen bij servicelijnen doorsnijden kan lekken openen of reparatiefauna aantrekken.
 
 ## Audio
 
-NL LOC HOLD: The reef has learned the shape of bolts.
+Het rif heeft de vorm van bouten geleerd.
 
 ## Field Note
 
-NL LOC HOLD: Clamp reef: route marker, harvestable shell, early proof that metal is not alien to the ecology anymore.
+Wrik niet de eerste klem los die je kunt bereiken. Een levende cluster kan een kabel stilhouden, een haarlek afdichten of een routeanker markeren.
 
 <!-- In-Game Wiki; generated from P224_SHELL_CLAMP_REEF/nl_NL. -->

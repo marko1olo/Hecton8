@@ -429,8 +429,7 @@ namespace Hecton8.Core
                     RebindDataVault(currentService as IDataVault);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredToDispatcher = false;
-                    _registeredLateFrame = false;
+                    TryUnregisterDispatcherRoutes();
                     if (currentService != null && isActiveAndEnabled)
                         TryRegisterDispatcherRoutes();
                     break;
@@ -460,6 +459,21 @@ namespace Hecton8.Core
 
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterDispatcherRoutes()
+        {
+            if (_registeredToDispatcher)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredToDispatcher = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
         }
 
         private void TryRegisterHotSwapListener()

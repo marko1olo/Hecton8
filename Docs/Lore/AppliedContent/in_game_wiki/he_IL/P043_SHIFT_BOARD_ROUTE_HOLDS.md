@@ -7,6 +7,9 @@ poi_tags: poi.shift_board;poi.transit_gate
 biome_tags: biome.drowned_colony;biome.service_canyon
 locale: he_IL
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "עיכובי מסלול בלוח משמרות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl

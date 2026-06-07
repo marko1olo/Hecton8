@@ -9,32 +9,32 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Noble Gas Brine Pockets"
+title: "Edelgas-pekelzakken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Noble Gas Brine Pockets
+# Edelgas-pekelzakken
 
-NL LOC HOLD: Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process.
+Edelgas-pekelzakken vormen de harde wetenschappelijke wortel van de blauwe economie van HECTON-8. Het waardevolle deel is geen gloeiende steen en geen magische isotoop. Het is een verzegelde drukgeschiedenis: edelgassen gevangen in minerale pekel en daarna opgesloten in clathraatsporen, microscheuren en defectroosters die alleen betekenis hebben als het monster intact wordt geborgen. Een slordige ploeg kan de zak horen sissen en denken dat ze geld heeft gevonden. Meestal heeft ze het geld net in weer veranderd. Veldextractie gebruikt daarom drukklokken, trage thermische afscherming en bewijslogging voordat enige raffinaderijclaim begint. De gasverhouding doet ertoe, maar hoe die verhouding ontstond doet evenveel ertoe. Een monster dat zijn drukcurve niet kan bewijzen, blijft laagwaardig voeder, zelfs als de xenontelling rijk lijkt. Deze grondstof leert de speler dat Xenon-Omega een procesuitkomst is, geen verzamelbaar mineraal. Deep Reach ontdekte geen wonderedelsteen. Het leerde welke verzegelde geschiedenissen tot schuldenmateriaal konden worden gekweld. Atlas classificeerde die geschiedenissen later met beschadigde prioriteiten. De zak zelf blijft ouder en vreemder dan beide: een bel geologie die nog steeds probeert geen weer te worden.
 
 ## Scanner
 
-NL LOC HOLD: Natural-to-process resource. Valuable only if pressure history survives extraction.
+EDELGAS-PEKELZAK // Afgesloten drukbel in minerale pekel. Waarde blijft alleen bestaan zolang de drukgeschiedenis verzegeld blijft; ontlucht haar en het fortuin wordt weer.
 
 ## Terminal
 
-NL LOC HOLD: RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+GRONDSTOFKLASSE: natuurlijk/procesvoeder. Gebruik drukklokextractie. Monster niet ontluchten of verwarmen. Vereist bewijs: drukcurve, gasverhouding, mineraaldefectkaart.
 
 ## Audio
 
-NL LOC HOLD: Open it wrong and the fortune becomes weather.
+Xenon-Omega begint hier als opgesloten chemie, niet als wondererts.
 
 ## Field Note
 
-NL LOC HOLD: This is where Xenon-Omega begins as chemistry, not magic.
+Open de zak niet om te zien of hij rijk is. Zo maken arme ploegen bellen.
 
 <!-- External Site; generated from P117_NOBLE_GAS_BRINE_POCKETS/nl_NL. -->

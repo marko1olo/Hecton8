@@ -1035,14 +1035,19 @@ namespace Hecton8.Gameplay
             _registeredColdReferenceRepair = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
         }
 
-        private void TryUnregisterColdReferenceRepair()
+        private void TryUnregisterColdReferenceRepair(bool clearPendingRequest = true)
         {
             if (!_registeredColdReferenceRepair)
+            {
+                if (clearPendingRequest)
+                    _coldReferenceRepairRequested = false;
                 return;
+            }
 
             GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
             _registeredColdReferenceRepair = false;
-            _coldReferenceRepairRequested = false;
+            if (clearPendingRequest)
+                _coldReferenceRepairRequested = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1050,6 +1055,20 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregister();
+                TryUnregisterColdReferenceRepair(clearPendingRequest: false);
+
+                if (currentService != null && isActiveAndEnabled)
+                {
+                    TryRegister();
+                    TryRegisterColdReferenceRepair();
+                }
+
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Input)
             {
                 _inputService = currentService as IInputService;
@@ -1058,7 +1077,7 @@ namespace Hecton8.Gameplay
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                CachePlayerContextReferencesCold(currentService as IPlayerRuntimeContext);
+                CachePlayerContextReferencesCold(currentService as IPlayerRuntimeContext, replaceExisting: true);
                 RequestColdReferenceResolve(0);
             }
         }
@@ -1086,18 +1105,27 @@ namespace Hecton8.Gameplay
             CachePlayerContextReferencesCold(GlobalRegistry.Player);
         }
 
-        private void CachePlayerContextReferencesCold(IPlayerRuntimeContext playerContext)
+        private void CachePlayerContextReferencesCold(IPlayerRuntimeContext playerContext, bool replaceExisting = false)
         {
             if (playerContext == null || !playerContext.IsInitialized)
-                return;
+            {
+                if (replaceExisting)
+                {
+                    playerMovement = null;
+                    playerToolManager = null;
+                    playerTransportCoordinator = null;
+                }
 
-            if (playerMovement == null)
+                return;
+            }
+
+            if (replaceExisting || playerMovement == null)
                 playerMovement = playerContext.PlayerMovement;
 
-            if (playerToolManager == null)
+            if (replaceExisting || playerToolManager == null)
                 playerToolManager = playerContext.ToolManager;
 
-            if (playerTransportCoordinator == null)
+            if (replaceExisting || playerTransportCoordinator == null)
                 playerTransportCoordinator = playerContext.PlayerTransportCoordinator;
         }
 

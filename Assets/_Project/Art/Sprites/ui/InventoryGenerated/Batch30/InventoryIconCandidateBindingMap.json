@@ -1,0 +1,116 @@
+{
+  "schema": "hecton8.inventory_icon_candidate_binding_map.v1",
+  "evidenceClass": "STATIC_SOURCE_DRAFT_NO_UNITY_IMPORT",
+  "bindings": [
+    {
+      "enabled": true,
+      "persistentId": "Data_EmergencyO2Canister",
+      "itemAsset": "Assets/_Project/Data/Items/Resources/Processed/Data_EmergencyO2Canister.asset",
+      "spriteAsset": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_01_OxygenMicroTank_Alpha512.png",
+      "spriteName": "",
+      "note": "high confidence: emergency oxygen micro-tank candidate",
+      "approved": true,
+      "reviewStatus": "APPROVED",
+      "reviewedBy": "codex-static-visual-review",
+      "reviewedAt": "2026-06-07T07:59:08Z",
+      "reviewNote": "Static visual approval from PREVIEW_B30_InventoryGenerated_DiegeticSlots.png and PREVIEW_B30_InventoryGenerated_Readability.png; cropped titanium candidate remains disabled."
+    },
+    {
+      "enabled": true,
+      "persistentId": "Comp_PressureCompensator",
+      "itemAsset": "Assets/_Project/Data/Items/Resources/Components/Comp_PressureCompensator.asset",
+      "spriteAsset": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_02_PressureRegulatorModule_Alpha512.png",
+      "spriteName": "",
+      "note": "high confidence: pressure regulator/compensator module",
+      "approved": true,
+      "reviewStatus": "APPROVED",
+      "reviewedBy": "codex-static-visual-review",
+      "reviewedAt": "2026-06-07T07:59:08Z",
+      "reviewNote": "Static visual approval from PREVIEW_B30_InventoryGenerated_DiegeticSlots.png and PREVIEW_B30_InventoryGenerated_Readability.png; cropped titanium candidate remains disabled."
+    },
+    {
+      "enabled": false,
+      "persistentId": "",
+      "itemAsset": "",
+      "spriteAsset": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_03_PressureSalvageCaseA_Alpha512.png",
+      "spriteName": "",
+      "note": "disabled: good prop but no exact current ItemData owner selected"
+    },
+    {
+      "enabled": true,
+      "persistentId": "Item_Tool_Repair",
+      "itemAsset": "Assets/_Project/Data/Items/Tools/Item_Tool_Repair.asset",
+      "spriteAsset": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_04_FoldedMultitoolA_Alpha512.png",
+      "spriteName": "",
+      "note": "high confidence: repair multitool silhouette",
+      "approved": true,
+      "reviewStatus": "APPROVED",
+      "reviewedBy": "codex-static-visual-review",
+      "reviewedAt": "2026-06-07T07:59:08Z",
+      "reviewNote": "Static visual approval from PREVIEW_B30_InventoryGenerated_DiegeticSlots.png and PREVIEW_B30_InventoryGenerated_Readability.png; cropped titanium candidate remains disabled."
+    },
+    {
+      "enabled": false,
+      "persistentId": "",
+      "itemAsset": "",
+      "spriteAsset": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_05_FoldedMultitoolB_Alpha512.png",
+      "spriteName": "",
+      "note": "disabled: too close to repair multitool; request a dedicated salvage sampler render in the next generated sheet"
+    },
+    {
+      "enabled": true,
+      "persistentId": "Comp_BatteryCell",
+      "itemAsset": "Assets/_Project/Data/Items/Resources/Components/Comp_BatteryCell.asset",
+      "spriteAsset": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_06_PowerCoilCartridge_Alpha512.png",
+      "spriteName": "",
+      "note": "high confidence: sealed cylindrical power cell",
+      "approved": true,
+      "reviewStatus": "APPROVED",
+      "reviewedBy": "codex-static-visual-review",
+      "reviewedAt": "2026-06-07T07:59:08Z",
+      "reviewNote": "Static visual approval from PREVIEW_B30_InventoryGenerated_DiegeticSlots.png and PREVIEW_B30_InventoryGenerated_Readability.png; cropped titanium candidate remains disabled."
+    },
+    {
+      "enabled": true,
+      "persistentId": "Comp_CoolingCartridge",
+      "itemAsset": "Assets/_Project/Data/Items/Resources/Components/Comp_CoolingCartridge.asset",
+      "spriteAsset": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_07_ThermalControlModule_Alpha512.png",
+      "spriteName": "",
+      "note": "high confidence: thermal control/cooling cartridge module",
+      "approved": true,
+      "reviewStatus": "APPROVED",
+      "reviewedBy": "codex-static-visual-review",
+      "reviewedAt": "2026-06-07T07:59:08Z",
+      "reviewNote": "Static visual approval from PREVIEW_B30_InventoryGenerated_DiegeticSlots.png and PREVIEW_B30_InventoryGenerated_Readability.png; cropped titanium candidate remains disabled."
+    },
+    {
+      "enabled": true,
+      "persistentId": "Comp_BeaconCore",
+      "itemAsset": "Assets/_Project/Data/Items/Resources/Components/Comp_BeaconCore.asset",
+      "spriteAsset": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_08_BeaconPuck_Alpha512.png",
+      "spriteName": "",
+      "note": "high confidence: beacon puck/core",
+      "approved": true,
+      "reviewStatus": "APPROVED",
+      "reviewedBy": "codex-static-visual-review",
+      "reviewedAt": "2026-06-07T07:59:08Z",
+      "reviewNote": "Static visual approval from PREVIEW_B30_InventoryGenerated_DiegeticSlots.png and PREVIEW_B30_InventoryGenerated_Readability.png; cropped titanium candidate remains disabled."
+    },
+    {
+      "enabled": false,
+      "persistentId": "",
+      "itemAsset": "",
+      "spriteAsset": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_09_SampleVialRack_Alpha512.png",
+      "spriteName": "",
+      "note": "disabled: rack reads as storage prop, not the single electrolyte ampoule item; request a dedicated ampoule render in the next generated sheet"
+    },
+    {
+      "enabled": false,
+      "persistentId": "",
+      "itemAsset": "",
+      "spriteAsset": "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Alpha512/DRAFT_TX_B30_IsolatedInventory_10_AlloyIngot_Alpha512.png",
+      "spriteName": "",
+      "note": "disabled: visually rejected; right edge is cropped in the generated source, regenerate titanium scrap with more object padding"
+    }
+  ]
+}

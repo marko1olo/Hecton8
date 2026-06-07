@@ -7,6 +7,9 @@ poi_tags: poi.brine_lot_card;poi.density_ladder_sample
 biome_tags: biome.brine_canyon;biome.process_chemistry
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Brine Salt Process Lot Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

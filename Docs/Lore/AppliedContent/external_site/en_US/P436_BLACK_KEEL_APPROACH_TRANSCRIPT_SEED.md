@@ -7,6 +7,9 @@ poi_tags: poi.black_keel_approach_transcript;poi.opening_caption_card
 biome_tags: biome.first_hour;biome.black_keel_orbit
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Black Keel Approach Transcript"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

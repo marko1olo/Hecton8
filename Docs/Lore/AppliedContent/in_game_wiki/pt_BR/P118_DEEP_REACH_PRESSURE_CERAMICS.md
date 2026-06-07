@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Pressure Ceramics"
+title: "Cerâmica de pressão Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Deep Reach Pressure Ceramics
+# Cerâmica de pressão Deep Reach
 
-PT LOC HOLD: Pressure ceramics are local minerals pushed through Deep Reach kilns, catalyst baths and vent-forge cycles. They are practical crafting material for seals, clamp rings and ascent hardware. They also make old company infrastructure dangerous when thermal shock turns them into shard bloom.
+Cerâmicas de pressão Deep Reach são minerais locais de HECTON-8 forçados por fornos, banhos catalíticos e ciclos de forja de respiradouro até segurarem pressão onde metal iria ceder ou travar. Elas aparecem em anéis de trava, assentos de vedação, contatos de cortador e isolamento de berços de ascensão, então são essenciais para reparos e fabricação da cadeia de fuga. O perigo não é serem material maligno. O perigo é competência sob custódia ruim: um anel pode durar anos e depois florescer em estilhaços cortantes se a tripulação o chocar com calor ou liberar pressão fora de sequência.
 
 ## Scanner
 
-PT LOC HOLD: Amplified resource. Human process made local minerals hold pressure better and fail meaner.
+CERAMICA DE PRESSAO DEEP REACH // Argila local, fluxo sulfetado e calor de forja de respiradouro transformados em anéis de trava e assentos de vedação. Segura pressão lindamente; sob choque falha como facas.
 
 ## Terminal
 
-PT LOC HOLD: RESOURCE CLASS: Deep-Reach-amplified. Uses: clamp rings, seal seats, cutter contacts, ascent cradle insulation. Failure: shard bloom under thermal shock.
+CLASSE DE RECURSO: amplificado pela Deep Reach. Usos: anéis de trava, assentos de vedação, contatos de cortador, isolamento de berço de ascensão. Modo de falha: flor de estilhaços sob choque térmico ou liberação ruim de pressão.
 
 ## Audio
 
-PT LOC HOLD: The company was good at building things. That is part of the crime.
+A Deep Reach era boa em construir coisas. Por isso a mentira funcionou.
 
 ## Field Note
 
-PT LOC HOLD: Deep Reach did create value. That is why the lie is tempting.
+Bata nela fria. Se cantar alto, não aqueça.
 
 <!-- In-Game Wiki; generated from P118_DEEP_REACH_PRESSURE_CERAMICS/pt_BR. -->

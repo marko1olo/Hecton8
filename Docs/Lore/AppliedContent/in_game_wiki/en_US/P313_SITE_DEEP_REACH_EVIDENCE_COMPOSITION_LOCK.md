@@ -7,6 +7,9 @@ poi_tags: poi.site_deep_reach_evidence_pair;poi.sanitized_memo_image
 biome_tags: biome.publication;biome.deep_reach
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Deep Reach Evidence Composition Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

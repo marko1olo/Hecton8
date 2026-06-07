@@ -9,32 +9,32 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Density Skater Fauna"
+title: "فاونا متزلجي الكثافة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Density Skater Fauna
+# فاونا متزلجي الكثافة
 
-AR LOC HOLD: Density Skater Fauna show HECTON-8's hard-sci-fi creature logic. They do not break physics; they exploit brine interfaces, pressure layers and sonar blind spots as habitat and hunting routes.
+فاونا متزلجي الكثافة تحول واحدة من أغرب أفكار HECTON-8 العلمية الصلبة إلى لقاء يمكن فهمه بلا محاضرة: يمكن أن يحتوي الماء على أسطح. في وادي المحلول الملحي تتراكم الملوحة والحرارة والضغط في رفوف كثافة. تستغل الحيوانات الصغيرة هذه الرفوف كما تستغل حشرات السطح الشد، إلا أن السطح مدفون داخل المحيط. يجب أن تكون النتيجة غريبة لكنها عادلة. يعبر متزلج فجوة تبدو فارغة؛ يظهر السونار تموجا؛ يهتز trim البدلة؛ ويفهم اللاعب أن هناك حدا. يجب أن يقاوم النص والتموضع فكرة التحليق الخيالي. المتزلج لا يطفو لأن العالم نسي الفيزياء. إنه حي لأن الفيزياء محددة. قد يقود مساره إلى brine vanes ممزقة أو جيوب أقل ملوحة أو درجات محلول دافئة أو مسارات كمين. وقد يضلل أيضا: ما يحمل حيوانا خفيفا قد يسقط Marauder محملا في ماء أسود طبقي. قيمة التصميم ليست المخلوق نفسه، بل الدرس الذي يعلمه. الوادي ليس فضاء مفتوحا. إنه آلة من ماء مكدس، وكل جسم صغير يمشي عليها يرسم الخريطة وهو يتحرك.
 
 ## Scanner
 
-AR LOC HOLD: Skaters ride the brine interface like a hard surface, leaving ripples where sonar expects open water.
+متزلج الكثافة // فاونا رفيعة الأطراف تركب واجهة المحلول الملحي كسطح، وتترك تموجات حيث يتوقع السونار ماء مفتوحا.
 
 ## Terminal
 
-AR LOC HOLD: FAUNA: skater contact is more likely near vane tears, warm brine steps and sonar dead edges.
+خط أساس الفاونا: يزداد تماس المتزلجين قرب brine vanes الممزقة، ودرجات المحلول الدافئة، وحواف السونار الميتة. أثرها يحدد رف كثافة، لا موطئ قدم آمنا. لا تطارد عبر الطبقات المعتمة.
 
 ## Audio
 
-AR LOC HOLD: Something is walking on the water inside the water.
+شيء ما يمشي على الماء داخل الماء.
 
 ## Field Note
 
-AR LOC HOLD: Density skaters prove the canyon is a layered machine. Their pathing follows chemistry, not empty space.
+إنها لا تحلق. إنها تمشي على حد يمكن لبدلتك أن تسقط خلاله.
 
 <!-- External Site; generated from P227_DENSITY_SKATER_FAUNA/ar_SA. -->

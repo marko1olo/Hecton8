@@ -536,12 +536,14 @@ namespace Hecton8.Interaction
         {
             if (_registered)
             {
+                SystemDispatcher.Unregister(this as IUpdatable, PriorityLayer.UI);
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
                 _registered = false;
             }
 
             if (_registeredLateFrame)
             {
+                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }

@@ -422,6 +422,27 @@ namespace Hecton8.World
             TryUnregisterHotSwapListener();
         }
 
+        private void TryUnregisterDispatcherTicks()
+        {
+            if (_registeredTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredTick = false;
+            }
+
+            if (_registeredFixedTick)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                _registeredFixedTick = false;
+            }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
+            }
+        }
+
         private void CacheRegistryServicesCold()
         {
             _objectPool = GlobalRegistry.ObjectPoolService;
@@ -469,9 +490,7 @@ namespace Hecton8.World
                     _physicsService = currentService as IPhysicsService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredTick = false;
-                    _registeredFixedTick = false;
-                    _registeredLateFrameTick = false;
+                    TryUnregisterDispatcherTicks();
                     if (currentService != null && isActiveAndEnabled && _remainingLifetime > 0f)
                         TryRegister();
                     break;

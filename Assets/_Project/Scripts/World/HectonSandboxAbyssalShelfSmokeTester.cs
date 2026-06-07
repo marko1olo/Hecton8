@@ -103,14 +103,10 @@ namespace Hecton8.World
 
             try
             {
-                positions = new NativeArray<AbsoluteUniversePosition>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                samples = new NativeArray<HectonSandboxAbyssalShelfAuditSample>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                reductions = new NativeArray<HectonSandboxAbyssalShelfSampleReduction>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                summary = new NativeArray<HectonSandboxAbyssalShelfSmokeSummary>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                RegisterTempJobArray(positions, nameof(positions));
-                RegisterTempJobArray(samples, nameof(samples));
-                RegisterTempJobArray(reductions, nameof(reductions));
-                RegisterTempJobArray(summary, nameof(summary));
+                positions = AllocateTrackedTempJobArray<AbsoluteUniversePosition>(SampleCount, nameof(positions), NativeArrayOptions.UninitializedMemory);
+                samples = AllocateTrackedTempJobArray<HectonSandboxAbyssalShelfAuditSample>(SampleCount, nameof(samples), NativeArrayOptions.UninitializedMemory);
+                reductions = AllocateTrackedTempJobArray<HectonSandboxAbyssalShelfSampleReduction>(SampleCount, nameof(reductions), NativeArrayOptions.UninitializedMemory);
+                summary = AllocateTrackedTempJobArray<HectonSandboxAbyssalShelfSmokeSummary>(1, nameof(summary), NativeArrayOptions.ClearMemory);
                 FillSamplePositions(positions);
 
                 var sampleJob = new HectonSandboxAbyssalShelfSmokeSampleJob
@@ -202,29 +198,10 @@ namespace Hecton8.World
                 if (sampleHandleScheduled)
                     DispatcherJobSwap.TryComplete(ref sampleHandle, forceComplete: true);
 
-                if (positions.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(positions);
-                    positions.Dispose();
-                }
-
-                if (samples.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(samples);
-                    samples.Dispose();
-                }
-
-                if (reductions.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(reductions);
-                    reductions.Dispose();
-                }
-
-                if (summary.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(summary);
-                    summary.Dispose();
-                }
+                DisposeTrackedTempJobArray(ref positions);
+                DisposeTrackedTempJobArray(ref samples);
+                DisposeTrackedTempJobArray(ref reductions);
+                DisposeTrackedTempJobArray(ref summary);
             }
         }
 
@@ -336,13 +313,45 @@ namespace Hecton8.World
                 _debugJson = "FAIL:JsonBuffer";
         }
 
-        private static void RegisterTempJobArray<T>(NativeArray<T> array, string label) where T : struct
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, string label, NativeArrayOptions options) where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(
-                array,
-                NativeMemoryOwner,
-                label,
-                NativeAllocationLifetime.TempJob);
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
+                    array,
+                    NativeMemoryOwner,
+                    label,
+                    NativeAllocationLifetime.TempJob);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+
+            array.Dispose();
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void DisposeTrackedTempJobArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
         }
 
         private static bool TryWriteJson(

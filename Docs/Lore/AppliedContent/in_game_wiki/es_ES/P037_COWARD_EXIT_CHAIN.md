@@ -7,6 +7,9 @@ poi_tags: poi.repaired_ascent_cradle;poi.partial_exit_console
 biome_tags: biome.surface_squall;biome.shallow_shelter
 locale: es_ES
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Cadena de salida cobarde"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

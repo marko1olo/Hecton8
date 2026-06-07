@@ -7,6 +7,9 @@ poi_tags: poi.atlas_severance_record;poi.factory_temple_cut_log
 biome_tags: biome.ending;biome.atlas
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Запись severance Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

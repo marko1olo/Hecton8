@@ -1,6 +1,7 @@
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+using Hecton8.Core.Memory;
 
 namespace Hecton8.Core
 {
@@ -271,7 +272,7 @@ namespace Hecton8.Core
             if (_frameTimeSamples.IsCreated)
                 return;
 
-            _frameTimeSamples = new NativeRingBuffer<float>(FrameTimeSampleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<float>[64] - fixed frame pacing average, no managed List/array growth - owner: FrameTimeWatchdog
+            _frameTimeSamples = new NativeRingBuffer<float>(FrameTimeSampleCount, Allocator.Persistent, SystemID.CoreDiagnostics, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<float>[64] - fixed frame pacing average, no managed List/array growth - owner: FrameTimeWatchdog
             _frameTimeSamples.RegisterBackingArray(
                 nameof(FrameTimeWatchdog),
                 nameof(_frameTimeSamples),

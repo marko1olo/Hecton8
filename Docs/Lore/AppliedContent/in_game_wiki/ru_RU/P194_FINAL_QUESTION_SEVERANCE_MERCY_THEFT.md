@@ -7,6 +7,9 @@ poi_tags: poi.atlas_severance_key;poi.continuity_cut_warning
 biome_tags: biome.atlas_basin;biome.factory_temple
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Финальный вопрос severance: mercy, theft, murder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

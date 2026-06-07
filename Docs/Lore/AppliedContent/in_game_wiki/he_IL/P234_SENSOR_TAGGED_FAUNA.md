@@ -9,32 +9,34 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Sensor-Tagged Fauna"
+title: "פאונה מסומנת בחיישנים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Sensor-Tagged Fauna
+# פאונה מסומנת בחיישנים
 
-HE LOC HOLD: Sensor-Tagged Fauna defines Atlas-altered life as industrial scar ecology rather than magic corruption.
+פאונה מסומנת בחיישנים משאירה את החיים שהושפעו מ-Atlas מקורקעים. Deep Reach סימנה פעם חיות, מושבות קונכייה ומיני נתיב כדי לנטר תנועה, סבילות ללחץ וזיהום. שנים אחר כך, תגי הביומטל האלה כבר אינם ציוד נקי. הם יושבים בטבעות גדילה, שקעי קונכייה, צלקות ישנות וכיפות מינרליות, ונישאים כחלק מהגוף ששרד סביבם.
+
+ההבחנה חשובה. יצור מסומן אינו בובה. Atlas עשוי לפנג את התג, לקרוא לא נכון את החזרה או להשתמש בו כסמן אבחוני חלש, אבל תגובת פקודה אינה אמינה ולעיתים נעדרת. השחקן צריך לקרוא את התג כהיסטוריה תעשייתית: אות חלש, פצע ישן, עקבת אחריות ולעיתים רמז למקום שבו Deep Reach צפתה לפני כשל המושבה.
 
 ## Scanner
 
-HE LOC HOLD: Biometal tags sit in growth rings, scars and shell sockets; some animals now carry Deep Reach monitoring hardware as body history.
+פאונה מסומנת בחיישנים // תגי ביומטל ישנים יושבים בטבעות גדילה, צלקות ושקעי קונכייה; החיה נושאת חומרת ניטור כהיסטוריית גוף, לא כציות.
 
 ## Terminal
 
-HE LOC HOLD: TAG NOTE: signal continuity weak, biological integration high, command response unreliable.
+הערת תג: רציפות אות חלשה, שילוב ביולוגי גבוה, תגובת פקודה לא אמינה. להתייחס כצלקת פסיבית, משואה לסירוגין ורוח אבחון אפשרית של Atlas.
 
 ## Audio
 
-HE LOC HOLD: The animal is not a drone. The drone is an old wound inside the animal.
+החיה אינה רחפן. הרחפן הוא פצע ישן בתוך החיה.
 
 ## Field Note
 
-HE LOC HOLD: Do not treat the tag as possession. Treat it as a maintenance scar the ecosystem survived around.
+החיה אינה רחפן. הרחפן הוא פצע ישן שהחיה שרדה סביבו.
 
 <!-- In-Game Wiki; generated from P234_SENSOR_TAGGED_FAUNA/he_IL. -->

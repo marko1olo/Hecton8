@@ -7,31 +7,34 @@ poi_tags: poi.noble_gas_bubble_trap;poi.brine_pocket_vent
 biome_tags: biome.brine_canyon;biome.vent_forge
 locale: ru_RU
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Карманы благородно-газового рассола"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Noble gas brine pockets
+# Карманы благородно-газового рассола
 
-Noble gas brine pockets - природный feedstock, делающий Xenon-Omega правдоподобным. Они не blue debt сами по себе. Ценность зависит от pressure history, mineral defects, brine chemistry и поздней обработки Deep Reach или Atlas.
+Карманы благородно-газового рассола - это запечатанные записи давления внутри минеральных рассолов HECTON-8. Полезный карман - не просто ксенон в воде; это газовое соотношение, кривая давления, температурный шрам и дефектная решетка минерала, удержанные вместе достаточно долго, чтобы доказать, что происходило под землей. Стравливание кармана уничтожает и ценность, и улику. Эти образцы важны потому, что процессы Deep Reach, а позже Atlas, могут сдвинуть правильное сырье с нужной историей давления к Xenon-Omega, но сырой карман все еще остается геологией, а не сокровищем сам по себе.
 
 ## Scanner
 
-Natural-to-process resource. Ценно только если pressure history survives extraction.
+КАРМАН БЛАГОРОДНО-ГАЗОВОГО РАССОЛА // Запечатанный пузырь давления в минеральном рассоле. Ценность живет только пока история давления закрыта; стравишь его - и состояние станет погодой.
 
 ## Terminal
 
-RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+КЛАСС РЕСУРСА: природное/процессное сырье. Извлекать через давильный колокол. Не стравливать и не греть образец. Обязательные доказательства: кривая давления, газовое соотношение, карта дефектов минерала.
 
 ## Audio
 
-Открой неправильно, и состояние станет погодой.
+Xenon-Omega начинается здесь как запертая химия, а не как чудо-руда.
 
 ## Field Note
 
-Здесь Xenon-Omega начинается как химия, не как магия.
+Не вскрывай карман, чтобы проверить, богатый ли он. Так бедные экипажи делают пузырьки.
 
 <!-- In-Game Wiki; generated from P117_NOBLE_GAS_BRINE_POCKETS/ru_RU. -->

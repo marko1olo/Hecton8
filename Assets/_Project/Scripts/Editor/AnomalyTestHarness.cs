@@ -150,12 +150,9 @@ namespace Hecton8.Editor
             try
             {
                 // COLD ALLOC: NativeArray brine bound buffers[4] - deterministic editor brine bound validation - owner: AnomalyTestHarness
-                basinMask = new NativeArray<byte>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                basinRecords = new NativeArray<AnomalyBasinRecord>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                bounds = new NativeArray<AnomalyBrinePoolBounds>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(basinMask, NativeMemoryOwner, BasinMaskLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(basinRecords, NativeMemoryOwner, BasinRecordsLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(bounds, NativeMemoryOwner, BrineBoundsLabel, NativeAllocationLifetime.TempJob);
+                basinMask = AllocateTrackedTempJobArray<byte>(4, BasinMaskLabel, NativeArrayOptions.ClearMemory);
+                basinRecords = AllocateTrackedTempJobArray<AnomalyBasinRecord>(1, BasinRecordsLabel, NativeArrayOptions.ClearMemory);
+                bounds = AllocateTrackedTempJobArray<AnomalyBrinePoolBounds>(1, BrineBoundsLabel, NativeArrayOptions.ClearMemory);
 
                 basinMask[0] = 1;
                 basinRecords[0] = new AnomalyBasinRecord
@@ -317,10 +314,8 @@ namespace Hecton8.Editor
             try
             {
                 // COLD ALLOC: NativeArray stale brine generator buffers[1] - deterministic editor brine generator validation - owner: AnomalyTestHarness
-                basinMask = new NativeArray<byte>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                basinRecords = new NativeArray<AnomalyBasinRecord>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(basinMask, NativeMemoryOwner, BasinMaskLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(basinRecords, NativeMemoryOwner, BasinRecordsLabel, NativeAllocationLifetime.TempJob);
+                basinMask = AllocateTrackedTempJobArray<byte>(1, BasinMaskLabel, NativeArrayOptions.ClearMemory);
+                basinRecords = AllocateTrackedTempJobArray<AnomalyBasinRecord>(1, BasinRecordsLabel, NativeArrayOptions.ClearMemory);
 
                 // COLD ALLOC: GameObject[1] - editor brine generator host - owner: AnomalyTestHarness
                 host = new GameObject("AnomalyHarnessBrineGeneratorHost");
@@ -394,14 +389,13 @@ namespace Hecton8.Editor
             try
             {
                 // COLD ALLOC: NativeArray anomaly buffers[PixelCount] - deterministic editor anomaly validation - owner: AnomalyTestHarness
-                heightmap = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                basinMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                candidateMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                basinRecords = new NativeArray<AnomalyBasinRecord>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                floodHeap = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                visitedStamp = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
+                heightmap = AllocateTrackedTempJobArray<float>(PixelCount, HeightmapLabel, NativeArrayOptions.UninitializedMemory);
+                basinMask = AllocateTrackedTempJobArray<byte>(PixelCount, BasinMaskLabel, NativeArrayOptions.ClearMemory);
+                candidateMask = AllocateTrackedTempJobArray<byte>(PixelCount, CandidateMaskLabel, NativeArrayOptions.ClearMemory);
+                basinRecords = AllocateTrackedTempJobArray<AnomalyBasinRecord>(PixelCount, BasinRecordsLabel, NativeArrayOptions.ClearMemory);
+                floodHeap = AllocateTrackedTempJobArray<int>(PixelCount, FloodHeapLabel, NativeArrayOptions.UninitializedMemory);
+                visitedStamp = AllocateTrackedTempJobArray<int>(PixelCount, VisitedStampLabel, NativeArrayOptions.ClearMemory);
+                acceptedCells = AllocateTrackedTempJobArray<int>(PixelCount, AcceptedCellsLabel, NativeArrayOptions.UninitializedMemory);
 
                 FillPerfectBowl(heightmap);
                 var settings = new AnomalyBasinDetectionSettings
@@ -464,14 +458,13 @@ namespace Hecton8.Editor
             try
             {
                 // COLD ALLOC: NativeArray open-edge basin buffers[PixelCount] - deterministic editor anomaly validation - owner: AnomalyTestHarness
-                heightmap = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                basinMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                candidateMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                basinRecords = new NativeArray<AnomalyBasinRecord>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                floodHeap = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                visitedStamp = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
+                heightmap = AllocateTrackedTempJobArray<float>(PixelCount, HeightmapLabel, NativeArrayOptions.UninitializedMemory);
+                basinMask = AllocateTrackedTempJobArray<byte>(PixelCount, BasinMaskLabel, NativeArrayOptions.ClearMemory);
+                candidateMask = AllocateTrackedTempJobArray<byte>(PixelCount, CandidateMaskLabel, NativeArrayOptions.ClearMemory);
+                basinRecords = AllocateTrackedTempJobArray<AnomalyBasinRecord>(PixelCount, BasinRecordsLabel, NativeArrayOptions.ClearMemory);
+                floodHeap = AllocateTrackedTempJobArray<int>(PixelCount, FloodHeapLabel, NativeArrayOptions.UninitializedMemory);
+                visitedStamp = AllocateTrackedTempJobArray<int>(PixelCount, VisitedStampLabel, NativeArrayOptions.ClearMemory);
+                acceptedCells = AllocateTrackedTempJobArray<int>(PixelCount, AcceptedCellsLabel, NativeArrayOptions.UninitializedMemory);
 
                 FillOpenEdgeBowl(heightmap);
                 var settings = new AnomalyBasinDetectionSettings
@@ -532,26 +525,21 @@ namespace Hecton8.Editor
             try
             {
                 // COLD ALLOC: NativeArray anomaly slice buffers[PixelCount] - deterministic editor anomaly validation - owner: AnomalyTestHarness
-                heightmap = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                basinMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                candidateMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                basinRecords = new NativeArray<AnomalyBasinRecord>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                floodHeap = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                visitedStamp = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                heightmap = AllocateTrackedTempJobArray<float>(PixelCount, HeightmapLabel, NativeArrayOptions.UninitializedMemory);
+                basinMask = AllocateTrackedTempJobArray<byte>(PixelCount, BasinMaskLabel, NativeArrayOptions.ClearMemory);
+                candidateMask = AllocateTrackedTempJobArray<byte>(PixelCount, CandidateMaskLabel, NativeArrayOptions.ClearMemory);
+                basinRecords = AllocateTrackedTempJobArray<AnomalyBasinRecord>(PixelCount, BasinRecordsLabel, NativeArrayOptions.ClearMemory);
+                floodHeap = AllocateTrackedTempJobArray<int>(PixelCount, FloodHeapLabel, NativeArrayOptions.UninitializedMemory);
+                visitedStamp = AllocateTrackedTempJobArray<int>(PixelCount, VisitedStampLabel, NativeArrayOptions.ClearMemory);
+                acceptedCells = AllocateTrackedTempJobArray<int>(PixelCount, AcceptedCellsLabel, NativeArrayOptions.UninitializedMemory);
                 // COLD ALLOC: NativeArray<int>[2] - sliced flood-fill status slots - owner: AnomalyTestHarness
-                sliceStatus = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                sliceStatus = AllocateTrackedTempJobArray<int>(2, SliceStatusLabel, NativeArrayOptions.ClearMemory);
                 // COLD ALLOC: NativeArray<int>[2] - sliced flood-fill deferred-state budget/drop slots - owner: AnomalyTestHarness
-                deferredStateBudget = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                deferredStateBudget = AllocateTrackedTempJobArray<int>(2, DeferredStateBudgetLabel, NativeArrayOptions.ClearMemory);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - current sliced flood-fill state lane - owner: AnomalyTestHarness
-                pendingFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
+                pendingFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, PendingFloodStatesLabel);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - deferred sliced flood-fill state lane - owner: AnomalyTestHarness
-                deferredFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
-                RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
-                NativeMemorySentinel.RegisterNativeArray(sliceStatus, NativeMemoryOwner, SliceStatusLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(deferredStateBudget, NativeMemoryOwner, DeferredStateBudgetLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeQueue(pendingFloodStates, 1, NativeMemoryOwner, PendingFloodStatesLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeQueue(deferredFloodStates, 1, NativeMemoryOwner, DeferredFloodStatesLabel, NativeAllocationLifetime.TempJob);
+                deferredFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, DeferredFloodStatesLabel);
 
                 FillPerfectBowl(heightmap);
                 var settings = new AnomalyBasinDetectionSettings
@@ -659,26 +647,21 @@ namespace Hecton8.Editor
             try
             {
                 // COLD ALLOC: NativeArray anomaly stamp-overflow buffers[PixelCount] - deterministic editor anomaly validation - owner: AnomalyTestHarness
-                heightmap = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                basinMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                candidateMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                basinRecords = new NativeArray<AnomalyBasinRecord>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                floodHeap = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                visitedStamp = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                heightmap = AllocateTrackedTempJobArray<float>(PixelCount, HeightmapLabel, NativeArrayOptions.UninitializedMemory);
+                basinMask = AllocateTrackedTempJobArray<byte>(PixelCount, BasinMaskLabel, NativeArrayOptions.ClearMemory);
+                candidateMask = AllocateTrackedTempJobArray<byte>(PixelCount, CandidateMaskLabel, NativeArrayOptions.ClearMemory);
+                basinRecords = AllocateTrackedTempJobArray<AnomalyBasinRecord>(PixelCount, BasinRecordsLabel, NativeArrayOptions.ClearMemory);
+                floodHeap = AllocateTrackedTempJobArray<int>(PixelCount, FloodHeapLabel, NativeArrayOptions.UninitializedMemory);
+                visitedStamp = AllocateTrackedTempJobArray<int>(PixelCount, VisitedStampLabel, NativeArrayOptions.UninitializedMemory);
+                acceptedCells = AllocateTrackedTempJobArray<int>(PixelCount, AcceptedCellsLabel, NativeArrayOptions.UninitializedMemory);
                 // COLD ALLOC: NativeArray<int>[2] - stamp-overflow sliced flood-fill status slots - owner: AnomalyTestHarness
-                sliceStatus = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                sliceStatus = AllocateTrackedTempJobArray<int>(2, SliceStatusLabel, NativeArrayOptions.ClearMemory);
                 // COLD ALLOC: NativeArray<int>[2] - stamp-overflow deferred-state budget/drop slots - owner: AnomalyTestHarness
-                deferredStateBudget = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                deferredStateBudget = AllocateTrackedTempJobArray<int>(2, DeferredStateBudgetLabel, NativeArrayOptions.ClearMemory);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - stamp-overflow current state lane - owner: AnomalyTestHarness
-                pendingFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
+                pendingFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, PendingFloodStatesLabel);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - stamp-overflow deferred state lane - owner: AnomalyTestHarness
-                deferredFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
-                RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
-                NativeMemorySentinel.RegisterNativeArray(sliceStatus, NativeMemoryOwner, SliceStatusLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(deferredStateBudget, NativeMemoryOwner, DeferredStateBudgetLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeQueue(pendingFloodStates, 1, NativeMemoryOwner, PendingFloodStatesLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeQueue(deferredFloodStates, 1, NativeMemoryOwner, DeferredFloodStatesLabel, NativeAllocationLifetime.TempJob);
+                deferredFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, DeferredFloodStatesLabel);
 
                 FillPerfectBowl(heightmap);
                 candidateMask[seedIndex] = 1;
@@ -830,26 +813,21 @@ namespace Hecton8.Editor
             try
             {
                 // COLD ALLOC: NativeArray corrupt-state flood-fill buffers[PixelCount] - deterministic editor anomaly validation - owner: AnomalyTestHarness
-                heightmap = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                basinMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                candidateMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                basinRecords = new NativeArray<AnomalyBasinRecord>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                floodHeap = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                visitedStamp = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                heightmap = AllocateTrackedTempJobArray<float>(PixelCount, HeightmapLabel, NativeArrayOptions.UninitializedMemory);
+                basinMask = AllocateTrackedTempJobArray<byte>(PixelCount, BasinMaskLabel, NativeArrayOptions.ClearMemory);
+                candidateMask = AllocateTrackedTempJobArray<byte>(PixelCount, CandidateMaskLabel, NativeArrayOptions.ClearMemory);
+                basinRecords = AllocateTrackedTempJobArray<AnomalyBasinRecord>(PixelCount, BasinRecordsLabel, NativeArrayOptions.ClearMemory);
+                floodHeap = AllocateTrackedTempJobArray<int>(PixelCount, FloodHeapLabel, NativeArrayOptions.UninitializedMemory);
+                visitedStamp = AllocateTrackedTempJobArray<int>(PixelCount, VisitedStampLabel, NativeArrayOptions.ClearMemory);
+                acceptedCells = AllocateTrackedTempJobArray<int>(PixelCount, AcceptedCellsLabel, NativeArrayOptions.UninitializedMemory);
                 // COLD ALLOC: NativeArray<int>[2] - corrupt-state sliced flood-fill status slots - owner: AnomalyTestHarness
-                sliceStatus = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                sliceStatus = AllocateTrackedTempJobArray<int>(2, SliceStatusLabel, NativeArrayOptions.ClearMemory);
                 // COLD ALLOC: NativeArray<int>[2] - corrupt-state deferred-state budget/drop slots - owner: AnomalyTestHarness
-                deferredStateBudget = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                deferredStateBudget = AllocateTrackedTempJobArray<int>(2, DeferredStateBudgetLabel, NativeArrayOptions.ClearMemory);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - corrupt-state current state lane - owner: AnomalyTestHarness
-                pendingFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
+                pendingFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, PendingFloodStatesLabel);
                 // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - corrupt-state deferred state lane - owner: AnomalyTestHarness
-                deferredFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
-                RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
-                NativeMemorySentinel.RegisterNativeArray(sliceStatus, NativeMemoryOwner, SliceStatusLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(deferredStateBudget, NativeMemoryOwner, DeferredStateBudgetLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeQueue(pendingFloodStates, 1, NativeMemoryOwner, PendingFloodStatesLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeQueue(deferredFloodStates, 1, NativeMemoryOwner, DeferredFloodStatesLabel, NativeAllocationLifetime.TempJob);
+                deferredFloodStates = AllocateTrackedTempJobQueue<AnomalyBasinFloodFillState>(1, DeferredFloodStatesLabel);
 
                 pendingFloodStates.Enqueue(new AnomalyBasinFloodFillState
                 {
@@ -926,10 +904,8 @@ namespace Hecton8.Editor
             try
             {
                 // COLD ALLOC: NativeArray cliff SDF buffers[CliffVoxelCount] - deterministic editor anomaly validation - owner: AnomalyTestHarness
-                inputSdf = new NativeArray<float>(CliffVoxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                outputSdf = new NativeArray<float>(CliffVoxelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(inputSdf, NativeMemoryOwner, CliffInputSdfLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(outputSdf, NativeMemoryOwner, CliffOutputSdfLabel, NativeAllocationLifetime.TempJob);
+                inputSdf = AllocateTrackedTempJobArray<float>(CliffVoxelCount, CliffInputSdfLabel, NativeArrayOptions.UninitializedMemory);
+                outputSdf = AllocateTrackedTempJobArray<float>(CliffVoxelCount, CliffOutputSdfLabel, NativeArrayOptions.ClearMemory);
 
                 FillVerticalCliffSdf(inputSdf);
                 JobHandle handle = HectonAnomalyEngine.ApplyVoxelCliffOverhangNoise(
@@ -996,12 +972,9 @@ namespace Hecton8.Editor
             try
             {
                 // COLD ALLOC: NativeArray feature buffers[FeaturePixelCount] - deterministic editor anomaly feature validation - owner: AnomalyTestHarness
-                heightmap = new NativeArray<float>(FeaturePixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                featureRecords = new NativeArray<AnomalyFeatureRecord>(FeaturePixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                fissureMask = new NativeArray<byte>(FeaturePixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(heightmap, NativeMemoryOwner, FeatureHeightmapLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(featureRecords, NativeMemoryOwner, FeatureRecordsLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(fissureMask, NativeMemoryOwner, FeatureFissureMaskLabel, NativeAllocationLifetime.TempJob);
+                heightmap = AllocateTrackedTempJobArray<float>(FeaturePixelCount, FeatureHeightmapLabel, NativeArrayOptions.ClearMemory);
+                featureRecords = AllocateTrackedTempJobArray<AnomalyFeatureRecord>(FeaturePixelCount, FeatureRecordsLabel, NativeArrayOptions.ClearMemory);
+                fissureMask = AllocateTrackedTempJobArray<byte>(FeaturePixelCount, FeatureFissureMaskLabel, NativeArrayOptions.ClearMemory);
 
                 int pillarIndex = FeaturePillarX + FeaturePillarZ * FeatureResolution;
                 int fissureIndex = FeatureFissureX + FeatureFissureZ * FeatureResolution;
@@ -1063,10 +1036,8 @@ namespace Hecton8.Editor
             try
             {
                 // COLD ALLOC: NativeArray seam buffers[SeamVoxelCount] - deterministic editor SDF seam validation - owner: AnomalyTestHarness
-                terrainHeights = new NativeArray<float>(SeamTerrainCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                sdf = new NativeArray<float>(SeamVoxelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(terrainHeights, NativeMemoryOwner, SeamTerrainHeightsLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(sdf, NativeMemoryOwner, SeamSdfLabel, NativeAllocationLifetime.TempJob);
+                terrainHeights = AllocateTrackedTempJobArray<float>(SeamTerrainCount, SeamTerrainHeightsLabel, NativeArrayOptions.UninitializedMemory);
+                sdf = AllocateTrackedTempJobArray<float>(SeamVoxelCount, SeamSdfLabel, NativeArrayOptions.ClearMemory);
 
                 for (int i = 0; i < terrainHeights.Length; i++)
                     terrainHeights[i] = 2f;
@@ -1116,12 +1087,9 @@ namespace Hecton8.Editor
             try
             {
                 // COLD ALLOC: NativeArray SDF injection buffers[SdfInjectionVoxelCount] - deterministic editor SDF anomaly validation - owner: AnomalyTestHarness
-                pillarSdf = new NativeArray<float>(SdfInjectionVoxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                fissureSdf = new NativeArray<float>(SdfInjectionVoxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                fissureInfluence = new NativeArray<uint>(SdfInjectionVoxelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(pillarSdf, NativeMemoryOwner, PillarSdfLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(fissureSdf, NativeMemoryOwner, FissureSdfLabel, NativeAllocationLifetime.TempJob);
-                NativeMemorySentinel.RegisterNativeArray(fissureInfluence, NativeMemoryOwner, FissureInfluenceLabel, NativeAllocationLifetime.TempJob);
+                pillarSdf = AllocateTrackedTempJobArray<float>(SdfInjectionVoxelCount, PillarSdfLabel, NativeArrayOptions.UninitializedMemory);
+                fissureSdf = AllocateTrackedTempJobArray<float>(SdfInjectionVoxelCount, FissureSdfLabel, NativeArrayOptions.UninitializedMemory);
+                fissureInfluence = AllocateTrackedTempJobArray<uint>(SdfInjectionVoxelCount, FissureInfluenceLabel, NativeArrayOptions.ClearMemory);
 
                 for (int i = 0; i < SdfInjectionVoxelCount; i++)
                 {
@@ -1271,22 +1239,26 @@ namespace Hecton8.Editor
             return count;
         }
 
-        private static void RegisterTempJobBuffers(
-            NativeArray<float> heightmap,
-            NativeArray<byte> basinMask,
-            NativeArray<byte> candidateMask,
-            NativeArray<AnomalyBasinRecord> basinRecords,
-            NativeArray<int> floodHeap,
-            NativeArray<int> visitedStamp,
-            NativeArray<int> acceptedCells)
+        private static NativeArray<T> AllocateTrackedTempJobArray<T>(int length, string label, NativeArrayOptions options)
+            where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(heightmap, NativeMemoryOwner, HeightmapLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(basinMask, NativeMemoryOwner, BasinMaskLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(candidateMask, NativeMemoryOwner, CandidateMaskLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(basinRecords, NativeMemoryOwner, BasinRecordsLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(floodHeap, NativeMemoryOwner, FloodHeapLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(visitedStamp, NativeMemoryOwner, VisitedStampLabel, NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(acceptedCells, NativeMemoryOwner, AcceptedCellsLabel, NativeAllocationLifetime.TempJob);
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId > 0)
+                    return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+
+            array.Dispose();
+            throw new System.InvalidOperationException($"[AnomalyTestHarness] NativeMemorySentinel rejected NativeArray registration for {label}.");
         }
 
         private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
@@ -1294,9 +1266,15 @@ namespace Hecton8.Editor
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+            finally
+            {
+                array.Dispose();
+                array = default;
+            }
         }
 
         private static void DisposeTrackedQueue<T>(ref NativeQueue<T> queue, string label) where T : unmanaged
@@ -1304,9 +1282,37 @@ namespace Hecton8.Editor
             if (!queue.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, label);
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, label);
+            }
+            finally
+            {
+                queue.Dispose();
+                queue = default;
+            }
+        }
+
+        private static NativeQueue<T> AllocateTrackedTempJobQueue<T>(int capacity, string label)
+            where T : unmanaged
+        {
+            NativeQueue<T> queue = new NativeQueue<T>(Allocator.TempJob);
+            try
+            {
+                int sentinelId = NativeMemorySentinel.RegisterNativeQueue(queue, capacity, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                if (sentinelId > 0)
+                    return queue;
+            }
+            catch
+            {
+                if (queue.IsCreated)
+                    queue.Dispose();
+
+                throw;
+            }
+
             queue.Dispose();
-            queue = default;
+            throw new System.InvalidOperationException($"[AnomalyTestHarness] NativeMemorySentinel rejected NativeQueue registration for {label}.");
         }
     }
 }

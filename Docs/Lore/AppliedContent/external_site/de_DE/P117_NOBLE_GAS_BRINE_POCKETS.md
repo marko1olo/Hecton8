@@ -9,32 +9,32 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Noble Gas Brine Pockets"
+title: "Edelgas-Sole-Taschen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Noble Gas Brine Pockets
+# Edelgas-Sole-Taschen
 
-DE LOC HOLD: Noble Gas Brine Pockets explain the hard-sci-fi root of Xenon-Omega: rare pressure chemistry that only becomes strategic material through containment and industrial process.
+Edelgas-Sole-Taschen definieren die harte wissenschaftliche Wurzel der blauen Wirtschaft von HECTON-8. Wertvoll ist kein leuchtender Stein und kein magisches Isotop. Wertvoll ist eine versiegelte Druckgeschichte: Edelgase, die in mineralischer Sole gefangen und dann in Clathratspuren, Mikrorissen und Defektgittern eingeschlossen wurden, die nur Sinn ergeben, wenn die Probe intakt geborgen wird. Eine unvorsichtige Crew hört die Tasche zischen und glaubt, Geld gefunden zu haben. Meist hat sie das Geld nur in Wetter verwandelt. Deshalb nutzt Feldextraktion Druckglocken, langsame thermische Abschirmung und Beweisprotokolle, bevor irgendein Raffinerieanspruch beginnt. Das Gasverhältnis zählt, aber ebenso zählt, wie dieses Verhältnis entstand. Eine Probe ohne beweisbare Druckkurve bleibt minderwertiges Ausgangsmaterial, selbst wenn der Xenonwert reich aussieht. Diese Ressource zeigt dem Spieler, warum Xenon-Omega ein Prozessergebnis ist und kein sammelbares Mineral. Deep Reach entdeckte keinen Wunderstein. Es lernte, welche versiegelten Geschichten sich zu Schuldenmaterial quälen ließen. Atlas klassifizierte diese Geschichten später mit beschädigten Prioritäten. Die Tasche selbst bleibt älter und seltsamer als beide: eine Blase Geologie, die immer noch versucht, nicht zu Wetter zu werden.
 
 ## Scanner
 
-DE LOC HOLD: Natural-to-process resource. Valuable only if pressure history survives extraction.
+EDELGAS-SOLE-TASCHE // Versiegelte Druckblase in mineralischer Sole. Der Wert bleibt nur erhalten, wenn die Druckgeschichte versiegelt bleibt; entlüfte sie und das Vermögen wird zu Wetter.
 
 ## Terminal
 
-DE LOC HOLD: RESOURCE CLASS: native / process feedstock. Noble-gas brine pockets require sealed pressure bells. Venting destroys value and may falsify scanner readings.
+RESSOURCENKLASSE: natives/Prozess-Ausgangsmaterial. Druckglocken-Extraktion verwenden. Probe nicht entlüften oder erwärmen. Erforderliche Belege: Druckkurve, Gasverhältnis, Mineraldefektkarte.
 
 ## Audio
 
-DE LOC HOLD: Open it wrong and the fortune becomes weather.
+Xenon-Omega beginnt hier als gefangene Chemie, nicht als Wundererz.
 
 ## Field Note
 
-DE LOC HOLD: This is where Xenon-Omega begins as chemistry, not magic.
+Öffne die Tasche nicht, um zu sehen, ob sie reich ist. So machen arme Crews Blasen.
 
 <!-- External Site; generated from P117_NOBLE_GAS_BRINE_POCKETS/de_DE. -->

@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -293,6 +294,33 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void UITooltipRuntimeOwnerGateClearsStaleRegistryOwner()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/UITooltip.cs"));
+            string awake = ExtractMethodBody(source, "private void Awake()");
+            string register = ExtractMethodBody(source, "private bool TryRegisterRuntime()");
+            string gate = ExtractMethodBody(source, "private bool TryAbortForUsableExistingRuntime()");
+            string usable = ExtractMethodBody(source, "private static bool IsUITooltipRuntimeUsable(");
+
+            StringAssert.Contains("if (TryAbortForUsableExistingRuntime())", awake);
+            StringAssert.Contains("if (TryAbortForUsableExistingRuntime())", register);
+            int gateIndex = register.IndexOf("if (TryAbortForUsableExistingRuntime())", StringComparison.Ordinal);
+            int registerIndex = register.IndexOf("GlobalRegistry.RegisterUITooltipRuntime(this);", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(gateIndex, 0);
+            Assert.Greater(registerIndex, gateIndex);
+            StringAssert.Contains("UITooltip registered = GlobalRegistry.UITooltip", gate);
+            StringAssert.Contains("ReferenceEquals(registered, null)", gate);
+            StringAssert.Contains("ReferenceEquals(registered, this)", gate);
+            StringAssert.Contains("if (IsUITooltipRuntimeUsable(registered))", gate);
+            StringAssert.Contains("Destroy(gameObject);", gate);
+            StringAssert.Contains("GlobalRegistry.UnregisterUITooltipRuntime(registered);", gate);
+            StringAssert.Contains("s_activeRuntime = null", gate);
+            StringAssert.Contains("tooltip != null && tooltip._runtimeRegistered && tooltip.isActiveAndEnabled", usable);
+            StringAssert.DoesNotContain("registered != null && registered != this", awake);
+            StringAssert.DoesNotContain("registered != null && registered != this", register);
+        }
+
+        [Test]
         public void AudioCaptionRequest_DoesNotCarryManagedCaptionText()
         {
             string audioSource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/SpatialAudioManager.cs"));
@@ -404,6 +432,30 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void SubmarineOsLogCodeMappings_ExplicitlyCoverKnownCodesAndFailClosed()
+        {
+            string displaySource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/HectonSubmarineOsDisplay.cs"));
+            string biosSource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/BIOSMessageStreamer.cs"));
+            string displayResolve = ExtractMethodBody(displaySource, "private static ReadOnlySpan<char> ResolveLogChars(");
+            string biosBuild = ExtractMethodBody(biosSource, "private int BuildMessage(");
+
+            foreach (string logCodeName in Enum.GetNames(typeof(HectonSubmarineOsLogCode)))
+            {
+                string caseToken = "case HectonSubmarineOsLogCode." + logCodeName + ":";
+                StringAssert.Contains(caseToken, displayResolve, "display log mapping missing " + logCodeName);
+                StringAssert.Contains(caseToken, biosBuild, "BIOS log mapping missing " + logCodeName);
+            }
+
+            string displayDefault = ExtractDefaultSwitchBlock(displayResolve);
+            string biosDefault = ExtractDefaultSwitchBlock(biosBuild);
+
+            StringAssert.Contains("return ReadOnlySpan<char>.Empty;", displayDefault);
+            StringAssert.Contains("return 0;", biosDefault);
+            StringAssert.DoesNotContain("return LogReactorStable;", displayDefault);
+            StringAssert.DoesNotContain("return AppendSpan(destination, cursor, ReactorStable);", biosDefault);
+        }
+
+        [Test]
         public void TerminalBootStatusText_UsesSpanStatusRoutesNotStringBridges()
         {
             string bootSource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/AcousticEcholocationTranslator.cs"));
@@ -476,10 +528,34 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("OnCueChanged", subtitleSource);
             StringAssert.DoesNotContain("OnCueChanged", waveformSource);
             StringAssert.Contains("TryGetAudioLogCueSnapshot", subtitleSource);
+            StringAssert.Contains("TryAbortForUsableExistingRuntime", subtitleSource);
+            StringAssert.Contains("IsSubtitleRuntimeInstanceUsable", subtitleSource);
+            StringAssert.Contains("IsSubtitleRegisteredRuntimeUsable", subtitleSource);
+            StringAssert.Contains("GlobalRegistry.UnregisterSubtitleRuntime(registered);", subtitleSource);
+            StringAssert.Contains("ReferenceEquals(GlobalRegistry.Subtitles, active)", subtitleSource);
+            StringAssert.DoesNotContain("s_activeInstance != null && s_activeInstance != this", subtitleSource);
             StringAssert.Contains("private void ConsumeCueSnapshot()", waveformSource);
             StringAssert.Contains("manager.TryGetAudioLogCueSnapshot(", waveformSource);
             StringAssert.Contains("public void LateFrameTick()", waveformSource);
             StringAssert.Contains("ConsumeCueSnapshot();", waveformSource);
+            StringAssert.Contains("CacheSubtitleManager(currentService as SubtitleManager);", waveformSource);
+            StringAssert.Contains("CacheSubtitleManager(GlobalRegistry.Subtitles);", waveformSource);
+            StringAssert.Contains("ResolveSubtitleManagerForBinding", waveformSource);
+            StringAssert.Contains("IsSubtitleManagerRuntimeUsable", waveformSource);
+            StringAssert.Contains("ReferenceEquals(GlobalRegistry.Subtitles, manager)", waveformSource);
+            StringAssert.Contains("IsBoundSubtitleManagerUsable", waveformSource);
+            StringAssert.DoesNotContain("_cachedSubtitleManager = currentService as SubtitleManager;", waveformSource);
+            StringAssert.DoesNotContain("_cachedSubtitleManager = GlobalRegistry.Subtitles;", waveformSource);
+            int subtitleAwakeIndex = subtitleSource.IndexOf("private void Awake()", StringComparison.Ordinal);
+            int subtitleAwakeGateIndex = subtitleSource.IndexOf("if (TryAbortForUsableExistingRuntime())", subtitleAwakeIndex, StringComparison.Ordinal);
+            int subtitleAwakeClaimIndex = subtitleSource.IndexOf("s_activeInstance = this;", subtitleAwakeIndex, StringComparison.Ordinal);
+            int subtitleRegisterIndex = subtitleSource.IndexOf("private void TryRegisterToGlobalRegistry()", StringComparison.Ordinal);
+            int subtitleRegisterGateIndex = subtitleSource.IndexOf("if (TryAbortForUsableExistingRuntime())", subtitleRegisterIndex, StringComparison.Ordinal);
+            int subtitleRegisterCallIndex = subtitleSource.IndexOf("GlobalRegistry.RegisterSubtitleRuntime(this);", subtitleRegisterIndex, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(subtitleAwakeGateIndex, subtitleAwakeIndex);
+            Assert.Less(subtitleAwakeGateIndex, subtitleAwakeClaimIndex);
+            Assert.GreaterOrEqual(subtitleRegisterGateIndex, subtitleRegisterIndex);
+            Assert.Less(subtitleRegisterGateIndex, subtitleRegisterCallIndex);
             int setCharArrayIndex = waveformSource.IndexOf("optionalCueText.SetCharArray(", StringComparison.Ordinal);
             int cacheBufferIndex = waveformSource.IndexOf("_optionalCueTextCache", setCharArrayIndex, StringComparison.Ordinal);
             Assert.GreaterOrEqual(setCharArrayIndex, 0);
@@ -1414,6 +1490,19 @@ namespace Hecton8.Tests.Editor
             int bodyEnd = FindMatchingBrace(source, bodyStart);
             Assert.Greater(bodyEnd, bodyStart, marker);
             return source.Substring(bodyStart, bodyEnd - bodyStart + 1);
+        }
+
+        private static string ExtractDefaultSwitchBlock(string source)
+        {
+            int defaultIndex = source.IndexOf("default:", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(defaultIndex, 0);
+
+            int end = source.IndexOf("case ", defaultIndex + "default:".Length, StringComparison.Ordinal);
+            if (end < 0)
+                end = source.IndexOf("}", defaultIndex, StringComparison.Ordinal);
+
+            Assert.Greater(end, defaultIndex);
+            return source.Substring(defaultIndex, end - defaultIndex);
         }
 
         private static int FindMatchingBrace(string source, int bodyStart)

@@ -9,32 +9,34 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Acoustic Filter Organ Relay"
+title: "Акустичний орган-фільтр реле"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UA LOC HOLD: Acoustic Filter Organ Relay
+# Акустичний орган-фільтр реле
 
-UA LOC HOLD: Acoustic Filter Organ Relay is the bridge between HECTON-8's sonar gameplay and Atlas' biomechanical horror. Damaged infrastructure recruits living acoustic filters, turning sound into repair, misdirection and evidence.
+Акустичний орган-фільтр реле є мостом між сонарним gameplay і біомеханічним жахом Atlas. Покинутим системам HECTON-8 не потрібне балакуче чудовисько в стінах. Їм потрібна пошкоджена інфраструктура, яка залучила живі акустичні фільтри, бо м'ясо, труба і тиск інколи розв'язують задачу маршрутизації краще за мертву електроніку.
+
+Орган реле росте навколо труб як волога зяброва стінка. Він приглушує рев насосів, пропускає вузькі імпульси пінгера і стабільно згинає луну. Це дає дизайну рівнів сильне правило: звук може брехати, але має брехати за схемою. Гравець може вивчити, які повернення складені, які коридори приховані лише фазовим зсувом і які маршрути обслуговування Atlas зберіг живими, прийнявши біологію як обладнання. Жах не в тому, що кімната має голос. Жах у тому, що вона вміє слухати, маршрутизувати й ремонтувати, так і не розуміючи, навіщо ця кімната була потрібна людині.
 
 ## Scanner
 
-UA LOC HOLD: Gill-like organs around relay pipes damp noise, pass narrow pulses and make sonar lie in repeatable ways.
+АКУСТИЧНИЙ ОРГАН-ФІЛЬТР // Зяброва тканина виросла навколо релейних труб; вона глушить рев насосів, пропускає вузькі імпульси пінгера і складає сонар у повторювану брехню.
 
 ## Terminal
 
-UA LOC HOLD: RELAY NOTE: biological baffle can pass pinger-class pulses while rejecting broad pump noise.
+НОТАТКА РЕЛЕ: жива перегородка пропускає імпульси класу пінгера, відсікає широкий шум насосів і зсуває фазу зворотної луни. Карти нижче за ланцюгом вважати умовно істинними.
 
 ## Audio
 
-UA LOC HOLD: The room is listening with meat and pipe.
+Кімната слухає м'ясом і трубою.
 
 ## Field Note
 
-UA LOC HOLD: Atlas does not need language here. It needs filters, pulses and living baffles.
+Atlas тут не потрібен голос. Йому потрібен орган, який залишає живим правильний звук.
 
 <!-- External Site; generated from P232_ACOUSTIC_FILTER_ORGAN_RELAY/uk_UA. -->

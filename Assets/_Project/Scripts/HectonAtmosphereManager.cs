@@ -146,19 +146,7 @@ namespace Hecton8.Atmosphere
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingStates.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(AtmosphereEvents), nameof(_pendingStates));
-                _pendingStates.Dispose();
-                _pendingStates = default;
-            }
-
-            if (_nextFrameStates.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(AtmosphereEvents), nameof(_nextFrameStates));
-                _nextFrameStates.Dispose();
-                _nextFrameStates = default;
-            }
+            ReleaseNativeQueues();
 
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
@@ -298,29 +286,65 @@ namespace Hecton8.Atmosphere
 
         private static void EnsureInitialized()
         {
-            if (!_pendingStates.IsCreated)
+            try
             {
-                _pendingStates = new NativeQueue<EnvironmentState>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EnvironmentState>[8] - deferred atmosphere state lane flushed by SystemDispatcher - owner: AtmosphereEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingStates,
-                    ExpectedPendingStateEventCapacity,
-                    nameof(AtmosphereEvents),
-                    nameof(_pendingStates),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingStates, ExpectedPendingStateEventCapacity);
-            }
+                if (!_pendingStates.IsCreated)
+                {
+                    _pendingStates = new NativeQueue<EnvironmentState>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EnvironmentState>[8] - deferred atmosphere state lane flushed by SystemDispatcher - owner: AtmosphereEvents
+                    RegisterNativeQueue(ref _pendingStates, ExpectedPendingStateEventCapacity, nameof(_pendingStates));
+                    PrewarmQueue(ref _pendingStates, ExpectedPendingStateEventCapacity);
+                }
 
-            if (!_nextFrameStates.IsCreated)
-            {
-                _nextFrameStates = new NativeQueue<EnvironmentState>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EnvironmentState>[8] - next-frame atmosphere state lane prevents same-frame reentrant dispatch - owner: AtmosphereEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameStates,
-                    ExpectedPendingStateEventCapacity,
-                    nameof(AtmosphereEvents),
-                    nameof(_nextFrameStates),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameStates, ExpectedPendingStateEventCapacity);
+                if (!_nextFrameStates.IsCreated)
+                {
+                    _nextFrameStates = new NativeQueue<EnvironmentState>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EnvironmentState>[8] - next-frame atmosphere state lane prevents same-frame reentrant dispatch - owner: AtmosphereEvents
+                    RegisterNativeQueue(ref _nextFrameStates, ExpectedPendingStateEventCapacity, nameof(_nextFrameStates));
+                    PrewarmQueue(ref _nextFrameStates, ExpectedPendingStateEventCapacity);
+                }
             }
+            catch
+            {
+                ReleaseNativeQueues();
+                _pendingStateCount = 0;
+                _nextFrameStateCount = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeQueue<T>(
+            ref NativeQueue<T> queue,
+            int capacity,
+            string label)
+            where T : unmanaged
+        {
+            int sentinelId = NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                capacity,
+                nameof(AtmosphereEvents),
+                label,
+                NativeAllocationLifetime.Session);
+            if (sentinelId > 0)
+                return;
+
+            ReleaseNativeQueue(ref queue, label);
+            throw new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+        }
+
+        private static void ReleaseNativeQueues()
+        {
+            ReleaseNativeQueue(ref _pendingStates, nameof(_pendingStates));
+            ReleaseNativeQueue(ref _nextFrameStates, nameof(_nextFrameStates));
+        }
+
+        private static void ReleaseNativeQueue<T>(ref NativeQueue<T> queue, string label)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(AtmosphereEvents), label);
+            queue.Dispose();
+            queue = default;
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -1204,19 +1228,15 @@ namespace Hecton8.Atmosphere
                     }
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                    {
-                        _registeredToTickManager = false;
-                        _registeredLateFrameTick = false;
-                        break;
-                    }
-
+                    TryUnregister();
+                    TryUnregisterLateFrame();
                     if (isActiveAndEnabled)
                     {
-                        TryUnregister();
-                        TryUnregisterLateFrame();
-                        TryRegister();
-                        TryRegisterLateFrame();
+                        if (currentService != null)
+                        {
+                            TryRegister();
+                            TryRegisterLateFrame();
+                        }
                     }
                     break;
             }

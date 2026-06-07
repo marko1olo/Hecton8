@@ -7,6 +7,9 @@ poi_tags: poi.atlas_weighting_audit;poi.claim_continuity_priority
 biome_tags: biome.abyssal_machine_field;biome.atlas_basin
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Atlas Weighting Audit Proof"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

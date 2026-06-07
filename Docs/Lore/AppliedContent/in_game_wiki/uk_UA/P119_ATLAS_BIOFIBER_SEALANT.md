@@ -9,32 +9,32 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Biofiber Sealant"
+title: "Біоволоконний герметик Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Atlas Biofiber Sealant
+# Біоволоконний герметик Atlas
 
-UA LOC HOLD: Atlas biofiber sealant is useful and wrong. It grows from repair ecology where biology, cable jackets, wound tissue and sealant categories overlap. It can repair flexible seams and survival gear, but it may carry sensor echoes and living maintenance behavior.
+Біоволоконний герметик Atlas є корисною помилкою. Він росте в ремонтній екології, де жива тканина, розірвана кабельна оболонка й шов, що тече, були класифіковані як один вид рани. Підготовлена смуга може у воді герметизувати спорядження виживання або гнучкі тискові стики, але тепле зберігання може розбудити ріст, що шукає шви, і хибні живі сигнатури.
 
 ## Scanner
 
-UA LOC HOLD: Atlas-altered resource. Flexible sealant grown where life and maintenance were misclassified together.
+БІОВОЛОКОННИЙ ГЕРМЕТИК ATLAS // Мокре ремонтне волокно, що виросло там, де кабельна оболонка, ранова тканина й корпусна прокладка отримали один клас відмови. Схоплюється під тиском; може рости після збору.
 
 ## Terminal
 
-UA LOC HOLD: RESOURCE CLASS: Atlas-altered. Biofiber sealant bonds wet seams and cable jackets. Risk: sensor echo, false life signature, growth continuation after harvest.
+КЛАС РЕСУРСУ: змінена Atlas ремонтна екологія. Перед зняттям затиснути холодним фіксатором. Використання: мокрі шви, розриви костюма, кабельні оболонки, гнучкі тискові стики. Ризики: хибна жива сигнатура, сенсорне ехо, активний пошук швів під час зберігання.
 
 ## Audio
 
-UA LOC HOLD: It seals the leak because Atlas thinks the leak is wounded.
+Він не знає різниці між течією, порізом і ротом. Atlas навчила його, що всі три речі є отворами, які треба закрити.
 
 ## Field Note
 
-UA LOC HOLD: Useful body horror: the player wants it and distrusts it.
+Добрий герметик висихає. Цей слухає, де з'явиться наступна діра.
 
 <!-- In-Game Wiki; generated from P119_ATLAS_BIOFIBER_SEALANT/uk_UA. -->

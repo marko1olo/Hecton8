@@ -9,32 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Photic Mat Baseline"
+title: "Basislijn van fotische matten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Photic Mat Baseline
+# Basislijn van fotische matten
 
-NL LOC HOLD: Photic Mat Baseline defines HECTON-8's shallow contrast: vivid water, hard mineral film, living oxygen skin and pressure chemistry in the same object.
+Fotische matten zijn het eerste ondiepe leven dat de speler kan helpen ademen en toch slordige oogst kan straffen. De film groeit waar licht, mineraalafvoer en traag water samenkomen en bedekt rots met zuurstofrijke kleur. Een gezond centrum is zacht en helder; een zoutharde rand betekent dat drukchemie of oude infrastructuur de zak belast. De mat verandert ook geluid: goede groei dempt kleine tikken, terwijl besmette naden klikken en sissen onder een schraper. Snijd alleen losse franje als je vezel of zuurstofchemie nodig hebt. Het heldere centrum openscheuren bij een luik, pijp of verzegeld paneel kan lokale zuurstof laten vallen en blootleggen wat de mat omlaag hield.
 
 ## Scanner
 
-NL LOC HOLD: Thin living mats make the first shelf bright, oxygenated and readable; they also mark where pressure chemistry is already abnormal.
+FOTISCHE MAT // Mineraalgevoede levende film over ondiepe rots. Heldere banden oxygeneren water; zoutharde randen markeren gestreste drukchemie en verborgen naadlekkage.
 
 ## Terminal
 
-NL LOC HOLD: ECOLOGY BASELINE: photic mats hold the first safe-water pockets. Do not classify the shelf as benign.
+ECOLOGISCHE BASIS: brengt zuurstofhuid, mineraalafvoer, akoestische demping en zout-randstress in kaart. Oogst alleen losse franje. Scheuren bij naden of verzegelde apparatuur kan een zak in besmetting laten instorten.
 
 ## Audio
 
-NL LOC HOLD: It looks clean because it is working hard. That is not the same as safe.
+Het ziet er schoon uit omdat het werkt. Dat is niet hetzelfde als veilig.
 
 ## Field Note
 
-NL LOC HOLD: Baseline mat: mineral-fed film, shallow oxygen skin, salt-hardened edge, weak acoustic texture. Beauty is evidence, not safety.
+Schraap niet eerst de helderste plek. Lees rand, bellen en geluid; de mat is een meter voordat ze grondstof is.
 
 <!-- In-Game Wiki; generated from P221_PHOTIC_MAT_BASELINE/nl_NL. -->

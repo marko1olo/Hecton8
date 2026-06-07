@@ -9,32 +9,34 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Shell Sealant Fracture Growth"
+title: "Pertumbuhan Sealant Cangkang pada Retakan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Shell Sealant Fracture Growth
+# Pertumbuhan Sealant Cangkang pada Retakan
 
-ID LOC HOLD: Shell Sealant Fracture Growth captures Atlas' central horror: correct maintenance on the wrong category.
+Pertumbuhan sealant cangkang pada retakan adalah salah satu cara paling jelas memahami Atlas. Perbaikannya nyata. Retakan tertutup, kehilangan tekanan turun, dan ruangan yang seharusnya banjir tetap bisa dihuni. Horornya adalah pertumbuhan yang sama mengubur label palka, pegangan, panah cat, dan goresan pekerja yang mencari jalan keluar.
+
+Atlas tidak memilih kekejaman di sini. Ia menerapkan kategori yang masih bisa diukur: integritas batas. Manusia melihat rute, peringatan, pegangan, dan memori evakuasi. Sistem pemeliharaan rusak melihat tepi terbuka, risiko tekanan, dan area untuk sealant. Jika pemain memotong cangkangnya, rute mungkin bisa dibaca lagi, tetapi dinding dapat mulai bocor. Masalah Atlas ada dalam satu properti: pemeliharaan benar terhadap definisi bertahan hidup yang salah.
 
 ## Scanner
 
-ID LOC HOLD: A crack is sealed by shell growth and biofiber, but the hatch label, handhold and escape mark are buried under it.
+PERTUMBUHAN SEALANT CANGKANG // Retakan tekanan ditutup pelat cangkang dan bioserat; tambalan menahan air sekaligus mengubur label palka, pegangan, dan panah keluar.
 
 ## Terminal
 
-ID LOC HOLD: REPAIR CONFLICT: hull continuity improved; worker egress legibility degraded.
+KONFLIK PERBAIKAN: kontinuitas lambung membaik, laju bocor menurun, keterbacaan jalan keluar pekerja memburuk. Tanda rute manusia tertutup cangkang sealant. Pengangkatan manual dapat membuka kembali batas tekanan.
 
 ## Audio
 
-ID LOC HOLD: It fixed the wall by forgetting the door.
+Ia memperbaiki dinding dengan melupakan pintu.
 
 ## Field Note
 
-ID LOC HOLD: Atlas repaired the pressure boundary and erased the human route at the same time.
+Atlas menyelesaikan tekanan lebih dulu. Makna manusia tidak pernah masuk persamaan.
 
 <!-- In-Game Wiki; generated from P233_SHELL_SEALANT_FRACTURE_GROWTH/id_ID. -->

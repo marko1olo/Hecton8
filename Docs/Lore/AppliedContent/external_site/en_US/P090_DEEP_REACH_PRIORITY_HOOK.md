@@ -7,6 +7,9 @@ poi_tags: poi.priority_hook_clause;poi.deep_reach_old_certificate
 biome_tags: biome.drowned_admin;biome.carrier_link
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Deep Reach Priority Hook"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

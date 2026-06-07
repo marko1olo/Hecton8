@@ -7,6 +7,9 @@ poi_tags: poi.coordinate_capture_record;poi.deep_reach_receiver_stamp
 biome_tags: biome.ending;biome.deep_reach
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Corporate Coordinate Capture Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

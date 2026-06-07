@@ -7,6 +7,9 @@ poi_tags: poi.scanner_stage_card;poi.scan_percent_strip
 biome_tags: biome.scanner;biome.evidence
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "Scanner Stage Binding"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -7,6 +7,9 @@ poi_tags: poi.locker_prop_matrix;poi.tool_wear_strip
 biome_tags: biome.worker_locker;biome.industrial_shelf
 locale: en_US
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Locker Prop Variant Matrix"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

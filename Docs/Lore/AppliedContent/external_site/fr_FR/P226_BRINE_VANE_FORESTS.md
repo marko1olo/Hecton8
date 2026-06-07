@@ -9,32 +9,32 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Brine Vane Forests"
+title: "Forêts de vannes de saumure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Brine Vane Forests
+# Forêts de vannes de saumure
 
-FR LOC HOLD: Brine Vane Forests define HECTON-8's canyon ecology. These membrane-like growths mark density boundaries, route hazards and the chemical economy that makes the moon's deep ocean feel engineered by pressure.
+Les Forêts de vannes de saumure sont l'endroit où HECTON-8 cesse de laisser l'eau se comporter comme un espace vide. Dans le canyon, l'eau devient architecture : les couches de densité s'empilent en murs, le sonar plie autour de corniches invisibles, et une descente négligente peut placer une combinaison sous sa flottabilité prévue avant que le profondimètre devienne dramatique. Les vannes de saumure rendent cette mathématique visible. Ce ne sont pas des plantes terrestres ni un récif alien parlant. Ce sont des membranes sel-minéral qui poussent là où les gradients chimiques continuent de les nourrir, assez plates pour paraître botaniques et assez physiques pour qu'on leur fasse confiance. Une nappe vivante dit : ne traverse pas ici. Un bord déchiré dit : quelque chose a traversé récemment. Une pointe enroulée dit : la frontière faiblit. Une côte pâle dit : la membrane a rejeté de la matière, peut-être utile pour chimie de saumure, grit de mastic ou calibration de capteur de densité. Un bon design de canyon doit faire naviguer par ces signes plutôt que par des flèches : dériver le long d'un mur intact, trouver la bouche déchirée, voir le sonar se tordre, sentir le trim de la combinaison changer, et comprendre que l'océan ne bloque pas par rancune. Il obéit à la pression. Voilà pourquoi les forêts de vannes de saumure sont belles d'une manière plus froide que le plateau photique. Elles n'accueillent pas. Elles se lisent.
 
 ## Scanner
 
-FR LOC HOLD: Flat brine vanes grow along density boundaries and show where water becomes a wall.
+FORÊT DE VANNES DE SAUMURE // Des membranes sel-minéral poussent le long du cisaillement de densité. Elles montrent où l'eau s'épaissit en mur et où le sonar va plier.
 
 ## Terminal
 
-FR LOC HOLD: CANYON NOTE: follow torn vane edges for breathable pockets; avoid opaque layered water.
+BASE CANYON : les nappes intactes marquent des frontières de densité dures. Bords déchirés et pointes enroulées indiquent fenêtres de cisaillement, poches moins salées ou trafic récent. Éviter l'eau stratifiée opaque ; elle peut aveugler le sonar et tirer une combinaison sous sa flottabilité prévue.
 
 ## Audio
 
-FR LOC HOLD: The canyon has leaves because it has pressure gradients.
+Le canyon a des feuilles parce qu'il a des gradients de pression.
 
 ## Field Note
 
-FR LOC HOLD: Vane forests are not plants in the Earth sense. They are salt-mineral membranes feeding on chemical gradients.
+Ce ne sont pas des arbres. Ce sont des feuilles de pression : des membranes nourries par les gradients chimiques, déchirées seulement là où une route a récemment forcé le passage.
 
 <!-- External Site; generated from P226_BRINE_VANE_FORESTS/fr_FR. -->

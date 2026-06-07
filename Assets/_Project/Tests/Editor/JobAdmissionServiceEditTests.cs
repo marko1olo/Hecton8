@@ -359,6 +359,7 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("if (pagerFile || legacyFile)"));
             Assert.That(source, Does.Contain("bool requiresLayoutHash = pagerFile;"));
             Assert.That(source, Does.Contain("ParseTerrainStreamingPagerDump(path, bytes, span, headerBytes, requiresLayoutHash)"));
+            Assert.That(source, Does.Contain("layoutHash == TerrainStreamingPagerDumpLayoutHash && reserved == 0u"));
             Assert.That(source, Does.Contain("if (legacyFile &&"));
             Assert.That(source, Does.Contain("ReadU64(span, 0) == TerrainStreamingDumpMagic"));
             Assert.That(source, Does.Contain("span.Length % TerrainStreamingDumpEntrySizeBytes == 0"));
@@ -380,6 +381,168 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("ComputeXxHash64(bytes, headerBytes, payloadBytes)"));
             Assert.That(source, Does.Contain("ComputeXxHash64(bytes, WorldChunkResidencyDumpHeaderBytes, payloadBytes)"));
             Assert.That(source, Does.Contain("ComputeXxHash64(bytes, 0, span.Length)"));
+        }
+
+        [Test]
+        public void TelemetryDumpValidator_SourceDecodesGpuScatterDirectorBlackboxAsDedicatedLayout()
+        {
+            string validatorSource = File.ReadAllText(TelemetryDumpValidatorWindowPath());
+            string scatterSource = File.ReadAllText(GpuScatterDirectorPath());
+
+            Assert.That(scatterSource, Does.Contain("private const uint ScatterTelemetryDumpMagic = 0x47505344u;"));
+            Assert.That(scatterSource, Does.Contain("private const uint ScatterTelemetryDumpVersion = 1u;"));
+            Assert.That(scatterSource, Does.Contain("private const int ScatterTelemetryDumpHeaderBytes = 32;"));
+            Assert.That(scatterSource, Does.Contain("private const string ScatterTelemetryDumpPath = \"Docs/AgentLogs/Dump_GPU_SCATTER_DIRECTOR.bin\";"));
+            Assert.That(scatterSource, Does.Contain("[StructLayout(LayoutKind.Explicit, Size = 64)]"));
+            Assert.That(scatterSource, Does.Contain("private struct ScatterTelemetryEntry"));
+            Assert.That(scatterSource, Does.Contain("WriteUInt32LittleEndian(target, 0, ScatterTelemetryDumpMagic);"));
+            Assert.That(scatterSource, Does.Contain("WriteInt32LittleEndian(target, 12, count);"));
+            Assert.That(scatterSource, Does.Contain("WriteInt32LittleEndian(target, 16, entrySize);"));
+            Assert.That(scatterSource, Does.Contain("WriteUInt32LittleEndian(target, 20, ScatterTelemetryHashSeed);"));
+            Assert.That(scatterSource, Does.Contain("WriteUInt32LittleEndian(target, 24, ScatterTelemetryInvalidStateFlag);"));
+
+            Assert.That(validatorSource, Does.Contain("private const uint GpuScatterDumpMagic = 0x47505344u;"));
+            Assert.That(validatorSource, Does.Contain("private const int GpuScatterDumpHeaderBytes = 32;"));
+            Assert.That(validatorSource, Does.Contain("private const int GpuScatterDumpEntrySizeBytes = 64;"));
+            Assert.That(validatorSource, Does.Contain("private const string GpuScatterDumpFileName = \"Dump_GPU_SCATTER_DIRECTOR.bin\";"));
+            Assert.That(validatorSource, Does.Contain("if (TryParseGpuScatterDump(path, bytes, span))"));
+            Assert.That(validatorSource, Does.Contain("private bool TryParseGpuScatterDump(string path, byte[] bytes, ReadOnlySpan<byte> span)"));
+            Assert.That(validatorSource, Does.Contain("ReadU32(span, 0) != GpuScatterDumpMagic"));
+            Assert.That(validatorSource, Does.Contain("hashSeed == GpuScatterTelemetryHashSeed"));
+            Assert.That(validatorSource, Does.Contain("invalidStateFlag == GpuScatterInvalidStateFlag"));
+            Assert.That(validatorSource, Does.Contain("reserved == 0u"));
+            Assert.That(validatorSource, Does.Contain("layout=gpu-scatter-director-blackbox"));
+            Assert.That(validatorSource, Does.Contain("BuildInvalidGpuScatterHeaderSummary("));
+            Assert.That(validatorSource, Does.Contain("BuildGpuScatterEntryLine("));
+            Assert.That(validatorSource, Does.Contain("ResolveGpuScatterFlagsLabel(flags)"));
+            Assert.That(validatorSource, Does.Contain("\"missing-dependency\""));
+            Assert.That(validatorSource, Does.Contain("\"invalid-state\""));
+            Assert.That(validatorSource, Does.Contain("\"origin-shift\""));
+            Assert.That(validatorSource, Does.Contain("ComputeGpuScatterStateHash("));
+            Assert.That(validatorSource, Does.Contain("hashOk="));
+            Assert.That(validatorSource, Does.Contain("ComputeXxHash64(bytes, GpuScatterDumpHeaderBytes, payloadBytes)"));
+        }
+
+        [Test]
+        public void TelemetryDumpValidator_SourceDecodesGpuScatterLodManagerBlackboxAsDedicatedLayout()
+        {
+            string validatorSource = File.ReadAllText(TelemetryDumpValidatorWindowPath());
+            string lodSource = File.ReadAllText(GpuScatterLodManagerPath());
+
+            Assert.That(lodSource, Does.Contain("private const uint BlackBoxMagic = 0x47534C4Du;"));
+            Assert.That(lodSource, Does.Contain("private const uint BlackBoxVersion = 2u;"));
+            Assert.That(lodSource, Does.Contain("private const int BlackBoxHeaderBytes = 20;"));
+            Assert.That(lodSource, Does.Contain("private const int ScatterBlackBoxEntryStrideBytes = 64;"));
+            Assert.That(lodSource, Does.Contain("const string path = \"Docs/AgentLogs/Dump_GPU_SCATTER_LOD_MANAGER.bin\";"));
+            Assert.That(lodSource, Does.Contain("[StructLayout(LayoutKind.Explicit, Size = ScatterBlackBoxEntryStrideBytes)]"));
+            Assert.That(lodSource, Does.Contain("private struct ScatterBlackBoxEntry"));
+            Assert.That(lodSource, Does.Contain("WriteUInt32LittleEndian(destination, 0, BlackBoxMagic);"));
+            Assert.That(lodSource, Does.Contain("WriteUInt32LittleEndian(destination, 8, reason);"));
+            Assert.That(lodSource, Does.Contain("WriteInt32LittleEndian(destination, 12, blackBoxLength);"));
+            Assert.That(lodSource, Does.Contain("WriteInt32LittleEndian(destination, 16, _blackBoxCursor);"));
+
+            Assert.That(validatorSource, Does.Contain("private const uint GpuScatterLodDumpMagic = 0x47534C4Du;"));
+            Assert.That(validatorSource, Does.Contain("private const uint GpuScatterLodDumpVersion = 2u;"));
+            Assert.That(validatorSource, Does.Contain("private const int GpuScatterLodDumpHeaderBytes = 20;"));
+            Assert.That(validatorSource, Does.Contain("private const int GpuScatterLodDumpEntrySizeBytes = 64;"));
+            Assert.That(validatorSource, Does.Contain("private const string GpuScatterLodDumpFileName = \"Dump_GPU_SCATTER_LOD_MANAGER.bin\";"));
+            Assert.That(validatorSource, Does.Contain("if (TryParseGpuScatterLodDump(path, bytes, span))"));
+            Assert.That(validatorSource, Does.Contain("private bool TryParseGpuScatterLodDump(string path, byte[] bytes, ReadOnlySpan<byte> span)"));
+            Assert.That(validatorSource, Does.Contain("ReadU32(span, 0) != GpuScatterLodDumpMagic"));
+            Assert.That(validatorSource, Does.Contain("layout=gpu-scatter-lod-blackbox"));
+            Assert.That(validatorSource, Does.Contain("BuildInvalidGpuScatterLodHeaderSummary("));
+            Assert.That(validatorSource, Does.Contain("BuildGpuScatterLodEntryLine("));
+            Assert.That(validatorSource, Does.Contain("ResolveGpuScatterLodReasonLabel(reason)"));
+            Assert.That(validatorSource, Does.Contain("ResolveGpuScatterLodFlagsLabel(flags)"));
+            Assert.That(validatorSource, Does.Contain("\"nonfinite-matrix\""));
+            Assert.That(validatorSource, Does.Contain("\"nonfinite-metadata\""));
+            Assert.That(validatorSource, Does.Contain("\"nonfinite-auxiliary-lane\""));
+            Assert.That(validatorSource, Does.Contain("\"nonfinite-aup\""));
+            Assert.That(validatorSource, Does.Contain("\"abi-layout\""));
+            Assert.That(validatorSource, Does.Contain("\"invalid-material-variant\""));
+            Assert.That(validatorSource, Does.Contain("ComputeXxHash64(bytes, GpuScatterLodDumpHeaderBytes, payloadBytes)"));
+        }
+
+        [Test]
+        public void TelemetryDumpValidator_SourceDecodesVegetationMemoryBlackboxAsDedicatedLayout()
+        {
+            string validatorSource = File.ReadAllText(TelemetryDumpValidatorWindowPath());
+            string runtimeSource = File.ReadAllText(VegetationMemorySovereigntyRuntimePath());
+            string contractsSource = File.ReadAllText(VegetationMemorySovereigntyContractsPath());
+
+            Assert.That(contractsSource, Does.Contain("public const ulong DumpMagic = 0x313331365F564547UL;"));
+            Assert.That(contractsSource, Does.Contain("public const int DumpVersion = 1;"));
+            Assert.That(contractsSource, Does.Contain("public const string DumpRelativePath = \"Docs/AgentLogs/Dump_1316_Vegetation.bin\";"));
+            Assert.That(contractsSource, Does.Contain("[StructLayout(LayoutKind.Explicit, Size = VegetationMemorySovereigntyConstants.TelemetryEntryStrideBytes)]"));
+            Assert.That(contractsSource, Does.Contain("[FieldOffset(0)] public ulong StateHash;"));
+            Assert.That(contractsSource, Does.Contain("[FieldOffset(40)] public ushort FailureCode;"));
+            Assert.That(contractsSource, Does.Contain("[FieldOffset(42)] public ushort Phase;"));
+            Assert.That(contractsSource, Does.Contain("[FieldOffset(44)] public uint Flags;"));
+            Assert.That(runtimeSource, Does.Contain("private const int VegetationMemoryDumpHeaderBytes = 24;"));
+            Assert.That(runtimeSource, Does.Contain("WriteUInt64LittleEndian(header, 0, VegetationMemorySovereigntyConstants.DumpMagic);"));
+            Assert.That(runtimeSource, Does.Contain("WriteInt32LittleEndian(header, 8, VegetationMemorySovereigntyConstants.DumpVersion);"));
+            Assert.That(runtimeSource, Does.Contain("WriteInt32LittleEndian(header, 12, VegetationMemorySovereigntyConstants.TelemetryFrameCount);"));
+            Assert.That(runtimeSource, Does.Contain("WriteInt32LittleEndian(header, 16, rowBytes);"));
+            Assert.That(runtimeSource, Does.Contain("WriteInt32LittleEndian(header, 20, cursorBuffer.Length > 0 ? cursorBuffer[0] : 0);"));
+            Assert.That(runtimeSource, Does.Contain("HashVegetationMemoryTelemetry(entry)"));
+            Assert.That(runtimeSource, Does.Contain("hash *= 1099511628211UL;"));
+
+            Assert.That(validatorSource, Does.Contain("private const ulong VegetationMemoryDumpMagic = 0x313331365F564547UL;"));
+            Assert.That(validatorSource, Does.Contain("private const int VegetationMemoryDumpHeaderBytes = 24;"));
+            Assert.That(validatorSource, Does.Contain("private const int VegetationMemoryDumpEntrySizeBytes = 64;"));
+            Assert.That(validatorSource, Does.Contain("private const string VegetationMemoryDumpFileName = \"Dump_1316_Vegetation.bin\";"));
+            Assert.That(validatorSource, Does.Contain("if (TryParseVegetationMemoryDump(path, bytes, span))"));
+            Assert.That(validatorSource, Does.Contain("private bool TryParseVegetationMemoryDump(string path, byte[] bytes, ReadOnlySpan<byte> span)"));
+            Assert.That(validatorSource, Does.Contain("ReadU64(span, 0) != VegetationMemoryDumpMagic"));
+            Assert.That(validatorSource, Does.Contain("layout=vegetation-memory-blackbox"));
+            Assert.That(validatorSource, Does.Contain("BuildInvalidVegetationMemoryHeaderSummary("));
+            Assert.That(validatorSource, Does.Contain("BuildVegetationMemoryEntryLine("));
+            Assert.That(validatorSource, Does.Contain("ResolveVegetationMemoryCodeLabel(failureCode)"));
+            Assert.That(validatorSource, Does.Contain("ResolveVegetationMemoryPhaseLabel(phase)"));
+            Assert.That(validatorSource, Does.Contain("ResolveVegetationMemoryFlagsLabel(flags)"));
+            Assert.That(validatorSource, Does.Contain("\"nan-detected\""));
+            Assert.That(validatorSource, Does.Contain("\"compaction-fence-active\""));
+            Assert.That(validatorSource, Does.Contain("\"write-lock-contention\""));
+            Assert.That(validatorSource, Does.Contain("ComputeVegetationMemoryStateHash("));
+            Assert.That(validatorSource, Does.Contain("hashOk="));
+            Assert.That(validatorSource, Does.Contain("ComputeXxHash64(bytes, VegetationMemoryDumpHeaderBytes, payloadBytes)"));
+        }
+
+        [Test]
+        public void TelemetryDumpValidator_SourceDecodesGlobalShaderDispatcherBlackboxAsDedicatedLayout()
+        {
+            string validatorSource = File.ReadAllText(TelemetryDumpValidatorWindowPath());
+            string dispatcherSource = File.ReadAllText(GlobalShaderDispatcherPath());
+
+            Assert.That(dispatcherSource, Does.Contain("private const uint TelemetryDumpMagic = 0x47534844u;"));
+            Assert.That(dispatcherSource, Does.Contain("private const uint TelemetryDumpVersion = 1u;"));
+            Assert.That(dispatcherSource, Does.Contain("private const int TelemetryDumpHeaderBytes = 32;"));
+            Assert.That(dispatcherSource, Does.Contain("private const int TelemetryDumpEntryBytes = 16;"));
+            Assert.That(dispatcherSource, Does.Contain("private const string TelemetryDumpPath = \"Docs/AgentLogs/Dump_GLOBAL_SHADER_DISPATCHER.bin\";"));
+            Assert.That(dispatcherSource, Does.Contain("WriteUInt32LittleEndian(target, 0, TelemetryDumpMagic);"));
+            Assert.That(dispatcherSource, Does.Contain("WriteUInt32LittleEndian(target, 8, reasonFlags);"));
+            Assert.That(dispatcherSource, Does.Contain("WriteInt32LittleEndian(target, 12, telemetryCursor);"));
+            Assert.That(dispatcherSource, Does.Contain("WriteInt32LittleEndian(target, 16, count);"));
+            Assert.That(dispatcherSource, Does.Contain("WriteInt32LittleEndian(target, 20, TelemetryDumpEntryBytes);"));
+            Assert.That(dispatcherSource, Does.Contain("WriteUInt32LittleEndian(target, 24, (uint)RequiredShaderGlobalSlots);"));
+            Assert.That(dispatcherSource, Does.Contain("float4 telemetryEntry = new float4(frame, dispatchMicroseconds, keywordCount, flags);"));
+
+            Assert.That(validatorSource, Does.Contain("private const uint GlobalShaderDispatcherDumpMagic = 0x47534844u;"));
+            Assert.That(validatorSource, Does.Contain("private const int GlobalShaderDispatcherDumpHeaderBytes = 32;"));
+            Assert.That(validatorSource, Does.Contain("private const int GlobalShaderDispatcherDumpEntrySizeBytes = 16;"));
+            Assert.That(validatorSource, Does.Contain("private const string GlobalShaderDispatcherDumpFileName = \"Dump_GLOBAL_SHADER_DISPATCHER.bin\";"));
+            Assert.That(validatorSource, Does.Contain("if (TryParseGlobalShaderDispatcherDump(path, bytes, span))"));
+            Assert.That(validatorSource, Does.Contain("private bool TryParseGlobalShaderDispatcherDump(string path, byte[] bytes, ReadOnlySpan<byte> span)"));
+            Assert.That(validatorSource, Does.Contain("ReadU32(span, 0) != GlobalShaderDispatcherDumpMagic"));
+            Assert.That(validatorSource, Does.Contain("layout=global-shader-dispatcher-blackbox"));
+            Assert.That(validatorSource, Does.Contain("BuildInvalidGlobalShaderDispatcherHeaderSummary("));
+            Assert.That(validatorSource, Does.Contain("BuildGlobalShaderDispatcherEntryLine("));
+            Assert.That(validatorSource, Does.Contain("ResolveGlobalShaderDispatcherReasonLabel(reasonFlags)"));
+            Assert.That(validatorSource, Does.Contain("\"layout-fault\""));
+            Assert.That(validatorSource, Does.Contain("\"dispatch-over-budget\""));
+            Assert.That(validatorSource, Does.Contain("\"vault-unavailable\""));
+            Assert.That(validatorSource, Does.Contain("FloatToUIntOrZero(flagsFloat)"));
+            Assert.That(validatorSource, Does.Contain("ComputeXxHash64(bytes, GlobalShaderDispatcherDumpHeaderBytes, payloadBytes)"));
         }
 
         private static float ResolveLane1BudgetAfterRefill(float globalQualityWeight01)
@@ -480,6 +643,57 @@ namespace Hecton8.Tests.Editor
                 "Scripts",
                 "World",
                 "WorldChunkResidencyManager.cs");
+        }
+
+        private static string GpuScatterDirectorPath()
+        {
+            return Path.Combine(
+                Application.dataPath,
+                "_Project",
+                "Scripts",
+                "World",
+                "GPUScatterDirector.cs");
+        }
+
+        private static string GpuScatterLodManagerPath()
+        {
+            return Path.Combine(
+                Application.dataPath,
+                "_Project",
+                "Scripts",
+                "Rendering",
+                "Scatter",
+                "GpuScatterLodManager.cs");
+        }
+
+        private static string VegetationMemorySovereigntyRuntimePath()
+        {
+            return Path.Combine(
+                Application.dataPath,
+                "_Project",
+                "Scripts",
+                "World",
+                "VegetationMemorySovereigntyRuntime.cs");
+        }
+
+        private static string VegetationMemorySovereigntyContractsPath()
+        {
+            return Path.Combine(
+                Application.dataPath,
+                "_Project",
+                "Scripts",
+                "World",
+                "VegetationMemorySovereigntyContracts.cs");
+        }
+
+        private static string GlobalShaderDispatcherPath()
+        {
+            return Path.Combine(
+                Application.dataPath,
+                "_Project",
+                "Scripts",
+                "Rendering",
+                "GlobalShaderDispatcher.cs");
         }
 
         private static string PredatorCognitionDomainSteeringPath()

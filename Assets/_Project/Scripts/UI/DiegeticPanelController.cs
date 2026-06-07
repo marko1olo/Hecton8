@@ -1239,6 +1239,8 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                UnregisterTick();
+                UnregisterSlowTick();
                 _dispatcherAvailableCold = currentService != null;
                 if (_dispatcherAvailableCold && isActiveAndEnabled)
                 {

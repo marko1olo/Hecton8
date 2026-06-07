@@ -437,11 +437,14 @@ namespace Hecton8.Core
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
             TryUnregisterFromTickManager();
             TryUnregisterFromLateFrameTickManager();
+            if (currentService == null || !isActiveAndEnabled)
+                return;
+
             TryRegisterToTickManager();
             TryRegisterToLateFrameTickManager();
         }

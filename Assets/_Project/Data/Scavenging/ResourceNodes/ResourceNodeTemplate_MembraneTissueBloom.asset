@@ -34,7 +34,7 @@ MonoBehaviour:
   maximumDensity: 1.3
   validLayers:
     serializedVersion: 2
-    m_Bits: 1792
+    m_Bits: 2101376
   colliderShape: 0
   physicalSize: {x: 1.1, y: 0.65, z: 1.1}
   harvestYield:

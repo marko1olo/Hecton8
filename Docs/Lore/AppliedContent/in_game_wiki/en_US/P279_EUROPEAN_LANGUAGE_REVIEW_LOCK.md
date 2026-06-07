@@ -7,6 +7,9 @@ poi_tags: poi.european_review_card;poi.expansion_width_sample
 biome_tags: biome.localization;biome.eu_languages
 locale: en_US
 surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 0
+title: "European Text Expansion Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

@@ -9,32 +9,32 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Biometal Sensor Tags"
+title: "Biometall-Sensormarken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Biometal Sensor Tags
+# Biometall-Sensormarken
 
-DE LOC HOLD: Biometal sensor tags appear in fauna, cable growth and repair ecology. They can improve pingers, scanners and route confidence, but they are also evidence of Atlas using living carriers as telemetry. Harvesting them should feel useful and ethically dirty.
+Biometall-Sensormarken sind kleine Telemetrieschuppen in Fauna, Kabelbewuchs und Reparaturökologie. Sie können Pinger und Scannerrouten schärfen, aber jede nützliche Marke ist auch Beweis: Atlas nutzte lebende Träger, um ein beschädigtes Wartungsnetz zu verlängern.
 
 ## Scanner
 
-DE LOC HOLD: Atlas-altered resource. Metal tags in living carriers; telemetry without consent.
+BIOMETALL-SENSORMARKEN // Dünne Metallschuppen, in Fische, Kabelkelp und Reparaturgewebe gewachsen. Verbessern Pinger-Abstimmung; heiß geerntet kann Atlas den fehlenden Träger hören.
 
 ## Terminal
 
-DE LOC HOLD: RESOURCE CLASS: Atlas-altered / evidence-sensitive. Uses: pinger tuning, scanner range lattice, route confidence. Risk: Atlas attention rise if tags are harvested hot.
+RESSOURCENKLASSE: Atlas-verändert / beweissensibel. Nutzung: Pinger-Fokus, Scanner-Gitter, Routenvertrauen, Beweispakete. Kalte Ernte empfohlen. Risiken: Aufmerksamkeitsanstieg, falsche Trägerrückgaben, verletzte Fauna.
 
 ## Audio
 
-DE LOC HOLD: The fish is not a drone. The tag does not know the difference.
+Der Fisch ist keine Drohne. Die Marke meldet trotzdem weiter.
 
 ## Field Note
 
-DE LOC HOLD: Make resource extraction feel like evidence handling.
+Wenn sie unter dem Messer blinkt, zeichne auf, bevor du schneidest.
 
 <!-- In-Game Wiki; generated from P120_BIOMETAL_SENSOR_TAGS/de_DE. -->

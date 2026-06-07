@@ -9,32 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Vent Anchor Colonies"
+title: "Colônias de âncoras de respiradouro"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Vent Anchor Colonies
+# Colônias de âncoras de respiradouro
 
-PT LOC HOLD: Vent Anchor Colonies connect HECTON-8 ecology to crafting routes without turning resources into magic ore.
+Colônias de âncoras de respiradouro explicam por que o Marauder não resolve todo reparo ficando no raso. Elas crescem onde respiradouros térmicos empurram calor e química de sulfetos para camadas de salmoura. Seus corpos nervurados prendem minerais, esfriam em placas e abrigam pequena fauna de respiradouro na borda de água letal. Isso as torna valiosas sem virar minério mágico. Nervuras soltas podem alimentar pressure-ceramic filler, cold-sealant grit e filtros químicos. Nervuras vivas e quentes podem matar um traje rápido ou rachar uma cabeça de ferramenta por choque térmico. A leitura correta é paciência: escaneie o bloom térmico, espere a borda resfriada, corte só placas soltas e deixe a garganta ativa em paz, a menos que o objetivo valha o risco.
 
 ## Scanner
 
-PT LOC HOLD: Colony ribs lock to thermal vents, trapping sulfides and feeding the material routes needed for deep-rated repairs.
+COLÔNIA DE ÂNCORAS DE RESPIRADOURO // Colônias nervuradas travam ao redor de respiradouros térmicos, prendem sulfetos e cultivam a química necessária para reparos de profundidade.
 
 ## Terminal
 
-PT LOC HOLD: RESOURCE NOTE: vent anchor colonies increase sealant and pressure-ceramic probability. Thermal exposure remains lethal.
+BASE DE RECURSO: colônias elevam probabilidade de cold-sealant grit, pressure-ceramic precursor e sulfide salt. Bloom térmico continua letal; colete amostras só de nervuras resfriadas e placas soltas.
 
 ## Audio
 
-PT LOC HOLD: Every good repair part is sitting in water that wants to cook you.
+Toda boa peça de reparo está em água que quer cozinhar você.
 
 ## Field Note
 
-PT LOC HOLD: Vent anchor: resource sign, temperature hazard, biology shelter and first clue that forge chemistry is alive around the edges.
+Uma âncora de respiradouro é sinal de recurso, aviso de calor, borda de abrigo e prova de que a forge chemistry tem mãos vivas ao redor.
 
 <!-- In-Game Wiki; generated from P228_VENT_ANCHOR_COLONIES/pt_BR. -->

@@ -7,6 +7,9 @@ poi_tags: poi.predator_shadow_sonar_gap;poi.cut_fish_path
 biome_tags: biome.photic_shelf;biome.shelf_drop
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Грамматика встречи с тенью хищника"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

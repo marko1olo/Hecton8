@@ -7,6 +7,9 @@ poi_tags: poi.quarantine_hold_notice;poi.orbital_air_counter
 biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: ru_RU
 surface: external_site
+source_voice: Website Public
+spoiler_tier: 0
+title: "Карантинный hold со stale air"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr

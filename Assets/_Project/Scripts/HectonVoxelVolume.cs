@@ -324,6 +324,18 @@ namespace Hecton8.Caves
         private const int MaxRegisteredPublishedVolumes = 256;
         private const int MaxLegacyRaymarchSteps = 2048;
         private const string NativeMemoryOwner = nameof(HectonVoxelVolume);
+        private const float MinRuntimeEntranceSnapshotRadius = 0.1f;
+        private const float MaxRuntimeEntranceSnapshotRadius = 32f;
+        private const float MinRuntimeEntranceSnapshotFunnelLength = 0.25f;
+        private const float MaxRuntimeEntranceSnapshotFunnelLength = 128f;
+        private const float MinRuntimeEntranceSnapshotInnerRadius = 0.05f;
+        private const float MinRuntimeGraphRadius = 0.1f;
+        private const float MaxRuntimeGraphRadius = 256f;
+        private const float MaxRuntimeGraphBlendRadius = 96f;
+        private const float MaxRuntimeTunnelScale = 8f;
+        private const float MaxRuntimeTunnelWarpAmount = 64f;
+        private const float MaxRuntimeGraphNoiseScale = 8f;
+        private const float MaxRuntimeGraphNoiseAmplitude = 8f;
         private const float ResourceCraterClusterRadiusMeters = 20f;
         private const float CollapseBoxHorizontalPaddingMeters = 4f;
         private const float CollapseImpulseVerticalBias = 0.45f;
@@ -2023,42 +2035,60 @@ namespace Hecton8.Caves
             _buildCollider = buildCollider;
 
             // COLD ALLOC: CaveNode[nodes.Length] - runtime room graph snapshot for crater rebuilds - owner: HectonVoxelVolume
-            _nodes = new CaveNode[nodes.Length];
+            CaveNode[] nodeSnapshots = new CaveNode[nodes.Length];
+            int validNodeCount = 0;
             for (int i = 0; i < nodes.Length; i++)
             {
-                CaveNode snapshot = nodes[i];
-                snapshot.position += (Unity.Mathematics.float3)absoluteUniverseOffset;
-                _nodes[i] = snapshot;
+                if (!TryBuildRuntimeNodeSnapshot(in nodes[i], absoluteUniverseOffset, out CaveNode snapshot))
+                    continue;
+
+                nodeSnapshots[validNodeCount++] = snapshot;
             }
+            if (validNodeCount != nodeSnapshots.Length)
+                Array.Resize(ref nodeSnapshots, validNodeCount);
+            _nodes = nodeSnapshots;
 
             // COLD ALLOC: CaveTunnel[tunnels.Length] - runtime tunnel graph snapshot for crater rebuilds - owner: HectonVoxelVolume
-            _tunnels = new CaveTunnel[tunnels.Length];
+            CaveTunnel[] tunnelSnapshots = new CaveTunnel[tunnels.Length];
+            int validTunnelCount = 0;
             for (int i = 0; i < tunnels.Length; i++)
             {
-                CaveTunnel snapshot = tunnels[i];
-                snapshot.pointA += (Unity.Mathematics.float3)absoluteUniverseOffset;
-                snapshot.pointB += (Unity.Mathematics.float3)absoluteUniverseOffset;
-                _tunnels[i] = snapshot;
+                if (!TryBuildRuntimeTunnelSnapshot(in tunnels[i], absoluteUniverseOffset, out CaveTunnel snapshot))
+                    continue;
+
+                tunnelSnapshots[validTunnelCount++] = snapshot;
             }
+            if (validTunnelCount != tunnelSnapshots.Length)
+                Array.Resize(ref tunnelSnapshots, validTunnelCount);
+            _tunnels = tunnelSnapshots;
 
             // COLD ALLOC: CaveEntrance[entrances.Length] - runtime entrance snapshot for terrain-hole/skirt rebuilds - owner: HectonVoxelVolume
-            _entrances = new CaveEntrance[entrances.Length];
+            CaveEntrance[] entranceSnapshots = new CaveEntrance[entrances.Length];
+            int validEntranceCount = 0;
             for (int i = 0; i < entrances.Length; i++)
             {
-                CaveEntrance snapshot = entrances[i];
-                snapshot.surfacePosition += (Unity.Mathematics.float3)absoluteUniverseOffset;
-                _entrances[i] = snapshot;
+                if (!TryBuildRuntimeEntranceSnapshot(in entrances[i], absoluteUniverseOffset, out CaveEntrance snapshot))
+                    continue;
+
+                entranceSnapshots[validEntranceCount++] = snapshot;
             }
+            if (validEntranceCount != entranceSnapshots.Length)
+                Array.Resize(ref entranceSnapshots, validEntranceCount);
+            _entrances = entranceSnapshots;
 
             // COLD ALLOC: CaveStructure[structures.Length] - runtime structure snapshot for crater rebuilds - owner: HectonVoxelVolume
-            _structures = new CaveStructure[structures.Length];
+            CaveStructure[] structureSnapshots = new CaveStructure[structures.Length];
+            int validStructureCount = 0;
             for (int i = 0; i < structures.Length; i++)
             {
-                CaveStructure snapshot = structures[i];
-                snapshot.position += (Unity.Mathematics.float3)absoluteUniverseOffset;
-                snapshot.pointB += (Unity.Mathematics.float3)absoluteUniverseOffset;
-                _structures[i] = snapshot;
+                if (!TryBuildRuntimeStructureSnapshot(in structures[i], absoluteUniverseOffset, out CaveStructure snapshot))
+                    continue;
+
+                structureSnapshots[validStructureCount++] = snapshot;
             }
+            if (validStructureCount != structureSnapshots.Length)
+                Array.Resize(ref structureSnapshots, validStructureCount);
+            _structures = structureSnapshots;
 
             _craterStamps.Clear();
             _resourceCraterClusterStamps.Clear();
@@ -4521,6 +4551,213 @@ namespace Hecton8.Caves
         private static bool IsFinite(float value)
         {
             return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+        private static bool IsFinite(float3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private static bool IsFinite(float4 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private static float SaturateFinite(float value)
+        {
+            return IsFinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float4 SaturateFinite(float4 value)
+        {
+            return IsFinite(value) ? math.saturate(value) : float4.zero;
+        }
+
+        private static bool TryNormalizeFinite(float3 value, out float3 normalized)
+        {
+            normalized = default;
+            if (!IsFinite(value))
+                return false;
+
+            float lengthSq = math.lengthsq(value);
+            if (!IsFinite(lengthSq) || lengthSq <= 0.0001f)
+                return false;
+
+            normalized = value * math.rsqrt(lengthSq);
+            return IsFinite(normalized);
+        }
+
+        private static bool TryResolveRuntimeSnapshotOffset(Vector3 absoluteUniverseOffset, out float3 offset)
+        {
+            offset = default;
+            if (!IsFinite(absoluteUniverseOffset))
+                return false;
+
+            offset = new float3(absoluteUniverseOffset.x, absoluteUniverseOffset.y, absoluteUniverseOffset.z);
+            return IsFinite(offset);
+        }
+
+        private static float ClampFinite(float value, float fallback, float minimum, float maximum)
+        {
+            return IsFinite(value) ? math.clamp(value, minimum, maximum) : fallback;
+        }
+
+        private static float3 ClampFinite(float3 value, float3 fallback, float minimum, float maximum)
+        {
+            return IsFinite(value) ? math.clamp(value, new float3(minimum), new float3(maximum)) : fallback;
+        }
+
+        private static bool TryBuildRuntimeNodeSnapshot(
+            in CaveNode source,
+            Vector3 absoluteUniverseOffset,
+            out CaveNode snapshot)
+        {
+            snapshot = default;
+            if (!TryResolveRuntimeSnapshotOffset(absoluteUniverseOffset, out float3 offset) ||
+                !IsFinite(source.position) ||
+                !IsFinite(source.radii))
+            {
+                return false;
+            }
+
+            if (math.cmin(source.radii) <= 0f)
+                return false;
+
+            float3 radii = ClampFinite(source.radii, new float3(MinRuntimeGraphRadius), MinRuntimeGraphRadius, MaxRuntimeGraphRadius);
+            float3 position = source.position + offset;
+            if (!IsFinite(position))
+                return false;
+
+            snapshot = source;
+            snapshot.position = position;
+            snapshot.radii = radii;
+            snapshot.blendRadius = ClampFinite(source.blendRadius, MinRuntimeGraphRadius, MinRuntimeGraphRadius, MaxRuntimeGraphBlendRadius);
+            snapshot.noiseScale = ClampFinite(source.noiseScale, 1f, 0.1f, MaxRuntimeGraphNoiseScale);
+            snapshot.noiseAmplitude = ClampFinite(source.noiseAmplitude, 0f, 0f, MaxRuntimeGraphNoiseAmplitude);
+            return true;
+        }
+
+        private static bool TryBuildRuntimeTunnelSnapshot(
+            in CaveTunnel source,
+            Vector3 absoluteUniverseOffset,
+            out CaveTunnel snapshot)
+        {
+            snapshot = default;
+            if (!TryResolveRuntimeSnapshotOffset(absoluteUniverseOffset, out float3 offset) ||
+                !IsFinite(source.pointA) ||
+                !IsFinite(source.pointB) ||
+                !IsFinite(source.radiusA) ||
+                !IsFinite(source.radiusB) ||
+                source.radiusA <= 0f ||
+                source.radiusB <= 0f)
+            {
+                return false;
+            }
+
+            float3 pointA = source.pointA + offset;
+            float3 pointB = source.pointB + offset;
+            if (!IsFinite(pointA) || !IsFinite(pointB))
+                return false;
+
+            snapshot = source;
+            snapshot.pointA = pointA;
+            snapshot.pointB = pointB;
+            snapshot.radiusA = ClampFinite(source.radiusA, MinRuntimeGraphRadius, MinRuntimeGraphRadius, MaxRuntimeGraphRadius);
+            snapshot.radiusB = ClampFinite(source.radiusB, MinRuntimeGraphRadius, MinRuntimeGraphRadius, MaxRuntimeGraphRadius);
+            snapshot.blendRadius = ClampFinite(source.blendRadius, MinRuntimeGraphRadius, MinRuntimeGraphRadius, MaxRuntimeGraphBlendRadius);
+            snapshot.heightScale = ClampFinite(source.heightScale, 1f, 0.1f, MaxRuntimeTunnelScale);
+            snapshot.widthScale = ClampFinite(source.widthScale, 1f, 0.1f, MaxRuntimeTunnelScale);
+            snapshot.warpAmount = ClampFinite(source.warpAmount, 0f, 0f, MaxRuntimeTunnelWarpAmount);
+            return true;
+        }
+
+        private static bool TryBuildRuntimeStructureSnapshot(
+            in CaveStructure source,
+            Vector3 absoluteUniverseOffset,
+            out CaveStructure snapshot)
+        {
+            snapshot = default;
+            if (!TryResolveRuntimeSnapshotOffset(absoluteUniverseOffset, out float3 offset) ||
+                !IsFinite(source.position) ||
+                !IsFinite(source.size))
+            {
+                return false;
+            }
+
+            if (math.cmax(source.size) <= 0f)
+                return false;
+
+            float3 position = source.position + offset;
+            if (!IsFinite(position))
+                return false;
+
+            float3 pointB = IsFinite(source.pointB) ? source.pointB + offset : position;
+            if (!IsFinite(pointB))
+                pointB = position;
+
+            float3 size = ClampFinite(source.size, new float3(MinRuntimeGraphRadius), MinRuntimeGraphRadius, MaxRuntimeGraphRadius);
+            snapshot = source;
+            snapshot.position = position;
+            snapshot.pointB = pointB;
+            snapshot.size = size;
+            snapshot.blendRadius = ClampFinite(source.blendRadius, MinRuntimeGraphRadius, MinRuntimeGraphRadius, MaxRuntimeGraphBlendRadius);
+            snapshot.noiseAmount = ClampFinite(source.noiseAmount, 0f, 0f, MaxRuntimeGraphNoiseAmplitude);
+            return true;
+        }
+
+        private static bool TryBuildRuntimeEntranceSnapshot(
+            in CaveEntrance source,
+            Vector3 absoluteUniverseOffset,
+            out CaveEntrance snapshot)
+        {
+            snapshot = default;
+            if (!TryResolveRuntimeSnapshotOffset(absoluteUniverseOffset, out float3 offset) ||
+                !IsFinite(source.surfacePosition) ||
+                !IsFinite(source.inwardDirection) ||
+                !IsFinite(source.radius) ||
+                !IsFinite(source.funnelLength) ||
+                source.radius <= 0f ||
+                source.funnelLength <= 0f ||
+                !TryNormalizeFinite(source.inwardDirection, out float3 inwardDirection))
+            {
+                return false;
+            }
+
+            float3 surfacePosition = source.surfacePosition + offset;
+            if (!IsFinite(surfacePosition))
+                return false;
+
+            snapshot = source;
+            snapshot.surfacePosition = surfacePosition;
+            snapshot.inwardDirection = inwardDirection;
+            snapshot.radius = math.clamp(source.radius, MinRuntimeEntranceSnapshotRadius, MaxRuntimeEntranceSnapshotRadius);
+            snapshot.funnelLength = math.clamp(source.funnelLength, MinRuntimeEntranceSnapshotFunnelLength, MaxRuntimeEntranceSnapshotFunnelLength);
+            float innerRadiusFallback = math.max(snapshot.radius * 0.6f, MinRuntimeEntranceSnapshotInnerRadius);
+            snapshot.innerRadius = IsFinite(source.innerRadius) && source.innerRadius > 0f
+                ? math.clamp(source.innerRadius, MinRuntimeEntranceSnapshotInnerRadius, math.max(snapshot.radius, innerRadiusFallback))
+                : innerRadiusFallback;
+            snapshot.terrainNormalBlend = SaturateFinite(source.terrainNormalBlend);
+            if (snapshot.terrainNormalBlend > 0f && TryNormalizeFinite(source.terrainNormal, out float3 terrainNormal))
+            {
+                snapshot.terrainNormal = terrainNormal;
+            }
+            else
+            {
+                snapshot.terrainNormal = new float3(0f, 1f, 0f);
+                snapshot.terrainNormalBlend = 0f;
+            }
+
+            if (IsFinite(source.terrainSplatColor))
+            {
+                snapshot.terrainSplatColor = SaturateFinite(source.terrainSplatColor);
+                snapshot.terrainSplatBlend = SaturateFinite(source.terrainSplatBlend);
+            }
+            else
+            {
+                snapshot.terrainSplatColor = float4.zero;
+                snapshot.terrainSplatBlend = 0f;
+            }
+            return true;
         }
 
         private static Bounds BuildRuntimeSegmentAabb(Vector3 start, Vector3 end, float radius)

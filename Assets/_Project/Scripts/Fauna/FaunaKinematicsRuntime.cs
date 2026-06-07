@@ -2299,10 +2299,10 @@ namespace Hecton8.AI
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
                     if (currentService == null)
                         return;
 
-                    TryUnregister();
                     TryRegister();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:

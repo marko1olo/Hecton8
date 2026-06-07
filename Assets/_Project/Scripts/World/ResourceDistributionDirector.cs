@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
@@ -422,16 +423,34 @@ namespace Hecton8.World
                     return;
 
                 Dispose();
+                NativeArray<PressureMetamorphismSample> replacement = default;
                 try
                 {
-                    Workspace = new NativeArray<PressureMetamorphismSample>(
+                    replacement = new NativeArray<PressureMetamorphismSample>(
                         capacity,
                         Allocator.Persistent,
                         NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(Workspace, nameof(ResourceDistributionDirector), nameof(Workspace), NativeAllocationLifetime.Scene);
+                    int sentinelId = NativeMemorySentinel.RegisterNativeArray(replacement, nameof(ResourceDistributionDirector), nameof(Workspace), NativeAllocationLifetime.Scene);
+                    if (sentinelId <= 0)
+                        throw new InvalidOperationException("Native memory sentinel registration failed for pressure metamorphism workspace.");
+
+                    Workspace = replacement;
+                    replacement = default;
                 }
                 catch
                 {
+                    if (replacement.IsCreated)
+                    {
+                        try
+                        {
+                            NativeMemorySentinel.UnregisterNativeArray(replacement);
+                        }
+                        finally
+                        {
+                            replacement.Dispose();
+                        }
+                    }
+
                     Dispose();
                     throw;
                 }
@@ -487,9 +506,15 @@ namespace Hecton8.World
             meteorImpactChancePerWindow = math.saturate(meteorImpactChancePerWindow);
             meteorImpactSearchRadiusMeters = math.clamp(meteorImpactSearchRadiusMeters, 24f, 256f);
             meteorImpactCraterRadiusMeters = math.clamp(meteorImpactCraterRadiusMeters, 1f, 16f);
-            meteoriteRadiationIntensity = math.saturate(meteoriteRadiationIntensity);
-            meteoriteRadiationRadiusMeters = math.clamp(meteoriteRadiationRadiusMeters, 4f, 40f);
-            meteoriteRadiationVisorBias = math.clamp(meteoriteRadiationVisorBias, 0f, 2f);
+            meteoriteRadiationIntensity = ResolveFiniteSaturate(meteoriteRadiationIntensity, DefaultMeteoriteRadiationIntensity);
+            meteoriteRadiationRadiusMeters = math.clamp(
+                ResolveFiniteAtLeast(meteoriteRadiationRadiusMeters, DefaultMeteoriteRadiationRadiusMeters, 4f),
+                4f,
+                40f);
+            meteoriteRadiationVisorBias = math.clamp(
+                ResolveFiniteAtLeast(meteoriteRadiationVisorBias, DefaultMeteoriteRadiationVisorBias, 0f),
+                0f,
+                2f);
             pressureMetamorphismDepthMeters = math.max(0f, pressureMetamorphismDepthMeters);
             pressureMetamorphismDays = math.max(0.01f, pressureMetamorphismDays);
             uint meteorSeed = Mix(unchecked((uint)EntityId.ToULong(GetEntityId())), (uint)MeteorImpactSeedSalt);
@@ -736,8 +761,13 @@ namespace Hecton8.World
                     _persistentWorldRegistry = currentService as PersistentWorldRegistry;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    if (_slowTickRegistered)
+                    {
+                        GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                        _slowTickRegistered = false;
+                    }
+
                     _dispatcher = currentService as ITickDispatcher;
-                    _slowTickRegistered = false;
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegisterSlowTick();
@@ -1226,13 +1256,24 @@ namespace Hecton8.World
 
         private void RegisterMeteoriteRadiationHazard(Vector3 runtimePosition, uint stableSeed)
         {
-            if (meteoriteRadiationIntensity <= 0f || meteoriteRadiationRadiusMeters <= 0f)
+            int zoneId = ResolveMeteorRadiationHazardZoneId(stableSeed);
+            if (zoneId == 0)
                 return;
 
-            int zoneId = ResolveMeteorRadiationHazardZoneId(stableSeed);
+            if (!math.isfinite(meteoriteRadiationIntensity) ||
+                meteoriteRadiationIntensity <= 0f ||
+                !math.isfinite(meteoriteRadiationRadiusMeters) ||
+                meteoriteRadiationRadiusMeters <= 0f ||
+                !TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition radiationAup))
+            {
+                RadiationHazardGrid.UnregisterSource(zoneId);
+                _debugLastMeteorHazardZoneId = 0;
+                return;
+            }
+
             RadiationHazardGrid.RegisterSource(
                 zoneId,
-                runtimePosition,
+                in radiationAup,
                 meteoriteRadiationIntensity,
                 meteoriteRadiationRadiusMeters);
             _debugLastMeteorHazardZoneId = zoneId;
@@ -3384,9 +3425,15 @@ namespace Hecton8.World
             meteorImpactChancePerWindow = math.saturate(meteorImpactChancePerWindow);
             meteorImpactSearchRadiusMeters = math.clamp(meteorImpactSearchRadiusMeters, 24f, 256f);
             meteorImpactCraterRadiusMeters = math.clamp(meteorImpactCraterRadiusMeters, 1f, 16f);
-            meteoriteRadiationIntensity = math.saturate(meteoriteRadiationIntensity);
-            meteoriteRadiationRadiusMeters = math.clamp(meteoriteRadiationRadiusMeters, 4f, 40f);
-            meteoriteRadiationVisorBias = math.clamp(meteoriteRadiationVisorBias, 0f, 2f);
+            meteoriteRadiationIntensity = ResolveFiniteSaturate(meteoriteRadiationIntensity, DefaultMeteoriteRadiationIntensity);
+            meteoriteRadiationRadiusMeters = math.clamp(
+                ResolveFiniteAtLeast(meteoriteRadiationRadiusMeters, DefaultMeteoriteRadiationRadiusMeters, 4f),
+                4f,
+                40f);
+            meteoriteRadiationVisorBias = math.clamp(
+                ResolveFiniteAtLeast(meteoriteRadiationVisorBias, DefaultMeteoriteRadiationVisorBias, 0f),
+                0f,
+                2f);
 
             if (voidGlassMeteoriteTemplate == null)
                 voidGlassMeteoriteTemplate = UnityEditor.AssetDatabase.LoadAssetAtPath<ResourceNodeTemplate>(EditorVoidGlassMeteoriteTemplatePath);

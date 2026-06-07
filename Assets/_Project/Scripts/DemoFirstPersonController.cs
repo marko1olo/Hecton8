@@ -106,8 +106,7 @@ namespace ScifiOffice
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredTick = false;
-                    _registeredLateFrame = false;
+                    UnregisterDispatcherTicksOnly();
                     if (currentService == null)
                         return;
 
@@ -351,17 +350,22 @@ namespace ScifiOffice
 
         private void UnregisterTick()
         {
-            if (_registeredTick && GlobalRegistry.Dispatcher != null)
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-
-            _registeredTick = false;
-            if (_registeredLateFrame && GlobalRegistry.Dispatcher != null)
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
-
-            _registeredLateFrame = false;
+            UnregisterDispatcherTicksOnly();
             _hasPendingLookPose = false;
             _pendingYawDeltaDegrees = 0f;
             _hasPendingMobileControlsVisibility = false;
+        }
+
+        private void UnregisterDispatcherTicksOnly()
+        {
+            if (_registeredTick)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+
+            _registeredTick = false;
+            if (_registeredLateFrame)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+
+            _registeredLateFrame = false;
         }
 
         private void TryRegisterHotSwapListener()
