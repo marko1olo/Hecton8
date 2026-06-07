@@ -767,6 +767,7 @@ namespace Hecton8.Tests.Editor
             string lateFrameBody = ExtractMethodBody(service, "public void LateFrameTick()");
             string flushHelperBody = ExtractMethodBody(service, "private bool TryFlushScratchBuffer<T>(");
             string flushBody = ExtractMethodBody(service, "private bool FlushExtractionScratchToVault()");
+            string dumpBody = ExtractMethodBody(service, "private void DumpBlackBox()");
 
             Assert.That(jobs, Does.Contain("[ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly WfcGrid;"));
             Assert.That(service, Does.Contain("TryPrepareSolveScratch"));
@@ -793,6 +794,12 @@ namespace Hecton8.Tests.Editor
             Assert.That(flushHelperBody, Does.Contain("TryAcquireWriteBuffer(in handle, bufferId, requiredLength"));
             Assert.That(flushHelperBody, Does.Contain("finally"));
             Assert.That(flushHelperBody, Does.Contain("ReleaseWriteBuffer(in handle, bufferId);"));
+            Assert.That(service, Does.Contain("private const string TelemetryDumpPayloadLabel = \"marauderOutpostTelemetryDumpPayload\";"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("nameof(MarauderOutpostGenerationService)"));
+            Assert.That(dumpBody, Does.Contain("NativeArrayOptions.ClearMemory"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBody, Does.Not.Contain("new NativeArray<byte>(payloadBytes"));
         }
 
         [Test]

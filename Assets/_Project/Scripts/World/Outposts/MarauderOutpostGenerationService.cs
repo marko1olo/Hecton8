@@ -38,6 +38,7 @@ namespace Hecton8.World.Outposts
         private const uint TelemetryDumpVersion = 1u;
         private const int TelemetryDumpHeaderBytes = 24;
         private const int TelemetryDumpEntryPayloadBytes = 72;
+        private const string TelemetryDumpPayloadLabel = "marauderOutpostTelemetryDumpPayload";
         private const float ShiftEpsilonMeters = 0.0001f;
         private const float MaxAupShiftMeters = 10000f;
         private const SystemID VaultOwnerSystemId = SystemID.WorldOutposts;
@@ -1995,7 +1996,11 @@ namespace Hecton8.World.Outposts
             NativeArray<byte> payload = default;
             try
             {
-                payload = new NativeArray<byte>(payloadBytes, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    payloadBytes,
+                    nameof(MarauderOutpostGenerationService),
+                    TelemetryDumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
                 int writeCursor = 0;
                 WriteUInt64LittleEndian(payload, ref writeCursor, TelemetryDumpMagic);
                 WriteUInt32LittleEndian(payload, ref writeCursor, TelemetryDumpVersion);
@@ -2021,8 +2026,10 @@ namespace Hecton8.World.Outposts
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(MarauderOutpostGenerationService),
+                    TelemetryDumpPayloadLabel);
             }
         }
 
