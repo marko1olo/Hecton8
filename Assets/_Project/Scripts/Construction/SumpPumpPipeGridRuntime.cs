@@ -776,7 +776,17 @@ namespace Hecton8.Construction
                 if (!scheduled)
                 {
                     if (hasPendingJob)
-                        DispatcherJobFence.TryComplete(ref pendingJob, forceComplete: true);
+                    {
+                        DispatcherJobFence.BeginPostSimulationSwapWindow();
+                        try
+                        {
+                            DispatcherJobFence.TryComplete(ref pendingJob, forceComplete: true);
+                        }
+                        finally
+                        {
+                            DispatcherJobFence.EndPostSimulationSwapWindow();
+                        }
+                    }
 
                     ReleaseDrainageSolverBufferPins();
                 }
@@ -803,8 +813,16 @@ namespace Hecton8.Construction
             if (!_solverScheduled)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _solverHandle, forceComplete: true))
-                return;
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                if (!DispatcherJobFence.TryComplete(ref _solverHandle, forceComplete: true))
+                    return;
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
 
             try
             {

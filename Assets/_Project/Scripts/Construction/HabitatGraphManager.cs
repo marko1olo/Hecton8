@@ -2466,8 +2466,16 @@ namespace Hecton8.Construction
             if (!_floodPropagationPending)
                 return false;
 
-            if (!DispatcherJobFence.TryComplete(ref _floodPropagationHandle, forceComplete: true))
-                return false;
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                if (!DispatcherJobFence.TryComplete(ref _floodPropagationHandle, forceComplete: true))
+                    return false;
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
 
             return FinishFloodPropagationJob();
         }

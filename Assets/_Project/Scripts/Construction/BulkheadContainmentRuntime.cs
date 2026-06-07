@@ -451,13 +451,31 @@ namespace Hecton8.Construction
         {
             if (_preSimulationScheduled)
             {
-                DispatcherJobFence.TryComplete(ref _preSimulationHandle, forceComplete: true);
+                DispatcherJobFence.BeginPreSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _preSimulationHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPreSimulationSwapWindow();
+                }
+
                 _preSimulationScheduled = false;
             }
 
             if (_simulationScheduled)
             {
-                DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
+
                 _simulationScheduled = false;
             }
 
