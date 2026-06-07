@@ -2392,7 +2392,18 @@ namespace Hecton8.Vehicles.Automation
 
         private static bool CompleteJobHandleForTeardown(ref JobHandle handle)
         {
-            return DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            bool completed;
+            DispatcherJobFence.BeginPostFixedSwapWindow();
+            try
+            {
+                completed = DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostFixedSwapWindow();
+            }
+
+            return completed;
         }
 
         private bool LockInitializationBuffers()
