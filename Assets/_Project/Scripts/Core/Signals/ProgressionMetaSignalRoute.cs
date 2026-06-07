@@ -11,6 +11,7 @@ namespace Hecton8.Core
     public static class ProgressionMetaSignalRoute
     {
         private static int _sequence;
+        private static int s_x001ProgressionMetaSignalRouteSignalPushDropCount;
 
         [Obsolete("Use TryPublishAchievementUnlocked(uint) so overflow/drop semantics stay visible at the producer.", true)]
         public static void PublishAchievementUnlocked(uint achievementHash)
@@ -64,7 +65,7 @@ namespace Hecton8.Core
                 ContextHash = contextHash
             };
 
-            return SignalBus<ProgressionMetaSignal>.TryPush(in signal);
+            return SignalBus<ProgressionMetaSignal>.TryPushTracked(in signal, ref s_x001ProgressionMetaSignalRouteSignalPushDropCount);
         }
     }
 }

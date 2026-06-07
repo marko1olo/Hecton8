@@ -21,6 +21,7 @@ namespace Hecton8.Core
         private static readonly uint SealantPackHash = unchecked((uint)LocHash.Compute("SealantPack"));
 
         private static int s_sequence;
+        private static int s_x001ItemLifecycleSignalRouteSignalPushDropCount;
 
         [System.Obsolete("Use TryPublishCollected(...) so overflow/drop semantics stay visible at the producer.", true)]
         public static bool PublishCollected(ItemData item, int quantity, ulong interactorEntityId, Vector3 runtimePosition, bool hasRuntimePosition)
@@ -90,7 +91,7 @@ namespace Hecton8.Core
                 Flags = flags
             };
 
-            return SignalBus<ItemLifecycleSignal>.TryPush(in signal);
+            return SignalBus<ItemLifecycleSignal>.TryPushTracked(in signal, ref s_x001ItemLifecycleSignalRouteSignalPushDropCount);
         }
 
         private static byte BuildFlags(ItemData item, bool hasRuntimePosition, uint itemHash)

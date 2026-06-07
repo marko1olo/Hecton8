@@ -15,6 +15,7 @@ namespace Hecton8.Core
         private static uint _inputOverrideSequence;
         private static uint _syncFenceSequence;
         private static uint _kccVelocitySequence;
+        private static int s_x001CoreDeterminismSignalsSignalPushDropCount;
         private static InputSignal _latestInputSignal;
         private static InputSignal _latestInputOverrideSignal;
         private static SyncFenceSignal _latestSyncFenceSignal;
@@ -81,7 +82,7 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             _latestInputSignal = signal;
-            return SignalBus<InputSignal>.TryPush(in signal);
+            return SignalBus<InputSignal>.TryPushTracked(in signal, ref s_x001CoreDeterminismSignalsSignalPushDropCount);
         }
 
         [Obsolete("Use TryPublish(in StateCorrectionSignal) so overflow/drop semantics stay visible at the producer.", true)]
@@ -93,7 +94,7 @@ namespace Hecton8.Core
         public static bool TryPublish(in StateCorrectionSignal signal)
         {
             EnsureInitialized();
-            return SignalBus<StateCorrectionSignal>.TryPush(in signal);
+            return SignalBus<StateCorrectionSignal>.TryPushTracked(in signal, ref s_x001CoreDeterminismSignalsSignalPushDropCount);
         }
 
         [Obsolete("Use TryPublish(in DesyncDetectedSignal) so overflow/drop semantics stay visible at the producer.", true)]
@@ -105,7 +106,7 @@ namespace Hecton8.Core
         public static bool TryPublish(in DesyncDetectedSignal signal)
         {
             EnsureInitialized();
-            return SignalBus<DesyncDetectedSignal>.TryPush(in signal);
+            return SignalBus<DesyncDetectedSignal>.TryPushTracked(in signal, ref s_x001CoreDeterminismSignalsSignalPushDropCount);
         }
 
         [Obsolete("Use TryPublish(in SyncFenceSignal) so overflow/drop semantics stay visible at the producer.", true)]
@@ -120,7 +121,7 @@ namespace Hecton8.Core
             SyncFenceSignal sequenced = signal;
             sequenced.Sequence = NextSequence(ref _syncFenceSequence);
             _latestSyncFenceSignal = sequenced;
-            return SignalBus<SyncFenceSignal>.TryPush(in sequenced);
+            return SignalBus<SyncFenceSignal>.TryPushTracked(in sequenced, ref s_x001CoreDeterminismSignalsSignalPushDropCount);
         }
 
         [Obsolete("Use TryPublishKccVelocity(in KccVelocitySignal) so overflow/drop semantics stay visible at the producer.", true)]
@@ -151,7 +152,7 @@ namespace Hecton8.Core
                 0.0f,
                 !math.all(math.isfinite(sequenced.Velocity)));
             _latestKccVelocitySignal = sequenced;
-            return SignalBus<KccVelocitySignal>.TryPush(in sequenced);
+            return SignalBus<KccVelocitySignal>.TryPushTracked(in sequenced, ref s_x001CoreDeterminismSignalsSignalPushDropCount);
         }
 
         public static bool TryDequeueInput(out InputSignal signal) => TryConsumeLane(out signal);

@@ -12,6 +12,7 @@ namespace Hecton8.Core
     public static class SessionLifecycleSignalRoute
     {
         private static int s_sequence;
+        private static int s_x001SessionLifecycleSignalRouteSignalPushDropCount;
 
         public static bool PublishGameLoadedHash(uint slotHash)
         {
@@ -46,7 +47,7 @@ namespace Hecton8.Core
                 Kind = kind
             };
 
-            return SignalBus<SessionLifecycleSignal>.TryPush(in signal);
+            return SignalBus<SessionLifecycleSignal>.TryPushTracked(in signal, ref s_x001SessionLifecycleSignalRouteSignalPushDropCount);
         }
     }
 }

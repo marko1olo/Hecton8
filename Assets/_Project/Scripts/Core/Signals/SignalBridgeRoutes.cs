@@ -6,6 +6,8 @@ namespace Hecton8.Core
 {
     public static class AupSignalRoute
     {
+        private static int s_x001AupSignalRouteSignalPushDropCount;
+
         [Obsolete("Use TryQueuePreShift(in AupPreShiftSignal) so overflow/drop semantics stay visible at the producer.", true)]
         public static void QueuePreShift(in AupPreShiftSignal signal)
         {
@@ -25,7 +27,7 @@ namespace Hecton8.Core
             if (dispatcher != null)
                 dispatcher.RequestAupPreShiftPause(shiftFrameId);
 
-            return SignalBus<AupPreShiftSignal>.TryPush(in sanitizedSignal);
+            return SignalBus<AupPreShiftSignal>.TryPushTracked(in sanitizedSignal, ref s_x001AupSignalRouteSignalPushDropCount);
         }
 
         [Obsolete("Use TryQueueShift(in AupShiftSignal) so overflow/drop semantics stay visible at the producer.", true)]
@@ -46,12 +48,14 @@ namespace Hecton8.Core
             if (dispatcher != null)
                 dispatcher.ReleaseAupPreShiftPause(sanitizedSignal.ShiftFrameId);
 
-            return SignalBus<AupShiftSignal>.TryPush(in sanitizedSignal);
+            return SignalBus<AupShiftSignal>.TryPushTracked(in sanitizedSignal, ref s_x001AupSignalRouteSignalPushDropCount);
         }
     }
 
     public static class SimulationSignalRoute
     {
+        private static int s_x001SimulationSignalRouteSignalPushDropCount;
+
         public static float TimeDilationScalar => SignalBridgeState.TimeDilationScalar;
 
         public static bool SimulationPaused => SignalBridgeState.SimulationPaused;
@@ -73,7 +77,7 @@ namespace Hecton8.Core
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
 
             SignalBridgeState.RecordTimeDilation(in sanitizedSignal);
-            return SignalBus<TimeDilationSignal>.TryPush(in sanitizedSignal);
+            return SignalBus<TimeDilationSignal>.TryPushTracked(in sanitizedSignal, ref s_x001SimulationSignalRouteSignalPushDropCount);
         }
 
         [Obsolete("Use TryQueuePause(in SimulationPauseSignal) so overflow/drop semantics stay visible at the producer.", true)]
@@ -91,7 +95,7 @@ namespace Hecton8.Core
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
 
             SignalBridgeState.RecordSimulationPause(in sanitizedSignal);
-            bool queued = SignalBus<SimulationPauseSignal>.TryPush(in sanitizedSignal);
+            bool queued = SignalBus<SimulationPauseSignal>.TryPushTracked(in sanitizedSignal, ref s_x001SimulationSignalRouteSignalPushDropCount);
 
             SystemPauseSignal pauseSignal = default;
             pauseSignal.SourceHash = sanitizedSignal.SourceHash;
@@ -100,7 +104,8 @@ namespace Hecton8.Core
             pauseSignal.Paused = sanitizedSignal.Paused;
             pauseSignal.Flags = sanitizedSignal.Flags;
             pauseSignal.RestoreScalar = sanitizedSignal.RestoreScalar;
-            return SignalBus<SystemPauseSignal>.TryPush(in pauseSignal) && queued;
+            bool systemQueued = SignalBus<SystemPauseSignal>.TryPushTracked(in pauseSignal, ref s_x001SimulationSignalRouteSignalPushDropCount);
+            return systemQueued && queued;
         }
 
         [Obsolete("Use TryQueueBulletTimeVisual(in BulletTimeVisualSignal) so overflow/drop semantics stay visible at the producer.", true)]
@@ -118,12 +123,14 @@ namespace Hecton8.Core
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
 
             SignalBridgeState.RecordBulletTimeVisual(in sanitizedSignal);
-            return SignalBus<BulletTimeVisualSignal>.TryPush(in sanitizedSignal);
+            return SignalBus<BulletTimeVisualSignal>.TryPushTracked(in sanitizedSignal, ref s_x001SimulationSignalRouteSignalPushDropCount);
         }
     }
 
     public static class CraftingSignalRoute
     {
+        private static int s_x001CraftingSignalRouteSignalPushDropCount;
+
         public static uint LatestCompletedUnitCount => SignalBridgeState.LatestCraftingCompletedUnitCount;
 
         [Obsolete("Use TryQueueCompleted(in CraftingCompletedSignal) so overflow/drop semantics stay visible at the producer.", true)]
@@ -136,12 +143,14 @@ namespace Hecton8.Core
         {
             SignalCorridorRuntime.EnsureInitialized();
             CraftingCompletedSignal sequencedSignal = SignalBridgeState.RecordCraftingCompleted(in signal);
-            return SignalBus<CraftingCompletedSignal>.TryPush(in sequencedSignal);
+            return SignalBus<CraftingCompletedSignal>.TryPushTracked(in sequencedSignal, ref s_x001CraftingSignalRouteSignalPushDropCount);
         }
     }
 
     public static class SurvivalSignalRoute
     {
+        private static int s_x001SurvivalSignalRouteSignalPushDropCount;
+
         public static bool TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence)
         {
             return SignalBridgeState.TryGetLatestSurvivalDeath(out signal, out sequence);
@@ -157,7 +166,7 @@ namespace Hecton8.Core
         {
             SignalCorridorRuntime.EnsureInitialized();
             SignalBridgeState.RecordSurvivalVitals(in signal);
-            return SignalBus<SurvivalVitalsChangedSignal>.TryPush(in signal);
+            return SignalBus<SurvivalVitalsChangedSignal>.TryPushTracked(in signal, ref s_x001SurvivalSignalRouteSignalPushDropCount);
         }
     }
 

@@ -12,6 +12,7 @@ namespace Hecton8.Core.Contracts.Signals
     {
         private const uint LcgA = 1664525u;
         private const uint LcgC = 1013904223u;
+        private static int s_x001MockSignalGeneratorsSignalPushDropCount;
 
         public static int InjectAcousticBurst(
             in float3 runtimeOrigin,
@@ -47,7 +48,7 @@ namespace Hecton8.Core.Contracts.Signals
                     ? AcousticPingSignal.FlagActiveSonar
                     : (byte)0;
 
-                if (SignalBus<AcousticPingSignal>.TryPush(in signal))
+                if (SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref s_x001MockSignalGeneratorsSignalPushDropCount))
                     pushed++;
             }
 
@@ -87,7 +88,7 @@ namespace Hecton8.Core.Contracts.Signals
                 signal.Flags = CombatDamageSignal.DirectRuntimeFlag;
                 signal.IntegrityDelta = (byte)math.clamp((int)math.round(safeMagnitude * 255f), 0, 255);
 
-                if (SignalBus<CombatDamageSignal>.TryPush(in signal))
+                if (SignalBus<CombatDamageSignal>.TryPushTracked(in signal, ref s_x001MockSignalGeneratorsSignalPushDropCount))
                     pushed++;
             }
 
