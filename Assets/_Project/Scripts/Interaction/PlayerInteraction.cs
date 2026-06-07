@@ -14,8 +14,8 @@
 // ARCHITECTURE:
 //   - Integrated with GameTickManager via ITickable — native Update() is PROHIBITED.
 //   - Spatial target probe tick (throttled) -> updates _currentHovered from the registry cache.
-//   - Input poll (every tick) → reads _currentHovered, fires Interact().
-//   - These two paths are fully decoupled: input is never gated by the target probe timer.
+//   - Input poll (every tick) -> refreshes the current center ray, then fires Interact().
+//   - Hover prompts stay throttled; action execution is never allowed to use a stale target.
 //   - UI State Guard: interaction input is blocked when any menu is open,
 //     but spatial target probes continue so the hover prompt is refreshed immediately on close.
 //
@@ -328,6 +328,9 @@ namespace Hecton8.Interaction
             if (IsGameplayInputBlockedByMenu())
                 return;
 
+            ResolveHoveredTarget();
+            _targetProbeTimer = 0f;
+
             if (_currentHovered == null)
             {
                 if (_physicalInteractionHandler != null &&
@@ -526,8 +529,9 @@ namespace Hecton8.Interaction
         ///          NOT blocked by UI state — hover prompt must be
         ///          visible the instant a menu closes.
         ///
-        /// Phase 2: Input poll (every tick) — action execution.
+        /// Phase 2: Input poll (every tick) - action execution.
         ///          Blocked by UI state (HectonFabricatorUI.IsMenuOpen).
+        ///          Interact input refreshes the current center ray before dispatch.
         ///
         /// Zero GC: fixed spatial registry scan, TryGetComponent,
         ///          ReferenceEquals, dispatcher action latch — all allocation-free.
