@@ -49,6 +49,46 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void SaveSidecarStorage_RespectsConfiguredPersistentRoot()
+        {
+            string previousRoot = Hecton8.Core.HectonPersistentPathPolicy.RootPath;
+            string tempRoot = Path.Combine(Path.GetTempPath(), "H8SidecarRoot_" + Guid.NewGuid().ToString("N"));
+            string relativePath = Path.Combine("nested", "slot.meta");
+            string expectedPath = Path.Combine(tempRoot, relativePath);
+
+            try
+            {
+                Directory.CreateDirectory(tempRoot);
+                SaveSidecarStorage.SetPersistentDataPathRoot(tempRoot);
+
+                SaveMetadata metadata = SaveMetadata.CreateFallback("slot", 123456789L);
+                metadata.GameVersion = "root-override-test";
+                metadata.SceneName = "RootOverrideScene";
+                metadata.PlayTimeSeconds = 42.5f;
+                metadata.Checksum = "abc123";
+                metadata.WorldSeed = 8192;
+                metadata.WorldGenerationVersionId = 7;
+
+                Assert.IsTrue(SaveSidecarStorage.SaveMetadata(metadata, relativePath, out string saveError), saveError);
+                Assert.IsTrue(File.Exists(expectedPath), expectedPath);
+                Assert.IsTrue(SaveSidecarStorage.LoadMetadata(relativePath, out SaveMetadata loaded, out string loadError), loadError);
+                Assert.AreEqual(metadata.SlotName, loaded.SlotName);
+                Assert.AreEqual(metadata.GameVersion, loaded.GameVersion);
+                Assert.AreEqual(metadata.SceneName, loaded.SceneName);
+                Assert.AreEqual(metadata.PlayTimeSeconds, loaded.PlayTimeSeconds);
+                Assert.AreEqual(metadata.Checksum, loaded.Checksum);
+                Assert.AreEqual(metadata.WorldSeed, loaded.WorldSeed);
+                Assert.AreEqual(metadata.WorldGenerationVersionId, loaded.WorldGenerationVersionId);
+            }
+            finally
+            {
+                SaveSidecarStorage.SetPersistentDataPathRoot(previousRoot);
+                if (Directory.Exists(tempRoot))
+                    Directory.Delete(tempRoot, true);
+            }
+        }
+
+        [Test]
         public void HazardZoneRuntimeDTO_IsExplicitEightBytes()
         {
             StructLayoutAttribute layout = typeof(HazardZoneRuntimeDTO).StructLayoutAttribute;

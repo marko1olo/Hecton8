@@ -392,7 +392,7 @@ namespace Hecton8.SaveSystem
                 s_persistentDataPathRoot = root;
             }
 
-            return HectonPersistentPathPolicy.CombineFile(relativePath);
+            return HectonPersistentPathPolicy.CombineFile(root, relativePath);
         }
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]

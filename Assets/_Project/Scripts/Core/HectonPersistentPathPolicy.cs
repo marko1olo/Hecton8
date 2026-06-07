@@ -20,6 +20,12 @@ namespace Hecton8.Core
             return Path.Combine(RootPath, NormalizeRelativeSegment(fileName));
         }
 
+        public static string CombineFile(string rootPath, string fileName)
+        {
+            string root = string.IsNullOrEmpty(rootPath) ? RootPath : rootPath;
+            return Path.Combine(root, NormalizeRelativeSegment(fileName));
+        }
+
         public static string CombineDirectory(string directoryName)
         {
             return Path.Combine(RootPath, NormalizeRelativeSegment(directoryName));
