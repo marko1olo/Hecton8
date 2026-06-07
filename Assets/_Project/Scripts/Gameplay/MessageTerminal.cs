@@ -186,6 +186,7 @@ namespace Hecton8.Gameplay
         private byte _pendingTerminalEventMask;
         private int _emissionPropertyId;
         private uint _resolvedAppliedLoreLocaleHash = H8AppliedLoreRuntime.DefaultLocaleHash;
+        private bool _appliedLoreTerminalPreviewPublished;
 
         // Track read messages (for persistence)
         private HashSet<string> _readMessageIds;
@@ -642,9 +643,11 @@ namespace Hecton8.Gameplay
                 Surface = (byte)terminalOsPreviewSurface,
                 Flags = terminalOsPreviewHash != 0u ? AppliedLoreTerminalPreviewSignal.FlagHasTerminalHash : (byte)0
             };
-            SignalBus<AppliedLoreTerminalPreviewSignal>.TryPushTracked(
-                in signal,
-                ref s_x001MessageTerminalSignalPushDropCount);
+            _appliedLoreTerminalPreviewPublished =
+                SignalBus<AppliedLoreTerminalPreviewSignal>.TryPushTracked(
+                    in signal,
+                    ref s_x001MessageTerminalSignalPushDropCount) ||
+                _appliedLoreTerminalPreviewPublished;
         }
 
         //  PUBLIC API
@@ -1438,6 +1441,8 @@ namespace Hecton8.Gameplay
         {
             RefreshAppliedLoreLocaleHash(language);
             RebuildLocalizedTextCache();
+            if (_appliedLoreTerminalPreviewPublished)
+                PublishAppliedLoreTerminalPreview();
         }
 
         private void RefreshAppliedLoreLocaleHash(GameLanguage language)
