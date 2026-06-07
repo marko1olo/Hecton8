@@ -42,11 +42,13 @@ namespace Hecton8.Tests.Editor
             string writer = ExtractMethodBody(source, "private static void WriteBytesAtomic(");
 
             StringAssert.Contains("WriteBytesAtomic(_savePath, output);", source);
-            StringAssert.Contains("File.WriteAllBytes(tempPath, bytes);", writer);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", writer);
+            StringAssert.Contains("stream.Flush(true);", writer);
             StringAssert.Contains("File.Replace(tempPath, path, null, true);", writer);
             StringAssert.Contains("File.Move(tempPath, path);", writer);
             StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", writer);
             StringAssert.DoesNotContain("File.WriteAllBytes(_savePath, output);", source);
+            StringAssert.DoesNotContain("File.WriteAllBytes(tempPath, bytes);", writer);
         }
 
         [Test]
@@ -57,11 +59,13 @@ namespace Hecton8.Tests.Editor
             string writer = ExtractMethodBody(source, "private static void WriteBytesAtomic(");
 
             StringAssert.Contains("WriteBytesAtomic(fullPath, bytes);", writeBinary);
-            StringAssert.Contains("File.WriteAllBytes(tempPath, bytes);", writer);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", writer);
+            StringAssert.Contains("stream.Flush(true);", writer);
             StringAssert.Contains("File.Replace(tempPath, path, null, true);", writer);
             StringAssert.Contains("File.Move(tempPath, path);", writer);
             StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", writer);
             StringAssert.DoesNotContain("File.WriteAllBytes(fullPath, bytes);", writeBinary);
+            StringAssert.DoesNotContain("File.WriteAllBytes(tempPath, bytes);", writer);
         }
 
         [Test]
@@ -102,12 +106,14 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("WriteBytesAtomic(writePath, readable.EncodeToPNG());", source);
             StringAssert.Contains("WriteBytesAtomic(atlasPath, atlas.EncodeToPNG());", source);
-            StringAssert.Contains("File.WriteAllBytes(tempPath, bytes);", writer);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", writer);
+            StringAssert.Contains("stream.Flush(true);", writer);
             StringAssert.Contains("File.Replace(tempPath, path, null, true);", writer);
             StringAssert.Contains("File.Move(tempPath, path);", writer);
             StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", writer);
             StringAssert.DoesNotContain("File.WriteAllBytes(writePath, readable.EncodeToPNG());", source);
             StringAssert.DoesNotContain("File.WriteAllBytes(atlasPath, atlas.EncodeToPNG());", source);
+            StringAssert.DoesNotContain("File.WriteAllBytes(tempPath, bytes);", writer);
         }
 
         [Test]
@@ -120,16 +126,20 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("WriteBytesAtomic(SeaGrassAtlasAssetPath, atlas.EncodeToPNG());", floraSource);
             StringAssert.Contains("WriteBytesAtomic(path, texture.EncodeToPNG());", shallowsSource);
-            StringAssert.Contains("File.WriteAllBytes(tempPath, bytes);", floraWriter);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", floraWriter);
+            StringAssert.Contains("stream.Flush(true);", floraWriter);
             StringAssert.Contains("File.Replace(tempPath, path, null, true);", floraWriter);
             StringAssert.Contains("File.Move(tempPath, path);", floraWriter);
             StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", floraWriter);
-            StringAssert.Contains("File.WriteAllBytes(tempPath, bytes);", shallowsWriter);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", shallowsWriter);
+            StringAssert.Contains("stream.Flush(true);", shallowsWriter);
             StringAssert.Contains("File.Replace(tempPath, path, null, true);", shallowsWriter);
             StringAssert.Contains("File.Move(tempPath, path);", shallowsWriter);
             StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", shallowsWriter);
             StringAssert.DoesNotContain("File.WriteAllBytes(SeaGrassAtlasAssetPath, atlas.EncodeToPNG());", floraSource);
             StringAssert.DoesNotContain("File.WriteAllBytes(path, texture.EncodeToPNG());", shallowsSource);
+            StringAssert.DoesNotContain("File.WriteAllBytes(tempPath, bytes);", floraWriter);
+            StringAssert.DoesNotContain("File.WriteAllBytes(tempPath, bytes);", shallowsWriter);
         }
 
         [Test]

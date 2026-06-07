@@ -245,7 +245,12 @@ namespace Hecton8.EditorTools
                 if (File.Exists(tempPath))
                     File.Delete(tempPath);
 
-                File.WriteAllBytes(tempPath, bytes);
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    stream.Write(bytes, 0, bytes.Length);
+                    stream.Flush(true);
+                }
+
                 if (File.Exists(path))
                     File.Replace(tempPath, path, null, true);
                 else
