@@ -78,6 +78,9 @@ namespace Hecton8.Core.Data
             if (ReferenceEquals(_dataVault, dataVault))
                 return;
 
+            if (HasOpenStoreState())
+                CloseFile();
+
             ReleaseVaultHandles(_dataVault);
             _dataVault = dataVault;
             _blackBoxHandle = default;
@@ -607,6 +610,19 @@ namespace Hecton8.Core.Data
             _btreeAvailable = false;
             _mappedBytes = 0L;
             _header = default;
+        }
+
+        private bool HasOpenStoreState()
+        {
+            return _basePointer != null ||
+                   _mappedBytes != 0L ||
+                   _fileStream != null ||
+                   _ownedFallbackPointer != null ||
+                   _blackBoxHandle.BufferID != 0u ||
+                   _blackBoxCursorHandle.BufferID != 0u ||
+                   _btreeTelemetryHandle.BufferID != 0u ||
+                   _btreeTelemetryCursorHandle.BufferID != 0u ||
+                   _btreeTelemetryAccumulatorHandle.BufferID != 0u;
         }
 
 #if HECTON8_STATICDATA_MMF_AVAILABLE
