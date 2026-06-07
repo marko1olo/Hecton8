@@ -822,6 +822,7 @@ namespace Hecton8.Core
         public const uint DumpMagic = 0x4D4C4438u; // MLD8
         public const uint DumpVersion = 1u;
         public const int DumpHeaderBytes = 32;
+        private const string DumpPayloadLabel = "mathLodBlackBoxDumpPayload";
 
         public static unsafe bool TryDump(string projectRoot, NativeArray<MathLodTelemetryEntry> telemetryRing, int cursor)
         {
@@ -836,7 +837,11 @@ namespace Hecton8.Core
             string path = Path.Combine(root, DumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
             int entryBytes = telemetryRing.Length * entrySize;
             int totalBytes = DumpHeaderBytes + entryBytes;
-            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                totalBytes,
+                nameof(MathLodBlackBoxDumpWriter),
+                DumpPayloadLabel,
+                NativeArrayOptions.UninitializedMemory);
             try
             {
                 byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
@@ -856,7 +861,10 @@ namespace Hecton8.Core
             }
             finally
             {
-                payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(MathLodBlackBoxDumpWriter),
+                    DumpPayloadLabel);
             }
         }
 

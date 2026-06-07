@@ -471,6 +471,22 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void MathLodBlackBoxDump_TracksTransientPayload()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "MathLodApproximation.cs");
+            string dumpBody = ExtractMethodBody(source, "public static unsafe bool TryDump(");
+
+            Assert.That(source, Does.Contain("private const string DumpPayloadLabel = \"mathLodBlackBoxDumpPayload\";"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("nameof(MathLodBlackBoxDumpWriter)"));
+            Assert.That(dumpBody, Does.Contain("DumpPayloadLabel"));
+            Assert.That(dumpBody, Does.Contain("NativeArrayOptions.UninitializedMemory"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBody, Does.Not.Contain("new NativeArray<byte>(totalBytes"));
+            Assert.That(dumpBody, Does.Not.Contain("payload.Dispose()"));
+        }
+
+        [Test]
         public void AmbientBiota_UsesContinuousSpawnAndShaderQualitySignals()
         {
             string director = ReadProjectFile("Assets", "_Project", "Scripts", "AI", "Ambient", "AmbientBiotaDirector.cs");
