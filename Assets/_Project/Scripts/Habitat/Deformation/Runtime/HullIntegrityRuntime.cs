@@ -1039,6 +1039,36 @@ namespace Hecton8.Habitat.Deformation
 
         private void RebindRegistryDependency(GlobalRegistryServiceSlot serviceSlot, object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                IDataVault currentVault = currentService as IDataVault;
+                if (ReferenceEquals(_dataVault, currentVault))
+                    return;
+
+                if (_jobScheduled)
+                {
+                    DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete: true);
+                    _jobScheduled = false;
+                }
+
+                ReleaseVaultHandles();
+                _dataVault = currentVault;
+                _initialized = 0;
+                _mockGenerated = 0;
+                _activeModuleCount = 0;
+                if (_dataVault != null && isActiveAndEnabled && TryInitialize())
+                {
+                    TryRegisterTickables();
+                    s_activeRuntime = this;
+                }
+                else if (s_activeRuntime == this)
+                {
+                    s_activeRuntime = null;
+                }
+
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Player)
                 return;
 
