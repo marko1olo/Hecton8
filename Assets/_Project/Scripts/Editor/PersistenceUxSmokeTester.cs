@@ -54,6 +54,7 @@ namespace Hecton8.Dev
             string saveSidecarStorage = ReadProjectFile("Assets/_Project/Scripts/SaveSidecarStorage.cs");
             string saveSlotThumbnail = ReadProjectFile("Assets/_Project/Scripts/UI/SaveSlotThumbnail.cs");
             string saveThumbnailCapture = ReadProjectFile("Assets/_Project/Scripts/UI/SaveThumbnailCapture.cs");
+            string worldChunkResidencyManager = ReadProjectFile("Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs");
 
             bool asyncThumbnailPass =
                 ContainsAll(thumbnailSystem, "Extension = \".jpg\"", "EncodeNativeArrayToJPG", "Awaitable.BackgroundThreadAsync", "NativeMemorySentinel.RegisterNativeArray") &&
@@ -253,6 +254,12 @@ namespace Hecton8.Dev
                 CountOccurrences(saveSidecarStorage, "DisposeTempNativeArrayBuffer(ref buffer,") == 4 &&
                 CountOccurrences(saveSidecarStorage, "buffer.Dispose();") == 1;
 
+            bool residencyDataLinkNotificationPass =
+                ContainsAll(worldChunkResidencyManager, "using Hecton8.UI;", "DataLinkDegradedMessage", "NotificationEvents.TryPushWarning(DataLinkDegradedMessage.AsSpan())", "_dataLinkDegradedNotificationPublished = true;", "if (!_dataLinkDegradedByStorageDebt)", "_dataLinkDegradedNotificationPublished = false;") &&
+                SourceIndex(worldChunkResidencyManager, "HUDNotificationSignal notification") == int.MaxValue &&
+                SourceIndex(worldChunkResidencyManager, "0x444C4B44u") == int.MaxValue &&
+                SourceIndex(worldChunkResidencyManager, "PublishPdaDataLinkState(signal.Frame)") == int.MaxValue;
+
             bool pass = asyncThumbnailPass &&
                         loadingStagePass &&
                         safeAupSnapPass &&
@@ -279,7 +286,8 @@ namespace Hecton8.Dev
                         sceneActivationContractPass &&
                         playModeSentinelAsyncIoPass &&
                         saveSlotPathGuardPass &&
-                        saveThumbnailSidecarGuardPass;
+                        saveThumbnailSidecarGuardPass &&
+                        residencyDataLinkNotificationPass;
 
             WriteArtifact(
                 pass,
@@ -310,6 +318,7 @@ namespace Hecton8.Dev
                 playModeSentinelAsyncIoPass,
                 saveSlotPathGuardPass,
                 saveThumbnailSidecarGuardPass,
+                residencyDataLinkNotificationPass,
                 rewrittenOffset,
                 rewrittenLength);
 
@@ -499,6 +508,7 @@ namespace Hecton8.Dev
             bool playModeSentinelAsyncIoPass,
             bool saveSlotPathGuardPass,
             bool saveThumbnailSidecarGuardPass,
+            bool residencyDataLinkNotificationPass,
             int inventoryRewriteOffset,
             int inventoryRewriteLength)
         {
@@ -538,6 +548,7 @@ namespace Hecton8.Dev
                 .Append("\"playModeSentinelAsyncIoPass\":").Append(playModeSentinelAsyncIoPass ? "true" : "false").Append(',')
                 .Append("\"saveSlotPathGuardPass\":").Append(saveSlotPathGuardPass ? "true" : "false").Append(',')
                 .Append("\"saveThumbnailSidecarGuardPass\":").Append(saveThumbnailSidecarGuardPass ? "true" : "false").Append(',')
+                .Append("\"residencyDataLinkNotificationPass\":").Append(residencyDataLinkNotificationPass ? "true" : "false").Append(',')
                 .Append("\"inventoryRewriteOffset\":").Append(inventoryRewriteOffset).Append(',')
                 .Append("\"inventoryRewriteLength\":").Append(inventoryRewriteLength)
                 .Append('}');

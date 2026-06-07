@@ -12,6 +12,7 @@ using Hecton8.Core.Scheduling;
 using Hecton8.Data;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
+using Hecton8.UI;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -663,6 +664,7 @@ namespace Hecton8.World
         private const float StorageDebtDataLinkResetThreshold = 0.45f;
         private const float StorageDebtProxyFallbackThreshold = 0.6f;
         private const float StorageDebtProxyFallbackResetThreshold = 0.45f;
+        private const string DataLinkDegradedMessage = "PDA DATA LINK DEGRADED";
         private const byte LoadRequestFlagPredictive = 1 << 0;
         private const byte LoadRequestFlagTeleport = 1 << 1;
         private const uint TelemetryInvalidAupFlag = 1u << 0;
@@ -3637,7 +3639,7 @@ namespace Hecton8.World
                 SignalBus<StreamingTurbulenceSignal>.TryPushTracked(in turbulence, ref _signalPushDropCount);
             }
 
-            PublishPdaDataLinkState(signal.Frame);
+            PublishPdaDataLinkState();
         }
 
         private void EvictDistantMacroDatabaseBreadcrumbs()
@@ -3721,20 +3723,14 @@ namespace Hecton8.World
             return active ? value > exitThreshold : value > enterThreshold;
         }
 
-        private void PublishPdaDataLinkState(uint frame)
+        private void PublishPdaDataLinkState()
         {
             if (_dataLinkDegradedByStorageDebt)
             {
                 if (_dataLinkDegradedNotificationPublished)
                     return;
 
-                HUDNotificationSignal notification = default;
-                notification.MessageHash = 0x444C4B44u; // "DLKD"
-                notification.ContextHash = 0x5354494Fu; // "STIO"
-                notification.Frame = frame;
-                notification.Severity = 1;
-                notification.Flags = StorageDebtSignal.DataLinkDegradedFlag;
-                SignalBus<HUDNotificationSignal>.TryPushTracked(in notification, ref _signalPushDropCount);
+                NotificationEvents.TryPushWarning(DataLinkDegradedMessage.AsSpan());
                 _dataLinkDegradedNotificationPublished = true;
             }
         }
