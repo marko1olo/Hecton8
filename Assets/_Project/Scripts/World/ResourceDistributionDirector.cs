@@ -2155,7 +2155,16 @@ namespace Hecton8.World
                 return;
             }
 
-            DispatcherJobSwap.TryComplete(ref _metamorphismJobHandle, forceComplete: true);
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobSwap.TryComplete(ref _metamorphismJobHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
+
             _metamorphismJobHandle = default;
             _metamorphismJobActive = false;
             _scheduledMetamorphismCount = 0;
