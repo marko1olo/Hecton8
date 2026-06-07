@@ -169,6 +169,69 @@ namespace Hecton8.Power
                            _powerEdges.IsCreated;
         }
 
+        public void RebindDataVault(IDataVault currentVault)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            JobHandle translationDependency = _translationPending ? _translationHandle : default;
+            if (_translationPending)
+            {
+                _translationHandle = default;
+                _translationPending = false;
+            }
+
+            _graphEvaluationPending = false;
+            _graph.InjectDataVault(currentVault);
+            ForceCompleteTranslationInPostSimulationWindow(ref translationDependency);
+            ReleasePendingTranslationLocks();
+            ReleaseBuffers();
+            ResetRuntimeStateForDataVaultRebind();
+
+            _dataVault = currentVault;
+            if (currentVault != null)
+            {
+                EnsureBuffers();
+                SignalCorridorRuntime.EnsureInitialized();
+                _initialized = _nodes.IsCreated &&
+                               _cellToNode.IsCreated &&
+                               _counts.IsCreated &&
+                               _generatorNodeIndex.IsCreated &&
+                               _blackBox.IsCreated &&
+                               _powerEdges.IsCreated;
+                TryBindGraphBaseAwakeState();
+            }
+
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        private void ResetRuntimeStateForDataVaultRebind()
+        {
+            _activeDescriptor = default;
+            _pendingDescriptor = default;
+            _activeGridHandle = 0u;
+            _pendingGridHandle = 0u;
+            _activeNodeCount = 0;
+            _activeDirectedEdgeCount = 0;
+            _activeDoorCount = 0;
+            _activeRoomCount = 0;
+            _activeGeneratorNodeIndex = -1;
+            _blackBoxCursor = 0;
+            _lastGraphFaultFlags = 0;
+            _reactorOutput01 = InitialReactorOutput01;
+            _lastReactorUpdateTime = 0f;
+            _initialized = false;
+            _translationHandle = default;
+            _translationGridLeaseBufferId = BufferID.Unknown;
+            _translationGridLeaseSystemId = SystemID.Unknown;
+            _translationBufferLockMask = 0UL;
+            _translationPending = false;
+            _graphEvaluationPending = false;
+            _hasActiveGraph = false;
+            _gasSeedPending = false;
+            _faultDumped = false;
+        }
+
         private void EnsureBuffers()
         {
             IDataVault vault = _dataVault;

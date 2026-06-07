@@ -352,16 +352,19 @@ namespace Hecton8.Power
 
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
+                IDataVault currentVault = currentService as IDataVault;
+                _wfcOutpostPowerBoot?.RebindDataVault(currentVault);
                 _shinobuLogisticsRouter?.Dispose();
                 _shinobuLogisticsRouter = null;
                 _submarineThermalGridRuntime?.Dispose();
                 _submarineThermalGridRuntime = null;
-                InjectDataVaultForAllGrids(currentService as IDataVault);
+                InjectDataVaultForAllGrids(currentVault);
                 ReleaseJacobiPowerVaultBuffers(previousService as IDataVault);
                 _nextSubmarineThermalGridTickTime = 0f;
                 _submarineThermalGridSimulationFrame = 0u;
-                if (Application.isPlaying && currentService is IDataVault)
+                if (Application.isPlaying && currentVault != null)
                 {
+                    EnsureWfcOutpostPowerBoot();
                     EnsureJacobiPowerVaultBuffers();
                     EnsureShinobuLogisticsRouter();
                     EnsureSubmarineThermalGridRuntime();
