@@ -3453,7 +3453,7 @@ namespace Hecton8.Physics
             // [BLOCKING_SYNC_POINT] Discard paths are structural mutation/origin-shift/teardown barriers;
             // normal culling result publication uses non-blocking finalization only.
             bool completed = shouldDiscard
-                ? DispatcherJobSwap.TryComplete(ref _physicsCullingJobHandle, forceComplete: true)
+                ? TryCompletePhysicsCullingJobForStateMutationBarrier(ref _physicsCullingJobHandle)
                 : DispatcherJobSwap.TryFinalizeCompleted(ref _physicsCullingJobHandle);
             if (!completed)
                 return;
@@ -3478,6 +3478,22 @@ namespace Hecton8.Physics
             }
 
             DispatchPhysicsCullingResults(jobCount);
+        }
+
+        private static bool TryCompletePhysicsCullingJobForStateMutationBarrier(ref JobHandle handle)
+        {
+            bool completed;
+            DispatcherJobSwap.BeginPostFixedSwapWindow();
+            try
+            {
+                completed = DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostFixedSwapWindow();
+            }
+
+            return completed;
         }
 
         private void DispatchPhysicsCullingResults(int jobCount)
