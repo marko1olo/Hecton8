@@ -5694,6 +5694,9 @@ namespace Hecton8.World
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVault(currentService as IDataVault);
+                    break;
                 case GlobalRegistryServiceSlot.Player:
                     RebindPlayerContext(previousService as IPlayerRuntimeContext, currentService as IPlayerRuntimeContext);
                     break;
@@ -5710,6 +5713,20 @@ namespace Hecton8.World
             }
 
             RefreshCachedDependencyDiagnostics();
+        }
+
+        private void RebindDataVault(IDataVault currentVault)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            CompletePendingSamplingJobForBarrier();
+            DisposeBurstData();
+            ReleaseBiomeInfluenceGraphicsBuffer();
+            _dataVault = currentVault;
+            _isDataDirty = true;
+            _samplingFramePrepared = false;
+            ClearSeafloorHeightCache();
         }
 
         private void RegisterRuntimeDependencyListeners()
