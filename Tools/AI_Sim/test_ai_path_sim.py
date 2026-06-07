@@ -10,7 +10,6 @@ import importlib.util
 import json
 import subprocess
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -18,10 +17,18 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 SIM_PATH = ROOT / "Tools" / "AiPathSim.py"
 TUNING_PATH = ROOT / "Data" / "AI" / "Navigation_Tuning.json"
 BINARY_PATH = ROOT / "Data" / "AI" / "Navigation_Tuning.h8bin"
 MANIFEST_PATH = ROOT / "Data" / "AI" / "Navigation_Tuning.manifest.json"
+
+from Tools.test_local_temp import project_local_tempdir_factory  # noqa: E402
+
+
+TEMP_DIR = project_local_tempdir_factory("ai_path_sim")
 
 
 def load_sim_module():
@@ -143,17 +150,14 @@ class AiPathSimTests(unittest.TestCase):
         self.assertFalse(valid)
         self.assertIn("export root must be a JSON object", errors)
 
-        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as handle:
-            temp_path = Path(handle.name)
-            handle.write("{invalid-json")
-        try:
+        with TEMP_DIR() as temp_root:
+            temp_path = Path(temp_root) / "invalid.json"
+            temp_path.write_text("{invalid-json", encoding="utf-8")
             output = io.StringIO()
             with contextlib.redirect_stdout(output):
                 self.assertEqual(self.sim.check_export(temp_path), 1)
             self.assertIn("CHECK FAILED", output.getvalue())
             self.assertIn("invalid JSON export", output.getvalue())
-        finally:
-            temp_path.unlink(missing_ok=True)
 
     def test_sample_cost_model_is_deterministic(self) -> None:
         self.assertEqual(self.sim.deterministic_sample_cost_model(), self.tuning["sampleCostModel"])
@@ -204,10 +208,9 @@ class AiPathSimTests(unittest.TestCase):
         self.assertTrue(any("missing source contract file" in error for error in errors))
 
     def test_cli_check_rejects_invalid_json_without_traceback(self) -> None:
-        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as handle:
-            temp_path = Path(handle.name)
-            handle.write("{invalid-json")
-        try:
+        with TEMP_DIR() as temp_root:
+            temp_path = Path(temp_root) / "invalid.json"
+            temp_path.write_text("{invalid-json", encoding="utf-8")
             result = subprocess.run(
                 [sys.executable, str(SIM_PATH), "--check", str(temp_path)],
                 cwd=ROOT,
@@ -220,8 +223,6 @@ class AiPathSimTests(unittest.TestCase):
             self.assertIn("CHECK FAILED", output)
             self.assertIn("invalid JSON export", output)
             self.assertNotIn("Trace" + "back", output)
-        finally:
-            temp_path.unlink(missing_ok=True)
 
     def test_duplicate_source_constants_are_all_checked(self) -> None:
         source_path = self.sim.SOURCE_ROOT / self.sim.FLUID_ENGINE_PATH
