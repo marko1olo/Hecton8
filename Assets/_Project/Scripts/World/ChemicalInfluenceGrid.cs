@@ -2391,6 +2391,7 @@ namespace Hecton8.World
 
         private void ResetVaultStateForRebind()
         {
+            UnlockSimulationBuffers();
             ReleaseVaultHandles(_dataVault);
             _breadcrumbCount = 0;
             _breadcrumbWriteCursor = 0;
