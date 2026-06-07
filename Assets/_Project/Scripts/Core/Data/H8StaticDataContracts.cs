@@ -2299,8 +2299,18 @@ namespace Hecton8.Core.Data
             uint payloadCrc32,
             uint flags)
         {
+            TryWrite(path, ring, cursorValue, payloadCrc32, flags);
+        }
+
+        public static bool TryWrite(
+            string path,
+            H8StaticDataTelemetryEntry* ring,
+            int cursorValue,
+            uint payloadCrc32,
+            uint flags)
+        {
             if (ring == null || string.IsNullOrEmpty(path))
-                return;
+                return false;
 
             if ((uint)cursorValue >= H8StaticDataFormat.TelemetryFrameCount)
                 cursorValue = 0;
@@ -2329,19 +2339,23 @@ namespace Hecton8.Core.Data
                 byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
                 int writeCursor = 0;
                 if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(destination, byteCount, &header, headerSize))
-                    return;
+                    return false;
 
                 writeCursor += headerSize;
                 for (int i = 0; i < H8StaticDataFormat.TelemetryFrameCount; i++)
                 {
                     int sourceIndex = (cursorValue + i) % H8StaticDataFormat.TelemetryFrameCount;
                     if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(destination + writeCursor, byteCount - writeCursor, ring + sourceIndex, entrySize))
-                        return;
+                        return false;
 
                     writeCursor += entrySize;
                 }
 
-                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, payload, writeCursor);
+                return Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, payload, writeCursor);
+            }
+            catch (Exception)
+            {
+                return false;
             }
             finally
             {
@@ -2361,8 +2375,17 @@ namespace Hecton8.Core.Data
             int cursorValue,
             uint flags)
         {
+            TryWrite(path, ring, cursorValue, flags);
+        }
+
+        public static bool TryWrite(
+            string path,
+            BTreeTelemetryEntry* ring,
+            int cursorValue,
+            uint flags)
+        {
             if (ring == null || string.IsNullOrEmpty(path))
-                return;
+                return false;
 
             if ((uint)cursorValue >= H8StaticDataFormat.TelemetryFrameCount)
                 cursorValue = 0;
@@ -2391,19 +2414,23 @@ namespace Hecton8.Core.Data
                 byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
                 int writeCursor = 0;
                 if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(destination, byteCount, &header, headerSize))
-                    return;
+                    return false;
 
                 writeCursor += headerSize;
                 for (int i = 0; i < H8StaticDataFormat.TelemetryFrameCount; i++)
                 {
                     int sourceIndex = (cursorValue + i) % H8StaticDataFormat.TelemetryFrameCount;
                     if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(destination + writeCursor, byteCount - writeCursor, ring + sourceIndex, entrySize))
-                        return;
+                        return false;
 
                     writeCursor += entrySize;
                 }
 
-                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, payload, writeCursor);
+                return Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, payload, writeCursor);
+            }
+            catch (Exception)
+            {
+                return false;
             }
             finally
             {

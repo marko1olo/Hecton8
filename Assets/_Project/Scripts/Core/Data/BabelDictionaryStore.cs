@@ -489,44 +489,75 @@ namespace Hecton8.Core.Data
 
         public void DumpBlackBox(string path = null)
         {
+            TryDumpBlackBox(path);
+        }
+
+        public bool TryDumpBlackBox(string path = null)
+        {
             if (!TryReadBlackBox(out NativeArray<H8StaticDataTelemetryEntry>.ReadOnly ring, out NativeArray<int>.ReadOnly cursor))
             {
-                return;
+                return false;
             }
 
             if (!TryResolveDumpPath(path, BlackBoxDumpFileName, out string resolvedPath))
-                return;
+                return false;
 
             H8StaticDataTelemetryEntry* ringPtr = (H8StaticDataTelemetryEntry*)ring.GetUnsafeReadOnlyPtr();
-            H8StaticDataBlackBoxDump.Write(
+            if (!H8StaticDataBlackBoxDump.TryWrite(
                 resolvedPath,
                 ringPtr,
                 cursor[0],
                 IsOpen ? _header.PayloadCrc32 : 0u,
-                IsOpen ? _header.Flags : 0u);
+                IsOpen ? _header.Flags : 0u))
+            {
+                return false;
+            }
+
             _pendingBlackBoxDumpCount = 0u;
+            return true;
         }
 
         public void DumpBTreeTelemetry(string path = null)
+        {
+            TryDumpBTreeTelemetry(path);
+        }
+
+        public bool TryDumpBTreeTelemetry(string path = null)
         {
             if (!TryReadBTreeTelemetry(
                     out NativeArray<BTreeTelemetryEntry>.ReadOnly ring,
                     out NativeArray<int>.ReadOnly cursor,
                     out _))
             {
-                return;
+                return false;
             }
 
             if (!TryResolveDumpPath(path, BTreeTelemetryDumpFileName, out string resolvedPath))
-                return;
+                return false;
 
             BTreeTelemetryEntry* ringPtr = (BTreeTelemetryEntry*)ring.GetUnsafeReadOnlyPtr();
-            H8BTreeTelemetryDump.Write(
+            if (!H8BTreeTelemetryDump.TryWrite(
                 resolvedPath,
                 ringPtr,
                 cursor[0],
-                H8CacheBTree.BTreeTelemetrySlowBatchFlag);
+                H8CacheBTree.BTreeTelemetrySlowBatchFlag))
+            {
+                return false;
+            }
+
             _pendingBTreeTelemetryDumpCount = 0u;
+            return true;
+        }
+
+        public bool FlushPendingDumpsCold()
+        {
+            bool flushed = true;
+            if (_pendingBlackBoxDumpCount != 0u)
+                flushed &= TryDumpBlackBox();
+            if (_pendingBTreeTelemetryDumpCount != 0u)
+                flushed &= TryDumpBTreeTelemetry();
+
+            return flushed;
         }
 
         public void Dispose()
@@ -1219,6 +1250,7 @@ namespace Hecton8.Core.Data
 
         private void CloseFile()
         {
+            FlushPendingDumpsCold();
             CompleteActiveLoreReadsForClose();
 
 #if HECTON8_BABEL_MMF_AVAILABLE
