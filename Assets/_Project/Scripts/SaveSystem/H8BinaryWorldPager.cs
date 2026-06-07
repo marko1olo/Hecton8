@@ -3108,16 +3108,18 @@ namespace Hecton8.Core.Persistence.Paging
             if (string.IsNullOrEmpty(dumpPath) || !telemetryRing.IsCreated)
                 return;
 
+            string tempPath = dumpPath + ".tmp";
             try
             {
                 HectonPersistentPathPolicy.EnsureParentDirectory(dumpPath);
+                TryDeleteBlackBoxDumpTempNoThrow(tempPath);
                 using (FileStream stream = new FileStream(
-                           dumpPath,
-                           FileMode.Create,
+                           tempPath,
+                           FileMode.CreateNew,
                            FileAccess.Write,
                            FileShare.Read,
                            4096,
-                           FileOptions.SequentialScan))
+                           FileOptions.SequentialScan | FileOptions.WriteThrough))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     int count = math.min(telemetryRing.Length, TelemetryCapacity);
@@ -3140,7 +3142,52 @@ namespace Hecton8.Core.Persistence.Paging
                         writer.Write((byte)entry.Operation);
                         writer.Write((byte)entry.Status);
                     }
+
+                    writer.Flush();
+                    stream.Flush(true);
                 }
+
+                PromoteBlackBoxDumpTempFile(tempPath, dumpPath);
+            }
+            catch (IOException)
+            {
+                TryDeleteBlackBoxDumpTempNoThrow(tempPath);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                TryDeleteBlackBoxDumpTempNoThrow(tempPath);
+            }
+            catch (NotSupportedException)
+            {
+                TryDeleteBlackBoxDumpTempNoThrow(tempPath);
+            }
+            catch (ArgumentException)
+            {
+                TryDeleteBlackBoxDumpTempNoThrow(tempPath);
+            }
+            catch (ObjectDisposedException)
+            {
+                TryDeleteBlackBoxDumpTempNoThrow(tempPath);
+            }
+        }
+
+        private static void PromoteBlackBoxDumpTempFile(string tempPath, string dumpPath)
+        {
+            if (File.Exists(dumpPath))
+            {
+                File.Replace(tempPath, dumpPath, null, true);
+                return;
+            }
+
+            File.Move(tempPath, dumpPath);
+        }
+
+        private static void TryDeleteBlackBoxDumpTempNoThrow(string tempPath)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(tempPath) && File.Exists(tempPath))
+                    File.Delete(tempPath);
             }
             catch (IOException)
             {
@@ -3152,9 +3199,6 @@ namespace Hecton8.Core.Persistence.Paging
             {
             }
             catch (ArgumentException)
-            {
-            }
-            catch (ObjectDisposedException)
             {
             }
         }

@@ -37,6 +37,22 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0, CountToken(startBody, "MarkInitializationFault("));
         }
 
+        [Test]
+        public void BlackBoxDumpWritesThroughAtomicTemp()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs");
+            string dumpBody = ExtractMethodBody(source, "private unsafe void WriteBlackBoxDump(");
+
+            StringAssert.Contains("string tempPath = dumpPath + \".tmp\";", dumpBody);
+            StringAssert.Contains("TryDeleteBlackBoxDumpTempNoThrow(tempPath);", dumpBody);
+            StringAssert.Contains("FileMode.CreateNew", dumpBody);
+            StringAssert.Contains("FileOptions.SequentialScan | FileOptions.WriteThrough", dumpBody);
+            StringAssert.Contains("stream.Flush(true);", dumpBody);
+            StringAssert.Contains("PromoteBlackBoxDumpTempFile(tempPath, dumpPath);", dumpBody);
+            StringAssert.DoesNotContain("FileMode.Create,", dumpBody);
+            StringAssert.Contains("File.Replace(tempPath, dumpPath, null, true);", source);
+        }
+
         private static string ReadProjectFile(string relativePath)
         {
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
