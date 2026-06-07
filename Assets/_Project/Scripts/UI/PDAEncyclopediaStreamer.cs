@@ -563,7 +563,14 @@ namespace Hecton8.UI
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
         {
-            RefreshAppliedLoreLocaleHash((GameLanguage)payload.Language);
+            HandleLanguageChanged((GameLanguage)payload.Language);
+        }
+
+        private void HandleLanguageChanged(GameLanguage language)
+        {
+            RefreshAppliedLoreLocaleHash(language);
+            _needsEntryReload = true;
+            ResetActiveSourceCache();
         }
 
         public void OnGlobalRegistryServiceReplaced(

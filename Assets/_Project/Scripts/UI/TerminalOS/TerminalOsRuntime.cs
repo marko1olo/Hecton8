@@ -789,12 +789,13 @@ namespace Hecton8.UI
             utf8Bytes = ReadOnlySpan<byte>.Empty;
             uint resolvedLocale = localeHash != 0u ? localeHash : H8AppliedLoreRuntime.DefaultLocaleHash;
             bool resolvedIsDefault = resolvedLocale == H8AppliedLoreRuntime.DefaultLocaleHash;
-            if (H8AppliedLoreRuntime.TryGetUtf8(packetHash, resolvedLocale, surface, out utf8Bytes))
+            if (H8AppliedLoreRuntime.TryGetUtf8(packetHash, resolvedLocale, surface, out utf8Bytes) &&
+                utf8Bytes.Length > 0)
             {
-                if (resolvedIsDefault || IsTerminalPreviewAsciiCompatible(utf8Bytes))
-                    return true;
+                return true;
             }
-            else if (resolvedIsDefault)
+
+            if (resolvedIsDefault)
             {
                 return false;
             }
@@ -951,24 +952,34 @@ namespace Hecton8.UI
                 if ((value & 0xC0) == 0x80)
                     continue;
 
-                line.Add((byte)'?');
+                WriteTerminalPreviewUtf8Marker(ref line);
+                return;
             }
         }
 
-        private static bool IsTerminalPreviewAsciiCompatible(ReadOnlySpan<byte> utf8Bytes)
+        private static void WriteTerminalPreviewUtf8Marker(ref FixedString32Bytes line)
         {
-            for (int i = 0; i < utf8Bytes.Length; i++)
-            {
-                byte value = utf8Bytes[i];
-                if (value == 0u)
-                    return true;
-                if (value == (byte)'\r' || value == (byte)'\n' || value == (byte)'\t')
-                    continue;
-                if (value < 0x20 || value >= 0x7F)
-                    return false;
-            }
+            line.Clear();
+            AppendTerminalPreviewAscii(ref line, (byte)'B');
+            AppendTerminalPreviewAscii(ref line, (byte)'A');
+            AppendTerminalPreviewAscii(ref line, (byte)'B');
+            AppendTerminalPreviewAscii(ref line, (byte)'E');
+            AppendTerminalPreviewAscii(ref line, (byte)'L');
+            AppendTerminalPreviewAscii(ref line, (byte)' ');
+            AppendTerminalPreviewAscii(ref line, (byte)'/');
+            AppendTerminalPreviewAscii(ref line, (byte)'/');
+            AppendTerminalPreviewAscii(ref line, (byte)' ');
+            AppendTerminalPreviewAscii(ref line, (byte)'U');
+            AppendTerminalPreviewAscii(ref line, (byte)'T');
+            AppendTerminalPreviewAscii(ref line, (byte)'F');
+            AppendTerminalPreviewAscii(ref line, (byte)'8');
+        }
 
-            return utf8Bytes.Length > 0;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void AppendTerminalPreviewAscii(ref FixedString32Bytes line, byte value)
+        {
+            if (line.Length < TerminalOsConstants.MaxFixedStringPayloadBytes)
+                line.Add(value);
         }
 
         private void ForceAllDirty()
