@@ -31,6 +31,29 @@ namespace Hecton8.Tests.Editor
                 resetTransient.IndexOf("_activeJobMutationGuardVault = null;", StringComparison.Ordinal));
         }
 
+        [Test]
+        public void TeardownForceCompletesActiveJobInsidePostSimulationSwapWindow()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs");
+            string teardown = ExtractMethodBlock(source, "private static void CompleteScheduledForTeardown()");
+            string helper = ExtractMethodBlock(source, "private static bool ForceCompleteActiveJobInPostSimulationWindow()");
+            string noWait = ExtractMethodBlock(source, "private static void TryFinalizeScheduledNoWait()");
+
+            Assert.That(teardown, Does.Contain("ForceCompleteActiveJobInPostSimulationWindow()"));
+            Assert.That(teardown, Does.Not.Contain("DispatcherJobSwap.TryComplete(ref _activeHandle, forceComplete: true)"));
+            Assert.That(helper, Does.Contain("DispatcherJobSwap.BeginPostSimulationSwapWindow();"));
+            Assert.That(helper, Does.Contain("DispatcherJobSwap.TryComplete(ref _activeHandle, forceComplete: true);"));
+            Assert.That(helper, Does.Contain("DispatcherJobSwap.EndPostSimulationSwapWindow();"));
+            Assert.Less(
+                helper.IndexOf("DispatcherJobSwap.BeginPostSimulationSwapWindow();", StringComparison.Ordinal),
+                helper.IndexOf("DispatcherJobSwap.TryComplete(ref _activeHandle, forceComplete: true);", StringComparison.Ordinal));
+            Assert.Less(
+                helper.IndexOf("DispatcherJobSwap.TryComplete(ref _activeHandle, forceComplete: true);", StringComparison.Ordinal),
+                helper.IndexOf("DispatcherJobSwap.EndPostSimulationSwapWindow();", StringComparison.Ordinal));
+            Assert.That(noWait, Does.Contain("DispatcherJobSwap.TryFinalizeCompleted(ref _activeHandle)"));
+            Assert.That(noWait, Does.Not.Contain("BeginPostSimulationSwapWindow"));
+        }
+
         private static string ReadProjectFile(string relativePath)
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
