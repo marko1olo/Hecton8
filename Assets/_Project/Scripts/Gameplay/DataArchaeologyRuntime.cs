@@ -420,6 +420,7 @@ namespace Hecton8.Gameplay
         private VaultGenerationHandle<DataArchaeologyNotification> _notificationsHandle;
         private VaultGenerationHandle<DataArchaeologyTelemetryEntry> _telemetryRingHandle;
         private LoreMmfEncyclopedia _loreMmf;
+        private LoreMmfLoadStatus _loreMmfLastOpenStatus = LoreMmfLoadStatus.NotOpen;
         private Mesh _resolvedReconstructionMesh;
         private IDataVault _dataVault;
         private int _partialCount;
@@ -442,6 +443,7 @@ namespace Hecton8.Gameplay
         private bool _mmfDirty;
         private float _nextMmfFlushTime = float.PositiveInfinity;
         private bool _disposed;
+        private bool _loreMmfOpenAttempted;
         private bool _hotSwapListenerRegistered;
         private ILoreUnlockSink _cachedLoreDatabase;
         private ISaveService _saveService;
@@ -712,14 +714,22 @@ namespace Hecton8.Gameplay
             if (destination == null || destination.Length == 0)
                 return LoreMmfLoadStatus.DestinationTooSmall;
 
+            if (_loreMmfOpenAttempted && _loreMmfLastOpenStatus != LoreMmfLoadStatus.Ok)
+                return _loreMmfLastOpenStatus;
+
             if (_loreMmf == null)
                 _loreMmf = new LoreMmfEncyclopedia(); // COLD ALLOC: LoreMmfEncyclopedia[1] - read-on-demand PDA MMF view - owner: DataArchaeologyRuntime
 
             if (!_loreMmf.IsOpen)
             {
-                LoreMmfLoadStatus openStatus = _loreMmf.TryOpen(loreIndexPath, lorePayloadPath);
-                if (openStatus != LoreMmfLoadStatus.Ok)
-                    return openStatus;
+                _loreMmfOpenAttempted = true;
+                _loreMmfLastOpenStatus = _loreMmf.TryOpen(loreIndexPath, lorePayloadPath);
+                if (_loreMmfLastOpenStatus != LoreMmfLoadStatus.Ok)
+                {
+                    _loreMmf.Dispose();
+                    _loreMmf = null;
+                    return _loreMmfLastOpenStatus;
+                }
             }
 
             return _loreMmf.TryLoadEntryUtf16(hash, destination, out charsWritten);
@@ -844,6 +854,8 @@ namespace Hecton8.Gameplay
 
             _loreMmf?.Dispose();
             _loreMmf = null;
+            _loreMmfLastOpenStatus = LoreMmfLoadStatus.NotOpen;
+            _loreMmfOpenAttempted = false;
 
             ClearFragmentPositions();
             ClearScanStates();
