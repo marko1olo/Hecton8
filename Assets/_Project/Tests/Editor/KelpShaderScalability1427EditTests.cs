@@ -1013,10 +1013,14 @@ namespace Hecton8.Tests.Editor
             int statesAcquire = tuningRelease >= 0
                 ? surfaceNets.IndexOf("vault.TryAcquireWriteLock(in handles.States", tuningRelease, System.StringComparison.Ordinal)
                 : -1;
+            string surfaceNetsDumpBody = ExtractMethodBody(surfaceNets, "private static bool TryWriteDumpFile(");
             Assert.That(commitIndex, Is.GreaterThanOrEqualTo(0));
             Assert.That(tuningAcquire, Is.GreaterThanOrEqualTo(0));
             Assert.That(tuningRelease, Is.GreaterThan(tuningAcquire));
             Assert.That(statesAcquire, Is.GreaterThan(tuningRelease));
+            Assert.That(surfaceNetsDumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(surfaceNetsDumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(surfaceNetsDumpBody, Does.Not.Contain("new NativeArray<byte>(totalBytes"));
         }
 
         [Test]

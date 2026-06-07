@@ -146,6 +146,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         private const int DumpVersion = 1;
         private const string DumpFileName = "Dump_MESH_SURGEON.bin";
         private const string AgentDumpFileName = "Dump_1304_Voxel.bin";
+        private const string DumpPayloadLabel = "voxelSurfaceNetsTelemetryDumpPayload";
         private const string CsvFileName = "meshing_profiles.csv";
         private const byte GpuUploadVerticesLock = 1 << 0;
         private const byte GpuUploadIndicesLock = 1 << 1;
@@ -1702,7 +1703,10 @@ namespace Hecton8.World.VoxelSurfaceNets
             int byteLength = count * entrySize;
             int totalBytes = 32 + byteLength;
             int cursor = math.clamp(telemetryCursor, 0, count - 1);
-            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                totalBytes,
+                nameof(VoxelSurfaceNetsVault),
+                DumpPayloadLabel);
             try
             {
                 unsafe
@@ -1728,8 +1732,10 @@ namespace Hecton8.World.VoxelSurfaceNets
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(VoxelSurfaceNetsVault),
+                    DumpPayloadLabel);
             }
         }
 
