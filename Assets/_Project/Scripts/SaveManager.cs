@@ -5325,9 +5325,6 @@ namespace Hecton8.SaveSystem
         public static string GetDiagnosticSaveFilePath(string slotName) => $"{ResolveSafeSlotFileStem(slotName)}.diag";
         private static string GetPersistentAbsolutePath(string relativePath)
         {
-            if (Path.IsPathRooted(relativePath))
-                return relativePath;
-
             string root = s_persistentDataPathRoot;
             if (string.IsNullOrEmpty(root))
             {
@@ -5336,22 +5333,7 @@ namespace Hecton8.SaveSystem
                 SaveSidecarStorage.SetPersistentDataPathRoot(root);
             }
 
-            return Path.Combine(root, NormalizePersistentRelativeSegment(relativePath));
-        }
-
-        private static string NormalizePersistentRelativeSegment(string segment)
-        {
-            if (string.IsNullOrEmpty(segment))
-                return string.Empty;
-
-            string normalized = segment
-                .Replace('\\', Path.DirectorySeparatorChar)
-                .Replace('/', Path.DirectorySeparatorChar)
-                .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-
-            return normalized.IndexOf("..", StringComparison.Ordinal) >= 0
-                ? Path.GetFileName(normalized)
-                : normalized;
+            return HectonPersistentPathPolicy.CombineFile(root, relativePath);
         }
 
         private static void CachePersistentDataPathRoot()

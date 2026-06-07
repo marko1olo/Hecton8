@@ -101,7 +101,7 @@ namespace Hecton8.SaveSystem
 
         public static string GetPrimaryMetadataPath(string slotName)
         {
-            return $"{slotName}.meta";
+            return $"{SaveManager.ResolveSafeSlotFileStem(slotName)}.meta";
         }
 
         public static string GetBackupMetadataPath(string slotName)
@@ -111,15 +111,16 @@ namespace Hecton8.SaveSystem
 
         public static string GetBackupMetadataPath(string slotName, int generation)
         {
+            string safeSlotName = SaveManager.ResolveSafeSlotFileStem(slotName);
             if (generation <= 1)
-                return $"{slotName}.meta.bak";
+                return $"{safeSlotName}.meta.bak";
 
-            return $"{slotName}.meta.bak{generation}";
+            return $"{safeSlotName}.meta.bak{generation}";
         }
 
         public static string GetTempMetadataPath(string slotName)
         {
-            return $"{slotName}.meta.tmp";
+            return $"{SaveManager.ResolveSafeSlotFileStem(slotName)}.meta.tmp";
         }
 
         public static bool Exists(string path)

@@ -382,9 +382,6 @@ namespace Hecton8.SaveSystem
 
         private static string ToAbsolutePath(string relativePath)
         {
-            if (Path.IsPathRooted(relativePath))
-                return relativePath;
-
             string root = s_persistentDataPathRoot;
             if (string.IsNullOrEmpty(root))
             {
