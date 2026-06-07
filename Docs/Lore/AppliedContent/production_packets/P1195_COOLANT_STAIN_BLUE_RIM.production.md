@@ -17,7 +17,7 @@
 | Location / route | Shelter coolant bottle, wet pump shelf, service tray, or exchanger cabinet |
 | Unlock context | Player scans a pale blue rim stain around a small fill lip |
 | Evidence object | Fill lip, blue rim stain, dried edge, shelf dust |
-| Connected packets | P861_CONDENSER_CUP_FIRST_DRIP; P1155_CONDENSATE_DRIP_TRACK; P1197_PIPE_CLAMP_DRIP_DOT |
+| Connected packets | P1197_PIPE_CLAMP_DRIP_DOT; P1198_PUMP_LABEL_WET_EDGE; P1199_EXCHANGER_FIN_SALT_BRIDGE |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: teaches coolant trace evidence without cooling-system claims |
 | Content status | source_complete_unimported |
 

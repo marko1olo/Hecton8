@@ -1120,6 +1120,7 @@ namespace Hecton8.Gameplay
             }
 
             float qualityWeight01 = RefreshGlobalQualityWeight01();
+            SnapshotInputs();
             if (HydrodynamicKccOwnsAuthority())
             {
                 ConsumeHydrodynamicKccAuthoritySnapshot(qualityWeight01);
@@ -1151,7 +1152,6 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            SnapshotInputs();
             SnapshotGpuFlow();
             SnapshotVoxelSolid(out byte inSolid, out float solidDensity);
             byte sdfGradientProbeRequested = ResolveSdfGradientProbeRequest();

@@ -9,7 +9,7 @@ from AppliedLoreTextIntegrityAudit import collect_production_packets, parse_pack
 
 
 class TestAppliedLoreTextIntegrityAudit(unittest.TestCase):
-    def test_production_packet_collection_respects_packet_globs(self):
+    def test_production_packet_collection_respects_parsed_packet_globs(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             packet_root = root / "Docs" / "Lore" / "AppliedContent" / "production_packets"
@@ -20,6 +20,18 @@ class TestAppliedLoreTextIntegrityAudit(unittest.TestCase):
             paths = collect_production_packets(root, parse_packet_globs("P001*"))
 
             self.assertEqual([path.name for path in paths], ["P001_KEEP.production.md"])
+
+    def test_production_packet_collection_respects_tuple_packet_globs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            packet_root = root / "Docs" / "Lore" / "AppliedContent" / "production_packets"
+            packet_root.mkdir(parents=True)
+            (packet_root / "P1195_MATCH.production.md").write_text("match", encoding="utf-8")
+            (packet_root / "P500_SKIP.production.md").write_text("skip", encoding="utf-8")
+
+            paths = collect_production_packets(root, ("P1195_*",))
+
+            self.assertEqual([path.name for path in paths], ["P1195_MATCH.production.md"])
 
 
 if __name__ == "__main__":

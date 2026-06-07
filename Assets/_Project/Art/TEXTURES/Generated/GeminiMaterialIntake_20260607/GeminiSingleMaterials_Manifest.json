@@ -1,7 +1,6 @@
 {
   "schema": "hecton8.external_pbr_pack.v1",
   "sourceProvider": "GeminiManualSingleMaterials",
-  "providerLicensePage": "",
   "license": "USER_GENERATED_REVIEW_REQUIRED",
   "resolution": "1024px",
   "unityImportStatus": "PENDING UNITY IMPORT",
@@ -16,7 +15,7 @@
       "title": "Wet Service Panel Biofilm",
       "source": "C:\\Users\\danat\\Downloads\\Wet Service Panel Biofilm.png",
       "license": "USER_GENERATED_REVIEW_REQUIRED",
-      "role": "wet aged service panel material for base equipment, old modules, and damp industrial props",
+      "role": "Wet aged service panel material for base equipment, old modules, and damp industrial props.",
       "catalogVersion": 1,
       "surfaceClass": "wet_service_panel_biofilm",
       "heldToolAllowed": false,
@@ -30,6 +29,7 @@
       "heightScale": 0.003,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_wet_service_panel_biofilm/TX_GM_gemini_20260607_wet_service_panel_biofilm_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_wet_service_panel_biofilm/TX_GM_gemini_20260607_wet_service_panel_biofilm_NormalGL.jpg",
@@ -43,7 +43,7 @@
       "title": "Transparent Pressure Glass Edge Wear",
       "source": "C:\\Users\\danat\\Downloads\\Transparent Pressure Glass Edge Wear.png",
       "license": "USER_GENERATED_REVIEW_REQUIRED",
-      "role": "smoky cyan acrylic/glass surface for scanner lenses, small viewports, and instrument covers",
+      "role": "Smoky cyan acrylic or glass surface for scanner lenses, small viewports, and instrument covers.",
       "catalogVersion": 1,
       "surfaceClass": "pressure_acrylic_viewport",
       "heldToolAllowed": true,
@@ -57,6 +57,7 @@
       "heightScale": 0.001,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_transparent_pressure_glass_edge_wear/TX_GM_gemini_20260607_transparent_pressure_glass_edge_wear_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_transparent_pressure_glass_edge_wear/TX_GM_gemini_20260607_transparent_pressure_glass_edge_wear_NormalGL.jpg",
@@ -70,7 +71,7 @@
       "title": "Salvage-Worn Repair Metal",
       "source": "C:\\Users\\danat\\Downloads\\Salvage-Worn Repair Metal.png",
       "license": "USER_GENERATED_REVIEW_REQUIRED",
-      "role": "patched salvage metal for damaged props, wreckage panels, and repairable industrial equipment",
+      "role": "Patched salvage metal for damaged props, wreckage panels, and repairable industrial equipment.",
       "catalogVersion": 1,
       "surfaceClass": "repaired_salvage_metal",
       "heldToolAllowed": false,
@@ -84,6 +85,7 @@
       "heightScale": 0.006,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_salvage_worn_repair_metal/TX_GM_gemini_20260607_salvage_worn_repair_metal_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_salvage_worn_repair_metal/TX_GM_gemini_20260607_salvage_worn_repair_metal_NormalGL.jpg",
@@ -97,7 +99,7 @@
       "title": "White Ceramic Sensor Casing",
       "source": "C:\\Users\\danat\\Downloads\\White Ceramic Sensor Casing.png",
       "license": "USER_GENERATED_REVIEW_REQUIRED",
-      "role": "off-white ceramic/composite casing for scanner, analyzer, and clean science tool bodies",
+      "role": "Off-white ceramic or composite casing for scanner, analyzer, and clean science tool bodies.",
       "catalogVersion": 1,
       "surfaceClass": "scientific_ceramic_casing",
       "heldToolAllowed": true,
@@ -111,6 +113,7 @@
       "heightScale": 0.002,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_white_ceramic_sensor_casing/TX_GM_gemini_20260607_white_ceramic_sensor_casing_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_white_ceramic_sensor_casing/TX_GM_gemini_20260607_white_ceramic_sensor_casing_NormalGL.jpg",
@@ -124,7 +127,7 @@
       "title": "Dark Anodized Tool Metal",
       "source": "C:\\Users\\danat\\Downloads\\Dark Anodized Tool Metal.png",
       "license": "USER_GENERATED_REVIEW_REQUIRED",
-      "role": "dark anodized aluminum for premium compact tool frames and inset rails",
+      "role": "Dark anodized aluminum for premium compact tool frames and inset rails.",
       "catalogVersion": 1,
       "surfaceClass": "dark_anodized_tool_metal",
       "heldToolAllowed": true,
@@ -138,6 +141,7 @@
       "heightScale": 0.002,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_dark_anodized_tool_metal/TX_GM_gemini_20260607_dark_anodized_tool_metal_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_dark_anodized_tool_metal/TX_GM_gemini_20260607_dark_anodized_tool_metal_NormalGL.jpg",
@@ -151,7 +155,7 @@
       "title": "Fine Ribbed Metal Trim",
       "source": "C:\\Users\\danat\\Downloads\\Fine Ribbed Metal Trim.png",
       "license": "USER_GENERATED_REVIEW_REQUIRED",
-      "role": "small-scale ribbed trim for laser cutter, flashlight, drill, and compact equipment ribs",
+      "role": "Small-scale ribbed trim for laser cutter, flashlight, drill, and compact equipment ribs.",
       "catalogVersion": 1,
       "surfaceClass": "fine_corrugated_trim",
       "heldToolAllowed": true,
@@ -165,6 +169,7 @@
       "heightScale": 0.007,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_fine_ribbed_metal_trim/TX_GM_gemini_20260607_fine_ribbed_metal_trim_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_fine_ribbed_metal_trim/TX_GM_gemini_20260607_fine_ribbed_metal_trim_NormalGL.jpg",
@@ -174,11 +179,39 @@
       }
     },
     {
+      "id": "gemini_20260607_orange_safety_composite_panel",
+      "title": "Orange Safety Composite Panel",
+      "source": "C:\\Users\\danat\\Downloads\\Orange Safety Composite Panel.png",
+      "license": "USER_GENERATED_REVIEW_REQUIRED",
+      "role": "Orange-red polymer composite for readable safety accents on tools and survival equipment.",
+      "catalogVersion": 1,
+      "surfaceClass": "safety_composite_panel",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "tilingScale": 3.4,
+      "metallic": 0.0,
+      "smoothness": 0.3,
+      "normalScale": 0.46,
+      "heightScale": 0.003,
+      "provisionalPbrMaps": true,
+      "watermarkRepaired": true,
+      "watermarkRisk": false,
+      "maps": {
+        "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_orange_safety_composite_panel/TX_GM_gemini_20260607_orange_safety_composite_panel_BaseColor.jpg",
+        "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_orange_safety_composite_panel/TX_GM_gemini_20260607_orange_safety_composite_panel_NormalGL.jpg",
+        "ARM_AO_Rough_Metal": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_orange_safety_composite_panel/TX_GM_gemini_20260607_orange_safety_composite_panel_ARM_AO_Rough_Metal.jpg",
+        "Height": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_orange_safety_composite_panel/TX_GM_gemini_20260607_orange_safety_composite_panel_Height.jpg",
+        "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_orange_safety_composite_panel/TX_GM_gemini_20260607_orange_safety_composite_panel_MaskMap_UnityURP.png"
+      }
+    },
+    {
       "id": "gemini_20260607_black_waterproof_grip_rubber",
       "title": "Black Waterproof Grip Rubber",
       "source": "C:\\Users\\danat\\Downloads\\Black Waterproof Grip Rubber.png",
       "license": "USER_GENERATED_REVIEW_REQUIRED",
-      "role": "black waterproof grip rubber for handheld tool grips and pressure-sealed handles",
+      "role": "Black waterproof grip rubber for handheld tool grips and pressure-sealed handles.",
       "catalogVersion": 1,
       "surfaceClass": "waterproof_rubber",
       "heldToolAllowed": true,
@@ -192,6 +225,7 @@
       "heightScale": 0.003,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_black_waterproof_grip_rubber/TX_GM_gemini_20260607_black_waterproof_grip_rubber_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_black_waterproof_grip_rubber/TX_GM_gemini_20260607_black_waterproof_grip_rubber_NormalGL.jpg",
@@ -205,7 +239,7 @@
       "title": "Clean NASA-Punk Tool Housing Metal",
       "source": "C:\\Users\\danat\\Downloads\\Clean NASA-Punk Tool Housing Metal.png",
       "license": "USER_GENERATED_REVIEW_REQUIRED",
-      "role": "clean blue painted pressure-rated tool housing for scanner, builder, and compact equipment shells",
+      "role": "Clean blue painted pressure-rated tool housing for scanner, builder, and compact equipment shells.",
       "catalogVersion": 1,
       "surfaceClass": "clean_tool_housing",
       "heldToolAllowed": true,
@@ -219,6 +253,7 @@
       "heightScale": 0.004,
       "provisionalPbrMaps": true,
       "watermarkRepaired": true,
+      "watermarkRisk": false,
       "maps": {
         "BaseColor": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_clean_nasa_punk_tool_housing_metal/TX_GM_gemini_20260607_clean_nasa_punk_tool_housing_metal_BaseColor.jpg",
         "NormalGL": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_clean_nasa_punk_tool_housing_metal/TX_GM_gemini_20260607_clean_nasa_punk_tool_housing_metal_NormalGL.jpg",
@@ -226,14 +261,6 @@
         "Height": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_clean_nasa_punk_tool_housing_metal/TX_GM_gemini_20260607_clean_nasa_punk_tool_housing_metal_Height.jpg",
         "MaskMap_UnityURP": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Singles/gemini_20260607_clean_nasa_punk_tool_housing_metal/TX_GM_gemini_20260607_clean_nasa_punk_tool_housing_metal_MaskMap_UnityURP.png"
       }
-    }
-  ],
-  "rejected": [
-    {
-      "id": "orange_safety_composite_panel",
-      "reason": "Prompt drift: output is dark ribbed metal, not orange safety composite.",
-      "source": "C:\\Users\\danat\\Downloads\\Orange Safety Composite Panel.png",
-      "cleanedPath": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/Rejected/TX_GM_orange_safety_composite_panel_Rejected_Cleaned_2k.jpg"
     }
   ],
   "preview": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/PREVIEW_GeminiSingleMaterials_20260607.png"

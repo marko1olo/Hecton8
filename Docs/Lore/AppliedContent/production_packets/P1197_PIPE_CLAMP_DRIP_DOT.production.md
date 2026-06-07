@@ -17,7 +17,7 @@
 | Location / route | Pump corner, shelter service line, exchanger cabinet, or wet utility rack |
 | Unlock context | Player scans a single dried drip dot below a pipe clamp screw |
 | Evidence object | Pipe clamp, drip dot, screw head, pipe underside |
-| Connected packets | P1121_HOSE_CLAMP_TORQUE_TICK; P1155_CONDENSATE_DRIP_TRACK; P970_PIPE_KNOCK_RETURN_PATTERN |
+| Connected packets | P1195_COOLANT_STAIN_BLUE_RIM; P1198_PUMP_LABEL_WET_EDGE; P1199_EXCHANGER_FIN_SALT_BRIDGE |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: teaches leak-trace geometry without fluid-system claims |
 | Content status | source_complete_unimported |
 

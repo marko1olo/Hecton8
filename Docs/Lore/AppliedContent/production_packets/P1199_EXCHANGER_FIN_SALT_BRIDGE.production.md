@@ -17,7 +17,7 @@
 | Location / route | Heat exchanger cabinet, wet console back, service duct, or pump shelf |
 | Unlock context | Player scans salt bridging between two exchanger fins |
 | Evidence object | Exchanger fins, salt bridge, dust line, cabinet lip |
-| Connected packets | P1196_HEAT_SINK_DUST_SHADOW; P1155_CONDENSATE_DRIP_TRACK; P1172_PRESSURE_PORT_SALT_NEEDLE |
+| Connected packets | P1196_HEAT_SINK_DUST_SHADOW; P1195_COOLANT_STAIN_BLUE_RIM; P1197_PIPE_CLAMP_DRIP_DOT |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: teaches fin contamination evidence without thermal simulation claims |
 | Content status | source_complete_unimported |
 

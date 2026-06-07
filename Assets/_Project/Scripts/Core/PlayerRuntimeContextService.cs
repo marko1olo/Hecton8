@@ -820,9 +820,7 @@ namespace Hecton8.Core
             if (!_runtimeContext.IsBound || _playerTransform == null)
                 return;
 
-            float3 velocity = CoreDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityRuntimeContextMaxAgeFrames, out float3 kccVelocity)
-                ? SafeFiniteVector(kccVelocity)
-                : float3.zero;
+            float3 velocity = ResolveMovementVelocitySnapshot();
             float3 forward = SafeDirection((float3)_playerTransform.forward, new float3(0f, 0f, 1f));
             Transform playerCameraTransform = ResolvePlayerCameraTransform();
             float3 cameraForward = SafeDirection(playerCameraTransform != null ? (float3)playerCameraTransform.forward : forward, forward);

@@ -13032,6 +13032,19 @@ Required packet style:
 
 If writer instructions are needed, put them in source comments or authoring notes, not player-facing text.
 
+## AppliedContent Production Handoff
+
+For production AppliedContent, prose is not done until it is materialized into the content pipeline:
+
+- packet/source JSON or production packet file exists with stable packet ID, Article ID, unlock ID, surface text, and locale status;
+- all 15 locale rows contain actual draft text or `BLOCKED_TRANSLATION_DRAFT`;
+- target surface files and indexes are updated for `in_game_wiki` and/or `external_site` when those surfaces are in scope;
+- `Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv` and generated hash constants are refreshed when the packet targets runtime;
+- route cards or binding maps exist when the packet is meant to unlock from a POI, scanner, terminal, quest, or scene object;
+- exporter/importer/audit output is reported with its real proof class.
+
+A loose markdown article, source brief, future integration note, or English-only packet is not production AppliedContent unless the task explicitly requested draft-only work.
+
 ## Multilingual Requirement
 
 Unless the task explicitly requests English source only, AppliedContent writing must plan all 15 project locales:

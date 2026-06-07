@@ -51,6 +51,12 @@ NATIVE_COLLECTION_CONSTRUCTOR_ASSIGNMENT_BLOCK_RE = re.compile(
 )
 NATIVE_ARRAY_CONSTRUCTOR_ASSIGNMENT_BLOCK_RE = NATIVE_COLLECTION_CONSTRUCTOR_ASSIGNMENT_BLOCK_RE
 LATEST_CREATED_FALLBACK_RE = re.compile(r"\bGlobalDataVault\s*\.\s*TryGetLatestCreated\s*\(")
+H8MEMORY_ALLOCATE_ASSIGN_RE = re.compile(
+    r"\b(?:this\s*\.\s*)?(?P<name>[A-Za-z_]\w*)\s*=\s*H8Memory\s*\.\s*Allocate\s*<"
+)
+H8MEMORY_RELEASE_REF_RE = re.compile(
+    r"\bH8Memory\s*\.\s*Release\s*\(\s*ref\s+(?:this\s*\.\s*)?(?P<name>[A-Za-z_]\w*)\b"
+)
 NATIVE_COLLECTION_DECLARATION_RE = re.compile(
     r"^\s*(?:\[[^\]]+\]\s*)*"
     r"(?:(?:public|private|protected|internal|static|readonly|volatile|unsafe|new)\s+)+"
@@ -2128,6 +2134,136 @@ def declaration_is_gate_relevant(classification: str) -> bool:
     }
 
 
+def collect_h8memory_tracked_fields_in_source(
+    source: str,
+    sanitized_lines: Sequence[str] | None = None,
+    original_lines: Sequence[str] | None = None,
+) -> set[tuple[str, str]]:
+    if "H8Memory." not in source:
+        return set()
+    if sanitized_lines is None:
+        sanitized_lines = sanitize_csharp_source(source).splitlines()
+    if original_lines is None:
+        original_lines = source.splitlines()
+
+    scopes: list[TypeScope] = []
+    pending_scope: TypeScope | None = None
+    depth = 0
+    allocations: dict[str, set[str]] = {}
+    releases: dict[str, set[str]] = {}
+
+    for line_number, line in enumerate(sanitized_lines, 1):
+        if pending_scope is not None and "{" in line:
+            pending_scope = TypeScope(
+                pending_scope.name,
+                pending_scope.kind,
+                pending_scope.bases,
+                depth + 1,
+                pending_scope.line,
+                pending_scope.burst,
+            )
+            scopes.append(pending_scope)
+            pending_scope = None
+
+        type_match = TYPE_DECLARATION_RE.search(line)
+        if type_match:
+            lookback_start = max(0, line_number - 5)
+            burst = any("BurstCompile" in item for item in original_lines[lookback_start:line_number])
+            kind = " ".join(type_match.group("kind").split())
+            new_scope = TypeScope(
+                type_match.group("name"),
+                kind,
+                type_match.group("bases") or "",
+                depth + 1,
+                line_number,
+                burst,
+            )
+            if "{" in line[type_match.end() :]:
+                scopes.append(new_scope)
+            else:
+                pending_scope = new_scope
+
+        owner = scopes[-1] if scopes else None
+        if owner is not None and (owner.kind == "class" or owner.kind == "record class"):
+            allocate_match = H8MEMORY_ALLOCATE_ASSIGN_RE.search(line)
+            if allocate_match:
+                allocations.setdefault(owner.name, set()).add(allocate_match.group("name"))
+            release_match = H8MEMORY_RELEASE_REF_RE.search(line)
+            if release_match:
+                releases.setdefault(owner.name, set()).add(release_match.group("name"))
+
+        depth += line.count("{") - line.count("}")
+        while scopes and depth < scopes[-1].body_depth:
+            scopes.pop()
+
+    tracked: set[tuple[str, str]] = set()
+    for owner_name, allocated_names in allocations.items():
+        released_names = releases.get(owner_name, set())
+        for field_name in allocated_names.intersection(released_names):
+            tracked.add((owner_name, field_name))
+
+    return tracked
+
+
+def collect_h8memory_tracked_fields_tree(
+    source_root: Path,
+    repo_root: Path = REPO_ROOT,
+) -> set[tuple[str, str]]:
+    if not source_root.exists():
+        raise FileNotFoundError(f"source root not found: {source_root}")
+
+    tracked: set[tuple[str, str]] = set()
+    for path in sorted(source_root.rglob("*.cs")):
+        relative_scan_path = path.relative_to(source_root)
+        if should_skip(relative_scan_path):
+            continue
+
+        try:
+            source = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError as exc:
+            raise OSError(f"failed to read {path}") from exc
+
+        if "H8Memory." not in source:
+            continue
+
+        tracked.update(collect_h8memory_tracked_fields_in_source(source))
+
+    return tracked
+
+
+def apply_h8memory_tracking_to_declarations(
+    findings: Iterable[DeclarationFinding],
+    tracked_fields: Container[tuple[str, str]],
+) -> list[DeclarationFinding]:
+    result: list[DeclarationFinding] = []
+    for finding in findings:
+        h8_tracked = (
+            finding.classification == "persistentOwnerField"
+            and finding.owner_type
+            and all((finding.owner_type, name) in tracked_fields for name in finding.names)
+        )
+        if h8_tracked:
+            result.append(
+                DeclarationFinding(
+                    path=finding.path,
+                    count=finding.count,
+                    lines=finding.lines,
+                    allowed=True,
+                    classification="h8MemoryTrackedOwnerField",
+                    collection_type=finding.collection_type,
+                    names=finding.names,
+                    owner_type=finding.owner_type,
+                    owner_kind=finding.owner_kind,
+                    owner_line=finding.owner_line,
+                    burst_owner=finding.burst_owner,
+                )
+            )
+        else:
+            result.append(finding)
+
+    return result
+
+
 def declaration_finding_to_dict(finding: DeclarationFinding) -> dict[str, Any]:
     return {
         "path": finding.path,
@@ -2353,6 +2489,7 @@ def scan_native_array_declaration_tree(
         raise FileNotFoundError(f"source root not found: {source_root}")
 
     findings: list[DeclarationFinding] = []
+    h8memory_tracked_fields = collect_h8memory_tracked_fields_tree(source_root, repo_root)
     for path in sorted(source_root.rglob("*.cs")):
         relative_scan_path = path.relative_to(source_root)
         if should_skip(relative_scan_path):
@@ -2381,6 +2518,7 @@ def scan_native_array_declaration_tree(
             )
         )
 
+    findings = apply_h8memory_tracking_to_declarations(findings, h8memory_tracked_fields)
     return group_declaration_findings(findings)
 
 
@@ -2431,6 +2569,7 @@ def scan_source_tree_with_declarations(
 
     constructor_findings: list[FileFinding] = []
     declaration_findings: list[DeclarationFinding] = []
+    h8memory_tracked_fields = collect_h8memory_tracked_fields_tree(source_root, repo_root)
     for path in sorted(source_root.rglob("*.cs")):
         relative_scan_path = path.relative_to(source_root)
         if should_skip(relative_scan_path):
@@ -2495,6 +2634,10 @@ def scan_source_tree_with_declarations(
             )
         declaration_findings.extend(file_declaration_findings)
 
+    declaration_findings = apply_h8memory_tracking_to_declarations(
+        declaration_findings,
+        h8memory_tracked_fields,
+    )
     return constructor_findings, group_declaration_findings(declaration_findings)
 
 
@@ -2681,6 +2824,11 @@ def build_audit_payload(
             declaration_finding_to_dict(finding)
             for finding in declaration_findings
             if finding.classification == "persistentOwnerField"
+        ],
+        "h8MemoryTrackedDeclarationFindings": [
+            declaration_finding_to_dict(finding)
+            for finding in declaration_findings
+            if finding.classification == "h8MemoryTrackedOwnerField"
         ],
         "jobInputDeclarationFindings": [
             declaration_finding_to_dict(finding)

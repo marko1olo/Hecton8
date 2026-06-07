@@ -17,7 +17,7 @@
 | Location / route | Pump face, service plate, wet utility rack, or shelter wall box |
 | Unlock context | Player scans a pump label with a softened wet edge |
 | Evidence object | Pump label, wet edge, printed arrow, faceplate screw |
-| Connected packets | P1120_PUMP_FLOW_ARROW_SCAR; P973_PUMP_COUGH_AIR_LOCK; P1179_VALVE_STEM_DRY_CRESCENT |
+| Connected packets | P1197_PIPE_CLAMP_DRIP_DOT; P1195_COOLANT_STAIN_BLUE_RIM; P1199_EXCHANGER_FIN_SALT_BRIDGE |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: teaches pump-label caution without pump-system claims |
 | Content status | source_complete_unimported |
 

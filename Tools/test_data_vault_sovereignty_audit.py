@@ -2249,6 +2249,59 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
             self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 0)
 
+    def test_allows_h8memory_tracked_partial_runtime_fields_only_with_release(self) -> None:
+        with temporary_directory(prefix="h8_vault_partial_h8memory_fields_") as temp_dir:
+            root = Path(temp_dir)
+            source = root / "Assets" / "_Project" / "Scripts"
+            world = source / "World"
+            owner = world / "SharedRuntime.cs"
+            partial = world / "SharedRuntime.Memory.cs"
+            world.mkdir(parents=True)
+            owner.write_text(
+                "using Unity.Collections;\n"
+                "public sealed partial class SharedRuntime\n"
+                "{\n"
+                "    private NativeArray<int> _tracked;\n"
+                "    private NativeArray<int> _missingRelease;\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            partial.write_text(
+                "using Hecton8.Core.Memory;\n"
+                "public sealed partial class SharedRuntime\n"
+                "{\n"
+                "    public void Allocate()\n"
+                "    {\n"
+                "        _tracked = H8Memory.Allocate<int>(4, SystemID.WorldStreaming, Allocator.Persistent);\n"
+                "        _missingRelease = H8Memory.Allocate<int>(4, SystemID.WorldStreaming, Allocator.Persistent);\n"
+                "    }\n"
+                "    public void Dispose()\n"
+                "    {\n"
+                "        H8Memory.Release(ref _tracked, SystemID.WorldStreaming);\n"
+                "    }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            declaration_findings = audit.scan_native_array_declaration_tree(source, root)
+            payload = audit.build_audit_payload(
+                [],
+                source,
+                root,
+                declaration_findings=declaration_findings,
+            )
+
+            classifications = {
+                finding["classification"]: finding
+                for finding in payload["declarationFindings"]
+            }
+            self.assertEqual(payload["h8MemoryTrackedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["persistentNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["allowedNativeCollectionDeclarations"], 1)
+            self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 1)
+            self.assertEqual(classifications["h8MemoryTrackedOwnerField"]["names"], ["_tracked"])
+            self.assertEqual(classifications["persistentOwnerField"]["names"], ["_missingRelease"])
+
     def test_declaration_classifier_ignores_comments_and_string_literals(self) -> None:
         source = (
             "public sealed class Commented\n"

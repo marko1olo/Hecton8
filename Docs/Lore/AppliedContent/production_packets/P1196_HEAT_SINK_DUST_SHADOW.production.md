@@ -17,7 +17,7 @@
 | Location / route | Wet console backplate, battery shelf, exchanger cabinet, or relay box |
 | Unlock context | Player scans a heat sink with a clean shadow under one fin group |
 | Evidence object | Heat sink, dust shadow, fin group, backplate |
-| Connected packets | P1153_FUSE_BAND_HEAT_FADE; P869_PANEL_LABEL_HALF_POWER; P1199_EXCHANGER_FIN_SALT_BRIDGE |
+| Connected packets | P1199_EXCHANGER_FIN_SALT_BRIDGE; P1195_COOLANT_STAIN_BLUE_RIM; P1198_PUMP_LABEL_WET_EDGE |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: teaches thermal surface evidence without power-system claims |
 | Content status | source_complete_unimported |
 
