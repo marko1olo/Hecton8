@@ -8669,7 +8669,7 @@ namespace Hecton8.World
 
         private void ClearVaultHandles(JobHandle disposeDependency)
         {
-            DispatcherJobSwap.TryComplete(ref disposeDependency, forceComplete: true);
+            TryCompleteSargassumJobInPostSimulationWindow(ref disposeDependency, forceComplete: true);
             _grazingAnchorsHandle = default;
             _massiveThreatsHandle = default;
             _formationBeaconsHandle = default;
@@ -8798,12 +8798,28 @@ namespace Hecton8.World
             }
         }
 
+        private static bool TryCompleteSargassumJobInPostSimulationWindow(ref JobHandle handle, bool forceComplete)
+        {
+            if (!forceComplete)
+                return DispatcherJobSwap.TryComplete(ref handle, forceComplete: false);
+
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
+        }
+
         private void CompletePendingFoveatedSimulationDecision(bool forceComplete)
         {
             if (!_foveatedSimulationScheduled)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _foveatedSimulationHandle, forceComplete))
+            if (!TryCompleteSargassumJobInPostSimulationWindow(ref _foveatedSimulationHandle, forceComplete))
                 return;
 
             _foveatedSimulationScheduled = false;
@@ -8819,7 +8835,7 @@ namespace Hecton8.World
                 _foveatedSimulationScheduled = false;
             }
 
-            DispatcherJobSwap.TryComplete(ref disposeDependency, forceComplete: true);
+            TryCompleteSargassumJobInPostSimulationWindow(ref disposeDependency, forceComplete: true);
             _foveatedSimulationInputHandle = default;
             _foveatedSimulationFrontHandle = default;
             _foveatedSimulationBackHandle = default;
