@@ -110,6 +110,28 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("File.WriteAllBytes(atlasPath, atlas.EncodeToPNG());", source);
         }
 
+        [Test]
+        public void FloraAtlasPngsWriteThroughAtomicTempPromotion()
+        {
+            string floraSource = ReadProjectSource("_Project/Scripts/Editor/WorldProceduralFloraTextureAuthoring.cs");
+            string shallowsSource = ReadProjectSource("_Project/Scripts/Editor/ProceduralGen/ShallowsBioForgeBatchBaker.cs");
+            string floraWriter = ExtractMethodBody(floraSource, "private static void WriteBytesAtomic(");
+            string shallowsWriter = ExtractMethodBody(shallowsSource, "private static void WriteBytesAtomic(");
+
+            StringAssert.Contains("WriteBytesAtomic(SeaGrassAtlasAssetPath, atlas.EncodeToPNG());", floraSource);
+            StringAssert.Contains("WriteBytesAtomic(path, texture.EncodeToPNG());", shallowsSource);
+            StringAssert.Contains("File.WriteAllBytes(tempPath, bytes);", floraWriter);
+            StringAssert.Contains("File.Replace(tempPath, path, null, true);", floraWriter);
+            StringAssert.Contains("File.Move(tempPath, path);", floraWriter);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", floraWriter);
+            StringAssert.Contains("File.WriteAllBytes(tempPath, bytes);", shallowsWriter);
+            StringAssert.Contains("File.Replace(tempPath, path, null, true);", shallowsWriter);
+            StringAssert.Contains("File.Move(tempPath, path);", shallowsWriter);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", shallowsWriter);
+            StringAssert.DoesNotContain("File.WriteAllBytes(SeaGrassAtlasAssetPath, atlas.EncodeToPNG());", floraSource);
+            StringAssert.DoesNotContain("File.WriteAllBytes(path, texture.EncodeToPNG());", shallowsSource);
+        }
+
         private static string ReadProjectSource(string assetRelativePath)
         {
             return File.ReadAllText(Path.Combine(Application.dataPath, assetRelativePath)).Replace("\r\n", "\n");

@@ -351,10 +351,43 @@ namespace Hecton8.Editor.ProceduralGen
 
             texture.SetPixels32(AtlasPixelScratch);
             texture.Apply(true, false);
-            File.WriteAllBytes(path, texture.EncodeToPNG());
+            WriteBytesAtomic(path, texture.EncodeToPNG());
             UnityEngine.Object.DestroyImmediate(texture);
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
             ConfigureAtlasImporter(path, kind);
+        }
+
+        private static void WriteBytesAtomic(string path, byte[] bytes)
+        {
+            string tempPath = path + ".tmp";
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                File.WriteAllBytes(tempPath, bytes);
+                if (File.Exists(path))
+                    File.Replace(tempPath, path, null, true);
+                else
+                    File.Move(tempPath, path);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+            }
         }
 
         private static Color32 SampleAtlas(AtlasKind kind, int x, int y)
