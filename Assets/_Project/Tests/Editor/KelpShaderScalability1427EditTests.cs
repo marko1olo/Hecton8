@@ -3117,6 +3117,22 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void AssetLifecycleGovernor_HeapDumpUsesTrackedTransientPayload()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Optimization", "AssetLifecycleGovernor.cs");
+            string dumpBody = ExtractMethodBody(source, "private unsafe void DumpHeapTelemetryToFile(");
+
+            Assert.That(source, Does.Contain("private const string HeapTelemetryDumpPayloadLabel = \"assetLifecycleHeapTelemetryDumpPayload\";"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("nameof(AssetLifecycleGovernor)"));
+            Assert.That(dumpBody, Does.Contain("HeapTelemetryDumpPayloadLabel"));
+            Assert.That(dumpBody, Does.Contain("NativeArrayOptions.UninitializedMemory"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBody, Does.Not.Contain("new NativeArray<byte>(byteCount"));
+            Assert.That(dumpBody, Does.Not.Contain("payload.Dispose()"));
+        }
+
+        [Test]
         public void DiegeticPanelController_ColorFormatIsHardwareRouteNotQualityFork()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "DiegeticPanelController.cs");

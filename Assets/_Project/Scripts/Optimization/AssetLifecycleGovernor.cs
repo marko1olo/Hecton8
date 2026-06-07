@@ -48,6 +48,7 @@ namespace Hecton8.Optimization
         private const uint HeapTelemetryVramPanicFlag = 1u << 1;
         private const uint HeapTelemetryBlindReleaseFlag = 1u << 2;
         private const uint HeapTelemetryLeakSuspectFlag = 1u << 3;
+        private const string HeapTelemetryDumpPayloadLabel = "assetLifecycleHeapTelemetryDumpPayload";
         private const int MaxColdDistantChunkReleases = 8;
         private const int MaxHardReaperEvictions = 64;
         private const double ColdTickWarningMilliseconds = 0.2d;
@@ -3677,7 +3678,11 @@ namespace Hecton8.Optimization
                 int entryBytes = UnsafeUtility.SizeOf<AssetHeapTelemetryEntry>();
                 int telemetryBytes = entryBytes * telemetry.Length;
                 int byteCount = headerBytes + telemetryBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(AssetLifecycleGovernor),
+                    HeapTelemetryDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
 
                 byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
                 WriteUInt64LittleEndian(bytes, 0, 0x484543544F4E3800UL);
@@ -3698,8 +3703,10 @@ namespace Hecton8.Optimization
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(AssetLifecycleGovernor),
+                    HeapTelemetryDumpPayloadLabel);
             }
         }
 

@@ -25,6 +25,22 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void VoxelDeltaBlackBoxDumpUsesTrackedTransientPayload()
+        {
+            string delta = ReadProjectFile(DeltaPath);
+            string dumpBlock = ExtractBlock(delta, "private bool WriteBlackBoxDumpFile(", "#if UNITY_EDITOR");
+
+            StringAssert.Contains("private const string BlackBoxDumpPayloadLabel = \"voxelDeltaBlackBoxDumpPayload\";", delta);
+            StringAssert.Contains("NativeFaultDumpWriter.CreateTransientPayload(", dumpBlock);
+            StringAssert.Contains("nameof(VoxelDeltaProcessor)", dumpBlock);
+            StringAssert.Contains("BlackBoxDumpPayloadLabel", dumpBlock);
+            StringAssert.Contains("NativeArrayOptions.UninitializedMemory", dumpBlock);
+            StringAssert.Contains("NativeFaultDumpWriter.DisposeTransientPayload(", dumpBlock);
+            StringAssert.DoesNotContain("new NativeArray<byte>(payloadBytes", dumpBlock);
+            StringAssert.DoesNotContain("payload.Dispose()", dumpBlock);
+        }
+
+        [Test]
         public void StreamingScratchRoute_UsesCollisionFree1418RangeAndDumpPath()
         {
             string engine = ReadProjectFile(EnginePath);

@@ -106,6 +106,7 @@ namespace Hecton8.Caves
         private const int MaxLaserCarveAxisCells = 8;
         private const int ChunkCompactionDirtyThreshold = (ChunkCellCount * 4) / 5;
         private const int MortonSignedOffset = 1 << 20;
+        private const string BlackBoxDumpPayloadLabel = "voxelDeltaBlackBoxDumpPayload";
         private const float MinRuntimeVoxelSize = 0.25f;
         private const float MinCarveRadiusMeters = 0.9f;
         private const float MaxCarveRadiusMeters = 4f;
@@ -6694,7 +6695,11 @@ namespace Hecton8.Caves
                     int headerBytes = UnsafeUtility.SizeOf<VoxelBlackBoxDumpHeader>();
                     int entriesBytes = VoxelBlackBoxCapacity * UnsafeUtility.SizeOf<VoxelCarveTelemetryEntry>();
                     int payloadBytes = headerBytes + entriesBytes;
-                    NativeArray<byte> payload = new NativeArray<byte>(payloadBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                        payloadBytes,
+                        nameof(VoxelDeltaProcessor),
+                        BlackBoxDumpPayloadLabel,
+                        NativeArrayOptions.UninitializedMemory);
                     try
                     {
                         byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
@@ -6705,8 +6710,10 @@ namespace Hecton8.Caves
                     }
                     finally
                     {
-                        if (payload.IsCreated)
-                            payload.Dispose();
+                        NativeFaultDumpWriter.DisposeTransientPayload(
+                            ref payload,
+                            nameof(VoxelDeltaProcessor),
+                            BlackBoxDumpPayloadLabel);
                     }
                 }
             }
