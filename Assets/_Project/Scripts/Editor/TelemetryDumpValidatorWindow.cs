@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Mathematics;
 using UnityEditor;
@@ -405,11 +406,16 @@ namespace Hecton8.EditorTools
 
         private bool TryParseCrashTelemetryDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
         {
-            if (!IsCrashTelemetryDumpPath(path) ||
-                span.Length < CrashTelemetryDumpHeaderBytes ||
-                ReadU64(span, 0) != CrashTelemetryDumpMagic)
+            if (!IsCrashTelemetryDumpPath(path))
             {
                 return false;
+            }
+
+            if (span.Length < CrashTelemetryDumpHeaderBytes ||
+                ReadU64(span, 0) != CrashTelemetryDumpMagic)
+            {
+                SetSummary(BuildInvalidCrashTelemetryHeaderSummary(path, span.Length, 0u, 0u));
+                return true;
             }
 
             uint entryCountRaw = ReadU32(span, 8);
@@ -563,11 +569,16 @@ namespace Hecton8.EditorTools
 
         private bool TryParseSimulationBucketDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
         {
-            if (!IsSimulationBucketDumpPath(path) ||
-                span.Length < SimulationBucketDumpHeaderBytes ||
-                ReadU64(span, 0) != SimulationBucketDumpMagic)
+            if (!IsSimulationBucketDumpPath(path))
             {
                 return false;
+            }
+
+            if (span.Length < SimulationBucketDumpHeaderBytes ||
+                ReadU64(span, 0) != SimulationBucketDumpMagic)
+            {
+                SetSummary(BuildInvalidSimulationBucketHeaderSummary(path, span.Length, 0u, 0, 0, 0, 0, 0u));
+                return true;
             }
 
             uint version = ReadU32(span, 8);
@@ -761,6 +772,8 @@ namespace Hecton8.EditorTools
             builder.Append(debt.ToString(CultureInfo.InvariantCulture));
             builder.Append(" flags=0x");
             builder.Append(pacingFlags.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(' ');
+            builder.Append(ResolveSimulationBucketFlagsLabel(pacingFlags));
             builder.Append(" rebalance=");
             builder.Append(rebalanceSequence.ToString(CultureInfo.InvariantCulture));
             builder.Append(" load=");
@@ -784,13 +797,53 @@ namespace Hecton8.EditorTools
             return builder.ToString();
         }
 
+        private static string ResolveSimulationBucketFlagsLabel(uint flags)
+        {
+            if (flags == 0u)
+                return "none";
+
+            StringBuilder builder = new StringBuilder(128);
+            AppendFlagLabel(builder, (flags & SimulationBucketPacingFlags.Impossible60Fps) != 0u, "impossible-60fps");
+            AppendFlagLabel(builder, (flags & SimulationBucketPacingFlags.PreSimulationOverBudget) != 0u, "pre-sim-over-budget");
+            AppendFlagLabel(builder, (flags & SimulationBucketPacingFlags.NonFiniteCost) != 0u, "nonfinite-cost");
+            AppendFlagLabel(builder, (flags & SimulationBucketPacingFlags.RebalancePending) != 0u, "rebalance-pending");
+            AppendFlagLabel(builder, (flags & SimulationBucketPacingFlags.SurvivalStaticDistribution) != 0u, "survival-static");
+            AppendFlagLabel(builder, (flags & SimulationBucketPacingFlags.HomeostasisKillRequested) != 0u, "homeostasis-kill");
+            AppendFlagLabel(builder, (flags & SimulationBucketPacingFlags.VisualOverkillBudgetAvailable) != 0u, "visual-overkill-room");
+
+            const uint knownFlags =
+                SimulationBucketPacingFlags.Impossible60Fps |
+                SimulationBucketPacingFlags.PreSimulationOverBudget |
+                SimulationBucketPacingFlags.NonFiniteCost |
+                SimulationBucketPacingFlags.RebalancePending |
+                SimulationBucketPacingFlags.SurvivalStaticDistribution |
+                SimulationBucketPacingFlags.HomeostasisKillRequested |
+                SimulationBucketPacingFlags.VisualOverkillBudgetAvailable;
+            uint unknownFlags = flags & ~knownFlags;
+            if (unknownFlags != 0u)
+            {
+                if (builder.Length != 0)
+                    builder.Append('|');
+
+                builder.Append("unknown=0x");
+                builder.Append(unknownFlags.ToString("X8", CultureInfo.InvariantCulture));
+            }
+
+            return builder.Length == 0 ? "unknown" : builder.ToString();
+        }
+
         private bool TryParseJobAdmissionDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
         {
-            if (!IsJobAdmissionDumpPath(path) ||
-                span.Length < JobAdmissionDumpHeaderBytes ||
-                ReadU64(span, 0) != JobAdmissionDumpMagic)
+            if (!IsJobAdmissionDumpPath(path))
             {
                 return false;
+            }
+
+            if (span.Length < JobAdmissionDumpHeaderBytes ||
+                ReadU64(span, 0) != JobAdmissionDumpMagic)
+            {
+                SetSummary(BuildInvalidJobAdmissionHeaderSummary(path, span.Length, 0u, 0, 0, 0, 0u, 0u));
+                return true;
             }
 
             uint version = ReadU32(span, 8);

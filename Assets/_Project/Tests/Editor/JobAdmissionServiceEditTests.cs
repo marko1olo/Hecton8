@@ -269,6 +269,7 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("reserved == 0u"));
             Assert.That(source, Does.Contain("JobAdmissionDumpHeaderBytes + (long)entryCount * entrySize <= span.Length"));
             Assert.That(source, Does.Contain("BuildInvalidJobAdmissionHeaderSummary("));
+            Assert.That(source, Does.Contain("SetSummary(BuildInvalidJobAdmissionHeaderSummary(path, span.Length, 0u, 0, 0, 0, 0u, 0u));"));
             Assert.That(source, Does.Contain("invalid job-admission blackbox header"));
             Assert.That(source, Does.Contain("builder.Append(\" | reserved=0x\")"));
             Assert.That(source, Does.Contain("ComputeXxHash64(bytes, JobAdmissionDumpHeaderBytes, payloadBytes)"));
@@ -294,9 +295,14 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("\"Dump_SIMULATION_BUCKET_DISTRIBUTOR.bin\""));
             Assert.That(source, Does.Contain("layout=simulation-bucket-blackbox"));
             Assert.That(source, Does.Contain("BuildInvalidSimulationBucketHeaderSummary("));
+            Assert.That(source, Does.Contain("SetSummary(BuildInvalidSimulationBucketHeaderSummary(path, span.Length, 0u, 0, 0, 0, 0, 0u));"));
             Assert.That(source, Does.Contain("BuildSimulationBucketEntryLine("));
             Assert.That(source, Does.Contain("ComputeXxHash64(bytes, SimulationBucketDumpHeaderBytes, payloadBytes)"));
             Assert.That(source, Does.Contain("builder.Append(\" activeSlow=\")"));
+            Assert.That(source, Does.Contain("ResolveSimulationBucketFlagsLabel(pacingFlags)"));
+            Assert.That(source, Does.Contain("\"pre-sim-over-budget\""));
+            Assert.That(source, Does.Contain("\"homeostasis-kill\""));
+            Assert.That(source, Does.Contain("\"unknown=0x\""));
             Assert.That(source, Does.Contain("builder.Append(\" state=0x\")"));
         }
 
@@ -314,6 +320,7 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("\"BLACKBOX_CRASH.bin\""));
             Assert.That(source, Does.Contain("layout=crash-telemetry-buffer"));
             Assert.That(source, Does.Contain("BuildInvalidCrashTelemetryHeaderSummary("));
+            Assert.That(source, Does.Contain("SetSummary(BuildInvalidCrashTelemetryHeaderSummary(path, span.Length, 0u, 0u));"));
             Assert.That(source, Does.Contain("BuildCrashTelemetryEntryLine("));
             Assert.That(source, Does.Contain("ComputeXxHash64(bytes, CrashTelemetryDumpHeaderBytes, payloadBytes)"));
             Assert.That(source, Does.Contain("builder.Append(\" errors=0x\")"));
