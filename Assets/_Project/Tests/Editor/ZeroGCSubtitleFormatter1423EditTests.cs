@@ -1249,6 +1249,25 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void BaseIntegrityHudNearestModule_RejectsNonFiniteDistanceSq()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/BaseIntegrityHUD.cs"));
+            string slowTick = ExtractMethodBody(source, "public void SlowTick(");
+            string nearest = ExtractMethodBody(source, "private static BaseModule FindNearestActiveModule(");
+            string moduleAup = ExtractMethodBody(source, "private static bool TryResolveModuleAup(");
+
+            StringAssert.Contains("math.isfinite(scanRadius) ? math.max(0f, scanRadius) : 0f", slowTick);
+            StringAssert.Contains("private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)", source);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceSq(scanRadiusSq) || scanRadiusSq <= 0d", nearest);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceSq(distanceSq)", nearest);
+            StringAssert.Contains("distanceSq > nearestDistanceSq", nearest);
+            StringAssert.Contains("if (!originAup.IsFinite())", moduleAup);
+            StringAssert.Contains("!double.IsNaN(distanceSq)", source);
+            StringAssert.Contains("!double.IsInfinity(distanceSq)", source);
+            StringAssert.Contains("distanceSq >= 0d", source);
+        }
+
+        [Test]
         public void InteractionPromptLocalizationPresentation_QueuesLateFrameRefresh()
         {
             string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/InteractionUI.cs"));
