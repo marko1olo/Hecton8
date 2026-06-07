@@ -556,6 +556,54 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void ArWaypointRuntimeProjection_RejectsNonFiniteAupMetrics()
+        {
+            string waypointPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/ARWaypointOverlay.cs");
+            string source = File.ReadAllText(waypointPath);
+            string collectBody = ExtractMethodBlock(source, "private void CollectRuntimeWaypoints()");
+            string nativeCopyBody = ExtractMethodBlock(source, "private int CopyRuntimeTargetsForStencil(NativeArray<StencilTargetSourceDTO> destination, int capacity)");
+            string spanCopyBody = ExtractMethodBlock(source, "private int CopyRuntimeTargetsForStencil(Span<StencilTargetSourceDTO> destination, int capacity)");
+            string renderBody = ExtractMethodBlock(source, "private void RenderWaypoints()");
+            string occlusionBody = ExtractMethodBlock(source, "private void RefreshOcclusionStates()");
+            string projectBody = ExtractMethodBlock(source, "private bool TryProjectWaypointOntoHudPlane(");
+            string frameBody = ExtractMethodBlock(source, "private WaypointProjectionFrame ResolveWaypointProjectionFrame()");
+            string planeBody = ExtractMethodBlock(source, "private static float ResolveHudPlaneDistance(");
+            string colorBody = ExtractMethodBlock(source, "private static Color ResolveWaypointColor(Color color)");
+
+            Assert.That(collectBody, Does.Contain("runtimeWaypoint.Color = ResolveWaypointColor(externalWaypoint.Color);"));
+            Assert.That(nativeCopyBody, Does.Contain("int writeCount = 0;"));
+            Assert.That(nativeCopyBody, Does.Contain("!waypoint.Active || !waypoint.PositionAup.IsFinite()"));
+            Assert.That(nativeCopyBody, Does.Contain("destination[writeCount] = new StencilTargetSourceDTO"));
+            Assert.That(nativeCopyBody, Does.Contain("return writeCount;"));
+            Assert.That(spanCopyBody, Does.Contain("int writeCount = 0;"));
+            Assert.That(spanCopyBody, Does.Contain("!waypoint.Active || !waypoint.PositionAup.IsFinite()"));
+            Assert.That(spanCopyBody, Does.Contain("destination[writeCount] = new StencilTargetSourceDTO"));
+            Assert.That(spanCopyBody, Does.Contain("return writeCount;"));
+            Assert.That(renderBody, Does.Contain("!waypoint.Active || !waypoint.PositionAup.IsFinite()"));
+            Assert.That(occlusionBody, Does.Contain("!waypoint.PositionAup.IsFinite()"));
+            Assert.That(occlusionBody, Does.Contain("!math.all(math.isfinite(delta)) || !math.isfinite(distanceSq)"));
+            Assert.That(projectBody, Does.Contain("!waypointAup.IsFinite()"));
+            Assert.That(projectBody, Does.Contain("!projectionFrame.CameraAup.IsFinite()"));
+            Assert.That(projectBody, Does.Contain("!math.all(math.isfinite(deltaAup))"));
+            Assert.That(projectBody, Does.Contain("!math.isfinite(viewDepth)"));
+            Assert.That(projectBody, Does.Contain("!math.isfinite(projectedWorldX) || !math.isfinite(projectedWorldY)"));
+            Assert.That(projectBody, Does.Contain("!IsFinite(projectedCanvasPosition)"));
+            Assert.That(frameBody, Does.Contain("!IsFinite(cameraPosition)"));
+            Assert.That(frameBody, Does.Contain("!math.isfinite(planeDistance) || planeDistance <= ProjectionDepthEpsilon"));
+            Assert.That(frameBody, Does.Contain("!IsFinite(lossyScale)"));
+            Assert.That(planeBody, Does.Contain("!IsFinite(cameraPosition)"));
+            Assert.That(planeBody, Does.Contain("!IsFinite(canvasRect.position)"));
+            Assert.That(planeBody, Does.Contain("math.isfinite(planeDistance)"));
+            Assert.That(colorBody, Does.Contain("!IsFinite(color) || color.a <= 0f"));
+            Assert.That(colorBody, Does.Contain("math.saturate(color.r)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Color color)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector2 value)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector3 value)"));
+        }
+
+        [Test]
         public void SuitHud_TextCreationUsesCachedFontSharedMaterial()
         {
             string path = Path.Combine(
