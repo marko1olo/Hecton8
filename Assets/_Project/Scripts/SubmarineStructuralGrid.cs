@@ -3427,6 +3427,23 @@ namespace Hecton8.Physics
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                IDataVault currentVault = currentService as IDataVault;
+                if (ReferenceEquals(_dataVault, currentVault))
+                    return;
+
+                DisposeNativeStateDeferred();
+                _dataVault = currentVault;
+                if (_dataVault == null || !isActiveAndEnabled)
+                    return;
+
+                EnsureNativeState();
+                SeedStructuralState();
+                _breachGpuDirty = true;
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 _registered = false;
