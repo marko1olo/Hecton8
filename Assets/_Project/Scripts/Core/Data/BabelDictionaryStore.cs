@@ -1250,8 +1250,8 @@ namespace Hecton8.Core.Data
 
         private void CloseFile()
         {
-            FlushPendingDumpsCold();
             CompleteActiveLoreReadsForClose();
+            FlushPendingDumpsCold();
 
 #if HECTON8_BABEL_MMF_AVAILABLE
             CloseMemoryMappedDictionary();
