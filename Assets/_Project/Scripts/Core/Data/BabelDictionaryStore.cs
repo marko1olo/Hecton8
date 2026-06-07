@@ -104,7 +104,7 @@ namespace Hecton8.Core.Data
             if (ReferenceEquals(_dataVault, dataVault))
                 return;
 
-            if (_ownedFallbackPointer != null)
+            if (HasOpenStoreState())
                 CloseFile();
 
             ReleaseVaultHandles(_dataVault);
@@ -120,6 +120,23 @@ namespace Hecton8.Core.Data
                 _errorSliceHandle = default;
                 _errorSliceVaultBacked = false;
             }
+        }
+
+        private bool HasOpenStoreState()
+        {
+            return _basePointer != null ||
+                   _mappedBytes != 0L ||
+                   _fileStream != null ||
+                   _ownedFallbackPointer != null ||
+                   _mappedBytesHandle.BufferID != 0u ||
+                   _errorSliceHandle.BufferID != 0u ||
+                   _errorPointer != null ||
+                   _blackBoxHandle.BufferID != 0u ||
+                   _blackBoxCursorHandle.BufferID != 0u ||
+                   _btreeTelemetryHandle.BufferID != 0u ||
+                   _btreeTelemetryCursorHandle.BufferID != 0u ||
+                   _btreeTelemetryAccumulatorHandle.BufferID != 0u ||
+                   _activeLoreReadHandleValid;
         }
 
         public bool OpenDefault()
