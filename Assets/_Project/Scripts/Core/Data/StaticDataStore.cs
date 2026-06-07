@@ -59,6 +59,7 @@ namespace Hecton8.Core.Data
         private uint _lastTreeKeysProcessed;
         private uint _lastPrefetchTouchCount;
         private uint _lastSearchComputeTimeNs;
+        private uint _pendingBTreeTelemetryDumpCount;
         private bool _btreeAvailable;
 
         public bool IsOpen => _basePointer != null && _mappedBytes >= UnsafeUtility.SizeOf<H8StaticDataHeader>();
@@ -113,54 +114,14 @@ namespace Hecton8.Core.Data
                 return false;
             }
 
+            bool openedMapped = false;
 #if HECTON8_STATICDATA_MMF_AVAILABLE
-            _fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.RandomAccess);
-            _mappedFile = MemoryMappedFile.CreateFromFile(
-                _fileStream,
-                null,
-                info.Length,
-                MemoryMappedFileAccess.Read,
-                HandleInheritability.None,
-                true);
-            _accessor = _mappedFile.CreateViewAccessor(0L, info.Length, MemoryMappedFileAccess.Read);
-            _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref _basePointer);
-            _mappedBytes = info.Length;
-#else
-            _ownedFallbackPointer = (byte*)H8Memory.AllocateRaw(
-                info.Length,
-                H8StaticDataFormat.AlignmentBytes,
-                SystemID.CoreDataVault,
-                Allocator.Persistent,
-                false);
-            if (_ownedFallbackPointer == null)
-            {
-                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
-                return false;
-            }
-
-            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.SequentialScan))
-            {
-                long offset = 0L;
-                while (offset < info.Length)
-                {
-                    int chunkBytes = (int)Math.Min(FileStreamBufferBytes, info.Length - offset);
-                    int read = stream.Read(new Span<byte>(_ownedFallbackPointer + offset, chunkBytes));
-                    if (read <= 0)
-                        break;
-
-                    offset += read;
-                }
-
-                if (offset != info.Length)
-                {
-                    RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, offset);
-                    Dispose();
-                    return false;
-                }
-            }
-            _basePointer = _ownedFallbackPointer;
-            _mappedBytes = info.Length;
+            openedMapped = TryOpenMemoryMappedStaticData(path, info.Length);
 #endif
+            if (!openedMapped && !TryOpenFallbackStaticData(path, info.Length))
+                return false;
+
+            EnsureBTreeTelemetry();
 
             if (!ValidateHeaderAndChecksum())
             {
@@ -231,7 +192,7 @@ namespace Hecton8.Core.Data
                         ? uint.MaxValue
                         : (uint)elapsedNs;
                 if (_lastSearchComputeTimeNs > H8CacheBTree.BTreeSlowBatchThresholdNs)
-                    DumpBTreeTelemetry();
+                    RequestBTreeTelemetryDump();
 
                 _lastTreeDepth = depth;
                 _lastTreeKeysProcessed = keysProcessed;
@@ -272,6 +233,9 @@ namespace Hecton8.Core.Data
                 return ref MissingRecord<T>.Value;
             }
 
+            if (recordTelemetry)
+                RecordBTreeTelemetry(true, 0u, hash, offset);
+
             return ref UnsafeUtility.AsRef<T>(_basePointer + offset);
         }
 
@@ -295,9 +259,9 @@ namespace Hecton8.Core.Data
                 return;
             }
 
-            string resolvedPath = string.IsNullOrEmpty(path)
-                ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", BlackBoxDumpFileName))
-                : path;
+            if (!TryResolveDumpPath(path, BlackBoxDumpFileName, out string resolvedPath))
+                return;
+
             H8StaticDataTelemetryEntry* ringPtr = (H8StaticDataTelemetryEntry*)ring.GetUnsafeReadOnlyPtr();
             H8StaticDataBlackBoxDump.Write(
                 resolvedPath,
@@ -317,15 +281,16 @@ namespace Hecton8.Core.Data
                 return;
             }
 
-            string resolvedPath = string.IsNullOrEmpty(path)
-                ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", BTreeTelemetryDumpFileName))
-                : path;
+            if (!TryResolveDumpPath(path, BTreeTelemetryDumpFileName, out string resolvedPath))
+                return;
+
             BTreeTelemetryEntry* ringPtr = (BTreeTelemetryEntry*)ring.GetUnsafeReadOnlyPtr();
             H8BTreeTelemetryDump.Write(
                 resolvedPath,
                 ringPtr,
                 cursor[0],
                 H8CacheBTree.BTreeTelemetrySlowBatchFlag);
+            _pendingBTreeTelemetryDumpCount = 0u;
         }
 
         public void Dispose()
@@ -379,23 +344,217 @@ namespace Hecton8.Core.Data
             return (long)ns;
         }
 
+        private static bool TryResolveDumpPath(string requestedPath, string defaultFileName, out string resolvedPath)
+        {
+            resolvedPath = null;
+            if (!TryResolveDumpRoot(out string dumpRoot))
+                return false;
+
+            string candidatePath = string.IsNullOrWhiteSpace(requestedPath)
+                ? Path.Combine(dumpRoot, defaultFileName)
+                : requestedPath;
+
+            try
+            {
+                string fullPath = Path.IsPathRooted(candidatePath)
+                    ? Path.GetFullPath(candidatePath)
+                    : Path.GetFullPath(Path.Combine(dumpRoot, candidatePath));
+                if (!IsPathUnderRoot(fullPath, dumpRoot))
+                    return false;
+
+                resolvedPath = fullPath;
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+        }
+
+        private static bool TryResolveDumpRoot(out string dumpRoot)
+        {
+            dumpRoot = null;
+            string dataPath = Application.dataPath;
+            if (string.IsNullOrEmpty(dataPath))
+                return false;
+
+            try
+            {
+                dumpRoot = Path.GetFullPath(Path.Combine(dataPath, "..", "Docs", "AgentLogs"));
+                return !string.IsNullOrEmpty(dumpRoot);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+        }
+
+        private static bool IsPathUnderRoot(string fullPath, string rootPath)
+        {
+            if (string.IsNullOrEmpty(fullPath) || string.IsNullOrEmpty(rootPath))
+                return false;
+
+            string normalizedRoot = Path.GetFullPath(rootPath);
+            if (!normalizedRoot.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) &&
+                !normalizedRoot.EndsWith(Path.AltDirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+            {
+                normalizedRoot += Path.DirectorySeparatorChar;
+            }
+
+            string normalizedPath = Path.GetFullPath(fullPath);
+            StringComparison comparison = Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            return normalizedPath.StartsWith(normalizedRoot, comparison);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void RequestBTreeTelemetryDump()
+        {
+            if (_pendingBTreeTelemetryDumpCount < uint.MaxValue)
+                _pendingBTreeTelemetryDumpCount++;
+        }
+
+#if HECTON8_STATICDATA_MMF_AVAILABLE
+        private bool TryOpenMemoryMappedStaticData(string path, long sourceLength)
+        {
+            try
+            {
+                _fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.RandomAccess);
+                _mappedFile = MemoryMappedFile.CreateFromFile(
+                    _fileStream,
+                    null,
+                    sourceLength,
+                    MemoryMappedFileAccess.Read,
+                    HandleInheritability.None,
+                    true);
+                _accessor = _mappedFile.CreateViewAccessor(0L, sourceLength, MemoryMappedFileAccess.Read);
+                _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref _basePointer);
+                _mappedBytes = sourceLength;
+                return true;
+            }
+            catch (IOException)
+            {
+                CloseMemoryMappedStaticData();
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                CloseMemoryMappedStaticData();
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                CloseMemoryMappedStaticData();
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                CloseMemoryMappedStaticData();
+                return false;
+            }
+        }
+#endif
+
+        private bool TryOpenFallbackStaticData(string path, long sourceLength)
+        {
+            _ownedFallbackPointer = (byte*)H8Memory.AllocateRaw(
+                sourceLength,
+                H8StaticDataFormat.AlignmentBytes,
+                SystemID.CoreDataVault,
+                Allocator.Persistent,
+                false);
+            if (_ownedFallbackPointer == null)
+            {
+                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
+                return false;
+            }
+
+            if (!LoadStaticDataIntoFallbackBufferCold(path, _ownedFallbackPointer, sourceLength))
+            {
+                CloseFile();
+                return false;
+            }
+
+            _basePointer = _ownedFallbackPointer;
+            _mappedBytes = sourceLength;
+            return true;
+        }
+
+        private bool LoadStaticDataIntoFallbackBufferCold(string path, byte* destination, long sourceLength)
+        {
+            try
+            {
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.SequentialScan))
+                {
+                    long offset = 0L;
+                    while (offset < sourceLength)
+                    {
+                        int chunkBytes = (int)Math.Min(FileStreamBufferBytes, sourceLength - offset);
+                        int read = stream.Read(new Span<byte>(destination + offset, chunkBytes));
+                        if (read <= 0)
+                            break;
+
+                        offset += read;
+                    }
+
+                    if (offset == sourceLength)
+                        return true;
+
+                    RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, offset);
+                    return false;
+                }
+            }
+            catch (IOException)
+            {
+                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
+                return false;
+            }
+        }
+
         private void CloseFile()
         {
 #if HECTON8_STATICDATA_MMF_AVAILABLE
-            if (_accessor != null)
-            {
-                if (_basePointer != null && _ownedFallbackPointer == null)
-                    _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
-
-                _accessor.Dispose();
-                _accessor = null;
-            }
-
-            if (_mappedFile != null)
-            {
-                _mappedFile.Dispose();
-                _mappedFile = null;
-            }
+            CloseMemoryMappedStaticData();
 #endif
             if (_fileStream != null)
             {
@@ -419,10 +578,40 @@ namespace Hecton8.Core.Data
             _lastTreeKeysProcessed = 0u;
             _lastPrefetchTouchCount = 0u;
             _lastSearchComputeTimeNs = 0u;
+            _pendingBTreeTelemetryDumpCount = 0u;
             _btreeAvailable = false;
             _mappedBytes = 0L;
             _header = default;
         }
+
+#if HECTON8_STATICDATA_MMF_AVAILABLE
+        private void CloseMemoryMappedStaticData()
+        {
+            if (_accessor != null)
+            {
+                if (_basePointer != null && _ownedFallbackPointer == null)
+                {
+                    _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                    _basePointer = null;
+                }
+
+                _accessor.Dispose();
+                _accessor = null;
+            }
+
+            if (_mappedFile != null)
+            {
+                _mappedFile.Dispose();
+                _mappedFile = null;
+            }
+
+            if (_fileStream != null)
+            {
+                _fileStream.Dispose();
+                _fileStream = null;
+            }
+        }
+#endif
 
         private bool ValidateHeaderAndChecksum()
         {
