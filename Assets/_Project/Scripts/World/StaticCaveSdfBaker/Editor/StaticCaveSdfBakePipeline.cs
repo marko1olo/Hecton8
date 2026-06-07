@@ -734,20 +734,14 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
 
                 if (File.Exists(fullPath))
                 {
-                    File.Move(fullPath, backupPath);
+                    File.Replace(tempPath, fullPath, backupPath, true);
                     backupCreated = true;
+                    tempPromoted = true;
                 }
-
-                try
+                else
                 {
                     File.Move(tempPath, fullPath);
                     tempPromoted = true;
-                }
-                catch
-                {
-                    if (backupCreated && !File.Exists(fullPath) && File.Exists(backupPath))
-                        File.Move(backupPath, fullPath);
-                    throw;
                 }
 
                 return new StaticCaveSdfBinaryWriteResult
