@@ -997,13 +997,27 @@ namespace Hecton8.Core.Database
                 if (!TryReadBlackBox(out NativeArray<MacroDatabaseTelemetryEntry>.ReadOnly blackBox))
                     return;
 
+                string tempPath = null;
                 try
                 {
                     string directory = Path.GetDirectoryName(path);
                     if (!string.IsNullOrEmpty(directory))
                         Directory.CreateDirectory(directory);
 
-                    using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                    tempPath = ResolveCreateTempPath(path);
+                    if (string.IsNullOrEmpty(tempPath))
+                        return;
+
+                    if (File.Exists(tempPath))
+                        File.Delete(tempPath);
+
+                    using (FileStream stream = new FileStream(
+                               tempPath,
+                               FileMode.CreateNew,
+                               FileAccess.Write,
+                               FileShare.Read,
+                               65536,
+                               FileOptions.SequentialScan | FileOptions.WriteThrough))
                     {
                         int entryBytes = UnsafeUtility.SizeOf<MacroDatabaseTelemetryEntry>();
                         for (int i = 0; i < blackBox.Length; i++)
@@ -1012,10 +1026,15 @@ namespace Hecton8.Core.Database
                             void* source = UnsafeUtility.AddressOf(ref entry);
                             stream.Write(new ReadOnlySpan<byte>(source, entryBytes));
                         }
+
+                        stream.Flush(true);
                     }
+
+                    PromoteTempFileAtomic(tempPath, path);
                 }
                 catch
                 {
+                    TryDeleteFileNoThrow(tempPath);
                 }
             }
         }

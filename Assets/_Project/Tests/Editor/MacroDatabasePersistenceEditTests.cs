@@ -42,6 +42,25 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("File.Delete(path)", body);
         }
 
+        [Test]
+        public void BlackBoxDumpPromotesTempFileAfterDurableWrite()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/Core/Database/H8MacroDatabaseService.cs");
+            string source = File.ReadAllText(path).Replace("\r\n", "\n");
+            string body = ExtractMethodBody(source, "public void DumpBlackBox(");
+
+            StringAssert.Contains("string tempPath = null;", body);
+            StringAssert.Contains("tempPath = ResolveCreateTempPath(path);", body);
+            StringAssert.Contains("FileMode.CreateNew", body);
+            StringAssert.Contains("FileOptions.SequentialScan | FileOptions.WriteThrough", body);
+            StringAssert.Contains("stream.Flush(true);", body);
+            StringAssert.Contains("PromoteTempFileAtomic(tempPath, path);", body);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", body);
+            StringAssert.DoesNotContain("new FileStream(path, FileMode.Create", body);
+            AssertOrder(body, "new FileStream(", "stream.Flush(true);");
+            AssertOrder(body, "stream.Flush(true);", "PromoteTempFileAtomic(tempPath, path);");
+        }
+
         private static string ExtractMethodBody(string source, string signature)
         {
             int start = source.IndexOf(signature, StringComparison.Ordinal);

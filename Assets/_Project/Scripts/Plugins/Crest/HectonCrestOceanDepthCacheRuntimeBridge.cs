@@ -148,8 +148,7 @@ namespace Hecton8.World
                         if (pngBytes.IsCreated && pngBytes.Length > 0)
                         {
                             byte* pngPointer = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(pngBytes);
-                            using FileStream stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read, 65536, FileOptions.SequentialScan);
-                            stream.Write(new ReadOnlySpan<byte>(pngPointer, pngBytes.Length));
+                            WriteDepthCachePngAtomic(absolutePath, pngPointer, pngBytes.Length);
                         }
                     }
                     finally
@@ -177,6 +176,56 @@ namespace Hecton8.World
             return false;
 #endif
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static void WriteDepthCachePngAtomic(string absolutePath, byte* pngPointer, int byteLength)
+        {
+            string tempPath = absolutePath + ".tmp";
+            TryDeleteFileCold(tempPath);
+
+            try
+            {
+                using (FileStream stream = new FileStream(
+                           tempPath,
+                           FileMode.CreateNew,
+                           FileAccess.Write,
+                           FileShare.Read,
+                           65536,
+                           FileOptions.SequentialScan | FileOptions.WriteThrough))
+                {
+                    stream.Write(new ReadOnlySpan<byte>(pngPointer, byteLength));
+                    stream.Flush(true);
+                }
+
+                PromoteTempFileAtomic(tempPath, absolutePath);
+            }
+            catch
+            {
+                TryDeleteFileCold(tempPath);
+                throw;
+            }
+        }
+
+        private static void PromoteTempFileAtomic(string tempPath, string destinationPath)
+        {
+            if (File.Exists(destinationPath))
+                File.Replace(tempPath, destinationPath, null, true);
+            else
+                File.Move(tempPath, destinationPath);
+        }
+
+        private static void TryDeleteFileCold(string path)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+            }
+        }
+#endif
 
         private static void DisposeRegisteredReadbackPixels(
             NativeArray<Color32> readbackPixels,
