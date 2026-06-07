@@ -605,6 +605,32 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void IndexedSectorEntityStateWriteSchedulingFailure_DefersScratchDisposal()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+
+            int errorIndex = source.IndexOf("Sector entity-state write job scheduling failed", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(errorIndex, 0, source);
+            int blockStart = source.LastIndexOf("JobHandle scheduledHandle = default;", errorIndex, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(blockStart, 0, source);
+            int blockEnd = source.IndexOf("return true;", errorIndex, StringComparison.Ordinal);
+            Assert.Greater(blockEnd, errorIndex, source);
+            string schedulingBlock = source.Substring(blockStart, blockEnd - blockStart);
+
+            StringAssert.Contains("scheduledHandle = buildHandle;", schedulingBlock);
+            StringAssert.Contains("scheduledHandle = sortHandle;", schedulingBlock);
+            StringAssert.Contains("scheduledHandle = extractHandle;", schedulingBlock);
+            StringAssert.Contains("scheduledHandle = compactHandle;", schedulingBlock);
+            StringAssert.Contains("scheduledHandle = compressHandle;", schedulingBlock);
+            StringAssert.Contains("writeHandle.Handle = scheduledHandle;", schedulingBlock);
+            StringAssert.Contains("DisposeIndexedSectorEntityStateOverrideWriteDeferred(ref writeHandle, default);", schedulingBlock);
+            StringAssert.Contains("JobHandle.ScheduleBatchedJobs();", schedulingBlock);
+            StringAssert.DoesNotContain("writeHandle.Dispose();", schedulingBlock);
+        }
+
+        [Test]
         public void HazardZoneRuntimeDTO_IsExplicitEightBytes()
         {
             StructLayoutAttribute layout = typeof(HazardZoneRuntimeDTO).StructLayoutAttribute;
