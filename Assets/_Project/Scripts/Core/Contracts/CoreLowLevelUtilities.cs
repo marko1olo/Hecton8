@@ -242,22 +242,52 @@ namespace Hecton8.Core
             if (!TryResolveWritablePath(absolutePath, out string fullPath))
                 return false;
 
+            string tempPath = fullPath + ".tmp";
             try
             {
                 string directory = Path.GetDirectoryName(fullPath);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.None))
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 {
                     stream.Write(payload.Slice(0, byteCount));
+                    stream.Flush(true);
                 }
 
+                PromoteTempFileAtomic(tempPath, fullPath);
                 return true;
             }
             catch
             {
+                TryDeleteFileNoThrow(tempPath);
                 return false;
+            }
+        }
+
+        private static void PromoteTempFileAtomic(string tempPath, string fullPath)
+        {
+            if (File.Exists(fullPath))
+            {
+                File.Replace(tempPath, fullPath, null, true);
+                return;
+            }
+
+            File.Move(tempPath, fullPath);
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
             }
         }
 

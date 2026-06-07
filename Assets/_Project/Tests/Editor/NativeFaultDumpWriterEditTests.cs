@@ -115,6 +115,13 @@ namespace Hecton8.Tests.Editor
             Assert.IsFalse(writerBlock.Contains(".ToArray("));
             Assert.IsFalse(writerBlock.Contains("File.WriteAllBytes"));
             StringAssert.Contains("stream.Write(payload.Slice(0, byteCount))", writerBlock);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", writerBlock);
+            StringAssert.Contains("stream.Flush(true);", writerBlock);
+            StringAssert.Contains("PromoteTempFileAtomic(tempPath, fullPath);", writerBlock);
+            StringAssert.Contains("File.Replace(tempPath, fullPath, null, true);", writerBlock);
+            StringAssert.Contains("File.Move(tempPath, fullPath);", writerBlock);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", writerBlock);
+            StringAssert.DoesNotContain("new FileStream(fullPath, FileMode.Create", writerBlock);
         }
 
         private static string ReadProjectFile(string relativePath)
