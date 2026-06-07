@@ -2588,8 +2588,16 @@ namespace Hecton8.AI.Ecosystem
             if (!_jobScheduled)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
-                return;
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+                    return;
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
 
             FinishFrameJobCompletion();
         }
