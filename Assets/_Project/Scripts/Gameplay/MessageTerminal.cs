@@ -1053,11 +1053,11 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void UpdateState()
+        private void UpdateState(bool allowPlayingExit = false)
         {
             TerminalState newState;
 
-            if (_state == TerminalState.Playing)
+            if (_state == TerminalState.Playing && !allowPlayingExit)
             {
                 // Don't interrupt playback
                 return;
@@ -1139,9 +1139,10 @@ namespace Hecton8.Gameplay
         {
             if (_currentMessageIndex < 0 || messages == null || _currentMessageIndex >= messages.Length)
             {
-                _state = TerminalState.Idle;
                 _currentMessageIndex = -1;
-                UpdateStatusLight();
+                _playbackTimer = 0f;
+                UpdatePendingMessage();
+                UpdateState(allowPlayingExit: true);
                 return;
             }
 
@@ -1158,7 +1159,7 @@ namespace Hecton8.Gameplay
 
             // Update state
             UpdatePendingMessage();
-            UpdateState();
+            UpdateState(allowPlayingExit: true);
         }
 
         // ══════════════════════════════════════════════════════════
