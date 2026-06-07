@@ -598,9 +598,10 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
 
                 string invalidPath = tempPath + ".invalid";
                 if (File.Exists(invalidPath))
-                    File.Delete(invalidPath);
+                    File.Replace(tempPath, invalidPath, null, true);
+                else
+                    File.Move(tempPath, invalidPath);
 
-                File.Move(tempPath, invalidPath);
                 return invalidPath;
             }
 
