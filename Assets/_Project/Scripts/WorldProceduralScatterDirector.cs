@@ -963,7 +963,7 @@ namespace Hecton8.World
                 return;
             }
 
-            DispatcherJobSwap.TryComplete(ref _samplingJobHandle, forceComplete: true);
+            TryCompleteScatterSamplingJobForTeardown(ref _samplingJobHandle);
             if (fieldSampler != null)
             {
                 fieldSampler.MarkScatterSamplingJobCompleted();
@@ -971,6 +971,22 @@ namespace Hecton8.World
             }
             _isSamplingJobRunning = false;
             ResetSamplingState();
+        }
+
+        private static bool TryCompleteScatterSamplingJobForTeardown(ref JobHandle handle)
+        {
+            bool completed;
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                completed = DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
+
+            return completed;
         }
 
         private void DisposeCellSamplingArrays()

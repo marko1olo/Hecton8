@@ -345,11 +345,27 @@ namespace Hecton8.World
         private void CompleteMigratorySargassumJobForDispose()
         {
             if (_migratorySargassumJobRunning)
-                DispatcherJobSwap.TryComplete(ref _migratorySargassumJobHandle, forceComplete: true);
+                TryCompleteMigratorySargassumJobForDispose(ref _migratorySargassumJobHandle);
 
             _migratorySargassumJobHandle = default;
             _migratorySargassumJobRunning = false;
             ReleaseMigratorySargassumJobBufferLocks();
+        }
+
+        private static bool TryCompleteMigratorySargassumJobForDispose(ref JobHandle handle)
+        {
+            bool completed;
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                completed = DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
+
+            return completed;
         }
 
         private IDataVault ResolveMigratorySargassumVaultCold()
