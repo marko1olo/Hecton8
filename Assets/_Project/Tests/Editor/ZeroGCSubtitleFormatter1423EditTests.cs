@@ -1162,6 +1162,24 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void PdaMarkerHudRuntimePresentation_RejectsNonFiniteDistanceSq()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/PDA/PDAMarkerHUDElement.cs"));
+            string sampleDisplay = ExtractMethodBody(source, "private void SampleMarkerDisplay(");
+            string updateDisplay = ExtractMethodBody(source, "private void UpdateDisplay(");
+
+            StringAssert.Contains("private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)", source);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceSq(distanceSq) || distanceSq > maxDisplayDistanceSq", updateDisplay);
+            StringAssert.Contains("SanitizeNonNegativeFinite(maxDisplayDistance, 0f)", sampleDisplay);
+            StringAssert.Contains("SanitizeNonNegativeFinite(fadeStartDistance, safeMaxDisplayDistance)", sampleDisplay);
+            StringAssert.Contains("ResolveSafeScreenMargin(screenMargin, screenWidth, screenHeight)", sampleDisplay);
+            StringAssert.Contains("math.clamp(screenPoint.x, safeScreenMargin, screenWidth - safeScreenMargin)", updateDisplay);
+            StringAssert.Contains("math.clamp(screenPoint.y, safeScreenMargin, screenHeight - safeScreenMargin)", updateDisplay);
+            StringAssert.Contains("!double.IsNaN(distanceSq)", source);
+            StringAssert.Contains("!double.IsInfinity(distanceSq)", source);
+        }
+
+        [Test]
         public void InteractionPromptLocalizationPresentation_QueuesLateFrameRefresh()
         {
             string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/InteractionUI.cs"));

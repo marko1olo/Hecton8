@@ -175,11 +175,16 @@ namespace Hecton8.PDA
             }
 
             int displayCount = math.min(_markerCount, _iconDisplays.Length);
-            double maxDisplayDistanceSq = (double)maxDisplayDistance * maxDisplayDistance;
-            double fadeStartDistanceSq = (double)fadeStartDistance * fadeStartDistance;
+            float safeMaxDisplayDistance = SanitizeNonNegativeFinite(maxDisplayDistance, 0f);
+            float safeFadeStartDistance = math.min(
+                SanitizeNonNegativeFinite(fadeStartDistance, safeMaxDisplayDistance),
+                safeMaxDisplayDistance);
+            double maxDisplayDistanceSq = (double)safeMaxDisplayDistance * safeMaxDisplayDistance;
+            double fadeStartDistanceSq = (double)safeFadeStartDistance * safeFadeStartDistance;
             double fadeDistanceSqSpan = math.max(0.001d, maxDisplayDistanceSq - fadeStartDistanceSq);
             float screenWidth = _screenWidthSnapshot;
             float screenHeight = _screenHeightSnapshot;
+            float safeScreenMargin = ResolveSafeScreenMargin(screenMargin, screenWidth, screenHeight);
 
             for (int i = 0; i < displayCount; i++)
             {
@@ -191,7 +196,8 @@ namespace Hecton8.PDA
                     fadeStartDistanceSq,
                     fadeDistanceSqSpan,
                     screenWidth,
-                    screenHeight);
+                    screenHeight,
+                    safeScreenMargin);
             }
 
             for (int i = displayCount; i < _activeDisplayCount; i++)
@@ -319,14 +325,15 @@ namespace Hecton8.PDA
             double fadeStartDistanceSq,
             double fadeDistanceSqSpan,
             float screenWidth,
-            float screenHeight)
+            float screenHeight,
+            float safeScreenMargin)
         {
             if (display == null || display.rectTransform == null || display.canvasGroup == null || _mainCamera == null)
                 return;
 
             AbsoluteUniversePosition markerAup = marker.PositionAup;
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in markerAup, in observerAup);
-            if (distanceSq > maxDisplayDistanceSq)
+            if (!IsFiniteNonNegativeDistanceSq(distanceSq) || distanceSq > maxDisplayDistanceSq)
             {
                 SetDisplayVisible(display, false);
                 return;
@@ -345,8 +352,8 @@ namespace Hecton8.PDA
                 return;
             }
 
-            float clampedX = math.clamp(screenPoint.x, screenMargin, screenWidth - screenMargin);
-            float clampedY = math.clamp(screenPoint.y, screenMargin, screenHeight - screenMargin);
+            float clampedX = math.clamp(screenPoint.x, safeScreenMargin, screenWidth - safeScreenMargin);
+            float clampedY = math.clamp(screenPoint.y, safeScreenMargin, screenHeight - safeScreenMargin);
             ApplyDisplayPosition(display, clampedX, clampedY);
 
             float alpha = 1f;
@@ -514,6 +521,27 @@ namespace Hecton8.PDA
         private static float DecodeAlpha(byte alphaByte)
         {
             return alphaByte * (1f / 255f);
+        }
+
+        private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)
+        {
+            return distanceSq >= 0d &&
+                   !double.IsNaN(distanceSq) &&
+                   !double.IsInfinity(distanceSq);
+        }
+
+        private static float SanitizeNonNegativeFinite(float value, float fallback)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : math.max(0f, fallback);
+        }
+
+        private static float ResolveSafeScreenMargin(float margin, float screenWidth, float screenHeight)
+        {
+            if (!math.isfinite(margin))
+                return 0f;
+
+            float maxMargin = math.max(0f, math.min(screenWidth, screenHeight) * 0.5f);
+            return math.clamp(margin, 0f, maxMargin);
         }
 
         private static float ApproximateDistanceMetersFromSq(double distanceSq)
