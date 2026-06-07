@@ -2247,6 +2247,22 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void BilateralDrsUpscaler_BlackBoxDumpTracksTransientPayload()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Rendering", "BilateralDrs", "HectonBilateralDrsUpscalerRuntime.cs");
+            string dumpBody = ExtractMethodBody(source, "private static unsafe void WriteBlackBoxDump(");
+
+            Assert.That(source, Does.Contain("private const string BlackBoxDumpPayloadLabel = \"bilateralDrsBlackBoxDumpPayload\";"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("nameof(HectonBilateralDrsUpscalerRuntime)"));
+            Assert.That(dumpBody, Does.Contain("BlackBoxDumpPayloadLabel"));
+            Assert.That(dumpBody, Does.Contain("NativeArrayOptions.UninitializedMemory"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBody, Does.Not.Contain("new NativeArray<byte>(byteCount"));
+            Assert.That(dumpBody, Does.Not.Contain("payload.Dispose()"));
+        }
+
+        [Test]
         public void RemainingComputeAdmission_UsesCapabilityNotHighResourceBucket()
         {
             string scriptsRoot = ResolveProjectPath("Assets", "_Project", "Scripts");

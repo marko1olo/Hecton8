@@ -22,6 +22,7 @@ namespace Hecton8.Rendering
         private const uint PostSimulationSystemHash = 0x4232504Fu; // B2PO
         private const uint VisualSyncSystemHash = 0x42325653u; // B2VS
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_BILATERAL_DRS_UPSCALER.bin";
+        private const string BlackBoxDumpPayloadLabel = "bilateralDrsBlackBoxDumpPayload";
         private const uint BlackBoxDumpMagic = 0x42324438u; // 8D2B
         private const uint BlackBoxDumpVersion = 1u;
         private const int BlackBoxDumpHeaderBytes = 32;
@@ -2107,7 +2108,11 @@ namespace Hecton8.Rendering
                 return;
 
             int byteCount = BlackBoxDumpHeaderBytes + count * entrySize;
-            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(HectonBilateralDrsUpscalerRuntime),
+                BlackBoxDumpPayloadLabel,
+                NativeArrayOptions.UninitializedMemory);
             try
             {
                 byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
@@ -2142,7 +2147,10 @@ namespace Hecton8.Rendering
             }
             finally
             {
-                payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonBilateralDrsUpscalerRuntime),
+                    BlackBoxDumpPayloadLabel);
             }
         }
 
