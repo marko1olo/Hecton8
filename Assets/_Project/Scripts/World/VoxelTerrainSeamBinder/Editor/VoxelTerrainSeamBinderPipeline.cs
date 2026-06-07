@@ -972,8 +972,9 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
             string temp = BuildTempPath(fullPath);
             File.WriteAllText(temp, text, TextEncoding);
             if (File.Exists(fullPath))
-                File.Delete(fullPath);
-            File.Move(temp, fullPath);
+                File.Replace(temp, fullPath, null, true);
+            else
+                File.Move(temp, fullPath);
         }
 
         private static void WriteBytesAtomic(string path, ReadOnlySpan<byte> bytes)
@@ -987,8 +988,9 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
             using (FileStream stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
                 stream.Write(bytes);
             if (File.Exists(fullPath))
-                File.Delete(fullPath);
-            File.Move(temp, fullPath);
+                File.Replace(temp, fullPath, null, true);
+            else
+                File.Move(temp, fullPath);
         }
 
         private static string BuildTempPath(string fullPath)

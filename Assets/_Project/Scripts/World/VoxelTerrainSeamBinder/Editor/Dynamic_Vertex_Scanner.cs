@@ -288,8 +288,9 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
             string temp = BuildTempPath(path);
             File.WriteAllText(temp, text, TextEncoding);
             if (File.Exists(path))
-                File.Delete(path);
-            File.Move(temp, path);
+                File.Replace(temp, path, null, true);
+            else
+                File.Move(temp, path);
         }
 
         private static string BuildTempPath(string path)
