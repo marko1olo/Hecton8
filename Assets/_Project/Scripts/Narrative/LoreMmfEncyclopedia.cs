@@ -60,8 +60,9 @@ namespace Hecton8.Narrative
                 if (headerStatus != LoreMmfLoadStatus.Ok)
                     return FailOpen(headerStatus);
 
-                if (!TryResolveMaxPayloadScratchBytes(out int maxPayloadBytes))
-                    return FailOpen(LoreMmfLoadStatus.CorruptIndex);
+                LoreMmfLoadStatus entriesStatus = ValidateIndexEntries(out int maxPayloadBytes);
+                if (entriesStatus != LoreMmfLoadStatus.Ok)
+                    return FailOpen(entriesStatus);
 
                 _payloadScratch = maxPayloadBytes > 0
                     ? new byte[maxPayloadBytes] // COLD ALLOC: largest lore payload entry scratch - owner: LoreMmfEncyclopedia
@@ -94,9 +95,7 @@ namespace Hecton8.Narrative
                 return LoreMmfLoadStatus.UnsupportedEncoding;
 
             if ((entry.ByteLength & 1) != 0 ||
-                entry.ByteLength < 0 ||
-                entry.ByteOffset < 0L ||
-                entry.ByteOffset + entry.ByteLength > _payloadLength)
+                !IsEntryPayloadRangeValid(entry))
             {
                 return LoreMmfLoadStatus.CorruptIndex;
             }
@@ -155,17 +154,19 @@ namespace Hecton8.Narrative
             ushort version = ReadUInt16LittleEndian(_indexBytes, 4);
             ushort entrySize = ReadUInt16LittleEndian(_indexBytes, 6);
             int entryCount = ReadInt32LittleEndian(_indexBytes, 8);
+            uint reserved = ReadUInt32LittleEndian(_indexBytes, 12);
             if (magic != IndexMagic ||
                 version != CurrentVersion ||
                 entrySize != EntrySizeBytes ||
-                entryCount < 0 ||
-                entryCount > MaxEntryCount)
+                entryCount <= 0 ||
+                entryCount > MaxEntryCount ||
+                reserved != 0u)
             {
                 return LoreMmfLoadStatus.CorruptIndex;
             }
 
             long requiredBytes = HeaderSizeBytes + ((long)entryCount * EntrySizeBytes);
-            if (requiredBytes > indexLength)
+            if (requiredBytes != indexLength)
                 return LoreMmfLoadStatus.CorruptIndex;
 
             _entryCount = entryCount;
@@ -200,24 +201,46 @@ namespace Hecton8.Narrative
             return false;
         }
 
-        private bool TryResolveMaxPayloadScratchBytes(out int maxPayloadBytes)
+        private LoreMmfLoadStatus ValidateIndexEntries(out int maxPayloadBytes)
         {
             maxPayloadBytes = 0;
+            uint previousHash = 0u;
             for (int i = 0; i < _entryCount; i++)
             {
                 ReadIndexEntry(i, out IndexEntry entry);
-                if (entry.ByteLength < 0 ||
-                    entry.ByteOffset < 0L ||
-                    entry.ByteOffset + entry.ByteLength > _payloadLength)
+                if (entry.Hash == 0u ||
+                    (i > 0 && entry.Hash <= previousHash) ||
+                    entry.Flags != 0 ||
+                    entry.Reserved != 0u)
                 {
-                    return false;
+                    return LoreMmfLoadStatus.CorruptIndex;
+                }
+
+                if (entry.Encoding != EncodingUtf16LittleEndian)
+                    return LoreMmfLoadStatus.UnsupportedEncoding;
+
+                if ((entry.ByteLength & 1) != 0 ||
+                    !IsEntryPayloadRangeValid(entry))
+                {
+                    return LoreMmfLoadStatus.CorruptIndex;
                 }
 
                 if (entry.ByteLength > maxPayloadBytes)
                     maxPayloadBytes = entry.ByteLength;
+
+                previousHash = entry.Hash;
             }
 
-            return true;
+            return LoreMmfLoadStatus.Ok;
+        }
+
+        private bool IsEntryPayloadRangeValid(IndexEntry entry)
+        {
+            if (entry.ByteLength <= 0 || entry.ByteOffset < 0L)
+                return false;
+
+            long byteLength = entry.ByteLength;
+            return byteLength <= _payloadLength && entry.ByteOffset <= _payloadLength - byteLength;
         }
 
         private void ReadIndexEntry(int index, out IndexEntry entry)
