@@ -3950,6 +3950,5 @@ namespace Hecton8.Gameplay
             return normalized * sdfRange;
         }
 
-        // Zero-GC behavior is now provided by Hecton8.Core.ZeroGCStringCache.
     }
 }
