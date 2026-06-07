@@ -1492,6 +1492,27 @@ namespace Hecton8.Environment
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                IDataVault currentVault = currentService as IDataVault;
+                if (ReferenceEquals(_dataVault, currentVault))
+                    return;
+
+                CompleteSeismicEvaluationJob(force: true);
+                CompleteCelestialMechanicsJobForBarrier();
+                ClearCachedRuntimeState();
+                RefreshCachedRuntimeState();
+                _dataVault = currentVault;
+                if (!_isInitialized || _dataVault == null || !isActiveAndEnabled)
+                    return;
+
+                EnsureTelemetryRing();
+                EnsureSeismicVaultBuffers();
+                PrewarmSeismicSignalLanes();
+                EvaluateAndPublish(ResolveSimulationTickDelta(0f), refreshTide: true, publishSignals: false, publishCelestial: true);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
