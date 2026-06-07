@@ -899,6 +899,8 @@ namespace Hecton8.Ecosystem
 
         private void ReleaseCarrionVaultHandles(IDataVault vault)
         {
+            UnlockCarrionJobBuffers();
+
             if (vault == null)
             {
                 ResetCarrionHandlesNoRelease();

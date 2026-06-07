@@ -1502,6 +1502,7 @@ namespace Hecton8.Ecosystem
 
         private void ReleaseVaultHandles(IDataVault vault)
         {
+            UnlockJobBuffers();
             ReleaseCarrionVaultHandles(vault);
 
             if (vault == null)
