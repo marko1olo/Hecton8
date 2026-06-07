@@ -144,21 +144,35 @@ namespace Hecton8.SaveSystem
             }
 
             EnsureFlushThread();
+            bool flushImmediately = false;
             lock (s_flushLock)
             {
                 if (s_flushCount == DiskFlushQueueCapacity)
                 {
-                    s_flushReadIndex = (s_flushReadIndex + 1) % DiskFlushQueueCapacity;
-                    s_flushCount--;
+                    flushImmediately = true;
+                }
+                else
+                {
+                    s_flushQueue[s_flushWriteIndex] = new DiskFlushRequest
+                    {
+                        AbsolutePath = absolutePath,
+                        ByteCount = byteCount > 0L ? byteCount : 0L
+                    };
+                    s_flushWriteIndex = (s_flushWriteIndex + 1) % DiskFlushQueueCapacity;
+                    s_flushCount++;
+                }
+            }
+
+            if (flushImmediately)
+            {
+                ThrottleFlush(byteCount);
+                if (!TryFlushPath(absolutePath))
+                {
+                    error = "Flush queue is full and immediate flush failed.";
+                    return false;
                 }
 
-                s_flushQueue[s_flushWriteIndex] = new DiskFlushRequest
-                {
-                    AbsolutePath = absolutePath,
-                    ByteCount = byteCount > 0L ? byteCount : 0L
-                };
-                s_flushWriteIndex = (s_flushWriteIndex + 1) % DiskFlushQueueCapacity;
-                s_flushCount++;
+                return true;
             }
 
             s_flushSignal.Set();
@@ -422,7 +436,7 @@ namespace Hecton8.SaveSystem
                 }
 
                 ThrottleFlush(request.ByteCount);
-                FlushPath(request.AbsolutePath);
+                _ = TryFlushPath(request.AbsolutePath);
             }
         }
 
@@ -456,17 +470,18 @@ namespace Hecton8.SaveSystem
             Thread.Sleep(delayMs > int.MaxValue ? int.MaxValue : (int)delayMs);
         }
 
-        private static void FlushPath(string absolutePath)
+        private static bool TryFlushPath(string absolutePath)
         {
             try
             {
                 if (string.IsNullOrEmpty(absolutePath))
-                    return;
+                    return false;
 
-                TryFlushPathNative(absolutePath);
+                return TryFlushPathNative(absolutePath);
             }
             catch
             {
+                return false;
             }
         }
 

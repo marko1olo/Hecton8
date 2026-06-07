@@ -100,6 +100,7 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterHotSwapListener();
             TryUnregister();
+            ClearPendingState();
         }
 
         /// <inheritdoc />
@@ -332,6 +333,18 @@ namespace Hecton8.Gameplay
             TryUnregister();
             if (currentService != null && isActiveAndEnabled)
                 TryRegister();
+        }
+
+        private void ClearPendingState()
+        {
+            _hasPendingState = false;
+            _pendingState = default;
+            _pendingAupAnchor = null;
+            _appliedAupAnchor = null;
+            _hasLastAppliedTrackingState = false;
+            _originShiftTrackingLockFrame = -1;
+            _lastAppliedLocalPosition = Vector3.zero;
+            _lastAppliedWorldRotation = Quaternion.identity;
         }
     }
 }

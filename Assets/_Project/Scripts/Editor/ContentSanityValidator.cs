@@ -1809,6 +1809,41 @@ namespace Hecton8.Editor.Validation
                 $"missing {string.Join(", ", missing)}.");
         }
 
+        private static void ValidateFirstHourRuntimeSceneOwners(ValidationResult result)
+        {
+            if (!TryReadProjectTextFile(ProductionWorldScenePath, out string sceneText, out string readFailure))
+            {
+                result.FirstHourDrillRouteErrorCount++;
+                result.Errors.Add($"{ProductionWorldScenePath}: failed to read first-hour runtime owner scene proof: {readFailure}");
+                return;
+            }
+
+            List<string> missing = new List<string>(3);
+            RequireSceneScriptGuid(sceneText, LoreSystemsRootScriptPath, "HectonLoreSystemsRoot", missing);
+            RequireSceneScriptGuid(sceneText, QuestManagerScriptPath, "QuestManager", missing);
+            RequireSceneScriptGuid(sceneText, FirstHourDirectorScriptPath, "FirstHourDirector", missing);
+            if (missing.Count <= 0)
+                return;
+
+            result.FirstHourDrillRouteErrorCount++;
+            result.Errors.Add(
+                $"{ProductionWorldScenePath}: missing first-hour runtime owner(s): {string.Join(", ", missing)}. " +
+                "The drill/copper quest spine is authored, but it is not production-integrated unless lore systems are present in the world scene.");
+        }
+
+        private static void RequireSceneScriptGuid(
+            string sceneText,
+            string scriptPath,
+            string label,
+            List<string> missing)
+        {
+            string guid = AssetDatabase.AssetPathToGUID(scriptPath);
+            if (!string.IsNullOrWhiteSpace(guid) && sceneText.IndexOf(guid, StringComparison.Ordinal) >= 0)
+                return;
+
+            missing.Add(label);
+        }
+
         private static bool TryExtractSceneObjectBlockByName(string sceneText, string objectName, out string block)
         {
             block = string.Empty;

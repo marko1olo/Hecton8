@@ -124,7 +124,7 @@ namespace Hecton8.World
 
             _vegetationMemoryTelemetryHandle = default;
             _vegetationMemoryTelemetryCursorHandle = default;
-            DisposeNativeArray(ref _vegetationMemoryTelemetryDumpPayload);
+            H8Memory.Release(ref _vegetationMemoryTelemetryDumpPayload, VegetationMemorySovereigntyConstants.OwnerSystemId);
             _vegetationMemoryTelemetryDumped = false;
         }
 
@@ -136,53 +136,20 @@ namespace Hecton8.World
                 return true;
             }
 
-            DisposeNativeArray(ref _vegetationMemoryTelemetryDumpPayload);
-            NativeArray<byte> replacement = default;
-            try
+            H8Memory.Release(ref _vegetationMemoryTelemetryDumpPayload, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            _vegetationMemoryTelemetryDumpPayload = H8Memory.Allocate<byte>(
+                VegetationMemoryDumpPayloadBytes,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+            if (!_vegetationMemoryTelemetryDumpPayload.IsCreated ||
+                _vegetationMemoryTelemetryDumpPayload.Length < VegetationMemoryDumpPayloadBytes)
             {
-                replacement = new NativeArray<byte>(
-                    VegetationMemoryDumpPayloadBytes,
-                    Allocator.Persistent,
-                    NativeArrayOptions.UninitializedMemory);
-                if (!replacement.IsCreated ||
-                    replacement.Length < VegetationMemoryDumpPayloadBytes)
-                {
-                    if (replacement.IsCreated)
-                        replacement.Dispose();
-                    return false;
-                }
-
-                int sentinelId = NativeMemorySentinel.RegisterNativeArray(
-                    replacement,
-                    NativeMemoryOwner,
-                    nameof(_vegetationMemoryTelemetryDumpPayload),
-                    NativeMemoryLifetime);
-                if (sentinelId <= 0)
-                {
-                    replacement.Dispose();
-                    return false;
-                }
-
-                _vegetationMemoryTelemetryDumpPayload = replacement;
-                replacement = default;
-                return true;
+                H8Memory.Release(ref _vegetationMemoryTelemetryDumpPayload, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                return false;
             }
-            catch
-            {
-                if (replacement.IsCreated)
-                {
-                    try
-                    {
-                        NativeMemorySentinel.UnregisterNativeArray(replacement);
-                    }
-                    finally
-                    {
-                        replacement.Dispose();
-                    }
-                }
 
-                throw;
-            }
+            return true;
         }
 
         private void RecordVegetationMemoryTelemetry(

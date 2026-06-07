@@ -925,6 +925,7 @@ namespace Hecton8.Gameplay
             if ((_stateFlags & StateSubscribedXRRuntime) != 0u || !Application.isPlaying)
                 return;
 
+            HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;
             HectonXRRuntimeState.XRActiveChanged += HandleXRActiveChanged;
             _stateFlags |= StateSubscribedXRRuntime;
         }
