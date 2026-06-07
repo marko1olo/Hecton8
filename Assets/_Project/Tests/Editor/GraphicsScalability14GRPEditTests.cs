@@ -604,6 +604,59 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void SubmarineSonarHoloMap_RejectsNonFiniteRuntimePresentation()
+        {
+            string mapPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/SubmarineSonarHoloMapRenderer.cs");
+            string source = File.ReadAllText(mapPath);
+            string visualSyncBody = ExtractMethodBlock(source, "private void RunVisualSync(float deltaTime)");
+            string lateFrameBody = ExtractMethodBlock(source, "public void LateFrameTick()");
+            string refreshBody = ExtractMethodBlock(source, "private void RefreshMapSample(int gridCells)");
+            string floorBody = ExtractMethodBlock(source, "private static float ResolveHybridFloorDelta(Vector3 samplePosition, float originY)");
+            string interpolationBody = ExtractMethodBlock(source, "private void UploadInterpolatedVertices()");
+            string visibleBody = ExtractMethodBlock(source, "private bool ResolveVisibleToPlayer()");
+            string qualityBody = ExtractMethodBlock(source, "private void RefreshQualityPolicy()");
+            string materialBody = ExtractMethodBlock(source, "private void ApplyMaterialPropertiesIfNeeded()");
+            string boundsBody = ExtractMethodBlock(source, "private void RefreshRuntimeMeshBounds()");
+            string clearBody = ExtractMethodBlock(source, "private void ClearMapSamples()");
+            string validateBody = ExtractMethodBlock(source, "private void OnValidate()");
+
+            Assert.That(visualSyncBody, Does.Contain("math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f"));
+            Assert.That(visualSyncBody, Does.Contain("SanitizeQualityWeight01(_cachedQualityWeight01)"));
+            Assert.That(lateFrameBody, Does.Contain("TryResolveAnchorRenderPose(anchor, out Vector3 anchorPosition, out Quaternion anchorRotation)"));
+            Assert.That(lateFrameBody, Does.Contain("Matrix4x4.TRS(anchorPosition, anchorRotation, Vector3.one)"));
+            Assert.That(refreshBody, Does.Contain("if (!IsFinite(originPosition) || !IsFinite(originRotation))"));
+            Assert.That(refreshBody, Does.Contain("ClearMapSamples();"));
+            Assert.That(refreshBody, Does.Contain("ResolveSampleRadiusMeters(sampleRadiusMeters)"));
+            Assert.That(refreshBody, Does.Contain("ResolveDisplayRadiusMeters(displayRadiusMeters)"));
+            Assert.That(refreshBody, Does.Contain("ResolveMaxHeightDeltaMeters(maxHeightDeltaMeters)"));
+            Assert.That(refreshBody, Does.Contain("ResolveVerticalExaggeration(verticalExaggeration)"));
+            Assert.That(refreshBody, Does.Contain("math.isfinite(heightDelta)"));
+            Assert.That(floorBody, Does.Contain("if (!IsFinite(samplePosition) || !math.isfinite(originY))"));
+            Assert.That(floorBody, Does.Contain("math.isfinite(terrainDelta) ? terrainDelta : 0f"));
+            Assert.That(floorBody, Does.Contain("math.isfinite(fallbackDelta) ? fallbackDelta : 0f"));
+            Assert.That(interpolationBody, Does.Contain("IsFinite(vertex) ? vertex : Vector3.zero"));
+            Assert.That(visibleBody, Does.Contain("!IsFinite(cameraPosition)"));
+            Assert.That(visibleBody, Does.Contain("!IsFinite(anchor.position)"));
+            Assert.That(visibleBody, Does.Contain("!math.isfinite(directionLengthSq)"));
+            Assert.That(qualityBody, Does.Contain("SanitizeQualityWeight01(value, _cachedQualityWeight01)"));
+            Assert.That(materialBody, Does.Contain("Color safeSonarColor = ResolveSonarColor(sonarColor);"));
+            Assert.That(materialBody, Does.Contain("_materialProperties.SetColor(_BaseColorId, safeSonarColor);"));
+            Assert.That(boundsBody, Does.Contain("ResolveSampleRadiusMeters(sampleRadiusMeters)"));
+            Assert.That(boundsBody, Does.Contain("ResolveDisplayRadiusMeters(displayRadiusMeters)"));
+            Assert.That(clearBody, Does.Contain("_hasCurrentSample = false;"));
+            Assert.That(clearBody, Does.Contain("_hasPreviousSample = false;"));
+            Assert.That(validateBody, Does.Contain("sonarColor = ResolveSonarColor(sonarColor);"));
+            Assert.That(source, Does.Contain("private static bool TryResolveAnchorRenderPose(Transform anchor, out Vector3 position, out Quaternion rotation)"));
+            Assert.That(source, Does.Contain("private static float SanitizeQualityWeight01(float value, float fallback = 0f)"));
+            Assert.That(source, Does.Contain("private static Color ResolveSonarColor(Color color)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Color color)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Quaternion rotation)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector3 value)"));
+        }
+
+        [Test]
         public void SuitHud_TextCreationUsesCachedFontSharedMaterial()
         {
             string path = Path.Combine(

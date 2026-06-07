@@ -109,8 +109,8 @@ namespace Hecton8.UI
                 return;
             }
 
-            float safeDeltaTime = math.max(0f, deltaTime);
-            float qualityWeight = math.saturate(_cachedQualityWeight01);
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
+            float qualityWeight = SanitizeQualityWeight01(_cachedQualityWeight01);
             int gridCells = ResolveGridCells(qualityWeight);
             float updateInterval = ResolveUpdateIntervalSeconds(qualityWeight);
             _interpolationBlendWeight = ResolveInterpolationBlendWeight(qualityWeight);
@@ -145,7 +145,10 @@ namespace Hecton8.UI
                 return;
 
             Transform anchor = ResolveMapAnchor();
-            Matrix4x4 matrix = Matrix4x4.TRS(ResolveAnchorRuntimePosition(anchor), anchor.rotation, Vector3.one);
+            if (!TryResolveAnchorRenderPose(anchor, out Vector3 anchorPosition, out Quaternion anchorRotation))
+                return;
+
+            Matrix4x4 matrix = Matrix4x4.TRS(anchorPosition, anchorRotation, Vector3.one);
             if (_hasPreviousSample && _interpolationBlendWeight > 0.0001f)
                 UploadInterpolatedVertices();
 
@@ -164,9 +167,11 @@ namespace Hecton8.UI
                 null);
         }
 
-        private static Vector3 ResolveAnchorRuntimePosition(Transform anchor)
+        private static bool TryResolveAnchorRenderPose(Transform anchor, out Vector3 position, out Quaternion rotation)
         {
-            return anchor != null ? anchor.position : Vector3.zero;
+            position = anchor != null ? anchor.position : Vector3.zero;
+            rotation = anchor != null ? anchor.rotation : Quaternion.identity;
+            return IsFinite(position) && IsFinite(rotation);
         }
 
         private void RefreshMapSample(int gridCells)
@@ -181,12 +186,19 @@ namespace Hecton8.UI
             Transform origin = sampleOrigin != null ? sampleOrigin : anchor;
             Vector3 originPosition = origin.position;
             Quaternion originRotation = origin.rotation;
-            float safeRadius = math.max(12f, sampleRadiusMeters);
+            if (!IsFinite(originPosition) || !IsFinite(originRotation))
+            {
+                ClearMapSamples();
+                return;
+            }
+
+            float safeRadius = ResolveSampleRadiusMeters(sampleRadiusMeters);
             float invGridCells = math.rcp(math.max(1, gridCells));
             float worldStep = (safeRadius + safeRadius) * invGridCells;
-            float displayScale = math.max(0.0001f, displayRadiusMeters) * math.rcp(safeRadius);
-            float safeMaxHeightDelta = math.max(1f, maxHeightDeltaMeters);
-            float safeVerticalScale = displayScale * math.max(0.02f, verticalExaggeration);
+            float safeDisplayRadius = ResolveDisplayRadiusMeters(displayRadiusMeters);
+            float displayScale = safeDisplayRadius * math.rcp(safeRadius);
+            float safeMaxHeightDelta = ResolveMaxHeightDeltaMeters(maxHeightDeltaMeters);
+            float safeVerticalScale = displayScale * ResolveVerticalExaggeration(verticalExaggeration);
             int vertexCount = (gridCells + 1) * (gridCells + 1);
 
             for (int z = 0; z <= gridCells; z++)
@@ -198,7 +210,9 @@ namespace Hecton8.UI
                     Vector3 sampleOffset = originRotation * new Vector3(xWorld, 0f, zWorld);
                     Vector3 samplePosition = originPosition + sampleOffset;
                     float heightDelta = ResolveHybridFloorDelta(samplePosition, originPosition.y);
-                    heightDelta = math.clamp(heightDelta, -safeMaxHeightDelta, safeMaxHeightDelta);
+                    heightDelta = math.isfinite(heightDelta)
+                        ? math.clamp(heightDelta, -safeMaxHeightDelta, safeMaxHeightDelta)
+                        : 0f;
                     int vertexIndex = ToVertexIndex(x, z, gridCells);
                     _currentVertices[vertexIndex] = new Vector3(
                         xWorld * displayScale,
@@ -218,16 +232,21 @@ namespace Hecton8.UI
 
         private static float ResolveHybridFloorDelta(Vector3 samplePosition, float originY)
         {
+            if (!IsFinite(samplePosition) || !math.isfinite(originY))
+                return 0f;
+
             float3 position = new float3(samplePosition.x, samplePosition.y, samplePosition.z);
             if (VoxelDynamicNavGridRuntime.TrySampleHybridNavigation(position, out VoxelDynamicNavGridRuntime.HybridNavigationSample sample))
             {
                 float floorY = sample.HasTerrainHeight != 0 || sample.Mode != VoxelDynamicNavGridRuntime.HybridNavigationMode.OpenWaterHeightmap
                     ? sample.FloorBoundaryY
                     : samplePosition.y;
-                return floorY - originY;
+                float terrainDelta = floorY - originY;
+                return math.isfinite(terrainDelta) ? terrainDelta : 0f;
             }
 
-            return samplePosition.y - originY;
+            float fallbackDelta = samplePosition.y - originY;
+            return math.isfinite(fallbackDelta) ? fallbackDelta : 0f;
         }
 
         private void UploadInterpolatedVertices()
@@ -236,7 +255,10 @@ namespace Hecton8.UI
             float t = math.lerp(1f, ageT, math.saturate(_interpolationBlendWeight));
             int vertexCount = (_activeGridCells + 1) * (_activeGridCells + 1);
             for (int i = 0; i < vertexCount; i++)
-                _renderVertices[i] = Vector3.LerpUnclamped(_previousVertices[i], _currentVertices[i], t);
+            {
+                Vector3 vertex = Vector3.LerpUnclamped(_previousVertices[i], _currentVertices[i], t);
+                _renderVertices[i] = IsFinite(vertex) ? vertex : Vector3.zero;
+            }
 
             for (int i = vertexCount; i < _renderVertices.Length; i++)
                 _renderVertices[i] = Vector3.zero;
@@ -295,21 +317,21 @@ namespace Hecton8.UI
 
         private static int ResolveGridCells(float qualityWeight01)
         {
-            float quality = math.saturate(qualityWeight01);
+            float quality = SanitizeQualityWeight01(qualityWeight01);
             float curve = quality * quality * (3f - (2f * quality));
             return math.clamp((int)math.round(math.lerp(8f, MaxGridCells, curve)), 8, MaxGridCells);
         }
 
         private static float ResolveUpdateIntervalSeconds(float qualityWeight01)
         {
-            float quality = math.saturate(qualityWeight01);
+            float quality = SanitizeQualityWeight01(qualityWeight01);
             float curve = quality * quality * (3f - (2f * quality));
             return math.max(0.01666667f, math.lerp(MinimumQualityUpdateIntervalSeconds, MaximumQualityUpdateIntervalSeconds, curve));
         }
 
         private static float ResolveInterpolationBlendWeight(float qualityWeight01)
         {
-            float quality = math.saturate(qualityWeight01);
+            float quality = SanitizeQualityWeight01(qualityWeight01);
             return math.saturate((quality - 0.35f) * 1.5384616f);
         }
 
@@ -322,6 +344,13 @@ namespace Hecton8.UI
             Vector3 cameraPosition = _viewCamera.transform.position;
             Vector3 toMonitor = anchor.position - cameraPosition;
             float directionLengthSq = toMonitor.sqrMagnitude;
+            if (!IsFinite(cameraPosition) ||
+                !IsFinite(anchor.position) ||
+                !math.isfinite(directionLengthSq))
+            {
+                return false;
+            }
+
             if (directionLengthSq <= MinimumDirectionLengthSq)
                 return true;
 
@@ -389,7 +418,7 @@ namespace Hecton8.UI
         private void RefreshQualityPolicy()
         {
             float value = HomeostasisBrain.GlobalQualityWeight;
-            _cachedQualityWeight01 = math.saturate(math.select(_cachedQualityWeight01, value, math.isfinite(value)));
+            _cachedQualityWeight01 = SanitizeQualityWeight01(value, _cachedQualityWeight01);
         }
 
         private void EnsureResources()
@@ -443,12 +472,13 @@ namespace Hecton8.UI
 
             EnsureMaterialPropertiesCold();
 
-            if (!_materialPropertiesDirty && SameColor(_appliedSonarColor, sonarColor))
+            Color safeSonarColor = ResolveSonarColor(sonarColor);
+            if (!_materialPropertiesDirty && SameColor(_appliedSonarColor, safeSonarColor))
                 return;
 
             _materialProperties.Clear();
-            _materialProperties.SetColor(_BaseColorId, sonarColor);
-            _appliedSonarColor = sonarColor;
+            _materialProperties.SetColor(_BaseColorId, safeSonarColor);
+            _appliedSonarColor = safeSonarColor;
             _materialPropertiesDirty = false;
         }
 
@@ -465,12 +495,12 @@ namespace Hecton8.UI
             if (_runtimeMesh == null)
                 return;
 
-            float safeRadius = math.max(12f, sampleRadiusMeters);
-            float safeDisplayRadius = math.max(0.0001f, displayRadiusMeters);
-            float verticalExtent = math.max(1f, maxHeightDeltaMeters) *
+            float safeRadius = ResolveSampleRadiusMeters(sampleRadiusMeters);
+            float safeDisplayRadius = ResolveDisplayRadiusMeters(displayRadiusMeters);
+            float verticalExtent = ResolveMaxHeightDeltaMeters(maxHeightDeltaMeters) *
                                    safeDisplayRadius *
                                    math.rcp(safeRadius) *
-                                   math.max(0.02f, verticalExaggeration);
+                                   ResolveVerticalExaggeration(verticalExaggeration);
             float safeVerticalSize = math.max(safeDisplayRadius, verticalExtent + verticalExtent);
             _runtimeMesh.bounds = new Bounds(
                 Vector3.zero,
@@ -521,6 +551,23 @@ namespace Hecton8.UI
             }
         }
 
+        private void ClearMapSamples()
+        {
+            for (int i = 0; i < _currentVertices.Length; i++)
+                _currentVertices[i] = Vector3.zero;
+
+            for (int i = 0; i < _previousVertices.Length; i++)
+                _previousVertices[i] = Vector3.zero;
+
+            for (int i = 0; i < _renderVertices.Length; i++)
+                _renderVertices[i] = Vector3.zero;
+
+            _hasCurrentSample = false;
+            _hasPreviousSample = false;
+            _interpolationAgeSeconds = 0f;
+            UploadVertices(_currentVertices);
+        }
+
         private static void DestroyUnityObject(Object target)
         {
             if (target == null)
@@ -538,12 +585,74 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            sampleRadiusMeters = math.max(12f, sampleRadiusMeters);
-            displayRadiusMeters = math.max(0.02f, displayRadiusMeters);
-            verticalExaggeration = math.clamp(verticalExaggeration, 0.02f, 1.25f);
-            maxHeightDeltaMeters = math.max(1f, maxHeightDeltaMeters);
+            sampleRadiusMeters = ResolveSampleRadiusMeters(sampleRadiusMeters);
+            displayRadiusMeters = ResolveDisplayRadiusMeters(displayRadiusMeters);
+            verticalExaggeration = ResolveVerticalExaggeration(verticalExaggeration);
+            maxHeightDeltaMeters = ResolveMaxHeightDeltaMeters(maxHeightDeltaMeters);
+            sonarColor = ResolveSonarColor(sonarColor);
             _materialPropertiesDirty = true;
         }
 #endif
+
+        private static float SanitizeQualityWeight01(float value, float fallback = 0f)
+        {
+            float safeFallback = math.isfinite(fallback) ? math.saturate(fallback) : 0f;
+            return math.isfinite(value) ? math.saturate(value) : safeFallback;
+        }
+
+        private static float ResolveSampleRadiusMeters(float radiusMeters)
+        {
+            return math.isfinite(radiusMeters) ? math.max(12f, radiusMeters) : 12f;
+        }
+
+        private static float ResolveDisplayRadiusMeters(float radiusMeters)
+        {
+            return math.isfinite(radiusMeters) ? math.max(0.02f, radiusMeters) : 0.02f;
+        }
+
+        private static float ResolveVerticalExaggeration(float exaggeration)
+        {
+            return math.isfinite(exaggeration) ? math.clamp(exaggeration, 0.02f, 1.25f) : 0.32f;
+        }
+
+        private static float ResolveMaxHeightDeltaMeters(float maxHeightDelta)
+        {
+            return math.isfinite(maxHeightDelta) ? math.max(1f, maxHeightDelta) : 1f;
+        }
+
+        private static Color ResolveSonarColor(Color color)
+        {
+            if (!IsFinite(color))
+                return new Color(0.10f, 0.92f, 0.76f, 1f);
+
+            return new Color(
+                math.saturate(color.r),
+                math.saturate(color.g),
+                math.saturate(color.b),
+                math.saturate(color.a));
+        }
+
+        private static bool IsFinite(Color color)
+        {
+            return math.isfinite(color.r) &&
+                   math.isfinite(color.g) &&
+                   math.isfinite(color.b) &&
+                   math.isfinite(color.a);
+        }
+
+        private static bool IsFinite(Quaternion rotation)
+        {
+            return math.isfinite(rotation.x) &&
+                   math.isfinite(rotation.y) &&
+                   math.isfinite(rotation.z) &&
+                   math.isfinite(rotation.w);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
     }
 }
