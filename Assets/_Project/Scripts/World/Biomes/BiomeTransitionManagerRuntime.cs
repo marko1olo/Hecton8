@@ -1316,7 +1316,16 @@ namespace Hecton8.World.Biomes
         {
             if (_seedScheduled)
             {
-                DispatcherJobSwap.TryComplete(ref _seedHandle, forceComplete: true);
+                DispatcherJobSwap.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobSwap.TryComplete(ref _seedHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobSwap.EndPostSimulationSwapWindow();
+                }
+
                 _seedScheduled = false;
             }
 
@@ -1327,7 +1336,16 @@ namespace Hecton8.World.Biomes
                 return;
             }
 
-            DispatcherJobSwap.TryComplete(ref _pipelineHandle, forceComplete: true);
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobSwap.TryComplete(ref _pipelineHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
+
             _pipelineScheduled = false;
             _pendingShaderPayloadUpload = false;
             _pipelineScheduleTicks = 0L;
