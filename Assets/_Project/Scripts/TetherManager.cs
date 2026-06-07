@@ -359,7 +359,9 @@ namespace Hecton8.Physics
                     CompleteShinobu328TensionMockForTeardown();
                     CompleteShinobu143AupMockForTeardown();
                     CompleteShinobu132CableMockForTeardown();
-                    _dataVault = currentService as IDataVault;
+                    IDataVault currentVault = currentService as IDataVault;
+                    RebindTetherInstancesForDataVault(currentVault);
+                    _dataVault = currentVault;
                     _shinobu143AupViews.Clear();
                     _shinobu132CableBootstrapRequested = false;
                     _shinobu328TensionBootstrapRequested = false;
@@ -390,6 +392,15 @@ namespace Hecton8.Physics
                     CachePlayerContext(currentService as IPlayerRuntimeContext);
                     break;
             }
+        }
+
+        private void RebindTetherInstancesForDataVault(IDataVault currentVault)
+        {
+            for (int i = 0; i < _activeInstances.Count; i++)
+                _activeInstances[i]?.RebindDataVault(currentVault);
+
+            for (int i = 0; i < _pooledInstances.Count; i++)
+                _pooledInstances[i]?.RebindDataVault(currentVault);
         }
 
         private void TryRegisterHotSwapListener()

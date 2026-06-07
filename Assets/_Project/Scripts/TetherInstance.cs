@@ -402,6 +402,21 @@ namespace Hecton8.Physics
             _manager = manager;
         }
 
+        internal void RebindDataVault(IDataVault currentVault)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            FinalizePendingVerletSolveForBarrier(publishResults: false);
+            DisposeDataVaultCableState();
+            _dataVault = currentVault;
+            _verletRuntimeInitialized = false;
+            _consecutiveVaultAccessFailures = 0;
+
+            if (_isActive && currentVault != null)
+                EnsureDataVaultCableState(_verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount(_qualityWeight01));
+        }
+
         /// <summary>
         /// Configures the tether against a player/payload pair.
         /// </summary>
