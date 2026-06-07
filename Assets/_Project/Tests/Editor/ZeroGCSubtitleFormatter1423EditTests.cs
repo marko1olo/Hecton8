@@ -1146,6 +1146,22 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RelayHudRuntimePresentation_RejectsNonFiniteDistanceSq()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/RelayHUDElement.cs"));
+            string lateFrame = ExtractMethodBody(source, "public void LateFrameTick()");
+
+            StringAssert.Contains("private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)", source);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceSq(distanceSq) || distanceSq > maxDisplayDistanceSq", lateFrame);
+            StringAssert.Contains("SanitizeNonNegativeFinite(maxDisplayDistance, 0f)", lateFrame);
+            StringAssert.Contains("ResolveSafeScreenMargin(screenMargin, screenWidth, screenHeight)", lateFrame);
+            StringAssert.Contains("float minX = safeScreenMargin", lateFrame);
+            StringAssert.Contains("float maxX = screenWidth - safeScreenMargin", lateFrame);
+            StringAssert.Contains("!double.IsNaN(distanceSq)", source);
+            StringAssert.Contains("!double.IsInfinity(distanceSq)", source);
+        }
+
+        [Test]
         public void InteractionPromptLocalizationPresentation_QueuesLateFrameRefresh()
         {
             string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/InteractionUI.cs"));

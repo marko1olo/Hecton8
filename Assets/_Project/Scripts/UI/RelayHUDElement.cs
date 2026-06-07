@@ -205,11 +205,12 @@ namespace Hecton8.UI
             }
 
             AbsoluteUniversePosition relayAup = routeTarget.RelayAup;
-            double maxDisplayDistanceSq = (double)maxDisplayDistance * maxDisplayDistance;
+            float safeMaxDisplayDistance = SanitizeNonNegativeFinite(maxDisplayDistance, 0f);
+            double maxDisplayDistanceSq = (double)safeMaxDisplayDistance * safeMaxDisplayDistance;
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in relayAup);
-            if (distanceSq > maxDisplayDistanceSq)
+            if (!IsFiniteNonNegativeDistanceSq(distanceSq) || distanceSq > maxDisplayDistanceSq)
             {
-                _lastObservedDistance = maxDisplayDistance + 1f;
+                _lastObservedDistance = safeMaxDisplayDistance + 1f;
                 _lastVisibilityState = RelayMarkerVisibilityState.Hidden_TooFar;
                 SetVisible(false);
                 return;
@@ -234,16 +235,17 @@ namespace Hecton8.UI
             bool clampedToEdge = behindCamera;
             float screenWidth = _screenWidthSnapshot;
             float screenHeight = _screenHeightSnapshot;
+            float safeScreenMargin = ResolveSafeScreenMargin(screenMargin, screenWidth, screenHeight);
             if (behindCamera)
             {
                 screenPosition.x = screenWidth - screenPosition.x;
                 screenPosition.y = screenHeight - screenPosition.y;
             }
 
-            float minX = screenMargin;
-            float maxX = screenWidth - screenMargin;
-            float minY = screenMargin;
-            float maxY = screenHeight - screenMargin;
+            float minX = safeScreenMargin;
+            float maxX = screenWidth - safeScreenMargin;
+            float minY = safeScreenMargin;
+            float maxY = screenHeight - safeScreenMargin;
 
             if (screenPosition.x < minX || screenPosition.x > maxX || screenPosition.y < minY || screenPosition.y > maxY)
             {
@@ -345,6 +347,27 @@ namespace Hecton8.UI
 
             runtimePosition = (Vector3)local;
             return true;
+        }
+
+        private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)
+        {
+            return distanceSq >= 0d &&
+                   !double.IsNaN(distanceSq) &&
+                   !double.IsInfinity(distanceSq);
+        }
+
+        private static float SanitizeNonNegativeFinite(float value, float fallback)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : math.max(0f, fallback);
+        }
+
+        private static float ResolveSafeScreenMargin(float margin, float screenWidth, float screenHeight)
+        {
+            if (!math.isfinite(margin))
+                return 0f;
+
+            float maxMargin = math.max(0f, math.min(screenWidth, screenHeight) * 0.5f);
+            return math.clamp(margin, 0f, maxMargin);
         }
 
         private static float ApproximateDistanceMetersFromSq(double distanceSq)
