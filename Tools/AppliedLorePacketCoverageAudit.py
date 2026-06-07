@@ -466,6 +466,23 @@ def format_stats(stats: CoverageStats) -> str:
     )
 
 
+def format_inventory(stats: InventoryStats) -> str:
+    lines = [
+        "AppliedLore packet inventory:",
+        f"source_packets={stats.source_packets}",
+        f"baked_packets={stats.baked_packets}",
+        f"unbaked_packets={stats.unbaked_packets}",
+        f"baked_missing_source_packets={stats.baked_missing_source_packets}",
+        f"canonical_ready_unbaked_packets={stats.canonical_ready_unbaked_packets}",
+        f"canonical_not_ready_unbaked_packets={stats.canonical_not_ready_unbaked_packets}",
+    ]
+    if stats.sample_canonical_ready_unbaked:
+        lines.append("sample_canonical_ready_unbaked=" + ",".join(stats.sample_canonical_ready_unbaked))
+    elif stats.sample_unbaked:
+        lines.append("sample_unbaked=" + ",".join(stats.sample_unbaked))
+    return "\n".join(lines)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="Repository root.")
@@ -473,18 +490,32 @@ def main() -> int:
     parser.add_argument("--packet-glob", action="append", default=[], help="Packet glob or comma-separated globs.")
     parser.add_argument("--packet-source", action="append", default=[], help="Explicit packet JSON source path.")
     parser.add_argument("--all", action="store_true", help="Audit every loaded packet.")
+    parser.add_argument("--inventory", action="store_true", help="Compare packet JSON sources against baked packet CSV.")
+    parser.add_argument("--sample-limit", type=int, default=20, help="Maximum inventory sample packet ids.")
     parser.add_argument("--json", action="store_true", help="Print machine-readable stats.")
     args = parser.parse_args()
 
     selectors = split_selectors(args.packet_id + args.packet_glob)
     root = Path(args.root).resolve()
     explicit_sources = tuple(Path(path).resolve() for path in args.packet_source)
-    stats = audit_selected_packets(
-        root,
-        selectors,
-        include_all=args.all,
-        explicit_packet_sources=explicit_sources,
-    )
+    if args.inventory:
+        stats = inventory_sources(root, explicit_packet_sources=explicit_sources, sample_limit=max(args.sample_limit, 0))
+        if args.json:
+            print(json.dumps(asdict(stats), indent=2, sort_keys=True))
+        else:
+            print(format_inventory(stats))
+        return 0
+
+    try:
+        stats = audit_selected_packets(
+            root,
+            selectors,
+            include_all=args.all,
+            explicit_packet_sources=explicit_sources,
+        )
+    except AppliedLoreCoverageError as exc:
+        print(str(exc))
+        return 1
     if args.json:
         print(json.dumps(asdict(stats), indent=2, sort_keys=True))
     else:

@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS180_FIRST_SEAL_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1175_GASKET_LIP_FLATTEN",
+    "P1176_O_RING_SHINY_PINCH",
+    "P1177_HATCH_SEAL_SAND_LINE",
+    "P1178_CABLE_GLAND_SALT_BEARD",
+    "P1179_VALVE_STEM_DRY_CRESCENT"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1175_GASKET_LIP_FLATTEN.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1176_O_RING_SHINY_PINCH.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1177_HATCH_SEAL_SAND_LINE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1178_CABLE_GLAND_SALT_BEARD.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1179_VALVE_STEM_DRY_CRESCENT.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

@@ -2161,6 +2161,24 @@ namespace Hecton.Localization
             handle = default;
         }
 
+        private static void ReleaseBabelBufferState<T>(
+            ref NativeArray<T> buffer,
+            ref VaultGenerationHandle<T> handle,
+            ref bool vaultBacked) where T : struct
+        {
+            if (vaultBacked)
+            {
+                buffer = default;
+                ReleaseBabelVaultHandle(_babelVault, ref handle);
+                vaultBacked = false;
+                return;
+            }
+
+            H8Memory.Release(ref buffer, SystemID.UI);
+            ReleaseBabelVaultHandle(_babelVault, ref handle);
+            vaultBacked = false;
+        }
+
         private static void AbortBabelDictionaryStage()
         {
             ReleaseBabelVaultHandle(_stagedLocaleVault, ref _stagedLocaleBytesHandle);
@@ -3294,86 +3312,15 @@ namespace Hecton.Localization
         {
             CompleteUtf8ReadersForMutation();
 
-            if (_utf8Bytes.IsCreated)
-            {
-                if (_utf8BytesVaultBacked)
-                {
-                    _utf8Bytes = default;
-                    ReleaseBabelVaultHandle(_babelVault, ref _utf8BytesHandle);
-                    _utf8BytesVaultBacked = false;
-                    _utf8BytesRegistered = false;
-                }
-                else
-                {
-                    if (_utf8BytesRegistered)
-                    {
-                        NativeMemorySentinel.UnregisterNativeArray(_utf8Bytes);
-                        _utf8BytesRegistered = false;
-                    }
-
-                    _utf8Bytes.Dispose();
-                    _utf8Bytes = default;
-                }
-            }
-
-            if (_utf8Index.IsCreated)
-            {
-                if (_utf8IndexVaultBacked)
-                {
-                    _utf8Index = default;
-                    ReleaseBabelVaultHandle(_babelVault, ref _utf8IndexHandle);
-                    _utf8IndexVaultBacked = false;
-                    _utf8IndexRegistered = false;
-                }
-                else
-                {
-                    if (_utf8IndexRegistered)
-                    {
-                        NativeMemorySentinel.UnregisterNativeArray(_utf8Index);
-                        _utf8IndexRegistered = false;
-                    }
-
-                    _utf8Index.Dispose();
-                    _utf8Index = default;
-                }
-            }
-
+            ReleaseBabelBufferState(ref _utf8Bytes, ref _utf8BytesHandle, ref _utf8BytesVaultBacked);
+            ReleaseBabelBufferState(ref _utf8Index, ref _utf8IndexHandle, ref _utf8IndexVaultBacked);
             _utf8IndexLength = 0;
             _utf8ByteLength = 0;
-            ReleaseBabelVaultHandle(_babelVault, ref _utf8BytesHandle);
-            ReleaseBabelVaultHandle(_babelVault, ref _utf8IndexHandle);
-            _utf8BytesVaultBacked = false;
-            _utf8IndexVaultBacked = false;
         }
 
         private static void DisposeErrorUtf8State()
         {
-            if (!_errorUtf8.IsCreated)
-            {
-                ReleaseBabelVaultHandle(_babelVault, ref _errorUtf8Handle);
-                _errorUtf8VaultBacked = false;
-                _errorUtf8Registered = false;
-                return;
-            }
-
-            if (_errorUtf8VaultBacked)
-            {
-                _errorUtf8 = default;
-                ReleaseBabelVaultHandle(_babelVault, ref _errorUtf8Handle);
-                _errorUtf8VaultBacked = false;
-                _errorUtf8Registered = false;
-                return;
-            }
-
-            if (_errorUtf8Registered)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_errorUtf8);
-                _errorUtf8Registered = false;
-            }
-
-            _errorUtf8.Dispose();
-            _errorUtf8 = default;
-            ReleaseBabelVaultHandle(_babelVault, ref _errorUtf8Handle);
+            ReleaseBabelBufferState(ref _errorUtf8, ref _errorUtf8Handle, ref _errorUtf8VaultBacked);
         }
 
         private static void DisposeOverrideCsvScratch()
@@ -3402,27 +3349,7 @@ namespace Hecton.Localization
 
         private static void DisposeDecryptionMaskState()
         {
-            if (!_decryptionMask.IsCreated)
-                return;
-
-            if (_decryptionMaskVaultBacked)
-            {
-                _decryptionMask = default;
-                ReleaseBabelVaultHandle(_babelVault, ref _decryptionMaskHandle);
-                _decryptionMaskVaultBacked = false;
-                _decryptionMaskRegistered = false;
-                return;
-            }
-
-            if (_decryptionMaskRegistered)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_decryptionMask);
-                _decryptionMaskRegistered = false;
-            }
-
-            _decryptionMask.Dispose();
-            _decryptionMask = default;
-            ReleaseBabelVaultHandle(_babelVault, ref _decryptionMaskHandle);
+            ReleaseBabelBufferState(ref _decryptionMask, ref _decryptionMaskHandle, ref _decryptionMaskVaultBacked);
         }
 
         private static void RegisterUtf8ReaderHandle(JobHandle handle)
@@ -3447,31 +3374,7 @@ namespace Hecton.Localization
 
         private static void DisposeTelemetryState()
         {
-            if (!_telemetryFrames.IsCreated)
-            {
-                ReleaseBabelVaultHandle(_babelVault, ref _telemetryFramesHandle);
-                _telemetryVaultBacked = false;
-                return;
-            }
-
-            if (_telemetryVaultBacked)
-            {
-                _telemetryFrames = default;
-                ReleaseBabelVaultHandle(_babelVault, ref _telemetryFramesHandle);
-                _telemetryVaultBacked = false;
-                _telemetryRegistered = false;
-                _telemetryWriteIndex = 0;
-                return;
-            }
-
-            if (_telemetryRegistered)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_telemetryFrames);
-                _telemetryRegistered = false;
-            }
-
-            _telemetryFrames.Dispose();
-            _telemetryFrames = default;
+            ReleaseBabelBufferState(ref _telemetryFrames, ref _telemetryFramesHandle, ref _telemetryVaultBacked);
             _telemetryWriteIndex = 0;
         }
 

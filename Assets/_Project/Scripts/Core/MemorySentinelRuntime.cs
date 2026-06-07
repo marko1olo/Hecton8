@@ -514,7 +514,9 @@ namespace Hecton8.Core
                     RebindVaultDependencyCold(currentService as IDataVault);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    RegisterDispatcherPhases();
+                    UnregisterDispatcherPhases();
+                    if (currentService != null)
+                        RegisterDispatcherPhases();
                     break;
             }
         }
