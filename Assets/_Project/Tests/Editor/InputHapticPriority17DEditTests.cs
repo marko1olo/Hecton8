@@ -193,6 +193,35 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void PowerSaveMute_SuppressesHapticIngressBeforeDeviceDispatch()
+        {
+            string dispatcher = Normalize(ReadProjectFile("Assets/_Project/Scripts/Core/InputDispatcher.cs"));
+            string synthesis = Normalize(ReadProjectFile("Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs"));
+
+            int drainIndex = dispatcher.IndexOf("private void DrainToolHaptics(float deltaTime)", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(drainIndex, 0, "DrainToolHaptics");
+            int muteIndex = dispatcher.IndexOf("if (ToolHapticsRuntime.PowerSaveMuteActive)", drainIndex, StringComparison.Ordinal);
+            int synthIndex = dispatcher.IndexOf("if (!IsHapticSynthesisDispatcherRouteRegistered())", drainIndex, StringComparison.Ordinal);
+            int requestIndex = dispatcher.IndexOf("while (SignalBus<HapticRequest>.TryConsumeFrame", drainIndex, StringComparison.Ordinal);
+            Assert.Greater(muteIndex, drainIndex, "power-save mute gate must be inside DrainToolHaptics.");
+            Assert.Greater(synthIndex, muteIndex, "power-save mute must stop fallback synthesis before it queues DTO commands.");
+            Assert.Greater(requestIndex, muteIndex, "power-save mute must drain haptic requests before normal request insertion.");
+
+            string muteWindow = dispatcher.Substring(muteIndex, Math.Min(512, dispatcher.Length - muteIndex));
+            StringAssert.Contains("DrainSuppressedHapticRequests();", muteWindow);
+            StringAssert.Contains("ClearVaultBuffer(ref _hapticCommandDtoHandle);", muteWindow);
+            StringAssert.Contains("_lastHapticCommandsActive = 0;", muteWindow);
+            StringAssert.Contains("_hapticDispatchAccumulator = 0f;", muteWindow);
+            StringAssert.Contains("QueueHapticOutput(schemeHash, 0f, 0f);", muteWindow);
+
+            StringAssert.Contains("using Hecton8.Tools;", synthesis);
+            Assert.AreEqual(3, CountToken(synthesis, "ToolHapticsRuntime.PowerSaveMuteActive"));
+            StringAssert.Contains("if (ToolHapticsRuntime.PowerSaveMuteActive)\n            {\n                _hapticSynthesisAccumulator = 0f;\n                return dependsOn;\n            }", synthesis);
+            StringAssert.Contains("if (ToolHapticsRuntime.PowerSaveMuteActive)\n                return;", synthesis);
+            StringAssert.Contains("if (ToolHapticsRuntime.PowerSaveMuteActive)\n            {\n                _hapticSynthesisAccumulator = 0f;\n                return;\n            }", synthesis);
+        }
+
+        [Test]
         public void UiNavigation_HasKeyboardAndGamepadRoutesWithoutMouseDependency()
         {
             string actions = ReadProjectFile("Assets/InputSystem_Actions.inputactions");

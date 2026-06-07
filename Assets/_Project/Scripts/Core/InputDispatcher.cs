@@ -3974,6 +3974,16 @@ namespace Hecton8.Core
             float safeDeltaTime = math.isfinite(deltaTime) && deltaTime > 0f
                 ? math.min(deltaTime, 0.1f)
                 : (float)StandardInputTickIntervalSeconds;
+            if (ToolHapticsRuntime.PowerSaveMuteActive)
+            {
+                DrainSuppressedHapticRequests();
+                ClearVaultBuffer(ref _hapticCommandDtoHandle);
+                _lastHapticCommandsActive = 0;
+                _hapticDispatchAccumulator = 0f;
+                QueueHapticOutput(schemeHash, 0f, 0f);
+                return;
+            }
+
             InputProfileDTO profile = ReadInputProfile();
             bool throttleHaptics = ShouldThrottleHapticDispatch(schemeHash);
             if (throttleHaptics)
@@ -4072,6 +4082,13 @@ namespace Hecton8.Core
             }
 
             QueueHapticOutput(schemeHash, lowMotor, highMotor);
+        }
+
+        private static void DrainSuppressedHapticRequests()
+        {
+            while (SignalBus<HapticRequest>.TryConsumeFrame(out _))
+            {
+            }
         }
 
         private void QueueHapticOutput(uint schemeHash, float lowMotor, float highMotor)

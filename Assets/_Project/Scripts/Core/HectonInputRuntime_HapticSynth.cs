@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Tools;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -107,6 +108,11 @@ namespace Hecton8.Core
             uint schemeHash = _currentInputSchemeHash != 0u ? _currentInputSchemeHash : ResolveCurrentInputSchemeHash();
             if (schemeHash == InputSchemeHashKeyboardMouse)
                 return dependsOn;
+            if (ToolHapticsRuntime.PowerSaveMuteActive)
+            {
+                _hapticSynthesisAccumulator = 0f;
+                return dependsOn;
+            }
 
             InputProfileDTO profile = ReadInputProfile();
             return ScheduleHapticSynthesisTranslator(timing.FrameDelta, in profile, schemeHash, timing.FrameId, dependsOn);
@@ -253,6 +259,8 @@ namespace Hecton8.Core
             {
                 return;
             }
+            if (ToolHapticsRuntime.PowerSaveMuteActive)
+                return;
 
             uint elapsedMicros = ResolveElapsedHapticSynthesisMicros();
             HapticTelemetryEntry telemetry = default;
@@ -318,6 +326,11 @@ namespace Hecton8.Core
         {
             if (schemeHash == InputSchemeHashKeyboardMouse)
                 return;
+            if (ToolHapticsRuntime.PowerSaveMuteActive)
+            {
+                _hapticSynthesisAccumulator = 0f;
+                return;
+            }
 
             float safeDeltaTime = math.isfinite(deltaTime) && deltaTime > 0f
                 ? math.min(deltaTime, 0.1f)
