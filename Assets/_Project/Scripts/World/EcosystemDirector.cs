@@ -410,7 +410,7 @@ namespace Hecton8.World
         private static readonly uint _FloraPredatorAupSaturationWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EcosystemDirector.FloraPredatorAupSaturation"));
         private static readonly uint _BiomassTelemetryHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EcosystemDirector.GlobalBiomassSum"));
         private static readonly uint _FaunaMutationTelemetryHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EcosystemDirector.TotalMutatedEntities"));
-        private static readonly uint _EcologicalCollapseWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Warning: Ecological Collapse"));
+        private const string EcologicalCollapseWarningMessage = "WARNING: ECOLOGICAL COLLAPSE";
         private static readonly uint _SectorClearedEventHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EcosystemDirector.SectorCleared"));
         private static readonly uint _ItemCuredFishNameHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ITEM_CURED_FISH_NAME"));
         private static readonly uint _ItemRawFishNameHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ITEM_RAW_FISH_NAME"));
@@ -7410,16 +7410,7 @@ namespace Hecton8.World
                 return;
 
             _lastScannerWarningFrame = frame;
-            HUDNotificationSignal notification = new HUDNotificationSignal
-            {
-                MessageHash = _EcologicalCollapseWarningHash,
-                ContextHash = _EcosystemDirectorContextHash,
-                SourceId = _BiomassTelemetryHash,
-                Frame = ReadDispatcherFrameId(),
-                Severity = 3,
-                Flags = 0
-            };
-            SignalBus<HUDNotificationSignal>.TryPushTracked(in notification, ref _signalPushDropCount);
+            NotificationEvents.TryPushCritical(EcologicalCollapseWarningMessage.AsSpan());
         }
 
         private static bool TryReadLatestScannerToolActiveSignal(
