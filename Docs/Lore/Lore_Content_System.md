@@ -186,6 +186,25 @@ Required separation:
 
 The runtime never becomes a lore interpreter.
 
+## Production AppliedContent File Set
+
+Production AppliedContent is accepted only when the useful prose is present in the files that feed the product:
+
+- canonical packet/source JSON or production packet source with stable packet ID, Article ID, unlock ID, surfaces, source voice, and locale status;
+- generated `in_game_wiki/<locale>/...` and/or `external_site/<locale>/...` pages for every in-scope locale;
+- `Publication_Surface_Index.csv` and `Localization_Status_Index.md` refreshed when publication surfaces change;
+- `Assets/_SourceData/DataMonolith/Narrative/applied_lore_packets.csv` and `Assets/_Project/Scripts/Core/Generated/H8AppliedLoreHashes.cs` refreshed when runtime data changes;
+- route card, binding map, or scene placement plan when a packet is intended to unlock from gameplay;
+- validation/import/audit command output with the real evidence class.
+
+Normal proof route:
+
+- `python -B Tools\AppliedLoreTargetedExporter.py --packet-id <ID> --refresh-indexes`
+- `python -B Tools\AppliedLoreImporter.py --root .`
+- `python -B Tools\AppliedLoreRuntimeAudit.py --source-only`
+
+Full runtime readiness still requires current Data Monolith bake/static-data evidence and Unity/player proof. Source-only audit proves authoring/export coverage, not in-game visibility.
+
 ## Current Priority Topics
 
 1. Player origin and starting contract.
