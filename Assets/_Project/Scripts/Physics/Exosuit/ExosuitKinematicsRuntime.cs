@@ -818,6 +818,28 @@ namespace Hecton8.Physics.Exosuit
                 return;
 
             _jobScheduled = false;
+            FinishCompletedJob();
+        }
+
+        private bool CompletePendingJobForRebind()
+        {
+            if (!_jobScheduled)
+            {
+                if (_jobBuffersLocked)
+                    UnlockJobBuffers();
+                return true;
+            }
+
+            if (!DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true))
+                return false;
+
+            _jobScheduled = false;
+            FinishCompletedJob();
+            return true;
+        }
+
+        private void FinishCompletedJob()
+        {
             float elapsedMs = ResolveElapsedJobMs();
             bool budgetExceeded = elapsedMs > 0.1f;
             bool telemetryDumpStaged = false;
@@ -1796,6 +1818,33 @@ namespace Hecton8.Physics.Exosuit
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                IDataVault currentVault = currentService as IDataVault;
+                if (ReferenceEquals(_dataVault, currentVault))
+                    return;
+
+                if (!CompletePendingJobForRebind())
+                    return;
+
+                ReleaseVaultBuffers();
+                _dataVault = currentVault;
+                if (_dataVault != null && _runtimeActive && isActiveAndEnabled && EnsureBuffers(true))
+                {
+#if UNITY_EDITOR
+                    TryApplyColdCsvOverrides();
+#endif
+                    WarmCoreBlackboxRoute();
+                    s_activeRuntime = this;
+                }
+                else if (ReferenceEquals(s_activeRuntime, this))
+                {
+                    s_activeRuntime = null;
+                }
+
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 
