@@ -651,6 +651,11 @@ namespace Hecton8.Editor
                 AssertContains(notificationEvents, "private static bool TryPublishRegistered(uint messageHash", "NotificationEvents dispatches registered messages without string payloads", report, ref failureCount);
                 AssertContains(notificationEvents, "ReportRegisteredMessageMiss(messageHash)", "NotificationEvents reports stale registered-message hashes", report, ref failureCount);
                 AssertContains(notificationEvents, "ReportQueueOverflow(severity)", "NotificationEvents reports full notification queues", report, ref failureCount);
+                AssertContains(notificationEvents, "public static int DuplicateRegistrationCount => _duplicateRegistrationCount", "NotificationEvents exposes duplicate-listener counter", report, ref failureCount);
+                AssertContains(notificationEvents, "public static int UnregisterMissCount => _unregisterMissCount", "NotificationEvents exposes unregister-miss counter", report, ref failureCount);
+                AssertContains(notificationEvents, "ReportDuplicateListenerRegistration()", "NotificationEvents reports duplicate listener registration", report, ref failureCount);
+                AssertContains(notificationEvents, "ReportUnregisterMiss()", "NotificationEvents reports stale listener unregister", report, ref failureCount);
+                AssertContains(notificationEvents, "if (!_listeners.TryUnregister(listener))", "NotificationEvents immediate unregister is miss-aware", report, ref failureCount);
             }
         }
 

@@ -37,6 +37,10 @@ namespace Hecton8.UI
         private const uint NotificationListenerContextHash = 0x4E455652u; // NEVR
         private const uint NotificationListenerExceptionWarningHash = 0x4E455645u; // NEVE
         private const uint NotificationListenerExceptionContextHash = 0x4E455658u; // NEVX
+        private const uint NotificationDuplicateListenerWarningHash = 0x4E455644u; // NEVD
+        private const uint NotificationDuplicateListenerContextHash = 0x4E455647u; // NEVG
+        private const uint NotificationUnregisterMissWarningHash = 0x4E455655u; // NEVU
+        private const uint NotificationUnregisterMissContextHash = 0x4E45564Eu; // NEVN
         private const uint NotificationQueueOverflowWarningHash = 0x4E455651u; // NEVQ
         private const uint NotificationQueueContextHash = 0x4E455650u; // NEVP
         private const uint NotificationRegisteredMessageMissWarningHash = 0x4E45564Du; // NEVM
@@ -98,7 +102,7 @@ namespace Hecton8.UI
                 return true;
             }
 
-            public void Unregister(INotificationEventListener listener)
+            public bool TryUnregister(INotificationEventListener listener)
             {
                 for (int i = 0; i < _count; i++)
                 {
@@ -108,8 +112,10 @@ namespace Hecton8.UI
                     _count--;
                     SetAt(i, GetAt(_count));
                     SetAt(_count, null);
-                    return;
+                    return true;
                 }
+
+                return false;
             }
 
             public INotificationEventListener GetAt(int index)
@@ -177,10 +183,14 @@ namespace Hecton8.UI
         private static int _droppedEventCount;
         private static int _registeredMessageMissCount;
         private static int _droppedListenerRegistrationCount;
+        private static int _duplicateRegistrationCount;
+        private static int _unregisterMissCount;
         private static int _listenerExceptionCount;
         private static int _lastQueueOverflowTelemetryFrame = -1;
         private static int _lastRegisteredMessageMissTelemetryFrame = -1;
         private static int _lastListenerOverflowTelemetryFrame = -1;
+        private static int _lastDuplicateTelemetryFrame = -1;
+        private static int _lastUnregisterMissTelemetryFrame = -1;
         private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
@@ -198,6 +208,10 @@ namespace Hecton8.UI
 
         public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
 
+        public static int DuplicateRegistrationCount => _duplicateRegistrationCount;
+
+        public static int UnregisterMissCount => _unregisterMissCount;
+
         public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -214,10 +228,14 @@ namespace Hecton8.UI
             _droppedEventCount = 0;
             _registeredMessageMissCount = 0;
             _droppedListenerRegistrationCount = 0;
+            _duplicateRegistrationCount = 0;
+            _unregisterMissCount = 0;
             _listenerExceptionCount = 0;
             _lastQueueOverflowTelemetryFrame = -1;
             _lastRegisteredMessageMissTelemetryFrame = -1;
             _lastListenerOverflowTelemetryFrame = -1;
+            _lastDuplicateTelemetryFrame = -1;
+            _lastUnregisterMissTelemetryFrame = -1;
             _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
         }
@@ -247,7 +265,8 @@ namespace Hecton8.UI
                 return;
             }
 
-            _listeners.Unregister(listener);
+            if (!_listeners.TryUnregister(listener))
+                ReportUnregisterMiss();
         }
 
         public static void FlushPending()
@@ -708,13 +727,13 @@ namespace Hecton8.UI
             if (!_deferredRegisterListeners.Contains(listener))
                 return false;
 
-            _deferredRegisterListeners.Unregister(listener);
+            _deferredRegisterListeners.TryUnregister(listener);
             return true;
         }
 
         private static void CancelDeferredUnregister(INotificationEventListener listener)
         {
-            _deferredUnregisterListeners.Unregister(listener);
+            _deferredUnregisterListeners.TryUnregister(listener);
         }
 
         private static bool IsDeferredRegisterPending(INotificationEventListener listener)
@@ -733,8 +752,8 @@ namespace Hecton8.UI
             for (int i = 0; i < unregisterCount; i++)
             {
                 INotificationEventListener listener = _deferredUnregisterListeners.GetAt(i);
-                if (listener != null)
-                    _listeners.Unregister(listener);
+                if (listener != null && !_listeners.TryUnregister(listener))
+                    ReportUnregisterMiss();
             }
 
             _deferredUnregisterListeners.Clear();
@@ -753,7 +772,10 @@ namespace Hecton8.UI
         private static void RegisterImmediate(INotificationEventListener listener)
         {
             if (_listeners.Contains(listener))
+            {
+                ReportDuplicateListenerRegistration();
                 return;
+            }
 
             if (!_listeners.TryRegister(listener))
                 ReportListenerRegistrationOverflow();
@@ -809,6 +831,34 @@ namespace Hecton8.UI
                 NotificationListenerOverflowWarningHash,
                 NotificationListenerContextHash,
                 Unity.Mathematics.math.max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportDuplicateListenerRegistration()
+        {
+            _duplicateRegistrationCount++;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (_lastDuplicateTelemetryFrame == frame)
+                return;
+
+            _lastDuplicateTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                NotificationDuplicateListenerWarningHash,
+                NotificationDuplicateListenerContextHash,
+                Unity.Mathematics.math.max(1, _duplicateRegistrationCount));
+        }
+
+        private static void ReportUnregisterMiss()
+        {
+            _unregisterMissCount++;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (_lastUnregisterMissTelemetryFrame == frame)
+                return;
+
+            _lastUnregisterMissTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                NotificationUnregisterMissWarningHash,
+                NotificationUnregisterMissContextHash,
+                Unity.Mathematics.math.max(1, _unregisterMissCount));
         }
 
         private static void ReportListenerDispatchException()
