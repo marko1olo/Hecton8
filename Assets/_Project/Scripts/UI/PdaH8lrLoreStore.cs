@@ -51,6 +51,8 @@ namespace Hecton8.UI
         public const int RecordSizeBytes = 16;
 
         private const int MaxRecordCount = 4096;
+        private const int PayloadAlignmentBytes = 16;
+        private const uint PayloadAlignmentMask = PayloadAlignmentBytes - 1u;
         private const int FileStreamBufferBytes = 64 * 1024;
         private const int VaultMirrorCopyChunkBytes = 8 * 1024;
         private const SystemID VaultOwnerSystemId = SystemID.UI;
@@ -375,8 +377,12 @@ namespace Hecton8.UI
 
         private bool ValidateMappedBytes(byte* basePointer, int mappedBytes)
         {
-            if (basePointer == null || mappedBytes < HeaderSizeBytes)
+            if (basePointer == null ||
+                mappedBytes < HeaderSizeBytes ||
+                (mappedBytes & (PayloadAlignmentBytes - 1)) != 0)
+            {
                 return false;
+            }
 
             PdaH8lrHeaderDTO header = default;
             header.Magic = ReadUInt32LittleEndian(basePointer, 0);
@@ -399,6 +405,7 @@ namespace Hecton8.UI
                 return false;
 
             uint previousHash = 0u;
+            ulong previousPayloadEnd = 0UL;
             uint payloadStart = uint.MaxValue;
             for (int i = 0; i < count; i++)
             {
@@ -406,14 +413,22 @@ namespace Hecton8.UI
                 if (record.Reserved0 != 0u ||
                     record.Hash == 0u ||
                     (i > 0 && record.Hash <= previousHash) ||
-                    (record.ByteOffset & 15u) != 0u ||
+                    (record.ByteOffset & PayloadAlignmentMask) != 0u ||
                     record.ByteLength == 0u ||
                     !IsRecordInBounds(in record, mappedBytes))
                 {
                     return false;
                 }
 
+                ulong payloadEnd = (ulong)record.ByteOffset + record.ByteLength;
+                if ((i > 0 && record.ByteOffset < previousPayloadEnd) ||
+                    !IsUtf8PayloadValid(basePointer, in record))
+                {
+                    return false;
+                }
+
                 payloadStart = math.min(payloadStart, record.ByteOffset);
+                previousPayloadEnd = payloadEnd;
                 previousHash = record.Hash;
             }
 
@@ -431,42 +446,37 @@ namespace Hecton8.UI
             }
 
             _btreeEndOffset = payloadStart;
-            _entryCount = count;
-            if (!ValidateBTreeEdge(basePointer))
+            if (!ValidateBTreeRecords(basePointer, count))
                 return false;
 
+            _entryCount = count;
             _btreeAvailable = true;
             return true;
         }
 
-        private bool ValidateBTreeEdge(byte* basePointer)
+        private bool ValidateBTreeRecords(byte* basePointer, int entryCount)
         {
-            PdaH8lrRecordDTO first = ReadRecordUnchecked(basePointer, 0);
-            PdaH8lrRecordDTO last = ReadRecordUnchecked(basePointer, _entryCount - 1);
-            return H8CacheBTree.TryFindValue(
+            for (int i = 0; i < entryCount; i++)
+            {
+                PdaH8lrRecordDTO record = ReadRecordUnchecked(basePointer, i);
+                if (!H8CacheBTree.TryFindValue(
                     basePointer,
                     _btreeOffset,
                     _btreeRootOffset,
                     _btreeEndOffset,
-                    first.Hash,
+                    record.Hash,
                     0f,
-                    out uint firstIndex,
+                    out uint recordIndex,
                     out _,
                     out _,
-                    out _) &&
-                firstIndex == 0u &&
-                H8CacheBTree.TryFindValue(
-                    basePointer,
-                    _btreeOffset,
-                    _btreeRootOffset,
-                    _btreeEndOffset,
-                    last.Hash,
-                    0f,
-                    out uint lastIndex,
-                    out _,
-                    out _,
-                    out _) &&
-                lastIndex == (uint)(_entryCount - 1);
+                    out _) ||
+                    recordIndex != (uint)i)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -501,6 +511,115 @@ namespace Hecton8.UI
 
             int end = offset + length;
             return end >= offset && end <= mappedBytes;
+        }
+
+        private static bool IsUtf8PayloadValid(byte* basePointer, in PdaH8lrRecordDTO record)
+        {
+            int cursor = (int)record.ByteOffset;
+            int end = cursor + (int)record.ByteLength;
+            while (cursor < end)
+            {
+                byte first = basePointer[cursor++];
+                if (first <= 0x7Fu)
+                    continue;
+
+                if (first >= 0xC2u && first <= 0xDFu)
+                {
+                    if (cursor >= end || !IsUtf8Continuation(basePointer[cursor++]))
+                        return false;
+                    continue;
+                }
+
+                if (first == 0xE0u)
+                {
+                    if (cursor + 1 >= end)
+                        return false;
+
+                    byte second = basePointer[cursor++];
+                    if (second < 0xA0u || second > 0xBFu || !IsUtf8Continuation(basePointer[cursor++]))
+                        return false;
+                    continue;
+                }
+
+                if ((first >= 0xE1u && first <= 0xECu) || (first >= 0xEEu && first <= 0xEFu))
+                {
+                    if (cursor + 1 >= end ||
+                        !IsUtf8Continuation(basePointer[cursor++]) ||
+                        !IsUtf8Continuation(basePointer[cursor++]))
+                    {
+                        return false;
+                    }
+
+                    continue;
+                }
+
+                if (first == 0xEDu)
+                {
+                    if (cursor + 1 >= end)
+                        return false;
+
+                    byte second = basePointer[cursor++];
+                    if (second < 0x80u || second > 0x9Fu || !IsUtf8Continuation(basePointer[cursor++]))
+                        return false;
+                    continue;
+                }
+
+                if (first == 0xF0u)
+                {
+                    if (cursor + 2 >= end)
+                        return false;
+
+                    byte second = basePointer[cursor++];
+                    if (second < 0x90u ||
+                        second > 0xBFu ||
+                        !IsUtf8Continuation(basePointer[cursor++]) ||
+                        !IsUtf8Continuation(basePointer[cursor++]))
+                    {
+                        return false;
+                    }
+
+                    continue;
+                }
+
+                if (first >= 0xF1u && first <= 0xF3u)
+                {
+                    if (cursor + 2 >= end ||
+                        !IsUtf8Continuation(basePointer[cursor++]) ||
+                        !IsUtf8Continuation(basePointer[cursor++]) ||
+                        !IsUtf8Continuation(basePointer[cursor++]))
+                    {
+                        return false;
+                    }
+
+                    continue;
+                }
+
+                if (first == 0xF4u)
+                {
+                    if (cursor + 2 >= end)
+                        return false;
+
+                    byte second = basePointer[cursor++];
+                    if (second > 0x8Fu ||
+                        !IsUtf8Continuation(basePointer[cursor++]) ||
+                        !IsUtf8Continuation(basePointer[cursor++]))
+                    {
+                        return false;
+                    }
+
+                    continue;
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsUtf8Continuation(byte value)
+        {
+            return (value & 0xC0u) == 0x80u;
         }
 
         private bool TryResolveReadableBasePointer(out byte* basePointer, out int mappedBytes)
