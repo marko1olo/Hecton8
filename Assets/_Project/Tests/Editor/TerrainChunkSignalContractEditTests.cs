@@ -1009,6 +1009,24 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void SpawnZoneSdfForensics_TracksFaultDumpPayload()
+        {
+            string path = Path.Combine(Directory.GetCurrentDirectory(), "Assets", "_Project", "Scripts", "World", "SpawnZoneSdfValidation.cs");
+            string source = File.ReadAllText(path);
+            string dumpBlock = ExtractSourceBlock(
+                source,
+                "public static unsafe void WriteTelemetryDump(",
+                "    public sealed partial class ResourceDistributionDirector");
+
+            Assert.That(source.Contains("private const string DumpPayloadLabel = \"spawnZoneSdfTelemetryDumpPayload\";"), Is.True);
+            Assert.That(dumpBlock.Contains("NativeFaultDumpWriter.CreateTransientPayload("), Is.True);
+            Assert.That(dumpBlock.Contains("nameof(SpawnZoneSdfForensics)"), Is.True);
+            Assert.That(dumpBlock.Contains("NativeArrayOptions.ClearMemory"), Is.True);
+            Assert.That(dumpBlock.Contains("NativeFaultDumpWriter.DisposeTransientPayload("), Is.True);
+            Assert.That(dumpBlock.Contains("new NativeArray<byte>(totalBytes"), Is.False);
+        }
+
+        [Test]
         public void SargassumRuntimeManagers_UseOwnerLocalPointersForWorldConsumers()
         {
             string root = Directory.GetCurrentDirectory();

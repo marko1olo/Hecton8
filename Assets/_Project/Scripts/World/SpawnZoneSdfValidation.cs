@@ -1010,6 +1010,7 @@ namespace Hecton8.World
     {
         private const ulong DumpMagic = 0x3031335F4E485348UL;
         private const int DumpVersion = 1;
+        private const string DumpPayloadLabel = "spawnZoneSdfTelemetryDumpPayload";
 
         public static unsafe void WriteTelemetryDump(string projectRoot, NativeArray<SpawnValidationTelemetryEntry> telemetry, int cursor)
         {
@@ -1019,7 +1020,11 @@ namespace Hecton8.World
             string path = Path.Combine(projectRoot, SpawnZoneSdfValidationConstants.DumpRelativePath);
             int entrySize = UnsafeUtility.SizeOf<SpawnValidationTelemetryEntry>();
             int totalBytes = 24 + telemetry.Length * entrySize;
-            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.ClearMemory);
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                totalBytes,
+                nameof(SpawnZoneSdfForensics),
+                DumpPayloadLabel,
+                NativeArrayOptions.ClearMemory);
 
             try
             {
@@ -1048,8 +1053,10 @@ namespace Hecton8.World
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(SpawnZoneSdfForensics),
+                    DumpPayloadLabel);
             }
         }
     }
