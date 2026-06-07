@@ -79,6 +79,7 @@ namespace Hecton8.Interaction
         private const int InteractTextCapacity = 128;
         private readonly char[] _cachedInteractTextBuffer = new char[InteractTextCapacity];
         private int _cachedInteractTextLength;
+        private string _cachedInteractTextLegacy = DefaultStudyVerbEn;
         private AbsoluteUniversePosition _cachedAup;
         private double _cachedAupTriggerRadiusSq;
         private uint _cachedDiscoveryHash;
@@ -168,6 +169,11 @@ namespace Hecton8.Interaction
 
             if (_cachedInteractTextLength == 0)
                 AppendInteractText(DefaultStudyVerbEn.AsSpan());
+
+            _cachedInteractTextLegacy = CopyCachedLegacyText(
+                _cachedInteractTextBuffer,
+                _cachedInteractTextLength,
+                DefaultStudyVerbEn);
         }
 
         private void AppendInteractText(ReadOnlySpan<char> value)
@@ -179,23 +185,6 @@ namespace Hecton8.Interaction
             int copyLength = value.Length <= remaining ? value.Length : remaining;
             value.Slice(0, copyLength).CopyTo(_cachedInteractTextBuffer.AsSpan(_cachedInteractTextLength));
             _cachedInteractTextLength += copyLength;
-        }
-
-        private string ResolveInteractVerb()
-        {
-            if (HasCustomInteractVerb())
-                return interactVerb;
-
-            if (linkedAudioLog == null)
-                return DefaultStudyVerbEn;
-
-            if (linkedAudioLog.IsTextOnlyPlayback)
-                return DefaultTextVerbEn;
-
-            if (!linkedAudioLog.HasPlaybackPayload && linkedAudioLog.HasVisibleContent)
-                return DefaultArchiveVerbEn;
-
-            return DefaultPlaybackVerbEn;
         }
 
         private ReadOnlySpan<char> ResolveInteractVerbSpan()
@@ -277,7 +266,7 @@ namespace Hecton8.Interaction
             H8AppliedLoreRuntime.TryRaisePacketUnlockedAt(appliedLorePacketHash, in _cachedAup, sourceId);
         }
 
-        public string GetInteractText() => ResolveInteractVerb();
+        public string GetInteractText() => _cachedInteractTextLegacy;
 
         public bool TryCopyInteractText(Span<char> destination, out int length)
         {
@@ -484,6 +473,15 @@ namespace Hecton8.Interaction
         private static string FallbackOrDefault(string value, string fallback)
         {
             return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
+
+        private static string CopyCachedLegacyText(char[] buffer, int length, string fallback)
+        {
+            if (length <= 0 || buffer == null)
+                return fallback;
+
+            // COLD ALLOC: string[<=128 chars] - legacy IInteractable bridge text rebuilt on enable/language/config changes - owner: NarrativeDiscovery
+            return new string(buffer, 0, Math.Min(length, buffer.Length));
         }
 
         internal void ConfigureRecoveryPlacement(

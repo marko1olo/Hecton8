@@ -586,7 +586,7 @@ namespace Hecton8.Interaction
 
             // USE GLOBAL CACHE — Zero Redundancy
             int resolvedInteractableMask = ResolveInteractableLayerMask();
-            const QueryTriggerInteraction triggerMode = QueryTriggerInteraction.Ignore;
+            const QueryTriggerInteraction triggerMode = QueryTriggerInteraction.Collide;
             if (InteractableRegistry.TryResolveSpatialTarget(
                     in _ray,
                     effectiveReach,
