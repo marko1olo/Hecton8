@@ -128,13 +128,13 @@ namespace Hecton8.Core.Data
 
             if (!ValidateHeaderAndChecksum())
             {
-                Dispose();
+                CloseFile();
                 return false;
             }
 
             if (!BuildLookupTree())
             {
-                Dispose();
+                CloseFile();
                 return false;
             }
 

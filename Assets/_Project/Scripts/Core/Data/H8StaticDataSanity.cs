@@ -25,14 +25,17 @@ namespace Hecton8.Core.Data
                     return Fail(store, scanned, 0u, 0, "Lookup entry unreadable.");
 
                 bool finite;
+                uint recordHash;
                 switch (entry.RecordType)
                 {
                     case H8StaticDataFormat.RecordTypeItem:
                         ref readonly H8ItemStaticRecord item = ref store.FetchRecord<H8ItemStaticRecord>(entry.Hash);
+                        recordHash = item.Hash;
                         finite = math.isfinite(item.MassKg) && math.isfinite(item.AccessFrequency);
                         break;
                     case H8StaticDataFormat.RecordTypeEconomy:
                         ref readonly H8EconomyStaticRecord economy = ref store.FetchRecord<H8EconomyStaticRecord>(entry.Hash);
+                        recordHash = economy.Hash;
                         finite =
                             math.isfinite(economy.BasePrice) &&
                             math.isfinite(economy.Scarcity01) &&
@@ -42,6 +45,7 @@ namespace Hecton8.Core.Data
                         break;
                     case H8StaticDataFormat.RecordTypePhysics:
                         ref readonly H8PhysicsStaticRecord physics = ref store.FetchRecord<H8PhysicsStaticRecord>(entry.Hash);
+                        recordHash = physics.Hash;
                         finite =
                             math.isfinite(physics.MassKg) &&
                             math.isfinite(physics.AddedMass) &&
@@ -52,6 +56,7 @@ namespace Hecton8.Core.Data
                         break;
                     case H8StaticDataFormat.RecordTypeFauna:
                         ref readonly H8FaunaStaticRecord fauna = ref store.FetchRecord<H8FaunaStaticRecord>(entry.Hash);
+                        recordHash = fauna.Hash;
                         finite =
                             math.isfinite(fauna.SwimSpeed) &&
                             math.isfinite(fauna.TurnRate) &&
@@ -63,6 +68,9 @@ namespace Hecton8.Core.Data
                     default:
                         return Fail(store, scanned, entry.Hash, entry.RecordType, "Unknown record type.");
                 }
+
+                if (recordHash != entry.Hash)
+                    return Fail(store, scanned, entry.Hash, entry.RecordType, "Record hash mismatch.");
 
                 if (!finite)
                     return Fail(store, scanned, entry.Hash, entry.RecordType, "NaN or Infinity detected.");

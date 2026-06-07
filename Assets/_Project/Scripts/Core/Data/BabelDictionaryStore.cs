@@ -192,6 +192,8 @@ namespace Hecton8.Core.Data
                         return false;
                 }
 
+                EnsureBTreeTelemetry();
+
                 if (!EnsureErrorSlice() || !ValidateHeaderAndChecksum() || !BuildIndexTable())
                 {
                     CloseFile();
