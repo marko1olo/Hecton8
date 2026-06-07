@@ -1465,7 +1465,7 @@ namespace Hecton8.UI
             if (_fixedRenderResolution.x > 0 && _fixedRenderResolution.y > 0)
                 return _fixedRenderResolution;
 
-            float safeDistanceSq = math.max(0f, distanceToCameraSq);
+            float safeDistanceSq = math.isfinite(distanceToCameraSq) ? math.max(0f, distanceToCameraSq) : float.MaxValue;
             float distanceBand = math.max(0.0001f, FarPanelDistanceSq - NearPanelDistanceSq);
             float distanceWeight = 1f - math.saturate((safeDistanceSq - NearPanelDistanceSq) / distanceBand);
             float qualityCurve = SmoothStep01(math.saturate(_qualityWeight01));
@@ -2045,13 +2045,19 @@ namespace Hecton8.UI
         private bool IsRayOriginWithinAupInteractionRange(float3 rayOriginWs, float maxDistance)
         {
             double maxDistanceSq = (double)maxDistance * maxDistance;
+            if (!IsFiniteNonNegativeDistanceSq(maxDistanceSq))
+                return false;
+
             Vector3 panelOrigin = (Vector3)_panelData.LocalToWorld.c3.xyz;
             double aupDistanceSq = ResolveAupDistanceSq((Vector3)rayOriginWs, panelOrigin);
-            if (!double.IsNaN(aupDistanceSq) && !double.IsInfinity(aupDistanceSq) && aupDistanceSq < double.MaxValue)
+            if (IsFiniteNonNegativeDistanceSq(aupDistanceSq) && aupDistanceSq < double.MaxValue)
                 return aupDistanceSq <= maxDistanceSq;
 
             float3 delta = ((float3)panelOrigin) - rayOriginWs;
-            return math.lengthsq(delta) <= (float)maxDistanceSq;
+            float localDistanceSq = math.lengthsq(delta);
+            return math.isfinite(localDistanceSq) &&
+                   localDistanceSq >= 0f &&
+                   localDistanceSq <= (float)maxDistanceSq;
         }
 
         private float ResolveEffectiveInteractionDistance()
@@ -2116,6 +2122,9 @@ namespace Hecton8.UI
         private static float ResolveAupDistanceSqClamped(Vector3 runtimePositionA, Vector3 runtimePositionB)
         {
             double distanceSq = ResolveAupDistanceSq(runtimePositionA, runtimePositionB);
+            if (!IsFiniteNonNegativeDistanceSq(distanceSq))
+                return float.MaxValue;
+
             return distanceSq >= float.MaxValue ? float.MaxValue : (float)distanceSq;
         }
 
@@ -2127,7 +2136,15 @@ namespace Hecton8.UI
                 return double.MaxValue;
             }
 
-            return AbsoluteUniversePosition.DistanceSq(in a, in b);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in a, in b);
+            return IsFiniteNonNegativeDistanceSq(distanceSq) ? distanceSq : double.MaxValue;
+        }
+
+        private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)
+        {
+            return !double.IsNaN(distanceSq) &&
+                   !double.IsInfinity(distanceSq) &&
+                   distanceSq >= 0d;
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)

@@ -1295,6 +1295,29 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void DiegeticPanelDistanceBridge_RejectsNonFiniteDistanceSq()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/DiegeticPanelController.cs"));
+            string resolution = ExtractMethodBody(source, "private int2 DetermineRenderResolutionFromDistanceSq(");
+            string interactionRange = ExtractMethodBody(source, "private bool IsRayOriginWithinAupInteractionRange(");
+            string clamped = ExtractMethodBody(source, "private static float ResolveAupDistanceSqClamped(");
+            string resolve = ExtractMethodBody(source, "private static double ResolveAupDistanceSq(");
+
+            StringAssert.Contains("math.isfinite(distanceToCameraSq) ? math.max(0f, distanceToCameraSq) : float.MaxValue", resolution);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceSq(maxDistanceSq)", interactionRange);
+            StringAssert.Contains("IsFiniteNonNegativeDistanceSq(aupDistanceSq)", interactionRange);
+            StringAssert.Contains("math.isfinite(localDistanceSq)", interactionRange);
+            StringAssert.Contains("localDistanceSq >= 0f", interactionRange);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceSq(distanceSq)", clamped);
+            StringAssert.Contains("return float.MaxValue;", clamped);
+            StringAssert.Contains("return IsFiniteNonNegativeDistanceSq(distanceSq) ? distanceSq : double.MaxValue;", resolve);
+            StringAssert.Contains("private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)", source);
+            StringAssert.Contains("!double.IsNaN(distanceSq)", source);
+            StringAssert.Contains("!double.IsInfinity(distanceSq)", source);
+            StringAssert.Contains("distanceSq >= 0d", source);
+        }
+
+        [Test]
         public void InteractionPromptLocalizationPresentation_QueuesLateFrameRefresh()
         {
             string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/InteractionUI.cs"));
