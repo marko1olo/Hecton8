@@ -394,6 +394,15 @@ namespace Hecton8.UI
             float3 viewRight = (float3)(viewRotation * Vector3.right);
             float3 viewUp = (float3)(viewRotation * Vector3.up);
             float3 viewForward = (float3)(viewRotation * Vector3.forward);
+            if (!IsFinite(viewPosition) ||
+                !math.all(math.isfinite(viewRight)) ||
+                !math.all(math.isfinite(viewUp)) ||
+                !math.all(math.isfinite(viewForward)))
+            {
+                QueueHideDots();
+                return;
+            }
+
             if (!TryResolveViewAup(viewPosition, out AbsoluteUniversePosition listenerAup))
             {
                 QueueHideDots();
@@ -403,11 +412,24 @@ namespace Hecton8.UI
             for (int i = 0; i < safeCount; i++)
             {
                 SpatialAudioImpactEmitterSample sample = _impactEmitterSamples[i];
+                AbsoluteUniversePosition sampleAup = sample.PositionAup;
+                if (!sampleAup.IsFinite())
+                {
+                    _projectionInputs[i] = default;
+                    continue;
+                }
+
                 float3 listenerRelativePosition = AupPrecisionMath.LocalDeltaFloat3Clamped(
-                    sample.PositionAup.ToAbsoluteDouble3(),
+                    sampleAup.ToAbsoluteDouble3(),
                     listenerAup.ToAbsoluteDouble3(),
                     AupPrecisionMath.DefaultMaxLocalCastMeters,
                     float3.zero);
+                if (!math.all(math.isfinite(listenerRelativePosition)))
+                {
+                    _projectionInputs[i] = default;
+                    continue;
+                }
+
                 _projectionInputs[i] = new AcousticRadarBlipInput
                 {
                     ListenerRelativePosition = listenerRelativePosition,
@@ -483,7 +505,7 @@ namespace Hecton8.UI
                 viewAup = OffsetAupLocal(
                     in cachedMovementState.PredictedAup,
                     (Vector3)((float3)viewPosition - cachedMovementState.PredictedWorldPosition));
-                return true;
+                return viewAup.IsFinite();
             }
 
             viewAup = default;
@@ -492,6 +514,9 @@ namespace Hecton8.UI
 
         private static AbsoluteUniversePosition OffsetAupLocal(in AbsoluteUniversePosition anchorAup, Vector3 runtimeOffset)
         {
+            if (!anchorAup.IsFinite() || !IsFinite(runtimeOffset))
+                return default;
+
             AbsoluteUniversePosition result = anchorAup;
             result.LocalX += runtimeOffset.x;
             result.LocalY += runtimeOffset.y;
@@ -500,6 +525,13 @@ namespace Hecton8.UI
             NormalizeAupLocalAxis(ref result.GridY, ref result.LocalY);
             NormalizeAupLocalAxis(ref result.GridZ, ref result.LocalZ);
             return result;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
         }
 
         private static void NormalizeAupLocalAxis(ref long grid, ref float local)

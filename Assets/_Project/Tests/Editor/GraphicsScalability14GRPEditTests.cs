@@ -533,6 +533,29 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void SonarHoloCompassProjection_RejectsNonFiniteAupDistances()
+        {
+            string compassPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/SonarHoloCompass.cs");
+            string source = File.ReadAllText(compassPath);
+            string scheduleBody = ExtractMethodBlock(source, "private void ScheduleProjection(int emitterCount)");
+            string viewAupBody = ExtractMethodBlock(source, "private bool TryResolveViewAup(Vector3 viewPosition, out AbsoluteUniversePosition viewAup)");
+            string offsetBody = ExtractMethodBlock(source, "private static AbsoluteUniversePosition OffsetAupLocal(in AbsoluteUniversePosition anchorAup, Vector3 runtimeOffset)");
+
+            Assert.That(scheduleBody, Does.Contain("!IsFinite(viewPosition)"));
+            Assert.That(scheduleBody, Does.Contain("if (!sampleAup.IsFinite())"));
+            Assert.That(scheduleBody, Does.Contain("_projectionInputs[i] = default;"));
+            Assert.That(scheduleBody, Does.Contain("!math.all(math.isfinite(listenerRelativePosition))"));
+            AssertOrder(scheduleBody, "AbsoluteUniversePosition sampleAup = sample.PositionAup;", "if (!sampleAup.IsFinite())");
+            AssertOrder(scheduleBody, "if (!sampleAup.IsFinite())", "sampleAup.ToAbsoluteDouble3()");
+            Assert.That(viewAupBody, Does.Contain("return viewAup.IsFinite();"));
+            Assert.That(viewAupBody, Does.Not.Contain("return true;"));
+            Assert.That(offsetBody, Does.Contain("if (!anchorAup.IsFinite() || !IsFinite(runtimeOffset))"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector3 value)"));
+        }
+
+        [Test]
         public void SuitHud_TextCreationUsesCachedFontSharedMaterial()
         {
             string path = Path.Combine(
