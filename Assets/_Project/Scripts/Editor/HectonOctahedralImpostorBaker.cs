@@ -1067,9 +1067,23 @@ namespace Hecton8.Editor
                 Directory.CreateDirectory(directory);
 
             void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bytes);
-            using (FileStream stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, 64 * 1024))
+            string tempPath = fullPath + ".tmp";
+            try
             {
-                stream.Write(new ReadOnlySpan<byte>(ptr, bytes.Length));
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 64 * 1024))
+                {
+                    stream.Write(new ReadOnlySpan<byte>(ptr, bytes.Length));
+                }
+
+                PromoteTempFileAtomic(tempPath, fullPath);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
             }
         }
 
@@ -1102,7 +1116,45 @@ namespace Hecton8.Editor
                 "  \"gpu_pack_microseconds\": ", pending.PackMicroseconds.ToString("0.00", CultureInfo.InvariantCulture), ",\n",
                 "  \"total_elapsed_microseconds\": ", (pending.TotalStopwatch.Elapsed.TotalMilliseconds * 1000.0).ToString("0.00", CultureInfo.InvariantCulture), "\n",
                 "}\n");
-            File.WriteAllText(fullPath, report);
+            WriteTextAtomic(fullPath, report);
+        }
+
+        private static void WriteTextAtomic(string path, string text)
+        {
+            string tempPath = path + ".tmp";
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                File.WriteAllText(tempPath, text);
+                PromoteTempFileAtomic(tempPath, path);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void PromoteTempFileAtomic(string tempPath, string path)
+        {
+            if (File.Exists(path))
+                File.Replace(tempPath, path, null, true);
+            else
+                File.Move(tempPath, path);
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+            }
         }
 
         private static string ResolveBudgetStatus(PendingBake pending)

@@ -132,6 +132,26 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("File.WriteAllBytes(path, texture.EncodeToPNG());", shallowsSource);
         }
 
+        [Test]
+        public void HlodImpostorBakeArtifactsWriteThroughAtomicTempPromotion()
+        {
+            string source = ReadProjectSource("_Project/Scripts/Editor/HectonOctahedralImpostorBaker.cs");
+            string nativeWriter = ExtractMethodBody(source, "private static void WriteNativeBytes(");
+            string textWriter = ExtractMethodBody(source, "private static void WriteTextAtomic(");
+            string promote = ExtractMethodBody(source, "private static void PromoteTempFileAtomic(");
+
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", nativeWriter);
+            StringAssert.Contains("PromoteTempFileAtomic(tempPath, fullPath);", nativeWriter);
+            StringAssert.Contains("WriteTextAtomic(fullPath, report);", source);
+            StringAssert.Contains("File.WriteAllText(tempPath, text);", textWriter);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", nativeWriter);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", textWriter);
+            StringAssert.Contains("File.Replace(tempPath, path, null, true);", promote);
+            StringAssert.Contains("File.Move(tempPath, path);", promote);
+            StringAssert.DoesNotContain("new FileStream(fullPath, FileMode.Create", nativeWriter);
+            StringAssert.DoesNotContain("File.WriteAllText(fullPath, report);", source);
+        }
+
         private static string ReadProjectSource(string assetRelativePath)
         {
             return File.ReadAllText(Path.Combine(Application.dataPath, assetRelativePath)).Replace("\r\n", "\n");
