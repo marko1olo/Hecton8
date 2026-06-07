@@ -1408,6 +1408,31 @@ namespace Hecton8.Tests.Editor
             Assert.That(releaseSegment, Does.Contain("ReleaseWriteLock(in _jobResultsHandle"));
             Assert.That(releaseSegment, Does.Contain("TryUnlockBuffer(PrevStatusBufferId"));
             Assert.That(releaseSegment, Does.Contain("TryUnlockBuffer(PositionsBufferId"));
+
+            int cancelIndex = source.IndexOf("private void CancelScheduledJobForTeardown", System.StringComparison.Ordinal);
+            int prepareIndex = source.IndexOf("private void PrepareForReinitialize", cancelIndex, System.StringComparison.Ordinal);
+            Assert.That(cancelIndex, Is.GreaterThan(readIndex));
+            Assert.That(prepareIndex, Is.GreaterThan(cancelIndex));
+            string cancelSegment = source.Substring(cancelIndex, prepareIndex - cancelIndex);
+            Assert.That(cancelSegment, Does.Contain("TryCompleteProximityJobForTeardown(ref _jobHandle)"));
+            Assert.That(cancelSegment, Does.Not.Contain("DispatcherJobSwap.TryComplete(ref _jobHandle, forceComplete: true)"));
+            Assert.Less(
+                cancelSegment.IndexOf("TryCompleteProximityJobForTeardown(ref _jobHandle)", System.StringComparison.Ordinal),
+                cancelSegment.IndexOf("ReleaseJobBufferLocks();", System.StringComparison.Ordinal));
+
+            int helperIndex = source.IndexOf("private static bool TryCompleteProximityJobForTeardown", System.StringComparison.Ordinal);
+            Assert.That(helperIndex, Is.GreaterThan(cancelIndex));
+            Assert.That(helperIndex, Is.LessThan(prepareIndex));
+            string helperSegment = source.Substring(helperIndex, prepareIndex - helperIndex);
+            Assert.That(helperSegment, Does.Contain("DispatcherJobSwap.BeginLateFrameSwapWindow();"));
+            Assert.That(helperSegment, Does.Contain("DispatcherJobSwap.TryComplete(ref handle, forceComplete: true)"));
+            Assert.That(helperSegment, Does.Contain("DispatcherJobSwap.EndLateFrameSwapWindow();"));
+            Assert.Less(
+                helperSegment.IndexOf("DispatcherJobSwap.BeginLateFrameSwapWindow();", System.StringComparison.Ordinal),
+                helperSegment.IndexOf("DispatcherJobSwap.TryComplete(ref handle, forceComplete: true)", System.StringComparison.Ordinal));
+            Assert.Less(
+                helperSegment.IndexOf("DispatcherJobSwap.TryComplete(ref handle, forceComplete: true)", System.StringComparison.Ordinal),
+                helperSegment.IndexOf("DispatcherJobSwap.EndLateFrameSwapWindow();", System.StringComparison.Ordinal));
         }
 
         [Test]
