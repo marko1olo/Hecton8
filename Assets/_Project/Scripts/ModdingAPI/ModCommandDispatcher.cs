@@ -296,6 +296,7 @@ namespace Hecton8.Modding
         private static int _kernelCount;
         private static int _modCount;
         private static bool _modMaskSignalConfigured;
+        private static int s_x001ModCommandDispatcherSignalPushDropCount;
         private static IAbyssalFlowGpuReadModel _abyssalFlowGpu;
         private static IAudioService _audioService;
 
@@ -573,7 +574,7 @@ namespace Hecton8.Modding
             signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.SourceHash = MemorySentinelModMaskSourceHash;
             signal.Flags = flags;
-            SignalBus<ModdedGameMaskSignal>.TryPush(in signal);
+            SignalBus<ModdedGameMaskSignal>.TryPushTracked(in signal, ref s_x001ModCommandDispatcherSignalPushDropCount);
         }
 
         private static void EnsureMemorySentinelModMaskLane()
