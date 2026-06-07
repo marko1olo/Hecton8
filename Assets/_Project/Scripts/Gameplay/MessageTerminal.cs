@@ -1092,12 +1092,15 @@ namespace Hecton8.Gameplay
                 return;
 
             _currentMessageIndex = messageIndex;
+            TerminalState previousState = _state;
             _state = TerminalState.Playing;
 
             _playbackTimer = ResolvePlaybackDuration(message);
 
             // Update status light
             UpdateStatusLight();
+            if (previousState != _state)
+                QueueStateChangedEvent(_state);
 
             uint messageHash = GetCachedMessageHashNoAlloc(messageIndex);
 
