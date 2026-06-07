@@ -1,20 +1,26 @@
 import csv
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
 
 TOOLS_ROOT = Path(__file__).resolve().parent
+ROOT = TOOLS_ROOT.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
 
 import ValidateFoamContactDecisionQueue as validator  # noqa: E402
+from Tools.test_local_temp import project_local_tempdir_factory  # noqa: E402
+
+
+TEMP_DIR = project_local_tempdir_factory("foam_contact_decision_queue")
 
 
 class ValidateFoamContactDecisionQueueTests(unittest.TestCase):
     def test_validate_queue_accepts_matching_decisions(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with TEMP_DIR() as temp_dir:
             root = Path(temp_dir)
             queue_path = root / "queue.csv"
             self._write_source_paths(root)
@@ -63,7 +69,7 @@ class ValidateFoamContactDecisionQueueTests(unittest.TestCase):
             )
         ]
 
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with TEMP_DIR() as temp_dir:
             with self.assertRaises(SystemExit):
                 validator.validate_source_paths(decisions, root=Path(temp_dir))
 

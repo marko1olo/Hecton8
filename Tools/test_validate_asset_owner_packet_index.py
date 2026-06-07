@@ -1,14 +1,20 @@
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
 
 TOOLS_ROOT = Path(__file__).resolve().parent
+ROOT = TOOLS_ROOT.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
 
 import ValidateAssetOwnerPacketIndex as validator  # noqa: E402
+from Tools.test_local_temp import project_local_tempdir_factory  # noqa: E402
+
+
+TEMP_DIR = project_local_tempdir_factory("asset_owner_packet_index")
 
 
 class ValidateAssetOwnerPacketIndexTests(unittest.TestCase):
@@ -20,7 +26,7 @@ class ValidateAssetOwnerPacketIndexTests(unittest.TestCase):
         self.assertEqual(5, sum(1 for row in rows if row.packet_presence == "OUTPUT_ONLY_NO_PACKET_FILE"))
 
     def test_line_count_mismatch_rejects_present_packet(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with TEMP_DIR() as temp_dir:
             root = Path(temp_dir)
             packet = root / "taskslocal/asset_system_20260605/ASSET_OWNER_01_PACKET.md"
             packet.parent.mkdir(parents=True, exist_ok=True)
@@ -31,7 +37,7 @@ class ValidateAssetOwnerPacketIndexTests(unittest.TestCase):
                 validator.validate_present_packet(row, root=root)
 
     def test_output_only_taskfile_rejects_row(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with TEMP_DIR() as temp_dir:
             tasklocal_root = Path(temp_dir)
             (tasklocal_root / "ASSET_OWNER_29_BAD_PACKET.md").write_text("bad", encoding="utf-8")
             row = _row(

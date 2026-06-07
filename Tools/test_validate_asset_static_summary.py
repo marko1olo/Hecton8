@@ -1,15 +1,21 @@
 import csv
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
 
 TOOLS_ROOT = Path(__file__).resolve().parent
+ROOT = TOOLS_ROOT.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
 
 import ValidateAssetStaticSummary as validator  # noqa: E402
+from Tools.test_local_temp import project_local_tempdir_factory  # noqa: E402
+
+
+TEMP_DIR = project_local_tempdir_factory("asset_static_summary")
 
 
 class ValidateAssetStaticSummaryTests(unittest.TestCase):
@@ -36,7 +42,7 @@ class ValidateAssetStaticSummaryTests(unittest.TestCase):
         self.assertEqual("Docs/AssetAudit/current.csv", rows[0].file_path)
 
     def test_validate_summary_accepts_matching_csv_stats(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with TEMP_DIR() as temp_dir:
             root = Path(temp_dir)
             csv_path = root / "Docs/AssetAudit/current.csv"
             summary_path = root / "summary.md"
@@ -60,7 +66,7 @@ class ValidateAssetStaticSummaryTests(unittest.TestCase):
         self.assertEqual(1, len(rows))
 
     def test_validate_summary_rejects_stale_row_count(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with TEMP_DIR() as temp_dir:
             root = Path(temp_dir)
             csv_path = root / "Docs/AssetAudit/current.csv"
             summary_path = root / "summary.md"
