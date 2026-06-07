@@ -508,6 +508,31 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void AcousticRadarPresentation_RejectsNonFiniteAupDistances()
+        {
+            string acousticRadarPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/AcousticRadarSphereRenderer.cs");
+            string source = File.ReadAllText(acousticRadarPath);
+            string refreshBody = ExtractMethodBlock(source, "private void RefreshMatricesForLateFrame()");
+            string listenerAupBody = ExtractMethodBlock(source, "private bool TryResolveListenerAup(Vector3 listenerPosition, out AbsoluteUniversePosition listenerAup)");
+            string offsetBody = ExtractMethodBlock(source, "private static AbsoluteUniversePosition OffsetAupLocal(in AbsoluteUniversePosition anchorAup, Vector3 runtimeOffset)");
+            string validateBody = ExtractMethodBlock(source, "private void OnValidate()");
+
+            Assert.That(refreshBody, Does.Contain("!IsFinite(anchorPosition)"));
+            Assert.That(refreshBody, Does.Contain("ResolveMaxContactDistanceMeters(maxContactDistanceMeters)"));
+            Assert.That(refreshBody, Does.Contain("if (!sampleAup.IsFinite())"));
+            Assert.That(refreshBody, Does.Contain("!math.isfinite(distanceSq) || distanceSq <= 0.0001f || distanceSq > safeMaxDistanceSq"));
+            Assert.That(listenerAupBody, Does.Contain("return listenerAup.IsFinite();"));
+            Assert.That(listenerAupBody, Does.Not.Contain("return true;"));
+            Assert.That(offsetBody, Does.Contain("if (!anchorAup.IsFinite() || !IsFinite(runtimeOffset))"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector3 value)"));
+            Assert.That(source, Does.Contain("private static float ResolveMaxContactDistanceMeters(float distanceMeters)"));
+            Assert.That(source, Does.Contain("math.isfinite(distanceMeters) ? math.max(1f, distanceMeters) : 1f"));
+            Assert.That(validateBody, Does.Contain("maxContactDistanceMeters = ResolveMaxContactDistanceMeters(maxContactDistanceMeters);"));
+        }
+
+        [Test]
         public void SuitHud_TextCreationUsesCachedFontSharedMaterial()
         {
             string path = Path.Combine(

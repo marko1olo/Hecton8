@@ -121,6 +121,14 @@ namespace Hecton8.UI
             float3 listenerForward = (float3)(listenerRotation * Vector3.forward);
             Quaternion anchorRotation = anchor.rotation;
             Vector3 anchorPosition = anchor.position;
+            if (!IsFinite(anchorPosition) ||
+                !math.all(math.isfinite(listenerRight)) ||
+                !math.all(math.isfinite(listenerUp)) ||
+                !math.all(math.isfinite(listenerForward)))
+            {
+                return;
+            }
+
             if (!TryResolveListenerAup(listenerPosition, out AbsoluteUniversePosition listenerAup))
                 return;
 
@@ -128,7 +136,7 @@ namespace Hecton8.UI
             float3 submarineForward = object.ReferenceEquals(forwardReference, listener)
                 ? ResolveForwardUnitVector(listenerForward)
                 : ResolveForwardUnitVector(forwardReference);
-            float safeMaxDistance = math.max(1f, maxContactDistanceMeters);
+            float safeMaxDistance = ResolveMaxContactDistanceMeters(maxContactDistanceMeters);
             float safeMaxDistanceSq = safeMaxDistance * safeMaxDistance;
             float inverseMaxDistanceSq = math.rcp(safeMaxDistanceSq);
             float radius = math.max(0.01f, sphereRadius);
@@ -144,6 +152,9 @@ namespace Hecton8.UI
                     continue;
 
                 AbsoluteUniversePosition sampleAup = sample.PositionAup;
+                if (!sampleAup.IsFinite())
+                    continue;
+
                 float3 deltaAup = AupPrecisionMath.LocalDeltaFloat3Clamped(
                     sampleAup.ToAbsoluteDouble3(),
                     listenerAup.ToAbsoluteDouble3(),
@@ -153,7 +164,7 @@ namespace Hecton8.UI
                     continue;
 
                 float distanceSq = math.lengthsq(deltaAup);
-                if (distanceSq <= 0.0001f || distanceSq > safeMaxDistanceSq)
+                if (!math.isfinite(distanceSq) || distanceSq <= 0.0001f || distanceSq > safeMaxDistanceSq)
                     continue;
 
                 float approximateDistance = ApproximateMagnitude(deltaAup);
@@ -285,7 +296,7 @@ namespace Hecton8.UI
                 listenerAup = OffsetAupLocal(
                     in cachedMovementState.PredictedAup,
                     (Vector3)((float3)listenerPosition - cachedMovementState.PredictedWorldPosition));
-                return true;
+                return listenerAup.IsFinite();
             }
 
             listenerAup = default;
@@ -294,6 +305,9 @@ namespace Hecton8.UI
 
         private static AbsoluteUniversePosition OffsetAupLocal(in AbsoluteUniversePosition anchorAup, Vector3 runtimeOffset)
         {
+            if (!anchorAup.IsFinite() || !IsFinite(runtimeOffset))
+                return default;
+
             AbsoluteUniversePosition result = anchorAup;
             result.LocalX += runtimeOffset.x;
             result.LocalY += runtimeOffset.y;
@@ -302,6 +316,18 @@ namespace Hecton8.UI
             NormalizeAupLocalAxis(ref result.GridY, ref result.LocalY);
             NormalizeAupLocalAxis(ref result.GridZ, ref result.LocalZ);
             return result;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
+        private static float ResolveMaxContactDistanceMeters(float distanceMeters)
+        {
+            return math.isfinite(distanceMeters) ? math.max(1f, distanceMeters) : 1f;
         }
 
         private static void NormalizeAupLocalAxis(ref long grid, ref float local)
@@ -517,7 +543,7 @@ namespace Hecton8.UI
             sphereRadius = math.clamp(sphereRadius, 0.05f, 1.5f);
             voxelSizeMeters = math.clamp(voxelSizeMeters, 0.002f, 0.08f);
             pulseIntensity = math.clamp(pulseIntensity, 0f, 4f);
-            maxContactDistanceMeters = math.max(1f, maxContactDistanceMeters);
+            maxContactDistanceMeters = ResolveMaxContactDistanceMeters(maxContactDistanceMeters);
             minimumAmplitude = math.clamp(minimumAmplitude, 0f, 0.1f);
             minimumRadiusFraction = math.saturate(minimumRadiusFraction);
             _materialPropertiesDirty = true;
