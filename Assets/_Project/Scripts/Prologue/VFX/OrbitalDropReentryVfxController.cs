@@ -45,6 +45,7 @@ namespace Hecton8.Prologue.VFX
         private const float OverlayNearClipPaddingMeters = 0.03f;
         private const float OverlayOverscan = 1.08f;
         private const string DumpFileName = "Dump_ORBITAL_DROP_REENTRY_VFX.bin";
+        private const string DumpPayloadLabel = "orbitalDropReentryVfxDumpPayload";
 
         private static readonly ProfilerMarker _lateFrameMarker = new ProfilerMarker("H8.PrologueVFX.Reentry.LateFrame");
         private static readonly int _HectonReentryPlasmaState0Id = Shader.PropertyToID("_HectonReentryPlasmaState0");
@@ -1078,7 +1079,11 @@ namespace Hecton8.Prologue.VFX
                 const int headerBytes = 24;
                 int length = math.min(TelemetryCapacity, telemetry.Length);
                 int byteCount = headerBytes + length * TelemetryEntrySizeBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(OrbitalDropReentryVfxController),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
 
                 unsafe
                 {
@@ -1111,8 +1116,10 @@ namespace Hecton8.Prologue.VFX
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(OrbitalDropReentryVfxController),
+                    DumpPayloadLabel);
             }
         }
 

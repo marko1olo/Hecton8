@@ -57,6 +57,7 @@ namespace Hecton8.Narrative.Prologue
         private const uint SurvivalAbortHash = 0x53555256u; // SURV
         private const uint DumpFailedHash = 0x444D5046u; // DMPF
         private const string DumpFileName = "Dump_PROLOGUE_SEQUENCE_DIRECTOR.bin";
+        private const string DumpPayloadLabel = "prologueSequenceDirectorDumpPayload";
         private const SystemID OwnerSystemId = SystemID.PrologueSequence;
         private static readonly int _prologueTelemetryRuntimeSizeBytes = UnsafeUtility.SizeOf<PrologueSequenceTelemetryEntry>();
         private static readonly int _reentryStateRuntimeSizeBytes = UnsafeUtility.SizeOf<ReentryStateDTO>();
@@ -1438,7 +1439,11 @@ namespace Hecton8.Narrative.Prologue
                 const int rowBytes = 28;
                 int length = math.min(TelemetryCapacity, blackBox.Length);
                 int byteCount = headerBytes + length * rowBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(AwaitableDropSequenceDirector),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
 
                 unsafe
                 {
@@ -1470,8 +1475,10 @@ namespace Hecton8.Narrative.Prologue
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(AwaitableDropSequenceDirector),
+                    DumpPayloadLabel);
             }
         }
 

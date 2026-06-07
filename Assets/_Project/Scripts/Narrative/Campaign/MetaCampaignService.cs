@@ -184,6 +184,7 @@ namespace Hecton8.Narrative.Campaign
         internal const byte RuleMatchQuest = 2;
 
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_META_CAMPAIGN_DIRECTOR.bin";
+        private const string DumpPayloadLabel = "metaCampaignDirectorDumpPayload";
         private const int GlobalVariableCapacity = MetaCampaignDTO.MaxGlobalVariables;
         private const int RuleCapacity = 5;
         private const int BlackBoxCapacity = 300;
@@ -1588,7 +1589,11 @@ namespace Hecton8.Narrative.Campaign
                 const int rowBytes = 24;
                 int count = blackBox.Length;
                 int byteCount = headerBytes + count * rowBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(MetaCampaignService),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
 
                 unsafe
                 {
@@ -1629,8 +1634,10 @@ namespace Hecton8.Narrative.Campaign
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(MetaCampaignService),
+                    DumpPayloadLabel);
             }
         }
 

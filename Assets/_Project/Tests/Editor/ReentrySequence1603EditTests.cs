@@ -116,6 +116,29 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void ReentryBlackBoxDumpsUseTrackedTransientPayloads()
+        {
+            AssertTrackedDumpPayload(
+                DirectorPath,
+                "DumpBlackBox",
+                "AwaitableDropSequenceDirector",
+                "DumpPayloadLabel",
+                "prologueSequenceDirectorDumpPayload");
+            AssertTrackedDumpPayload(
+                VfxPath,
+                "DumpBlackBoxOnce",
+                "OrbitalDropReentryVfxController",
+                "DumpPayloadLabel",
+                "orbitalDropReentryVfxDumpPayload");
+            AssertTrackedDumpPayload(
+                OrbitDirectorPath,
+                "DumpTelemetry",
+                "OrbitalRelativityDirector",
+                "DumpPayloadLabel",
+                "orbitalMechanicsDirectorDumpPayload");
+        }
+
+        [Test]
         public void HotPhaseMethodsDoNotResolveColdDependenciesOrManagedTiming()
         {
             for (int fileIndex = 0; fileIndex < ReentryCSharpFiles.Length; fileIndex++)
@@ -740,6 +763,26 @@ namespace Hecton8.Tests.Editor
                 .FirstOrDefault(candidate => candidate.Identifier.ValueText == name);
             Assert.That(method, Is.Not.Null, name);
             return method;
+        }
+
+        private static void AssertTrackedDumpPayload(
+            string relativePath,
+            string methodName,
+            string ownerName,
+            string labelName,
+            string labelValue)
+        {
+            string source = Read(relativePath);
+            string methodSource = FindMethod(Parse(relativePath), methodName).ToFullString();
+
+            StringAssert.Contains("private const string " + labelName + " = \"" + labelValue + "\";", source);
+            StringAssert.Contains("NativeFaultDumpWriter.CreateTransientPayload(", methodSource);
+            StringAssert.Contains("nameof(" + ownerName + ")", methodSource);
+            StringAssert.Contains(labelName, methodSource);
+            StringAssert.Contains("NativeArrayOptions.UninitializedMemory", methodSource);
+            StringAssert.Contains("NativeFaultDumpWriter.DisposeTransientPayload(", methodSource);
+            Assert.That(ContainsOrdinal(methodSource, "new NativeArray<byte>(byteCount"), Is.False);
+            Assert.That(ContainsOrdinal(methodSource, "payload.Dispose()"), Is.False);
         }
 
         private static PropertyDeclarationSyntax FindProperty(CompilationUnitSyntax root, string name)

@@ -47,6 +47,7 @@ namespace Hecton8.Prologue.Space
         private const float CameraPressureNormalPriorityThreshold = 0.28f;
         private const float CameraPressureHighPriorityThreshold = 0.72f;
         private const string DumpFileName = "Dump_ORBITAL_MECHANICS_DIRECTOR.bin";
+        private const string DumpPayloadLabel = "orbitalMechanicsDirectorDumpPayload";
         private const SystemID OwnerSystemId = SystemID.CoreBridge;
         private const BufferID TelemetryRingBufferId = (BufferID)0x4F524241; // "ORBA"
 
@@ -1396,7 +1397,11 @@ namespace Hecton8.Prologue.Space
                 const int rowBytes = 52;
                 int length = telemetryRing.Length;
                 int byteCount = headerBytes + length * rowBytes;
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(OrbitalRelativityDirector),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
 
                 unsafe
                 {
@@ -1430,8 +1435,10 @@ namespace Hecton8.Prologue.Space
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(OrbitalRelativityDirector),
+                    DumpPayloadLabel);
             }
         }
 

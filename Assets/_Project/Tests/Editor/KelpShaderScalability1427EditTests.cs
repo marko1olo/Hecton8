@@ -3101,6 +3101,22 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void MetaCampaignService_BlackBoxDumpUsesTrackedTransientPayload()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Narrative", "Campaign", "MetaCampaignService.cs");
+            string dumpBody = ExtractMethodBody(source, "private void DumpBlackBox()");
+
+            Assert.That(source, Does.Contain("private const string DumpPayloadLabel = \"metaCampaignDirectorDumpPayload\";"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("nameof(MetaCampaignService)"));
+            Assert.That(dumpBody, Does.Contain("DumpPayloadLabel"));
+            Assert.That(dumpBody, Does.Contain("NativeArrayOptions.UninitializedMemory"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBody, Does.Not.Contain("new NativeArray<byte>(byteCount"));
+            Assert.That(dumpBody, Does.Not.Contain("payload.Dispose()"));
+        }
+
+        [Test]
         public void DiegeticPanelController_ColorFormatIsHardwareRouteNotQualityFork()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "DiegeticPanelController.cs");
