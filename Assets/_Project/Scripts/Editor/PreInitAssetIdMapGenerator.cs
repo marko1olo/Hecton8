@@ -75,9 +75,42 @@ namespace Hecton8.EditorValidation
 
             string absolutePath = Path.GetFullPath(GeneratedFilePath);
             Directory.CreateDirectory(Path.GetDirectoryName(absolutePath));
-            File.WriteAllText(absolutePath, builder.ToString(), new UTF8Encoding(false));
+            WriteTextAtomic(absolutePath, builder.ToString(), new UTF8Encoding(false));
             AssetDatabase.ImportAsset(GeneratedFilePath);
             Debug.Log("[PreInitAssetIdMapGenerator] Generated " + guids.Length + " GUID mappings.");
+        }
+
+        private static void WriteTextAtomic(string path, string text, Encoding encoding)
+        {
+            string tempPath = path + ".tmp";
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                File.WriteAllText(tempPath, text, encoding);
+                if (File.Exists(path))
+                    File.Replace(tempPath, path, null, true);
+                else
+                    File.Move(tempPath, path);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+            }
         }
 
         private readonly struct GeneratedAssetGuidRecord

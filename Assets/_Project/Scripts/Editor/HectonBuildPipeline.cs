@@ -163,7 +163,7 @@ public static class HectonBuildPipeline
 
         string absolutePath = Path.Combine(ProjectRoot, projectRelativePath);
         Directory.CreateDirectory(Path.GetDirectoryName(absolutePath));
-        File.WriteAllText(
+        WriteTextAtomic(
             absolutePath,
             "{\n" +
             "  \"MonoBehaviour\": {\n" +
@@ -266,8 +266,41 @@ public static class HectonBuildPipeline
             builder.Append("ExceptionMessage: ").Append(failure.Message).Append('\n');
         }
 
-        File.WriteAllText(resultPath, builder.ToString(), Encoding.UTF8);
+        WriteTextAtomic(resultPath, builder.ToString(), Encoding.UTF8);
         UnityEngine.Debug.Log("[BUILD PIPELINE] Wrote " + resultPath);
+    }
+
+    private static void WriteTextAtomic(string path, string text, Encoding encoding)
+    {
+        string tempPath = path + ".tmp";
+        try
+        {
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+
+            File.WriteAllText(tempPath, text, encoding);
+            if (File.Exists(path))
+                File.Replace(tempPath, path, null, true);
+            else
+                File.Move(tempPath, path);
+        }
+        catch
+        {
+            TryDeleteFileNoThrow(tempPath);
+            throw;
+        }
+    }
+
+    private static void TryDeleteFileNoThrow(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        catch
+        {
+        }
     }
 
     private static long GetFileOrDirectorySize(string path)

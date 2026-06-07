@@ -64,6 +64,36 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("File.WriteAllBytes(fullPath, bytes);", writeBinary);
         }
 
+        [Test]
+        public void PreInitAssetGuidMapWritesThroughAtomicTempPromotion()
+        {
+            string source = ReadProjectSource("_Project/Scripts/Editor/PreInitAssetIdMapGenerator.cs");
+            string writer = ExtractMethodBody(source, "private static void WriteTextAtomic(");
+
+            StringAssert.Contains("WriteTextAtomic(absolutePath, builder.ToString(), new UTF8Encoding(false));", source);
+            StringAssert.Contains("File.WriteAllText(tempPath, text, encoding);", writer);
+            StringAssert.Contains("File.Replace(tempPath, path, null, true);", writer);
+            StringAssert.Contains("File.Move(tempPath, path);", writer);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", writer);
+            StringAssert.DoesNotContain("File.WriteAllText(absolutePath, builder.ToString(), new UTF8Encoding(false));", source);
+        }
+
+        [Test]
+        public void HectonBuildPipelineWritesBuildArtifactsThroughAtomicTempPromotion()
+        {
+            string source = ReadProjectSource("_Project/Scripts/Editor/HectonBuildPipeline.cs");
+            string writer = ExtractMethodBody(source, "private static void WriteTextAtomic(");
+
+            StringAssert.Contains("WriteTextAtomic(\n            absolutePath,", source);
+            StringAssert.Contains("WriteTextAtomic(resultPath, builder.ToString(), Encoding.UTF8);", source);
+            StringAssert.Contains("File.WriteAllText(tempPath, text, encoding);", writer);
+            StringAssert.Contains("File.Replace(tempPath, path, null, true);", writer);
+            StringAssert.Contains("File.Move(tempPath, path);", writer);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", writer);
+            StringAssert.DoesNotContain("File.WriteAllText(\n            absolutePath,", source);
+            StringAssert.DoesNotContain("File.WriteAllText(resultPath, builder.ToString(), Encoding.UTF8);", source);
+        }
+
         private static string ReadProjectSource(string assetRelativePath)
         {
             return File.ReadAllText(Path.Combine(Application.dataPath, assetRelativePath)).Replace("\r\n", "\n");
