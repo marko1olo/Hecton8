@@ -3,16 +3,24 @@
 
 from __future__ import annotations
 
-import tempfile
+import sys
 import unittest
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from Tools.UX.clean_python_cache import find_pycache_dirs, remove_pycache_dirs
+from Tools.test_local_temp import project_local_tempdir_factory
+
+
+TEMP_DIR = project_local_tempdir_factory("ux_python_cache_cleanup")
 
 
 class PythonCacheCleanupTests(unittest.TestCase):
     def test_find_and_remove_pycache_dirs_under_root(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_root:
+        with TEMP_DIR() as temp_root:
             root = Path(temp_root)
             cache_a = root / "Tools" / "UX" / "__pycache__"
             cache_b = root / "Tools" / "__pycache__"

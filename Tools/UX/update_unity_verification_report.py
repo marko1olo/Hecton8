@@ -67,7 +67,7 @@ def main() -> int:
     args = parser.parse_args()
 
     report_path = _resolve_path(args.report)
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = json.loads(report_path.read_text(encoding="utf-8-sig"))
 
     evidence = args.evidence.strip()
     evidence_path = _resolve_path(evidence) if evidence else None

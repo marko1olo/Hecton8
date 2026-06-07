@@ -55,7 +55,7 @@ ALLOWED_PROMPT_SOURCE_STATUSES = {
 
 
 def _load_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def validate_aggregate_report(report: dict[str, Any], environment_probe: dict[str, Any]) -> list[str]:

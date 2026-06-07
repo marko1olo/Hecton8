@@ -4,10 +4,13 @@
 from __future__ import annotations
 
 import copy
-import json
-import os
+import sys
 import unittest
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from Tools.UX.validate_aggregate_report import (
     EXPECTED_ARTIFACT_HASHES,
@@ -17,13 +20,13 @@ from Tools.UX.validate_aggregate_report import (
 )
 
 
-ROOT = Path(__file__).resolve().parents[2]
-REPORT_PATH = ROOT / "Docs/AgentLogs/UI_HardwareAdaptiveValidation_UX_ENGINEER.json"
-PROBE_PATH = ROOT / "Docs/AgentLogs/UI_UnityEnvironmentProbe_UX_ENGINEER.json"
-
-
-def _load(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
+def _valid_probe_fixture() -> dict:
+    return {
+        "schema": "hecton8.hardware_adaptive_ui_scaler.unity_environment_probe.v1",
+        "requiredUnityVersion": "6000.4.1f1",
+        "runtimeVerificationStatus": "PENDING_UNITY_VERIFICATION",
+        "status": "UNITY_NOT_FOUND",
+    }
 
 
 def _valid_report_fixture() -> dict:
@@ -69,16 +72,14 @@ def _valid_report_fixture() -> dict:
 
 
 class AggregateReportValidatorTests(unittest.TestCase):
-    def test_current_aggregate_report_is_valid(self) -> None:
-        if os.environ.get("H8_UX_AGGREGATE_RUNNING") == "1":
-            self.skipTest("aggregate runner validates the candidate report after command execution")
-        self.assertEqual([], validate_aggregate_report(_load(REPORT_PATH), _load(PROBE_PATH)))
+    def test_valid_aggregate_report_fixture_is_valid(self) -> None:
+        self.assertEqual([], validate_aggregate_report(_valid_report_fixture(), _valid_probe_fixture()))
 
     def test_rejects_runtime_promotion(self) -> None:
         report = _valid_report_fixture()
         report["unityRuntimeStatus"] = "PASS"
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertTrue(any("unityRuntimeStatus" in failure for failure in failures))
 
@@ -86,7 +87,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report = _valid_report_fixture()
         report["evidenceClasses"] = ["STATIC_SOURCE"]
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("evidenceClasses must be STATIC_SOURCE, STATIC_DOC, CLI_COMPILE", failures)
 
@@ -94,7 +95,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report = _valid_report_fixture()
         report["runtimeEvidenceClassesMissing"] = ["UNITY_CONSOLE", "PLAYMODE"]
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("runtimeEvidenceClassesMissing must list all Unity/runtime evidence gates", failures)
 
@@ -103,7 +104,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report["promptSourceStatus"] = "PROMPT_SOURCE_MISSING"
         report["promptSourcePath"] = ""
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("promptSourceStatus must be active prompt or archived fallback", failures)
         self.assertIn("promptSourcePath must identify the prompt source", failures)
@@ -112,7 +113,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report = _valid_report_fixture()
         report["activeCurrentBatchExists"] = True
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("archived prompt fallback requires activeCurrentBatchExists false", failures)
 
@@ -120,7 +121,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report = _valid_report_fixture()
         report["promptTaskCount"] = 6
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("promptTaskCount must be 7", failures)
 
@@ -129,7 +130,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report["promptRequiredStatus"] = "WRONG"
         report["promptSha256"] = "not-a-sha"
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("promptRequiredStatus must be UI SCALED", failures)
         self.assertIn("promptSha256 must be a lowercase SHA-256 digest", failures)
@@ -139,7 +140,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report["commands"] = [record for record in report["commands"] if record["name"] != "unity_environment_probe"]
         report["commandCount"] = len(report["commands"])
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("missing aggregate command: unity_environment_probe", failures)
 
@@ -147,7 +148,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report = _valid_report_fixture()
         report["commands"][-1], report["commands"][-2] = report["commands"][-2], report["commands"][-1]
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("python_cache_cleanup must be the final aggregate command", failures)
 
@@ -155,7 +156,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report = _valid_report_fixture()
         report["commands"][0], report["commands"][1] = report["commands"][1], report["commands"][0]
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("commands must match expected order", failures)
 
@@ -163,7 +164,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report = _valid_report_fixture()
         report["commands"][0]["exitCode"] = 1
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertTrue(any("exitCode must be 0" in failure for failure in failures))
 
@@ -171,7 +172,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report = _valid_report_fixture()
         report["aggregateSelfValidation"] = {"status": "FAIL", "failures": ["forced failure"]}
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("aggregateSelfValidation must be PASS with no failures", failures)
 
@@ -179,7 +180,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report = _valid_report_fixture()
         report["statusLogSelfValidation"] = {"status": "FAIL", "failures": ["forced failure"]}
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("statusLogSelfValidation must be PASS with no failures", failures)
 
@@ -187,7 +188,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report = _valid_report_fixture()
         report["unitHarnessTestCount"] = EXPECTED_UNIT_HARNESS_TESTS - 1
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("unitHarnessTestCount must match unit_harness output", failures)
         self.assertIn(f"unitHarnessTestCount must be {EXPECTED_UNIT_HARNESS_TESTS}", failures)
@@ -196,7 +197,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report = _valid_report_fixture()
         report["artifactHashCount"] = EXPECTED_ARTIFACT_HASHES - 1
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("artifactHashCount must match artifactSha256 length", failures)
         self.assertIn(f"artifactHashCount must be {EXPECTED_ARTIFACT_HASHES}", failures)
@@ -205,7 +206,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report = _valid_report_fixture()
         report["artifactSha256"]["artifact_00"] = "not-a-sha256"
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("artifactSha256 digest invalid: artifact_00", failures)
 
@@ -213,7 +214,7 @@ class AggregateReportValidatorTests(unittest.TestCase):
         report = _valid_report_fixture()
         report["pythonCacheCountAfter"] = 1
 
-        failures = validate_aggregate_report(report, _load(PROBE_PATH))
+        failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("pythonCacheCountAfter must be 0", failures)
 

@@ -122,7 +122,7 @@ def main() -> int:
     args = parser.parse_args()
 
     report_path = Path(args.report)
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = json.loads(report_path.read_text(encoding="utf-8-sig"))
     failures = _check_failures(report)
 
     audit = {

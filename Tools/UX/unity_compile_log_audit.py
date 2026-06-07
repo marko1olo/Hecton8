@@ -63,6 +63,14 @@ def audit_log_text(log_text: str, match_limit: int = 20) -> dict[str, object]:
     }
 
 
+def _read_log_text(log_path: Path) -> str:
+    data = log_path.read_bytes()
+    if data.startswith(b"\xff\xfe") or data.startswith(b"\xfe\xff"):
+        return data.decode("utf-16", errors="replace")
+
+    return data.decode("utf-8-sig", errors="replace")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--log", default=str(DEFAULT_LOG_PATH), help="Unity batchmode/import log to audit.")
@@ -87,7 +95,7 @@ def main() -> int:
         print(report["failures"][0])
         return 2
 
-    log_text = log_path.read_text(encoding="utf-8", errors="replace")
+    log_text = _read_log_text(log_path)
     audit = audit_log_text(log_text)
     report = {
         "schema": "hecton8.hardware_adaptive_ui_scaler.unity_compile_log_audit.v1",

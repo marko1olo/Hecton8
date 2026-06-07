@@ -19,6 +19,13 @@ AGGREGATE_PATH = ROOT / "Docs/AgentLogs/UI_HardwareAdaptiveValidation_UX_ENGINEE
 CHECKED_TASK_PATTERN = re.compile(r"^- \[x\] Task\s+(\d+)\s+-", re.MULTILINE)
 
 
+def _self_validation_failed(validation: object) -> bool:
+    if not isinstance(validation, dict):
+        return True
+
+    return validation.get("status") != "PASS" or validation.get("failures") not in ([], None)
+
+
 def validate_status_log_consistency(
     status_text: str,
     rationale_text: str,
@@ -61,8 +68,10 @@ def validate_status_log_consistency(
         failures.append("aggregate report status must be PASS")
     if aggregate_report.get("unityRuntimeStatus") != "PENDING_UNITY_VERIFICATION":
         failures.append("aggregate unityRuntimeStatus must remain pending")
-    if aggregate_report.get("aggregateSelfValidation", {}).get("status") != "PASS":
-        failures.append("aggregate self-validation must be PASS")
+    if _self_validation_failed(aggregate_report.get("aggregateSelfValidation")):
+        failures.append("aggregate self-validation must be PASS with no failures")
+    if _self_validation_failed(aggregate_report.get("statusLogSelfValidation")):
+        failures.append("status/log self-validation must be PASS with no failures")
 
     return failures
 
@@ -78,11 +87,11 @@ def main() -> int:
     args = parser.parse_args()
 
     failures = validate_status_log_consistency(
-        STATUS_PATH.read_text(encoding="utf-8"),
-        RATIONALE_PATH.read_text(encoding="utf-8"),
-        LOG_PATH.read_text(encoding="utf-8"),
-        BLOCKER_PATH.read_text(encoding="utf-8"),
-        json.loads(AGGREGATE_PATH.read_text(encoding="utf-8")),
+        STATUS_PATH.read_text(encoding="utf-8-sig"),
+        RATIONALE_PATH.read_text(encoding="utf-8-sig"),
+        LOG_PATH.read_text(encoding="utf-8-sig"),
+        BLOCKER_PATH.read_text(encoding="utf-8-sig"),
+        json.loads(AGGREGATE_PATH.read_text(encoding="utf-8-sig")),
     )
 
     report = {

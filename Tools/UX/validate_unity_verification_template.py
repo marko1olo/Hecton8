@@ -112,7 +112,7 @@ def main() -> int:
     args = parser.parse_args()
 
     template_path = Path(args.template)
-    template = json.loads(template_path.read_text(encoding="utf-8"))
+    template = json.loads(template_path.read_text(encoding="utf-8-sig"))
     failures = _failures(template)
 
     report = {
