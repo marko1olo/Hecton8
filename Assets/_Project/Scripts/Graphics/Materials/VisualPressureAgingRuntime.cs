@@ -888,7 +888,16 @@ namespace Hecton8.Graphics.Materials
             if (!_simulationScheduled)
                 return;
 
-            DispatcherJobFence.TryComplete(ref _scheduledSimulationHandle, forceComplete: true);
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _scheduledSimulationHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+
             _runtimeFlags &= ~FlagJobFencePending;
             UnlockJobBuffers();
             _simulationScheduled = false;

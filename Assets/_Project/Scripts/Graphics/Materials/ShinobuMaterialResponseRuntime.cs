@@ -1205,7 +1205,16 @@ namespace Hecton8.Graphics.Materials
         {
             if (_simulationScheduled)
             {
-                DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
+
                 _simulationScheduled = false;
             }
 
