@@ -342,16 +342,16 @@ namespace Hecton8.Gameplay
 
             RefreshCachedAup();
 
-            // Calculate current depth
-            float currentDepth = -ResolveRuntimePosition().y;
+            // Target depth is authored as world Y: 0 at surface, negative underwater.
+            float currentY = ResolveRuntimePosition().y;
 
-            // Calculate depth error
-            float depthError = targetDepth - currentDepth;
+            // Positive error lifts the beacon, negative error sinks it.
+            float verticalError = targetDepth - currentY;
 
             // Check if stabilized
             bool wasStabilized = _isStabilized;
             float linearSpeedSq = _rb.linearVelocity.sqrMagnitude;
-            _isStabilized = math.abs(depthError) < 0.5f && linearSpeedSq < 0.01f;
+            _isStabilized = math.abs(verticalError) < 0.5f && linearSpeedSq < 0.01f;
 
             if (_isStabilized && !wasStabilized)
             {
@@ -366,8 +366,8 @@ namespace Hecton8.Gameplay
             // Apply buoyancy force
             if (!_rb.isKinematic)
             {
-                // Upward force proportional to depth error
-                float forceMagnitude = depthError * buoyancyForce;
+                // Upward force proportional to vertical target error.
+                float forceMagnitude = verticalError * buoyancyForce;
 
                 // Apply force
                 Vector3 force = Vector3.up * forceMagnitude;
@@ -726,7 +726,7 @@ namespace Hecton8.Gameplay
         private void OnDrawGizmosSelected()
         {
             // Draw target depth line
-            Vector3 targetPos = new Vector3(transform.position.x, -targetDepth, transform.position.z);
+            Vector3 targetPos = new Vector3(transform.position.x, targetDepth, transform.position.z);
             Gizmos.color = new Color(0f, 0.8f, 1f, 0.5f);
             Gizmos.DrawLine(transform.position, targetPos);
             Gizmos.DrawWireSphere(targetPos, 0.3f);
