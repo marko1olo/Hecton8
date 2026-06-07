@@ -139,16 +139,45 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile("Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs");
             string cacheStageBody = ExtractMethodBody(source, "private static async Awaitable<string> TryStageStreamingAssetsUriToCacheAsync(");
             string rollbackBody = ExtractMethodBody(source, "private static unsafe bool TryWriteEditorHotReloadRollbackSnapshot(");
+            string telemetryDumpBody = ExtractMethodBody(source, "private static void WriteTelemetryDump(");
             string promoteBody = ExtractMethodBody(source, "private static void PromoteTempFileCold(");
 
             StringAssert.Contains("PromoteTempFileCold(tempPath, cachePath);", cacheStageBody);
             StringAssert.Contains("PromoteTempFileCold(tempPath, finalPath);", rollbackBody);
+            StringAssert.Contains("FileMode.CreateNew", rollbackBody);
+            StringAssert.Contains("FileOptions.SequentialScan | FileOptions.WriteThrough", rollbackBody);
+            StringAssert.Contains("stream.Flush(true);", rollbackBody);
+            StringAssert.Contains("PromoteTempFileCold(tempPath, path);", telemetryDumpBody);
+            StringAssert.Contains("FileMode.CreateNew", telemetryDumpBody);
+            StringAssert.Contains("FileOptions.WriteThrough | FileOptions.SequentialScan", telemetryDumpBody);
+            StringAssert.Contains("stream.Flush(true);", telemetryDumpBody);
             StringAssert.Contains("File.Replace(tempPath, finalPath, null, true);", promoteBody);
             StringAssert.Contains("File.Move(tempPath, finalPath);", promoteBody);
+            StringAssert.DoesNotContain("TryDeleteFile(finalPath);", rollbackBody);
             StringAssert.DoesNotContain("TryDeleteFile(cachePath);\r\n                File.Move(tempPath, cachePath);", source);
             StringAssert.DoesNotContain("TryDeleteFile(cachePath);\n                File.Move(tempPath, cachePath);", source);
             StringAssert.DoesNotContain("TryDeleteFile(finalPath);\r\n                File.Move(tempPath, finalPath);", source);
             StringAssert.DoesNotContain("TryDeleteFile(finalPath);\n                File.Move(tempPath, finalPath);", source);
+        }
+
+        [Test]
+        public void StaticDataHashManifestPromotesTempFileAfterDurableWrite()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs");
+            string manifestBody = ExtractMethodBody(source, "public static H8DataBakeResult GenerateHashManifest(");
+            string promoteBody = ExtractMethodBody(source, "private static void PromoteTempFileAtomic(");
+
+            StringAssert.Contains("string tempPath = outputPath + \".tmp\";", manifestBody);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", manifestBody);
+            StringAssert.Contains("System.IO.FileMode.CreateNew", manifestBody);
+            StringAssert.Contains("System.IO.FileOptions.WriteThrough | System.IO.FileOptions.SequentialScan", manifestBody);
+            StringAssert.Contains("writer.Flush();", manifestBody);
+            StringAssert.Contains("stream.Flush(true);", manifestBody);
+            StringAssert.Contains("PromoteTempFileAtomic(tempPath, outputPath);", manifestBody);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", ExtractMethodBody(source, "private static void TryDeleteFileNoThrow("));
+            StringAssert.Contains("System.IO.File.Replace(tempPath, destinationPath, null, true);", promoteBody);
+            StringAssert.Contains("System.IO.File.Move(tempPath, destinationPath);", promoteBody);
+            StringAssert.DoesNotContain("outputPath,\n                System.IO.FileMode.Create", manifestBody);
         }
 
         [Test]

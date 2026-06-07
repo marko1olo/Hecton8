@@ -886,6 +886,7 @@ namespace Hecton8.SaveSystem
             if (!telemetryRing.IsCreated || telemetryRing.Length <= 0 || string.IsNullOrEmpty(path))
                 return false;
 
+            string tempPath = null;
             try
             {
                 string directory = Path.GetDirectoryName(path);
@@ -916,7 +917,16 @@ namespace Hecton8.SaveSystem
                     LastFrame = last.Frame,
                     _pad0 = 0u
                 };
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+
+                tempPath = path + ".tmp";
+                TryDeleteFileNoThrow(tempPath);
+                using (FileStream stream = new FileStream(
+                           tempPath,
+                           FileMode.CreateNew,
+                           FileAccess.Write,
+                           FileShare.Read,
+                           4096,
+                           FileOptions.WriteThrough | FileOptions.SequentialScan))
                 {
                     stream.Write(new ReadOnlySpan<byte>((byte*)&header, headerBytes));
                     byte* source = (byte*)telemetryRing.GetUnsafeReadOnlyPtr();
@@ -925,17 +935,42 @@ namespace Hecton8.SaveSystem
                         int index = (start + i) % capacity;
                         stream.Write(new ReadOnlySpan<byte>(source + (index * stride), stride));
                     }
+
+                    stream.Flush(true);
                 }
 
+                PromoteTempFileAtomic(tempPath, path);
                 return true;
             }
             catch (IOException)
             {
+                TryDeleteFileNoThrow(tempPath);
                 return false;
             }
             catch (UnauthorizedAccessException)
             {
+                TryDeleteFileNoThrow(tempPath);
                 return false;
+            }
+        }
+
+        private static void PromoteTempFileAtomic(string tempPath, string destinationPath)
+        {
+            if (File.Exists(destinationPath))
+                File.Replace(tempPath, destinationPath, null, true);
+            else
+                File.Move(tempPath, destinationPath);
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
             }
         }
 

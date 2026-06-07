@@ -2138,11 +2138,11 @@ namespace Hecton8.Data
                 byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(arena);
                 using (FileStream stream = new FileStream(
                            tempPath,
-                           FileMode.Create,
+                           FileMode.CreateNew,
                            FileAccess.Write,
                            FileShare.Read,
                            EditorHotReloadSnapshotChunkBytes,
-                           FileOptions.SequentialScan))
+                           FileOptions.SequentialScan | FileOptions.WriteThrough))
                 {
                     int copiedBytes = 0;
                     while (copiedBytes < blobBytes)
@@ -2153,7 +2153,7 @@ namespace Hecton8.Data
                         copiedBytes += chunkBytes;
                     }
 
-                    stream.Flush();
+                    stream.Flush(true);
                 }
 
                 PromoteTempFileCold(tempPath, finalPath);
@@ -2163,37 +2163,31 @@ namespace Hecton8.Data
             catch (IOException)
             {
                 TryDeleteFile(tempPath);
-                TryDeleteFile(finalPath);
                 return false;
             }
             catch (UnauthorizedAccessException)
             {
                 TryDeleteFile(tempPath);
-                TryDeleteFile(finalPath);
                 return false;
             }
             catch (ArgumentException)
             {
                 TryDeleteFile(tempPath);
-                TryDeleteFile(finalPath);
                 return false;
             }
             catch (NotSupportedException)
             {
                 TryDeleteFile(tempPath);
-                TryDeleteFile(finalPath);
                 return false;
             }
             catch (System.Security.SecurityException)
             {
                 TryDeleteFile(tempPath);
-                TryDeleteFile(finalPath);
                 return false;
             }
             catch (InvalidOperationException)
             {
                 TryDeleteFile(tempPath);
-                TryDeleteFile(finalPath);
                 return false;
             }
         }
@@ -3824,34 +3818,54 @@ namespace Hecton8.Data
             NativeArray<H8DataMonolithTelemetryEntry>.ReadOnly ring,
             int cursor)
         {
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using BinaryWriter writer = new BinaryWriter(stream, System.Text.Encoding.UTF8, leaveOpen: false);
-            writer.Write(0x4858444Du);
-            writer.Write((uint)status);
-            writer.Write(cursor);
-            writer.Write(H8DataLayoutConstants.TelemetryRingCapacity);
-            writer.Write(UnsafeUtility.SizeOf<H8DataMonolithTelemetryEntry>());
-            int start = NormalizeTelemetryCursor(cursor);
-            for (int i = 0; i < H8DataLayoutConstants.TelemetryRingCapacity; i++)
+            string tempPath = path + ".tmp";
+            TryDeleteFile(tempPath);
+            try
             {
-                int ringIndex = start + i;
-                if (ringIndex >= H8DataLayoutConstants.TelemetryRingCapacity)
-                    ringIndex -= H8DataLayoutConstants.TelemetryRingCapacity;
+                using FileStream stream = new FileStream(
+                    tempPath,
+                    FileMode.CreateNew,
+                    FileAccess.Write,
+                    FileShare.Read,
+                    4096,
+                    FileOptions.WriteThrough | FileOptions.SequentialScan);
+                using BinaryWriter writer = new BinaryWriter(stream, System.Text.Encoding.UTF8, leaveOpen: true);
+                writer.Write(0x4858444Du);
+                writer.Write((uint)status);
+                writer.Write(cursor);
+                writer.Write(H8DataLayoutConstants.TelemetryRingCapacity);
+                writer.Write(UnsafeUtility.SizeOf<H8DataMonolithTelemetryEntry>());
+                int start = NormalizeTelemetryCursor(cursor);
+                for (int i = 0; i < H8DataLayoutConstants.TelemetryRingCapacity; i++)
+                {
+                    int ringIndex = start + i;
+                    if (ringIndex >= H8DataLayoutConstants.TelemetryRingCapacity)
+                        ringIndex -= H8DataLayoutConstants.TelemetryRingCapacity;
 
-                H8DataMonolithTelemetryEntry entry = ring[ringIndex];
-                writer.Write(entry.Checksum64);
-                writer.Write(entry.LoadTicks);
-                writer.Write(entry.IoTicks);
-                writer.Write(entry.FrameIndex);
-                writer.Write(entry.BlobBytes);
-                writer.Write(entry.SectionCount);
-                writer.Write(entry.LoadStatus);
-                writer.Write(entry.PathFlags);
-                writer.Write(entry.StateHash);
-                writer.Write(entry.Reserved0);
-                writer.Write(entry.Reserved1);
-                writer.Write(entry.Reserved2);
-                writer.Write(entry.Reserved3);
+                    H8DataMonolithTelemetryEntry entry = ring[ringIndex];
+                    writer.Write(entry.Checksum64);
+                    writer.Write(entry.LoadTicks);
+                    writer.Write(entry.IoTicks);
+                    writer.Write(entry.FrameIndex);
+                    writer.Write(entry.BlobBytes);
+                    writer.Write(entry.SectionCount);
+                    writer.Write(entry.LoadStatus);
+                    writer.Write(entry.PathFlags);
+                    writer.Write(entry.StateHash);
+                    writer.Write(entry.Reserved0);
+                    writer.Write(entry.Reserved1);
+                    writer.Write(entry.Reserved2);
+                    writer.Write(entry.Reserved3);
+                }
+
+                writer.Flush();
+                stream.Flush(true);
+                PromoteTempFileCold(tempPath, path);
+            }
+            catch
+            {
+                TryDeleteFile(tempPath);
+                throw;
             }
         }
 #endif

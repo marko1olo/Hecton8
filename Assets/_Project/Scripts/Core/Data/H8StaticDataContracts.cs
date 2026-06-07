@@ -1958,24 +1958,48 @@ namespace Hecton8.Core.Data
             if (string.IsNullOrEmpty(csvPath) || !System.IO.File.Exists(csvPath))
                 return Fail("CSV file missing.");
 
+            if (string.IsNullOrEmpty(outputPath))
+                return Fail("Output path missing.");
+
             H8CsvTable table = H8CsvReader.ParseFile(csvPath);
-            using (System.IO.FileStream stream = new System.IO.FileStream(
-                outputPath,
-                System.IO.FileMode.Create,
-                System.IO.FileAccess.Write,
-                System.IO.FileShare.Read))
-            using (System.IO.StreamWriter writer = new System.IO.StreamWriter(stream, System.Text.Encoding.UTF8))
+            string directory = System.IO.Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(directory))
+                System.IO.Directory.CreateDirectory(directory);
+
+            string tempPath = outputPath + ".tmp";
+            TryDeleteFileNoThrow(tempPath);
+            try
             {
-                writer.WriteLine("Id,Fnv1a32");
-                for (int i = 0; i < table.RowCount; i++)
+                using (System.IO.FileStream stream = new System.IO.FileStream(
+                    tempPath,
+                    System.IO.FileMode.CreateNew,
+                    System.IO.FileAccess.Write,
+                    System.IO.FileShare.Read,
+                    4096,
+                    System.IO.FileOptions.WriteThrough | System.IO.FileOptions.SequentialScan))
+                using (System.IO.StreamWriter writer = new System.IO.StreamWriter(stream, System.Text.Encoding.UTF8, 4096, leaveOpen: true))
                 {
-                    string id = table.Get(i, 0);
-                    uint hash = ComputeFnv1a32(id.AsSpan());
-                    writer.Write(id);
-                    writer.Write(',');
-                    WriteHex8(writer, hash);
-                    writer.WriteLine();
+                    writer.WriteLine("Id,Fnv1a32");
+                    for (int i = 0; i < table.RowCount; i++)
+                    {
+                        string id = table.Get(i, 0);
+                        uint hash = ComputeFnv1a32(id.AsSpan());
+                        writer.Write(id);
+                        writer.Write(',');
+                        WriteHex8(writer, hash);
+                        writer.WriteLine();
+                    }
+
+                    writer.Flush();
+                    stream.Flush(true);
                 }
+
+                PromoteTempFileAtomic(tempPath, outputPath);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
             }
 
             return new H8DataBakeResult
@@ -1994,6 +2018,26 @@ namespace Hecton8.Core.Data
                 Success = false,
                 Message = message
             };
+        }
+
+        private static void PromoteTempFileAtomic(string tempPath, string destinationPath)
+        {
+            if (System.IO.File.Exists(destinationPath))
+                System.IO.File.Replace(tempPath, destinationPath, null, true);
+            else
+                System.IO.File.Move(tempPath, destinationPath);
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path) && System.IO.File.Exists(path))
+                    System.IO.File.Delete(path);
+            }
+            catch
+            {
+            }
         }
 
         private static void WriteHex8(TextWriter writer, uint value)
