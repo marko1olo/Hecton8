@@ -1404,13 +1404,19 @@ namespace Hecton8.QA.Headless
                     writer.Write('}');
                 }
 
-                if (File.Exists(_resultPath))
-                    File.Delete(_resultPath);
-                File.Move(tempPath, _resultPath);
+                PromoteResultFileCold(tempPath);
             }
             catch (Exception)
             {
             }
+        }
+
+        private void PromoteResultFileCold(string tempPath)
+        {
+            if (File.Exists(_resultPath))
+                File.Replace(tempPath, _resultPath, null, true);
+            else
+                File.Move(tempPath, _resultPath);
         }
 
         private static void WriteJsonEscaped(StreamWriter writer, string value)

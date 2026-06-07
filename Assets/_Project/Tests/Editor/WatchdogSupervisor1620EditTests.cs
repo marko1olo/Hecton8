@@ -281,6 +281,16 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void ApexQaHeadlessResultsPromoteAtomically()
+        {
+            string headlessSimulation = ReadProjectFile("Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs");
+            string stressFracture = ReadProjectFile("Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs");
+
+            AssertHeadlessResultUsesAtomicPromote(headlessSimulation);
+            AssertHeadlessResultUsesAtomicPromote(stressFracture);
+        }
+
+        [Test]
         public void ApexQaDomain_CompilationThrottleDoesNotLaunchBuildProcess()
         {
             string supervisor = ReadProjectFile("Assets/_Project/Editor/QA/WatchdogSupervisor1620.cs");
@@ -437,6 +447,17 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("finally", method);
             Assert.Less(method.IndexOf("TryAcquireWriteLock(", StringComparison.Ordinal), method.IndexOf("finally", StringComparison.Ordinal), method);
             Assert.Less(method.IndexOf("finally", StringComparison.Ordinal), method.IndexOf("ReleaseWriteLock(", StringComparison.Ordinal), method);
+        }
+
+        private static void AssertHeadlessResultUsesAtomicPromote(string source)
+        {
+            StringAssert.Contains("PromoteResultFileCold(tempPath);", source);
+            StringAssert.Contains("private void PromoteResultFileCold(string tempPath)", source);
+            StringAssert.Contains("File.Replace(tempPath, _resultPath, null, true);", source);
+            StringAssert.DoesNotContain("File.Delete(_resultPath);\r\n            File.Move(tempPath, _resultPath);", source);
+            StringAssert.DoesNotContain("File.Delete(_resultPath);\n            File.Move(tempPath, _resultPath);", source);
+            StringAssert.DoesNotContain("File.Delete(_resultPath);\r\n                File.Move(tempPath, _resultPath);", source);
+            StringAssert.DoesNotContain("File.Delete(_resultPath);\n                File.Move(tempPath, _resultPath);", source);
         }
 
         private static int CountToken(string source, string token)
