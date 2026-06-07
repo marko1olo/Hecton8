@@ -94,7 +94,7 @@ namespace Hecton8.Dev
                 ContainsAll(saveBinaryStorage, "ConsumeIndexedSectorQuarantineFlag", "ReportIndexedSectorQuarantine", "TryResetIndexedPersistentWorldSectorToPristine") &&
                 ContainsAll(saveBinaryStorage, "ReportIndexedSectorBackupRecovery", "CopyAndClearIndexedSectorBackupRecoveryHashes", "TryRestoreIndexedPersistentWorldSectorFromBackup", "refreshBackupBeforeCommit: false") &&
                 ContainsAll(persistentWorldRegistry, "ConsumeIndexedSectorBackupRecoveryFlag", "RestoreBackupRecoveredIndexedSectorsFromBackup") &&
-                ContainsAll(saveManager, "CriticalSectorCorruptionMessage", "NotificationEvents.PushCritical(CriticalSectorCorruptionMessage)");
+                ContainsAll(saveManager, "CriticalSectorCorruptionMessage", "NotificationEvents.TryPushCritical(CriticalSectorCorruptionMessage.AsSpan())");
 
             bool seedConsistencyPass =
                 ContainsAll(saveManager, "GeologicalAnomalyDetectedMessage", "WorldGenerationVersionId", "RuntimeWorldGenerationVersionId") &&

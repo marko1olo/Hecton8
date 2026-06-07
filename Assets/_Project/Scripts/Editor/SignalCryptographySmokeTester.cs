@@ -585,7 +585,7 @@ namespace Hecton8.Editor
                 AssertContains(audioLogSystem, "_currentPlaybackBitCrushed = bitCrushRouteActive", "Partial playback state mirrors actual route availability", report, ref failureCount);
                 AssertContains(audioLogSystem, "_EncryptedVoiceRouteMissingWarningHash", "Missing encrypted voice route publishes telemetry once", report, ref failureCount);
                 AssertContains(audioLogSystem, "NotificationEvents.RegisterMessage(\"LOG DISCOVERED", "Audio log discovery notifications are pre-registered", report, ref failureCount);
-                AssertContains(audioLogSystem, "NotificationEvents.PushRegisteredInfo(notificationHash)", "Audio log discovery pushes notification hashes without hot string payloads", report, ref failureCount);
+                AssertContains(audioLogSystem, "NotificationEvents.TryPushRegisteredInfo(notificationHash)", "Audio log discovery observes registered notification queue refusal", report, ref failureCount);
                 AssertContains(audioLogSystem, "private bool TryBindResolvedLogHash(uint logHash, AudioLogData data)", "Runtime-resolved audio logs use a canonical hash binding helper", report, ref failureCount);
                 AssertContains(tryBindResolvedLogHashBody, "ReferenceEquals(existingData, data)", "Resolved audio log hash binding rejects asset hash collisions", report, ref failureCount);
                 AssertContains(tryBindResolvedLogHashBody, "TrackResolvedLogHash(logHash)", "Canonical audio log binding tracks resolved hashes", report, ref failureCount);
@@ -647,8 +647,10 @@ namespace Hecton8.Editor
             if (notificationEvents.Length > 0)
             {
                 AssertContains(notificationEvents, "public static uint RegisterMessage(string message)", "NotificationEvents exposes cold message registration", report, ref failureCount);
-                AssertContains(notificationEvents, "internal static void PushRegisteredInfo(uint messageHash)", "NotificationEvents exposes hash-only info publish path", report, ref failureCount);
-                AssertContains(notificationEvents, "private static void PublishRegistered(uint messageHash", "NotificationEvents dispatches registered messages without string payloads", report, ref failureCount);
+                AssertContains(notificationEvents, "internal static bool TryPushRegisteredInfo(uint messageHash)", "NotificationEvents exposes queue-visible hash-only info publish path", report, ref failureCount);
+                AssertContains(notificationEvents, "private static bool TryPublishRegistered(uint messageHash", "NotificationEvents dispatches registered messages without string payloads", report, ref failureCount);
+                AssertContains(notificationEvents, "ReportRegisteredMessageMiss(messageHash)", "NotificationEvents reports stale registered-message hashes", report, ref failureCount);
+                AssertContains(notificationEvents, "ReportQueueOverflow(severity)", "NotificationEvents reports full notification queues", report, ref failureCount);
             }
         }
 
