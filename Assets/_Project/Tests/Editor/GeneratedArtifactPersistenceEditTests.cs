@@ -152,6 +152,22 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("File.WriteAllText(fullPath, report);", source);
         }
 
+        [Test]
+        public void AITextureControlMapPngWritesThroughAtomicTempPromotion()
+        {
+            string source = ReadProjectSource("_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureControlMapBaker.cs");
+            string writePngAsync = ExtractMethodBody(source, "private static void WritePngAsync(");
+            string promote = ExtractMethodBody(source, "private static void PromoteTempFileAtomic(");
+
+            StringAssert.Contains("string tempPath = context.OutputPath + \".tmp\";", writePngAsync);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", writePngAsync);
+            StringAssert.Contains("PromoteTempFileAtomic(tempPath, context.OutputPath);", writePngAsync);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", writePngAsync);
+            StringAssert.Contains("File.Replace(tempPath, path, null, true);", promote);
+            StringAssert.Contains("File.Move(tempPath, path);", promote);
+            StringAssert.DoesNotContain("new FileStream(context.OutputPath, FileMode.Create", writePngAsync);
+        }
+
         private static string ReadProjectSource(string assetRelativePath)
         {
             return File.ReadAllText(Path.Combine(Application.dataPath, assetRelativePath)).Replace("\r\n", "\n");
