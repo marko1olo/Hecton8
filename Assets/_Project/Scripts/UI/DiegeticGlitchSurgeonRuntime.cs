@@ -224,6 +224,7 @@ namespace Hecton8.UI
         private const string DefaultCsvRelativePath = "glitch_profiles.csv";
 #endif
         private const string DefaultDumpRelativePath = "Docs/AgentLogs/Dump_1309_UIPresentation.bin";
+        private const string DumpPayloadLabel = "diegeticGlitchSurgeonDumpPayload";
 
         private const BufferID StateBufferId = (BufferID)70900;
         private const BufferID GlitchTableBufferId = (BufferID)GlitchTableBufferIdRaw;
@@ -2411,7 +2412,11 @@ namespace Hecton8.UI
                 int headerBytes = UnsafeUtility.SizeOf<GlitchBlackBoxDumpHeader>();
                 int stride = UnsafeUtility.SizeOf<DiegeticGlitchTelemetryEntry>();
                 int byteCount = headerBytes + TelemetryFrameCount * stride;
-                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(DiegeticGlitchSurgeonRuntime),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
                 try
                 {
                     byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
@@ -2434,8 +2439,10 @@ namespace Hecton8.UI
                 }
                 finally
                 {
-                    if (payload.IsCreated)
-                        payload.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(DiegeticGlitchSurgeonRuntime),
+                        DumpPayloadLabel);
                 }
             }
             catch (IOException)

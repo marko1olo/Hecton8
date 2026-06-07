@@ -201,6 +201,7 @@ namespace Hecton8.UI.Navigation
         private const float DialScaleUploadEpsilon = 0.000001f;
         private const uint DumpMagic = 0x4759434Fu;
         private const string DumpFileName = "Dump_COMPASS_GYRO_STABILIZER.bin";
+        private const string DumpPayloadLabel = "diegeticGyroCompassDumpPayload";
         private const uint FlagInitialized = 1u << 0;
         private const uint FlagPowered = 1u << 1;
         private const uint FlagAnomalyUnstable = 1u << 2;
@@ -1918,7 +1919,11 @@ namespace Hecton8.UI.Navigation
                 NativeArray<byte> payload = default;
                 try
                 {
-                    payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    payload = NativeFaultDumpWriter.CreateTransientPayload(
+                        byteCount,
+                        nameof(DiegeticGyroCompassRuntime),
+                        DumpPayloadLabel,
+                        NativeArrayOptions.UninitializedMemory);
                     byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                     int cursor = blackBoxCursor;
                     if (cursor < 0 || cursor >= BlackBoxCapacity)
@@ -1952,8 +1957,10 @@ namespace Hecton8.UI.Navigation
                 }
                 finally
                 {
-                    if (payload.IsCreated)
-                        payload.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(DiegeticGyroCompassRuntime),
+                        DumpPayloadLabel);
                 }
             }
             catch (IOException)

@@ -33,6 +33,7 @@ namespace Hecton8.UI
         private const uint ToolHash = 0x53434E52u; // SCNR
         private const float ShaderFloatEpsilon = 0.0001f;
         private const string TelemetryDumpPath = "Docs/AgentLogs/Dump_MINIGAME_FREQUENCY_TUNING.bin";
+        private const string TelemetryDumpPayloadLabel = "pdaDecryptionTelemetryDumpPayload";
         private const SystemID VaultOwnerSystemId = SystemID.UI;
 
         private static readonly int LocalToWorldId = Shader.PropertyToID("_HectonFrequencyTuningLocalToWorld");
@@ -854,31 +855,37 @@ namespace Hecton8.UI
                 NativeArray<byte> payload = default;
                 try
                 {
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
-                Span<byte> header = new Span<byte>(destination, headerBytes);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), TelemetryCapacity);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), _telemetryCursor);
+                    payload = NativeFaultDumpWriter.CreateTransientPayload(
+                        byteCount,
+                        nameof(PDADecryptionSpectrogramPanel),
+                        TelemetryDumpPayloadLabel,
+                        NativeArrayOptions.UninitializedMemory);
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    Span<byte> header = new Span<byte>(destination, headerBytes);
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), TelemetryCapacity);
+                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), _telemetryCursor);
 
-                for (int i = 0; i < TelemetryCapacity; i++)
-                {
-                    if (!TryReadTelemetryEntry(i, out FrequencyTuningTelemetryEntry entry))
+                    for (int i = 0; i < TelemetryCapacity; i++)
                     {
-                        _telemetryDumpQueued = true;
-                        return;
-                    }
+                        if (!TryReadTelemetryEntry(i, out FrequencyTuningTelemetryEntry entry))
+                        {
+                            _telemetryDumpQueued = true;
+                            return;
+                        }
 
-                    Span<byte> row = new Span<byte>(destination + headerBytes + i * rowBytes, rowBytes);
-                    WriteFrequencyTuningTelemetryEntry(row, in entry);
-                }
+                        Span<byte> row = new Span<byte>(destination + headerBytes + i * rowBytes, rowBytes);
+                        WriteFrequencyTuningTelemetryEntry(row, in entry);
+                    }
 
                     if (!NativeFaultDumpWriter.TryWriteAll(TelemetryDumpPath, payload, byteCount))
                         _telemetryDumpQueued = true;
                 }
                 finally
                 {
-                    if (payload.IsCreated)
-                        payload.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(PDADecryptionSpectrogramPanel),
+                        TelemetryDumpPayloadLabel);
                 }
             }
             catch (IOException)

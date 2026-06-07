@@ -437,6 +437,7 @@ namespace Hecton8.UI
     {
         private const string OwnerName = "SHINOBU_144";
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_SONAR_SYNTHESIZER.bin";
+        private const string BlackBoxDumpPayloadLabel = "topographicalSonarBlackBoxDumpPayload";
         private const int BlackBoxDumpHeaderBytes = 32;
         private const uint BlackBoxDumpMagic = 0x534F4E52u;
         private const uint BlackBoxDumpVersion = 1u;
@@ -1936,7 +1937,11 @@ namespace Hecton8.UI
             NativeArray<byte> payload = default;
             try
             {
-                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(TopographicalSonarSynthesizer),
+                    BlackBoxDumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
                 byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
                 int cursor = 0;
                 WriteUInt32LittleEndian(destination, ref cursor, BlackBoxDumpMagic);
@@ -1962,8 +1967,10 @@ namespace Hecton8.UI
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(TopographicalSonarSynthesizer),
+                    BlackBoxDumpPayloadLabel);
             }
         }
 

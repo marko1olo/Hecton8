@@ -3131,9 +3131,11 @@ namespace Hecton8.Tests.Editor
             string commitBody = ExtractMethodBody(source, "private void CommitWaveResult(");
             string recordBody = ExtractMethodBody(source, "private void RecordTelemetry()");
             string flushDumpBody = ExtractMethodBody(source, "private void FlushQueuedTelemetryDump()");
+            string dumpBody = ExtractMethodBody(source, "private unsafe void DumpTelemetryCold()");
             string registerBody = ExtractMethodBody(source, "private void TryRegisterTickHandlers()");
             string unregisterBody = ExtractMethodBody(source, "private void TryUnregisterTickHandlers()");
 
+            Assert.That(source, Does.Contain("private const string TelemetryDumpPayloadLabel = \"pdaDecryptionTelemetryDumpPayload\";"));
             Assert.That(source, Does.Contain("MonoBehaviour, ISlowTickable, ILateFrameTickable"));
             Assert.That(lateFrameBody, Does.Not.Contain("DumpTelemetryCold"));
             Assert.That(lateFrameBody, Does.Not.Contain("FileStream"));
@@ -3145,6 +3147,13 @@ namespace Hecton8.Tests.Editor
             Assert.That(flushDumpBody, Does.Contain("DumpTelemetryCold();"));
             Assert.That(registerBody, Does.Contain("GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI)"));
             Assert.That(unregisterBody, Does.Contain("GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI)"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("nameof(PDADecryptionSpectrogramPanel)"));
+            Assert.That(dumpBody, Does.Contain("TelemetryDumpPayloadLabel"));
+            Assert.That(dumpBody, Does.Contain("NativeArrayOptions.UninitializedMemory"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBody, Does.Not.Contain("new NativeArray<byte>(byteCount"));
+            Assert.That(dumpBody, Does.Not.Contain("payload.Dispose()"));
         }
 
         [Test]
@@ -3177,7 +3186,9 @@ namespace Hecton8.Tests.Editor
             string scheduleBody = ExtractMethodBody(source, "private void ScheduleDrift(");
             string commitCompletedBody = ExtractMethodBody(source, "private void CommitCompletedState()");
             string flushDumpBody = ExtractMethodBody(source, "private void FlushQueuedBlackBoxDump()");
+            string dumpBody = ExtractMethodBody(source, "private unsafe void DumpBlackBoxOnce(int blackBoxCursor)");
 
+            Assert.That(source, Does.Contain("private const string DumpPayloadLabel = \"diegeticGyroCompassDumpPayload\";"));
             Assert.That(source, Does.Contain("ISlowTickable, ILateFrameTickable"));
             Assert.That(lateFrameBody, Does.Not.Contain("DumpBlackBoxOnce"));
             Assert.That(lateFrameBody, Does.Not.Contain("FileStream"));
@@ -3187,6 +3198,13 @@ namespace Hecton8.Tests.Editor
             Assert.That(commitCompletedBody, Does.Not.Contain("DumpBlackBoxOnce("));
             Assert.That(slowBody, Does.Contain("FlushQueuedBlackBoxDump();"));
             Assert.That(flushDumpBody, Does.Contain("DumpBlackBoxOnce(_queuedBlackBoxCursor);"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("nameof(DiegeticGyroCompassRuntime)"));
+            Assert.That(dumpBody, Does.Contain("DumpPayloadLabel"));
+            Assert.That(dumpBody, Does.Contain("NativeArrayOptions.UninitializedMemory"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBody, Does.Not.Contain("new NativeArray<byte>(byteCount"));
+            Assert.That(dumpBody, Does.Not.Contain("payload.Dispose()"));
         }
 
         [Test]
@@ -3242,9 +3260,11 @@ namespace Hecton8.Tests.Editor
             string commitBody = ExtractMethodBody(source, "private void CommitCompletedScan()");
             string slowBody = ExtractMethodBody(source, "public void SlowTick()");
             string flushDumpBody = ExtractMethodBody(source, "private void FlushQueuedBlackBoxDump()");
+            string dumpBody = ExtractMethodBody(source, "private unsafe bool DumpBlackBox()");
             string registerBody = ExtractMethodBody(source, "private void TryRegisterSlowTickable()");
             string unregisterBody = ExtractMethodBody(source, "private void TryUnregisterSlowTickable()");
 
+            Assert.That(source, Does.Contain("private const string BlackBoxDumpPayloadLabel = \"topographicalSonarBlackBoxDumpPayload\";"));
             Assert.That(source, Does.Contain("ILateFrameTickable, ISlowTickable, IRenderable"));
             Assert.That(lateFrameBody, Does.Not.Contain("DumpBlackBox();"));
             Assert.That(commitBody, Does.Contain("QueueBlackBoxDump();"));
@@ -3253,6 +3273,13 @@ namespace Hecton8.Tests.Editor
             Assert.That(flushDumpBody, Does.Contain("DumpBlackBox();"));
             Assert.That(registerBody, Does.Contain("GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI)"));
             Assert.That(unregisterBody, Does.Contain("GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI)"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("nameof(TopographicalSonarSynthesizer)"));
+            Assert.That(dumpBody, Does.Contain("BlackBoxDumpPayloadLabel"));
+            Assert.That(dumpBody, Does.Contain("NativeArrayOptions.ClearMemory"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBody, Does.Not.Contain("new NativeArray<byte>(byteCount"));
+            Assert.That(dumpBody, Does.Not.Contain("payload.Dispose()"));
         }
 
         [Test]
@@ -3263,7 +3290,9 @@ namespace Hecton8.Tests.Editor
             string slowBody = ExtractMethodBody(source, "public void SlowTick()");
             string inspectBody = ExtractMethodBody(source, "private void InspectAndDumpIfNeeded()");
             string flushDumpBody = ExtractMethodBody(source, "private void FlushQueuedBlackBoxDump()");
+            string dumpBody = ExtractMethodBody(source, "private void DumpBlackBox(uint faultFlags)");
 
+            Assert.That(source, Does.Contain("private const string DumpPayloadLabel = \"diegeticGlitchSurgeonDumpPayload\";"));
             Assert.That(source, Does.Contain("ISlowTickable, ILateFrameTickable"));
             Assert.That(lateFrameBody, Does.Not.Contain("DumpBlackBox("));
             Assert.That(lateFrameBody, Does.Not.Contain("FileStream"));
@@ -3271,6 +3300,13 @@ namespace Hecton8.Tests.Editor
             Assert.That(inspectBody, Does.Not.Contain("DumpBlackBox(faultFlags);"));
             Assert.That(slowBody, Does.Contain("FlushQueuedBlackBoxDump();"));
             Assert.That(flushDumpBody, Does.Contain("DumpBlackBox(faultFlags);"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("nameof(DiegeticGlitchSurgeonRuntime)"));
+            Assert.That(dumpBody, Does.Contain("DumpPayloadLabel"));
+            Assert.That(dumpBody, Does.Contain("NativeArrayOptions.ClearMemory"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBody, Does.Not.Contain("new NativeArray<byte>(byteCount"));
+            Assert.That(dumpBody, Does.Not.Contain("payload.Dispose()"));
         }
 
         [Test]
