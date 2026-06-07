@@ -240,6 +240,26 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("new FileStream(tempPath, FileMode.Create, FileAccess.Write", textWriter);
         }
 
+        [Test]
+        public void BiotaDensityBakeArtifactsWriteThroughDurableAtomicTempPromotion()
+        {
+            string source = ReadProjectSource("_Project/Scripts/World/BiotaDensityMapBaker/Editor/BiotaDensityBakePipeline.cs");
+            string binaryWriter = ExtractMethodBody(source, "private static void WriteCompressedBinaryInternalBlocking(");
+            string textWriter = ExtractMethodBody(source, "internal static void WriteUtf8TextAtomic(");
+            string promote = ExtractMethodBody(source, "private static void PromoteTempFileOrThrow(");
+
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", binaryWriter);
+            StringAssert.Contains("stream.Flush(true);", binaryWriter);
+            StringAssert.Contains("PromoteTempFileOrThrow(tempPath, finalPath);", binaryWriter);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", textWriter);
+            StringAssert.Contains("stream.Flush(true);", textWriter);
+            StringAssert.Contains("PromoteTempFileOrThrow(tempPath, fullPath);", textWriter);
+            StringAssert.Contains("File.Replace(tempPath, finalPath, null, true);", promote);
+            StringAssert.Contains("File.Move(tempPath, finalPath);", promote);
+            StringAssert.DoesNotContain("new FileStream(tempPath, FileMode.Create, FileAccess.Write", binaryWriter);
+            StringAssert.DoesNotContain("new FileStream(tempPath, FileMode.Create, FileAccess.Write", textWriter);
+        }
+
         private static string ReadProjectSource(string assetRelativePath)
         {
             return File.ReadAllText(Path.Combine(Application.dataPath, assetRelativePath)).Replace("\r\n", "\n");

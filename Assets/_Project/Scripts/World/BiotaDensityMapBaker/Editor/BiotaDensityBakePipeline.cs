@@ -1004,7 +1004,10 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
             byte[] payloadChunk = new byte[ChunkBytes];
             FileOptions fileOptions = FileOptions.WriteThrough | (asynchronous ? FileOptions.Asynchronous : FileOptions.None);
 
-            using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read, ChunkBytes, fileOptions))
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+
+            using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.Read, ChunkBytes, fileOptions))
             {
                 stream.Write(header, 0, header.Length);
                 int emittedRuns = 0;
@@ -1147,7 +1150,10 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
             byte[] bytes = Utf8NoBom.GetBytes(contents ?? string.Empty);
             try
             {
-                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 {
                     stream.Write(bytes, 0, bytes.Length);
                     stream.Flush(true);
@@ -1168,7 +1174,7 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
             {
                 if (File.Exists(finalPath))
                 {
-                    File.Replace(tempPath, finalPath, null);
+                    File.Replace(tempPath, finalPath, null, true);
                     return;
                 }
 
