@@ -17,7 +17,7 @@
 | Location / route | Shelter wall panel, emergency crate hinge, or shoreline salvage bracket |
 | Unlock context | Player scans a rivet head with a white salt ring under its lip |
 | Evidence object | Rivet head, salt ring, panel seam, dried water mark |
-| Connected packets | P1120_RED_TAPE_CORNER_FLAG; P1157_DRAIN_TRAP_SALT_CAP; P1168_WASHER_SHADOW_OFFSET |
+| Connected packets | P1120_PUMP_FLOW_ARROW_SCAR; P1157_DRAIN_TRAP_SALT_CAP; P1168_WASHER_SHADOW_OFFSET |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: teaches repair inspection order without tool-system claims |
 | Content status | source_complete_unimported |
 

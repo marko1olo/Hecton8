@@ -484,7 +484,7 @@ namespace Hecton8.Interaction
 
         private void TryUnregisterFromDispatcher()
         {
-            if (!_dispatcherRegistered)
+            if (!_dispatcherRegistered && !_lateFrameRegistered)
                 return;
 
             if (_lateFrameRegistered)
@@ -1633,8 +1633,7 @@ namespace Hecton8.Interaction
                     break;
 
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _dispatcherRegistered = false;
-                    _lateFrameRegistered = false;
+                    TryUnregisterFromDispatcher();
                     if (currentService != null && _isInitialized && isActiveAndEnabled)
                         TryRegisterToDispatcher();
                     break;

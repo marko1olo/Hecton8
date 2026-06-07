@@ -2596,6 +2596,72 @@ def main() -> int:
     thermo_surgeon_headered_path.write_bytes(abyssal)
     assert server.parse_dump_file(thermo_surgeon_headered_path)["type"] == "abyssal_thermodynamics_blackbox"
 
+    abyssal_flags = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5)
+    abyssal = bytearray(
+        bytes(server.ABYSSAL_THERMODYNAMICS_TELEMETRY_CAPACITY * server.ABYSSAL_THERMODYNAMICS_ENTRY_BYTES)
+    )
+    server.ABYSSAL_THERMODYNAMICS_ENTRY.pack_into(
+        abyssal,
+        0,
+        80.0,
+        10000.0,
+        9990.0,
+        220.0,
+        10.0,
+        20.0,
+        30.0,
+        7001,
+        1 << 2,
+        3,
+        6,
+        0xFFFFFFFF,
+        32,
+    )
+    server.ABYSSAL_THERMODYNAMICS_ENTRY.pack_into(
+        abyssal,
+        server.ABYSSAL_THERMODYNAMICS_ENTRY_BYTES,
+        1250.0,
+        20000.0,
+        20575.0,
+        980.0,
+        40.0,
+        50.0,
+        60.0,
+        7002,
+        abyssal_flags,
+        7,
+        12,
+        12345,
+        16,
+    )
+    abyssal_path = root / "Dump_SHINOBU_203.bin"
+    abyssal_path.write_bytes(abyssal)
+    parsed_abyssal = server.parse_dump_file(abyssal_path)
+    assert parsed_abyssal["type"] == "abyssal_thermodynamics_blackbox"
+    assert parsed_abyssal["entrySize"] == server.ABYSSAL_THERMODYNAMICS_ENTRY_BYTES
+    assert parsed_abyssal["declaredEntryCount"] == server.ABYSSAL_THERMODYNAMICS_TELEMETRY_CAPACITY
+    assert parsed_abyssal["nonEmptyEntryCount"] == 2
+    assert parsed_abyssal["latest"]["frame"] == 7002
+    assert parsed_abyssal["latest"]["flagLabels"] == [
+        "nan",
+        "shift",
+        "mock-sources",
+        "energy-drift",
+        "divergent",
+        "max-iterations",
+    ]
+    assert parsed_abyssal["latest"]["energyDelta"] == 575.0
+    assert parsed_abyssal["latest"]["nanCellIndex"] == 12345
+    assert "nan_detected" in parsed_abyssal["warnings"]
+    assert "shift" in parsed_abyssal["warnings"]
+    assert "mock_sources" in parsed_abyssal["warnings"]
+    assert "energy_drift" in parsed_abyssal["warnings"]
+    assert "divergent" in parsed_abyssal["warnings"]
+    assert "max_iterations" in parsed_abyssal["warnings"]
+    thermo_surgeon_raw_path = root / "Dump_THERMO_SURGEON.bin"
+    thermo_surgeon_raw_path.write_bytes(abyssal)
+    assert server.parse_dump_file(thermo_surgeon_raw_path)["type"] == "abyssal_thermodynamics_blackbox"
+
     respawn_flags = (
         (1 << 0)
         | (1 << 2)

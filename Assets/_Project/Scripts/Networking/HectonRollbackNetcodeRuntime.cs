@@ -461,8 +461,7 @@ namespace Hecton8.Networking
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredFixedDispatcher = 0;
-                _registeredLateFrame = 0;
+                TryUnregisterDispatch();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegisterDispatch();
             }
@@ -1267,6 +1266,21 @@ namespace Hecton8.Networking
                 _registeredFixedDispatcher = 1;
             if (_registeredLateFrame == 0 && GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core))
                 _registeredLateFrame = 1;
+        }
+
+        private void TryUnregisterDispatch()
+        {
+            if (_registeredFixedDispatcher != 0)
+            {
+                GlobalRegistry.UnregisterDispatcherFixedSystem(this);
+                _registeredFixedDispatcher = 0;
+            }
+
+            if (_registeredLateFrame != 0)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _registeredLateFrame = 0;
+            }
         }
 
         private void TryRegisterHotSwapListener()

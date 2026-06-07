@@ -1519,6 +1519,7 @@ namespace Hecton8.QA
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    UnregisterTickLanesCold();
                     if (_runActive && currentService != null)
                         RegisterTickLanesCold();
                     break;

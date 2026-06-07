@@ -764,8 +764,8 @@ namespace Hecton8.Gameplay
                     _physicsService = currentService as IPhysicsService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _isRegistered = false;
-                    _lateFrameRegistered = false;
+                    UnregisterFromFixedTick();
+                    UnregisterFromLateFrame();
                     if (currentService != null)
                     {
                         if (_state == FloaterState.Attached)

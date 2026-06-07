@@ -431,6 +431,7 @@ namespace Hecton8.Tests.Editor
 
             string loadBodyAfterClear = source.Substring(clearIndex, staticValidatorIndex - clearIndex);
             StringAssert.Contains("return FailLoadedVoxelDeltaState(", loadBodyAfterClear);
+            StringAssert.Contains("!math.isfinite(chunkHeader.VoxelSize)", loadBodyAfterClear);
             StringAssert.Contains("Voxel delta dirty chunk store failed while loading dense payload.", loadBodyAfterClear);
             StringAssert.Contains("Voxel delta dense dirty-mask count does not match the chunk header.", loadBodyAfterClear);
             StringAssert.Contains("Voxel delta snapshot dirty-cell count does not match the header.", loadBodyAfterClear);
@@ -444,6 +445,7 @@ namespace Hecton8.Tests.Editor
 
             string validatorBody = source.Substring(staticValidatorIndex, nextMethodIndex - staticValidatorIndex);
             Assert.AreEqual(-1, validatorBody.IndexOf("FailLoadedVoxelDeltaState(", StringComparison.Ordinal), source);
+            StringAssert.Contains("!math.isfinite(chunkHeader.VoxelSize)", validatorBody);
             StringAssert.Contains("CountNativeSnapshotDirtyMaskBits(snapshotPtr + cursor)", validatorBody);
             StringAssert.Contains("error = \"Voxel delta dense dirty-mask count does not match the chunk header.\";", validatorBody);
             StringAssert.Contains("error = \"Voxel delta snapshot contains unread trailing bytes.\";", validatorBody);
@@ -2367,6 +2369,22 @@ namespace Hecton8.Tests.Editor
                 dirtyCellCount: 0,
                 payloadByteLength: 0,
                 appendTrailingBytes: true);
+
+            AssertVoxelDeltaNativeSnapshotRejected(
+                snapshot,
+                "Voxel delta chunk header contains invalid values");
+        }
+
+        [Test]
+        public void VoxelDeltaNativeSnapshot_ReadRejectsNonFiniteVoxelSize()
+        {
+            byte[] snapshot = BuildAlignedVoxelDeltaNativeSnapshot(
+                storageFlags: VoxelDeltaChunkDTO.StorageUniformSdfRle,
+                voxelSize: float.NaN,
+                dirtyCellCount: VoxelDeltaChunkDTO.CellCount,
+                payloadByteLength: VoxelDeltaChunkDTO.UniformSdfRlePayloadBytes,
+                appendTrailingBytes: false,
+                writeValidPayloadHash: true);
 
             AssertVoxelDeltaNativeSnapshotRejected(
                 snapshot,
@@ -10835,7 +10853,7 @@ namespace Hecton8.Tests.Editor
         {
             SaveData data = SaveData.CreateNew(0.0);
             data.playerStats.hasLastDeathRecord = false;
-            data.playerStats.lastDeathCause = 7;
+            data.playerStats.lastDeathCause = SaveData.PlayerLastDeathCauseMaxKnown;
             data.playerStats.lastDeathPosX = 1f;
             data.playerStats.lastDeathPosY = 2f;
             data.playerStats.lastDeathPosZ = 3f;
@@ -10999,7 +11017,7 @@ namespace Hecton8.Tests.Editor
                 data.playerStats.bleedingSeverity01 = float.NaN;
                 data.playerStats.fracturePenalty01 = float.PositiveInfinity;
                 data.playerStats.hasLastDeathRecord = false;
-                data.playerStats.lastDeathCause = 7;
+                data.playerStats.lastDeathCause = SaveData.PlayerLastDeathCauseMaxKnown;
                 data.playerStats.lastDeathPosX = 1f;
                 data.playerStats.lastDeathPosY = 2f;
                 data.playerStats.lastDeathPosZ = 3f;
@@ -11196,7 +11214,7 @@ namespace Hecton8.Tests.Editor
             SaveData data = SaveData.CreateNew(0.0);
             data.version = SaveData.CurrentVersion;
             data.playerStats.hasLastDeathRecord = false;
-            data.playerStats.lastDeathCause = 7;
+            data.playerStats.lastDeathCause = SaveData.PlayerLastDeathCauseMaxKnown;
             data.playerStats.lastDeathPosX = 1f;
             data.playerStats.lastDeathPosY = 2f;
             data.playerStats.lastDeathPosZ = 3f;
