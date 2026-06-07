@@ -133,6 +133,24 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("TryRestoreBackup(outputPath, backupPath, out string restoreError)", copyBody);
         }
 
+        [Test]
+        public void StaticDataArenaTempFilesPromoteAtomically()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs");
+            string cacheStageBody = ExtractMethodBody(source, "private static async Awaitable<string> TryStageStreamingAssetsUriToCacheAsync(");
+            string rollbackBody = ExtractMethodBody(source, "private static unsafe bool TryWriteEditorHotReloadRollbackSnapshot(");
+            string promoteBody = ExtractMethodBody(source, "private static void PromoteTempFileCold(");
+
+            StringAssert.Contains("PromoteTempFileCold(tempPath, cachePath);", cacheStageBody);
+            StringAssert.Contains("PromoteTempFileCold(tempPath, finalPath);", rollbackBody);
+            StringAssert.Contains("File.Replace(tempPath, finalPath, null, true);", promoteBody);
+            StringAssert.Contains("File.Move(tempPath, finalPath);", promoteBody);
+            StringAssert.DoesNotContain("TryDeleteFile(cachePath);\r\n                File.Move(tempPath, cachePath);", source);
+            StringAssert.DoesNotContain("TryDeleteFile(cachePath);\n                File.Move(tempPath, cachePath);", source);
+            StringAssert.DoesNotContain("TryDeleteFile(finalPath);\r\n                File.Move(tempPath, finalPath);", source);
+            StringAssert.DoesNotContain("TryDeleteFile(finalPath);\n                File.Move(tempPath, finalPath);", source);
+        }
+
         private static string ReadProjectFile(string relativePath)
         {
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

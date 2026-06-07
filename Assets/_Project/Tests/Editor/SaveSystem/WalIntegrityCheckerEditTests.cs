@@ -134,6 +134,22 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void Shinobu357PartialWalPromotionAvoidsDeleteMoveFallback()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs");
+            string source = File.ReadAllText(path);
+
+            StringAssert.Contains("TryReplaceOrCopyWal(partialPath, destinationPath)", source);
+            StringAssert.Contains("File.Replace(partialPath, destinationPath, null, true);", source);
+            StringAssert.Contains("TryCopyWalOverDestination(partialPath, destinationPath)", source);
+            StringAssert.Contains("File.Copy(partialPath, destinationPath, true);", source);
+            StringAssert.Contains("DeleteIfExists(partialPath);", source);
+            StringAssert.DoesNotContain("TryDeleteAndMoveWal", source);
+            StringAssert.DoesNotContain("DeleteIfExists(destinationPath);\r\n                File.Move(partialPath, destinationPath);", source);
+            StringAssert.DoesNotContain("DeleteIfExists(destinationPath);\n                File.Move(partialPath, destinationPath);", source);
+        }
+
+        [Test]
         public void HeadlessWalFuzzer_CorruptedPrimaryPromotesBackupAndValidatesHash()
         {
             WalFuzzerProfileDTO profile = WalIntegrityFuzzerCore.BuildDefaultProfile();

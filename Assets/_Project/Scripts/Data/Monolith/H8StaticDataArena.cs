@@ -369,8 +369,7 @@ namespace Hecton8.Data
                 if (!File.Exists(tempPath))
                     return null;
 
-                TryDeleteFile(cachePath);
-                File.Move(tempPath, cachePath);
+                PromoteTempFileCold(tempPath, cachePath);
                 return cachePath;
             }
             catch (OperationCanceledException)
@@ -442,6 +441,14 @@ namespace Hecton8.Data
             catch (System.Security.SecurityException)
             {
             }
+        }
+
+        private static void PromoteTempFileCold(string tempPath, string finalPath)
+        {
+            if (File.Exists(finalPath))
+                File.Replace(tempPath, finalPath, null, true);
+            else
+                File.Move(tempPath, finalPath);
         }
 #endif
 
@@ -2149,8 +2156,7 @@ namespace Hecton8.Data
                     stream.Flush();
                 }
 
-                TryDeleteFile(finalPath);
-                File.Move(tempPath, finalPath);
+                PromoteTempFileCold(tempPath, finalPath);
                 snapshotPath = finalPath;
                 return true;
             }
