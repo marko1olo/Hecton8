@@ -579,6 +579,32 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void AsyncWriteManagerFlushQueue_FallsBackInsteadOfDroppingRequests()
+        {
+            string source = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
+
+            StringAssert.Contains("bool flushImmediately = false;", source);
+            StringAssert.Contains("flushImmediately = true;", source);
+            StringAssert.Contains("if (flushImmediately)", source);
+            StringAssert.Contains("ThrottleFlush(byteCount);", source);
+            StringAssert.Contains("if (!TryFlushPath(absolutePath))", source);
+            StringAssert.Contains("Flush queue is full and immediate flush failed.", source);
+            StringAssert.Contains("private static bool TryFlushPath(string absolutePath)", source);
+            StringAssert.Contains("_ = TryFlushPath(request.AbsolutePath);", source);
+
+            int queueFullIndex = source.IndexOf("if (s_flushCount == DiskFlushQueueCapacity)", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(queueFullIndex, 0, source);
+            int enqueueIndex = source.IndexOf("s_flushQueue[s_flushWriteIndex]", queueFullIndex, StringComparison.Ordinal);
+            Assert.Greater(enqueueIndex, queueFullIndex, source);
+            string queueFullBlock = source.Substring(queueFullIndex, enqueueIndex - queueFullIndex);
+            StringAssert.Contains("flushImmediately = true;", queueFullBlock);
+            StringAssert.DoesNotContain("s_flushReadIndex = (s_flushReadIndex + 1) % DiskFlushQueueCapacity;", queueFullBlock);
+            StringAssert.DoesNotContain("s_flushCount--;", queueFullBlock);
+        }
+
+        [Test]
         public void HazardZoneRuntimeDTO_IsExplicitEightBytes()
         {
             StructLayoutAttribute layout = typeof(HazardZoneRuntimeDTO).StructLayoutAttribute;

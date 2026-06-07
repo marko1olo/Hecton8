@@ -44,6 +44,19 @@ namespace Hecton8.Tests.Editor
                 listener.IndexOf("_dataVault = currentService as IDataVault;", StringComparison.Ordinal));
         }
 
+        [Test]
+        public void XrRuntimeSubscription_DeduplicatesBeforeSubscribe()
+        {
+            string providerSource = ReadProjectFile("Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs");
+            string subscribe = ExtractMethodBlock(providerSource, "private void TrySubscribeXRRuntime()");
+
+            Assert.That(subscribe, Does.Contain("HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;"));
+            Assert.That(subscribe, Does.Contain("HectonXRRuntimeState.XRActiveChanged += HandleXRActiveChanged;"));
+            Assert.Less(
+                subscribe.IndexOf("HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;", StringComparison.Ordinal),
+                subscribe.IndexOf("HectonXRRuntimeState.XRActiveChanged += HandleXRActiveChanged;", StringComparison.Ordinal));
+        }
+
         private static string ReadProjectFile(string relativePath)
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

@@ -1953,6 +1953,24 @@ namespace Hecton8.Gameplay
                 return;
 
             _nextColdRebindFrame = frame + 64;
+            RefreshMissingRegistryServicesCold();
+        }
+
+        private void RefreshMissingRegistryServicesCold()
+        {
+            if (_gasDynamics == null)
+                _gasDynamics = GlobalRegistry.GasDynamics;
+            if (_fluidGpuReadModel == null)
+                _fluidGpuReadModel = GlobalRegistry.AbyssalFlowGpu;
+            if (_analyticalFlowReadModel == null)
+                _analyticalFlowReadModel = GlobalRegistry.AnalyticalFlow;
+            if (_voxelEngine == null)
+                _voxelEngine = GlobalRegistry.VoxelEngine;
+            if (_motor == null && GlobalRegistry.PlayerMotor != null)
+                _motor = GlobalRegistry.PlayerMotor;
+            if (_playerRuntimeContext == null)
+                _playerRuntimeContext = GlobalRegistry.Player;
+
             RefreshCameraTransformFromPlayerContext();
         }
 

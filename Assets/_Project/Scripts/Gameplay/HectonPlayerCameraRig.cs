@@ -280,8 +280,7 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying)
                 return;
 
-            if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            TryRegisterLateFrameTick();
             if (!_registeredOriginShiftListener)
             {
                 HectonFloatingOrigin.RegisterListener(this);
@@ -297,12 +296,25 @@ namespace Hecton8.Gameplay
                 _registeredOriginShiftListener = false;
             }
 
-            if (_registeredLateFrame)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
-                _registeredLateFrame = false;
-            }
+            TryUnregisterLateFrameTick();
 
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_registeredLateFrame || !Application.isPlaying)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrame = false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -330,9 +342,9 @@ namespace Hecton8.Gameplay
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            TryUnregister();
+            TryUnregisterLateFrameTick();
             if (currentService != null && isActiveAndEnabled)
-                TryRegister();
+                TryRegisterLateFrameTick();
         }
 
         private void ClearPendingState()
