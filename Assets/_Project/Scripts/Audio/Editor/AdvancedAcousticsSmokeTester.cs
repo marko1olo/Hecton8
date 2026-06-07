@@ -461,7 +461,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "return 0.4f;", "Rock/default impact clang multiplier remains dull", builder, ref failureCount);
                 AssertContains(renderer, "SignalBus<HighSpeedImpactSignal>.GetFrameSnapshot()", "High-speed CCD impacts are consumed without dequeuing another domain's signal lane", builder, ref failureCount);
                 AssertContains(renderer, "SignalBus<PhysicsEventPayload>.GetFrameSnapshot()", "Critical renderer consumes acoustic impulses through the typed physics payload snapshot", builder, ref failureCount);
-                AssertContains(renderer, "SignalBus<PhysicsEventPayload>.TryPush(in payload)", "Critical renderer publishes predator acoustic impulses through the typed physics payload lane with explicit drop semantics", builder, ref failureCount);
+                AssertContains(renderer, "SignalBus<PhysicsEventPayload>.TryPushTracked(in payload", "Critical renderer publishes predator acoustic impulses through the typed physics payload lane with tracked drop semantics", builder, ref failureCount);
                 AssertContains(renderer, "ConsumeLaserCutterEventSignals();", "Critical renderer drains laser cutter state from typed signal snapshots", builder, ref failureCount);
                 AssertContains(renderer, "SignalBus<global::Hecton8.Core.Contracts.Signals.LaserCutterEventPayload>.GetFrameSnapshot()", "Critical renderer consumes laser cutter payloads through the typed SignalBus lane", builder, ref failureCount);
                 AssertContains(renderer, "ConsumeProceduralAudioSignals();", "Critical renderer drains procedural audio from typed signal snapshots", builder, ref failureCount);
@@ -1111,7 +1111,7 @@ namespace Hecton8.Audio.Editor
             {
                 AssertContains(globalSignals, "[StructLayout(LayoutKind.Explicit, Size = 32)]", "DirectorAI music signal has explicit ARM64 layout with manual offsets", builder, ref failureCount);
                 AssertContains(globalSignals, "public readonly struct DirectorAIMusicSignal : ISignal", "DirectorAI music cue is an immutable typed signal", builder, ref failureCount);
-                AssertContains(directorAI, "SignalBus<DirectorAIMusicSignal>.TryPush(in signal)", "DirectorAI publishes music cues through the typed SignalBus lane with explicit drop semantics", builder, ref failureCount);
+                AssertContains(directorAI, "SignalBus<DirectorAIMusicSignal>.TryPushTracked(in signal", "DirectorAI publishes music cues through the typed SignalBus lane with tracked drop semantics", builder, ref failureCount);
                 AssertContains(directorAI, "PublishMusicSignal(ThreatSpikeEventType", "DirectorAI threat spikes publish typed music cues even without legacy listeners", builder, ref failureCount);
                 AssertContains(directorAI, "PublishMusicSignal(PredatorPressureEventType", "DirectorAI predator pressure publishes typed music cues even without legacy listeners", builder, ref failureCount);
             }
@@ -1764,7 +1764,7 @@ namespace Hecton8.Audio.Editor
             if (eventsSource.Length > 0)
             {
                 AssertContains(eventsSource, "LeviathanRoar", "Procedural audio event kind routes Leviathan roar", builder, ref failureCount);
-                AssertContains(eventsSource, "SignalBus<AudioEvent>.TryPush(in audioEvent)", "Procedural audio event source publishes through the typed SignalBus lane with explicit drop semantics", builder, ref failureCount);
+                AssertContains(eventsSource, "SignalBus<AudioEvent>.TryPushTracked(in audioEvent", "Procedural audio event source publishes through the typed SignalBus lane with tracked drop semantics", builder, ref failureCount);
                 AssertContains(eventsSource, "GlobalSignals.InitializeAllQueues()", "Procedural audio event source enters through central signal lane authority", builder, ref failureCount);
             }
 
