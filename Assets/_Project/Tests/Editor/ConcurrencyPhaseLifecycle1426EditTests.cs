@@ -1115,6 +1115,7 @@ namespace Hecton8.Tests.Editor
             string release = ExtractMethodBody(text, "UnlockRuntimeBuffers");
             string tuningAcquire = ExtractMethodBody(text, "TryLockTuningBuffer");
             string tuningRelease = ExtractMethodBody(text, "UnlockTuningBuffer");
+            string releaseOwned = ExtractMethodBody(text, "ReleaseOwnedVaultHandles");
             string force = ExtractMethodBody(text, "ForceCompletePendingJobInPostSimulationWindow");
             string finish = ExtractMethodBody(text, "FinalizeCompletedPendingJob");
 
@@ -1131,6 +1132,7 @@ namespace Hecton8.Tests.Editor
             Assert.That(release, Does.Contain("_runtimeGuardVault = null"));
             Assert.That(release, Does.Contain("vault?.ReleaseMutationGuard(RuntimeMutationGuardMask)"));
             Assert.That(release, Does.Not.Contain("IDataVault vault = _dataVault"));
+            Assert.That(releaseOwned, Does.Contain("UnlockRuntimeBuffers();"));
             Assert.That(tuningAcquire, Does.Contain("TryAcquireMutationGuard(TuningMutationGuardMask)"));
             Assert.That(tuningRelease, Does.Contain("ReleaseMutationGuard(TuningMutationGuardMask)"));
             Assert.That(force, Does.Contain("DispatcherJobFence.BeginPostSimulationSwapWindow()"));

@@ -1350,6 +1350,8 @@ namespace Hecton8.Equipment.Auxiliary
 
         private void ReleaseOwnedVaultHandles()
         {
+            UnlockRuntimeBuffers();
+
             IDataVault vault = _dataVault;
             if (vault == null)
             {
