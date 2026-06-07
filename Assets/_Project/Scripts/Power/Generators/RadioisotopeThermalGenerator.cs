@@ -400,31 +400,61 @@ namespace Hecton8.Power.Generators
 
         private static void DisposeNativeBuffers()
         {
-            if (TryResolveRtgBuffers(
-                    out NativeArray<float> startTimes,
-                    out NativeArray<float> halfLives,
-                    out NativeArray<float> baseOutput,
-                    out NativeArray<float> currentOutput,
-                    out NativeArray<float> outputNormalized,
-                    out NativeArray<byte> flags,
-                    out NativeArray<RtgTelemetryEntry> telemetryRing))
+            IDataVault vault = s_dataVault;
+            ClearResolvedNativeArray(vault, in s_rtgStartTimesHandle);
+            ClearResolvedNativeArray(vault, in s_rtgHalfLivesHandle);
+            ClearResolvedNativeArray(vault, in s_rtgBaseOutputHandle);
+            ClearResolvedNativeArray(vault, in s_rtgCurrentOutputHandle);
+            ClearResolvedNativeArray(vault, in s_rtgOutputNormalizedHandle);
+            ClearResolvedNativeArray(vault, in s_rtgFlagsHandle);
+            ClearResolvedNativeArray(vault, in s_telemetryRingHandle);
+
+            ReleaseRtgVaultBuffers(vault);
+        }
+
+        private static void ReleaseRtgVaultBuffers(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, BufferID.RtgStartTimes, ref s_rtgStartTimesHandle);
+            ReleaseVaultHandle(vault, BufferID.RtgHalfLives, ref s_rtgHalfLivesHandle);
+            ReleaseVaultHandle(vault, BufferID.RtgBaseOutput, ref s_rtgBaseOutputHandle);
+            ReleaseVaultHandle(vault, BufferID.RtgCurrentOutput, ref s_rtgCurrentOutputHandle);
+            ReleaseVaultHandle(vault, BufferID.RtgOutputNormalized, ref s_rtgOutputNormalizedHandle);
+            ReleaseVaultHandle(vault, BufferID.RtgFlags, ref s_rtgFlagsHandle);
+            ReleaseVaultHandle(vault, BufferID.RtgTelemetryRing, ref s_telemetryRingHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(
+            IDataVault vault,
+            BufferID expectedBufferId,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && IsPowerVaultHandle(in handle, expectedBufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool IsPowerVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.Power &&
+                   handle.Generation != 0u;
+        }
+
+        private static void ClearResolvedNativeArray<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault == null ||
+                !IsHandleValid(in handle) ||
+                !vault.TryResolveHandle(in handle, out NativeArray<T> buffer))
             {
-                ClearNativeArray(startTimes);
-                ClearNativeArray(halfLives);
-                ClearNativeArray(baseOutput);
-                ClearNativeArray(currentOutput);
-                ClearNativeArray(outputNormalized);
-                ClearNativeArray(flags);
-                ClearNativeArray(telemetryRing);
+                return;
             }
 
-            s_rtgStartTimesHandle = default;
-            s_rtgHalfLivesHandle = default;
-            s_rtgBaseOutputHandle = default;
-            s_rtgCurrentOutputHandle = default;
-            s_rtgOutputNormalizedHandle = default;
-            s_rtgFlagsHandle = default;
-            s_telemetryRingHandle = default;
+            ClearNativeArray(buffer);
         }
 
         private static bool TryResolveRtgBuffers(
@@ -982,6 +1012,12 @@ namespace Hecton8.Power.Generators
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                RebindDataVault(currentService as IDataVault);
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsRuntime ||
                 serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsService)
             {
@@ -995,6 +1031,80 @@ namespace Hecton8.Power.Generators
             TryUnregisterSaveParticipant();
             _saveService = currentService as ISaveService;
             TryRegisterSaveParticipant();
+        }
+
+        private static void RebindDataVault(IDataVault currentVault)
+        {
+            if (ReferenceEquals(s_dataVault, currentVault))
+                return;
+
+            CompleteDecayJobForTeardown();
+            SetLeaderSlot(-1);
+            DisposeNativeBuffers();
+            s_dataVault = currentVault;
+            s_lastDecayEvaluationSeconds = float.NegativeInfinity;
+            s_telemetryCursor = 0;
+
+            if (currentVault == null)
+                return;
+
+            EnsureNativeBuffers();
+            RebuildActiveRuntimeStateFromInstances();
+            RefreshLeader();
+        }
+
+        private static void RebuildActiveRuntimeStateFromInstances()
+        {
+            if (s_instances == null ||
+                !TryResolveRtgBuffers(
+                    out NativeArray<float> startTimes,
+                    out NativeArray<float> halfLives,
+                    out NativeArray<float> baseOutput,
+                    out NativeArray<float> currentOutput,
+                    out NativeArray<float> outputNormalized,
+                    out NativeArray<byte> rtgFlags,
+                    out _))
+            {
+                s_activeCount = 0;
+                return;
+            }
+
+            float now = ResolveCurrentTimeSeconds();
+            int activeCount = 0;
+            float healthSum = 0f;
+            for (int i = 0; i < MaxRtgs; i++)
+            {
+                RadioisotopeThermalGenerator instance = s_instances[i];
+                if (instance == null || instance._slot != i)
+                {
+                    rtgFlags[i] = 0;
+                    startTimes[i] = 0f;
+                    halfLives[i] = 0f;
+                    baseOutput[i] = 0f;
+                    currentOutput[i] = 0f;
+                    outputNormalized[i] = 0f;
+                    continue;
+                }
+
+                instance.ResolveLocalDecaySnapshot(now);
+                startTimes[i] = math.max(0f, instance._startTimeSeconds);
+                halfLives[i] = math.max(MinimumHalfLifeSeconds, instance.halfLifeHours * SecondsPerHour);
+                baseOutput[i] = math.max(0f, instance.baseOutputWatts);
+                currentOutput[i] = instance._reprocessed || instance._isDead
+                    ? 0f
+                    : math.max(0f, instance._currentOutputWatts);
+                outputNormalized[i] = math.saturate(instance._outputNormalized01);
+                rtgFlags[i] = instance.ComposeRuntimeFlags();
+                healthSum += outputNormalized[i];
+                activeCount++;
+                instance.PublishRadiationAndHeat();
+                instance.MarkPowerGridDirty();
+            }
+
+            s_activeCount = activeCount;
+            s_averageRtgHealth01 = activeCount > 0
+                ? math.saturate(healthSum * math.rcp((float)activeCount))
+                : 1f;
         }
 
         private static void CacheThermodynamicsServiceCold()
