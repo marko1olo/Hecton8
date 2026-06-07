@@ -187,7 +187,9 @@ namespace Hecton8.Narrative
 
             if (_alreadyDiscovered)
             {
-                CacheInteractText(
+                CacheReplayInteractText(
+                    ResolveInteractVerbSpan(out string replayLegacyVerb),
+                    replayLegacyVerb,
                     ResolveLocalizedSpan(LocalizationKeys.INTERACT_REPLAY_SUFFIX, DefaultReplaySuffix),
                     DefaultReplaySuffix);
                 return;
@@ -403,6 +405,53 @@ namespace Hecton8.Narrative
 
             text.CopyTo(_cachedInteractText);
             _cachedInteractTextLength = text.Length;
+            _legacyInteractText = CopyCachedLegacyText(_cachedInteractText, _cachedInteractTextLength, _legacyInteractText);
+        }
+
+        private void CacheReplayInteractText(
+            ReadOnlySpan<char> verbText,
+            string legacyVerb,
+            ReadOnlySpan<char> suffixText,
+            string legacySuffix)
+        {
+            _legacyInteractText = string.IsNullOrEmpty(legacyVerb) ? DefaultPlaybackVerbEn : legacyVerb;
+            _cachedInteractTextLength = 0;
+
+            bool copied =
+                TryAppendInteractText(verbText) &&
+                (_cachedInteractTextLength <= 0 || TryAppendInteractText(" ".AsSpan())) &&
+                TryAppendInteractText(suffixText);
+
+            if (!copied || _cachedInteractTextLength <= 0)
+            {
+                CacheInteractText(suffixText, legacySuffix);
+                return;
+            }
+
+            _legacyInteractText = CopyCachedLegacyText(_cachedInteractText, _cachedInteractTextLength, _legacyInteractText);
+        }
+
+        private bool TryAppendInteractText(ReadOnlySpan<char> text)
+        {
+            if (text.IsEmpty)
+                return true;
+
+            int remaining = _cachedInteractText.Length - _cachedInteractTextLength;
+            if (remaining < text.Length)
+                return false;
+
+            text.CopyTo(_cachedInteractText.AsSpan(_cachedInteractTextLength));
+            _cachedInteractTextLength += text.Length;
+            return true;
+        }
+
+        private static string CopyCachedLegacyText(char[] buffer, int length, string fallback)
+        {
+            if (length <= 0 || buffer == null)
+                return fallback;
+
+            // COLD ALLOC: string[<=96 chars] - legacy IInteractable bridge text rebuilt on enable/language/discovery changes - owner: AudioLogPickup
+            return new string(buffer, 0, Math.Min(length, buffer.Length));
         }
 
         private void CacheRegistryServicesCold()
