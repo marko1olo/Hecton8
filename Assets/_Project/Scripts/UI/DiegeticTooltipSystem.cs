@@ -69,6 +69,7 @@ namespace Hecton8.UI
         private const float MaxFaceDilate = 1f;
         private const float DefaultFaceDilate = 0f;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_CONTEXTUAL_UX_PROMPTER.bin";
+        private const string BlackBoxDumpPayloadLabel = "diegeticTooltipBlackBoxDumpPayload";
 
         private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
         private static readonly int GradientScaleId = Shader.PropertyToID("_GradientScale");
@@ -1579,9 +1580,10 @@ namespace Hecton8.UI
                 const int headerBytes = 12;
                 const int rowBytes = 32;
                 int byteCount = headerBytes + (writtenCount * rowBytes);
-                payload = new NativeArray<byte>(
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
                     byteCount,
-                    Allocator.Temp,
+                    nameof(DiegeticTooltipSystem),
+                    BlackBoxDumpPayloadLabel,
                     NativeArrayOptions.UninitializedMemory);
 
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
@@ -1632,8 +1634,10 @@ namespace Hecton8.UI
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(DiegeticTooltipSystem),
+                    BlackBoxDumpPayloadLabel);
             }
         }
 

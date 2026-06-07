@@ -47,6 +47,7 @@ namespace Hecton8.UI.VR
         private const SystemID VaultOwnerSystemId = SystemID.UI;
         private const BufferID BlackBoxBufferId = BufferID.OpenXrManualOverrideLeverBlackBox;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_1335_OpenXRManualOverrideLever.bin";
+        private const string BlackBoxDumpPayloadLabel = "openXrManualOverrideLeverDumpPayload";
 
         [Header("References")]
         [SerializeField] private BoxCollider activationVolume;
@@ -682,9 +683,10 @@ namespace Hecton8.UI.VR
                 string path = Path.Combine(projectRoot, DumpRelativePath);
                 const int headerBytes = 8;
                 int byteCount = headerBytes + (BlackBoxFrameCount * BlackBoxDumpEntryBytes);
-                payload = new NativeArray<byte>(
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
                     byteCount,
-                    Allocator.Temp,
+                    nameof(OpenXRManualOverrideLever),
+                    BlackBoxDumpPayloadLabel,
                     NativeArrayOptions.UninitializedMemory);
 
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
@@ -728,8 +730,10 @@ namespace Hecton8.UI.VR
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(OpenXRManualOverrideLever),
+                    BlackBoxDumpPayloadLabel);
             }
         }
 

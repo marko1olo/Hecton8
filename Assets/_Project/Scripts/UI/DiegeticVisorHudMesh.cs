@@ -23,6 +23,7 @@ namespace Hecton8.UI
         private const int BlackBoxCapacity = 300;
         private const SystemID VaultOwnerSystemId = SystemID.UI;
         private const BufferID BlackBoxBufferId = BufferID.DiegeticVisorHudBlackBox;
+        private const string BlackBoxDumpPayloadLabel = "diegeticVisorHudDumpPayload";
         private const float DefaultDistanceMeters = 0.48f;
         private const float DefaultHorizontalDegrees = 78f;
         private const float DefaultVerticalDegrees = 48f;
@@ -709,9 +710,10 @@ namespace Hecton8.UI
                 const int headerBytes = 8;
                 const int rowBytes = 40;
                 int byteCount = headerBytes + (BlackBoxCapacity * rowBytes);
-                payload = new NativeArray<byte>(
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
                     byteCount,
-                    Allocator.Temp,
+                    nameof(DiegeticVisorHudMesh),
+                    BlackBoxDumpPayloadLabel,
                     NativeArrayOptions.UninitializedMemory);
 
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
@@ -753,8 +755,10 @@ namespace Hecton8.UI
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(DiegeticVisorHudMesh),
+                    BlackBoxDumpPayloadLabel);
             }
         }
 

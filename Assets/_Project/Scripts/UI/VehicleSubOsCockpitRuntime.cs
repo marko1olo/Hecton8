@@ -66,6 +66,7 @@ namespace Hecton8.UI
         private const int CockpitTelemetryDumpEntryBytes = 64;
         private const int DamageHologramDumpEntryBytes = 24;
         private const string DamageHolographerMirrorDumpPath = "Docs/AgentLogs/Dump_VEHICLE_SUB_OS_DAMAGE_HOLOGRAPHER.bin";
+        private const string DamageHologramDumpPayloadLabel = "vehicleSubOsDamageHologramDumpPayload";
         private const int InvalidDisplayBucket = int.MinValue;
         private const int StatusModeInternalBus = 0;
         private const int StatusModeExternalLive = 1;
@@ -2878,7 +2879,11 @@ namespace Hecton8.UI
                 return;
 
             int byteCount = DumpHeaderBytes + count * DamageHologramDumpEntryBytes;
-            NativeArray<byte> dump = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> dump = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(VehicleSubOsCockpitRuntime),
+                DamageHologramDumpPayloadLabel,
+                NativeArrayOptions.UninitializedMemory);
             try
             {
                 int cursor = 0;
@@ -2906,7 +2911,10 @@ namespace Hecton8.UI
             }
             finally
             {
-                dump.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref dump,
+                    nameof(VehicleSubOsCockpitRuntime),
+                    DamageHologramDumpPayloadLabel);
             }
         }
 
