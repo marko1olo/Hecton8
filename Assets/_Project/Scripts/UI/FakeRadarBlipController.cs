@@ -418,17 +418,23 @@ namespace Hecton8.UI
                 }
 
                 AbsoluteUniversePosition hitAup = hit.AbsolutePosition;
+                if (!hitAup.IsFinite())
+                    continue;
+
                 float3 enemyDeltaAup = AupPrecisionMath.LocalDeltaFloat3Clamped(
                     hitAup.ToAbsoluteDouble3(),
                     playerAup.ToAbsoluteDouble3(),
                     AupPrecisionMath.DefaultMaxLocalCastMeters,
                     float3.zero);
+                if (!math.all(math.isfinite(enemyDeltaAup)))
+                    continue;
+
                 float2 flatDelta = MakeFloat2(
                     math.dot(enemyDeltaAup, radarRightFlatF3),
                     math.dot(enemyDeltaAup, radarForwardFlatF3));
 
                 float distanceSqr = math.lengthsq(flatDelta);
-                if (distanceSqr <= 0.0001f || distanceSqr > rangeSqr)
+                if (!math.isfinite(distanceSqr) || distanceSqr <= 0.0001f || distanceSqr > rangeSqr)
                     continue;
 
                 float2 planeOffset = radarCenter2 + flatDelta * radarScale;
@@ -533,14 +539,14 @@ namespace Hecton8.UI
                 (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
                 playerAup = movementState.PredictedAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             if (playerMovement != null)
             {
                 playerAup = playerMovement.CurrentAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
             playerAup = default;

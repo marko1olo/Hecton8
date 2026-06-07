@@ -491,6 +491,23 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void FakeRadarPresentation_RejectsNonFiniteAupDistances()
+        {
+            string fakeRadarPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/FakeRadarBlipController.cs");
+            string source = File.ReadAllText(fakeRadarPath);
+            string scheduleBody = ExtractMethodBlock(source, "private void ScheduleBlipCull(Camera projectionCamera)");
+            string playerAupBody = ExtractMethodBlock(source, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+
+            Assert.That(scheduleBody, Does.Contain("if (!hitAup.IsFinite())"));
+            Assert.That(scheduleBody, Does.Contain("if (!math.all(math.isfinite(enemyDeltaAup)))"));
+            Assert.That(scheduleBody, Does.Contain("!math.isfinite(distanceSqr) || distanceSqr <= 0.0001f || distanceSqr > rangeSqr"));
+            Assert.That(playerAupBody, Does.Contain("return playerAup.IsFinite();"));
+            Assert.That(playerAupBody, Does.Not.Contain("return true;"));
+        }
+
+        [Test]
         public void SuitHud_TextCreationUsesCachedFontSharedMaterial()
         {
             string path = Path.Combine(
