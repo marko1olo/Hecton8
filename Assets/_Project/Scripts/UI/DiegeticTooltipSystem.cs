@@ -251,16 +251,17 @@ namespace Hecton8.UI
             Vector3 cameraUp = cameraTransform.up;
             Vector3 cameraForward = cameraTransform.forward;
             Vector3 anchorPosition = ResolveAnchorPosition(cameraPosition);
-            RefreshVisibleDistanceCache();
-            if ((anchorPosition - cameraPosition).sqrMagnitude > _cachedMaxVisibleDistanceSq)
-                return;
-
-            if (!IsFinite(anchorPosition))
+            if (!IsFinite(cameraPosition) || !IsFinite(anchorPosition))
             {
                 QueueBlackBoxDump();
                 ClearTooltipState();
                 return;
             }
+
+            RefreshVisibleDistanceCache();
+            float anchorDistanceSq = (anchorPosition - cameraPosition).sqrMagnitude;
+            if (!math.isfinite(anchorDistanceSq) || anchorDistanceSq > _cachedMaxVisibleDistanceSq)
+                return;
 
             Color resolvedColor = _diagnosticActive ? _diagnosticColor : glyphColor;
             Vector4 tint = default;
@@ -1244,7 +1245,7 @@ namespace Hecton8.UI
         {
             Vector3 toCamera = cameraPosition - anchor;
             float distanceSq = toCamera.sqrMagnitude;
-            if (distanceSq <= 0.0001f)
+            if (!math.isfinite(distanceSq) || distanceSq <= 0.0001f)
                 return anchor;
 
             float depthOffset = math.isfinite(vrDepthOffsetMeters) ? math.max(0f, vrDepthOffsetMeters) : 0f;

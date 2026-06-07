@@ -1318,6 +1318,24 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void DiegeticTooltipRender_RejectsNonFiniteDistanceSq()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/DiegeticTooltipSystem.cs"));
+            string render = ExtractMethodBody(source, "public void Render(");
+            string depthOffset = ExtractMethodBody(source, "private Vector3 ApplyVrDepthOffset(");
+
+            StringAssert.Contains("!IsFinite(cameraPosition) || !IsFinite(anchorPosition)", render);
+            StringAssert.Contains("float anchorDistanceSq = (anchorPosition - cameraPosition).sqrMagnitude;", render);
+            StringAssert.Contains("!math.isfinite(anchorDistanceSq) || anchorDistanceSq > _cachedMaxVisibleDistanceSq", render);
+            int finiteCheckIndex = render.IndexOf("!IsFinite(cameraPosition) || !IsFinite(anchorPosition)", StringComparison.Ordinal);
+            int distanceCheckIndex = render.IndexOf("float anchorDistanceSq = (anchorPosition - cameraPosition).sqrMagnitude;", StringComparison.Ordinal);
+            Assert.Greater(distanceCheckIndex, finiteCheckIndex);
+            StringAssert.Contains("if (!math.isfinite(distanceSq) || distanceSq <= 0.0001f)", depthOffset);
+            StringAssert.Contains("float depthOffset = math.isfinite(vrDepthOffsetMeters) ? math.max(0f, vrDepthOffsetMeters) : 0f;", depthOffset);
+            StringAssert.Contains("private static bool IsFinite(Vector3 value)", source);
+        }
+
+        [Test]
         public void InteractionPromptLocalizationPresentation_QueuesLateFrameRefresh()
         {
             string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/InteractionUI.cs"));
