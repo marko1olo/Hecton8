@@ -584,7 +584,17 @@ namespace Hecton8.Physics.Vehicles
         private void CompleteIntegratorForLifecycle()
         {
             if (_integratorPending)
-                DispatcherJobFence.TryComplete(ref _integratorHandle, forceComplete: true);
+            {
+                DispatcherJobFence.BeginPostFixedSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _integratorHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostFixedSwapWindow();
+                }
+            }
 
             _integratorPending = false;
             UnlockSimulationBuffers();

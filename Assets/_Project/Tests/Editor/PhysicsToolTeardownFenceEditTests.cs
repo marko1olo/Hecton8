@@ -27,6 +27,11 @@ namespace Hecton8.Tests.Editor
             "public static bool CompleteScheduledForTeardown()",
             "DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete: true)",
             "return FinishScheduledCompletion();")]
+        [TestCase(
+            "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+            "private void CompleteIntegratorForLifecycle()",
+            "DispatcherJobFence.TryComplete(ref _integratorHandle, forceComplete: true)",
+            "_integratorPending = false;")]
         public void PhysicsToolTeardownForceCompletesInsidePostFixedSwapWindow(
             string relativePath,
             string signature,
