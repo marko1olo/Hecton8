@@ -464,7 +464,9 @@ namespace Hecton8.World
             haptic.LowFrequencyMotor01 = 0.9f;
             haptic.HighFrequencyMotor01 = 1f;
             haptic.DurationSeconds = 0.18f;
-            haptic.PriorityFlags = HapticPulseSignal.PriorityCollision;
+            haptic.PriorityFlags = HapticPulseSignal.PackPriorityAndSourceHash(
+                HapticPulseSignal.PriorityCollision,
+                PredatorCableBiteSourceId);
             SignalBus<HapticPulseSignal>.TryPushTracked(in haptic, ref s_x001BioCableBiteSignalPushDropCount);
 
             if (TryResolveAupFromRuntimePosition(bitePoint, out AbsoluteUniversePosition biteAup))

@@ -205,6 +205,7 @@ namespace Hecton8.UI
         private const ushort MetaFlagH8lrSource = 2;
         private const ushort MetaFlagDataMonolithSource = 4;
         private const ushort MetaFlagEncryptedPrerequisite = 8;
+        private const uint LoreUnlockHapticSourceHash = 0x50444148u;
         private const float LoreUnlockHapticLow01 = 0.12f;
         private const float LoreUnlockHapticHigh01 = 0.92f;
         private const float LoreUnlockHapticSeconds = 0.075f;
@@ -1514,7 +1515,9 @@ namespace Hecton8.UI
                 LowFrequencyMotor01 = LoreUnlockHapticLow01,
                 HighFrequencyMotor01 = LoreUnlockHapticHigh01,
                 DurationSeconds = LoreUnlockHapticSeconds,
-                PriorityFlags = HapticPulseSignal.PriorityTool
+                PriorityFlags = HapticPulseSignal.PackPriorityAndSourceHash(
+                    HapticPulseSignal.PriorityTool,
+                    LoreUnlockHapticSourceHash)
             };
             SignalBus<HapticPulseSignal>.TryPushTracked(in pulse, ref s_x001PdaEncyclopediaStreamerSignalPushDropCount);
         }

@@ -49,6 +49,7 @@ namespace Hecton8.Tests.Editor
         {
             string dispatcher = Normalize(ReadProjectFile("Assets/_Project/Scripts/Core/InputDispatcher.cs"));
             string synthesis = Normalize(ReadProjectFile("Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs"));
+            string acoustic = Normalize(ReadProjectFile("Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs"));
 
             StringAssert.Contains("SignalCorridorRuntime.EnsureHapticPulseSignalLaneInitialized();", dispatcher);
             StringAssert.Contains("while (SignalBus<HapticPulseSignal>.TryConsumeFrame(out HapticPulseSignal pulse))", dispatcher);
@@ -59,6 +60,8 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(2, CountToken(synthesis, "SignalBus<HapticPulseSignal>.TryPushTracked(in pulse"));
             StringAssert.DoesNotContain("ResolveHapticPulsePriority(pulse.PriorityFlags)", synthesis);
             StringAssert.DoesNotContain("ResolveHapticPulsePriority(synthesizedPulse.PriorityFlags)", synthesis);
+            Assert.AreEqual(2, CountToken(acoustic, "SignalBus<HapticPulseSignal>.TryPushTracked(in pulse"));
+            StringAssert.DoesNotContain("SignalBus<HapticPulseSignal>.TryPush(in pulse", acoustic);
         }
 
         [Test]
@@ -91,6 +94,9 @@ namespace Hecton8.Tests.Editor
             string questManager = ReadProjectFile("Assets/_Project/Scripts/Quest/QuestManager.cs");
             string questDagResolver = ReadProjectFile("Assets/_Project/Scripts/Quest/QuestDagResolverRuntime.cs");
             string toolKinematics = ReadProjectFile("Assets/_Project/Scripts/Tools/ToolKinematics/ToolKinematicsRuntime.cs");
+            string acoustic = ReadProjectFile("Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs");
+            string pdaEncyclopedia = ReadProjectFile("Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs");
+            string bioCable = ReadProjectFile("Assets/_Project/Scripts/World/BioCableIK.cs");
 
             StringAssert.Contains("public const uint PriorityMask = PriorityCollision | PriorityExplosion | PriorityTool;", signal);
             StringAssert.Contains("public const int SourceHashShift = 3;", signal);
@@ -107,9 +113,16 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("HapticPulseSignal.PackPriorityAndSourceHash(\n                    HapticPulseSignal.PriorityTool,\n                    QuestDagRuntimeConstants.SignalSourceHash)", Normalize(questManager));
             StringAssert.Contains("HapticPulseSignal.PackPriorityAndSourceHash(\n                    HapticPulseSignal.PriorityTool,\n                    QuestDagRuntimeConstants.SignalSourceHash)", Normalize(questDagResolver));
             StringAssert.Contains("HapticPulseSignal.PackPriorityAndSourceHash(\n                    HapticPulseSignal.PriorityTool,\n                    heat.ToolHash)", Normalize(toolKinematics));
+            StringAssert.Contains("HapticPulseSignal.PackPriorityAndSourceHash(\n                        HapticPulseSignal.PriorityTool,\n                        GhostBlipSourceHash)", Normalize(acoustic));
+            StringAssert.Contains("HapticPulseSignal.PackPriorityAndSourceHash(\n                        HapticPulseSignal.PriorityTool,\n                        TuningHapticSourceHash)", Normalize(acoustic));
+            StringAssert.Contains("HapticPulseSignal.PackPriorityAndSourceHash(\n                    HapticPulseSignal.PriorityTool,\n                    LoreUnlockHapticSourceHash)", Normalize(pdaEncyclopedia));
+            StringAssert.Contains("HapticPulseSignal.PackPriorityAndSourceHash(\n                HapticPulseSignal.PriorityCollision,\n                PredatorCableBiteSourceId)", Normalize(bioCable));
             StringAssert.DoesNotContain("PriorityTool | (QuestDagRuntimeConstants.SignalSourceHash & 0x00FFFFFFu)", questManager);
             StringAssert.DoesNotContain("PriorityTool | (QuestDagRuntimeConstants.SignalSourceHash & 0x00FFFFFFu)", questDagResolver);
             StringAssert.DoesNotContain("PriorityTool | (heat.ToolHash & 0x00FFFFFFu)", toolKinematics);
+            StringAssert.DoesNotContain("PriorityFlags = HapticPulseSignal.Priority", acoustic);
+            StringAssert.DoesNotContain("PriorityFlags = HapticPulseSignal.Priority", pdaEncyclopedia);
+            StringAssert.DoesNotContain("PriorityFlags = HapticPulseSignal.Priority", bioCable);
         }
 
         [Test]
