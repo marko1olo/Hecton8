@@ -1361,6 +1361,7 @@ namespace Hecton8.Gameplay
 
         private static void ResetTransientState()
         {
+            ReleaseActiveJobMutationGuard();
             _activeHandle = default;
             _activeJobMutationGuardVault = null;
             _pendingTrajectoryCount = 0;
@@ -1379,6 +1380,8 @@ namespace Hecton8.Gameplay
 
         private static void ReleaseVaultLanes(IDataVault vault)
         {
+            ReleaseActiveJobMutationGuard();
+
             if (vault == null)
                 return;
 
