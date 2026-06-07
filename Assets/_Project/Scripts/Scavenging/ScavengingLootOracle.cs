@@ -7,6 +7,7 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Data;
 using Hecton8.Core.Generated;
 using Hecton8.Core.Memory;
+using Hecton8.UI;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -37,7 +38,7 @@ namespace Hecton8.Scavenging
         public const int SelfAuditRollCount = 10000;
         public const byte ItemSourceKind = ItemAcquiredSignalSourceKinds.ScavengingLootOracle;
         public const byte VisualSourceKind = ItemAcquiredSignalSourceKinds.ScavengingLootOracle;
-        public const byte HudSeverityWarning = 2;
+        public const string InventoryFullMessage = "SCAVENGE BLOCKED // INVENTORY FULL";
         public const byte ItemSignalFlagQuantityClamped = 1 << 0;
         public const uint ItemSignalMaxQuantity = ushort.MaxValue;
         public const uint ToolMaskAny = 0u;
@@ -55,7 +56,6 @@ namespace Hecton8.Scavenging
         public const uint ResultFlagForcedItem = 1u << 3;
         public const uint ResultFlagSuppressDepletionDelta = 1u << 4;
         public const uint ResultFlagQuantityClamped = 1u << 5;
-        public const uint InventoryFullMessageHash = 0x4946554Cu; // IFUL
         public const uint VisualScavengeLaneHash = 0x56534356u; // VSCV
         public const uint LootOracleSourceHash = 0x4C4F5243u; // LORC
         public const uint EmergencyTableHash = 0x454D4C54u; // EMLT
@@ -1754,14 +1754,7 @@ namespace Hecton8.Scavenging
                 ScavengingResolvedYieldDTO yield = resolvedYields[i];
                 if (((uint)yield.Flags & ScavengingLootOracleConstants.ResultFlagInventoryFull) != 0u)
                 {
-                    HUDNotificationSignal hudSignal = default;
-                    hudSignal.MessageHash = ScavengingLootOracleConstants.InventoryFullMessageHash;
-                    hudSignal.ContextHash = yield.OreHash;
-                    hudSignal.SourceId = ScavengingLootOracleConstants.LootOracleSourceHash;
-                    hudSignal.Frame = yield.Frame;
-                    hudSignal.Severity = ScavengingLootOracleConstants.HudSeverityWarning;
-                    hudSignal.Flags = 0;
-                    SignalBus<HUDNotificationSignal>.TryPushTracked(in hudSignal, ref _signalDropCount);
+                    NotificationEvents.TryPushWarning(ScavengingLootOracleConstants.InventoryFullMessage.AsSpan());
                     continue;
                 }
 
@@ -1955,7 +1948,6 @@ namespace Hecton8.Scavenging
             SignalBus<VisualScavengeSignal>.EnsureInitialized();
             SignalBus<ItemAcquiredSignal>.EnsureInitialized();
             SignalBus<ResourceDepletionDeltaSignal>.EnsureInitialized();
-            SignalBus<HUDNotificationSignal>.EnsureInitialized();
             _signalLanesConfigured = true;
             _staticReset = true;
         }

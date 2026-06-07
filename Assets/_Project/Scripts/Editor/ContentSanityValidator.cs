@@ -1218,6 +1218,24 @@ namespace Hecton8.Editor.Validation
                 return;
             }
 
+            if (!TryReadProjectTextFile(ScavengingLootOracleRuntimeScriptPath, out string oracleSource, out string oracleReadFailure))
+            {
+                AddResourceDistributionRouteError(
+                    result,
+                    $"{ScavengingLootOracleRuntimeScriptPath}: failed to read source; Scavenging inventory-full UI bridge cannot be validated. {oracleReadFailure}");
+            }
+            else if (oracleSource.IndexOf("using Hecton8.UI;", StringComparison.Ordinal) < 0 ||
+                     oracleSource.IndexOf("InventoryFullMessage", StringComparison.Ordinal) < 0 ||
+                     oracleSource.IndexOf("NotificationEvents.TryPushWarning(ScavengingLootOracleConstants.InventoryFullMessage.AsSpan())", StringComparison.Ordinal) < 0 ||
+                     oracleSource.IndexOf("HUDNotificationSignal hudSignal", StringComparison.Ordinal) >= 0 ||
+                     oracleSource.IndexOf("InventoryFullMessageHash", StringComparison.Ordinal) >= 0 ||
+                     oracleSource.IndexOf("SignalBus<HUDNotificationSignal>.EnsureInitialized();", StringComparison.Ordinal) >= 0)
+            {
+                AddResourceDistributionRouteError(
+                    result,
+                    $"{ScavengingLootOracleRuntimeScriptPath}: inventory-full yield must route warning UI through NotificationEvents without reinitializing the legacy HUD signal lane.");
+            }
+
             if (sceneTextAvailable &&
                 TryExtractMonoBehaviourBlockByScriptGuid(sceneText, oracleGuid, out _))
             {
