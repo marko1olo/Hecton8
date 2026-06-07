@@ -1902,7 +1902,16 @@ namespace Hecton8.Audio.Synthesis
                 return;
             }
 
-            DispatcherJobFence.TryComplete(ref _synthJobHandle, forceComplete: true);
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _synthJobHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndLateFrameSwapWindow();
+            }
+
             Volatile.Write(ref _synthJobPending, 0);
             ReleaseOutstandingSynthJobBufferLocks();
             PublishReadyBuffer(ResolveElapsedMicroseconds(_synthJobStartTicks));

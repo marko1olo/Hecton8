@@ -1289,7 +1289,16 @@ namespace Hecton8.Audio
                 return;
 
             JobHandle handle = _pendingVocalWarningJobHandle;
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndLateFrameSwapWindow();
+            }
+
             _pendingVocalWarningJobHandle = default;
             _pendingVocalWarningScheduleMicros = 0f;
             ReleasePendingVocalWarningFrameGuard();
