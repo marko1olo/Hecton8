@@ -297,7 +297,7 @@ namespace Hecton8.Core.Hardware
             _sequence++;
             PlatformBatteryWatchdog.SampleAndApply(this);
 
-            if (TryAcquireThermalSeverityWriteView(out NativeArray<byte> thermalSeverity))
+            if (TryAcquireThermalSeverityWriteView(out NativeArray<byte> thermalSeverity, out IDataVault severityWriteVault))
             {
                 try
                 {
@@ -305,7 +305,7 @@ namespace Hecton8.Core.Hardware
                 }
                 finally
                 {
-                    ReleaseThermalSeverityWriteView();
+                    ReleaseThermalSeverityWriteView(severityWriteVault);
                 }
             }
 
@@ -812,25 +812,25 @@ namespace Hecton8.Core.Hardware
 
         private void EnsureNativeState()
         {
-            if (OpenOrAcquireThermalSeverityWriteViewForOwnerRoute(out _))
+            if (OpenOrAcquireThermalSeverityWriteViewForOwnerRoute(out _, out IDataVault severityWriteVault))
             {
                 try
                 {
                 }
                 finally
                 {
-                    ReleaseThermalSeverityWriteView();
+                    ReleaseThermalSeverityWriteView(severityWriteVault);
                 }
             }
 
-            if (OpenOrAcquireThermalBlackBoxWriteViewForOwnerRoute(out _))
+            if (OpenOrAcquireThermalBlackBoxWriteViewForOwnerRoute(out _, out IDataVault blackBoxWriteVault))
             {
                 try
                 {
                 }
                 finally
                 {
-                    ReleaseThermalBlackBoxWriteView();
+                    ReleaseThermalBlackBoxWriteView(blackBoxWriteVault);
                 }
             }
         }
@@ -865,13 +865,25 @@ namespace Hecton8.Core.Hardware
 
         private bool TryAcquireThermalSeverityWriteView(out NativeArray<byte> severity)
         {
+            return TryAcquireThermalSeverityWriteView(out severity, out _);
+        }
+
+        private bool TryAcquireThermalSeverityWriteView(out NativeArray<byte> severity, out IDataVault writeVault)
+        {
             severity = default;
-            IDataVault vault = _dataVault;
+            writeVault = _dataVault;
+            IDataVault vault = writeVault;
             if (vault == null || _thermalSeverityHandle.BufferID == 0u)
+            {
+                writeVault = null;
                 return false;
+            }
 
             if (!vault.TryAcquireWriteLock(in _thermalSeverityHandle, SystemID.HardwareHomeostasis, out severity))
+            {
+                writeVault = null;
                 return false;
+            }
 
             bool handedOff = false;
             try
@@ -888,17 +900,26 @@ namespace Hecton8.Core.Hardware
             finally
             {
                 if (!handedOff)
+                {
                     vault.ReleaseWriteLock(in _thermalSeverityHandle, SystemID.HardwareHomeostasis);
+                    writeVault = null;
+                }
             }
         }
 
         private bool OpenOrAcquireThermalSeverityWriteViewForOwnerRoute(out NativeArray<byte> severity)
         {
+            return OpenOrAcquireThermalSeverityWriteViewForOwnerRoute(out severity, out _);
+        }
+
+        private bool OpenOrAcquireThermalSeverityWriteViewForOwnerRoute(out NativeArray<byte> severity, out IDataVault writeVault)
+        {
             severity = default;
+            writeVault = null;
             if (!EnsureThermalSeverityHandleForOwnerRoute())
                 return false;
 
-            return TryAcquireThermalSeverityWriteView(out severity);
+            return TryAcquireThermalSeverityWriteView(out severity, out writeVault);
         }
 
         private bool EnsureThermalSeverityHandleForOwnerRoute()
@@ -922,12 +943,11 @@ namespace Hecton8.Core.Hardware
             return _thermalSeverityHandle.BufferID != 0u;
         }
 
-        private bool ReleaseThermalSeverityWriteView()
+        private bool ReleaseThermalSeverityWriteView(IDataVault writeVault)
         {
-            IDataVault vault = _dataVault;
-            return vault != null &&
+            return writeVault != null &&
                    _thermalSeverityHandle.BufferID != 0u &&
-                   vault.ReleaseWriteLock(in _thermalSeverityHandle, SystemID.HardwareHomeostasis);
+                   writeVault.ReleaseWriteLock(in _thermalSeverityHandle, SystemID.HardwareHomeostasis);
         }
 
         private bool TryReadThermalSeverity(out NativeArray<byte>.ReadOnly severity)
@@ -956,13 +976,25 @@ namespace Hecton8.Core.Hardware
 
         private bool TryAcquireThermalBlackBoxWriteView(out NativeArray<HardwareThermalTelemetryEntry> blackBox)
         {
+            return TryAcquireThermalBlackBoxWriteView(out blackBox, out _);
+        }
+
+        private bool TryAcquireThermalBlackBoxWriteView(out NativeArray<HardwareThermalTelemetryEntry> blackBox, out IDataVault writeVault)
+        {
             blackBox = default;
-            IDataVault vault = _dataVault;
+            writeVault = _dataVault;
+            IDataVault vault = writeVault;
             if (vault == null || _blackBoxHandle.BufferID == 0u)
+            {
+                writeVault = null;
                 return false;
+            }
 
             if (!vault.TryAcquireWriteLock(in _blackBoxHandle, SystemID.HardwareHomeostasis, out blackBox))
+            {
+                writeVault = null;
                 return false;
+            }
 
             bool handedOff = false;
             try
@@ -979,7 +1011,10 @@ namespace Hecton8.Core.Hardware
             finally
             {
                 if (!handedOff)
+                {
                     vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.HardwareHomeostasis);
+                    writeVault = null;
+                }
             }
         }
 
@@ -997,11 +1032,17 @@ namespace Hecton8.Core.Hardware
 
         private bool OpenOrAcquireThermalBlackBoxWriteViewForOwnerRoute(out NativeArray<HardwareThermalTelemetryEntry> blackBox)
         {
+            return OpenOrAcquireThermalBlackBoxWriteViewForOwnerRoute(out blackBox, out _);
+        }
+
+        private bool OpenOrAcquireThermalBlackBoxWriteViewForOwnerRoute(out NativeArray<HardwareThermalTelemetryEntry> blackBox, out IDataVault writeVault)
+        {
             blackBox = default;
+            writeVault = null;
             if (!EnsureThermalBlackBoxHandleForOwnerRoute())
                 return false;
 
-            return TryAcquireThermalBlackBoxWriteView(out blackBox);
+            return TryAcquireThermalBlackBoxWriteView(out blackBox, out writeVault);
         }
 
         private bool EnsureThermalBlackBoxHandleForOwnerRoute()
@@ -1025,12 +1066,11 @@ namespace Hecton8.Core.Hardware
             return _blackBoxHandle.BufferID != 0u;
         }
 
-        private bool ReleaseThermalBlackBoxWriteView()
+        private bool ReleaseThermalBlackBoxWriteView(IDataVault writeVault)
         {
-            IDataVault vault = _dataVault;
-            return vault != null &&
+            return writeVault != null &&
                    _blackBoxHandle.BufferID != 0u &&
-                   vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.HardwareHomeostasis);
+                   writeVault.ReleaseWriteLock(in _blackBoxHandle, SystemID.HardwareHomeostasis);
         }
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
