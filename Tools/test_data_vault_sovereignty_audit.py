@@ -1,24 +1,23 @@
 import json
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
 
 TOOLS_ROOT = Path(__file__).resolve().parent
-REPO_ROOT = TOOLS_ROOT.parent
-TEST_TEMP_ROOT = REPO_ROOT / ".tmp" / "data_vault_sovereignty_audit_tests"
-TEST_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
-tempfile.tempdir = str(TEST_TEMP_ROOT)
 if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
+
+from test_local_temp import project_local_tempdir_factory  # noqa: E402
+
+temporary_directory = project_local_tempdir_factory("data_vault_sovereignty_audit_tests")
 
 import DataVaultSovereigntyAudit as audit  # noqa: E402
 
 
 class DataVaultSovereigntyAuditTests(unittest.TestCase):
     def test_scan_separates_h8memory_allowed_constructors_from_system_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_audit_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_audit_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             h8memory = source / "Core" / "Memory" / "H8Memory.cs"
@@ -46,7 +45,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["forbiddenFileCount"], 1)
 
     def test_constructor_scan_ignores_comments_strings_and_splits_surface(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_constructor_surface_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_constructor_surface_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             runtime = source / "Gameplay" / "RuntimeNativeOwner.cs"
@@ -83,7 +82,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["forbiddenDirectConstructorsByAllocator"], {"Persistent": 3})
 
     def test_constructor_scan_tracks_allocator_classes(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_allocator_surface_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_allocator_surface_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             baker = source / "World" / "BiomeWeightMapBaker" / "Editor" / "BiomeWeightMapBakePipeline.cs"
@@ -116,7 +115,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["findings"][0]["allocatorKinds"], ["TempJob", "Temp", "Persistent"])
 
     def test_editor_transient_nativearray_constructors_are_reported_not_gate_relevant(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_editor_transient_surface_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_editor_transient_surface_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             baker = source / "World" / "StaticCaveSdfBaker" / "Editor" / "StaticCaveSdfBakePipeline.cs"
@@ -141,7 +140,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["findings"][0]["forbiddenCount"], 0)
 
     def test_multiline_editor_tempjob_constructor_is_not_unknown_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_multiline_allocator_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_multiline_allocator_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             baker = source / "World" / "StaticCaveSdfBaker" / "Editor" / "StaticCaveSdfBakePipeline.cs"
@@ -165,7 +164,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["editorOfflineTransientScratchDirectConstructors"], 1)
 
     def test_file_scoped_unity_editor_guard_sets_editor_surface_outside_editor_folder(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_editor_guard_surface_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_editor_guard_surface_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             window = source / "VFX" / "Debris" / "ShinobuVoxelSculptorWindow.cs"
@@ -191,7 +190,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["editorOfflineTransientScratchDirectConstructors"], 1)
 
     def test_partial_unity_editor_guard_classifies_constructor_lines_separately(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_partial_editor_guard_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_partial_editor_guard_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             runtime = source / "VFX" / "BiolumPulseSyncRuntime.cs"
@@ -235,7 +234,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             )
 
     def test_nested_preprocessor_guard_restores_active_parent_branch(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_nested_editor_guard_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_nested_editor_guard_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             runtime = source / "VFX" / "MixedPreprocessorRuntime.cs"
@@ -266,7 +265,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["editorOfflineTransientScratchDirectConstructors"], 3)
 
     def test_try_get_latest_created_runtime_fallback_is_gate_relevant(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_latest_created_runtime_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_latest_created_runtime_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             runtime = source / "Gameplay" / "HazardRuntime.cs"
@@ -299,7 +298,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["latestCreatedFallbackFindings"][0]["forbiddenLines"], [7])
 
     def test_try_get_latest_created_allows_bootstrap_editor_and_diagnostics_routes(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_latest_created_allowed_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_latest_created_allowed_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             bootstrap = source / "Bootstrap" / "VaultBootstrapProbe.cs"
@@ -344,7 +343,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeForbiddenLatestCreatedFallbacks"], 0)
 
     def test_try_get_latest_created_partial_editor_guard_counts_runtime_only(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_latest_created_partial_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_latest_created_partial_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             runtime = source / "Inventory" / "CargoTransferRuntime.cs"
@@ -378,7 +377,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             )
 
     def test_try_get_latest_created_diagnostic_name_alone_does_not_allow_runtime(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_latest_created_diag_name_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_latest_created_diag_name_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             runtime = source / "Gameplay" / "DiagnosticHazardRuntime.cs"
@@ -404,7 +403,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["runtimeForbiddenLatestCreatedFallbacks"], 1)
 
     def test_editor_sentinel_tracked_constructor_wrapper_is_not_raw_ownership_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_sentinel_wrapper_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_sentinel_wrapper_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             baker = source / "Editor" / "HydraulicErosionForge" / "Baker.cs"
@@ -436,7 +435,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["editorOfflineTransientScratchDirectConstructors"], 1)
 
     def test_scan_tracks_nativearray_field_declaration_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_declaration_audit_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_declaration_audit_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             h8memory = source / "Core" / "Memory" / "H8Memory.cs"
@@ -470,7 +469,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["declarationFileCount"], 1)
 
     def test_classifies_job_input_native_collections_separately_from_owner_debt(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_job_declaration_audit_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_job_declaration_audit_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             gameplay = source / "Gameplay" / "SignalJobs.cs"
@@ -531,7 +530,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(classifications["nativeViewStruct"], 1)
 
     def test_classifies_editor_bake_session_and_preview_cache_fields(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_editor_declaration_audit_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_editor_declaration_audit_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             editor = source / "World" / "OfflineHadalTrenchBaker" / "Editor" / "HadalTrenchBakePipeline.cs"
@@ -568,7 +567,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             self.assertEqual(payload["forbiddenNativeCollectionDeclarations"], 1)
 
     def test_allows_tracked_editor_preview_cache_fields(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_tracked_editor_preview_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_tracked_editor_preview_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             editor = source / "World" / "OfflineHadalTrenchBaker" / "Editor" / "HadalTrenchForgeWindow.cs"
@@ -644,7 +643,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
         self.assertEqual(reused, expected)
 
     def test_combined_scan_matches_individual_nativearray_scans(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="h8_vault_combined_audit_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_combined_audit_") as temp_dir:
             root = Path(temp_dir)
             source = root / "Assets" / "_Project" / "Scripts"
             gameplay = source / "Gameplay" / "StatefulSystem.cs"
@@ -761,7 +760,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             ],
         }
 
-        with tempfile.TemporaryDirectory(prefix="h8_vault_baseline_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_baseline_") as temp_dir:
             path = Path(temp_dir) / "baseline.json"
             baseline = audit.build_baseline(payload)
             audit.write_json(path, baseline)
@@ -814,7 +813,7 @@ class DataVaultSovereigntyAuditTests(unittest.TestCase):
             ],
         }
 
-        with tempfile.TemporaryDirectory(prefix="h8_vault_latest_baseline_") as temp_dir:
+        with temporary_directory(prefix="h8_vault_latest_baseline_") as temp_dir:
             path = Path(temp_dir) / "baseline.json"
             baseline = audit.build_baseline(payload)
             audit.write_json(path, baseline)

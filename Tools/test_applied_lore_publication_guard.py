@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
 import json
 import os
-import tempfile
+import sys
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 from io import StringIO
 
-import Tools.AppliedLorePublicationGuard as guard
+TOOLS_ROOT = Path(__file__).resolve().parent
+if str(TOOLS_ROOT) not in sys.path:
+    sys.path.insert(0, str(TOOLS_ROOT))
+
+from test_local_temp import project_local_tempdir_factory  # noqa: E402
+
+import AppliedLorePublicationGuard as guard  # noqa: E402
+
+temporary_directory = project_local_tempdir_factory("applied_lore_publication_guard_tests")
 
 class TestAppliedLorePublicationGuard(unittest.TestCase):
     def setUp(self):
-        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_dir = temporary_directory()
         self.root = Path(self.temp_dir.name)
         self.wiki_dir = self.root / "Docs" / "Lore" / "AppliedContent" / "in_game_wiki"
         self.site_dir = self.root / "Docs" / "Lore" / "AppliedContent" / "external_site"
