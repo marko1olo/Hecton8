@@ -1854,8 +1854,7 @@ namespace Hecton8.Editor
                 return;
             }
 
-            File.Copy(tempPath, absolutePath, true);
-            File.Delete(tempPath);
+            PromoteGeneratedArtifact(tempPath, absolutePath);
         }
 
         private static void WriteLinkXml(TextWriter writer)
@@ -2135,8 +2134,15 @@ namespace Hecton8.Editor
                 return;
             }
 
-            File.Copy(tempPath, absolutePath, true);
-            File.Delete(tempPath);
+            PromoteGeneratedArtifact(tempPath, absolutePath);
+        }
+
+        private static void PromoteGeneratedArtifact(string tempPath, string absolutePath)
+        {
+            if (File.Exists(absolutePath))
+                File.Replace(tempPath, absolutePath, null, true);
+            else
+                File.Move(tempPath, absolutePath);
         }
 
         private static void WriteVaultOffsets(TextWriter writer)
