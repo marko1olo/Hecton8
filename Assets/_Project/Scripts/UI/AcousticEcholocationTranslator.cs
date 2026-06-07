@@ -542,15 +542,20 @@ namespace Hecton8.UI
                     continue;
                 }
 
-                nearestDistanceSqr = candidateDistanceSqr;
+                AbsoluteUniversePosition candidateAup;
                 if (contact.HasAbsolutePosition)
                 {
-                    nearestAup = contact.AbsolutePosition;
+                    candidateAup = contact.AbsolutePosition;
+                    if (!AbsoluteUniversePosition.IsFinite(in candidateAup))
+                        continue;
                 }
-                else if (!TryResolveAupFromRuntimeOrigin(contact.Position, out nearestAup))
+                else if (!TryResolveAupFromRuntimeOrigin(contact.Position, out candidateAup))
                 {
                     continue;
                 }
+
+                nearestDistanceSqr = candidateDistanceSqr;
+                nearestAup = candidateAup;
             }
 
             if (nearestDistanceSqr == float.MaxValue)
@@ -593,7 +598,8 @@ namespace Hecton8.UI
                     continue;
 
                 double candidateDistanceMeters = ApproximateAupDistanceMeters(in anchorAup, in originAup);
-                if (candidateDistanceMeters > AnchorClassificationRadius ||
+                if (!IsFiniteNonNegativeDistanceMeters(candidateDistanceMeters) ||
+                    candidateDistanceMeters > AnchorClassificationRadius ||
                     candidateDistanceMeters >= nearestDistanceMeters)
                 {
                     continue;
@@ -622,7 +628,8 @@ namespace Hecton8.UI
             {
                 AbsoluteUniversePosition anchorAup = anchorAups[i];
                 double candidateDistanceMeters = ApproximateAupDistanceMeters(in anchorAup, in originAup);
-                if (candidateDistanceMeters > AnchorClassificationRadius ||
+                if (!IsFiniteNonNegativeDistanceMeters(candidateDistanceMeters) ||
+                    candidateDistanceMeters > AnchorClassificationRadius ||
                     candidateDistanceMeters >= nearestDistanceMeters)
                 {
                     continue;
@@ -646,14 +653,14 @@ namespace Hecton8.UI
                 (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
                 originAup = movementState.PredictedAup;
-                return true;
+                return AbsoluteUniversePosition.IsFinite(in originAup);
             }
 
             HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
             if (movement != null)
             {
                 originAup = movement.CurrentAup;
-                return true;
+                return AbsoluteUniversePosition.IsFinite(in originAup);
             }
 
             originAup = default;
@@ -663,13 +670,24 @@ namespace Hecton8.UI
         private static int RoundApproximateAupDistanceMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
             double distanceMeters = ApproximateAupDistanceMeters(in a, in b);
+            if (!IsFiniteNonNegativeDistanceMeters(distanceMeters))
+                return int.MaxValue;
             return distanceMeters >= int.MaxValue ? int.MaxValue : (int)math.round(distanceMeters);
         }
 
         private static double ApproximateAupDistanceMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
             double approximateDistance = AbsoluteUniversePosition.ApproximateDistanceMetersClamped(in a, in b);
+            if (!IsFiniteNonNegativeDistanceMeters(approximateDistance))
+                return double.PositiveInfinity;
             return approximateDistance >= int.MaxValue ? int.MaxValue : approximateDistance;
+        }
+
+        private static bool IsFiniteNonNegativeDistanceMeters(double distanceMeters)
+        {
+            return !double.IsNaN(distanceMeters) &&
+                   !double.IsInfinity(distanceMeters) &&
+                   distanceMeters >= 0d;
         }
 
         private void ShowClassification(ContactClassification classification, int distanceMeters)

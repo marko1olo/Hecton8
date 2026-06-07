@@ -1180,6 +1180,52 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void PdaMarkerRegistryNearestHudMarker_RejectsNonFiniteDistanceSq()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/PDA/PDAMarkerRegistry.cs"));
+            string nearest = ExtractMethodBody(source, "public bool TryGetNearestVisibleHudMarker(in AbsoluteUniversePosition originAup");
+            string approximate = ExtractMethodBody(source, "private static float ApproximateDistanceMetersFromSq(");
+
+            StringAssert.Contains("private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)", source);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceSq(distanceSqr)", nearest);
+            StringAssert.Contains("distanceSqr >= bestDistanceSqr", nearest);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceSq(distanceSq)", approximate);
+            StringAssert.Contains("!double.IsNaN(distanceSq)", source);
+            StringAssert.Contains("!double.IsInfinity(distanceSq)", source);
+            StringAssert.Contains("distanceSq >= 0d", source);
+        }
+
+        [Test]
+        public void AcousticEcholocationAupDistanceBridge_RejectsNonFiniteDistanceMeters()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/AcousticEcholocationTranslator.cs"));
+            string leviathanScan = ExtractMethodBody(source, "private bool TryResolveNearestLeviathan(");
+            string vectorAnchorScan = ExtractMethodBody(source, "private bool TryResolveNearestAbyssalAnchor(");
+            string aupAnchorScan = ExtractMethodBody(source, "private static bool TryResolveNearestAbyssalAnchorDistance(");
+            string origin = ExtractMethodBody(source, "private bool TryResolveClassificationOriginAup(");
+            string round = ExtractMethodBody(source, "private static int RoundApproximateAupDistanceMeters(");
+            string approximate = ExtractMethodBody(source, "private static double ApproximateAupDistanceMeters(");
+
+            StringAssert.Contains("private static bool IsFiniteNonNegativeDistanceMeters(double distanceMeters)", source);
+            StringAssert.Contains("AbsoluteUniversePosition candidateAup;", leviathanScan);
+            StringAssert.Contains("!AbsoluteUniversePosition.IsFinite(in candidateAup)", leviathanScan);
+            int resolveCandidateIndex = leviathanScan.IndexOf("AbsoluteUniversePosition candidateAup;", StringComparison.Ordinal);
+            int assignNearestIndex = leviathanScan.IndexOf("nearestDistanceSqr = candidateDistanceSqr;", StringComparison.Ordinal);
+            Assert.Greater(assignNearestIndex, resolveCandidateIndex);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceMeters(candidateDistanceMeters)", vectorAnchorScan);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceMeters(candidateDistanceMeters)", aupAnchorScan);
+            Assert.AreEqual(2, CountToken(origin, "return AbsoluteUniversePosition.IsFinite(in originAup);"));
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceMeters(distanceMeters)", round);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceMeters(approximateDistance)", approximate);
+            StringAssert.Contains("return double.PositiveInfinity;", approximate);
+            StringAssert.Contains("return int.MaxValue;", round);
+            StringAssert.Contains("!double.IsNaN(distanceMeters)", source);
+            StringAssert.Contains("!double.IsInfinity(distanceMeters)", source);
+            StringAssert.Contains("distanceMeters >= 0d", source);
+            Assert.AreEqual(2, CountToken(source, "!IsFiniteNonNegativeDistanceMeters(candidateDistanceMeters)"));
+        }
+
+        [Test]
         public void InteractionPromptLocalizationPresentation_QueuesLateFrameRefresh()
         {
             string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/InteractionUI.cs"));

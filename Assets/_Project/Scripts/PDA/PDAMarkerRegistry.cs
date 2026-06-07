@@ -463,7 +463,8 @@ namespace Hecton8.PDA
                     continue;
 
                 double distanceSqr = AbsoluteUniversePosition.DistanceSq(in candidate.positionAup, in originAup);
-                if (distanceSqr >= bestDistanceSqr)
+                if (!IsFiniteNonNegativeDistanceSq(distanceSqr) ||
+                    distanceSqr >= bestDistanceSqr)
                     continue;
 
                 bestDistanceSqr = distanceSqr;
@@ -855,6 +856,8 @@ namespace Hecton8.PDA
 
         private static float ApproximateDistanceMetersFromSq(double distanceSq)
         {
+            if (!IsFiniteNonNegativeDistanceSq(distanceSq))
+                return float.PositiveInfinity;
             if (distanceSq <= 0d)
                 return 0f;
 
@@ -862,6 +865,13 @@ namespace Hecton8.PDA
             uint estimateBits = (math.asuint(clampedSq) >> 1) + 0x1FC00000u;
             float estimate = math.asfloat(estimateBits);
             return 0.5f * (estimate + (clampedSq / math.max(estimate, 0.0001f)));
+        }
+
+        private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)
+        {
+            return !double.IsNaN(distanceSq) &&
+                   !double.IsInfinity(distanceSq) &&
+                   distanceSq >= 0d;
         }
     }
 }
