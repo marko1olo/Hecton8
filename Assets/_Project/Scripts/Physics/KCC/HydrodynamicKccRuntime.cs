@@ -4506,14 +4506,23 @@ namespace Hecton8.Physics.KCC
 
         private void AbortScheduledBatchForTeardown()
         {
-            DispatcherJobFence.TryComplete(ref _postSimulationHandle, true);
-            DispatcherJobFence.TryComplete(ref _sdfCollisionHandle, true);
-            DispatcherJobFence.TryComplete(ref _collisionHandle, true);
-            DispatcherJobFence.TryComplete(ref _commandHandle, true);
-            DispatcherJobFence.TryComplete(ref _integrationHandle, true);
-            DispatcherJobFence.TryComplete(ref _environmentMockHandle, true);
-            DispatcherJobFence.TryComplete(ref _inputHandle, true);
-            DispatcherJobFence.TryComplete(ref _externalInputHandle, true);
+            DispatcherJobFence.BeginPostFixedSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _postSimulationHandle, true);
+                DispatcherJobFence.TryComplete(ref _sdfCollisionHandle, true);
+                DispatcherJobFence.TryComplete(ref _collisionHandle, true);
+                DispatcherJobFence.TryComplete(ref _commandHandle, true);
+                DispatcherJobFence.TryComplete(ref _integrationHandle, true);
+                DispatcherJobFence.TryComplete(ref _environmentMockHandle, true);
+                DispatcherJobFence.TryComplete(ref _inputHandle, true);
+                DispatcherJobFence.TryComplete(ref _externalInputHandle, true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostFixedSwapWindow();
+            }
+
             ClearScheduledBatchState();
         }
 
