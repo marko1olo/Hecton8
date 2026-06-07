@@ -1822,7 +1822,8 @@ namespace Hecton8.Gameplay
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 using (BinaryReader reader = new BinaryReader(stream))
                 {
-                    if (stream.Length < MmfHeaderBytes)
+                    long expectedByteCount = ResolveExpectedMmfByteCount();
+                    if (stream.Length < expectedByteCount)
                         return;
 
                     uint magic = reader.ReadUInt32();
@@ -1832,8 +1833,11 @@ namespace Hecton8.Gameplay
 
                     int fragmentCount = reader.ReadInt32();
                     int partialCount = reader.ReadInt32();
-                    int safeFragmentCount = math.clamp(fragmentCount, 0, MaxDiscoveryCount);
-                    int safePartialCount = math.clamp(partialCount, 0, MaxPartialScanCount);
+                    if ((uint)fragmentCount > MaxDiscoveryCount || (uint)partialCount > MaxPartialScanCount)
+                        return;
+
+                    int safeFragmentCount = fragmentCount;
+                    int safePartialCount = partialCount;
 
                     ClearFragmentPositions();
                     for (int i = 0; i < MaxDiscoveryCount; i++)
@@ -1951,6 +1955,13 @@ namespace Hecton8.Gameplay
 #else
             ClearMmfDirty();
 #endif
+        }
+
+        private static long ResolveExpectedMmfByteCount()
+        {
+            return MmfHeaderBytes +
+                   ((long)MaxDiscoveryCount * MmfFragmentRecordBytes) +
+                   ((long)MaxPartialScanCount * MmfPartialRecordBytes);
         }
 
         private void ClearMmfDirty()

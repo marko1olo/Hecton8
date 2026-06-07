@@ -123,13 +123,19 @@ namespace Hecton8.Core.Data
         public bool OpenDefault()
         {
             string path = Path.Combine(Application.dataPath, "..", "Data", "Balance", "Baked", H8StaticDataFormat.BabelDictionaryFileName);
-            return Open(Path.GetFullPath(path));
+            if (TryResolveFullPath(path, out string resolvedPath))
+                return Open(resolvedPath);
+
+            return FailOpenPathResolveCold();
         }
 
         public bool OpenDefault(uint expectedPayloadCrc32)
         {
             string path = Path.Combine(Application.dataPath, "..", "Data", "Balance", "Baked", H8StaticDataFormat.BabelDictionaryFileName);
-            return Open(Path.GetFullPath(path), expectedPayloadCrc32);
+            if (TryResolveFullPath(path, out string resolvedPath))
+                return Open(resolvedPath, expectedPayloadCrc32);
+
+            return FailOpenPathResolveCold();
         }
 
         public bool Open(string path)
@@ -138,68 +144,132 @@ namespace Hecton8.Core.Data
             if (!EnsureBlackBox())
                 return false;
 
-            if (!BitConverter.IsLittleEndian || string.IsNullOrEmpty(path) || !File.Exists(path))
+            try
             {
-                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
-                return false;
-            }
-
-            FileInfo info = new FileInfo(path);
-            if (info.Length < UnsafeUtility.SizeOf<H8BabelDictionaryHeader>() || info.Length > int.MaxValue)
-            {
-                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
-                return false;
-            }
-
-            _sourceFileBytes = info.Length;
-            long paddedLength = H8StaticDataFormat.AlignUp16(info.Length);
-            _paddingBytes = (uint)(paddedLength - info.Length);
-
-#if HECTON8_BABEL_MMF_AVAILABLE
-            if (_paddingBytes == 0u)
-            {
-                _fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.RandomAccess);
-                _mappedFile = MemoryMappedFile.CreateFromFile(
-                    _fileStream,
-                    null,
-                    info.Length,
-                    MemoryMappedFileAccess.Read,
-                    HandleInheritability.None,
-                    true);
-                _accessor = _mappedFile.CreateViewAccessor(0L, info.Length, MemoryMappedFileAccess.Read);
-                _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref _basePointer);
-                _mappedBytes = info.Length;
-            }
-            else
-#endif
-            {
-                if (!TryAcquirePaddedDictionaryBuffer(paddedLength))
+                if (!BitConverter.IsLittleEndian || string.IsNullOrEmpty(path) || !File.Exists(path))
                 {
                     RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
                     return false;
                 }
 
-                if (!LoadFileIntoPaddedBufferCold(path, _ownedFallbackPointer, info.Length))
+                FileInfo info = new FileInfo(path);
+                if (info.Length < UnsafeUtility.SizeOf<H8BabelDictionaryHeader>() || info.Length > int.MaxValue)
                 {
-                    Dispose();
+                    RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
                     return false;
                 }
 
-                if (_paddingBytes > 0u)
-                    UnsafeUtility.MemClear(_ownedFallbackPointer + info.Length, _paddingBytes);
+                _sourceFileBytes = info.Length;
+                long paddedLength = H8StaticDataFormat.AlignUp16(info.Length);
+                _paddingBytes = (uint)(paddedLength - info.Length);
 
-                _basePointer = _ownedFallbackPointer;
-                _mappedBytes = paddedLength;
+#if HECTON8_BABEL_MMF_AVAILABLE
+                if (_paddingBytes == 0u)
+                {
+                    _fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.RandomAccess);
+                    _mappedFile = MemoryMappedFile.CreateFromFile(
+                        _fileStream,
+                        null,
+                        info.Length,
+                        MemoryMappedFileAccess.Read,
+                        HandleInheritability.None,
+                        true);
+                    _accessor = _mappedFile.CreateViewAccessor(0L, info.Length, MemoryMappedFileAccess.Read);
+                    _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref _basePointer);
+                    _mappedBytes = info.Length;
+                }
+                else
+#endif
+                {
+                    if (!TryAcquirePaddedDictionaryBuffer(paddedLength))
+                    {
+                        RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
+                        return false;
+                    }
+
+                    if (!LoadFileIntoPaddedBufferCold(path, _ownedFallbackPointer, info.Length))
+                    {
+                        CloseFile();
+                        return false;
+                    }
+
+                    if (_paddingBytes > 0u)
+                        UnsafeUtility.MemClear(_ownedFallbackPointer + info.Length, _paddingBytes);
+
+                    _basePointer = _ownedFallbackPointer;
+                    _mappedBytes = paddedLength;
+                }
+
+                if (!EnsureErrorSlice() || !ValidateHeaderAndChecksum() || !BuildIndexTable())
+                {
+                    CloseFile();
+                    return false;
+                }
+
+                RecordTelemetry(StateOpenHash, 0u, 0u, 0L);
+                return true;
             }
-
-            if (!EnsureErrorSlice() || !ValidateHeaderAndChecksum() || !BuildIndexTable())
+            catch (IOException)
             {
-                Dispose();
+                return FailOpenCold();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return FailOpenCold();
+            }
+            catch (NotSupportedException)
+            {
+                return FailOpenCold();
+            }
+            catch (ArgumentException)
+            {
+                return FailOpenCold();
+            }
+        }
+
+        private bool FailOpenCold()
+        {
+            RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
+            CloseFile();
+            return false;
+        }
+
+        private bool FailOpenPathResolveCold()
+        {
+            CloseFile();
+            if (EnsureBlackBox())
+                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
+
+            return false;
+        }
+
+        private static bool TryResolveFullPath(string path, out string resolvedPath)
+        {
+            resolvedPath = null;
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            try
+            {
+                resolvedPath = Path.GetFullPath(path);
+                return !string.IsNullOrEmpty(resolvedPath);
+            }
+            catch (IOException)
+            {
                 return false;
             }
-
-            RecordTelemetry(StateOpenHash, 0u, 0u, 0L);
-            return true;
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
         }
 
         public bool Open(string path, uint expectedPayloadCrc32)
