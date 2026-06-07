@@ -31,6 +31,7 @@ namespace Hecton8.Construction
         private static VaultGenerationHandle<int> s_QueueHandle;
         private static VaultGenerationHandle<int> s_ResultNodeIndexHandle;
         private static bool s_WriteGuardHeld;
+        private static IDataVault s_WriteGuardVault;
 
         internal static bool TryAcquireWriteBuffers(
             IDataVault vault,
@@ -106,6 +107,7 @@ namespace Hecton8.Construction
                     return false;
 
                 s_WriteGuardHeld = true;
+                s_WriteGuardVault = vault;
                 guardHeld = false;
                 return acquired;
             }
@@ -139,15 +141,18 @@ namespace Hecton8.Construction
             s_QueueHandle = default;
             s_ResultNodeIndexHandle = default;
             s_WriteGuardHeld = false;
+            s_WriteGuardVault = null;
         }
 
         internal static void ReleaseWriteLocks(IDataVault vault)
         {
-            if (vault == null || !s_WriteGuardHeld)
+            if (!s_WriteGuardHeld)
                 return;
 
-            vault.ReleaseMutationGuard(RouteScratchMutationGuardMask);
+            IDataVault guardVault = s_WriteGuardVault ?? vault;
             s_WriteGuardHeld = false;
+            s_WriteGuardVault = null;
+            guardVault?.ReleaseMutationGuard(RouteScratchMutationGuardMask);
         }
 
         private static bool TryEnsureHandle<T>(
