@@ -5898,13 +5898,13 @@ namespace Hecton8.World
             NativeMemorySentinel.UnregisterNativeArray(array);
             if (dependency.IsCompleted)
             {
-                DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
+                ForceCompleteVegetationDisposeDependencyInPostSimulationWindow(ref dependency);
                 array.Dispose();
             }
             else
             {
                 JobHandle disposeHandle = array.Dispose(dependency);
-                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+                ForceCompleteVegetationDisposeDependencyInPostSimulationWindow(ref disposeHandle);
             }
 
             array = default;
@@ -5921,13 +5921,13 @@ namespace Hecton8.World
 
             if (dependency.IsCompleted)
             {
-                DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
+                ForceCompleteVegetationDisposeDependencyInPostSimulationWindow(ref dependency);
                 list.Dispose();
             }
             else
             {
                 JobHandle disposeHandle = list.Dispose(dependency);
-                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+                ForceCompleteVegetationDisposeDependencyInPostSimulationWindow(ref disposeHandle);
             }
 
             list = default;
@@ -5965,16 +5965,29 @@ namespace Hecton8.World
 
             if (dependency.IsCompleted)
             {
-                DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
+                ForceCompleteVegetationDisposeDependencyInPostSimulationWindow(ref dependency);
                 map.Dispose();
             }
             else
             {
                 JobHandle disposeHandle = map.Dispose(dependency);
-                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+                ForceCompleteVegetationDisposeDependencyInPostSimulationWindow(ref disposeHandle);
             }
 
             map = default;
+        }
+
+        private static void ForceCompleteVegetationDisposeDependencyInPostSimulationWindow(ref JobHandle handle)
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private static void RegisterTrackedNativeParallelMultiHashMap<TKey, TValue>(
