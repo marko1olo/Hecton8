@@ -848,8 +848,16 @@ namespace Hecton8.Animation.FaunaProcedural
             if (!_solverScheduled)
                 return true;
 
-            if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
-                return false;
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+            try
+            {
+                if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
+                    return false;
+            }
+            finally
+            {
+                DispatcherJobFence.EndLateFrameSwapWindow();
+            }
 
             return FinishPendingSolverCompletion();
         }
