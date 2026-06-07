@@ -119,16 +119,35 @@ namespace Hecton8.UI.Editor
         {
             public static void Save(string filepath, AudioClip clip)
             {
-                using (FileStream fileStream = CreateEmpty(filepath))
+                string directory = Path.GetDirectoryName(filepath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                string tempPath = filepath + ".tmp";
+                try
                 {
-                    ConvertAndWrite(fileStream, clip);
-                    WriteHeader(fileStream, clip);
+                    if (File.Exists(tempPath))
+                        File.Delete(tempPath);
+
+                    using (FileStream fileStream = CreateEmpty(tempPath))
+                    {
+                        ConvertAndWrite(fileStream, clip);
+                        WriteHeader(fileStream, clip);
+                        fileStream.Flush(true);
+                    }
+
+                    PromoteTempFileAtomic(tempPath, filepath);
+                }
+                catch
+                {
+                    TryDeleteFileNoThrow(tempPath);
+                    throw;
                 }
             }
 
             private static FileStream CreateEmpty(string filepath)
             {
-                FileStream fileStream = new FileStream(filepath, FileMode.Create);
+                FileStream fileStream = new FileStream(filepath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
                 byte emptyByte = 0;
 
                 for (int i = 0; i < 44; i++) // WAV header is 44 bytes
@@ -137,6 +156,29 @@ namespace Hecton8.UI.Editor
                 }
 
                 return fileStream;
+            }
+
+            private static void PromoteTempFileAtomic(string tempPath, string filepath)
+            {
+                if (File.Exists(filepath))
+                {
+                    File.Replace(tempPath, filepath, null, true);
+                    return;
+                }
+
+                File.Move(tempPath, filepath);
+            }
+
+            private static void TryDeleteFileNoThrow(string path)
+            {
+                try
+                {
+                    if (File.Exists(path))
+                        File.Delete(path);
+                }
+                catch
+                {
+                }
             }
 
             private static void ConvertAndWrite(FileStream fileStream, AudioClip clip)

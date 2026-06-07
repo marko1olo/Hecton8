@@ -198,6 +198,25 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("File.WriteAllBytes(tempPath, bytes);", writer);
         }
 
+        [Test]
+        public void UIAudioPlaceholdersWriteWavsThroughAtomicTempPromotion()
+        {
+            string source = ReadProjectSource("_Project/Scripts/UI/Editor/UIAudioPlaceholderGenerator.cs");
+            string save = ExtractMethodBody(source, "public static void Save(");
+            string createEmpty = ExtractMethodBody(source, "private static FileStream CreateEmpty(");
+            string promote = ExtractMethodBody(source, "private static void PromoteTempFileAtomic(");
+
+            StringAssert.Contains("string tempPath = filepath + \".tmp\";", save);
+            StringAssert.Contains("CreateEmpty(tempPath)", save);
+            StringAssert.Contains("fileStream.Flush(true);", save);
+            StringAssert.Contains("PromoteTempFileAtomic(tempPath, filepath);", save);
+            StringAssert.Contains("TryDeleteFileNoThrow(tempPath);", save);
+            StringAssert.Contains("new FileStream(filepath, FileMode.CreateNew", createEmpty);
+            StringAssert.Contains("File.Replace(tempPath, filepath, null, true);", promote);
+            StringAssert.Contains("File.Move(tempPath, filepath);", promote);
+            StringAssert.DoesNotContain("new FileStream(filepath, FileMode.Create)", createEmpty);
+        }
+
         private static string ReadProjectSource(string assetRelativePath)
         {
             return File.ReadAllText(Path.Combine(Application.dataPath, assetRelativePath)).Replace("\r\n", "\n");
