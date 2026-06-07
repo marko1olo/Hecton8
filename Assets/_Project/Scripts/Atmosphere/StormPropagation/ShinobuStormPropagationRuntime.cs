@@ -941,13 +941,31 @@ namespace Hecton8.Atmosphere
         {
             if (_attenuationScheduled)
             {
-                DispatcherJobFence.TryComplete(ref _attenuationJobHandle, forceComplete: true);
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _attenuationJobHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
+
                 _attenuationScheduled = false;
             }
 
             if (_mockScheduled)
             {
-                DispatcherJobFence.TryComplete(ref _mockHurricaneJobHandle, forceComplete: true);
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _mockHurricaneJobHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
+
                 _mockScheduled = false;
             }
         }

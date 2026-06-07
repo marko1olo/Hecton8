@@ -1246,7 +1246,16 @@ namespace Hecton8.Atmosphere
             if (!_waveParameterJobScheduled)
                 return;
 
-            DispatcherJobFence.TryComplete(ref _waveParameterJobHandle, forceComplete: true);
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _waveParameterJobHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+
             _waveParameterJobScheduled = false;
             ReleaseWaveParameterJobLease();
             _waveParameterPayloadDirty = true;

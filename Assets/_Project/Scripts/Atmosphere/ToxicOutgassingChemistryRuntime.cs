@@ -1196,8 +1196,16 @@ namespace Hecton8.Atmosphere
                 return;
 
             long completeStart = Stopwatch.GetTimestamp();
-            if (!DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete: true))
-                return;
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                if (!DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete: true))
+                    return;
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
 
             FinishScheduledWork(completeStart);
         }
