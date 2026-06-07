@@ -35,6 +35,7 @@ namespace Hecton8.UI
         private const int DistanceTextCapacity = 32;
         private const uint LabelHashSeed = 2166136261u;
         private const uint LabelHashPrime = 16777619u;
+        private const int MaxVisibleBeaconIcons = 16;
         // --------------------------------------------------------------------------
         //  INSPECTOR
         // --------------------------------------------------------------------------
@@ -88,7 +89,9 @@ namespace Hecton8.UI
         private int _distancePatternLength = 6;
 
         // Pre-allocated array for beacon icons
-        private BeaconIconDisplay[] _iconDisplays = new BeaconIconDisplay[16]; // COLD ALLOC: BeaconIconDisplay[16] — max visible beacon icon slots — owner: BeaconHUDElement
+        private BeaconIconDisplay[] _iconDisplays = new BeaconIconDisplay[MaxVisibleBeaconIcons]; // COLD ALLOC: BeaconIconDisplay[16] - max visible beacon icon slots - owner: BeaconHUDElement
+        private readonly DeployableBeacon[] _selectedBeacons = new DeployableBeacon[MaxVisibleBeaconIcons]; // COLD ALLOC: DeployableBeacon[16] - nearest visible HUD selection - owner: BeaconHUDElement
+        private readonly double[] _selectedBeaconDistanceSq = new double[MaxVisibleBeaconIcons]; // COLD ALLOC: double[16] - nearest visible HUD selection distances - owner: BeaconHUDElement
         private int _activeIconCount;
 
         // --------------------------------------------------------------------------
@@ -183,24 +186,31 @@ namespace Hecton8.UI
             beaconCount = math.min(beaconCount, math.min(BeaconRegistry.Count, beacons.Length));
             _idlePollTimer = 0f;
 
+            double maxDisplayDistanceSq = (double)maxDisplayDistance * maxDisplayDistance;
+            double fadeStartDistanceSq = (double)fadeStartDistance * fadeStartDistance;
+            double fadeDistanceSqSpan = math.max(0.001d, maxDisplayDistanceSq - fadeStartDistanceSq);
+            int displayCount = SelectNearestDisplayBeacons(beacons, beaconCount, in observerAup, maxDisplayDistanceSq);
+            if (displayCount <= 0)
+            {
+                HideAllIcons();
+                return;
+            }
+
             // Hide excess icons
-            for (int i = beaconCount; i < _activeIconCount; i++)
+            for (int i = displayCount; i < _activeIconCount; i++)
             {
                 if (_iconDisplays[i] != null && _iconDisplays[i].gameObject != null)
                     ApplyDisplayVisible(_iconDisplays[i], false, 0f);
             }
 
-            _activeIconCount = math.min(beaconCount, _iconDisplays.Length);
-            double maxDisplayDistanceSq = (double)maxDisplayDistance * maxDisplayDistance;
-            double fadeStartDistanceSq = (double)fadeStartDistance * fadeStartDistance;
-            double fadeDistanceSqSpan = math.max(0.001d, maxDisplayDistanceSq - fadeStartDistanceSq);
+            _activeIconCount = displayCount;
             float screenWidth = _screenWidthSnapshot;
             float screenHeight = _screenHeightSnapshot;
 
             // Update each beacon icon
             for (int i = 0; i < _activeIconCount; i++)
             {
-                DeployableBeacon beacon = beacons[i];
+                DeployableBeacon beacon = _selectedBeacons[i];
                 if (beacon == null || !beacon.isActiveAndEnabled)
                 {
                     if (_iconDisplays[i] != null && _iconDisplays[i].gameObject != null)
@@ -218,6 +228,60 @@ namespace Hecton8.UI
                     screenWidth,
                     screenHeight);
             }
+        }
+
+        private int SelectNearestDisplayBeacons(
+            DeployableBeacon[] beacons,
+            int beaconCount,
+            in AbsoluteUniversePosition observerAup,
+            double maxDisplayDistanceSq)
+        {
+            int slotLimit = math.min(_iconDisplays.Length, math.min(_selectedBeacons.Length, _selectedBeaconDistanceSq.Length));
+            if (slotLimit <= 0)
+                return 0;
+
+            for (int i = 0; i < slotLimit; i++)
+            {
+                _selectedBeacons[i] = null;
+                _selectedBeaconDistanceSq[i] = double.MaxValue;
+            }
+
+            int selectedCount = 0;
+            for (int i = 0; i < beaconCount; i++)
+            {
+                DeployableBeacon beacon = beacons[i];
+                if (beacon == null || !beacon.isActiveAndEnabled)
+                    continue;
+
+                AbsoluteUniversePosition beaconAup = beacon.PositionAup;
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in observerAup, in beaconAup);
+                if (distanceSq > maxDisplayDistanceSq)
+                    continue;
+
+                int insertIndex = selectedCount;
+                if (selectedCount >= slotLimit)
+                {
+                    insertIndex = slotLimit - 1;
+                    if (distanceSq >= _selectedBeaconDistanceSq[insertIndex])
+                        continue;
+                }
+                else
+                {
+                    selectedCount++;
+                }
+
+                while (insertIndex > 0 && distanceSq < _selectedBeaconDistanceSq[insertIndex - 1])
+                {
+                    _selectedBeaconDistanceSq[insertIndex] = _selectedBeaconDistanceSq[insertIndex - 1];
+                    _selectedBeacons[insertIndex] = _selectedBeacons[insertIndex - 1];
+                    insertIndex--;
+                }
+
+                _selectedBeaconDistanceSq[insertIndex] = distanceSq;
+                _selectedBeacons[insertIndex] = beacon;
+            }
+
+            return selectedCount;
         }
 
         // --------------------------------------------------------------------------
