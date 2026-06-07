@@ -919,6 +919,87 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        public static bool OverwriteAllAtomic(string absolutePath, void* buffer, int byteCount, string tempSuffix, out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(absolutePath) || buffer == null || byteCount <= 0)
+            {
+                error = "Native atomic overwrite request is invalid.";
+                return false;
+            }
+
+            if (IsSuppressedDiagnosticDumpPath(absolutePath))
+                return true;
+
+            string suffix = string.IsNullOrEmpty(tempSuffix) ? ".atomic.tmp" : tempSuffix;
+            string tempPath = absolutePath + suffix;
+            try
+            {
+                DeleteAtomicOverwriteTempIfExists(tempPath);
+                InvalidateCachedReadWindows(tempPath);
+                if (!TryWriteAllNative(tempPath, buffer, byteCount, null, 0, byteCount, createAlways: true, paceWrites: false, out error))
+                {
+                    DeleteAtomicOverwriteTempIfExists(tempPath);
+                    return false;
+                }
+
+                if (!TryFlushPathNative(tempPath))
+                {
+                    DeleteAtomicOverwriteTempIfExists(tempPath);
+                    error = "Native atomic overwrite temp flush failed.";
+                    return false;
+                }
+
+                InvalidateCachedReadWindows(absolutePath);
+                if (File.Exists(absolutePath))
+                    File.Replace(tempPath, absolutePath, null, true);
+                else
+                    File.Move(tempPath, absolutePath);
+
+                if (!QueueThrottledFlush(absolutePath, byteCount, out error))
+                    return false;
+
+                return true;
+            }
+            catch (IOException ex)
+            {
+                DeleteAtomicOverwriteTempIfExists(tempPath);
+                error = $"Native atomic overwrite failed for '{absolutePath}': {ex.Message}";
+                return false;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                DeleteAtomicOverwriteTempIfExists(tempPath);
+                error = $"Native atomic overwrite unauthorized for '{absolutePath}': {ex.Message}";
+                return false;
+            }
+            catch (ArgumentException ex)
+            {
+                DeleteAtomicOverwriteTempIfExists(tempPath);
+                error = $"Native atomic overwrite path invalid for '{absolutePath}': {ex.Message}";
+                return false;
+            }
+            catch (NotSupportedException ex)
+            {
+                DeleteAtomicOverwriteTempIfExists(tempPath);
+                error = $"Native atomic overwrite path unsupported for '{absolutePath}': {ex.Message}";
+                return false;
+            }
+        }
+
+        private static void DeleteAtomicOverwriteTempIfExists(string path)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+            catch (ArgumentException) { }
+            catch (NotSupportedException) { }
+        }
+
         private static bool IsSuppressedDiagnosticDumpPath(string absolutePath)
         {
             if (string.IsNullOrEmpty(absolutePath))
@@ -6745,7 +6826,7 @@ namespace Hecton8.SaveSystem
             try
             {
                 byte* compactPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compactBytes);
-                return AsyncWriteManager.OverwriteAll(absolutePath, compactPtr, compactLength, out error);
+                return AsyncWriteManager.OverwriteAllAtomic(absolutePath, compactPtr, compactLength, ".compact.tmp", out error);
             }
             finally
             {
@@ -6969,7 +7050,7 @@ namespace Hecton8.SaveSystem
                 updatedHeader.HashHeader64 = 0UL;
                 updatedHeader.HashHeader64 = ComputeHeaderHash(ref updatedHeader);
                 WriteVersionedSaveFileHeader(mappedFilePtr, ref updatedHeader);
-                if (!AsyncWriteManager.OverwriteAll(absoluteSavePath, mappedFilePtr, (int)newLength, out error))
+                if (!AsyncWriteManager.OverwriteAllAtomic(absoluteSavePath, mappedFilePtr, (int)newLength, ".sector-commit.tmp", out error))
                     return false;
             }
             catch (Exception ex)

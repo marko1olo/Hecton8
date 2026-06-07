@@ -119,6 +119,21 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void IndexedSectorCommitUsesAtomicOverwrite()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/SaveBinaryStorage.cs");
+            string source = File.ReadAllText(path);
+
+            StringAssert.Contains("public static bool OverwriteAllAtomic(", source);
+            StringAssert.Contains("TryWriteAllNative(tempPath, buffer, byteCount, null, 0, byteCount, createAlways: true, paceWrites: false, out error)", source);
+            StringAssert.Contains("TryFlushPathNative(tempPath)", source);
+            StringAssert.Contains("DeleteAtomicOverwriteTempIfExists(tempPath);", source);
+            StringAssert.Contains("File.Replace(tempPath, absolutePath, null, true);", source);
+            StringAssert.Contains("AsyncWriteManager.OverwriteAllAtomic(absolutePath, compactPtr, compactLength, \".compact.tmp\", out error)", source);
+            StringAssert.Contains("AsyncWriteManager.OverwriteAllAtomic(absoluteSavePath, mappedFilePtr, (int)newLength, \".sector-commit.tmp\", out error)", source);
+        }
+
+        [Test]
         public void HeadlessWalFuzzer_CorruptedPrimaryPromotesBackupAndValidatesHash()
         {
             WalFuzzerProfileDTO profile = WalIntegrityFuzzerCore.BuildDefaultProfile();
