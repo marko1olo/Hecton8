@@ -169,9 +169,15 @@ namespace Hecton8.Dev
                 SourceIndex(saveEvents, "FixedString128Bytes Message") == int.MaxValue;
 
             bool saveRecoveryHudBridgePass =
-                ContainsAll(saveManager, "RecordSuccessfulLoad(slotName", "if (LastLoadUsedBackup)", "SaveEvents.TryRaiseEmergencyBackupRestoreRequested(SaveEvents.ComputeSlotHash(slotName));", "PublishSaveRecoveredNotification(slotName);") &&
+                ContainsAll(saveManager, "RecordSuccessfulLoad(slotName", "if (LastLoadUsedBackup)", "SaveEvents.TryRaiseEmergencyBackupRestoreRequested(SaveEvents.ComputeSlotHash(slotName));", "if (LastLoadSelfRepaired && !LastLoadUsedBackup)", "PublishSaveSelfRepairedNotification();") &&
                 SourceIndex(saveManager, "RecordSuccessfulLoad(slotName") < SourceIndex(saveManager, "SaveEvents.TryRaiseEmergencyBackupRestoreRequested(SaveEvents.ComputeSlotHash(slotName));") &&
-                SourceIndex(saveManager, "SaveEvents.TryRaiseEmergencyBackupRestoreRequested(SaveEvents.ComputeSlotHash(slotName));") < SourceIndex(saveManager, "PublishSaveRecoveredNotification(slotName);") &&
+                SourceIndex(saveManager, "SaveEvents.TryRaiseEmergencyBackupRestoreRequested(SaveEvents.ComputeSlotHash(slotName));") < SourceIndex(saveManager, "PublishSaveSelfRepairedNotification();") &&
+                ContainsAll(saveManager, "WorldPagerSavingMessage", "NotificationEvents.TryPushInfo(WorldPagerSavingMessage.AsSpan())", "SaveSelfRepairedMessage", "NotificationEvents.TryPushWarning(SaveSelfRepairedMessage.AsSpan())") &&
+                SourceIndex(saveManager, "PublishSaveSynchronizedNotification") == int.MaxValue &&
+                SourceIndex(saveManager, "WorldPagerSavingMessageHash") == int.MaxValue &&
+                SourceIndex(saveManager, "SaveRecoveredMessageHash") == int.MaxValue &&
+                SourceIndex(saveManager, "SaveSynchronizedMessageHash") == int.MaxValue &&
+                SourceIndex(saveManager, "HUDNotificationSignal notification") == int.MaxValue &&
                 ContainsAll(hudSaveNotificationLink, "LoadFailedKeyHash", "BackupRestoreKeyHash", "LocalizationKeys.ERROR_LOAD_FAILED_TITLE", "LocalizationKeys.WARNING_BACKUP_USED_TITLE") &&
                 ContainsAll(hudSaveNotificationLink, "TryResolveNotificationSystem(out HUDNotification targetNotification)", "TryGetComponent(out resolved)", "HUDNotification.TryGetActive(out resolved)", "resolved.isActiveAndEnabled") &&
                 ContainsAll(hudSaveNotificationLink, "case SaveEventType.LoadFailed:", "targetNotification.ShowCritical(in _messageBuffer);") &&

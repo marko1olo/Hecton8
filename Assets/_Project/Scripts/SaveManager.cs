@@ -58,11 +58,6 @@ namespace Hecton8.SaveSystem
         private const uint WfcBytesSavedTelemetryHash = 0x57464253u; // WFBS
         private const uint WfcCorruptPayloadTelemetryHash = 0x57464358u; // WFCX
         private const uint WfcWriteFailureTelemetryHash = 0x57465746u; // WFWF
-        private const uint WorldPagerSavingMessageHash = 0x53415647u; // SAVG
-        private const uint WorldPagerSavingContextHash = 0x48384249u; // H8BI
-        private const uint SaveRecoveredMessageHash = 0x53565243u; // SVRC
-        private const uint SaveRecoveredContextHash = 0x42414B52u; // BAKR
-        private const uint SaveSynchronizedMessageHash = 0x53565359u; // SVSY
         private const uint SaveDurationTelemetryHash = 0x5356444Du; // SVDM
         private const uint SaveCompressedSizeTelemetryHash = 0x53564342u; // SVCB
         private const uint ScreenshotSizeKbTelemetryHash = 0x53534B42u; // SSKB
@@ -76,6 +71,8 @@ namespace Hecton8.SaveSystem
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
         private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: LOCALIZED DATA CORRUPTION. TERRAIN RE-INITIALIZED.";
         private const string GeologicalAnomalyDetectedMessage = "UNSTABLE REALITY";
+        private const string WorldPagerSavingMessage = "WORLD PAGER SAVING";
+        private const string SaveSelfRepairedMessage = "SAVE DATA SELF-REPAIRED";
         private const string WfcOutpostBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SAVE_MANAGER_WFC_PERSISTENCE_SYNC.bin";
         private const string AsyncPersistenceBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SAVE_MANAGER_ASYNC_PERSISTENCE.bin";
         private const int MaxRegisteredSaveables = 256;
@@ -3102,16 +3099,7 @@ namespace Hecton8.SaveSystem
                     return;
 
                 _worldPagerSavingNotificationArmed = true;
-                HUDNotificationSignal notification = new HUDNotificationSignal
-                {
-                    MessageHash = WorldPagerSavingMessageHash,
-                    ContextHash = WorldPagerSavingContextHash,
-                    SourceId = WorldPagerSourceHash,
-                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                    Severity = 0,
-                    Flags = 0
-                };
-                SignalBus<HUDNotificationSignal>.TryPushTracked(in notification, ref _signalPushDropCount);
+                NotificationEvents.TryPushInfo(WorldPagerSavingMessage.AsSpan());
                 return;
             }
 
@@ -3599,32 +3587,9 @@ namespace Hecton8.SaveSystem
             cursor += sizeof(ulong);
         }
 
-        private static void PublishSaveRecoveredNotification(string slotName)
+        private static void PublishSaveSelfRepairedNotification()
         {
-            HUDNotificationSignal notification = new HUDNotificationSignal
-            {
-                MessageHash = SaveRecoveredMessageHash,
-                ContextHash = ComputeSlotHash(slotName) ^ SaveRecoveredContextHash,
-                SourceId = AsyncPersistenceSourceHash,
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Severity = 1,
-                Flags = 0
-            };
-            SignalBus<HUDNotificationSignal>.TryPushTracked(in notification, ref _signalPushDropCount);
-        }
-
-        private static void PublishSaveSynchronizedNotification(string slotName)
-        {
-            HUDNotificationSignal notification = new HUDNotificationSignal
-            {
-                MessageHash = SaveSynchronizedMessageHash,
-                ContextHash = ComputeSlotHash(slotName),
-                SourceId = AsyncPersistenceSourceHash,
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Severity = 0,
-                Flags = 0
-            };
-            SignalBus<HUDNotificationSignal>.TryPushTracked(in notification, ref _signalPushDropCount);
+            NotificationEvents.TryPushWarning(SaveSelfRepairedMessage.AsSpan());
         }
 
         private void StageIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
@@ -4293,7 +4258,6 @@ namespace Hecton8.SaveSystem
                 LastOperationSucceeded = true;
                 LogInfo($"[SaveManager] Saved '{slotName}' (XXH3-64: {metadata.Checksum}) in {totalTimer.ElapsedMilliseconds}ms");
                 SaveEvents.TryRaiseSaveCompleted(SaveEvents.ComputeSlotHash(slotName));
-                PublishSaveSynchronizedNotification(slotName);
             }
             catch (Exception ex)
             {
@@ -5176,8 +5140,8 @@ namespace Hecton8.SaveSystem
                 RecordSuccessfulLoad(slotName, data.version, postLoadIntegrity, LastLoadUsedBackup, LastLoadBackupGeneration, LastLoadUsedLegacyCompression, LastLoadSelfRepaired);
                 if (LastLoadUsedBackup)
                     SaveEvents.TryRaiseEmergencyBackupRestoreRequested(SaveEvents.ComputeSlotHash(slotName));
-                if (LastLoadUsedBackup || LastLoadSelfRepaired)
-                    PublishSaveRecoveredNotification(slotName);
+                if (LastLoadSelfRepaired && !LastLoadUsedBackup)
+                    PublishSaveSelfRepairedNotification();
 
                 LastOperationSucceeded = true;
                 string loadCompletionSuffix = criticalBackupPromotedForLoad
