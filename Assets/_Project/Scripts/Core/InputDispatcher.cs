@@ -633,7 +633,6 @@ namespace Hecton8.Core
 
                 CaptureState((float)StandardInputTickIntervalSeconds);
                 PublishDeterministicInputState(_standardInputFrame++);
-                RunMockCollisionHapticJob(_standardInputFrame - 1u);
                 substepCount++;
             }
 
@@ -4244,16 +4243,6 @@ namespace Hecton8.Core
             {
                 ReleaseInputMutationGuard();
             }
-        }
-
-        private void RunMockCollisionHapticJob(uint frame)
-        {
-            // SHINOBU_353 owns mock haptic storms through GenerateMockHapticStormJob.
-        }
-
-        private void HandleMockCollisionSignal(in MockCollisionSignal signal)
-        {
-            // Legacy direct command injection disabled; keep the signature for old test harnesses.
         }
 
         private int EvaluateHapticCommandDtos(

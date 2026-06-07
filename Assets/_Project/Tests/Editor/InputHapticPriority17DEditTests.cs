@@ -107,6 +107,18 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void HapticMockStorms_DoNotRetainLegacyDirectInjectionStub()
+        {
+            string dispatcher = ReadProjectFile("Assets/_Project/Scripts/Core/InputDispatcher.cs");
+            string synthesis = ReadProjectFile("Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs");
+
+            StringAssert.DoesNotContain("RunMockCollisionHapticJob", dispatcher);
+            StringAssert.DoesNotContain("HandleMockCollisionSignal", dispatcher);
+            StringAssert.DoesNotContain("Legacy direct command injection disabled", dispatcher);
+            StringAssert.Contains("GenerateMockHapticStormJob", synthesis);
+        }
+
+        [Test]
         public void RootInputProfile_ProvidesStickAndHapticTuningForDeviceSweep()
         {
             string profile = ReadProjectFile("input_profiles.csv");
