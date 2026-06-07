@@ -271,25 +271,20 @@ namespace Hecton8.Core
             {
                 if (Path.IsPathRooted(requestedPath))
                 {
-                    fullPath = Path.GetFullPath(requestedPath);
-                    return true;
+                    return TryResolveRootedWritablePath(requestedPath, out fullPath);
                 }
 
                 if (!TryNormalizeRelativePath(requestedPath, out string relativePath))
                     return false;
 
 #if UNITY_EDITOR
-                string dataPath = UnityEngine.Application.dataPath;
-                string projectRoot = !string.IsNullOrEmpty(dataPath)
-                    ? Directory.GetParent(dataPath)?.FullName
-                    : null;
-                if (!string.IsNullOrEmpty(projectRoot))
+                if (TryResolveProjectRoot(out string projectRoot))
                 {
                     fullPath = Path.GetFullPath(Path.Combine(projectRoot, relativePath));
-                    return true;
+                    return IsPathUnderRoot(fullPath, projectRoot);
                 }
 #endif
-                fullPath = Path.GetFullPath(Path.Combine(HectonPersistentPathPolicy.RootPath, relativePath));
+                fullPath = HectonPersistentPathPolicy.CombineFile(relativePath);
                 return true;
             }
             catch
@@ -314,6 +309,52 @@ namespace Hecton8.Core
 
             relativePath = normalized;
             return true;
+        }
+
+        private static bool TryResolveRootedWritablePath(string requestedPath, out string fullPath)
+        {
+            fullPath = Path.GetFullPath(requestedPath);
+#if UNITY_EDITOR
+            if (TryResolveProjectRoot(out string projectRoot) && IsPathUnderRoot(fullPath, projectRoot))
+                return true;
+#endif
+            return IsPathUnderRoot(fullPath, HectonPersistentPathPolicy.RootPath);
+        }
+
+#if UNITY_EDITOR
+        private static bool TryResolveProjectRoot(out string projectRoot)
+        {
+            projectRoot = null;
+            string dataPath = UnityEngine.Application.dataPath;
+            if (string.IsNullOrEmpty(dataPath))
+                return false;
+
+            DirectoryInfo parent = Directory.GetParent(dataPath);
+            if (parent == null)
+                return false;
+
+            projectRoot = Path.GetFullPath(parent.FullName);
+            return true;
+        }
+#endif
+
+        private static bool IsPathUnderRoot(string fullPath, string rootPath)
+        {
+            if (string.IsNullOrEmpty(fullPath) || string.IsNullOrEmpty(rootPath))
+                return false;
+
+            string normalizedRoot = Path.GetFullPath(rootPath);
+            if (!normalizedRoot.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) &&
+                !normalizedRoot.EndsWith(Path.AltDirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+            {
+                normalizedRoot += Path.DirectorySeparatorChar;
+            }
+
+            string normalizedPath = Path.GetFullPath(fullPath);
+            StringComparison comparison = Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            return normalizedPath.StartsWith(normalizedRoot, comparison);
         }
 
         private static bool ContainsTraversalSegment(string path)

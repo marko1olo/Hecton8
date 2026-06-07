@@ -295,7 +295,8 @@ namespace Hecton8.Core.Content
             if (!IsPortableDictionaryRelativePath(relativePath))
                 return false;
 
-            if (TryResolveFileUnder(Application.persistentDataPath, relativePath, out path))
+            path = global::Hecton8.Core.HectonPersistentPathPolicy.CombineFile(relativePath);
+            if (File.Exists(path))
                 return true;
 
             if (TryResolveFileUnder(Application.streamingAssetsPath, relativePath, out path))
