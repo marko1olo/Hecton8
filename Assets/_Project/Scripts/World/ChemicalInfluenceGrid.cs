@@ -172,6 +172,7 @@ namespace Hecton8.World
         private const string RuntimeRootName = "[ChemicalInfluenceGrid]";
         private const string VaultOwnerName = nameof(ChemicalInfluenceGrid);
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_CHEMISTRY_SURGEON.bin";
+        private const string TelemetryDumpPayloadLabel = "chemicalInfluenceTelemetryDumpPayload";
         private const string ProfileCsvRelativePath = "_Project/Data/chemical_emitter_profiles.csv";
         private const int DefaultBreadcrumbCapacity = 64;
         private const int MaxDefoliantDeadZones = 64;
@@ -2156,7 +2157,11 @@ namespace Hecton8.World
                 int rowBytes = UnsafeUtility.SizeOf<ChemicalTelemetryEntry>();
                 int headerBytes = 20;
                 int totalBytes = headerBytes + ring.Length * rowBytes;
-                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    VaultOwnerName,
+                    TelemetryDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 Span<byte> bytes = new Span<byte>(payload.GetUnsafePtr(), totalBytes);
                 WriteUInt64LittleEndian(bytes, 0, ChemicalDumpMagic);
                 WriteInt32LittleEndian(bytes, 8, 1);
@@ -2188,8 +2193,10 @@ namespace Hecton8.World
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    VaultOwnerName,
+                    TelemetryDumpPayloadLabel);
             }
         }
 

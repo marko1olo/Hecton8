@@ -24,6 +24,22 @@ namespace Hecton8.Tests.Editor
                 reset.IndexOf("_scheduledBuffersGuardVault = null;", StringComparison.Ordinal));
         }
 
+        [Test]
+        public void DumpTelemetryRing_TracksTransientFaultDumpPayload()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs");
+            string dump = ExtractMethodBlock(source, "private void DumpTelemetryRing()");
+
+            Assert.That(source, Does.Contain("private const string TelemetryDumpPayloadLabel = \"chemicalInfluenceTelemetryDumpPayload\";"));
+            Assert.That(dump, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dump, Does.Contain("VaultOwnerName"));
+            Assert.That(dump, Does.Contain("TelemetryDumpPayloadLabel"));
+            Assert.That(dump, Does.Contain("NativeArrayOptions.UninitializedMemory"));
+            Assert.That(dump, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dump, Does.Not.Contain("new NativeArray<byte>(totalBytes"));
+            Assert.That(dump, Does.Not.Contain("payload.Dispose()"));
+        }
+
         private static string ReadProjectFile(string relativePath)
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
