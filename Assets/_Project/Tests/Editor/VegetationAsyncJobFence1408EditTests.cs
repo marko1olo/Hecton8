@@ -299,6 +299,7 @@ namespace Hecton8.Tests.Editor
                 source,
                 "public bool TryScheduleAbyssalPath(Vector3 startPosition, Vector3 endPosition, int traversalSpeciesId");
             string completeBody = ExtractMethodBody(source, "CompleteAbyssalPathJob");
+            string helperBody = ExtractMethodBody(source, "TryCompleteVegetationNavJob");
             string invalidateBody = ExtractMethodBody(source, "InvalidateAbyssalPathState");
 
             AssertOrdered(scheduleBody, "JobHandle smoothingHandle = smoothingJob.Schedule(pathSourceHandle)", "_abyssalPathJob = new AbyssalPathPendingJob");
@@ -314,8 +315,12 @@ namespace Hecton8.Tests.Editor
             Assert.That(scheduleBody, Does.Not.Contain("CommitAbyssalPathResult"));
             Assert.That(source, Does.Not.Contain("ForceCompleteAbyssalPathDependency"));
 
-            AssertOrdered(completeBody, "DispatcherJobSwap.TryComplete(ref handle, forceComplete)", "CommitAbyssalPathResult");
+            AssertOrdered(completeBody, "TryCompleteVegetationNavJob(ref handle, forceComplete)", "CommitAbyssalPathResult");
             AssertOrdered(completeBody, "CommitAbyssalPathResult", "ReleaseAbyssalPathPendingJob(ref pending)");
+            Assert.That(helperBody, Does.Contain("DispatcherJobSwap.TryComplete(ref handle, forceComplete: false)"));
+            AssertCompleteInsidePostSimulationWindow(
+                helperBody,
+                "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true)");
             Assert.That(completeBody, Does.Contain("_abyssalPathScheduled = false"));
             Assert.That(completeBody, Does.Contain("!pending.Cancelled"));
             Assert.That(invalidateBody, Does.Contain("pending.Cancelled = true"));
@@ -381,7 +386,7 @@ namespace Hecton8.Tests.Editor
             Assert.That(readBody, Does.Not.Contain("TryComplete"));
             Assert.That(rebuildBody, Does.Not.Contain("CompleteHLODCullJob"));
             Assert.That(rebuildBody, Does.Not.Contain("TryComplete"));
-            Assert.That(completeBody, Does.Contain("DispatcherJobSwap.TryComplete"));
+            Assert.That(completeBody, Does.Contain("TryCompleteVegetationNavJob(ref _hlodCullHandle, forceComplete)"));
         }
 
         private static void AssertCompleteInsidePostSimulationWindow(string method, string completeCall)

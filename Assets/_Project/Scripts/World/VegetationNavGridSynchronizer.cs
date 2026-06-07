@@ -1349,11 +1349,27 @@ namespace Hecton8.World
             if (!_hlodCullScheduled)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _hlodCullHandle, forceComplete))
+            if (!TryCompleteVegetationNavJob(ref _hlodCullHandle, forceComplete))
                 return;
 
             _hlodCullScheduled = false;
             _hlodCullHandle = default;
+        }
+
+        private static bool TryCompleteVegetationNavJob(ref JobHandle handle, bool forceComplete)
+        {
+            if (!forceComplete)
+                return DispatcherJobSwap.TryComplete(ref handle, forceComplete: false);
+
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
         }
 
         private bool TryMirrorHLODRegistrySnapshotToVault()
@@ -2015,7 +2031,7 @@ namespace Hecton8.World
                 return;
 
             JobHandle handle = _abyssalPathHandle;
-            if (!DispatcherJobSwap.TryComplete(ref handle, forceComplete))
+            if (!TryCompleteVegetationNavJob(ref handle, forceComplete))
             {
                 _abyssalPathHandle = handle;
                 _abyssalPathJob.Handle = handle;
