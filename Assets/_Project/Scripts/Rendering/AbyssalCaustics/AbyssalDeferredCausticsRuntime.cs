@@ -16,7 +16,8 @@ namespace Hecton8.Rendering
     public sealed unsafe class AbyssalDeferredCausticsRuntime : MonoBehaviour, ICausticsService, ILateFrameTickable, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystemId = SystemID.GraphicsScalability;
-        private const string DumpPath = "Docs/AgentLogs/Dump_1719.bin";
+        private const string DumpPath = "Docs/AgentLogs/Dump_13KRA.bin";
+        private const string BlackBoxDumpPayloadLabel = "abyssalCausticsBlackBoxDumpPayload";
         private const float CausticsMinimumWavelength = 0.25f;
 
         private static AbyssalDeferredCausticsRuntime s_runtimeInstance;
@@ -1944,7 +1945,11 @@ namespace Hecton8.Rendering
             const int HeaderBytes = 20;
             const int RowBytes = 64;
             int totalBytes = HeaderBytes + entryCount * RowBytes;
-            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                totalBytes,
+                nameof(AbyssalDeferredCausticsRuntime),
+                BlackBoxDumpPayloadLabel,
+                NativeArrayOptions.UninitializedMemory);
             try
             {
                 WriteUInt32LittleEndian(payload, 0, 0x32334353u);
@@ -1985,8 +1990,10 @@ namespace Hecton8.Rendering
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(AbyssalDeferredCausticsRuntime),
+                    BlackBoxDumpPayloadLabel);
             }
         }
 

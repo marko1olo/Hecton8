@@ -139,9 +139,19 @@ namespace Hecton8.Tests.Editor
                 "_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs");
             string source = File.ReadAllText(path);
             string acquireBlock = ExtractMethodBlock(source, "private bool AcquireOrRefreshOwnedVaultBuffer<T>(");
+            string dumpBlock = ExtractMethodBlock(source, "private void DumpBlackBox()");
 
             Assert.That(acquireBlock, Does.Contain("if (vault.IsAllocationLocked)"));
             Assert.That(source, Does.Contain("Docs/AgentLogs/Dump_13KRA.bin"));
+            Assert.That(source, Does.Contain("private const string BlackBoxDumpPayloadLabel = \"abyssalCausticsBlackBoxDumpPayload\";"));
+            Assert.That(dumpBlock, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBlock, Does.Contain("nameof(AbyssalDeferredCausticsRuntime)"));
+            Assert.That(dumpBlock, Does.Contain("BlackBoxDumpPayloadLabel"));
+            Assert.That(dumpBlock, Does.Contain("NativeArrayOptions.UninitializedMemory"));
+            Assert.That(dumpBlock, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBlock, Does.Not.Contain("new NativeArray<byte>(totalBytes"));
+            Assert.That(dumpBlock, Does.Not.Contain("payload.Dispose()"));
+            Assert.That(source, Does.Not.Contain("Dump_1719.bin"));
             Assert.That(source, Does.Not.Contain("Dump_SHINOBU_232.bin"));
         }
 
