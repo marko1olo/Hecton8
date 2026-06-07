@@ -3786,7 +3786,9 @@ namespace Hecton8.Caves
 
                 cursor += chunkHeaderBytes;
 
-                if (chunkHeader.VoxelSize <= 0f || chunkHeader.DirtyCellCount < 0)
+                if (!math.isfinite(chunkHeader.VoxelSize) ||
+                    chunkHeader.VoxelSize <= 0f ||
+                    chunkHeader.DirtyCellCount < 0)
                 {
                     if (snapshotHasDeltaRle)
                         ReportVoxelDeltaChunkCorruption(SaveCorruptionMalformedRleAction, chunkHeader.DirtyCellCount);
@@ -4189,7 +4191,9 @@ namespace Hecton8.Caves
 
                 cursor += chunkHeaderBytes;
 
-                if (chunkHeader.VoxelSize <= 0f || chunkHeader.DirtyCellCount < 0)
+                if (!math.isfinite(chunkHeader.VoxelSize) ||
+                    chunkHeader.VoxelSize <= 0f ||
+                    chunkHeader.DirtyCellCount < 0)
                 {
                     error = "Voxel delta chunk header contains invalid values.";
                     return false;
