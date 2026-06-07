@@ -437,9 +437,46 @@ namespace Hecton8.Editor.ModdingSDK
             }
             catch
             {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void WriteTextAtomic(string destinationPath, string text)
+        {
+            string tempPath = destinationPath + ".tmp";
+            try
+            {
                 if (File.Exists(tempPath))
                     File.Delete(tempPath);
+
+                File.WriteAllText(tempPath, text);
+                if (File.Exists(destinationPath))
+                    File.Replace(tempPath, destinationPath, null, true);
+                else
+                    File.Move(tempPath, destinationPath);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
                 throw;
+            }
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (Exception exception) when (
+                exception is IOException ||
+                exception is UnauthorizedAccessException ||
+                exception is ArgumentException ||
+                exception is NotSupportedException ||
+                exception is System.Security.SecurityException)
+            {
             }
         }
 
@@ -486,7 +523,7 @@ namespace Hecton8.Editor.ModdingSDK
         {
             string json = JsonUtility.ToJson(manifest, true);
             string manifestPath = Path.Combine(outputDirectory, "mod.json");
-            File.WriteAllText(manifestPath, json);
+            WriteTextAtomic(manifestPath, json);
         }
 
         private bool TryValidateConfiguration(bool includeExpensiveFileContentValidation, out string validationError)
