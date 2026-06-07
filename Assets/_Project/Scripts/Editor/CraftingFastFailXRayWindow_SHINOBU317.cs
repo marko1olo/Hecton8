@@ -17,6 +17,8 @@ namespace Hecton8.Editor
 {
     public sealed class CraftingFastFailXRayWindowSHINOBU317 : EditorWindow
     {
+        private static int s_x001CraftingFastFailXRayWindowSignalPushDropCount;
+
         private ObjectField _recipeField;
         private Label _layoutLabel;
         private Label _vaultLabel;
@@ -137,7 +139,7 @@ namespace Hecton8.Editor
                 Load01 = 0f
             };
 
-            bool accepted = SignalBus<InventoryChangedSignal>.TryPush(in signal);
+            bool accepted = SignalBus<InventoryChangedSignal>.TryPushTracked(in signal, ref s_x001CraftingFastFailXRayWindowSignalPushDropCount);
             _scannerLabel.text = accepted ? "Injected InventoryChangedSignal." : "InventoryChangedSignal queue rejected injection.";
         }
 

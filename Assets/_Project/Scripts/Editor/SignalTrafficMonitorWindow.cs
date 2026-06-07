@@ -19,6 +19,7 @@ namespace Hecton8.Editor
         private const string NativeMemoryOwner = nameof(SignalTrafficMonitorWindow);
         private const string TelemetryLabel = "telemetry";
         private const string FramesLabel = "frames";
+        private static int s_x001SignalTrafficMonitorWindowSignalPushDropCount;
 
         private NativeArray<SignalLaneTelemetry> _telemetry;
         private NativeArray<SignalTelemetryFrame> _frames;
@@ -328,7 +329,7 @@ namespace Hecton8.Editor
                     signal.Damage = magnitude;
                     signal.EntityId = entityId;
                     signal.Flags = 1;
-                    SignalBus<SignalWardenMockDamageSignal>.TryPush(in signal);
+                    SignalBus<SignalWardenMockDamageSignal>.TryPushTracked(in signal, ref s_x001SignalTrafficMonitorWindowSignalPushDropCount);
                     break;
                 }
                 case InjectKind.MockFootstep:
@@ -341,7 +342,7 @@ namespace Hecton8.Editor
                     signal.Frame = unchecked((uint)Time.frameCount);
                     signal.SurfaceHash = unchecked((uint)Animator.StringToHash(_surfaceField.value ?? string.Empty));
                     signal.Flags = 1;
-                    SignalBus<MockPlayerFootstepSignal>.TryPush(in signal);
+                    SignalBus<MockPlayerFootstepSignal>.TryPushTracked(in signal, ref s_x001SignalTrafficMonitorWindowSignalPushDropCount);
                     break;
                 }
                 case InjectKind.CombatDamage:
@@ -353,7 +354,7 @@ namespace Hecton8.Editor
                     signal.TargetHash = entityId;
                     signal.Frame = unchecked((uint)Time.frameCount);
                     signal.Flags = CombatDamageSignal.DirectRuntimeFlag;
-                    SignalBus<CombatDamageSignal>.TryPush(in signal);
+                    SignalBus<CombatDamageSignal>.TryPushTracked(in signal, ref s_x001SignalTrafficMonitorWindowSignalPushDropCount);
                     break;
                 }
                 case InjectKind.AcousticBurst:

@@ -16,6 +16,7 @@ namespace Hecton8.World.SeedShipAnomaly.Editor
         private static readonly ulong FieldAndTuningMutationGuardMask =
             SeedShipAnomalyMutationGuardBit(BufferID.ShinobuSeedShipAnomalyField) |
             SeedShipAnomalyMutationGuardBit(BufferID.ShinobuSeedShipAnomalyTuning);
+        private static int s_x001SeedShipAnomalyTunerWindowSignalPushDropCount;
 
         [MenuItem("Hecton8/Seed Ship Anomaly Tuner")]
         public static void Open()
@@ -68,14 +69,14 @@ namespace Hecton8.World.SeedShipAnomaly.Editor
             EditorGUILayout.Space();
             if (GUILayout.Button("Inject Core Hack"))
             {
-                SignalBus<CoreHackedSignal>.TryPush(new CoreHackedSignal
+                SignalBus<CoreHackedSignal>.TryPushTracked(new CoreHackedSignal
                 {
                     Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),
                     SourceHash = SeedShipAnomalyConstants.SourceHash,
                     CodeHash = SeedShipAnomalyConstants.CoreHackAcceptedHash,
                     Validity01 = 1f,
                     Flags = 1
-                });
+                }, ref s_x001SeedShipAnomalyTunerWindowSignalPushDropCount);
             }
 
             Repaint();
