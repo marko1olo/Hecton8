@@ -4492,13 +4492,10 @@ namespace Hecton8.World
 
         private void DisposeRuntimeState()
         {
-            JobHandle disposeDependency = _solveScheduled ? _scheduledSolveHandle : default;
-            if (_genomeMutationScheduled)
-                disposeDependency = JobHandle.CombineDependencies(disposeDependency, _scheduledGenomeMutationHandle);
-            if (_macroSwarmTravelScheduled)
-                disposeDependency = JobHandle.CombineDependencies(disposeDependency, _macroSwarmTravelHandle);
-            if (_apexTerritoryOverlapScheduled)
-                disposeDependency = JobHandle.CombineDependencies(disposeDependency, _scheduledApexTerritoryOverlapHandle);
+            CompleteScheduledSimulation(forceComplete: true);
+            CompleteScheduledMacroSwarmTravel(forceComplete: true);
+            CompleteScheduledApexTerritoryOverlap(forceComplete: true);
+
             ReleaseBuffer(ref _floraPredatorAupBufferA);
             ReleaseBuffer(ref _floraPredatorAupBufferB);
             _floraPredatorAupUploadSnapshot = null;
@@ -5297,12 +5294,28 @@ namespace Hecton8.World
             CompleteScheduledSolve(forceComplete);
         }
 
+        private static bool TryCompleteScheduledJobInPostSimulationWindow(ref JobHandle handle, bool forceComplete)
+        {
+            if (!forceComplete)
+                return DispatcherJobSwap.TryComplete(ref handle, forceComplete: false);
+
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
+        }
+
         private void CompleteScheduledSolve(bool forceComplete)
         {
             if (!_solveScheduled)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _scheduledSolveHandle, forceComplete))
+            if (!TryCompleteScheduledJobInPostSimulationWindow(ref _scheduledSolveHandle, forceComplete))
                 return;
 
             bool applyPendingImpacts = false;
@@ -5784,7 +5797,7 @@ namespace Hecton8.World
             if (!_genomeMutationScheduled)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _scheduledGenomeMutationHandle, forceComplete))
+            if (!TryCompleteScheduledJobInPostSimulationWindow(ref _scheduledGenomeMutationHandle, forceComplete))
                 return;
 
             try
@@ -5898,7 +5911,7 @@ namespace Hecton8.World
             if (!_macroSwarmTravelScheduled)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _macroSwarmTravelHandle, forceComplete))
+            if (!TryCompleteScheduledJobInPostSimulationWindow(ref _macroSwarmTravelHandle, forceComplete))
                 return;
 
             try
@@ -6634,7 +6647,7 @@ namespace Hecton8.World
             if (!_apexTerritoryOverlapScheduled)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _scheduledApexTerritoryOverlapHandle, forceComplete))
+            if (!TryCompleteScheduledJobInPostSimulationWindow(ref _scheduledApexTerritoryOverlapHandle, forceComplete))
                 return;
 
             try
@@ -7893,7 +7906,7 @@ namespace Hecton8.World
         {
             if (_macroSwarmTravelScheduled)
             {
-                DispatcherJobFence.TryComplete(ref _macroSwarmTravelHandle, forceComplete: true);
+                TryCompleteScheduledJobInPostSimulationWindow(ref _macroSwarmTravelHandle, forceComplete: true);
                 _macroSwarmTravelScheduled = false;
                 UnlockMacroSwarmTravelJobBuffers();
             }
