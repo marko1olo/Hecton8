@@ -257,6 +257,7 @@ namespace Hecton8.Visor
         private const uint DumpMagic = 0x4445434Cu; // DECL
         private const string DumpFilePrefix = "Dump_DynamicDecalVaultRuntime_";
         private const string DumpFileExtension = ".bin";
+        private const string DumpPayloadLabel = "dynamicDecalVaultDumpPayload";
         private const SystemID OwnerSystem = SystemID.Vfx;
 
         private static readonly ProfilerMarker _visualSyncMarker = new ProfilerMarker("H8.VisorTrauma.VisualSync");
@@ -2828,7 +2829,11 @@ namespace Hecton8.Visor
                 const int headerBytes = 16;
                 const int rowBytes = 64;
                 int byteCount = headerBytes + count * rowBytes;
-                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(DynamicDecalVaultRuntime),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
                 try
                 {
                     byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
@@ -2852,8 +2857,10 @@ namespace Hecton8.Visor
                 }
                 finally
                 {
-                    if (payload.IsCreated)
-                        payload.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(DynamicDecalVaultRuntime),
+                        DumpPayloadLabel);
                 }
             }
             catch (IOException)

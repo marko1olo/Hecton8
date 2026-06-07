@@ -219,7 +219,8 @@ namespace Hecton8.Visor
         private const uint TelemetryFlagMockData = 1u << 4;
         private const uint DumpMagic = 0x56534152u; // VSAR
         private const uint DumpVersion = 1u;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1335_VisorARStencil.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_13KRA.bin";
+        private const string DumpPayloadLabel = "visorArStencilDumpPayload";
 #if UNITY_EDITOR
         private const string ArShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VisorAR.shader";
         private const string StencilShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VisorStencilMask.shader";
@@ -1346,7 +1347,11 @@ namespace Hecton8.Visor
                 int count = math.min(telemetryLength, VisorARStencilContracts.TelemetryFrameCount);
                 int stride = VisorARStencilContracts.TelemetryEntryStrideBytes;
                 int totalBytes = 32 + count * stride;
-                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(HectonVisorARStencilRendererFeature),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
                 Span<byte> header = new Span<byte>(payloadPtr, 32);
@@ -1389,8 +1394,10 @@ namespace Hecton8.Visor
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonVisorARStencilRendererFeature),
+                    DumpPayloadLabel);
             }
         }
 

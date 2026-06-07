@@ -1571,6 +1571,7 @@ namespace Hecton8.Visor
         private const int ActiveSonarGeoTelemetryCapacity = 300;
         private const int ActiveSonarGeoTelemetryEntrySizeBytes = 64;
         private const SystemID SpectrumVaultOwner = SystemID.UI;
+        private const string ActiveSonarGeoDumpPayloadLabel = "activeSonarGeoDumpPayload";
         private const float ActiveSonarGeoSpeedMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
         private const float ActiveSonarGeoMaxRangeMeters = 400f;
         private static readonly BufferID AupDiscoveryGridBufferId = (BufferID)71030;
@@ -3759,7 +3760,11 @@ namespace Hecton8.Visor
                 string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs"));
                 string path = Path.Combine(directory, "Dump_ACTIVE_SONAR_ILLUMINATION.bin");
                 int totalBytes = telemetryCount * ActiveSonarGeoTelemetryEntrySizeBytes;
-                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(SpectrumSystem),
+                    ActiveSonarGeoDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
                 int offset = 0;
@@ -3825,8 +3830,10 @@ namespace Hecton8.Visor
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(SpectrumSystem),
+                    ActiveSonarGeoDumpPayloadLabel);
             }
         }
 

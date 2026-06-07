@@ -379,9 +379,11 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "SpectrumSystem.cs");
             string entryBody = ExtractTypeBody(source, "private struct ActiveSonarGeoTelemetryEntry");
             string writeBody = ExtractMethodBody(source, "private void WriteActiveSonarGeoTelemetry(");
+            string dumpBody = ExtractMethodBody(source, "private unsafe void DumpActiveSonarGeoTelemetry()");
             string serializeBody = ExtractMethodBody(source, "private static void WriteActiveSonarGeoTelemetryEntry(");
             string encodeBody = ExtractMethodBody(source, "private static byte EncodeActiveSonarGeoQualityWeightQ8(");
 
+            Assert.That(source, Does.Contain("private const string ActiveSonarGeoDumpPayloadLabel = \"activeSonarGeoDumpPayload\";"));
             Assert.That(entryBody, Does.Contain("[System.Runtime.InteropServices.FieldOffset(28)]"));
             Assert.That(entryBody, Does.Contain("public byte QualityWeightQ8;"));
             Assert.That(writeBody, Does.Contain("entry.Flags = 0u;"));
@@ -390,6 +392,13 @@ namespace Hecton8.Tests.Editor
             Assert.That(encodeBody, Does.Contain("quality * byte.MaxValue"));
             Assert.That(writeBody, Does.Not.Contain("<= 0.15f"));
             Assert.That(source, Does.Not.Contain("ResolveActiveSonarGeoQualityWeight() <= 0.15f"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("nameof(SpectrumSystem)"));
+            Assert.That(dumpBody, Does.Contain("ActiveSonarGeoDumpPayloadLabel"));
+            Assert.That(dumpBody, Does.Contain("NativeArrayOptions.UninitializedMemory"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBody, Does.Not.Contain("new NativeArray<byte>(totalBytes"));
+            Assert.That(dumpBody, Does.Not.Contain("payload.Dispose()"));
         }
 
         [Test]
@@ -2459,15 +2468,46 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void VisorBlackBoxDumpPayloads_UseTrackedTransientBuffers()
+        {
+            string dynamicDecal = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "DynamicDecalVaultRuntime.cs");
+            string internalFlood = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "InternalFloodWaterlineRuntime.cs");
+            string dynamicDumpBody = ExtractMethodBody(dynamicDecal, "private static void DumpBlackBox(uint reasonFlags)");
+            string floodDumpBody = ExtractMethodBody(internalFlood, "private unsafe void DumpBlackBoxOnce()");
+
+            Assert.That(dynamicDecal, Does.Contain("private const string DumpPayloadLabel = \"dynamicDecalVaultDumpPayload\";"));
+            Assert.That(dynamicDumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dynamicDumpBody, Does.Contain("nameof(DynamicDecalVaultRuntime)"));
+            Assert.That(dynamicDumpBody, Does.Contain("DumpPayloadLabel"));
+            Assert.That(dynamicDumpBody, Does.Contain("NativeArrayOptions.ClearMemory"));
+            Assert.That(dynamicDumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dynamicDumpBody, Does.Not.Contain("new NativeArray<byte>(byteCount"));
+            Assert.That(dynamicDumpBody, Does.Not.Contain("payload.Dispose()"));
+
+            Assert.That(internalFlood, Does.Contain("private const string DumpPayloadLabel = \"internalFloodWaterlineDumpPayload\";"));
+            Assert.That(floodDumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(floodDumpBody, Does.Contain("nameof(InternalFloodWaterlineRuntime)"));
+            Assert.That(floodDumpBody, Does.Contain("DumpPayloadLabel"));
+            Assert.That(floodDumpBody, Does.Contain("NativeArrayOptions.UninitializedMemory"));
+            Assert.That(floodDumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(floodDumpBody, Does.Not.Contain("new NativeArray<byte>(totalBytes"));
+            Assert.That(floodDumpBody, Does.Not.Contain("payload.Dispose()"));
+        }
+
+        [Test]
         public void VisorArStencilFrameUpload_StagesLocallyAndCommitsSingleWriterPhases()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonVisorARStencilRendererFeature.cs");
+            string dumpBody = ExtractMethodBody(source, "private unsafe void DumpTelemetryOnce(uint reasonFlags, int telemetryLength");
             int buildStart = source.IndexOf("private bool BuildAndUploadFrame(", System.StringComparison.Ordinal);
             int helperStart = source.IndexOf("private static bool TryCommitSingleToVault", buildStart, System.StringComparison.Ordinal);
             Assert.That(buildStart, Is.GreaterThanOrEqualTo(0));
             Assert.That(helperStart, Is.GreaterThan(buildStart));
             string buildBody = source.Substring(buildStart, helperStart - buildStart);
 
+            Assert.That(source, Does.Contain("DumpRelativePath = \"Docs/AgentLogs/Dump_13KRA.bin\""));
+            Assert.That(source, Does.Not.Contain("Dump_1335_VisorARStencil.bin"));
+            Assert.That(source, Does.Contain("private const string DumpPayloadLabel = \"visorArStencilDumpPayload\";"));
             Assert.That(buildBody, Does.Contain("stackalloc ARWaypointOverlay.StencilTargetSourceDTO[VisorARStencilContracts.MaxTargets]"));
             Assert.That(buildBody, Does.Contain("stackalloc VisorArTargetDTO[VisorARStencilContracts.MaxTargets]"));
             Assert.That(buildBody, Does.Not.Contain("TryAcquireWriteLock("));
@@ -2495,6 +2535,13 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("private bool TryCommitTelemetryFrame("));
             Assert.That(source, Does.Contain("vault.ReleaseWriteLock(in handle, SystemID.UI);"));
             Assert.That(source, Does.Contain("vault.ReleaseWriteLock(in _telemetryHandle, SystemID.UI);"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("nameof(HectonVisorARStencilRendererFeature)"));
+            Assert.That(dumpBody, Does.Contain("DumpPayloadLabel"));
+            Assert.That(dumpBody, Does.Contain("NativeArrayOptions.UninitializedMemory"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(dumpBody, Does.Not.Contain("new NativeArray<byte>(totalBytes"));
+            Assert.That(dumpBody, Does.Not.Contain("payload.Dispose()"));
         }
 
         [Test]

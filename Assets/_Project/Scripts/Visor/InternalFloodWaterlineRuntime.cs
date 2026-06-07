@@ -36,6 +36,7 @@ namespace Hecton8.Visor
         private const uint ScreenBubbleSpeciesHash = 0x53434242u; // SCBB
         private const byte ScreenBubbleDebrisKind = 12;
         private const string DumpFileName = "Dump_INTERNAL_FLOOD_RENDERER.bin";
+        private const string DumpPayloadLabel = "internalFloodWaterlineDumpPayload";
         private static readonly int InternalWaterlineYId = Shader.PropertyToID("_InternalWaterlineY");
         private static readonly int InternalWaterColorId = Shader.PropertyToID("_InternalWaterColor");
         private static readonly int InternalWaterlineRuntimeId = Shader.PropertyToID("_InternalWaterlineRuntime");
@@ -786,7 +787,11 @@ namespace Hecton8.Visor
             {
                 string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", DumpFileName));
                 int totalBytes = 24 + TelemetryCapacity * TelemetryEntrySizeBytes;
-                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(InternalFloodWaterlineRuntime),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
                 Span<byte> header = new Span<byte>(payloadPtr, 24);
@@ -843,8 +848,10 @@ namespace Hecton8.Visor
             }
             finally
             {
-                if (payload.IsCreated)
-                    payload.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(InternalFloodWaterlineRuntime),
+                    DumpPayloadLabel);
             }
         }
 
