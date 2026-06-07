@@ -28,6 +28,26 @@ namespace Hecton8.Tests.Editor
             Assert.That(lateFrame, Does.Not.Contain("ForceCompletePendingGroundResponseInPostSimulationWindow"));
         }
 
+        [Test]
+        public void DisposeBuffersForceCompletesNativeDisposeHandleInsidePostSimulationWindow()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs");
+            string disposeBuffers = ExtractMethodBlock(source, "private void DisposeBuffers(JobHandle dependency)");
+            string helper = ExtractMethodBlock(source, "private static void ForceCompleteDisposeHandleInPostSimulationWindow(");
+            string bufferSetDispose = ExtractMethodBlock(source, "public void Dispose()");
+
+            Assert.That(disposeBuffers, Does.Contain("ForceCompleteDisposeHandleInPostSimulationWindow(ref _disposeHandle);"));
+            Assert.That(disposeBuffers, Does.Not.Contain("DispatcherJobFence.TryComplete(ref _disposeHandle, forceComplete: true)"));
+            AssertOrdered(disposeBuffers, "_nativeBuffers.Dispose(dependency, ref _disposeHandle);", "ForceCompleteDisposeHandleInPostSimulationWindow(ref _disposeHandle);");
+            AssertOrdered(disposeBuffers, "ForceCompleteDisposeHandleInPostSimulationWindow(ref _disposeHandle);", "_groundResponseScheduled = false;");
+
+            AssertCompleteInsideFencePostSimulationWindow(
+                helper,
+                "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);");
+            Assert.That(bufferSetDispose, Does.Contain("ForceCompleteDisposeHandleInPostSimulationWindow(ref disposeHandle);"));
+            Assert.That(bufferSetDispose, Does.Not.Contain("DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true)"));
+        }
+
         private static void AssertBarrierUsesHelperBeforeSwapAndReset(string method)
         {
             const string helperCall = "ForceCompletePendingGroundResponseInPostSimulationWindow();";
@@ -41,6 +61,23 @@ namespace Hecton8.Tests.Editor
         {
             const string beginWindow = "DispatcherJobSwap.BeginPostSimulationSwapWindow();";
             const string endWindow = "DispatcherJobSwap.EndPostSimulationSwapWindow();";
+
+            int completeIndex = method.IndexOf(completeCall, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(completeIndex, 0, "Missing force complete: " + completeCall);
+
+            int beginIndex = method.LastIndexOf(beginWindow, completeIndex, StringComparison.Ordinal);
+            int endIndex = method.IndexOf(endWindow, completeIndex, StringComparison.Ordinal);
+
+            Assert.GreaterOrEqual(beginIndex, 0, "Missing post-simulation begin for: " + completeCall);
+            Assert.GreaterOrEqual(endIndex, 0, "Missing post-simulation end for: " + completeCall);
+            Assert.Less(beginIndex, completeIndex, completeCall);
+            Assert.Less(completeIndex, endIndex, completeCall);
+        }
+
+        private static void AssertCompleteInsideFencePostSimulationWindow(string method, string completeCall)
+        {
+            const string beginWindow = "DispatcherJobFence.BeginPostSimulationSwapWindow();";
+            const string endWindow = "DispatcherJobFence.EndPostSimulationSwapWindow();";
 
             int completeIndex = method.IndexOf(completeCall, StringComparison.Ordinal);
             Assert.GreaterOrEqual(completeIndex, 0, "Missing force complete: " + completeCall);

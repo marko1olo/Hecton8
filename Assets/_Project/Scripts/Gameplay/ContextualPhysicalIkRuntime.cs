@@ -1718,9 +1718,22 @@ namespace Hecton8.Gameplay
             finally
             {
                 JobHandle.ScheduleBatchedJobs();
-                DispatcherJobFence.TryComplete(ref _disposeHandle, forceComplete: true);
+                ForceCompleteDisposeHandleInPostSimulationWindow(ref _disposeHandle);
                 _groundResponseScheduled = false;
                 _pendingGroundResponseHandle = default;
+            }
+        }
+
+        private static void ForceCompleteDisposeHandleInPostSimulationWindow(ref JobHandle handle)
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
             }
         }
 
@@ -1868,7 +1881,7 @@ namespace Hecton8.Gameplay
                     JobHandle.ScheduleBatchedJobs();
                     try
                     {
-                        DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+                        ForceCompleteDisposeHandleInPostSimulationWindow(ref disposeHandle);
                     }
                     catch (Exception exception)
                     {
