@@ -569,6 +569,7 @@ namespace Hecton8.Core.Hardware
 
             if (!_policyInitialized || hapticMute != _hapticMuteApplied)
             {
+                ToolHapticsRuntime.SetPowerSaveMuteGlobal(hapticMute);
                 ToolHapticsRuntime haptics = _haptics;
                 if (haptics != null)
                     haptics.SetPowerSaveMute(hapticMute);
@@ -618,6 +619,7 @@ namespace Hecton8.Core.Hardware
                 dispatcher.SetThermalCriticalSlowTick(false);
 
             ToolHapticsRuntime haptics = _haptics;
+            ToolHapticsRuntime.SetPowerSaveMuteGlobal(false);
             if (haptics != null)
                 haptics.SetPowerSaveMute(false);
 
@@ -1167,9 +1169,11 @@ namespace Hecton8.Core.Hardware
             if (serviceSlot == GlobalRegistryServiceSlot.ToolHapticsRuntime)
             {
                 _haptics = currentService as ToolHapticsRuntime;
+                bool hapticMute = _policyInitialized && _hapticMuteApplied;
+                ToolHapticsRuntime.SetPowerSaveMuteGlobal(hapticMute);
                 ToolHapticsRuntime haptics = _haptics;
                 if (haptics != null)
-                    haptics.SetPowerSaveMute(_policyInitialized && _hapticMuteApplied);
+                    haptics.SetPowerSaveMute(hapticMute);
             }
         }
 
