@@ -1226,6 +1226,29 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void DiegeticPdaVisibility_RejectsNonFiniteDistanceSq()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/DiegeticPDAController.cs"));
+            string visibility = ExtractMethodBody(source, "private bool IsPdaVisibleToCamera(");
+            string resolveAupDistance = ExtractMethodBody(source, "private static double ResolveAupVisibilityDistanceSq(");
+            string validate = ExtractMethodBody(source, "private void OnValidate(");
+
+            StringAssert.Contains("ResolveActiveCameraDistanceMeters(activeCameraDistanceMeters)", visibility);
+            StringAssert.Contains("!IsFiniteNonNegativeDistanceSq(visibilityDistanceSq)", visibility);
+            StringAssert.Contains("visibilityDistanceSq > maxDistanceSq", visibility);
+            StringAssert.Contains("!math.isfinite(distanceSq)", visibility);
+            StringAssert.Contains("private static float ResolveActiveCameraDistanceMeters(float distanceMeters)", source);
+            StringAssert.Contains("math.isfinite(distanceMeters) ? math.max(0.5f, distanceMeters) : 0.5f", source);
+            StringAssert.Contains("private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)", source);
+            StringAssert.Contains("? distanceSq", resolveAupDistance);
+            StringAssert.Contains(": ResolveLocalDistanceSq(cameraPosition, anchorPosition)", resolveAupDistance);
+            StringAssert.Contains("!double.IsNaN(distanceSq)", source);
+            StringAssert.Contains("!double.IsInfinity(distanceSq)", source);
+            StringAssert.Contains("distanceSq >= 0d", source);
+            StringAssert.Contains("activeCameraDistanceMeters = ResolveActiveCameraDistanceMeters(activeCameraDistanceMeters);", validate);
+        }
+
+        [Test]
         public void InteractionPromptLocalizationPresentation_QueuesLateFrameRefresh()
         {
             string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/InteractionUI.cs"));

@@ -526,12 +526,19 @@ namespace Hecton8.UI
 
             Vector3 cameraPosition = cameraTransform.position;
             Vector3 anchorPosition = anchor.position;
-            double maxDistanceSq = (double)activeCameraDistanceMeters * activeCameraDistanceMeters;
-            if (ResolveAupVisibilityDistanceSq(cameraPosition, anchorPosition) > maxDistanceSq)
+            float safeMaxDistanceMeters = ResolveActiveCameraDistanceMeters(activeCameraDistanceMeters);
+            double maxDistanceSq = (double)safeMaxDistanceMeters * safeMaxDistanceMeters;
+            double visibilityDistanceSq = ResolveAupVisibilityDistanceSq(cameraPosition, anchorPosition);
+            if (!IsFiniteNonNegativeDistanceSq(visibilityDistanceSq) ||
+                visibilityDistanceSq > maxDistanceSq)
+            {
                 return false;
+            }
 
             float3 toPda = (float3)(anchorPosition - cameraPosition);
             float distanceSq = math.lengthsq(toPda);
+            if (!math.isfinite(distanceSq))
+                return false;
             if (distanceSq <= 0.0001f)
                 return true;
 
@@ -555,7 +562,10 @@ namespace Hecton8.UI
                 return ResolveLocalDistanceSq(cameraPosition, anchorPosition);
             }
 
-            return AbsoluteUniversePosition.DistanceSq(in cameraAup, in anchorAup);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in cameraAup, in anchorAup);
+            return IsFiniteNonNegativeDistanceSq(distanceSq)
+                ? distanceSq
+                : ResolveLocalDistanceSq(cameraPosition, anchorPosition);
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
@@ -594,6 +604,18 @@ namespace Hecton8.UI
             return (double)delta.x * delta.x +
                    (double)delta.y * delta.y +
                    (double)delta.z * delta.z;
+        }
+
+        private static float ResolveActiveCameraDistanceMeters(float distanceMeters)
+        {
+            return math.isfinite(distanceMeters) ? math.max(0.5f, distanceMeters) : 0.5f;
+        }
+
+        private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)
+        {
+            return !double.IsNaN(distanceSq) &&
+                   !double.IsInfinity(distanceSq) &&
+                   distanceSq >= 0d;
         }
 
         private Transform ResolveVisibilityAnchor()
@@ -1223,7 +1245,7 @@ namespace Hecton8.UI
         private void OnValidate()
         {
             tabletRenderTextureResolution = SanitizeTabletResolution(tabletRenderTextureResolution);
-            activeCameraDistanceMeters = math.max(0.5f, activeCameraDistanceMeters);
+            activeCameraDistanceMeters = ResolveActiveCameraDistanceMeters(activeCameraDistanceMeters);
             cameraFrustumDotThreshold = math.clamp(cameraFrustumDotThreshold, -0.2f, 0.8f);
         }
 #endif
