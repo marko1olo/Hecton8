@@ -17,7 +17,7 @@
 | Location / route | Pump room threshold, shelter utility wall, or wet service alcove |
 | Unlock context | Player scans a scratched flow arrow on a small pump casing |
 | Evidence object | Pump casing, scratched flow arrow, wet scrape, hose socket |
-| Connected packets | P807_COLD_SEALANT_CLAMP_SCAR; P1115_SAMPLE_BAG_AIR_BUBBLE; P905_STORM_SHELF_TAG_LINE |
+| Connected packets | P807_COLD_SEALANT_CLAMP_SCAR; P1115_SAMPLE_BAG_AIR_BUBBLE; P905_ANCHOR_PAINT_CURRENT_SIDE |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: helps the player read pump direction before swapping or reseating hoses |
 | Content status | source_complete_unimported |
 

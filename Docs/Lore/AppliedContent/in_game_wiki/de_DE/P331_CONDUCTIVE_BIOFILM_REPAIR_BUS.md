@@ -9,32 +9,34 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Conductive Biofilm Repair Bus"
+title: "Leitender Biofilm-Reparaturbus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# DE LOC HOLD: Conductive Biofilm Repair Bus
+# Leitender Biofilm-Reparaturbus
 
-DE LOC HOLD: Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.
+Leitender Biofilm entsteht dort, wo Deep-Reach-Kabel, warme Sole und beschädigte Isolierung Kontakt halten. Die Matte trägt schwachen Strom über Kupferbrüche und lässt Atlas-Diagnosen Räume erreichen, die elektrisch tot sein müssten.
+
+Die Gefahr liegt im Kategorienfehler. Atlas sieht Durchgang und setzt Reparaturpriorität. Der Organismus sieht Wärme, Mineralfluss und Oberfläche. Wer die Matte schneidet, kann eine Tür unterbrechen, eine Drohnenprüfung wecken oder frische Ladung freilegen, die feldhungrige Räuber ruft.
 
 ## Scanner
 
-DE LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
+Biofilmhaut überbrückt gebrochenes Kupfer und lebende Matte. Schwacher Strom vorhanden. Atlas-Reparaturmarke in Salzkruste.
 
 ## Terminal
 
-DE LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+ATLAS-REPARATURBUS // Leitender Mikrobenfilm kreuzt Kabelbrüche C-18 bis C-22. Diagnosepulse laufen durch nasses Wachstum, wenn das Kupfer fehlt. Nicht als Bewusstsein einstufen. Als kontaminiertes Wartungssubstrat behandeln.
 
 ## Audio
 
-DE LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
+Der Film trägt einen Puls. Das macht ihn nicht klug. Es heißt nur, dass der Draht gelernt hat, lebendig zu verrotten.
 
 ## Field Note
 
-DE LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+Wenn ein nasses Kabel Haut hat, erst verfolgen, dann schneiden. Die tote Seite ist meistens sicherer. Meistens.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/de_DE. -->

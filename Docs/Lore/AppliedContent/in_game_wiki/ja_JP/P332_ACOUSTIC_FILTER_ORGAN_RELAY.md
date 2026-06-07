@@ -9,32 +9,34 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Acoustic Filter Organ Relay"
+title: "音響フィルター器官リレー"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Acoustic Filter Organ Relay
+# 音響フィルター器官リレー
 
-JA LOC HOLD: Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.
+一部の礁生物は、音を形作れるほど密なフィルター器官を育てる。リレー筐体が割れた後、Atlas修理ノードはその組織を音響バッフルとして使うようになった。
+
+その助けには歯がある。経路ピンを運ぶ器官は、振動を餌食に知らせ、タグ付き動物を起こし、Marauder自身の動きを礁の奥へ返すこともある。きれいな返答は安全な通路を意味しない。通路に聞き手がいるという意味だ。
 
 ## Scanner
 
-JA LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
+フィルター器官の共鳴が破損リレーの拍子と一致。組織通過後の戻りがより明瞭。筐体に噛み跡。
 
 ## Terminal
 
-JA LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
+音響リレー // 局所フィルター器官組織が嵐ノイズを抑え、ケーブル礁内でサービスピンを反復。圧力サージ下では信号利得が不安定。生物リレーは経路補助であり捕食者の餌でもある。
 
 ## Audio
 
-JA LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
+装置みたいに返事するのは、装置がそいつの喉を使っているからだ。
 
 ## Field Note
 
-JA LOC HOLD: Use with sonar, scanner and route-warning UI.
+エコーの奥に脈があるなら、道具を黙らせ、水を見てから動け。
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/ja_JP. -->

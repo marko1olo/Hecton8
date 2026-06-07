@@ -9,32 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Vent Micronode Power Nest"
+title: "Sarang Daya Mikronode Vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Vent Micronode Power Nest
+# Sarang Daya Mikronode Vent
 
-ID LOC HOLD: The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.
+Laut bawah penuh daya kecil, bukan daya murah hati. Vent mengeluarkan panas lewat kerak kaya logam; gradien kimia berkumpul di kulit mineral; perangkat tua meninggalkan kontak dan koil.
 
-## Scanner
-
-ID LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
-
-## Terminal
-
-ID LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
-
-## Audio
-
-ID LOC HOLD: At depth, even the vents are drafted into maintenance.
-
-## Field Note
-
-ID LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+Satu node bisa menjaga relai berdetak, mengisi drone untuk satu rambatan, atau menyimpan memori. Ia memberi alasan mendekati vent tanpa menjadikannya peti aman: panas, tekanan, racun, dan logika Atlas berbagi sarang.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/id_ID. -->

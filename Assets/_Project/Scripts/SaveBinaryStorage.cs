@@ -126,7 +126,6 @@ namespace Hecton8.SaveSystem
         {
             public string AbsolutePath;
             public NativeArray<byte> Bytes;
-            public int BytesSentinelId;
             public long WindowOffset;
             public long WindowLength;
             public long FileLength;
@@ -637,16 +636,11 @@ namespace Hecton8.SaveSystem
             }
 
             NativeArray<byte> windowBytes = default;
-            int windowBytesSentinelId = 0;
             bool transferredWindowBytes = false;
             try
             {
                 // COLD ALLOC: NativeArray<byte>[windowLength] - cached save read window - owner: AsyncWriteManager
-                windowBytes = new NativeArray<byte>((int)windowLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                int registrationId = NativeMemorySentinel.RegisterNativeArray(windowBytes, NativeMemoryOwner, nameof(CachedReadWindow), NativeMemoryLifetime);
-                if (registrationId <= 0)
-                    throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
-                windowBytesSentinelId = registrationId;
+                windowBytes = AllocateCachedReadWindowBytes((int)windowLength);
                 byte* windowPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(windowBytes);
                 if (!TryReadAbsoluteFileRangeToNativeBuffer(absolutePath, windowOffset, windowPtr, (int)windowLength, out error))
                     return false;
@@ -655,7 +649,6 @@ namespace Hecton8.SaveSystem
                 {
                     AbsolutePath = absolutePath,
                     Bytes = windowBytes,
-                    BytesSentinelId = registrationId,
                     WindowOffset = windowOffset,
                     WindowLength = windowLength,
                     FileLength = fileLength,
@@ -673,7 +666,7 @@ namespace Hecton8.SaveSystem
             finally
             {
                 if (!transferredWindowBytes && windowBytes.IsCreated)
-                    DisposeCachedReadWindowBytes(ref windowBytes, ref windowBytesSentinelId);
+                    DisposeCachedReadWindowBytes(ref windowBytes);
             }
         }
 
@@ -771,53 +764,31 @@ namespace Hecton8.SaveSystem
         private static void DisposeCachedReadWindow(ref CachedReadWindow window)
         {
             if (window.Bytes.IsCreated)
-                DisposeCachedReadWindowBytes(ref window.Bytes, ref window.BytesSentinelId);
+                DisposeCachedReadWindowBytes(ref window.Bytes);
 
             window = default;
         }
 
-        private static void DisposeCachedReadWindowBytes(ref NativeArray<byte> bytes, ref int sentinelId)
+        private static NativeArray<byte> AllocateCachedReadWindowBytes(int length)
+        {
+            NativeArray<byte> bytes = H8Memory.Allocate<byte>(
+                length,
+                SystemID.SavePersistence,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+            if (bytes.IsCreated && bytes.Length >= length)
+                return bytes;
+
+            H8Memory.Release(ref bytes, SystemID.SavePersistence);
+            throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+        }
+
+        private static void DisposeCachedReadWindowBytes(ref NativeArray<byte> bytes)
         {
             if (!bytes.IsCreated)
                 return;
 
-            bool sentinelUnregistered = false;
-            try
-            {
-                if (sentinelId > 0)
-                {
-                    NativeMemorySentinel.Unregister(sentinelId);
-                    sentinelId = 0;
-                    sentinelUnregistered = true;
-                }
-
-                bytes.Dispose();
-                bytes = default;
-            }
-            catch (Exception disposalException)
-            {
-                RestoreCachedReadWindowSentinelOrThrow(bytes, ref sentinelId, sentinelUnregistered, disposalException);
-                throw;
-            }
-        }
-
-        private static void RestoreCachedReadWindowSentinelOrThrow(NativeArray<byte> bytes, ref int sentinelId, bool sentinelUnregistered, Exception disposalException)
-        {
-            if (!sentinelUnregistered || !bytes.IsCreated)
-                return;
-
-            try
-            {
-                int registrationId = NativeMemorySentinel.RegisterNativeArray(bytes, NativeMemoryOwner, nameof(CachedReadWindow), NativeMemoryLifetime);
-                if (registrationId <= 0)
-                    throw new InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
-
-                sentinelId = registrationId;
-            }
-            catch (Exception restoreException)
-            {
-                throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
-            }
+            H8Memory.Release(ref bytes, SystemID.SavePersistence);
         }
 
         public static bool WriteAll(string absolutePath, void* buffer, int byteCount, out string error)
@@ -1690,10 +1661,7 @@ namespace Hecton8.SaveSystem
                 }
 
                 // COLD ALLOC: NativeArray<byte>[fileLength] - native read-only save snapshot - owner: AsyncWriteManager
-                fileBytes = new NativeArray<byte>((int)fileLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                int registrationId = NativeMemorySentinel.RegisterNativeArray(fileBytes, NativeMemoryOwner, nameof(ReadOnlyMapping), NativeMemoryLifetime);
-                if (registrationId <= 0)
-                    throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+                fileBytes = AllocateReadOnlyMappingBytes((int)fileLength);
                 byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
                 if (!TryReadAbsoluteFileToNativeBuffer(absolutePath, filePtr, (int)fileLength, out error))
                     return false;
@@ -1714,6 +1682,27 @@ namespace Hecton8.SaveSystem
                 if (fileBytes.IsCreated)
                     DisposeReadOnlyMappingBytes(ref fileBytes);
             }
+        }
+
+        private static NativeArray<byte> AllocateReadOnlyMappingBytes(int length)
+        {
+            NativeArray<byte> bytes = new NativeArray<byte>(length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            try
+            {
+                int registrationId = NativeMemorySentinel.RegisterNativeArray(bytes, NativeMemoryOwner, nameof(ReadOnlyMapping), NativeMemoryLifetime);
+                if (registrationId > 0)
+                    return bytes;
+            }
+            catch
+            {
+                if (bytes.IsCreated)
+                    bytes.Dispose();
+                throw;
+            }
+
+            if (bytes.IsCreated)
+                bytes.Dispose();
+            throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
         }
 
         private static bool TryReadAbsoluteFileToNativeBuffer(
@@ -2211,27 +2200,29 @@ namespace Hecton8.SaveSystem
 
             internal bool IsCompleted => IsCreated && Handle.IsCompleted;
 
-            internal void RegisterNativeMemorySentinel()
+            internal static NativeArray<T> AllocateRegisteredArray<T>(
+                int length,
+                string label,
+                NativeArrayOptions options)
+                where T : struct
             {
-                RegisterArray(SourceStates, EntityStateWriteSourceStatesLabel);
-                RegisterArray(SortEntries, EntityStateWriteSortEntriesLabel);
-                RegisterArray(RadixScratch, EntityStateWriteRadixScratchLabel);
-                RegisterArray(SortedEntityStates, EntityStateWriteSortedStatesLabel);
-                RegisterArray(CompactStates, EntityStateWriteCompactStatesLabel);
-                RegisterArray(FileBytes, EntityStateWriteFileBytesLabel);
-                RegisterArray(ResultLength, EntityStateWriteResultLengthLabel);
-                RegisterArray(RadixCounts, EntityStateWriteRadixCountsLabel);
-                RegisterArray(RadixOffsets, EntityStateWriteRadixOffsetsLabel);
-            }
+                NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);
+                try
+                {
+                    int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+                    if (registrationId > 0)
+                        return array;
+                }
+                catch
+                {
+                    if (array.IsCreated)
+                        array.Dispose();
+                    throw;
+                }
 
-            private static void RegisterArray<T>(NativeArray<T> array, string label) where T : struct
-            {
-                if (!array.IsCreated)
-                    return;
-
-                int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
-                if (registrationId <= 0)
-                    throw new InvalidOperationException(NativeMemoryTransientRegistrationFailureMessage);
+                if (array.IsCreated)
+                    array.Dispose();
+                throw new InvalidOperationException(NativeMemoryTransientRegistrationFailureMessage);
             }
 
             private void UnregisterNativeMemorySentinel()
@@ -2307,6 +2298,26 @@ namespace Hecton8.SaveSystem
 
                 this = default;
                 return disposeHandle;
+            }
+        }
+
+        private static NativeArray<T> AllocateRegisteredPersistentScratchNativeArray<T>(
+            int length,
+            NativeArrayOptions options,
+            string label)
+            where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);
+            try
+            {
+                RegisterPersistentScratchNativeArray(array, label);
+                return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+                throw;
             }
         }
 
@@ -6271,16 +6282,42 @@ namespace Hecton8.SaveSystem
                 writeHandle.IsCreated = true;
                 writeHandle.AbsolutePath = absolutePath;
                 writeHandle.SectorHash = sectorHash;
-                writeHandle.SourceStates = new NativeArray<EntityDataRecord>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                writeHandle.SortEntries = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                writeHandle.RadixScratch = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                writeHandle.SortedEntityStates = new NativeArray<EntityDataRecord>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                writeHandle.CompactStates = new NativeArray<SectorCompactEntityStateRecord16>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                writeHandle.FileBytes = new NativeArray<byte>(fileCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                writeHandle.ResultLength = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                writeHandle.RadixCounts = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                writeHandle.RadixOffsets = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                writeHandle.RegisterNativeMemorySentinel();
+                writeHandle.SourceStates = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<EntityDataRecord>(
+                    recordCount,
+                    EntityStateWriteSourceStatesLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                writeHandle.SortEntries = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<SectorEntityStateSortEntry>(
+                    recordCount,
+                    EntityStateWriteSortEntriesLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                writeHandle.RadixScratch = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<SectorEntityStateSortEntry>(
+                    recordCount,
+                    EntityStateWriteRadixScratchLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                writeHandle.SortedEntityStates = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<EntityDataRecord>(
+                    recordCount,
+                    EntityStateWriteSortedStatesLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                writeHandle.CompactStates = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<SectorCompactEntityStateRecord16>(
+                    recordCount,
+                    EntityStateWriteCompactStatesLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                writeHandle.FileBytes = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<byte>(
+                    fileCapacity,
+                    EntityStateWriteFileBytesLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                writeHandle.ResultLength = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<int>(
+                    1,
+                    EntityStateWriteResultLengthLabel,
+                    NativeArrayOptions.ClearMemory);
+                writeHandle.RadixCounts = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<int>(
+                    1 << 16,
+                    EntityStateWriteRadixCountsLabel,
+                    NativeArrayOptions.ClearMemory);
+                writeHandle.RadixOffsets = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<int>(
+                    1 << 16,
+                    EntityStateWriteRadixOffsetsLabel,
+                    NativeArrayOptions.ClearMemory);
             }
             catch (Exception ex)
             {
@@ -6324,17 +6361,26 @@ namespace Hecton8.SaveSystem
                 SectorHash = sectorHash
             };
 
+            JobHandle scheduledHandle = default;
             try
             {
                 JobHandle buildHandle = buildJob.Schedule(recordCount, math.min(64, math.max(1, recordCount)));
+                scheduledHandle = buildHandle;
                 JobHandle sortHandle = sortJob.Schedule(buildHandle);
+                scheduledHandle = sortHandle;
                 JobHandle extractHandle = extractJob.Schedule(recordCount, math.min(64, math.max(1, recordCount)), sortHandle);
+                scheduledHandle = extractHandle;
                 JobHandle compactHandle = compactJob.Schedule(recordCount, math.min(64, math.max(1, recordCount)), extractHandle);
-                writeHandle.Handle = compressJob.Schedule(compactHandle);
+                scheduledHandle = compactHandle;
+                JobHandle compressHandle = compressJob.Schedule(compactHandle);
+                scheduledHandle = compressHandle;
+                writeHandle.Handle = compressHandle;
             }
             catch (Exception ex)
             {
-                writeHandle.Dispose();
+                writeHandle.Handle = scheduledHandle;
+                SaveBinaryStorage.DisposeIndexedSectorEntityStateOverrideWriteDeferred(ref writeHandle, default);
+                JobHandle.ScheduleBatchedJobs();
                 error = $"Sector entity-state write job scheduling failed: {ex.Message}";
                 return false;
             }
@@ -7352,8 +7398,10 @@ namespace Hecton8.SaveSystem
                 }
 
                 compactLength = (int)compactLengthLong;
-                compactBytes = new NativeArray<byte>(compactLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                RegisterPersistentScratchNativeArray(compactBytes, IndexedSectorCompactionBufferLabel);
+                compactBytes = AllocateRegisteredPersistentScratchNativeArray<byte>(
+                    compactLength,
+                    NativeArrayOptions.UninitializedMemory,
+                    IndexedSectorCompactionBufferLabel);
                 byte* compactPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compactBytes);
                 if (!UnsafeMemoryCopyGuard.SafeCopy(compactPtr, compactLength, mappedFilePtr, metadataEndOffset))
                 {
@@ -7595,8 +7643,10 @@ namespace Hecton8.SaveSystem
 
                 AsyncWriteManager.InvalidateCachedReadWindows(absoluteSavePath);
                 // COLD ALLOC: NativeArray<byte>[newLength] - portable indexed-sector commit buffer - owner: SaveBinaryStorage
-                commitBytes = new NativeArray<byte>((int)newLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                RegisterPersistentScratchNativeArray(commitBytes, IndexedSectorCommitBufferLabel);
+                commitBytes = AllocateRegisteredPersistentScratchNativeArray<byte>(
+                    (int)newLength,
+                    NativeArrayOptions.UninitializedMemory,
+                    IndexedSectorCommitBufferLabel);
                 byte* mappedFilePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(commitBytes);
                 UnsafeUtility.MemClear(mappedFilePtr, newLength);
                 int bytesToCopy = (int)(originalSaveLength < newLength ? originalSaveLength : newLength);

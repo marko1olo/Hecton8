@@ -4949,6 +4949,7 @@ namespace Hecton8.Physics
             if (_sceneEventsSubscribed)
                 return;
 
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             _sceneEventsSubscribed = true;
         }

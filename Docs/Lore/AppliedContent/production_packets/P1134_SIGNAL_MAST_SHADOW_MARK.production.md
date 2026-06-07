@@ -17,7 +17,7 @@
 | Location / route | Surface mast base, emergency signal frame, or shallow shelf route post |
 | Unlock context | Player scans a scratched shadow mark at a signal mast base |
 | Evidence object | Signal mast base, shadow scratch, tilt washer, paint dot |
-| Connected packets | P815_BROKEN_BEACON_COPPER_TASTE; P906_STORM_SHELF_RELAY_FLAG; P1130_BEARING_CARD_SWELL_MARK |
+| Connected packets | P816_SERVICE_MAST_ALIGNMENT_MARK; P819_RELAY_NOISE_LOG_STRIP; P1130_BEARING_CARD_SWELL_MARK |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: links surface sky reading to a local object without making sky/astronomy claims |
 | Content status | source_complete_unimported |
 

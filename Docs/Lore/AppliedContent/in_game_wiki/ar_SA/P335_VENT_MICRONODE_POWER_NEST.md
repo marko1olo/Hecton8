@@ -9,32 +9,34 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Vent Micronode Power Nest"
+title: "عش طاقة لعقد فتحات حرارية دقيقة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# AR LOC HOLD: Vent Micronode Power Nest
+# عش طاقة لعقد فتحات حرارية دقيقة
 
-AR LOC HOLD: Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.
+تتكون عقد الفتحات الدقيقة حيث تتقاسم الكيمياء الحارة وغبار المعدن والعتاد القديم الشق نفسه. لا تغذي المستعمرة مثل مفاعل. إنها تبقي الأشياء الصغيرة حية: حلقة ذاكرة، ومضة تشخيص، زحف درون، مزلاج باب كان يجب أن يموت منذ سنوات.
+
+قرب حوض Atlas تصبح الأعشاش أكثف لأن كل تدرج مفيد. الجيولوجيا تعطي الحرارة، الحياة تعطي السطوح الموصلة، والآلات المكسورة تعطي القواعد. قد يأخذ المغير شحنة أو يقرأ بقايا ذاكرة، لكن العقدة نفسها قد تغذي حلقة إصلاح تلاحظ السرقة.
 
 ## Scanner
 
-AR LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
+عقد حرارية دقيقة في قشرة الفتحة. ندوب شحن درونات وبقايا ذاكرة حاضرة. ناقل إصلاح محلي يسحب التيار.
 
 ## Terminal
 
-AR LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
+عقدة فتحة حرارية // التدرج الكيميائي يدعم توجيها منخفض الطاقة وبقايا ذاكرة ودورات شحن درونات متقطعة. كثافة العقد ترتفع قرب بنى مصنع-معبد حوض Atlas.
 
 ## Audio
 
-AR LOC HOLD: At depth, even the vents are drafted into maintenance.
+حتى الحرارة لديها أوراق هنا في الأسفل.
 
 ## Field Note
 
-AR LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+خذ شحنة واحدة ثم تحرك. السحب الثاني يجعل العش ينظر إليك.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/ar_SA. -->

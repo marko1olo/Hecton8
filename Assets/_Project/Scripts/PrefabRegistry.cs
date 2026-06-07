@@ -141,7 +141,9 @@ namespace Hecton8.Core
             if (_editorHooksInstalled)
                 return;
 
+            AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
             AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+            EditorApplication.quitting -= HandleEditorQuitting;
             EditorApplication.quitting += HandleEditorQuitting;
             _editorHooksInstalled = true;
         }

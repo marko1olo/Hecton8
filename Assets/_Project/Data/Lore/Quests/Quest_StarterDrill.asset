@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8726360dc0d2a8c48a29a476077f0abc, type: 3}
+  m_Name: Quest_StarterDrill
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Quest.QuestData
+  questId: quest_starter_drill
+  displayTitle: BUILD SEAFLOOR DRILL
+  description: Scan a resource node, fabricate the seafloor drill, and prepare to open copper veins.
+  localizedDisplayTitle:
+    tableKey: QUEST_QUEST_STARTER_DRILL_TITLE
+    fallbackText: BUILD SEAFLOOR DRILL
+    variants: []
+  localizedDescription:
+    tableKey: QUEST_QUEST_STARTER_DRILL_DESCRIPTION
+    fallbackText: Scan a resource node, fabricate the seafloor drill, and prepare to open copper veins.
+    variants: []
+  triggerType: 3
+  triggerId: first_hour_exit_lifepod
+  triggerValue: 0
+  completionType: 6
+  completionId: Item_Tool_SeafloorDrill
+  completionValue: 1
+  prerequisiteQuestIds:
+  - quest_arrival
+  criticalItemId: Item_Tool_SeafloorDrill
+  respawnEventId: respawn_first_hour_seafloor_drill
+  phaseGate: 0
+  markerTargetId:
+  markerWorldPosition: {x: 0, y: 0, z: 0}
+  markerHeightOffset: 6
+  autoActivateOnStart: 0
+  oneTimeOnly: 1

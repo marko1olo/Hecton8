@@ -24,6 +24,7 @@ namespace Hecton8.Tests.Editor
         private const string SaveSystemRuntimeSmokeTesterPath = "Assets/_Project/Scripts/SaveSystemRuntimeSmokeTester.cs";
         private const string SaveRecoverySmokeTesterPath = "Assets/_Project/Scripts/SaveRecoverySmokeTester.cs";
         private const string SaveSidecarStoragePath = "Assets/_Project/Scripts/SaveSidecarStorage.cs";
+        private const string SaveBinaryStoragePath = "Assets/_Project/Scripts/SaveBinaryStorage.cs";
         private const string EntityDeltaCompressionArchitecturePath = "Assets/_Project/Scripts/SaveSystem/EntityDeltaCompressionArchitecture.cs";
         private const string WalIntegrityFuzzerCorePath = "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs";
         private const string WalIntegrityFuzzerCoreShinobu357Path = "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs";
@@ -510,12 +511,32 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("AllocateTempNativeArrayBuffer((int)fileLength, MaintenanceReadBufferLabel", source);
             StringAssert.Contains("DisposeTempNativeArrayBuffer(ref buffer, MetadataWriteBufferLabel)", source);
             StringAssert.Contains("DisposeTempNativeArrayBuffer(ref buffer, MaintenanceReadBufferLabel)", source);
+            StringAssert.Contains("if (!TryResolveMetadataByteCount(metadata, out int byteCount, out error))", source);
+            StringAssert.Contains("if (!TryResolveMaintenanceByteCount(record, out int byteCount, out error))", source);
+            StringAssert.Contains("private static bool TryAddStringByteCount(ref long total, string value, out string error)", source);
+            StringAssert.Contains("private static bool TryResolveUtf16ByteCount(int charCount, out int byteCount)", source);
+            StringAssert.Contains("return Path.Combine(root, NormalizePersistentRelativeSegment(relativePath));", source);
+            StringAssert.Contains("SaveMetadata loaded = new SaveMetadata();", source);
+            StringAssert.Contains("if (string.IsNullOrEmpty(error))", source);
+            StringAssert.Contains("error = reader.Error;", source);
+            StringAssert.Contains("metadata = null;", source);
+            StringAssert.Contains("metadata = loaded;", source);
+            Assert.AreEqual(2, CountOccurrences(source, "SaveSlotMaintenanceRecord loaded = new SaveSlotMaintenanceRecord();"), "Current and legacy maintenance decoders must stage into local records.");
+            Assert.AreEqual(2, CountOccurrences(source, "record = loaded;"), "Maintenance decoders should publish records only after complete decode.");
+            StringAssert.Contains("loaded.ApplyStateFlags(stateFlags);", source);
             Assert.AreEqual(1, CountOccurrences(source, "new NativeArray<byte>"), "Sidecar Temp byte buffers must stay centralized in AllocateTempNativeArrayBuffer.");
             Assert.AreEqual(2, CountOccurrences(source, "NativeMemorySentinel.RegisterNativeArray(buffer"), "Sidecar storage has one normal registration and one restore registration.");
 
             StringAssert.DoesNotContain("RegisterTempNativeArrayBuffer(buffer, \"", source);
             StringAssert.DoesNotContain("new NativeArray<byte>(byteCount", source);
             StringAssert.DoesNotContain("new NativeArray<byte>((int)fileLength", source);
+            StringAssert.DoesNotContain("GetStringByteCount(", source);
+            StringAssert.DoesNotContain("checked(value.Length * sizeof(char))", source);
+            StringAssert.DoesNotContain("checked(charCount * sizeof(char))", source);
+            StringAssert.DoesNotContain("HectonPersistentPathPolicy.CombineFile(relativePath)", source);
+            StringAssert.DoesNotContain("metadata = new SaveMetadata();\n                return reader.ReadString", source);
+            StringAssert.DoesNotContain("record.ApplyStateFlags(stateFlags);", source);
+            StringAssert.DoesNotContain("record = new SaveSlotMaintenanceRecord();\n            error = string.Empty;\n            if (!reader.ReadString(out record.SlotName)", source);
         }
 
         [Test]
@@ -536,6 +557,87 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.DoesNotContain("RegisterTempNativeArrayBuffer(payload", source);
             StringAssert.DoesNotContain("new NativeArray<byte>(", source.Replace("new NativeArray<byte>(length, Allocator.Temp, options);", string.Empty));
+        }
+
+        [Test]
+        public void SaveBinaryStorageTracksIndexedSectorWriteHandleScratchAtomically()
+        {
+            string source = ReadProjectFile(SaveBinaryStoragePath);
+
+            StringAssert.Contains("internal static NativeArray<T> AllocateRegisteredArray<T>", source);
+            StringAssert.Contains("NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);", source);
+            StringAssert.Contains("NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob)", source);
+            StringAssert.Contains("writeHandle.SourceStates = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<EntityDataRecord>", source);
+            StringAssert.Contains("writeHandle.SortEntries = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<SectorEntityStateSortEntry>", source);
+            StringAssert.Contains("writeHandle.CompactStates = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<SectorCompactEntityStateRecord16>", source);
+            StringAssert.Contains("writeHandle.FileBytes = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<byte>", source);
+            StringAssert.Contains("writeHandle.RadixOffsets = IndexedSectorEntityStateWriteHandle.AllocateRegisteredArray<int>", source);
+            StringAssert.Contains("UnregisterArray(SourceStates)", source);
+            StringAssert.Contains("UnregisterArray(RadixOffsets)", source);
+            StringAssert.Contains("JobHandle scheduledHandle = default;", source);
+            StringAssert.Contains("scheduledHandle = buildHandle;", source);
+            StringAssert.Contains("scheduledHandle = sortHandle;", source);
+            StringAssert.Contains("scheduledHandle = extractHandle;", source);
+            StringAssert.Contains("scheduledHandle = compactHandle;", source);
+            StringAssert.Contains("scheduledHandle = compressHandle;", source);
+            StringAssert.Contains("writeHandle.Handle = scheduledHandle;", source);
+            StringAssert.Contains("DisposeIndexedSectorEntityStateOverrideWriteDeferred(ref writeHandle, default);", source);
+            Assert.AreEqual(1, CountOccurrences(source, "NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, options);"), "Indexed-sector entity-state write scratch allocation must stay centralized in AllocateRegisteredArray.");
+
+            StringAssert.DoesNotContain("internal void RegisterNativeMemorySentinel", source);
+            StringAssert.DoesNotContain("writeHandle.RegisterNativeMemorySentinel()", source);
+            StringAssert.DoesNotContain("RegisterArray(SourceStates", source);
+            StringAssert.DoesNotContain("writeHandle.SourceStates = new NativeArray<EntityDataRecord>", source);
+            StringAssert.DoesNotContain("writeHandle.SortEntries = new NativeArray<SectorEntityStateSortEntry>", source);
+            StringAssert.DoesNotContain("writeHandle.RadixScratch = new NativeArray<SectorEntityStateSortEntry>", source);
+            StringAssert.DoesNotContain("writeHandle.SortedEntityStates = new NativeArray<EntityDataRecord>", source);
+            StringAssert.DoesNotContain("writeHandle.CompactStates = new NativeArray<SectorCompactEntityStateRecord16>", source);
+            StringAssert.DoesNotContain("writeHandle.FileBytes = new NativeArray<byte>", source);
+            StringAssert.DoesNotContain("writeHandle.ResultLength = new NativeArray<int>", source);
+            StringAssert.DoesNotContain("writeHandle.RadixCounts = new NativeArray<int>", source);
+            StringAssert.DoesNotContain("writeHandle.RadixOffsets = new NativeArray<int>", source);
+        }
+
+        [Test]
+        public void SaveBinaryStorageTracksPersistentReadBuffersAtomically()
+        {
+            string source = ReadProjectFile(SaveBinaryStoragePath);
+
+            StringAssert.Contains("private static NativeArray<byte> AllocateCachedReadWindowBytes(int length, out int sentinelId)", source);
+            StringAssert.Contains("windowBytes = AllocateCachedReadWindowBytes((int)windowLength, out windowBytesSentinelId);", source);
+            StringAssert.Contains("BytesSentinelId = windowBytesSentinelId", source);
+            StringAssert.Contains("DisposeCachedReadWindowBytes(ref window.Bytes, ref window.BytesSentinelId)", source);
+            StringAssert.Contains("RestoreCachedReadWindowSentinelOrThrow", source);
+            StringAssert.Contains("private static NativeArray<byte> AllocateReadOnlyMappingBytes(int length)", source);
+            StringAssert.Contains("fileBytes = AllocateReadOnlyMappingBytes((int)fileLength);", source);
+            StringAssert.Contains("DisposeReadOnlyMappingBytes(ref fileBytes)", source);
+            StringAssert.Contains("RestoreReadOnlyMappingSentinelOrThrow", source);
+            Assert.AreEqual(2, CountOccurrences(source, "NativeArray<byte> bytes = new NativeArray<byte>(length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"), "Cached read window and read-only mapping byte allocations must stay centralized in their helper methods.");
+
+            StringAssert.DoesNotContain("windowBytes = new NativeArray<byte>", source);
+            StringAssert.DoesNotContain("NativeMemorySentinel.RegisterNativeArray(windowBytes", source);
+            StringAssert.DoesNotContain("fileBytes = new NativeArray<byte>", source);
+            StringAssert.DoesNotContain("NativeMemorySentinel.RegisterNativeArray(fileBytes", source);
+        }
+
+        [Test]
+        public void SaveBinaryStorageTracksIndexedSectorPersistentScratchAtomically()
+        {
+            string source = ReadProjectFile(SaveBinaryStoragePath);
+
+            StringAssert.Contains("private static NativeArray<T> AllocateRegisteredPersistentScratchNativeArray<T>", source);
+            StringAssert.Contains("NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);", source);
+            StringAssert.Contains("RegisterPersistentScratchNativeArray(array, label)", source);
+            StringAssert.Contains("DisposeRegisteredPersistentScratchNativeArray(ref compactBytes, IndexedSectorCompactionBufferLabel)", source);
+            StringAssert.Contains("DisposeRegisteredPersistentScratchNativeArray(ref commitBytes, IndexedSectorCommitBufferLabel)", source);
+            StringAssert.Contains("compactBytes = AllocateRegisteredPersistentScratchNativeArray<byte>", source);
+            StringAssert.Contains("commitBytes = AllocateRegisteredPersistentScratchNativeArray<byte>", source);
+            Assert.AreEqual(1, CountOccurrences(source, "NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);"), "Indexed-sector persistent scratch allocation must stay centralized in AllocateRegisteredPersistentScratchNativeArray.");
+
+            StringAssert.DoesNotContain("compactBytes = new NativeArray<byte>", source);
+            StringAssert.DoesNotContain("commitBytes = new NativeArray<byte>", source);
+            StringAssert.DoesNotContain("RegisterPersistentScratchNativeArray(compactBytes", source);
+            StringAssert.DoesNotContain("RegisterPersistentScratchNativeArray(commitBytes", source);
         }
 
         [Test]

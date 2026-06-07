@@ -9,32 +9,34 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Acoustic Filter Organ Relay"
+title: "Акустичне реле фільтр-органа"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Acoustic Filter Organ Relay
+# Акустичне реле фільтр-органа
 
-UK LOC HOLD: Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.
+Деякі рифові тварини відрощують фільтр-органи, достатньо щільні, щоб формувати звук. Ремонтні вузли Atlas навчилися використовувати цю тканину як акустичну перегородку після тріщин у корпусах реле.
+
+У такої допомоги є зуби. Той самий орган, що несе маршрутний пінг, може повідомити вібрацію пожирачам, розбудити мічену фауну або відбити рух мародера вниз рифом. Чиста відповідь не означає безпечний коридор. Вона означає, що коридор має слухача.
 
 ## Scanner
 
-UK LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
+Резонанс фільтр-органа збігається з каденцією пошкодженого реле. Після проходження крізь тканину повернення чистіше. На корпусі сліди укусів.
 
 ## Terminal
 
-UK LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
+АКУСТИЧНЕ РЕЛЕ // Місцева тканина фільтр-органа гасить штормовий шум і повторює сервісні пінги в кабельному рифі. Підсилення сигналу нестабільне під час стрибків тиску. Біологічне реле допомагає маршруту й принаджує хижаків.
 
 ## Audio
 
-UK LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
+Воно відповідає як обладнання, бо обладнання користується його горлом.
 
 ## Field Note
 
-UK LOC HOLD: Use with sonar, scanner and route-warning UI.
+Якщо за луною є пульс, тримай інструмент тихо й перевір воду перед рухом.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/uk_UA. -->

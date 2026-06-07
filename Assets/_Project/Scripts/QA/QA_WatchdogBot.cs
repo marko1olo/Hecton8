@@ -1590,6 +1590,7 @@ namespace Hecton8.QA
             if (_quitHookRegistered)
                 return;
 
+            Application.quitting -= HandleApplicationQuittingCold;
             Application.quitting += HandleApplicationQuittingCold;
             _quitHookRegistered = true;
         }

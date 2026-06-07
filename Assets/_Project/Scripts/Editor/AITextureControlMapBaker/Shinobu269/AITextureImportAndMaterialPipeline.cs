@@ -46,7 +46,9 @@ namespace Hecton8.Editor.AITextureControlMaps
 
         static AITexturePostImportDrain()
         {
+            AssemblyReloadEvents.beforeAssemblyReload -= Clear;
             AssemblyReloadEvents.beforeAssemblyReload += Clear;
+            EditorApplication.quitting -= Clear;
             EditorApplication.quitting += Clear;
         }
 

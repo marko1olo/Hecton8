@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET.V0",
+  "release_set_id": "RS182_FIRST_LOCKER_TRACE_ARTICLES",
+  "status": "production_article_source_candidates_pending_importer_admission_route_card_bake_and_unity_placement",
+  "evidence_class": "STATIC_DOC",
+  "packets": [
+    "P1185_LOCKER_NAME_TAPE_SALT_EDGE",
+    "P1186_GLOVE_PAIR_MISMATCHED_CUFF",
+    "P1187_BOOT_DRY_RIM_SOLE_LINE",
+    "P1188_MUG_HANDLE_CHIP_STAIN",
+    "P1189_SHIFT_NOTE_GREASE_THUMB"
+  ],
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P1185_LOCKER_NAME_TAPE_SALT_EDGE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1186_GLOVE_PAIR_MISMATCHED_CUFF.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1187_BOOT_DRY_RIM_SOLE_LINE.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1188_MUG_HANDLE_CHIP_STAIN.production.md",
+    "Docs/Lore/AppliedContent/production_packets/P1189_SHIFT_NOTE_GREASE_THUMB.production.md"
+  ],
+  "canonical_importer_ready": false,
+  "runtime_ready": false,
+  "native_localization_ready": false,
+  "data_monolith_ready": false,
+  "h8bin_ready": false,
+  "unity_placement_ready": false,
+  "generated_page_ready": false,
+  "publication_ready": false
+}

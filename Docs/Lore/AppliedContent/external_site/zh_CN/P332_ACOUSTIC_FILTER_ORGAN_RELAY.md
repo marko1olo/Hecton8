@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Acoustic Filter Organ Relay"
+title: "声学滤器官中继"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Acoustic Filter Organ Relay
+# 声学滤器官中继
 
-ZH LOC HOLD: HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.
+在无线电失效的深度下，声音是主要仪器。电缆礁会扭曲声音：破壳会响，金属毯会散射，风暴脉冲会模糊距离，活组织可能夹在声源与回波之间。
 
-## Scanner
-
-ZH LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
-
-## Terminal
-
-ZH LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
-
-## Audio
-
-ZH LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
-
-## Field Note
-
-ZH LOC HOLD: Use with sonar, scanner and route-warning UI.
+所以声呐不是干净真相。中继可能显示一扇门，也可能喂给掠食者、重复旧警告，或让同一条走廊出现两次。
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/zh_CN. -->

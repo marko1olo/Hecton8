@@ -9,32 +9,34 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Acoustic Filter Organ Relay"
+title: "Relé de órgão filtrante acústico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Acoustic Filter Organ Relay
+# Relé de órgão filtrante acústico
 
-PT LOC HOLD: Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.
+Alguns animais de recife desenvolvem órgãos filtrantes densos o bastante para moldar som. Nós de reparo Atlas passaram a usar esse tecido como barreira acústica depois que as carcaças dos relés racharam.
+
+Essa ajuda tem dentes ao redor. O mesmo órgão que leva um ping de rota pode anunciar vibração para comedores, acordar fauna marcada ou devolver o movimento de um Marauder pelo recife. Resposta limpa não quer dizer corredor seguro. Quer dizer que o corredor tem ouvinte.
 
 ## Scanner
 
-PT LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
+Ressonância do órgão filtrante combina com a cadência do relé danificado. Retorno mais limpo após atravessar tecido. Marcas de mordida na carcaça.
 
 ## Terminal
 
-PT LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
+RELÉ ACÚSTICO // Tecido local de órgão filtrante abafa ruído de tempestade e repete pings de serviço no recife de cabos. Ganho de sinal instável sob surtos de pressão. Relé biológico é ajuda de rota e isca de predador.
 
 ## Audio
 
-PT LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
+Ele responde como equipamento porque o equipamento está usando a garganta dele.
 
 ## Field Note
 
-PT LOC HOLD: Use with sonar, scanner and route-warning UI.
+Se o eco tem pulso por trás, mantenha a ferramenta quieta e confira a água antes de mover.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/pt_BR. -->

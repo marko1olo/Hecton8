@@ -9,32 +9,18 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Vent Micronode Power Nest"
+title: "Nido de energía de micronodos de fumarola"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Vent Micronode Power Nest
+# Nido de energía de micronodos de fumarola
 
-ES LOC HOLD: The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.
+El océano inferior está lleno de potencia pequeña, no generosa. Las fumarolas sangran calor por corteza metálica; los gradientes químicos se juntan sobre piel mineral; el viejo hardware dejó contactos y bobinas.
 
-## Scanner
-
-ES LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
-
-## Terminal
-
-ES LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
-
-## Audio
-
-ES LOC HOLD: At depth, even the vents are drafted into maintenance.
-
-## Field Note
-
-ES LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+Un nodo puede mantener un relé latiendo, cargar un dron una sola vez o conservar memoria. Da motivo para acercarse a fumarolas sin volverlas cofres seguros: calor, presión, toxinas y lógica Atlas comparten nido.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/es_ES. -->

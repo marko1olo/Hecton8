@@ -17,7 +17,7 @@
 | Location / route | Emergency crate, first shelter shelf, or raft salvage pouch |
 | Unlock context | Player scans a ration pouch with a pinhole in the foil layer |
 | Evidence object | Ration pouch, foil pinhole, pressure crease, dry edge |
-| Connected packets | P1110_DRY_POUCH_SALT_CHECK; P1111_WET_STOCK_RED_TAG; P1007_VITAMIN_RATION_ORANGE_DUST |
+| Connected packets | P1110_DRY_POUCH_SALT_CHECK; P1111_WET_STOCK_RED_TAG; P1126_NUTRIENT_GEL_COLD_LAYER |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: teaches early ration inspection before the player treats sealed-looking food as clean |
 | Content status | source_complete_unimported |
 

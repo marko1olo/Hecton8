@@ -4,7 +4,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localized_pages: 444
+localized_pages: 446
 draft_machine_or_llm_pages: 0
 draft_marker_pages: 0
 ---
@@ -120,6 +120,8 @@ draft_marker_pages: 0
 - [Selene Arendt Atlas Weighting](P107_SELENE_ARENDT_ATLAS_WEIGHTING.md) `P107_SELENE_ARENDT_ATLAS_WEIGHTING`
 - [Noor Haldane Evac Cert](P108_NOOR_HALDANE_EVAC_CERT.md) `P108_NOOR_HALDANE_EVAC_CERT`
 - [Silent Orbit Receipt Ledger](P1090_SILENT_ORBIT_RECEIPT_LEDGER.md) `P1090_SILENT_ORBIT_RECEIPT_LEDGER`
+- [Pellet Wake Braking Ledger](P1091_PELLET_WAKE_BRAKING_LEDGER.md) `P1091_PELLET_WAKE_BRAKING_LEDGER`
+- [Pressure Ladder Acoustic Chart](P1092_PRESSURE_LADDER_ACOUSTIC_CHART.md) `P1092_PRESSURE_LADDER_ACOUSTIC_CHART`
 - [Marek Ibarra Loss Conversion](P109_MAREK_IBARRA_LOSS_CONVERSION.md) `P109_MAREK_IBARRA_LOSS_CONVERSION`
 - [Vera Sato-Ren Return Action](P110_VERA_SATO_REN_RETURN_ACTION.md) `P110_VERA_SATO_REN_RETURN_ACTION`
 - [Manual Bilge Pump Kit](P111_MANUAL_BILGE_PUMP_KIT.md) `P111_MANUAL_BILGE_PUMP_KIT`

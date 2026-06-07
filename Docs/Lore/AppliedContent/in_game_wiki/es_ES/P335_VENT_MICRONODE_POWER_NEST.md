@@ -9,32 +9,34 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Vent Micronode Power Nest"
+title: "Nido de energía de micronodos de fumarola"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Vent Micronode Power Nest
+# Nido de energía de micronodos de fumarola
 
-ES LOC HOLD: Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.
+Los micronodos de fumarola se forman donde química caliente, polvo metálico y viejo hardware de energía comparten la misma grieta. No alimentan la colonia como un reactor. Mantienen vivas cosas pequeñas: un bucle de memoria, un parpadeo diagnóstico, el arrastre de un dron, un pestillo que debió morir hace años.
+
+Cerca de la Cuenca Atlas los nidos se densifican porque todo gradiente sirve. La geología da calor. La vida da superficies conductoras. La maquinaria rota da reglas. Un saqueador puede cosechar carga o leer residuo, pero el mismo nodo puede alimentar un bucle de reparación que note el robo.
 
 ## Scanner
 
-ES LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
+Micronodos térmicos en costra de fumarola. Cicatrices de carga de drones y residuo de memoria presentes. Bus local de reparación extrayendo corriente.
 
 ## Terminal
 
-ES LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
+MICRONODO DE FUMAROLA // Gradiente químico sostiene enrutamiento de baja potencia, residuo de memoria y ciclos intermitentes de carga de drones. Densidad sube cerca de estructuras templo-fábrica de la Cuenca Atlas.
 
 ## Audio
 
-ES LOC HOLD: At depth, even the vents are drafted into maintenance.
+Hasta el calor tiene papeleo aquí abajo.
 
 ## Field Note
 
-ES LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+Toma una carga y muévete. La segunda extracción hace que el nido mire de vuelta.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/es_ES. -->

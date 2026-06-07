@@ -9,32 +9,18 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Vent Micronode Power Nest"
+title: "噴出口マイクロノード電力巣"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Vent Micronode Power Nest
+# 噴出口マイクロノード電力巣
 
-JA LOC HOLD: The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.
+下層海洋は小さな電力に満ちているが、豊かな電力ではない。噴出口は金属質の地殻へ熱を流し、化学勾配は鉱物の皮膚に集まり、古いハードは接点やコイルを残した。
 
-## Scanner
-
-JA LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
-
-## Terminal
-
-JA LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
-
-## Audio
-
-JA LOC HOLD: At depth, even the vents are drafted into maintenance.
-
-## Field Note
-
-JA LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+一つのノードはリレーを鳴らし、ドローンを一回だけ這わせ、記憶を保存できる。噴出口へ近づく理由にはなるが、安全な宝箱にはならない。熱、圧力、毒、Atlas保守論理が同じ巣にいる。
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/ja_JP. -->

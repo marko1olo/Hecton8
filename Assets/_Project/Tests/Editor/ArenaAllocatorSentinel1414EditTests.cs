@@ -24,6 +24,78 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void GlobalDataVault_RawPayloadAndArenaFreePathsCheckH8MemoryResult()
+        {
+            string h8Memory = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/H8Memory.cs");
+            string vault = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs");
+            string tryFreeRaw = ExtractMethod(h8Memory, "internal static bool TryFreeRaw");
+            string storePayload = ExtractMethod(vault, "public bool TryStoreMacroDatabasePayload");
+            string rollbackPayload = ExtractMethod(vault, "private static void FreeMacroDatabasePayloadRollbackOrThrow");
+            string removePayload = ExtractMethod(vault, "public bool TryRemoveMacroDatabasePayload");
+            string dispose = ExtractMethod(vault, "public void Dispose()");
+            string disposePayloadCache = ExtractMethod(vault, "private void DisposeMacroDatabasePayloadCache");
+
+            StringAssert.Contains("TryFreeRaw(pointer, allocator, requester);", h8Memory);
+            StringAssert.Contains("return false;", tryFreeRaw);
+            Assert.AreEqual(0, CountOccurrences(vault, "H8Memory.FreeRaw("));
+
+            StringAssert.Contains("!H8Memory.TryFreeRaw(existing.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault)", storePayload);
+            StringAssert.Contains("FreeMacroDatabasePayloadRollbackOrThrow(payloadPointer, null);", storePayload);
+            StringAssert.Contains("if (H8Memory.TryFreeRaw(payloadPointer, Allocator.Persistent, SystemID.CoreDataVault))", rollbackPayload);
+            StringAssert.Contains("throw cleanupFailure;", rollbackPayload);
+
+            StringAssert.Contains("!H8Memory.TryFreeRaw(entry.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault)", removePayload);
+            StringAssert.Contains("removed = default;", removePayload);
+            StringAssert.Contains("!H8Memory.TryFreeRaw(_arenaBase, Allocator.Persistent, SystemID.CoreDataVault)", dispose);
+            StringAssert.Contains("!H8Memory.TryFreeRaw(entry.Pointer.ToPointer(), Allocator.Persistent, SystemID.CoreDataVault)", disposePayloadCache);
+        }
+
+        [Test]
+        public void H8Memory_RawRegistrationFailureRollsBackUntrackedPointers()
+        {
+            string h8Memory = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/H8Memory.cs");
+            string allocateRaw = ExtractMethod(h8Memory, "public static void* AllocateRaw");
+            string reallocateRaw = ExtractMethod(h8Memory, "internal static void* ReallocateRaw");
+            string releaseSentinelReapedRaw = ExtractMethod(h8Memory, "public static bool ReleaseSentinelReapedRaw");
+            string freeUntracked = ExtractMethod(h8Memory, "private static bool TryFreeUntrackedRawPointer");
+
+            StringAssert.Contains("TryFreeUntrackedRawPointer(pointer, allocator, owner);", allocateRaw);
+            StringAssert.Contains("TryFreeUntrackedRawPointer(newPointer, allocator, owner);", reallocateRaw);
+            StringAssert.Contains("TryFreeUntrackedRawPointer(pointer, fallbackAllocator, SystemID.Unknown);", releaseSentinelReapedRaw);
+            StringAssert.Contains("UnsafeUtility.Free(pointer, allocator);", freeUntracked);
+            StringAssert.Contains("RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);", freeUntracked);
+            StringAssert.Contains("return false;", freeUntracked);
+        }
+
+        [Test]
+        public void H8Memory_RegisterActiveJobCompletesIncomingHandlesOnFailure()
+        {
+            string h8Memory = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/H8Memory.cs");
+            string registerActiveJob = ExtractMethod(h8Memory, "public static bool RegisterActiveJob");
+            string completeOwnerJobHandle = ExtractMethod(h8Memory, "private static void TryCompleteOwnerJobHandle");
+
+            StringAssert.Contains("public static bool RegisterActiveJob(SystemID owner, JobHandle handle)", h8Memory);
+            StringAssert.Contains("TryCompleteOwnerJobHandle(ref handle);", registerActiveJob);
+            StringAssert.Contains("TryCompleteOwnerJobHandle(ref combinedHandle);", registerActiveJob);
+            StringAssert.Contains("CompleteOwnerJobs(owner);", registerActiveJob);
+            StringAssert.Contains("return false;", registerActiveJob);
+            StringAssert.Contains("DispatcherJobFence.TryComplete(ref ownerHandle, forceComplete: true);", completeOwnerJobHandle);
+        }
+
+        [Test]
+        public void H8Memory_DeferredNativeArrayReleaseCompletesDisposeHandleWhenJobRegistrationFails()
+        {
+            string h8Memory = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/H8Memory.cs");
+            string deferredRelease = ExtractMethod(h8Memory, "public static JobHandle Release<T>(ref NativeArray<T> array, JobHandle dependency, SystemID owner)");
+
+            StringAssert.Contains("JobHandle disposeHandle = array.Dispose(dependency);", deferredRelease);
+            StringAssert.Contains("if (!RegisterActiveJob(owner, disposeHandle))", deferredRelease);
+            StringAssert.Contains("TryCompleteOwnerJobHandle(ref disposeHandle);", deferredRelease);
+            StringAssert.Contains("array = default;", deferredRelease);
+            StringAssert.Contains("return disposeHandle;", deferredRelease);
+        }
+
+        [Test]
         public void GlobalDataVault_DeferredGrowth_ClearUsesCompareExchange()
         {
             string vault = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs");

@@ -1095,6 +1095,7 @@ namespace Hecton8.Tools
         {
             CacheRegistryDependenciesCold();
             TryRegisterHotSwap();
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
             SceneManager.sceneUnloaded += HandleSceneUnloaded;
 
             if (_isInitialized)

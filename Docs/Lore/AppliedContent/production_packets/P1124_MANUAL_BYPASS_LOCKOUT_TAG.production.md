@@ -17,7 +17,7 @@
 | Location / route | Pump bypass lever, shelter utility wall, or drowned service cabinet |
 | Unlock context | Player scans a torn lockout tag on a manual bypass lever |
 | Evidence object | Manual bypass tag, torn tie, lever notch, red paint line |
-| Connected packets | P808_BYPASS_LEVER_SALT_GROOVE; P1120_PUMP_FLOW_ARROW_SCAR; P1123_GROUND_STRAP_SALT_BLOOM |
+| Connected packets | P808_PUMP_SPINE_RETURN_STAMP; P1120_PUMP_FLOW_ARROW_SCAR; P1123_GROUND_STRAP_SALT_BLOOM |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: teaches the player that bypass state is a safety condition, not free loot flavor |
 | Content status | source_complete_unimported |
 

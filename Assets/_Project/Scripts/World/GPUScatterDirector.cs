@@ -2268,35 +2268,13 @@ namespace Hecton8.World
                 return false;
 
             DisposeVisibleCountReadbackData();
-            NativeArray<uint> replacement = default;
-            try
-            {
-                replacement = new NativeArray<uint>(
-                    IndirectArgsElementCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory);
-                int sentinelId = NativeMemorySentinel.RegisterNativeArray(replacement, nameof(GPUScatterDirector), "_visibleCountReadbackData", NativeAllocationLifetime.Scene);
-                if (sentinelId <= 0)
-                    throw new InvalidOperationException("Native memory sentinel registration failed for visible count readback data.");
-
-                _visibleCountReadback.Data = replacement;
-            }
-            catch
-            {
-                if (replacement.IsCreated)
-                {
-                    try
-                    {
-                        NativeMemorySentinel.UnregisterNativeArray(replacement);
-                    }
-                    finally
-                    {
-                        replacement.Dispose();
-                    }
-                }
-
-                throw;
-            }
+            _visibleCountReadback.Data = H8Memory.Allocate<uint>(
+                IndirectArgsElementCount,
+                VaultOwnerSystemId,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            if (!_visibleCountReadback.Data.IsCreated)
+                throw new InvalidOperationException("H8Memory allocation failed for visible count readback data.");
 
             _visibleCountReadbackRepairRequested = false;
             return true;
@@ -2392,11 +2370,7 @@ namespace Hecton8.World
         private void ReleaseVisibleCountReadbackNativeData()
         {
             if (_visibleCountReadback.Data.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_visibleCountReadback.Data);
-                _visibleCountReadback.Data.Dispose();
-                _visibleCountReadback.Data = default;
-            }
+                H8Memory.Release(ref _visibleCountReadback.Data, VaultOwnerSystemId);
         }
 
 #if UNITY_EDITOR

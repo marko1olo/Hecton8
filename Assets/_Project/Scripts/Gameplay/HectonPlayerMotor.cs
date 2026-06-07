@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Caves;
 using Hecton8.Inventory;
@@ -207,7 +208,42 @@ namespace Hecton8.Gameplay
         public bool TryGetRecentLadderContact(int maxPhysicsFrameAge, out Vector3 point)
         {
             point = default;
-            return false;
+            if (HectonFloatingOrigin.IsShiftInProgress)
+                return false;
+
+            uint maxAgeFrames = (uint)math.max(0, maxPhysicsFrameAge);
+            System.ReadOnlySpan<PlayerStateSignal> signals = SignalBus<PlayerStateSignal>.GetFrameSnapshot();
+            for (int i = signals.Length - 1; i >= 0; i--)
+            {
+                if (TryResolveLadderContactSignal(in signals[i], maxAgeFrames, out point))
+                    return true;
+            }
+
+            return SignalBus<PlayerStateSignal>.TryGetLatest(out PlayerStateSignal latestSignal, out _) &&
+                   TryResolveLadderContactSignal(in latestSignal, maxAgeFrames, out point);
+        }
+
+        private static bool TryResolveLadderContactSignal(in PlayerStateSignal signal, uint maxAgeFrames, out Vector3 point)
+        {
+            point = default;
+            const byte RequiredFlags = PlayerStateSignal.FlagActive | PlayerStateSignal.FlagClimbing;
+            if (signal.State != PlayerStateSignal.StateClimbing ||
+                (signal.Flags & RequiredFlags) != RequiredFlags ||
+                !IsFreshSignalFrame(SystemDispatcher.CurrentFrameId, signal.Frame, maxAgeFrames) ||
+                !signal.PositionAup.TryToRuntimeFloat3(out float3 runtimePoint) ||
+                !math.all(math.isfinite(runtimePoint)))
+            {
+                return false;
+            }
+
+            point = new Vector3(runtimePoint.x, runtimePoint.y, runtimePoint.z);
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFreshSignalFrame(uint currentFrame, uint signalFrame, uint maxAgeFrames)
+        {
+            return signalFrame <= currentFrame && currentFrame - signalFrame <= maxAgeFrames;
         }
 
         /// <summary>Consumes the most recent hand IK repair snap resolved by the typed KCC repair lane.</summary>

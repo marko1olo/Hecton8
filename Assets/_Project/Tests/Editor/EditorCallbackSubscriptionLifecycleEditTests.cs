@@ -9,6 +9,13 @@ namespace Hecton8.Tests.Editor
 {
     public sealed class EditorCallbackSubscriptionLifecycleEditTests
     {
+        private static readonly string[] PairedEditorEvents =
+        {
+            "EditorApplication.update",
+            "EditorApplication.playModeStateChanged",
+            "SceneView.duringSceneGui"
+        };
+
         private static readonly Regex OnEnableSignatureRegex = new Regex(
             @"void\s+OnEnable\s*\([^)]*\)\s*\{",
             RegexOptions.Compiled);
@@ -26,10 +33,95 @@ namespace Hecton8.Tests.Editor
                 {
                     string body = ExtractMethodBody(source, match.Index);
                     int line = CountLinesBefore(source, match.Index);
-                    AuditEvent(path, line, body, "EditorApplication.update", failures);
-                    AuditEvent(path, line, body, "SceneView.duringSceneGui", failures);
+                    foreach (string eventName in PairedEditorEvents)
+                        AuditEvent(path, line, body, eventName, failures);
                 }
             }
+
+            Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+        }
+
+        [Test]
+        public void PlayModeStateChangedSubscriptions_DefensivelyDeduplicateNearSubscribe()
+        {
+            string[] sourceFiles = EnumerateScriptFiles();
+            List<string> failures = new List<string>();
+
+            AuditNearbySubscriptions(
+                sourceFiles,
+                @"(?:UnityEditor\.)?EditorApplication\.playModeStateChanged",
+                "playModeStateChanged",
+                failures);
+
+            Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+        }
+
+        [Test]
+        public void ReloadAndCompilationSubscriptions_DefensivelyDeduplicateNearSubscribe()
+        {
+            string[] sourceFiles = EnumerateScriptFiles();
+            List<string> failures = new List<string>();
+
+            AuditNearbySubscriptions(
+                sourceFiles,
+                @"(?:UnityEditor\.)?AssemblyReloadEvents\.beforeAssemblyReload",
+                "beforeAssemblyReload",
+                failures);
+            AuditNearbySubscriptions(
+                sourceFiles,
+                @"(?:UnityEditor\.)?AssemblyReloadEvents\.afterAssemblyReload",
+                "afterAssemblyReload",
+                failures);
+            AuditNearbySubscriptions(
+                sourceFiles,
+                @"CompilationPipeline\.compilationStarted",
+                "compilationStarted",
+                failures);
+            AuditNearbySubscriptions(
+                sourceFiles,
+                @"CompilationPipeline\.compilationFinished",
+                "compilationFinished",
+                failures);
+
+            Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+        }
+
+        [Test]
+        public void GlobalRuntimeSubscriptions_DefensivelyDeduplicateNearSubscribe()
+        {
+            string[] sourceFiles = EnumerateScriptFiles();
+            List<string> failures = new List<string>();
+
+            AuditNearbySubscriptions(
+                sourceFiles,
+                @"(?:UnityEngine\.SceneManagement\.)?SceneManager\.sceneLoaded",
+                "sceneLoaded",
+                failures);
+            AuditNearbySubscriptions(
+                sourceFiles,
+                @"(?:UnityEngine\.SceneManagement\.)?SceneManager\.sceneUnloaded",
+                "sceneUnloaded",
+                failures);
+            AuditNearbySubscriptions(
+                sourceFiles,
+                @"(?:UnityEngine\.SceneManagement\.)?SceneManager\.activeSceneChanged",
+                "activeSceneChanged",
+                failures);
+            AuditNearbySubscriptions(
+                sourceFiles,
+                @"(?<!Editor)(?:UnityEngine\.)?Application\.quitting",
+                "Application.quitting",
+                failures);
+            AuditNearbySubscriptions(
+                sourceFiles,
+                @"(?:UnityEditor\.)?EditorApplication\.quitting",
+                "EditorApplication.quitting",
+                failures);
+            AuditNearbySubscriptions(
+                sourceFiles,
+                @"AudioSettings\.OnAudioConfigurationChanged",
+                "OnAudioConfigurationChanged",
+                failures);
 
             Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
         }
@@ -89,6 +181,50 @@ namespace Hecton8.Tests.Editor
             }
 
             return lines;
+        }
+
+        private static string[] EnumerateScriptFiles()
+        {
+            string scriptsRoot = Path.Combine(ProjectRoot, "Assets", "_Project", "Scripts");
+            List<string> paths = new List<string>(Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories));
+            return paths.ToArray();
+        }
+
+        private static void AuditNearbySubscriptions(
+            string[] sourceFiles,
+            string eventPattern,
+            string eventName,
+            List<string> failures)
+        {
+            Regex addRegex = new Regex(eventPattern + @"\s*\+=\s*(?<handler>[^;]+);");
+
+            foreach (string path in sourceFiles)
+            {
+                string[] lines = File.ReadAllLines(path);
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    Match match = addRegex.Match(lines[i]);
+                    if (!match.Success)
+                        continue;
+
+                    string handler = match.Groups["handler"].Value.Trim();
+                    if (!HasNearbyRemove(lines, i, eventPattern, handler))
+                        failures.Add(ToProjectRelative(path) + ":" + (i + 1) + " missing " + eventName + " -= " + handler + "; before subscribe");
+                }
+            }
+        }
+
+        private static bool HasNearbyRemove(string[] lines, int addLineIndex, string eventPattern, string handler)
+        {
+            Regex removeRegex = new Regex(eventPattern + @"\s*-=\s*" + Regex.Escape(handler) + @"\s*;");
+            int firstLine = Math.Max(0, addLineIndex - 5);
+            for (int i = firstLine; i <= addLineIndex; i++)
+            {
+                if (removeRegex.IsMatch(lines[i]))
+                    return true;
+            }
+
+            return false;
         }
 
         private static string ToProjectRelative(string path)

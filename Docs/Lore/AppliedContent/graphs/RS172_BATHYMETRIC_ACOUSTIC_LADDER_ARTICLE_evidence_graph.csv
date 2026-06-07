@@ -1,0 +1,2 @@
+packet_id,arc_id,depth_band,route_moment,prereq_packet_ids,next_packet_ids,evidence_type,truth_claim,player_decision,spoiler_tier,primary_surface
+P1092_PRESSURE_LADDER_ACOUSTIC_CHART,depth_ladder_route,0-5600m,first_bathymetric_chart_or_false_floor_ping,P032_PRESSURE_LADDER_DEPTH_BANDS;P049_SONAR_RETURN_ROUTE;P083_BRINE_CANYON_ROUTE_LADDER,,bathymetric acoustic chart,"HECTON-8 depth bands change light, pressure, brine, heat, metal debris and acoustic trust; sonar must be proven locally.",Why does the ocean lie differently at each depth band?,1,terminal

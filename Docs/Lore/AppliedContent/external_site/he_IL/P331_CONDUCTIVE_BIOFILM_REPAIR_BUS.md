@@ -9,32 +9,18 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Conductive Biofilm Repair Bus"
+title: "אוטובוס תיקון של ביופילם מוליך"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Conductive Biofilm Repair Bus
+# אוטובוס תיקון של ביופילם מוליך
 
-HE LOC HOLD: Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.
+בשוניות הכבלים, תשתית שבורה כמעט אף פעם לא נשארת נקייה. מי מלח חמים מזינים מרבדים מיקרוביאליים על בידוד קרוע; ברזל ונחושת נעשים שלד; פעימות אבחון ישנות נותנות לקצב לצמיחה.
 
-## Scanner
-
-HE LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
-
-## Terminal
-
-HE LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
-
-## Audio
-
-HE LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
-
-## Field Note
-
-HE LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+לבוזזים זו הוכחה שימושית. עור כבל חי יכול להצביע על עורקי שירות, דלתות חלשות, קיני רחפנים או נתיב נתונים. כל חתך מסוכן, כי אטלס עלול לקרוא את הגשר החי כמלאי תיקון תקף.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/he_IL. -->

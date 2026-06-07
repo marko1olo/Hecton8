@@ -2788,23 +2788,49 @@ public struct VoxelTerrainSeamSnapJob : IJobParallelFor
 
     public void Execute(int idx)
     {
-        if (!terrainHeights.IsCreated || ptsX <= 1 || ptsZ <= 1 || seamTransitionBand <= 0f)
+        if (!terrainHeights.IsCreated ||
+            !positions.IsCreated ||
+            idx < 0 ||
+            idx >= positions.Length ||
+            ptsX <= 1 ||
+            ptsZ <= 1 ||
+            terrainHeights.Length < ptsX * ptsZ ||
+            !math.isfinite(voxelStep) ||
+            voxelStep <= 0.0001f ||
+            !math.isfinite(seamTransitionBand) ||
+            seamTransitionBand <= 0f ||
+            !IsFinite(volumeOrigin))
+        {
             return;
+        }
 
         float3 position = positions[idx];
+        if (!IsFinite(position))
+            return;
+
         float boundaryDistance = VoxelSeamDirector.ComputeBoundaryDistance(
             position.xz,
             volumeOrigin,
             ptsX,
             ptsZ,
             voxelStep);
-        if (boundaryDistance > seamTransitionBand)
+        if (!math.isfinite(boundaryDistance) || boundaryDistance > seamTransitionBand)
             return;
 
         float terrainHeight = SampleTerrainHeight(position.xz);
+        if (!math.isfinite(terrainHeight))
+            return;
+
         float blendToTerrain = VoxelSeamDirector.ComputeBoundaryBlend01(boundaryDistance, seamTransitionBand);
+        if (!math.isfinite(blendToTerrain))
+            return;
+
         float targetHeight = VoxelSeamDirector.ComputeTargetSnapHeight(terrainHeight, seamOverlap);
-        positions[idx] = new float3(position.x, math.lerp(position.y, targetHeight, blendToTerrain), position.z);
+        float snappedY = math.lerp(position.y, targetHeight, blendToTerrain);
+        if (!math.isfinite(targetHeight) || !math.isfinite(snappedY))
+            return;
+
+        positions[idx] = new float3(position.x, snappedY, position.z);
     }
 
     float SampleTerrainHeight(float2 absoluteWorldXZ)
@@ -2825,7 +2851,15 @@ public struct VoxelTerrainSeamSnapJob : IJobParallelFor
         float h10 = terrainHeights[x1 + z0 * ptsX];
         float h01 = terrainHeights[x0 + z1 * ptsX];
         float h11 = terrainHeights[x1 + z1 * ptsX];
+        if (!math.isfinite(h00) || !math.isfinite(h10) || !math.isfinite(h01) || !math.isfinite(h11))
+            return float.NaN;
+
         return math.lerp(math.lerp(h00, h10, fx), math.lerp(h01, h11, fx), fz);
+    }
+
+    static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
     }
 }
 [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -2843,23 +2877,51 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
 
     public void Execute(int idx)
     {
-        if (!terrainHeights.IsCreated || ptsX <= 1 || ptsZ <= 1 || seamTransitionBand <= 0f)
+        if (!terrainHeights.IsCreated ||
+            !positions.IsCreated ||
+            !normals.IsCreated ||
+            idx < 0 ||
+            idx >= positions.Length ||
+            idx >= normals.Length ||
+            ptsX <= 1 ||
+            ptsZ <= 1 ||
+            terrainHeights.Length < ptsX * ptsZ ||
+            !math.isfinite(voxelStep) ||
+            voxelStep <= 0.0001f ||
+            !math.isfinite(seamTransitionBand) ||
+            seamTransitionBand <= 0f ||
+            !IsFinite(volumeOrigin))
+        {
             return;
+        }
 
         float3 position = positions[idx];
+        if (!IsFinite(position))
+            return;
+
         float boundaryDistance = VoxelSeamDirector.ComputeBoundaryDistance(
             position.xz,
             volumeOrigin,
             ptsX,
             ptsZ,
             voxelStep);
-        if (boundaryDistance > seamTransitionBand)
+        if (!math.isfinite(boundaryDistance) || boundaryDistance > seamTransitionBand)
             return;
 
         float3 terrainNormal = SampleTerrainNormal(position.xz);
+        if (!IsFinite(terrainNormal))
+            return;
+
         float3 voxelNormal = NormalizeFastOrDefault(normals[idx], new float3(0f, 1f, 0f));
         float blendToTerrain = VoxelSeamDirector.ComputeBoundaryBlend01(boundaryDistance, seamTransitionBand);
-        normals[idx] = BlendNormalsNlerp(voxelNormal, terrainNormal, blendToTerrain);
+        if (!math.isfinite(blendToTerrain))
+            return;
+
+        float3 blendedNormal = BlendNormalsNlerp(voxelNormal, terrainNormal, blendToTerrain);
+        if (!IsFinite(blendedNormal))
+            return;
+
+        normals[idx] = blendedNormal;
     }
 
     float SampleTerrainHeight(float2 absoluteWorldXZ)
@@ -2880,6 +2942,9 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
         float h10 = terrainHeights[x1 + z0 * ptsX];
         float h01 = terrainHeights[x0 + z1 * ptsX];
         float h11 = terrainHeights[x1 + z1 * ptsX];
+        if (!math.isfinite(h00) || !math.isfinite(h10) || !math.isfinite(h01) || !math.isfinite(h11))
+            return float.NaN;
+
         return math.lerp(math.lerp(h00, h10, fx), math.lerp(h01, h11, fx), fz);
     }
 
@@ -2903,7 +2968,8 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
         float3 normal11 = ResolveTerrainGridNormal(x1, z1);
         float3 normalX0 = math.lerp(normal00, normal10, fx);
         float3 normalX1 = math.lerp(normal01, normal11, fx);
-        return NormalizeFastOrDefault(math.lerp(normalX0, normalX1, fz), new float3(0f, 1f, 0f));
+        float3 normal = NormalizeFastOrDefault(math.lerp(normalX0, normalX1, fz), new float3(0f, 1f, 0f));
+        return IsFinite(normal) ? normal : new float3(0f, 1f, 0f);
     }
 
     float3 ResolveTerrainGridNormal(int x, int z)
@@ -2917,6 +2983,8 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
         float heightRight = terrainHeights[xNext + z * ptsX];
         float heightBack = terrainHeights[x + zPrev * ptsX];
         float heightForward = terrainHeights[x + zNext * ptsX];
+        if (!math.isfinite(heightLeft) || !math.isfinite(heightRight) || !math.isfinite(heightBack) || !math.isfinite(heightForward))
+            return new float3(0f, 1f, 0f);
 
         float stepX = math.max((xNext - xPrev) * voxelStep, voxelStep);
         float stepZ = math.max((zNext - zPrev) * voxelStep, voxelStep);
@@ -2927,14 +2995,22 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
 
     static float3 BlendNormalsNlerp(float3 startNormal, float3 endNormal, float t)
     {
-        float blend = math.saturate(t);
+        float blend = math.isfinite(t) ? math.saturate(t) : 0f;
         return NormalizeFastOrDefault(math.lerp(startNormal, endNormal, blend), startNormal);
     }
 
     static float3 NormalizeFastOrDefault(float3 value, float3 fallback)
     {
+        if (!IsFinite(value))
+            return fallback;
+
         float lengthSq = math.lengthsq(value);
-        return lengthSq > 0.0001f ? value / math.max(LengthApprox(value), 0.0001f) : fallback;
+        return math.isfinite(lengthSq) && lengthSq > 0.0001f ? value / math.max(LengthApprox(value), 0.0001f) : fallback;
+    }
+
+    static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
     }
 
     static float LengthApprox(float3 value)
@@ -2978,7 +3054,30 @@ public struct VoxelBiomeSampleJob : IJobParallelFor
 
     public void Execute(int idx)
     {
+        if (!biomeValues.IsCreated || idx < 0 || idx >= biomeValues.Length)
+            return;
+
+        if (!gridBiome.IsCreated ||
+            !positions.IsCreated ||
+            idx >= positions.Length ||
+            ptsX <= 1 ||
+            ptsZ <= 1 ||
+            gridBiome.Length < ptsX * ptsZ ||
+            !math.isfinite(voxelStep) ||
+            voxelStep <= 0.0001f ||
+            !IsFinite(volumeOrigin))
+        {
+            biomeValues[idx] = 0f;
+            return;
+        }
+
         float3 wp=positions[idx];
+        if (!IsFinite(wp))
+        {
+            biomeValues[idx] = 0f;
+            return;
+        }
+
         float lx=(wp.x-volumeOrigin.x)/voxelStep;
         float lz=(wp.z-volumeOrigin.z)/voxelStep;
         lx=math.clamp(lx,0f,ptsX-1f);
@@ -2987,11 +3086,21 @@ public struct VoxelBiomeSampleJob : IJobParallelFor
         int x1=math.min(x0+1,ptsX-1);
         int z1=math.min(z0+1,ptsZ-1);
         float fx=lx-x0,fz=lz-z0;
-        float v00=gridBiome[x0+z0*ptsX];
-        float v10=gridBiome[x1+z0*ptsX];
-        float v01=gridBiome[x0+z1*ptsX];
-        float v11=gridBiome[x1+z1*ptsX];
-        biomeValues[idx]=math.lerp(math.lerp(v00,v10,fx),math.lerp(v01,v11,fx),fz);
+        float v00=SaturateFinite(gridBiome[x0+z0*ptsX]);
+        float v10=SaturateFinite(gridBiome[x1+z0*ptsX]);
+        float v01=SaturateFinite(gridBiome[x0+z1*ptsX]);
+        float v11=SaturateFinite(gridBiome[x1+z1*ptsX]);
+        biomeValues[idx]=SaturateFinite(math.lerp(math.lerp(v00,v10,fx),math.lerp(v01,v11,fx),fz));
+    }
+
+    static float SaturateFinite(float value)
+    {
+        return math.isfinite(value) ? math.saturate(value) : 0f;
+    }
+
+    static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
     }
 }
 
@@ -3306,7 +3415,13 @@ public struct VoxelDirtyBlendJob : IJobParallelFor
         if (!dirtyBlendValues.IsCreated || index < 0 || index >= dirtyBlendValues.Length)
             return;
 
-        if (!modifiedCells.IsCreated || modifiedCellCount <= 0 || !positions.IsCreated || index >= positions.Length || voxelStep <= 0.0001f)
+        if (!modifiedCells.IsCreated ||
+            modifiedCellCount <= 0 ||
+            !positions.IsCreated ||
+            index >= positions.Length ||
+            !math.isfinite(voxelStep) ||
+            voxelStep <= 0.0001f ||
+            !math.all(math.isfinite(absoluteCellOffset)))
         {
             dirtyBlendValues[index] = 0f;
             return;
@@ -3314,7 +3429,19 @@ public struct VoxelDirtyBlendJob : IJobParallelFor
 
         double invVoxelStep = 1.0d / math.max((double)voxelStep, 0.0001d);
         float3 position = positions[index];
+        if (!IsFinite(position))
+        {
+            dirtyBlendValues[index] = 0f;
+            return;
+        }
+
         double3 absolutePosition = new double3(position.x, position.y, position.z) + absoluteCellOffset;
+        if (!math.all(math.isfinite(absolutePosition)))
+        {
+            dirtyBlendValues[index] = 0f;
+            return;
+        }
+
         int3 cell = (int3)math.floor(absolutePosition * invVoxelStep);
         float blend = ContainsModifiedCell(cell) ? 1f : 0f;
         blend = math.max(blend, HasDirtyNeighbor(cell, new int3(1, 0, 0)));
@@ -3362,6 +3489,11 @@ public struct VoxelDirtyBlendJob : IJobParallelFor
         hash = (hash ^ (uint)cell.y) * 16777619u;
         hash = (hash ^ (uint)cell.z) * 16777619u;
         return (int)(hash & (uint)(bucketCount - 1));
+    }
+
+    static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
     }
 }
 

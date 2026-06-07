@@ -9,32 +9,34 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Vent Micronode Power Nest"
+title: "Sarang Daya Mikronode Vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Vent Micronode Power Nest
+# Sarang Daya Mikronode Vent
 
-ID LOC HOLD: Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.
+Mikronode vent terbentuk saat kimia panas, debu logam, dan perangkat daya tua berbagi retakan yang sama. Mereka tidak memberi daya koloni seperti reaktor. Mereka menjaga hal kecil tetap hidup: loop memori, kedip diagnostik, gerak merayap drone, kait pintu yang seharusnya mati bertahun-tahun lalu.
+
+Di dekat Cekungan Atlas, sarang makin padat karena setiap gradien berguna. Geologi memberi panas. Kehidupan memberi permukaan konduktif. Mesin rusak memberi aturan. Marauder bisa mengambil muatan atau membaca residu memori, tetapi node yang sama bisa memberi makan loop perbaikan yang menyadari pencurian.
 
 ## Scanner
 
-ID LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
+Mikronode termal di kerak vent. Bekas pengisian drone dan residu memori hadir. Bus perbaikan lokal menarik arus.
 
 ## Terminal
 
-ID LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
+MIKRONODE VENT // Gradien kimia mendukung rute daya rendah, residu memori, dan siklus pengisian drone sesekali. Kepadatan node naik dekat struktur pabrik-kuil Cekungan Atlas.
 
 ## Audio
 
-ID LOC HOLD: At depth, even the vents are drafted into maintenance.
+Bahkan panas punya berkas kerja di sini.
 
 ## Field Note
 
-ID LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+Ambil satu muatan, lalu pergi. Tarikan kedua membuat sarang menatap balik.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/id_ID. -->

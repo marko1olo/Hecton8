@@ -268,6 +268,7 @@ namespace Hecton8.UI
             if (Application.isPlaying && logLifecycleDiagnostics)
                 Hecton8.Core.H8Debug.Log("[HectonSystemsDebugUI] OnEnable.", this);
 #endif
+            SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
             SceneManager.activeSceneChanged += HandleActiveSceneChanged;
             TryRegisterHotSwapListener();
             if (!_slowTickRegistered || !_lateFrameRegistered)

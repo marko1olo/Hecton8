@@ -220,15 +220,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            LODSystemManager registered = GlobalRegistry.LODSystem;
-            if (registered != null && registered != this)
-            {
-                #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogWarning("[LODSystemManager] Duplicate registry owner detected. Destroying duplicate.");
-                #endif
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             CacheRegistryServicesCold();
             EnsureDistanceScratchAllocated();
@@ -250,6 +243,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
@@ -345,6 +341,9 @@ namespace Hecton8.World
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             GlobalRegistry.RegisterLODSystemRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.LODSystem, this);
             if (_serviceRegistered)
@@ -362,6 +361,47 @@ namespace Hecton8.World
             _serviceRegistered = false;
             if (ReferenceEquals(s_activeRuntime, this))
                 s_activeRuntime = null;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            LODSystemManager registered = GlobalRegistry.LODSystem;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsLodSystemRuntimeUsable(registered))
+                {
+                    s_activeRuntime = registered;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                GlobalRegistry.UnregisterLODSystemRuntime(registered);
+                if (ReferenceEquals(s_activeRuntime, registered))
+                    s_activeRuntime = null;
+            }
+
+            LODSystemManager active = s_activeRuntime;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsLodSystemRuntimeUsable(active))
+            {
+                GlobalRegistry.RegisterLODSystemRuntime(active);
+                s_activeRuntime = active;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterLODSystemRuntime(active);
+            if (ReferenceEquals(s_activeRuntime, active))
+                s_activeRuntime = null;
+
+            return false;
+        }
+
+        private static bool IsLodSystemRuntimeUsable(LODSystemManager manager)
+        {
+            return manager != null && manager._serviceRegistered && manager.isActiveAndEnabled;
         }
 
         private void TryRegisterSaveParticipant()

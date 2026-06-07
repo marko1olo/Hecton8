@@ -439,12 +439,12 @@ def publication_surface_rows(base: Path, packets: list[dict]) -> list[dict[str, 
                 localized = packet.get("localized", {}).get(locale, {})
                 flags = localized_row_flags(localized) if isinstance(localized, dict) else 0
                 page_path = base / folder / locale / f"{packet_id}.md"
-                
+
                 status = localization_status_from_flags(flags, locale)
                 source_voice = resolve_source_voice(packet, surface_key)
                 spoiler_tier = resolve_spoiler_tier(packet, cluster_spoiler_tiers)
                 spoiler_warning = "archive_spoilers" if surface_key == "external_site" and str(spoiler_tier).isdigit() and int(spoiler_tier) >= 3 else ""
-                
+
                 try:
                     packet_json_path = Path(packet.get("_source_path", "")).relative_to(base).as_posix()
                 except Exception:
@@ -630,7 +630,7 @@ def export_pages(root: Path, overwrite: bool, packet_glob: str = "") -> tuple[in
                 if path.exists() and not overwrite:
                     rendered = render_page(base, packet, locale, surface_key, surface_title, cluster_spoiler_tiers)
                     existing = path.read_text(encoding="utf-8")
-                    if not localization_frontmatter_matches(existing, rendered):
+                    if existing != rendered:
                         path.write_text(rendered, encoding="utf-8", newline="\n")
                         written += 1
                         continue

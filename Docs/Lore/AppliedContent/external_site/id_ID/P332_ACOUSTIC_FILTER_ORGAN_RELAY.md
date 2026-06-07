@@ -9,32 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Acoustic Filter Organ Relay"
+title: "Relai Organ Penyaring Akustik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Acoustic Filter Organ Relay
+# Relai Organ Penyaring Akustik
 
-ID LOC HOLD: HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.
+Di bawah kedalaman radio, suara menjadi alat utama. Terumbu kabel membuatnya rumit: rumah pecah berdenging, logam menyebarkan pantulan, badai mengaburkan jarak, dan jaringan hidup bisa berada di antara sumber dan balik.
 
-## Scanner
-
-ID LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
-
-## Terminal
-
-ID LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
-
-## Audio
-
-ID LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
-
-## Field Note
-
-ID LOC HOLD: Use with sonar, scanner and route-warning UI.
+Karena itu sonar bukan kebenaran bersih. Relai dapat membuka petunjuk pintu, memberi makan predator, mengulang peringatan lama, atau membuat koridor yang sama tampak dua kali.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/id_ID. -->

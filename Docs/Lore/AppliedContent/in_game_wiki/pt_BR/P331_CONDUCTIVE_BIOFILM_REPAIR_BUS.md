@@ -9,32 +9,34 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Conductive Biofilm Repair Bus"
+title: "Barramento de reparo por biofilme condutor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Conductive Biofilm Repair Bus
+# Barramento de reparo por biofilme condutor
 
-PT LOC HOLD: Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.
+O biofilme condutor aparece onde cabo Deep Reach, salmoura quente e isolamento danificado continuam em contato. O tapete leva corrente fraca por falhas no cobre e permite que diagnósticos Atlas alcancem salas que deveriam estar eletricamente mortas.
+
+O perigo é a falha de categoria. Atlas vê continuidade e dá prioridade de reparo. O organismo vê calor, fluxo mineral e área de contato. Um Marauder que corta o tapete pode interromper uma porta, acordar uma auditoria de drone ou expor carga fresca bastante para atrair predadores que caçam cintilação de campo.
 
 ## Scanner
 
-PT LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
+Bainha de biofilme ligando cobre partido e tapete vivo. Corrente fraca presente. Etiqueta de reparo Atlas na crosta de sal.
 
 ## Terminal
 
-PT LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+BARRAMENTO DE REPARO ATLAS // Filme microbiano condutor cruzou as quebras de cabo C-18 a C-22. Pulsos diagnósticos seguem pelo crescimento úmido quando o cobre acabou. Não classificar como cognição. Tratar como substrato de manutenção contaminado.
 
 ## Audio
 
-PT LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
+O filme carrega um pulso. Isso não o torna inteligente. Quer dizer que o fio aprendeu a apodrecer vivo.
 
 ## Field Note
 
-PT LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+Se um cabo molhado tem pele, rastreie antes de cortar. O lado morto costuma ser mais seguro. Costuma.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/pt_BR. -->

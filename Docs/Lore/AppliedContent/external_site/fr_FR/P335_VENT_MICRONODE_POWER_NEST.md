@@ -9,32 +9,18 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Vent Micronode Power Nest"
+title: "Nid d'énergie de micronœuds de cheminée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Vent Micronode Power Nest
+# Nid d'énergie de micronœuds de cheminée
 
-FR LOC HOLD: The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.
+L'océan inférieur regorge de petite puissance, pas de puissance généreuse. Les cheminées saignent de la chaleur dans la croûte métallique; les gradients chimiques s'accumulent sur la peau minérale; l'ancien matériel a laissé contacts et bobines.
 
-## Scanner
-
-FR LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
-
-## Terminal
-
-FR LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
-
-## Audio
-
-FR LOC HOLD: At depth, even the vents are drafted into maintenance.
-
-## Field Note
-
-FR LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+Un nœud peut garder un relais actif, charger un drone pour une seule reptation ou préserver une mémoire. Il attire le joueur vers les cheminées sans les rendre sûres : chaleur, pression, toxines et logique Atlas partagent le même nid.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/fr_FR. -->

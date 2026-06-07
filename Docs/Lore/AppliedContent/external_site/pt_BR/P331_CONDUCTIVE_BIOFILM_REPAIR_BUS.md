@@ -9,32 +9,18 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Conductive Biofilm Repair Bus"
+title: "Barramento de reparo por biofilme condutor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Conductive Biofilm Repair Bus
+# Barramento de reparo por biofilme condutor
 
-PT LOC HOLD: Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.
+Nos recifes de cabos, infraestrutura quebrada raramente fica limpa. Salmoura quente alimenta tapetes microbianos sobre isolamento rasgado; ferro e cobre viram andaime; pulsos diagnósticos antigos dão ritmo ao crescimento.
 
-## Scanner
-
-PT LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
-
-## Terminal
-
-PT LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
-
-## Audio
-
-PT LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
-
-## Field Note
-
-PT LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+Para Marauders, isso vale como pista. Pele viva de cabo pode apontar troncos de serviço, portas de baixa energia, ninhos de drones ou rotas de dados. Cada corte segue incerto, porque Atlas pode ler a ponte viva como inventário de reparo válido.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/pt_BR. -->

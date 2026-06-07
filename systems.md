@@ -98,7 +98,8 @@ Reject any runtime system that:
 - has no phase assignment;
 - publishes gameplay truth from UI, VFX, audio, camera, or animation presentation;
 - uses binary quality switches instead of continuous scaling;
-- reports success without profiler, GC, or static proof when runtime code changed.
+- reports success without profiler, GC, or static proof when runtime code changed;
+- responds to a repeated compile/runtime/ownership failure by adding wrapper glue, fallback managers, duplicate registries, or another checker instead of fixing the real owner route, replacing the route, or reverting the agent's broken chunk.
 
 ## Acceptance Sentence
 

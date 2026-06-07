@@ -9,32 +9,18 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Conductive Biofilm Repair Bus"
+title: "導電性バイオフィルム修理バス"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Conductive Biofilm Repair Bus
+# 導電性バイオフィルム修理バス
 
-JA LOC HOLD: Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.
+ケーブル礁では、壊れたインフラは清潔なまま残らない。暖かい塩水が裂けた絶縁の上で微生物マットを育て、鉄と銅が足場になり、古い診断パルスが成長にリズムを与える。
 
-## Scanner
-
-JA LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
-
-## Terminal
-
-JA LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
-
-## Audio
-
-JA LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
-
-## Field Note
-
-JA LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+Marauderには価値ある証拠だ。生きたケーブルの皮膚は、サービス幹線、低電力ドア、ドローン巣、データ経路を示すことがある。同時に、Atlasがその生きた橋を有効な修理在庫として読むため、切断は常に危険になる。
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/ja_JP. -->

@@ -9,32 +9,34 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Conductive Biofilm Repair Bus"
+title: "導電性バイオフィルム修理バス"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Conductive Biofilm Repair Bus
+# 導電性バイオフィルム修理バス
 
-JA LOC HOLD: Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.
+導電性バイオフィルムは、Deep Reachのケーブル、暖かい塩水、傷んだ絶縁材が接触し続ける場所に現れる。マットは銅の断線を越えて微弱電流を運び、電気的に死んでいるはずの部屋へAtlas診断を届かせる。
+
+危険なのは分類の失敗だ。Atlasは導通を見て修理優先度を付ける。生物は熱、鉱物流、表面積だけを見る。Marauderがマットを切れば、扉を落とし、ドローン監査を起こし、場のきらめきを追う捕食者を呼ぶ新しい電荷をさらすかもしれない。
 
 ## Scanner
 
-JA LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
+バイオフィルムの鞘が折れた銅線と生きたマットをつないでいる。微弱電流あり。塩殻内にAtlas修理タグ。
 
 ## Terminal
 
-JA LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+ATLAS修理バス // 導電性微生物膜がケーブル断線C-18からC-22を横断。銅が失われた区間で、診断パルスは湿った成長層を通る。知性として分類するな。汚染された保守基質として扱え。
 
 ## Audio
 
-JA LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
+その膜はパルスを運んでいる。賢いわけじゃない。ワイヤが生きたまま腐る方法を覚えただけだ。
 
 ## Field Note
 
-JA LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+濡れたケーブルに皮膚があるなら、切る前に辿れ。死んだ側のほうがたいてい安全だ。たいていは。
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/ja_JP. -->

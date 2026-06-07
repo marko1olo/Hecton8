@@ -576,7 +576,10 @@ namespace Hecton8.SaveSystem
                 && WriteNonBlankStringList(ref writer, data.suitInstalledUpgradeIds, SaveData.MaxSuitUpgradeIds)
                 && WriteNonBlankStringList(ref writer, data.suitUnlockedBlueprintIds, SaveData.MaxSuitUpgradeIds)
                 && WriteNonBlankStringList(ref writer, data.suitBrokenUpgradeIds, SaveData.MaxSuitUpgradeIds)
-                && writer.WriteString(data.playerExpressionProfileId ?? string.Empty)
+                && writer.WriteString(
+                    string.IsNullOrWhiteSpace(data.playerExpressionProfileId)
+                        ? string.Empty
+                        : data.playerExpressionProfileId)
                 && writer.WriteInt(SanitizeAtlas6PlayerStatus(data.atlas6PlayerStatus))
                 && writer.WriteInt(Math.Max(0, data.atlas6BarterCount))
                 && writer.WriteBool(data.atlas6DirectiveConflictTriggered)
@@ -855,7 +858,8 @@ namespace Hecton8.SaveSystem
             CompactNonBlankStringList(data.suitInstalledUpgradeIds, SaveData.MaxSuitUpgradeIds);
             CompactNonBlankStringList(data.suitUnlockedBlueprintIds, SaveData.MaxSuitUpgradeIds);
             CompactNonBlankStringList(data.suitBrokenUpgradeIds, SaveData.MaxSuitUpgradeIds);
-            data.playerExpressionProfileId ??= string.Empty;
+            if (string.IsNullOrWhiteSpace(data.playerExpressionProfileId))
+                data.playerExpressionProfileId = string.Empty;
             data.corporateReceivedOrderIds ??= new List<string>(SaveData.MaxCorporateOrderIds);
             CompactNonBlankStringList(data.corporateReceivedOrderIds, SaveData.MaxCorporateOrderIds);
             SanitizeCorporatePendingOrdersAfterRead(data);
@@ -900,8 +904,10 @@ namespace Hecton8.SaveSystem
             SaveData.EnsureExactArrayCapacity(
                 ref data.narrativeDiscoveryIds,
                 SaveData.MaxNarrativeDiscoveries);
-            for (int i = 0; i < data.narrativeDiscoveryCount; i++)
-                data.narrativeDiscoveryIds[i] ??= string.Empty;
+            CompactNonBlankStringArraySlice(
+                data.narrativeDiscoveryIds,
+                ref data.narrativeDiscoveryCount,
+                SaveData.MaxNarrativeDiscoveries);
         }
 
         private static void SanitizeCorporatePendingOrdersAfterRead(SaveData data)
@@ -3114,7 +3120,10 @@ namespace Hecton8.SaveSystem
                 value.depletedCount,
                 value.depletedNodeIds,
                 WorldStateDTO.MaxNodes);
-            SanitizeStringArraySlice(value.depletedNodeIds, value.depletedCount);
+            CompactNonBlankStringArraySlice(
+                value.depletedNodeIds,
+                ref value.depletedCount,
+                WorldStateDTO.MaxNodes);
             value.depletedPickupChunkCount = ClampPairedCollectionCount(
                 value.depletedPickupChunkCount,
                 WorldStateDTO.MaxPickupChunks,
@@ -3720,7 +3729,10 @@ namespace Hecton8.SaveSystem
                 value.recentCount,
                 value.recentEntryIds,
                 ScanLogDTO.MaxRecentEntries);
-            SanitizeStringArraySlice(value.recentEntryIds, value.recentCount);
+            CompactNonBlankStringArraySlice(
+                value.recentEntryIds,
+                ref value.recentCount,
+                ScanLogDTO.MaxRecentEntries);
             value.EnsureCapacity();
         }
 
@@ -4234,7 +4246,10 @@ namespace Hecton8.SaveSystem
                 value.unlockedCount,
                 value.unlockedIds,
                 AchievementRegistryDTO.MaxUnlockedAchievements);
-            SanitizeStringArraySlice(value.unlockedIds, value.unlockedCount);
+            CompactNonBlankStringArraySlice(
+                value.unlockedIds,
+                ref value.unlockedCount,
+                AchievementRegistryDTO.MaxUnlockedAchievements);
             value.EnsureCapacity();
             return true;
         }
@@ -4266,7 +4281,7 @@ namespace Hecton8.SaveSystem
 
         private static RunModifiersDTO SanitizeRunModifiers(RunModifiersDTO value)
         {
-            if (!value.isDailySeed || value.dailySeedId == null)
+            if (!value.isDailySeed || string.IsNullOrWhiteSpace(value.dailySeedId))
                 value.dailySeedId = string.Empty;
 
             if (!value.isPermadeath)
@@ -5710,14 +5725,32 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static void SanitizeStringArraySlice(string[] values, int count)
+        private static void CompactNonBlankStringArraySlice(string[] values, ref int count, int maxCount)
         {
-            if (values == null || count <= 0)
+            if (values == null)
+            {
+                count = 0;
                 return;
+            }
 
-            int safeCount = Math.Clamp(count, 0, values.Length);
+            int safeCount = Math.Clamp(count, 0, Math.Min(values.Length, Math.Max(maxCount, 0)));
+            int writeIndex = 0;
             for (int i = 0; i < safeCount; i++)
-                values[i] ??= string.Empty;
+            {
+                string value = values[i];
+                if (string.IsNullOrWhiteSpace(value))
+                    continue;
+
+                if (writeIndex != i)
+                    values[writeIndex] = value;
+
+                writeIndex++;
+            }
+
+            for (int i = writeIndex; i < safeCount; i++)
+                values[i] = string.Empty;
+
+            count = writeIndex;
         }
 
         private static int ClampListCount<T>(List<T> values, int maxCount)

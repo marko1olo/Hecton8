@@ -1156,6 +1156,7 @@ namespace Hecton8.Gameplay
         private ResourceDistributionDirector _resourceDistributionRuntime;
         private IGasDynamicsSolver _gasDynamicsRuntime;
         private IFluidSurfaceCurrentReadModel _fluidSurfaceRuntime;
+        private ITerrainProvider _terrainProviderRuntime;
         private IAbyssalFlowGpuReadModel _abyssalFlowGpuRuntime;
         private IAmbientCurrentReadModel _ambientCurrentReadModel;
         private IPhysicsService _physicsService;
@@ -4089,6 +4090,7 @@ namespace Hecton8.Gameplay
             _resourceDistributionRuntime = GlobalRegistry.ResourceDistribution;
             _gasDynamicsRuntime = GlobalRegistry.GasDynamics;
             _fluidSurfaceRuntime = GlobalRegistry.FluidSurfaceCurrent;
+            _terrainProviderRuntime = GlobalRegistry.Terrain;
             _abyssalFlowGpuRuntime = GlobalRegistry.AbyssalFlowGpu;
             _ambientCurrentReadModel = GlobalRegistry.AmbientCurrent;
             _physicsService = GlobalRegistry.Physics;
@@ -4164,6 +4166,9 @@ namespace Hecton8.Gameplay
                     _fluidSurfaceRuntime = currentService as IFluidSurfaceCurrentReadModel;
                     _abyssalFlowGpuRuntime = currentService as IAbyssalFlowGpuReadModel;
                     _ambientCurrentReadModel = currentService as IAmbientCurrentReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    _terrainProviderRuntime = currentService as ITerrainProvider;
                     break;
                 case GlobalRegistryServiceSlot.Physics:
                     _physicsService = currentService as IPhysicsService;
@@ -4268,6 +4273,7 @@ namespace Hecton8.Gameplay
             _resourceDistributionRuntime = null;
             _gasDynamicsRuntime = null;
             _fluidSurfaceRuntime = null;
+            _terrainProviderRuntime = null;
             _abyssalFlowGpuRuntime = null;
             _inputServiceRuntime = null;
             _playerInventoryService = null;
@@ -7151,8 +7157,34 @@ namespace Hecton8.Gameplay
 
         private float ResolveFallbackWaterSurfaceY()
         {
+            const float ProviderMismatchRejectMeters = 128f;
+
+            ITerrainProvider terrainProvider = _terrainProviderRuntime;
+            float terrainWaterSurface = waterSurfaceY;
+            bool hasTerrainWaterSurface = false;
+            if (terrainProvider != null && math.isfinite(terrainProvider.WaterSurfaceLevel))
+            {
+                terrainWaterSurface = terrainProvider.WaterSurfaceLevel;
+                hasTerrainWaterSurface = true;
+            }
+
             IFluidSurfaceCurrentReadModel fluidSurface = _fluidSurfaceRuntime;
-            return fluidSurface != null ? fluidSurface.WaterLevel : waterSurfaceY;
+            if (fluidSurface != null && math.isfinite(fluidSurface.WaterLevel))
+            {
+                float fluidWaterSurface = fluidSurface.WaterLevel;
+                if (!hasTerrainWaterSurface ||
+                    math.abs(fluidWaterSurface - terrainWaterSurface) <= ProviderMismatchRejectMeters)
+                {
+                    return fluidWaterSurface;
+                }
+            }
+
+            if (hasTerrainWaterSurface)
+            {
+                return fluidSurface.WaterLevel;
+            }
+
+            return waterSurfaceY;
         }
 
         private float ResolveOceanSeaLevel(PhysicsOceanKinematics oceanKinematics)

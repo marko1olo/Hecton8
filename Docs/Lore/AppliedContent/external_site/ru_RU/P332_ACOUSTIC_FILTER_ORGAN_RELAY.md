@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Acoustic filter organ relay"
+title: "Акустический релейный фильтр-орган"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Acoustic filter organ relay
+# Акустический релейный фильтр-орган
 
-Биомеханический ужас HECTON-8 остается функциональным: животные становятся relay surfaces, потому что звук - маршрут через давление, воду и сломанный металл.
+Ниже радиоглубины звук становится главным инструментом. Кабельный риф усложняет его: треснувшие корпуса звенят, металлические маты рассеивают, штормовые импульсы размывают дистанцию, а живая ткань оказывается между источником и возвратом.
 
-## Scanner
-
-Organ resonance matches damaged relay cadence. Echo useful, not safe.
-
-## Terminal
-
-ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
-
-## Audio
-
-Если оно отвечает как оборудование, считай это оборудованием, которое может кровоточить.
-
-## Field Note
-
-Использовать с sonar, scanner и route-warning UI.
+Поэтому сонар не дает чистой истины. Реле может показать дверь, накормить хищников, повторить старое предупреждение или заставить один и тот же коридор появиться дважды.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/ru_RU. -->

@@ -3,38 +3,24 @@ packet_id: P333_SHELL_SEALANT_PRESSURE_GROWTH
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.shell_sealant_pressure_growth
 unlock_id: unlock.shell_sealant_pressure_growth
-poi_tags: poi.shell_sealant_growth;poi.fracture_lip_biomatter
-biome_tags: biome.atlas;biome.hardware
+poi_tags: poi.shell_sealant_breach;poi.pressure_growth_wall
+biome_tags: biome.atlas;biome.pressure
 locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Shell Sealant Pressure Growth"
+title: "Pertumbuhan Tekanan Sealant Cangkang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ID LOC HOLD: Shell Sealant Pressure Growth
+# Pertumbuhan Tekanan Sealant Cangkang
 
-ID LOC HOLD: The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.
+Perbaikan tidak selalu berarti pemulihan. Sealant darurat Deep Reach dirancang menyelamatkan tekanan lebih dulu. Dalam kimia HECTON-8, busa bisa menjadi cangkang mineral penahan beban.
 
-## Scanner
-
-ID LOC HOLD: Sealant growth over fracture. Pressure rating unknown. Cut only after scan.
-
-## Terminal
-
-ID LOC HOLD: SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.
-
-## Audio
-
-ID LOC HOLD: A sealed wound can still kill the room.
-
-## Field Note
-
-ID LOC HOLD: Useful for crafting, route gating and false-confidence moments.
+Bagi ledger, hasilnya bagus. Bagi Marauder, keberhasilan yang sama bisa merusak rute: tambalan menebal ke dalam, mengunci palka, mengubur alat, atau mengisolasi ruang terakhir di balik dinding yang secara teknis bekerja.
 
 <!-- External Site; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/id_ID. -->

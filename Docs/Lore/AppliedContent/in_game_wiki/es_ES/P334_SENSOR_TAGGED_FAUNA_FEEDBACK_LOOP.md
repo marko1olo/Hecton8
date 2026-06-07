@@ -3,38 +3,40 @@ packet_id: P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.sensor_tagged_fauna_feedback_loop
 unlock_id: unlock.sensor_tagged_fauna_feedback_loop
-poi_tags: poi.sensor_tagged_fauna_loop;poi.old_tag_new_growth
-biome_tags: biome.atlas;biome.fauna
+poi_tags: poi.tagged_fauna_loop;poi.old_colony_sensor
+biome_tags: biome.ecology;biome.comms
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Sensor-Tagged Fauna Feedback Loop"
+title: "Bucle de fauna con etiqueta sensora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Sensor-Tagged Fauna Feedback Loop
+# Bucle de fauna con etiqueta sensora
 
-ES LOC HOLD: Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.
+Deep Reach etiquetó fauna local para mapear corrientes, química y migración. Muchas etiquetas duraron más que las tripulaciones. Atlas aún las lee como entradas de prospección, así que la ruta de un animal puede elevar prioridad de reparación o abrir una baldosa vieja del mapa.
+
+Eso no vuelve obediente al animal. Puede estar herido, ser territorial, estar infectado por hardware viejo o seguir comida. La máquina solo ve movimiento y datos. Un saqueador ve una verdad peor: el océano puede delatarte por accidente.
 
 ## Scanner
 
-ES LOC HOLD: Old colony tag under new growth. Behavior trace resembles survey sweep.
+Vieja etiqueta sensora colonial bajo cicatriz nueva. Perfil de movimiento entra en canal de prospección Atlas. Animal agitado por ping activo.
 
 ## Terminal
 
-ES LOC HOLD: FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.
+BUCLE DE FAUNA // Etiqueta heredada 7F reporta temperatura, movimiento y salinidad por canal de prospección dañado. Prioridad de reparación Atlas subió tras evento migratorio. Animal etiquetado es fuente de telemetría, no activo de mando.
 
 ## Audio
 
-ES LOC HOLD: It is not hunting you. It may still report you.
+No caza para Atlas. Nada con una placa todavía clavada bajo la piel.
 
 ## Field Note
 
-ES LOC HOLD: Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command.
+Los animales etiquetados cambian el mapa sin querer. Sigue uno solo si sabes qué más lo sigue.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/es_ES. -->

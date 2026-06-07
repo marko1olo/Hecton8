@@ -242,15 +242,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            DynamicResolutionScaler registered = GlobalRegistry.DynamicResolution;
-            if (registered != null && registered != this)
-            {
-                #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogWarning("[DynamicResolutionScaler] Duplicate instance detected. Destroying duplicate.");
-                #endif
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             _runtimeRenderScaleQueueActive = Application.isPlaying;
 
@@ -294,6 +287,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             _runtimeRenderScaleQueueActive = Application.isPlaying;
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
@@ -352,12 +348,8 @@ namespace Hecton8.World
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            DynamicResolutionScaler registered = GlobalRegistry.DynamicResolution;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterDynamicResolutionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.DynamicResolution, this);
@@ -376,6 +368,47 @@ namespace Hecton8.World
             _serviceRegistered = false;
             if (ReferenceEquals(s_activeRuntime, this))
                 s_activeRuntime = null;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            DynamicResolutionScaler registered = GlobalRegistry.DynamicResolution;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                if (IsDynamicResolutionRuntimeUsable(registered))
+                {
+                    s_activeRuntime = registered;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                GlobalRegistry.UnregisterDynamicResolutionRuntime(registered);
+                if (ReferenceEquals(s_activeRuntime, registered))
+                    s_activeRuntime = null;
+            }
+
+            DynamicResolutionScaler active = s_activeRuntime;
+            if (ReferenceEquals(active, null) || ReferenceEquals(active, this))
+                return false;
+
+            if (IsDynamicResolutionRuntimeUsable(active))
+            {
+                GlobalRegistry.RegisterDynamicResolutionRuntime(active);
+                s_activeRuntime = active;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterDynamicResolutionRuntime(active);
+            if (ReferenceEquals(s_activeRuntime, active))
+                s_activeRuntime = null;
+
+            return false;
+        }
+
+        private static bool IsDynamicResolutionRuntimeUsable(DynamicResolutionScaler scaler)
+        {
+            return scaler != null && scaler._serviceRegistered && scaler.isActiveAndEnabled;
         }
 
         private void TryRegisterSaveParticipant()

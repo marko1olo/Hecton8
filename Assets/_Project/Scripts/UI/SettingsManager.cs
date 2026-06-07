@@ -163,6 +163,7 @@ namespace Hecton8.UI
 
             _isShuttingDown = false;
             s_runtimeInstance = this;
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             if (Application.isPlaying)
                 GameBootstrapper.PersistRuntimeService(this);

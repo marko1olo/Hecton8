@@ -209,15 +209,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            CullingManager registered = GlobalRegistry.Culling;
-            if (registered != null && registered != this)
-            {
-                #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Duplicate instance detected. Destroying duplicate.");
-                #endif
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Hecton8.Core.H8Debug.Log("[CullingManager] Initialized.");
@@ -226,12 +219,18 @@ namespace Hecton8.World
 
         private void Start()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             // Apply layer cull distances after scene initialization
             ApplyLayerCullDistances();
         }
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             CachePlayerRuntimeContext(GlobalRegistry.Player);
             CachePlayerSensoryService(GlobalRegistry.PlayerSensory);
             TryRegisterService();
@@ -305,12 +304,8 @@ namespace Hecton8.World
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            CullingManager registered = GlobalRegistry.Culling;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GlobalRegistry.RegisterCullingRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Culling, this);
@@ -330,6 +325,47 @@ namespace Hecton8.World
                 s_activeRuntimeInstance = null;
 
             _serviceRegistered = false;
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            CullingManager active = s_activeRuntimeInstance;
+            if (!ReferenceEquals(active, null) && !ReferenceEquals(active, this))
+            {
+                if (IsCullingRuntimeUsable(active))
+                {
+                    GlobalRegistry.RegisterCullingRuntime(active);
+                    s_activeRuntimeInstance = active;
+                    Destroy(gameObject);
+                    return true;
+                }
+
+                GlobalRegistry.UnregisterCullingRuntime(active);
+                if (ReferenceEquals(s_activeRuntimeInstance, active))
+                    s_activeRuntimeInstance = null;
+            }
+
+            CullingManager registered = GlobalRegistry.Culling;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsCullingRuntimeUsable(registered))
+            {
+                s_activeRuntimeInstance = registered;
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterCullingRuntime(registered);
+            if (ReferenceEquals(s_activeRuntimeInstance, registered))
+                s_activeRuntimeInstance = null;
+
+            return false;
+        }
+
+        private static bool IsCullingRuntimeUsable(CullingManager manager)
+        {
+            return manager != null && manager._serviceRegistered && manager.isActiveAndEnabled;
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerRuntimeContext)

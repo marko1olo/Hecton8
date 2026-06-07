@@ -9,32 +9,34 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Acoustic filter organ relay"
+title: "Акустический релейный фильтр-орган"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Acoustic filter organ relay
+# Акустический релейный фильтр-орган
 
-Acoustic filter organ relay делает фауну route-relevant. Некоторые формы жизни - не враг и не декор, а часть поврежденного diagnostic loop.
+Некоторые рифовые животные отращивают фильтр-органы, достаточно плотные, чтобы формировать звук. Ремонтные узлы Atlas научились использовать эту ткань как акустическую перегородку после того, как корпуса реле треснули.
+
+У такой помощи есть зубы. Тот же орган, который несет маршрутный пинг, может сообщить вибрацию кормящимся тварям, разбудить меченую фауну или отразить движение мародера вниз по рифу. Чистый ответ не означает безопасный коридор. Он означает, что у коридора есть слушатель.
 
 ## Scanner
 
-Organ resonance matches damaged relay cadence. Echo useful, not safe.
+Резонанс фильтр-органа совпадает с ритмом поврежденного реле. После прохождения через ткань возврат чище. На корпусе следы укусов.
 
 ## Terminal
 
-ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
+АКУСТИЧЕСКОЕ РЕЛЕ // Местная ткань фильтр-органа гасит штормовой шум и повторяет сервисные пинги внутри кабельного рифа. Усиление сигнала нестабильно при скачках давления. Биологическое реле помогает маршруту и приманивает хищников.
 
 ## Audio
 
-Если оно отвечает как оборудование, считай это оборудованием, которое может кровоточить.
+Оно отвечает как оборудование, потому что оборудование пользуется его горлом.
 
 ## Field Note
 
-Использовать с sonar, scanner и route-warning UI.
+Если за эхом есть пульс, держи инструмент тихо и проверь воду перед движением.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/ru_RU. -->

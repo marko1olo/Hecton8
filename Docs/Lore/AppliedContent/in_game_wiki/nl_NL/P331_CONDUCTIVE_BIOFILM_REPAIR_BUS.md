@@ -9,32 +9,34 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Conductive Biofilm Repair Bus"
+title: "Geleidende biofilm-reparatiebus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Conductive Biofilm Repair Bus
+# Geleidende biofilm-reparatiebus
 
-NL LOC HOLD: Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.
+Geleidende biofilm verschijnt waar Deep Reach-kabel, warme pekel en beschadigde isolatie contact houden. De mat draagt zwakke stroom over koperbreuken en laat Atlas-diagnostiek kamers bereiken die elektrisch dood zouden moeten zijn.
+
+Het gevaar zit in categoriefout. Atlas ziet continuïteit en geeft reparatieprioriteit. Het organisme ziet warmte, mineraalstroom en oppervlak. Een Marauder die de mat snijdt, kan een deur onderbreken, een drone-audit wekken of verse lading blootleggen die veldjagende roofdieren lokt.
 
 ## Scanner
 
-NL LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
+Biofilmhuid overbrugt gebroken koper en levende mat. Zwakke stroom aanwezig. Atlas-reparatietag in zoutkorst.
 
 ## Terminal
 
-NL LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+ATLAS-REPARATIEBUS // Geleidende microbiële film kruist kabelbreuken C-18 tot C-22. Diagnosepulsen lopen door natte groei wanneer koper verdwenen is. Niet als cognitie classificeren. Behandel als besmet onderhoudssubstraat.
 
 ## Audio
 
-NL LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
+De film draagt een puls. Dat maakt hem niet slim. Het betekent dat de draad levend heeft leren rotten.
 
 ## Field Note
 
-NL LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+Als een natte kabel huid heeft, volg hem voor je snijdt. De dode kant is meestal veiliger. Meestal.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/nl_NL. -->

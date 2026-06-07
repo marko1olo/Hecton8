@@ -3,38 +3,40 @@ packet_id: P333_SHELL_SEALANT_PRESSURE_GROWTH
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.shell_sealant_pressure_growth
 unlock_id: unlock.shell_sealant_pressure_growth
-poi_tags: poi.shell_sealant_growth;poi.fracture_lip_biomatter
-biome_tags: biome.atlas;biome.hardware
+poi_tags: poi.shell_sealant_breach;poi.pressure_growth_wall
+biome_tags: biome.atlas;biome.pressure
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Shell Sealant Pressure Growth"
+title: "Crescimento pressurizado de selante de concha"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PT LOC HOLD: Shell Sealant Pressure Growth
+# Crescimento pressurizado de selante de concha
 
-PT LOC HOLD: Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.
+Selante de concha começa como química emergencial: espuma de remendo, lama mineral e pressão forçando material para dentro da brecha. Na água de HECTON-8, crescimento local pode colonizar o remendo e endurecer em concha em camadas.
+
+Atlas marca sucesso se a perda de pressão cai. Marauders ligam para largura de retorno, folga de ferramentas e o que a concha prendeu do outro lado. Um bom selo pode encalhar uma rota, esconder água ruim ou preservar uma sala morta por tempo bastante para suas máquinas responderem.
 
 ## Scanner
 
-PT LOC HOLD: Sealant growth over fracture. Pressure rating unknown. Cut only after scan.
+Laminado de concha sobre rachadura de pressão. Crescimento de cálcio-silicato fundido com espuma de remendo Atlas. Flexiona sob carga.
 
 ## Terminal
 
-PT LOC HOLD: SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.
+EVENTO DE SELANTE // Espuma de remendo emergencial semeou concha mineral pela brecha P-4. Taxa de crescimento acima da tabela estática. Selo mantém na pressão atual; folga da rota reduzida em 31 por cento.
 
 ## Audio
 
-PT LOC HOLD: A sealed wound can still kill the room.
+A parede sarou. Esse é o problema. Sarou para dentro.
 
 ## Field Note
 
-PT LOC HOLD: Useful for crafting, route gating and false-confidence moments.
+Marque remendos de concha na entrada. Na saída, assuma que ficaram mais estreitos.
 
 <!-- In-Game Wiki; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/pt_BR. -->

@@ -9,32 +9,34 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Vent micronode power nest"
+title: "Энергогнездо жерловых микроузлов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent micronode power nest
+# Энергогнездо жерловых микроузлов
 
-Vent micronode power nest объясняет, почему глубокая repair network плотнее и менее естественна. Atlas использует vent energy как local decision fuel.
+Жерловые микроузлы формируются там, где горячая химия, металлическая пыль и старое силовое железо делят одну трещину. Они не питают колонию как реактор. Они держат живыми мелочи: петлю памяти, диагностический миг, ползок дрона, дверную защелку, которая должна была умереть годы назад.
+
+У Бассейна Atlas гнезда становятся плотнее, потому что полезен каждый градиент. Геология дает тепло. Жизнь дает проводящие поверхности. Сломанные машины дают правила. Мародер может снять заряд или прочитать остаток памяти, но тот же узел может кормить ремонтную петлю, которая заметит кражу.
 
 ## Scanner
 
-Thermal micronodes feeding local repair loops. Drone charge scars present.
+Тепловые микроузлы в корке жерла. Есть шрамы зарядки дронов и остатки памяти. Локальная ремонтная шина тянет ток.
 
 ## Terminal
 
-VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
+ЖЕРЛОВЫЙ МИКРОУЗЕЛ // Химический градиент поддерживает маломощную маршрутизацию, остатки памяти и прерывистые циклы зарядки дронов. Плотность узлов растет рядом с фабрично-храмовыми структурами Бассейна Atlas.
 
 ## Audio
 
-На глубине даже vents мобилизованы в maintenance.
+Тут внизу даже у тепла есть бумажная работа.
 
 ## Field Note
 
-Использовать рядом с final descent resource и Atlas-basin warnings.
+Сними один заряд и уходи. Второй рывок заставляет гнездо посмотреть в ответ.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/ru_RU. -->

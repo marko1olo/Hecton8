@@ -9,32 +9,34 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Conductive Biofilm Repair Bus"
+title: "전도성 바이오필름 수리 버스"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Conductive Biofilm Repair Bus
+# 전도성 바이오필름 수리 버스
 
-KO LOC HOLD: Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.
+전도성 바이오필름은 Deep Reach 케이블, 따뜻한 염수, 손상된 절연체가 계속 맞닿는 곳에 생긴다. 그 매트는 구리 단선을 넘어 약한 전류를 운반하고, 전기적으로 죽었어야 할 방까지 Atlas 진단을 보낸다.
+
+위험은 분류 실패에서 온다. Atlas는 연속성을 보고 수리 우선순위를 준다. 생물은 열, 광물 흐름, 표면적을 본다. Marauder가 매트를 자르면 문이 끊기거나 드론 감사가 깨어나거나, 장의 흔들림을 쫓는 포식자를 부를 만큼 신선한 전하가 드러날 수 있다.
 
 ## Scanner
 
-KO LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
+바이오필름 껍질이 끊어진 구리와 살아 있는 매트를 잇는다. 약한 전류 감지. 소금 껍질 안에 Atlas 수리 태그.
 
 ## Terminal
 
-KO LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+ATLAS 수리 버스 // 전도성 미생물막이 케이블 단선 C-18부터 C-22까지 가로질렀다. 구리가 사라진 구간에서 진단 펄스는 젖은 성장층을 통해 흐른다. 인지로 분류하지 말 것. 오염된 정비 기질로 취급할 것.
 
 ## Audio
 
-KO LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
+그 막은 펄스를 운반한다. 똑똑해서가 아니다. 전선이 산 채로 썩는 법을 배운 것이다.
 
 ## Field Note
 
-KO LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+젖은 케이블에 피부가 있으면 자르기 전에 따라가라. 죽은 쪽이 보통 더 안전하다. 보통은.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/ko_KR. -->

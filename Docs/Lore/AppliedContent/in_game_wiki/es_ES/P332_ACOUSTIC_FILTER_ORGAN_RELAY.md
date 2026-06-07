@@ -9,32 +9,34 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Acoustic Filter Organ Relay"
+title: "Relé de órgano acústico filtrante"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ES LOC HOLD: Acoustic Filter Organ Relay
+# Relé de órgano acústico filtrante
 
-ES LOC HOLD: Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.
+Algunos animales de arrecife desarrollan órganos filtrantes bastante densos para moldear sonido. Los nodos de reparación Atlas aprendieron a usar ese tejido como deflector acústico cuando se rajaron las carcasas.
+
+La ayuda viene con dientes. El mismo órgano que lleva un ping de ruta puede anunciar vibración a carroñeros, despertar fauna etiquetada o devolver el movimiento de un saqueador por el arrecife. Una respuesta limpia no significa corredor seguro. Significa que el corredor escucha.
 
 ## Scanner
 
-ES LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
+La resonancia del órgano filtrante coincide con la cadencia del relé dañado. El retorno llega más limpio tras pasar por tejido. Mordidas en la carcasa.
 
 ## Terminal
 
-ES LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
+RELÉ ACÚSTICO // El tejido local del órgano filtrante amortigua ruido de tormenta y repite pings de servicio dentro del arrecife de cables. Ganancia inestable bajo golpes de presión. El relé biológico ayuda la ruta y atrae depredadores.
 
 ## Audio
 
-ES LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
+Responde como equipo porque el equipo está usando su garganta.
 
 ## Field Note
 
-ES LOC HOLD: Use with sonar, scanner and route-warning UI.
+Si el eco tiene un pulso detrás, calla la herramienta y revisa el agua antes de moverte.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/es_ES. -->

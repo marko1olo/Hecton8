@@ -3,38 +3,40 @@ packet_id: P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.sensor_tagged_fauna_feedback_loop
 unlock_id: unlock.sensor_tagged_fauna_feedback_loop
-poi_tags: poi.sensor_tagged_fauna_loop;poi.old_tag_new_growth
-biome_tags: biome.atlas;biome.fauna
+poi_tags: poi.tagged_fauna_loop;poi.old_colony_sensor
+biome_tags: biome.ecology;biome.comms
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Sensor-Tagged Fauna Feedback Loop"
+title: "センサータグ付き動物フィードバックループ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Sensor-Tagged Fauna Feedback Loop
+# センサータグ付き動物フィードバックループ
 
-JA LOC HOLD: Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.
+Deep Reachは海流、化学、移動を地図化するために現地動物へタグを付けた。多くのタグは乗員より長く生き残った。Atlasはいまも測量入力として読むため、動物の経路が修理優先度を上げたり古い地図タイルを開いたりする。
+
+それで動物が従順になるわけではない。傷つき、縄張りを守り、古いハードウェアに侵され、餌を追っているだけかもしれない。機械は動きとデータだけを見る。Marauderはもっと悪い真実を見る。海は偶然こちらを通報する。
 
 ## Scanner
 
-JA LOC HOLD: Old colony tag under new growth. Behavior trace resembles survey sweep.
+新しい瘢痕組織の下に旧コロニーのセンサータグ。運動プロファイルがAtlas測量チャンネルへ入る。動物はアクティブpingで興奮。
 
 ## Terminal
 
-JA LOC HOLD: FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.
+動物ループ // 旧タグ7Fが破損した測量チャンネルを通じて温度、運動、塩分を報告。移動事象後、Atlas修理優先度が上昇。タグ付き動物はテレメトリ源であり、指揮資産ではない。
 
 ## Audio
 
-JA LOC HOLD: It is not hunting you. It may still report you.
+Atlasのために狩っているんじゃない。皮膚の下にまだバッジを打ち込まれたまま泳いでいるだけだ。
 
 ## Field Note
 
-JP LOC HOLD: Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command.
+タグ付き動物は意図せず地図を変える。追うなら、何がそいつを追っているか知ってからにしろ。
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/ja_JP. -->

@@ -2955,6 +2955,7 @@ namespace Hecton8.Audio
                 return;
 
             AcousticOcclusionUtility.AcquireRuntime();
+            AudioSettings.OnAudioConfigurationChanged -= HandleAudioConfigurationChanged;
             AudioSettings.OnAudioConfigurationChanged += HandleAudioConfigurationChanged;
             RefreshAudioQualityPolicyCold();
             CacheColdRegistryReferences();

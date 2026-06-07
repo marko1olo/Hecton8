@@ -9,32 +9,34 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Acoustic Filter Organ Relay"
+title: "Relais d'organe filtrant acoustique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# FR LOC HOLD: Acoustic Filter Organ Relay
+# Relais d'organe filtrant acoustique
 
-FR LOC HOLD: Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.
+Certains animaux de récif développent des organes filtrants assez denses pour modeler le son. Les nœuds de réparation Atlas ont appris à utiliser ce tissu comme chicane acoustique après la fissure des boîtiers.
+
+Cette aide a des dents. Le même organe qui porte un ping de route peut annoncer les vibrations aux mangeurs, réveiller une faune balisée ou renvoyer le mouvement d'un maraudeur dans le récif. Une réponse propre ne signifie pas un couloir sûr. Elle signifie que le couloir écoute.
 
 ## Scanner
 
-FR LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
+La résonance de l'organe filtrant correspond à la cadence du relais endommagé. Retour plus propre après passage dans le tissu. Marques de morsure sur le boîtier.
 
 ## Terminal
 
-FR LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
+RELAIS ACOUSTIQUE // Le tissu local de l'organe filtrant amortit le bruit de tempête et répète les pings de service dans le récif de câbles. Gain instable sous poussées de pression. Relais biologique utile à la route et appât à prédateurs.
 
 ## Audio
 
-FR LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
+Ça répond comme du matériel parce que le matériel utilise sa gorge.
 
 ## Field Note
 
-FR LOC HOLD: Use with sonar, scanner and route-warning UI.
+Si l'écho porte un pouls, garde l'outil silencieux et vérifie l'eau.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/fr_FR. -->

@@ -318,7 +318,9 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
 
         static HadalSdfPreviewStore()
         {
+            AssemblyReloadEvents.beforeAssemblyReload -= Dispose;
             AssemblyReloadEvents.beforeAssemblyReload += Dispose;
+            EditorApplication.quitting -= Dispose;
             EditorApplication.quitting += Dispose;
         }
 

@@ -17,7 +17,7 @@
 | Location / route | Emergency canteen, first shelter shelf, or shoreline salvage bag |
 | Unlock context | Player scans a canteen cap with grit in the threads |
 | Evidence object | Canteen cap, thread grit ring, mouth seal, ledger scratch |
-| Connected packets | P357_CANTEEN_WATER_LEDGER; P1111_WET_STOCK_RED_TAG; P1125_RATION_FOIL_PINHOLE |
+| Connected packets | P861_CONDENSER_CUP_FIRST_DRIP; P1111_WET_STOCK_RED_TAG; P1125_RATION_FOIL_PINHOLE |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: makes early water containers require physical inspection before trust |
 | Content status | source_complete_unimported |
 

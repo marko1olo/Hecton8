@@ -3,8 +3,8 @@ packet_id: P333_SHELL_SEALANT_PRESSURE_GROWTH
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.shell_sealant_pressure_growth
 unlock_id: unlock.shell_sealant_pressure_growth
-poi_tags: poi.shell_sealant_growth;poi.fracture_lip_biomatter
-biome_tags: biome.atlas;biome.hardware
+poi_tags: poi.shell_sealant_breach;poi.pressure_growth_wall
+biome_tags: biome.atlas;biome.pressure
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
@@ -19,22 +19,24 @@ localization_flags: 0
 
 # Shell Sealant Pressure Growth
 
-Shell Sealant Pressure Growth turns repair into uncertainty. Atlas can fix a leak in a way that saves the moment and ruins the route later.
+Shell sealant starts as emergency chemistry: patch foam, mineral slurry and pressure forcing material into a breach. In HECTON-8 water, local growth can colonize the patch and harden it into layered shell. The leak stops. The passage narrows. A hatch that opened yesterday may scrape suit tanks today.
+
+Atlas rates the event as success if pressure loss falls. Marauders care about return width, tool clearance and what the shell trapped on the other side. A good seal can strand a route, hide a pocket of bad water or preserve a dead room long enough for its machinery to answer.
 
 ## Scanner
 
-Sealant growth over fracture. Pressure rating unknown. Cut only after scan.
+Shell laminate over pressure crack. Calcium-silicate growth fused with Atlas patch foam. Flexing under load.
 
 ## Terminal
 
-SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.
+SEALANT EVENT // Emergency patch foam seeded mineral shell across breach P-4. Growth rate exceeds static repair table. Seal holds at current pressure; route clearance reduced by 31 percent.
 
 ## Audio
 
-A sealed wound can still kill the room.
+The wall is healed. That's the problem. It healed inward.
 
 ## Field Note
 
-Useful for crafting, route gating and false-confidence moments.
+Mark shell patches on the way in. On the way out, assume they got narrower.
 
 <!-- In-Game Wiki; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/en_US. -->

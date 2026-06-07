@@ -17,7 +17,7 @@
 | Location / route | Storm shelf route line, shoreline anchor, or flooded service rail |
 | Unlock context | Player scans a tether knot that has set hard after wet tension |
 | Evidence object | Tether knot, wet-set fibers, chafe stripe, anchor eye |
-| Connected packets | P905_STORM_SHELF_TAG_LINE; P1130_BEARING_CARD_SWELL_MARK; P1124_MANUAL_BYPASS_LOCKOUT_TAG |
+| Connected packets | P905_ANCHOR_PAINT_CURRENT_SIDE; P1130_BEARING_CARD_SWELL_MARK; P1124_MANUAL_BYPASS_LOCKOUT_TAG |
 | First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: makes early route lines read as evidence of stress and direction |
 | Content status | source_complete_unimported |
 

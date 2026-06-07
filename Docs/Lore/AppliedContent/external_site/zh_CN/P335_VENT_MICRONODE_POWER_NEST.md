@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Vent Micronode Power Nest"
+title: "喷口微节点电力巢"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Vent Micronode Power Nest
+# 喷口微节点电力巢
 
-ZH LOC HOLD: The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.
+下层海洋充满小功率，而不是慷慨电力。喷口让热穿过富金属地壳，化学梯度聚在矿物皮肤上，旧 Deep Reach 硬件留下触点、线圈和陶瓷体。
 
-## Scanner
-
-ZH LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
-
-## Terminal
-
-ZH LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
-
-## Audio
-
-ZH LOC HOLD: At depth, even the vents are drafted into maintenance.
-
-## Field Note
-
-ZH LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+一个节点可以让中继继续跳动，为无人机充一次爬行的电，或保留本该惰性的记忆。它给玩家接近喷口的理由，但不会把喷口变成安全宝箱。热、压力、毒素和 Atlas 维护逻辑共享同一巢。
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/zh_CN. -->

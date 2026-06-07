@@ -2555,13 +2555,13 @@ namespace Hecton8.SaveSystem
         internal static ModuleDTO SanitizeScalarsForPersistence(in ModuleDTO value)
         {
             ModuleDTO dto = value;
-            dto.prefabId ??= string.Empty;
-            dto.slottedToolItemId ??= string.Empty;
-            dto.pipeInFlightItemId ??= string.Empty;
+            dto.prefabId = SanitizePersistenceId(dto.prefabId);
+            dto.slottedToolItemId = SanitizePersistenceId(dto.slottedToolItemId);
+            dto.pipeInFlightItemId = SanitizePersistenceId(dto.pipeInFlightItemId);
             dto.pipeInFlightAmount = Math.Max(0, dto.pipeInFlightAmount);
             dto.pipeTransitProgress = SanitizeUnit01(dto.pipeTransitProgress);
             dto.pipeExportTimerSeconds = SanitizeNonNegativeFinite(dto.pipeExportTimerSeconds);
-            dto.drillBufferedItemId ??= string.Empty;
+            dto.drillBufferedItemId = SanitizePersistenceId(dto.drillBufferedItemId);
             dto.drillBufferedAmount = Math.Max(0, dto.drillBufferedAmount);
             dto.drillCycleTimerSeconds = SanitizeNonNegativeFinite(dto.drillCycleTimerSeconds);
             dto.sorterBufferedSlotCount = Math.Clamp(dto.sorterBufferedSlotCount, 0, MaxSorterBufferedSlots);
@@ -2577,6 +2577,11 @@ namespace Hecton8.SaveSystem
             dto.failureMode = SanitizeFailureMode(dto.failureMode);
             dto.floodedReefFloodSeconds = SanitizeNonNegativeFinite(dto.floodedReefFloodSeconds);
             return dto;
+        }
+
+        private static string SanitizePersistenceId(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value;
         }
 
         internal static bool SanitizeForPersistenceInPlace(ref ModuleDTO value)
@@ -2760,11 +2765,12 @@ namespace Hecton8.SaveSystem
             int safeCount = Math.Min(count, Math.Min(maxCount, values.Length));
             for (int i = 0; i < safeCount; i++)
             {
-                if (values[i] != null)
+                string safeValue = SanitizePersistenceId(values[i]);
+                if (values[i] == safeValue)
                     continue;
 
                 replacement ??= (string[])values.Clone();
-                replacement[i] = string.Empty;
+                replacement[i] = safeValue;
             }
 
             if (replacement != null)
@@ -2780,10 +2786,11 @@ namespace Hecton8.SaveSystem
             int safeCount = Math.Min(count, Math.Min(maxCount, values.Length));
             for (int i = 0; i < safeCount; i++)
             {
-                if (values[i] != null)
+                string safeValue = SanitizePersistenceId(values[i]);
+                if (values[i] == safeValue)
                     continue;
 
-                values[i] = string.Empty;
+                values[i] = safeValue;
                 changed = true;
             }
 

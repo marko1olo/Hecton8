@@ -9,32 +9,34 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Vent Micronode Power Nest"
+title: "喷口微节点电力巢"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Vent Micronode Power Nest
+# 喷口微节点电力巢
 
-ZH LOC HOLD: Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.
+喷口微节点形成于热化学、金属尘和旧电力硬件共享同一裂缝的地方。它们不能像反应堆一样供养殖民地，只能让小东西继续活着：记忆回路、诊断闪烁、无人机的一次爬行、早该死掉的门闩。
+
+Atlas Basin 附近巢群更密，因为每一种梯度都有用。地质提供热。生命提供导电表面。破机器提供规则。Marauder 可以收取电荷或读取记忆残留，但同一个节点也可能供养会注意到盗取行为的维修回路。
 
 ## Scanner
 
-ZH LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
+喷口壳层内有热微节点。存在无人机充电疤痕和记忆残留。本地维修总线正在抽取电流。
 
 ## Terminal
 
-ZH LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
+喷口微节点 // 化学梯度支持低功率路由、记忆残留和间歇无人机充电周期。Atlas Basin 工厂神殿结构附近节点密度上升。
 
 ## Audio
 
-ZH LOC HOLD: At depth, even the vents are drafted into maintenance.
+到了这里，连热量都有文书。
 
 ## Field Note
 
-ZH LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+拿一份电荷就走。第二次拉取会让巢回头看你。
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/zh_CN. -->

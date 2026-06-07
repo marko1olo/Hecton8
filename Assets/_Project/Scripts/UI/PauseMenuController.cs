@@ -1682,7 +1682,8 @@ namespace Hecton8.UI
             if (_mainMenuCleanupHookRegistered)
                 return;
 
-            SceneManager.sceneLoaded += HandlePendingMainMenuSceneLoaded;
+                SceneManager.sceneLoaded -= HandlePendingMainMenuSceneLoaded;
+                SceneManager.sceneLoaded += HandlePendingMainMenuSceneLoaded;
             _mainMenuCleanupHookRegistered = true;
         }
 

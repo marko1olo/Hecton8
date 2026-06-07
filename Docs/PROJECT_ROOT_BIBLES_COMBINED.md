@@ -1660,7 +1660,8 @@ Reject any runtime system that:
 - has no phase assignment;
 - publishes gameplay truth from UI, VFX, audio, camera, or animation presentation;
 - uses binary quality switches instead of continuous scaling;
-- reports success without profiler, GC, or static proof when runtime code changed.
+- reports success without profiler, GC, or static proof when runtime code changed;
+- responds to a repeated compile/runtime/ownership failure by adding wrapper glue, fallback managers, duplicate registries, or another checker instead of fixing the real owner route, replacing the route, or reverting the agent's broken chunk.
 
 ## Acceptance Sentence
 
@@ -4873,6 +4874,21 @@ Accepted documentation must do at least one of these:
 
 If none of these is true, stop writing and return to source, assets, Unity proof, or the concrete blocker.
 
+## 0C. Production Deliverable Lock
+
+Every non-trivial production task must resolve to one primary deliverable class:
+
+- `SOURCE_CHANGE`;
+- `ASSET_CHANGE`;
+- `CONTENT_ARTIFACT`;
+- `FRESH_PROOF`;
+- `BLOCKER`;
+- `POLICY_DOC` only when the user explicitly requested policy, audit, routing, or rule work.
+
+Support artifacts cannot accept the task by themselves. Static scans, validators, route cards, checklists, summaries, screenshots that only reject a bad state, and report synthesis are useful only when they route the next source, asset, content, proof, or blocker action.
+
+New self-check scripts are accepted only when they catch a concrete repeated failure, include a negative case or reproducible rejected state, map to a named product gate, and do not claim runtime, visual, prose, profiler, or player-readiness proof from static output.
+
 ## 1. Universal Review Questions
 
 Every player-facing change must answer:
@@ -4916,7 +4932,9 @@ When `VISUAL_ROUTE_INVALID` is reached, the next action is route recovery, not a
 
 - identify the authoritative route owner and active scene/material/component binding;
 - inspect existing source assets and reference images before generating replacement visuals;
+- compare against known-good in-project screenshots before inventing a new polish route;
 - decide whether to restore, replace, or remove the broken route;
+- fix water/terrain/sky/material/contact/camera foundations before fog, bloom, exposure, grading, vignette, or decorative light changes;
 - capture the same shot list again only after root cause changes;
 - keep all acceptance claims at `PENDING VERIFICATION` until the screenshots pass taste and the required Unity/profiler proof exists.
 
@@ -5875,6 +5893,8 @@ Technical report means an audit, policy review, architecture review, proof revie
 
 [RULE] Product-first execution: ordinary work must improve the requested player route, visible result, gameplay value, stability, or concrete blocker first. Do not create audit/status/rationale/route-card bureaucracy unless the user explicitly requests batch/logging/orchestration or the changed artifact genuinely needs a concise decision record.
 
+[RULE] Deliverable class lock: every non-trivial production task must end in one primary useful artifact class: `SOURCE_CHANGE`, `ASSET_CHANGE`, `CONTENT_ARTIFACT`, `FRESH_PROOF`, `BLOCKER`, or `POLICY_DOC` only when the user explicitly asked for policy/audit/rule work. Scans, summaries, route cards, validators, checklists, and reports are support artifacts; they are not a production deliverable by themselves.
+
 [REQ] Work as much as possible means: carry the current front until it is genuinely handled. Do not conserve effort by simplifying the user's meaning, reducing the requested task, stopping after the first narrow success, or waiting for the user to point out obvious next steps. If a follow-up source/asset/proof/rule fix is required to make the current change correct, do it. If the follow-up is unrelated, speculative, destructive, blocked by process gates, or mostly paperwork, stop and report the exact boundary.
 
 [RULE] Verification work has a budget. One scoped static scan and one scoped triage pass may route the next action. Repeating checks over unchanged source, unchanged assets, or unchanged proof is bureaucracy theater.
@@ -5886,6 +5906,10 @@ Technical report means an audit, policy review, architecture review, proof revie
 [FORBID] Paper-success loops: no agent may convert an implementation failure into success by producing more status files, task packets, boards, CSVs, static scans, route cards, or rationale prose. Once the root blocker is known, more paperwork is allowed only if it directly names the next command, next file to edit, or proof artifact to collect.
 
 [RULE] Same-failure escalation: if the same defect appears in two consecutive captures, scans, compile logs, or proof attempts, the agent must change strategy. For visuals, declare `VISUAL_ROUTE_INVALID` and recover/replace the route. For runtime, fix the owner/source path or run the missing proof. For blocked Unity/build/profiler gates, stop that lane with the exact process/tool blocker instead of writing another validation artifact.
+
+[RULE] Universal route invalidation: after the same failure repeats, stop polishing the current path. Code work must fix the real owner, replace the route, or revert the agent's broken chunk; it must not add wrapper glue or another checker over the same failure. Text/lore work must produce the requested artifact or a source-brief blocker; it must not end as packet planning. Visual work must restore/replace the base scene, material, asset, camera, or lighting route before any cosmetic pass.
+
+[FORBID] Self-check cascade: do not add a validator, audit script, or meta-check unless it catches a concrete repeated failure, has a negative example or reproducible reject case, maps to a product gate, and enables the next source/asset/proof action. A passing static validator proves only its static condition.
 
 [RULE] Performance is a servant. Performance work exists to protect or buy player-visible beauty, gameplay clarity, stability, and scalability. Do not remove visual/gameplay value solely to satisfy a metric; solve budget failure with premium approximation, load-shed gate, cadence/tier scaling, or richer high-tier path that preserves the product face.
 
@@ -5900,6 +5924,8 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 [REQ] Use existing quality assets before rewriting. Assets that are blurry, primitive, badly imported, stale demo content, or below `TASTE.md` must be fixed, regenerated offline, replaced, or explicitly reported.
 
 [REQ] Existing editor/offline generation systems for meshes, textures, rocks, flora, fauna, materials, and procedural families must be searched before inventing new asset-generation routes.
+
+[RULE] No polish before base beauty: if the frame fails reference-level composition, material truth, water/terrain/sky readability, contact detail, or route scale, do not tune fog, bloom, exposure, color grading, vignette, decorative lights, or screenshots as the fix. Restore, replace, or rebind the base owner stack first, then prove with the same shot list.
 
 [RULE] Until `Docs\ARCHITECTURE\FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` is proven, gameplay, runtime, player-visible visual, UI, audio, world, asset, system, and in-world content tasks must state which first-20-minutes route moment they improve or which route blocker they remove. Pure rule routing, tool-shim upkeep, generated snapshot sync, narrow typo fixes, and read-only governance checks may instead state `FIRST_20_NOT_APPLICABLE: <reason>`.
 
@@ -6166,6 +6192,8 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 - exact authority docs already routed for the parent task;
 - owned read/edit scope;
 - forbidden scope;
+- primary deliverable class;
+- kill condition for same-failure or report-only drift;
 - expected output format;
 - evidence standard;
 - whether file edits are allowed.
@@ -6184,6 +6212,8 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 - create hidden same-wave dependencies;
 - overwrite unrelated work or run broad unrelated audits;
 - produce another paper-success loop after a blocker is already known.
+
+[FORBID] A subagent wave is invalid if all lanes only summarize, route, or validate while no lane is assigned a concrete source, asset, content, proof, or blocker outcome. Synthesis is allowed only after at least one lane produces evidence or a change-ready blocker.
 
 [REQ] If a subagent finds a blocker, the primary route becomes one of:
 - fix the source/asset/rule gate;
@@ -7391,6 +7421,8 @@ Static scans are not valid for:
 - PlayMode behavior;
 - device support;
 - release readiness.
+
+Validator scripts are production debt unless they enforce a named gate. A new validator must name the repeated defect it catches, include a negative case or reproducible rejected state, and say which source/asset/proof action follows a failure. A passing validator proves only its static predicate; it does not accept code quality, prose quality, visual taste, runtime behavior, performance, or platform readiness.
 
 ## GlobalQualityWeight Scaling
 
@@ -12632,6 +12664,8 @@ Localization status:
 
 No field may be filled with vibes. If the answer is unknown, write `UNKNOWN - DO NOT INVENT` and either stop or make discovery the task.
 
+A source brief is an input or blocker, not the final artifact, unless the user explicitly asked only for a source brief.
+
 ## Production Writing Loop
 
 Use this order for real work:
@@ -12647,6 +12681,8 @@ Use this order for real work:
 9. Provide a proof packet: sources used, IDs, surfaces, locale roster, native-review status, forbidden facts avoided.
 
 The loop must produce content, not a proposal about content. A task asking for a diary should end with a diary. A task asking for a technical article should end with a readable technical article, not notes about the future article.
+
+If the same content problem repeats after one rewrite pass, stop polishing phrasing and change the source route: revise the scene/evidence/knowledge boundary, choose a different surface or speaker, or report the exact missing canon/source blocker.
 
 Localization lock: AppliedContent and major in-world content should be prepared for all 15 supported locales immediately. Non-native or machine-assisted text must be labeled honestly through status/frontmatter/index fields, never as player-visible disclaimers and never as native-final without proof.
 

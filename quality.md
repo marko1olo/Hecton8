@@ -87,6 +87,21 @@ Accepted documentation must do at least one of these:
 
 If none of these is true, stop writing and return to source, assets, Unity proof, or the concrete blocker.
 
+## 0C. Production Deliverable Lock
+
+Every non-trivial production task must resolve to one primary deliverable class:
+
+- `SOURCE_CHANGE`;
+- `ASSET_CHANGE`;
+- `CONTENT_ARTIFACT`;
+- `FRESH_PROOF`;
+- `BLOCKER`;
+- `POLICY_DOC` only when the user explicitly requested policy, audit, routing, or rule work.
+
+Support artifacts cannot accept the task by themselves. Static scans, validators, route cards, checklists, summaries, screenshots that only reject a bad state, and report synthesis are useful only when they route the next source, asset, content, proof, or blocker action.
+
+New self-check scripts are accepted only when they catch a concrete repeated failure, include a negative case or reproducible rejected state, map to a named product gate, and do not claim runtime, visual, prose, profiler, or player-readiness proof from static output.
+
 ## 1. Universal Review Questions
 
 Every player-facing change must answer:
@@ -130,7 +145,9 @@ When `VISUAL_ROUTE_INVALID` is reached, the next action is route recovery, not a
 
 - identify the authoritative route owner and active scene/material/component binding;
 - inspect existing source assets and reference images before generating replacement visuals;
+- compare against known-good in-project screenshots before inventing a new polish route;
 - decide whether to restore, replace, or remove the broken route;
+- fix water/terrain/sky/material/contact/camera foundations before fog, bloom, exposure, grading, vignette, or decorative light changes;
 - capture the same shot list again only after root cause changes;
 - keep all acceptance claims at `PENDING VERIFICATION` until the screenshots pass taste and the required Unity/profiler proof exists.
 

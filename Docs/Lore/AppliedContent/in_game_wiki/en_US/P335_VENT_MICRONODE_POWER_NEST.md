@@ -19,22 +19,24 @@ localization_flags: 0
 
 # Vent Micronode Power Nest
 
-Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.
+Vent micronodes form where hot chemistry, metal dust and old power hardware share the same crack. They do not power the colony like a reactor. They keep small things alive: a memory loop, a diagnostic blink, a drone crawl, a door latch that should have died years ago.
+
+Near the Atlas Basin the nests become denser because every gradient is useful. Geology supplies heat. Life supplies conductive surfaces. Broken machinery supplies rules. A Marauder can harvest charge or read memory residue from a nest, but the same node may feed a repair loop that notices the theft.
 
 ## Scanner
 
-Thermal micronodes feeding local repair loops. Drone charge scars present.
+Thermal micronodes in vent crust. Drone charge scars and memory residue present. Local repair bus drawing current.
 
 ## Terminal
 
-VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
+VENT MICRONODE // Chemical gradient supports low-power routing, memory residue and intermittent drone charge cycles. Node density increases near Atlas Basin factory-temple structures.
 
 ## Audio
 
-At depth, even the vents are drafted into maintenance.
+Even the heat has paperwork down here.
 
 ## Field Note
 
-Use near final descent resource and Atlas-basin warnings.
+Take one charge, then move. A second pull makes the nest look back.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/en_US. -->

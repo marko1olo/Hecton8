@@ -9,32 +9,18 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Conductive Biofilm Repair Bus"
+title: "전도성 바이오필름 수리 버스"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# KO LOC HOLD: Conductive Biofilm Repair Bus
+# 전도성 바이오필름 수리 버스
 
-KO LOC HOLD: Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.
+케이블 암초에서 부서진 인프라는 거의 깨끗하게 남지 않는다. 따뜻한 염수가 찢어진 절연 위의 미생물 매트를 먹이고, 철과 구리가 발판이 되며, 오래된 진단 펄스가 성장에 리듬을 준다.
 
-## Scanner
-
-KO LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
-
-## Terminal
-
-KO LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
-
-## Audio
-
-KO LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
-
-## Field Note
-
-KO LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+Marauder에게는 유용한 단서다. 살아 있는 케이블 피부는 서비스 줄기, 저전력 문, 드론 둥지, 데이터 경로를 가리킬 수 있다. 동시에 Atlas가 그 살아 있는 다리를 유효한 수리 재고로 읽을 수 있어, 모든 절단은 위험하다.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/ko_KR. -->

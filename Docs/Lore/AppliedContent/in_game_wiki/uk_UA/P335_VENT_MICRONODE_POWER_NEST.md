@@ -9,32 +9,34 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Vent Micronode Power Nest"
+title: "Енергогніздо жерлових мікровузлів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# UK LOC HOLD: Vent Micronode Power Nest
+# Енергогніздо жерлових мікровузлів
 
-UK LOC HOLD: Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.
+Жерлові мікровузли формуються там, де гаряча хімія, металевий пил і старе силове обладнання ділять одну тріщину. Вони не живлять колонію як реактор. Вони тримають живими дрібниці: петлю пам'яті, діагностичний спалах, повзок дрона, дверну защіпку, що мала померти роки тому.
+
+Біля Басейну Atlas гнізда густішають, бо корисний кожен градієнт. Геологія дає тепло. Життя дає провідні поверхні. Зламані машини дають правила. Мародер може зняти заряд або прочитати залишок пам'яті, але той самий вузол може годувати ремонтну петлю, що помітить крадіжку.
 
 ## Scanner
 
-UK LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
+Теплові мікровузли в корі жерла. Є шрами заряджання дронів і залишки пам'яті. Локальна ремонтна шина тягне струм.
 
 ## Terminal
 
-UK LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
+ЖЕРЛОВИЙ МІКРОВУЗОЛ // Хімічний градієнт підтримує малопотужну маршрутизацію, залишки пам'яті й переривчасті цикли заряджання дронів. Щільність вузлів зростає біля фабрично-храмових структур Басейну Atlas.
 
 ## Audio
 
-UK LOC HOLD: At depth, even the vents are drafted into maintenance.
+Тут унизу навіть тепло має папери.
 
 ## Field Note
 
-UK LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+Візьми один заряд і йди. Другий ривок змушує гніздо подивитися у відповідь.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/uk_UA. -->

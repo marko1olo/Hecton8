@@ -9,32 +9,34 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Vent Micronode Power Nest"
+title: "Gniazdo zasilania mikrowęzłów kominowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Vent Micronode Power Nest
+# Gniazdo zasilania mikrowęzłów kominowych
 
-PL LOC HOLD: Vent Micronode Power Nest explains why the deep repair network feels denser and less natural. Atlas uses vent energy as local decision fuel.
+Mikrowęzły kominowe tworzą się tam, gdzie gorąca chemia, metaliczny pył i stary sprzęt zasilający dzielą tę samą szczelinę. Nie zasilają kolonii jak reaktor. Utrzymują przy życiu drobiazgi: pętlę pamięci, błysk diagnostyczny, pełzanie drona, rygiel drzwi, który powinien umrzeć lata temu.
+
+Przy Basenie Atlas gniazda gęstnieją, bo każdy gradient jest użyteczny. Geologia daje ciepło. Życie daje przewodzące powierzchnie. Zepsute maszyny dają reguły. Marauder może zebrać ładunek albo odczytać pamięć, ale ten sam węzeł może karmić pętlę naprawczą, która zauważy kradzież.
 
 ## Scanner
 
-PL LOC HOLD: Thermal micronodes feeding local repair loops. Drone charge scars present.
+Termiczne mikrowęzły w skorupie komina. Ślady ładowania dronów i resztki pamięci obecne. Lokalna magistrala naprawcza pobiera prąd.
 
 ## Terminal
 
-PL LOC HOLD: VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
+MIKROWĘZEŁ KOMINOWY // Gradient chemiczny wspiera routing niskiej mocy, resztki pamięci i przerywane cykle ładowania dronów. Gęstość węzłów rośnie przy strukturach fabryczno-świątynnych Basenu Atlas.
 
 ## Audio
 
-PL LOC HOLD: At depth, even the vents are drafted into maintenance.
+Tu na dole nawet ciepło ma papierologię.
 
 ## Field Note
 
-PL LOC HOLD: Use near final descent resource and Atlas-basin warnings.
+Weź jeden ładunek i ruszaj. Drugie pociągnięcie sprawia, że gniazdo patrzy z powrotem.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/pl_PL. -->

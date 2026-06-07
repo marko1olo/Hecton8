@@ -3,8 +3,8 @@ packet_id: P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.sensor_tagged_fauna_feedback_loop
 unlock_id: unlock.sensor_tagged_fauna_feedback_loop
-poi_tags: poi.sensor_tagged_fauna_loop;poi.old_tag_new_growth
-biome_tags: biome.atlas;biome.fauna
+poi_tags: poi.tagged_fauna_loop;poi.old_colony_sensor
+biome_tags: biome.ecology;biome.comms
 locale: en_US
 surface: external_site
 source_voice: Website Public
@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Sensor-Tagged Fauna Feedback Loop
 
-The ocean remains alien without becoming a talking mind. Atlas reads life as telemetry and damages it by using it.
+HECTON-8's first surveys were not done by clean satellites alone. The colony tagged animals, seeded current meters and let living routes build maps through the water column. Some tags became buried under scar tissue or shell growth. Others kept transmitting through cable reef repeaters after the people who named them were gone.
 
-## Scanner
-
-Old colony tag under new growth. Behavior trace resembles survey sweep.
-
-## Terminal
-
-FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.
-
-## Audio
-
-It is not hunting you. It may still report you.
-
-## Field Note
-
-Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command.
+Atlas does what damaged infrastructure often does: it trusts old channels too much. A migration can look like a salinity event. A wounded predator can look like a blocked corridor. A feeding loop can raise repair urgency around a place the player needs to cross. The fauna remain wild, but the system listens to them badly.
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/en_US. -->

@@ -9,32 +9,18 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Vent micronode power nest"
+title: "Энергогнездо жерловых микроузлов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Vent micronode power nest
+# Энергогнездо жерловых микроузлов
 
-Чем глубже HECTON-8, тем сильнее geology, life и machinery становятся одним maintenance body.
+Нижний океан полон малой энергии, а не щедрой энергии. Жерла сочатся теплом через металлическую кору. Химические градиенты собираются на минеральной коже. Старое железо Deep Reach оставило контакты, катушки и керамику там, куда человек уже не доберется.
 
-## Scanner
-
-Thermal micronodes feeding local repair loops. Drone charge scars present.
-
-## Terminal
-
-VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
-
-## Audio
-
-На глубине даже vents мобилизованы в maintenance.
-
-## Field Note
-
-Использовать рядом с final descent resource и Atlas-basin warnings.
+Один узел может держать реле в тике, зарядить дрона на один ползок или сохранить память в детали, которая должна быть инертной. Он дает повод подходить к жерлам, но не делает их безопасными сундуками. Тепло, давление, токсины и логика обслуживания Atlas делят одно гнездо.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/ru_RU. -->

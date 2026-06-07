@@ -1,7 +1,7 @@
 {
   "schema": "H8.RELEASE_SET_MANIFEST.V0",
   "release_set_id": "RS003_HUMAN_SPACE_AEGIR_ROUTE",
-  "status": "production_facing_draft",
+  "status": "production_facing_draft_pending_native_localization",
   "packet_sources": [
     "Docs/Lore/AppliedContent/packets/RS003_HUMAN_SPACE_AEGIR_ROUTE.packets.json"
   ],
@@ -31,7 +31,20 @@
   ],
   "markdown_publication_locales_present": [
     "en_US",
-    "ru_RU"
+    "ar_SA",
+    "de_DE",
+    "es_ES",
+    "fr_FR",
+    "he_IL",
+    "id_ID",
+    "ja_JP",
+    "ko_KR",
+    "nl_NL",
+    "pl_PL",
+    "pt_BR",
+    "ru_RU",
+    "uk_UA",
+    "zh_CN"
   ],
   "surfaces": [
     "scanner",

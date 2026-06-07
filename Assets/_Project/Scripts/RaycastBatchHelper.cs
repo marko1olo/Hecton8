@@ -71,12 +71,8 @@ namespace Hecton8.Physics
 
         private void Awake()
         {
-            RaycastBatchHelper registered = GlobalRegistry.RaycastBatch;
-            if (registered != null && registered != this)
-            {
-                Destroy(gameObject);
+            if (TryAbortForUsableExistingRuntime())
                 return;
-            }
 
             GameBootstrapper.PersistRuntimeService(this);
             _queryCount = 0;
@@ -86,6 +82,9 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
+            if (TryAbortForUsableExistingRuntime())
+                return;
+
             TryRegisterService();
             TryRegisterHotSwapListener();
             TryRegisterLateFrame();
@@ -270,12 +269,32 @@ namespace Hecton8.Physics
             if (_registeredService)
                 return;
 
-            RaycastBatchHelper registered = GlobalRegistry.RaycastBatch;
-            if (registered != null && registered != this)
+            if (TryAbortForUsableExistingRuntime())
                 return;
 
             GlobalRegistry.RegisterRaycastBatchRuntime(this);
             _registeredService = ReferenceEquals(GlobalRegistry.RaycastBatch, this);
+        }
+
+        private bool TryAbortForUsableExistingRuntime()
+        {
+            RaycastBatchHelper registered = GlobalRegistry.RaycastBatch;
+            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
+                return false;
+
+            if (IsRaycastBatchRuntimeUsable(registered))
+            {
+                Destroy(gameObject);
+                return true;
+            }
+
+            GlobalRegistry.UnregisterRaycastBatchRuntime(registered);
+            return false;
+        }
+
+        private static bool IsRaycastBatchRuntimeUsable(RaycastBatchHelper helper)
+        {
+            return helper != null && helper._registeredService && helper.isActiveAndEnabled;
         }
 
         private void TryUnregisterService()

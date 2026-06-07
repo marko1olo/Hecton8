@@ -73,6 +73,7 @@ namespace Hecton8.Modding
             if (TryAbortForUsableExistingRuntime())
                 return;
 
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             if (!_bootstrapListenerRegistered)
             {

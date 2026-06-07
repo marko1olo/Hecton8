@@ -6570,6 +6570,7 @@ namespace Hecton8.Bootstrap
             if (_sceneGuardRegistered)
                 return;
 
+            SceneManager.sceneLoaded -= HandleSceneLoadedGuard;
             SceneManager.sceneLoaded += HandleSceneLoadedGuard;
             _sceneGuardRegistered = true;
         }

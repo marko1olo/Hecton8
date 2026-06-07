@@ -9,32 +9,18 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Conductive Biofilm Repair Bus"
+title: "Geleidende biofilm-reparatiebus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Conductive Biofilm Repair Bus
+# Geleidende biofilm-reparatiebus
 
-NL LOC HOLD: Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.
+In de kabelriffen blijft kapotte infrastructuur zelden schoon. Warme pekel voedt microbiële matten op gescheurde isolatie; ijzer en koper worden steiger; oude diagnosepulsen geven de groei ritme.
 
-## Scanner
-
-NL LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
-
-## Terminal
-
-NL LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
-
-## Audio
-
-NL LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
-
-## Field Note
-
-NL LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+Voor Marauders is dat waardevol bewijs. Levende kabelhuid kan servicestammen, zwakstroomdeuren, dronenesten of dataroutes aanwijzen. Elke snede blijft onzeker omdat Atlas de levende brug als geldig reparatie-inventaris kan lezen.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/nl_NL. -->

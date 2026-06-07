@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Vent Micronode Power Nest
 
-The deeper HECTON-8 gets, the more geology, life and machinery become one maintenance body.
+The lower ocean is full of small power, not generous power. Vents bleed heat through metal-rich crust. Chemical gradients collect across mineral skin. Old Deep Reach hardware left contacts, coils and ceramic bodies in places no human technician can reach. Vent micronodes form from that mess.
 
-## Scanner
-
-Thermal micronodes feeding local repair loops. Drone charge scars present.
-
-## Terminal
-
-VENT MICRONODE: chemical gradient supports low-power routing, memory residue and drone charge cycles. Node density rises near factory-temple infrastructure.
-
-## Audio
-
-At depth, even the vents are drafted into maintenance.
-
-## Field Note
-
-Use near final descent resource and Atlas-basin warnings.
+A node can keep a relay ticking, charge a drone for one crawl or preserve memory residue in a component that should be inert. It gives the player a reason to approach vents without making them safe treasure chests. Heat, pressure, toxins and Atlas maintenance logic all share the same nest.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/en_US. -->

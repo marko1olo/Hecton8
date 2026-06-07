@@ -64,8 +64,12 @@ HEADLESS_ENTRY = struct.Struct("<IiIqqqffffffI")
 LIVE_TELEMETRY_ENTRY_V1 = struct.Struct("<IIIIIfff")
 LIVE_TELEMETRY_ENTRY_V2 = struct.Struct("<IIIIIIfffffIIIII")
 LIVE_TELEMETRY_ENTRY = LIVE_TELEMETRY_ENTRY_V2
+DATA_MONOLITH_TELEMETRY_HEADER = struct.Struct("<IIiii")
+DATA_MONOLITH_TELEMETRY_ENTRY = struct.Struct("<Qqq" + "I" * 10)
 GLOBAL_TELEMETRY_PREFIX = struct.Struct("<QII")
 SURVIVAL_BLACKBOX_SOURCE_ENTRY = struct.Struct("<III" + "f" * 11 + "II")
+ARM64_ALIGNMENT_TELEMETRY_HEADER = struct.Struct("<Qiii")
+ARM64_ALIGNMENT_TELEMETRY_ENTRY = struct.Struct("<QQdddIIIIfI")
 TOXIC_OUTGASSING_HEADER = struct.Struct("<IIIIIIII")
 TOXIC_OUTGASSING_ENTRY = struct.Struct("<dddffffIIHHHBBQ")
 GAS_DYNAMICS_HEADER = struct.Struct("<Iiiiii")
@@ -159,6 +163,16 @@ GLOBAL_TELEMETRY_BUS_METADATA_OFFSET = GLOBAL_TELEMETRY_PREFIX.size
 GLOBAL_TELEMETRY_BUS_SOURCE_DESCRIPTOR_METADATA_INDEX = 32
 GLOBAL_TELEMETRY_BUS_SOURCE_DESCRIPTOR_UINT_STRIDE = 4
 GLOBAL_TELEMETRY_BUS_MAX_FRAME_STRIDE_BYTES = 64 * 1024
+DATA_MONOLITH_TELEMETRY_MAGIC = 0x4858444D
+DATA_MONOLITH_TELEMETRY_HEADER_BYTES = 20
+DATA_MONOLITH_TELEMETRY_ENTRY_BYTES = 64
+DATA_MONOLITH_TELEMETRY_RING_CAPACITY = 300
+DATA_MONOLITH_MAX_BLOB_BYTES = 256 * 1024 * 1024
+ARM64_ALIGNMENT_TELEMETRY_MAGIC = 0x3430325F55424F53
+ARM64_ALIGNMENT_TELEMETRY_VERSION = 1
+ARM64_ALIGNMENT_TELEMETRY_HEADER_BYTES = 20
+ARM64_ALIGNMENT_TELEMETRY_ENTRY_BYTES = 64
+ARM64_ALIGNMENT_TELEMETRY_CAPACITY = 300
 SURVIVAL_BLACKBOX_SOURCE_HASH = 0x53555256
 SURVIVAL_BLACKBOX_SOURCE_BYTES = 64
 SURVIVAL_BLACKBOX_DEATH_CAUSE_SHIFT = 24
@@ -208,6 +222,52 @@ FOVEATED_SIMULATION_FLAG_LABELS = (
 GLOBAL_TELEMETRY_SOURCE_LABELS = {
     SURVIVAL_BLACKBOX_SOURCE_HASH: "survival",
 }
+
+DATA_MONOLITH_LOAD_STATUS_LABELS = {
+    0: "none",
+    1: "loaded",
+    2: "missing",
+    3: "file-too-small",
+    4: "file-too-large",
+    5: "read-failed",
+    6: "bad-magic",
+    7: "unsupported-version",
+    8: "bad-checksum",
+    9: "header-mismatch",
+    10: "invalid-section-table",
+    11: "ready-locked",
+}
+
+DATA_MONOLITH_PATH_FLAG_LABELS = (
+    (1 << 0, "managedFileFallback", "managed-file-fallback"),
+    (1 << 1, "memoryMappedFile", "memory-mapped-file"),
+    (1 << 2, "vaultBacked", "vault-backed"),
+    (1 << 3, "streamingUriStaged", "streaming-uri-staged"),
+    (1 << 4, "nativeFile", "native-file"),
+    (1 << 5, "streamingUriRequiresAsync", "streaming-uri-requires-async"),
+    (1 << 6, "streamingUriStagingCancelled", "streaming-uri-staging-cancelled"),
+    (1 << 7, "androidAssetManager", "android-asset-manager"),
+    (1 << 8, "androidJavaAssetManager", "android-java-asset-manager"),
+)
+
+DATA_MONOLITH_FAILURE_STAGE_LABELS = {
+    0: "none",
+    1: "load-status",
+    2: "arena-capacity",
+    3: "write-lock",
+    4: "copy-to-arena",
+    6: "write-lock-release",
+    7: "telemetry-vault",
+    8: "telemetry-bootstrap",
+}
+
+ARM64_ALIGNMENT_TELEMETRY_FLAG_LABELS = (
+    (1 << 0, "pack1Detected", "pack1-detected"),
+    (1 << 1, "misalignedEightByteField", "misaligned-8-byte-field"),
+    (1 << 2, "invalidStride", "invalid-stride"),
+    (1 << 3, "dynamicCastFault", "dynamic-cast-fault"),
+    (1 << 4, "dumpWritten", "dump-written"),
+)
 
 SURVIVAL_BLACKBOX_FLAG_LABELS = (
     (1 << 0, "alive", "alive"),
@@ -1861,6 +1921,245 @@ def parse_global_telemetry_source_descriptors(metadata: list[int]) -> list[dict[
             }
         )
     return descriptors
+
+
+def is_data_monolith_telemetry_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPH8STATICDATAARENATELEMETRYBIN", "DUMPH8STATICDATAARENATELEMETRYH8DUMP"}
+
+
+def data_monolith_status_label(status: int) -> str:
+    return DATA_MONOLITH_LOAD_STATUS_LABELS.get(status, f"unknown={status}")
+
+
+def parse_data_monolith_telemetry_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < DATA_MONOLITH_TELEMETRY_HEADER_BYTES:
+        return {
+            "type": "data_monolith_telemetry_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic, header_status, cursor, ring_capacity, entry_size = DATA_MONOLITH_TELEMETRY_HEADER.unpack_from(data, 0)
+    if (
+        magic != DATA_MONOLITH_TELEMETRY_MAGIC
+        or ring_capacity <= 0
+        or entry_size != DATA_MONOLITH_TELEMETRY_ENTRY_BYTES
+    ):
+        return {
+            "type": "data_monolith_telemetry_blackbox",
+            "magic": magic,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = DATA_MONOLITH_TELEMETRY_HEADER_BYTES
+    expected_bytes = payload_offset + ring_capacity * entry_size
+    readable_entries = min(ring_capacity, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = DATA_MONOLITH_TELEMETRY_ENTRY.unpack_from(data, offset)
+        load_status = fields[6]
+        path_flags = fields[7]
+        path_labels, unknown_path_flags = resolve_bit_labels(path_flags, DATA_MONOLITH_PATH_FLAG_LABELS)
+        failure_stage = fields[9]
+        entries.append(
+            {
+                "slot": index,
+                "checksum64": fields[0],
+                "checksum64Hex": f"0x{fields[0]:016X}",
+                "loadTicks": fields[1],
+                "ioTicks": fields[2],
+                "frame": fields[3],
+                "blobBytes": fields[4],
+                "blobMiB": round(fields[4] / (1024 * 1024), 4),
+                "sectionCount": fields[5],
+                "loadStatus": load_status,
+                "loadStatusLabel": data_monolith_status_label(load_status),
+                "pathFlags": path_flags,
+                "pathFlagLabels": path_labels,
+                "unknownPathFlags": unknown_path_flags,
+                "stateHash": fields[8],
+                "stateHashHex": f"0x{fields[8]:08X}",
+                "failureStage": failure_stage,
+                "failureStageLabel": DATA_MONOLITH_FAILURE_STAGE_LABELS.get(
+                    failure_stage,
+                    f"unknown={failure_stage}",
+                ),
+                "failureDetail0": fields[10],
+                "failureDetail1": fields[11],
+                "failureDetail2": fields[12],
+                "loaded": load_status == 1,
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if ring_capacity > DATA_MONOLITH_TELEMETRY_RING_CAPACITY:
+        warnings.append("entry_capacity_exceeded")
+    if cursor < 0 or cursor >= ring_capacity:
+        warnings.append("telemetry_cursor_out_of_range")
+    if header_status != 1:
+        warnings.append("header_not_loaded")
+    if header_status not in DATA_MONOLITH_LOAD_STATUS_LABELS:
+        warnings.append("unknown_header_status")
+    if any(entry.get("loadStatus") not in DATA_MONOLITH_LOAD_STATUS_LABELS for entry in entries):
+        warnings.append("unknown_load_status")
+    if any(entry.get("loadStatus") not in {0, 1} for entry in entries):
+        warnings.append("load_failures")
+    if any(entry.get("unknownPathFlags") for entry in entries):
+        warnings.append("unknown_path_flags")
+    if any(entry.get("failureStage") for entry in entries):
+        warnings.append("failure_details")
+    if any(entry.get("blobBytes", 0) > DATA_MONOLITH_MAX_BLOB_BYTES for entry in entries):
+        warnings.append("blob_size_over_cap")
+    if any(entry.get("loadTicks", 0) < 0 or entry.get("ioTicks", 0) < 0 for entry in entries):
+        warnings.append("negative_ticks")
+    return {
+        "type": "data_monolith_telemetry_blackbox",
+        "magic": magic,
+        "headerBytes": DATA_MONOLITH_TELEMETRY_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": ring_capacity,
+        "telemetryCursor": cursor,
+        "headerStatus": header_status,
+        "headerStatusLabel": data_monolith_status_label(header_status),
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
+
+
+def is_arm64_alignment_telemetry_blackbox_path(path: Path) -> bool:
+    normalized = re.sub(r"[^A-Z0-9]", "", path.name.upper())
+    return normalized in {"DUMPSHINOBU204BIN", "DUMPSHINOBU204H8DUMP"}
+
+
+def parse_arm64_alignment_telemetry_blackbox(data: bytes) -> dict[str, Any]:
+    if len(data) < ARM64_ALIGNMENT_TELEMETRY_HEADER_BYTES:
+        return {
+            "type": "arm64_alignment_telemetry_blackbox",
+            "entries": [],
+            "latest": None,
+            "warnings": ["truncated_header"],
+        }
+
+    magic, version, entry_count, entry_size = ARM64_ALIGNMENT_TELEMETRY_HEADER.unpack_from(data, 0)
+    if (
+        magic != ARM64_ALIGNMENT_TELEMETRY_MAGIC
+        or version != ARM64_ALIGNMENT_TELEMETRY_VERSION
+        or entry_count <= 0
+        or entry_size != ARM64_ALIGNMENT_TELEMETRY_ENTRY_BYTES
+    ):
+        return {
+            "type": "arm64_alignment_telemetry_blackbox",
+            "magic": magic,
+            "version": version,
+            "entries": [],
+            "latest": None,
+            "warnings": ["invalid_header"],
+        }
+
+    payload_offset = ARM64_ALIGNMENT_TELEMETRY_HEADER_BYTES
+    expected_bytes = payload_offset + entry_count * entry_size
+    readable_entries = min(entry_count, max(0, len(data) - payload_offset) // entry_size)
+    entries = []
+    nonfinite_seen = False
+    for index in range(readable_entries):
+        offset = payload_offset + index * entry_size
+        if is_empty_entry(data, offset, entry_size):
+            continue
+
+        fields = ARM64_ALIGNMENT_TELEMETRY_ENTRY.unpack_from(data, offset)
+        flags = fields[7]
+        flag_labels, unknown_flags = resolve_bit_labels(flags, ARM64_ALIGNMENT_TELEMETRY_FLAG_LABELS)
+        if any(not math.isfinite(value) for value in fields[2:6]):
+            nonfinite_seen = True
+        entries.append(
+            {
+                "slot": index,
+                "structHash": fields[0],
+                "structHashHex": f"0x{fields[0]:016X}",
+                "offendingAddress": fields[1],
+                "offendingAddressHex": f"0x{fields[1]:016X}",
+                "aupOrRuntimePosition": {
+                    "x": round(fields[2], 4),
+                    "y": round(fields[3], 4),
+                    "z": round(fields[4], 4),
+                },
+                "bufferID": fields[5],
+                "bufferIDHex": f"0x{fields[5]:08X}",
+                "byteOffset": fields[6],
+                "frame": fields[7],
+                "flags": flags,
+                "flagLabels": flag_labels,
+                "unknownFlags": unknown_flags,
+                "severity01": round(fields[8], 4),
+                "stateHash": fields[9],
+                "stateHashHex": f"0x{fields[9]:08X}",
+                "pack1Detected": bool(flags & (1 << 0)),
+                "misalignedEightByteField": bool(flags & (1 << 1)),
+                "invalidStride": bool(flags & (1 << 2)),
+                "dynamicCastFault": bool(flags & (1 << 3)),
+                "dumpWritten": bool(flags & (1 << 4)),
+            }
+        )
+
+    latest = max(entries, key=lambda entry: safe_int(entry.get("frame"), 0)) if entries else None
+    capped = cap_entries(entries)
+    warnings = []
+    if len(data) < expected_bytes:
+        warnings.append("payload_truncated")
+    if len(data) > expected_bytes:
+        warnings.append("trailing_bytes")
+    if len(data) > payload_offset and (len(data) - payload_offset) % entry_size != 0:
+        warnings.append("trailing_partial_entry")
+    if entry_count > ARM64_ALIGNMENT_TELEMETRY_CAPACITY:
+        warnings.append("entry_capacity_exceeded")
+    if any(entry.get("unknownFlags") for entry in entries):
+        warnings.append("unknown_flags")
+    if nonfinite_seen:
+        warnings.append("nonfinite_position")
+    if any(entry.get("pack1Detected") for entry in entries):
+        warnings.append("pack1_detected")
+    if any(entry.get("misalignedEightByteField") for entry in entries):
+        warnings.append("misaligned_8_byte_field")
+    if any(entry.get("invalidStride") for entry in entries):
+        warnings.append("invalid_stride")
+    if any(entry.get("dynamicCastFault") for entry in entries):
+        warnings.append("dynamic_cast_fault")
+    if any(entry.get("stateHash") == 0 for entry in entries):
+        warnings.append("state_hash_zero")
+    if any(entry.get("severity01", 0.0) < 0.0 or entry.get("severity01", 0.0) > 1.0 for entry in entries):
+        warnings.append("severity_out_of_range")
+    return {
+        "type": "arm64_alignment_telemetry_blackbox",
+        "magic": magic,
+        "version": version,
+        "headerBytes": ARM64_ALIGNMENT_TELEMETRY_HEADER_BYTES,
+        "entrySize": entry_size,
+        "declaredEntryCount": entry_count,
+        "nonEmptyEntryCount": len(entries),
+        "returnedEntryCount": len(capped),
+        "entries": capped,
+        "latest": latest,
+        "warnings": warnings,
+    }
 
 
 def parse_global_telemetry_frame(
@@ -6868,6 +7167,7 @@ def try_parse_magic_identified_blackbox(data: bytes) -> dict[str, Any] | None:
             return parse_thermodynamics_hazard_blackbox(data)
 
     magic_parsers = (
+        (DATA_MONOLITH_TELEMETRY_MAGIC, parse_data_monolith_telemetry_blackbox),
         (TOXIC_OUTGASSING_MAGIC, parse_toxic_outgassing_blackbox),
         (GAS_DYNAMICS_MAGIC, parse_gas_dynamics_blackbox),
         (STORM_PROPAGATION_MAGIC, parse_storm_propagation_blackbox),
@@ -7976,6 +8276,8 @@ def parse_dump_file(path: Path) -> dict[str, Any]:
         return {**base, **parse_terrain_streaming_dump(data)}
     if is_global_telemetry_bus_blackbox_path(path):
         return {**base, **parse_global_telemetry_bus_blackbox(data)}
+    if is_data_monolith_telemetry_blackbox_path(path):
+        return {**base, **parse_data_monolith_telemetry_blackbox(data)}
     if is_toxic_outgassing_blackbox_path(path):
         return {**base, **parse_toxic_outgassing_blackbox(data)}
     if is_gas_dynamics_blackbox_path(path):

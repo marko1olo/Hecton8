@@ -76,6 +76,8 @@ Static scans are not valid for:
 - device support;
 - release readiness.
 
+Validator scripts are production debt unless they enforce a named gate. A new validator must name the repeated defect it catches, include a negative case or reproducible rejected state, and say which source/asset/proof action follows a failure. A passing validator proves only its static predicate; it does not accept code quality, prose quality, visual taste, runtime behavior, performance, or platform readiness.
+
 ## GlobalQualityWeight Scaling
 
 `GlobalQualityWeight` affects test matrix breadth, not truth. Compact, Middle, High, and Ultra paths must be checked when a change affects visuals, cadence, capacity, or runtime budget. Testing must prove that compact does not become ugly/unreadable and high tier does not change gameplay truth.

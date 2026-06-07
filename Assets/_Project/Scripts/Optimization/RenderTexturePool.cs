@@ -95,6 +95,7 @@ namespace Hecton8.Optimization
             if (TryRegisterService())
             {
                 TryRegisterSlowTickable();
+                SceneManager.sceneUnloaded -= HandleSceneUnloaded;
                 SceneManager.sceneUnloaded += HandleSceneUnloaded;
             }
         }

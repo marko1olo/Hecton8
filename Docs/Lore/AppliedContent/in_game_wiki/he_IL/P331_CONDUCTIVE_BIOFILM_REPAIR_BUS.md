@@ -9,32 +9,34 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Conductive Biofilm Repair Bus"
+title: "אוטובוס תיקון של ביופילם מוליך"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# HE LOC HOLD: Conductive Biofilm Repair Bus
+# אוטובוס תיקון של ביופילם מוליך
 
-HE LOC HOLD: Conductive Biofilm Repair Bus defines one concrete repair-network mechanism. Atlas exploits local biology as low-grade signal and seal infrastructure instead of controlling a mystical ocean mind.
+ביופילם מוליך מופיע במקום שבו כבל Deep Reach, מי מלח חמים ובידוד פגום נשארים במגע. המרבד מעביר זרם חלש דרך שברי נחושת ומאפשר לאבחון של אטלס להגיע לחדרים שהיו אמורים להיות מתים חשמלית.
+
+הסכנה היא כשל סיווג. אטלס רואה רציפות ומקצה עדיפות תיקון. האורגניזם רואה חום, זרימת מינרלים ושטח. בוזז שחותך את המרבד עלול לנתק דלת, להעיר בדיקת רחפן או לחשוף מטען טרי שמושך טורפים הרגישים לשדה.
 
 ## Scanner
 
-HE LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
+מעטפת ביופילם מגשרת בין נחושת שבורה למרבד חי. זרם חלש נוכח. תג תיקון של אטלס נמצא בקרום מלח.
 
 ## Terminal
 
-HE LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+אוטובוס תיקון אטלס // סרט מיקרוביאלי מוליך חצה את שברי הכבל C-18 עד C-22. פעימות אבחון עוברות דרך צמיחה רטובה כשהנחושת איננה. לא לסווג כהכרה. לטפל כמצע תחזוקה מזוהם.
 
 ## Audio
 
-HE LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
+הסרט נושא פעימה. זה לא עושה אותו חכם. זה אומר שהחוט למד להירקב חי.
 
 ## Field Note
 
-HE LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+אם לכבל רטוב יש עור, עקוב אחריו לפני החיתוך. הצד המת בדרך כלל בטוח יותר. בדרך כלל.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/he_IL. -->

@@ -3,38 +3,24 @@ packet_id: P333_SHELL_SEALANT_PRESSURE_GROWTH
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.shell_sealant_pressure_growth
 unlock_id: unlock.shell_sealant_pressure_growth
-poi_tags: poi.shell_sealant_growth;poi.fracture_lip_biomatter
-biome_tags: biome.atlas;biome.hardware
+poi_tags: poi.shell_sealant_breach;poi.pressure_growth_wall
+biome_tags: biome.atlas;biome.pressure
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Shell Sealant Pressure Growth"
+title: "貝殻シーラント圧力成長"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# JA LOC HOLD: Shell Sealant Pressure Growth
+# 貝殻シーラント圧力成長
 
-JA LOC HOLD: The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.
+修理は常に復元ではない。Deep Reachの緊急シーラントは快適さより先に圧力を守るためのものだった。HECTON-8の化学では、フォームパッチが荷重を支える鉱物殻になる。
 
-## Scanner
-
-JA LOC HOLD: Sealant growth over fracture. Pressure rating unknown. Cut only after scan.
-
-## Terminal
-
-JA LOC HOLD: SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.
-
-## Audio
-
-JA LOC HOLD: A sealed wound can still kill the room.
-
-## Field Note
-
-JA LOC HOLD: Useful for crafting, route gating and false-confidence moments.
+台帳上は優秀だ。Marauderには同じ成功が経路破壊になる。パッチが内側へ厚くなり、ハッチを噛み、工具箱を埋め、機能している壁の向こうへ最後の区画を閉じ込める。
 
 <!-- External Site; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/ja_JP. -->

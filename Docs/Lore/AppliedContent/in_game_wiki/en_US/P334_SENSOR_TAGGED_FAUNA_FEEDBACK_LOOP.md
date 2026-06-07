@@ -3,8 +3,8 @@ packet_id: P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.sensor_tagged_fauna_feedback_loop
 unlock_id: unlock.sensor_tagged_fauna_feedback_loop
-poi_tags: poi.sensor_tagged_fauna_loop;poi.old_tag_new_growth
-biome_tags: biome.atlas;biome.fauna
+poi_tags: poi.tagged_fauna_loop;poi.old_colony_sensor
+biome_tags: biome.ecology;biome.comms
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
@@ -19,22 +19,24 @@ localization_flags: 0
 
 # Sensor-Tagged Fauna Feedback Loop
 
-Sensor-Tagged Fauna Feedback Loop explains why animals can change route pressure. They are not controlled soldiers; they are noisy data points in a broken maintenance system.
+Deep Reach tagged local fauna to map currents, chemistry and migration. Many tags survived longer than the crews. Atlas still reads them as survey inputs, so an animal's route can raise repair priority, open a stale map tile or make a drone search the wrong depth.
+
+This does not make the animal obedient. It may be wounded, territorial, infected by old hardware or following food. The machine only sees movement plus data. A Marauder sees the worse truth: the ocean can report you by accident.
 
 ## Scanner
 
-Old colony tag under new growth. Behavior trace resembles survey sweep.
+Old colony sensor tag under new scar tissue. Motion profile enters Atlas survey channel. Animal agitated by active ping.
 
 ## Terminal
 
-FAUNA LOOP: Atlas reads tagged movement as environmental state. Animal migration becomes low-resolution map feedback and repair priority evidence.
+FAUNA LOOP // Legacy tag 7F reports temperature, motion and salinity through damaged survey channel. Atlas repair priority rose after migration event. Tagged animal is telemetry source, not command asset.
 
 ## Audio
 
-It is not hunting you. It may still report you.
+It's not hunting for Atlas. It is swimming with a badge still nailed under the skin.
 
 ## Field Note
 
-Scanner returns remain environmental evidence: tag, migration, repair priority, and no explicit predator command.
+Tagged animals change the map without meaning to. Follow one only if you know what else follows it.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/en_US. -->

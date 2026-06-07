@@ -9,32 +9,18 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Conductive Biofilm Repair Bus"
+title: "导电生物膜维修总线"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# ZH LOC HOLD: Conductive Biofilm Repair Bus
+# 导电生物膜维修总线
 
-ZH LOC HOLD: Atlas repair horror begins as engineering: conductive film, corroded cable, weak current and maintenance logic extending through life.
+在电缆礁里，破碎基础设施很少保持干净。温热盐卤喂养裂开绝缘层上的微生物毯；铁和铜成为支架；旧诊断脉冲给生长提供节奏。
 
-## Scanner
-
-ZH LOC HOLD: Biofilm carries weak current across fractured cable and living mat.
-
-## Terminal
-
-ZH LOC HOLD: ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
-
-## Audio
-
-ZH LOC HOLD: The ocean did not learn to speak. Atlas learned where the wet wires grow.
-
-## Field Note
-
-ZH LOC HOLD: Good first visual bridge from beautiful shallows to mechanical contamination.
+这对 Marauder 是有价值的线索。活电缆皮肤可能指向维修干线、低功率门、无人机巢或数据路线。每一次切割都不稳妥，因为 Atlas 可能把这座活桥读作有效维修库存。
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/zh_CN. -->

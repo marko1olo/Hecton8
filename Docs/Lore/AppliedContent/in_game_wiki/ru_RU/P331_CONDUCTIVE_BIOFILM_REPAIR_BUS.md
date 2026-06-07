@@ -9,32 +9,34 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Проводящая biofilm repair bus"
+title: "Проводящая биопленочная ремонтная шина"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Проводящая biofilm repair bus
+# Проводящая биопленочная ремонтная шина
 
-Проводящая biofilm repair bus задает конкретный механизм repair-network. Atlas использует местную биологию как слабый signal/seal infrastructure, не как мистический разум океана.
+Проводящая биопленка появляется там, где кабель Deep Reach, теплая рапа и поврежденная изоляция остаются в контакте. Мат проводит слабый ток через разрывы меди и позволяет диагностике Atlas добираться до комнат, которые должны быть электрически мертвы.
+
+Опасность в ошибке классификации. Atlas видит непрерывность и назначает ремонтный приоритет. Организм видит тепло, минеральный поток и площадь поверхности. Мародер, который режет мат, может оборвать дверь, разбудить аудит дрона или открыть свежий заряд, достаточный для хищников, охотящихся по мерцанию поля.
 
 ## Scanner
 
-Biofilm carries weak current across fractured cable and living mat.
+Оболочка биопленки замыкает разорванную медь и живой мат. Есть слабый ток. В соляной корке найден ремонтный тег Atlas.
 
 ## Terminal
 
-ATLAS REPAIR BUS: conductive microbial film bridges corroded contacts, routes diagnostic pulses and anchors drone patch behavior. Not cognition. Maintenance substrate.
+РЕМОНТНАЯ ШИНА ATLAS // Проводящая микробная пленка пересекла разрывы кабеля C-18-C-22. Диагностические импульсы идут через мокрый рост там, где меди уже нет. Не классифицировать как сознание. Считать загрязненным субстратом обслуживания.
 
 ## Audio
 
-Океан не научился говорить. Atlas научился находить мокрые провода, которые растут.
+Пленка несет импульс. Это не делает ее умной. Это значит, что провод научился гнить заживо.
 
 ## Field Note
 
-Хороший первый мост от красивого мелководья к механическому заражению.
+Если у мокрого кабеля есть кожа, сначала проследи ее. Мертвая сторона обычно безопаснее. Обычно.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/ru_RU. -->

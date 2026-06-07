@@ -19,22 +19,24 @@ localization_flags: 0
 
 # Acoustic Filter Organ Relay
 
-Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.
+Some reef animals grow filter organs dense enough to shape sound. Atlas repair nodes learned to use that tissue as an acoustic baffle after relay housings cracked. A ping can leave metal, pass through living chambers and come back cleaner than it should.
+
+That help has teeth around it. The same organ that carries a route ping can announce vibration to feeders, wake tagged fauna or echo a Marauder's own movement down the reef. A clean reply does not mean a safe corridor. It means the corridor has a listener.
 
 ## Scanner
 
-Organ resonance matches damaged relay cadence. Echo useful, not safe.
+Filter organ resonance matches damaged relay cadence. Return is cleaner after passing through tissue. Bite marks on housing.
 
 ## Terminal
 
-ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
+ACOUSTIC RELAY // Local filter-organ tissue dampens storm noise and repeats service pings inside the cable reef. Signal gain unstable under pressure surges. Biological relay is route aid and predator lure.
 
 ## Audio
 
-If it answers like equipment, treat it like equipment that can bleed.
+It answers like equipment because the equipment is using its throat.
 
 ## Field Note
 
-Use with sonar, scanner and route-warning UI.
+If the echo has a pulse behind it, keep the tool quiet and check the water before moving.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/en_US. -->

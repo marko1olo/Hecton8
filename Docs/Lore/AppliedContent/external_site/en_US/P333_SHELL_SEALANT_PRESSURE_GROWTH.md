@@ -3,8 +3,8 @@ packet_id: P333_SHELL_SEALANT_PRESSURE_GROWTH
 release_set_id: RS067_ATLAS_REPAIR_NETWORK_MECHANICS
 article_id: applied_lore.shell_sealant_pressure_growth
 unlock_id: unlock.shell_sealant_pressure_growth
-poi_tags: poi.shell_sealant_growth;poi.fracture_lip_biomatter
-biome_tags: biome.atlas;biome.hardware
+poi_tags: poi.shell_sealant_breach;poi.pressure_growth_wall
+biome_tags: biome.atlas;biome.pressure
 locale: en_US
 surface: external_site
 source_voice: Website Public
@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Shell Sealant Pressure Growth
 
-The repair network is not evil theater. It solves local failures badly, with no human understanding of future cost.
+Repair is not always restoration. Deep Reach emergency sealants were built to save pressure first and comfort later. Under HECTON-8 chemistry, a foam patch can become a mineral shell: layered, load-bearing, alive enough to keep growing along warmth and flow.
 
-## Scanner
-
-Sealant growth over fracture. Pressure rating unknown. Cut only after scan.
-
-## Terminal
-
-SHELL SEALANT: calcium-silicate growth reinforced by Atlas drone scoring. Patch may hold static pressure and fail under ascent vibration.
-
-## Audio
-
-A sealed wound can still kill the room.
-
-## Field Note
-
-Useful for crafting, route gating and false-confidence moments.
+The result is excellent from a ledger view. Less leakage. Lower immediate loss. A breach moves from red to amber. For a Marauder, the same success can ruin a route. The patch can thicken inward, jam a hatch, bury a tool cache or isolate a survivor's last compartment behind a wall that is technically doing its job.
 
 <!-- External Site; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/en_US. -->

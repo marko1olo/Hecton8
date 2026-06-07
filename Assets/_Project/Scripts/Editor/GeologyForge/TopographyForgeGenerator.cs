@@ -27,6 +27,7 @@ namespace Hecton8.Editor.GeologyForge
 
         static TopographyForgeGenerator()
         {
+            AssemblyReloadEvents.beforeAssemblyReload -= CancelAsyncBake;
             AssemblyReloadEvents.beforeAssemblyReload += CancelAsyncBake;
         }
 

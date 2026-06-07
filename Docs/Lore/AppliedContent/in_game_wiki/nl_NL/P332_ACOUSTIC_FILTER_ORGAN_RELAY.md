@@ -9,32 +9,34 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Acoustic Filter Organ Relay"
+title: "Akoestisch filterorgaan-relais"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# NL LOC HOLD: Acoustic Filter Organ Relay
+# Akoestisch filterorgaan-relais
 
-NL LOC HOLD: Acoustic Filter Organ Relay makes fauna route-relevant. Some life is not an enemy or decoration; it is part of a damaged diagnostic loop.
+Sommige rifdieren groeien filterorganen die dicht genoeg zijn om geluid te vormen. Atlas-reparatieknooppunten gebruiken dat weefsel als akoestisch schot sinds de relaisbehuizingen zijn gebarsten.
+
+Die hulp heeft tanden. Hetzelfde orgaan dat een routeping draagt, kan trilling melden aan eters, getagde fauna wekken of de beweging van een Marauder door het rif terugkaatsen. Een schone reactie betekent geen veilige corridor. Het betekent dat de corridor een luisteraar heeft.
 
 ## Scanner
 
-NL LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
+Filterorgaanresonantie past bij beschadigde relaiscadans. Retour schoner na passage door weefsel. Bijtsporen op behuizing.
 
 ## Terminal
 
-NL LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
+AKOESTISCH RELAIS // Lokaal filterorgaanweefsel dempt stormruis en herhaalt servicepings in het kabelrif. Signaalwinst instabiel onder drukgolven. Biologisch relais is routehulp en roofdierlokaas.
 
 ## Audio
 
-NL LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
+Het antwoordt als apparatuur omdat de apparatuur zijn keel gebruikt.
 
 ## Field Note
 
-NL LOC HOLD: Use with sonar, scanner and route-warning UI.
+Als er achter de echo een puls zit, houd het gereedschap stil en controleer het water.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/nl_NL. -->

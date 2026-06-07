@@ -53,6 +53,13 @@ namespace Hecton8.Editor.Validation
         private const string ScannerToolItemId = "Item_Tool_Scanner";
         private const string SeafloorDrillItemId = "Item_Tool_SeafloorDrill";
         private const string SeafloorDrillRecipePath = DataRoot + "/Crafting/Recipes/Recipe_SeafloorDrill.asset";
+        private const string ArrivalQuestId = "quest_arrival";
+        private const string StarterDrillQuestId = "quest_starter_drill";
+        private const string CopperSampleQuestId = "quest_copper_sample";
+        private const string FirstBreathQuestId = "quest_first_breath";
+        private const string StarterDrillQuestPath = DataRoot + "/Lore/Quests/Quest_StarterDrill.asset";
+        private const string CopperSampleQuestPath = DataRoot + "/Lore/Quests/Quest_CopperSample.asset";
+        private const string FirstBreathQuestPath = DataRoot + "/Lore/Quests/Quest_FirstBreath.asset";
         private const string GlassPanelItemId = "Comp_GlassPanel";
         private const string FiberMeshItemId = "Comp_FiberMesh";
         private const string SilicaShardsItemId = "Data_SilicaShards";
@@ -154,6 +161,7 @@ namespace Hecton8.Editor.Validation
             ValidateResourceNodeTemplates(result);
             ValidateResourceDistributionRuntimeRoute(result);
             ValidateFirstHourDrillRoute(result);
+            ValidateFirstHourQuestSpine(result);
             ValidateFirstHourFabricatorSceneRoute(result);
             ValidateBaseModuleTemplates(result);
             ValidatePlayerPdaShell(result);
@@ -1586,6 +1594,82 @@ namespace Hecton8.Editor.Validation
                 $"{CopperVeinTemplatePath}: copper is Drill-gated, but first-hour seafloor drill route is incomplete; " +
                 $"missing {string.Join(", ", missing)} for PersistentId='{SeafloorDrillItemId}'. " +
                 $"Do not fall back to Knife/Any and do not require copper/copper wire before the copper drill gate opens.");
+        }
+
+        private static void ValidateFirstHourQuestSpine(ValidationResult result)
+        {
+            List<string> failures = new List<string>(8);
+            QuestData starterDrill = AssetDatabase.LoadAssetAtPath<QuestData>(StarterDrillQuestPath);
+            QuestData copperSample = AssetDatabase.LoadAssetAtPath<QuestData>(CopperSampleQuestPath);
+            QuestData firstBreath = AssetDatabase.LoadAssetAtPath<QuestData>(FirstBreathQuestPath);
+
+            ValidateQuestIdentity(starterDrill, StarterDrillQuestPath, StarterDrillQuestId, failures);
+            ValidateQuestIdentity(copperSample, CopperSampleQuestPath, CopperSampleQuestId, failures);
+            ValidateQuestIdentity(firstBreath, FirstBreathQuestPath, FirstBreathQuestId, failures);
+
+            if (starterDrill != null)
+            {
+                if (starterDrill.completionType != QuestCompletionType.OnCraftCompleted ||
+                    !string.Equals(starterDrill.completionId, SeafloorDrillItemId, StringComparison.Ordinal))
+                {
+                    failures.Add($"{StarterDrillQuestPath} must complete on crafting '{SeafloorDrillItemId}'");
+                }
+
+                if (!HasPrerequisiteQuestId(starterDrill, ArrivalQuestId))
+                    failures.Add($"{StarterDrillQuestPath} must depend on '{ArrivalQuestId}'");
+            }
+
+            if (copperSample != null)
+            {
+                if (copperSample.completionType != QuestCompletionType.OnItemCollected ||
+                    !string.Equals(copperSample.completionId, CopperItemId, StringComparison.Ordinal))
+                {
+                    failures.Add($"{CopperSampleQuestPath} must complete on collecting '{CopperItemId}'");
+                }
+
+                if (!HasPrerequisiteQuestId(copperSample, StarterDrillQuestId))
+                    failures.Add($"{CopperSampleQuestPath} must depend on '{StarterDrillQuestId}' so copper never becomes the pre-drill route");
+            }
+
+            if (firstBreath != null && !HasPrerequisiteQuestId(firstBreath, CopperSampleQuestId))
+                failures.Add($"{FirstBreathQuestPath} must depend on '{CopperSampleQuestId}' so depth pressure follows the drill/copper chain");
+
+            if (failures.Count <= 0)
+                return;
+
+            result.FirstHourDrillRouteErrorCount++;
+            result.Errors.Add("FirstHourQuestSpine: " + string.Join("; ", failures));
+        }
+
+        private static void ValidateQuestIdentity(
+            QuestData quest,
+            string assetPath,
+            string expectedQuestId,
+            List<string> failures)
+        {
+            if (quest == null)
+            {
+                failures.Add($"{assetPath} missing QuestData");
+                return;
+            }
+
+            if (!string.Equals(quest.questId, expectedQuestId, StringComparison.Ordinal))
+                failures.Add($"{assetPath} questId must be '{expectedQuestId}'");
+        }
+
+        private static bool HasPrerequisiteQuestId(QuestData quest, string prerequisiteId)
+        {
+            string[] prerequisites = quest != null ? quest.prerequisiteQuestIds : null;
+            if (prerequisites == null)
+                return false;
+
+            for (int i = 0; i < prerequisites.Length; i++)
+            {
+                if (string.Equals(prerequisites[i], prerequisiteId, StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
         }
 
         private static void ValidateFirstHourFabricatorSceneRoute(ValidationResult result)

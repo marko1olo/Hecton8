@@ -9,32 +9,18 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Acoustic Filter Organ Relay"
+title: "Akustyczny przekaźnik organu filtrującego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# PL LOC HOLD: Acoustic Filter Organ Relay
+# Akustyczny przekaźnik organu filtrującego
 
-PL LOC HOLD: HECTON-8's biomechanical horror stays functional: animals can become relay surfaces because sound is the only route through pressure, water and broken metal.
+Poniżej głębokości radiowej dźwięk jest głównym instrumentem. Rafa kablowa go komplikuje: pęknięte obudowy dzwonią, metalowe maty rozpraszają, burze rozmazują dystans, a żywa tkanka siedzi między źródłem i powrotem.
 
-## Scanner
-
-PL LOC HOLD: Organ resonance matches damaged relay cadence. Echo useful, not safe.
-
-## Terminal
-
-PL LOC HOLD: ACOUSTIC RELAY: filter organ tissue dampens noise, repeats service pings and improves Atlas local diagnostics. Biological relay remains unstable under storm pulses.
-
-## Audio
-
-PL LOC HOLD: If it answers like equipment, treat it like equipment that can bleed.
-
-## Field Note
-
-PL LOC HOLD: Use with sonar, scanner and route-warning UI.
+Dlatego sonar nie jest czystą prawdą. Przekaźnik może pokazać drzwi, nakarmić drapieżniki, powtórzyć stare ostrzeżenie albo pokazać ten sam korytarz dwa razy.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/pl_PL. -->

@@ -83,7 +83,7 @@ LOCALIZED_TEXT_FIELDS = (
 )
 
 DRAFT_LOCALIZATION_PREFIX = re.compile(
-    r"^Draft\s+[A-Z]{2}(?:-[A-Z]{2})?\s+localization pending native pass\.\s*",
+    r"^Draft\s+[A-Za-z]{2}(?:[-_][A-Za-z]{2})?\s+localization pending native pass\.\s*",
     re.ASCII,
 )
 LOCALIZED_DRAFT_PREFIXES = (
