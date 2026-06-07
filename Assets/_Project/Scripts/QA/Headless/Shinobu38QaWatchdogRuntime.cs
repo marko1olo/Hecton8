@@ -959,6 +959,12 @@ namespace Hecton8.QA.Headless
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                RebindDataVault(currentService as IDataVault);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
@@ -969,7 +975,8 @@ namespace Hecton8.QA.Headless
 
             if (currentService == null ||
                 _finished ||
-                !isActiveAndEnabled)
+                !isActiveAndEnabled ||
+                _dataVault == null)
             {
                 return;
             }
@@ -977,6 +984,122 @@ namespace Hecton8.QA.Headless
             RegisterRuntimeLanes();
             if (!_started)
                 Finish(ResultStatusFault, EventHashCrash);
+        }
+
+        private void RebindDataVault(IDataVault currentVault)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            UnregisterRuntimeLanes();
+            if (!CompletePendingNavigationForRebind())
+            {
+                Finish(ResultStatusFault, EventHashCrash);
+                return;
+            }
+
+            StopFileWriter(flushPending: true);
+            UnlockRuntimeBuffers();
+            ReleaseWatchdogVaultHandles(_dataVault);
+            _dataVault = currentVault;
+
+            if (currentVault == null ||
+                _finished ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            if (!TryRebuildVaultStateAfterRebind())
+            {
+                Finish(ResultStatusFault, EventHashCrash);
+                return;
+            }
+
+            RegisterRuntimeLanes();
+            if (!_started)
+                Finish(ResultStatusFault, EventHashCrash);
+        }
+
+        private bool CompletePendingNavigationForRebind()
+        {
+            if (!_navigationPending)
+                return true;
+
+            if (!DispatcherJobFence.TryComplete(ref _navigationHandle, forceComplete: true))
+                return false;
+
+            _navigationHandle = default;
+            _navigationPending = false;
+            return true;
+        }
+
+        private bool TryRebuildVaultStateAfterRebind()
+        {
+            try
+            {
+                EnsureVaultHandles();
+                if (!LockRuntimeBuffers())
+                    return false;
+
+                if (!TryResolveWatchdogVaultBuffer(_dataVault, in _stateHandle, StateBufferId, 1, out NativeArray<WatchdogStateDTO> stateBuffer) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _snapshotHandle, SnapshotBufferId, 1, out NativeArray<TelemetrySnapshotDTO> snapshotBuffer) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _agent36InputHandle, BufferID.ShinobuInputCurrentDto, InputBufferCapacity, out NativeArray<InputStateDTO> inputBuffer) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _waypointsHandle, WaypointsBufferId, RouteCapacity, out NativeArray<Shinobu38RouteWaypointDTO> waypoints) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _mockRebaseSignalsHandle, RebaseSignalsBufferId, 1, out NativeArray<MockRebaseSignal> rebaseSignals) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _tuningHandle, TuningBufferId, 1, out NativeArray<Shinobu38TuningDTO> tuningBuffer) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _mockVaultHandle, MockVaultBufferId, 1, out NativeArray<Shinobu38MockVaultDTO> mockVault) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _telemetryRingHandle, TelemetryRingBufferId, TelemetryCapacity, out NativeArray<Shinobu38WatchdogTelemetryEntry> telemetryRing) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _csvScratchHandle, CsvScratchBufferId, CsvScratchBytes, out NativeArray<byte> csvScratch) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _waypointScratchHandle, WaypointScratchBufferId, CsvOverrideBytes, out NativeArray<byte> waypointScratch) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _dumpScratchHandle, DumpScratchBufferId, CrashDumpBytes, out NativeArray<byte> dumpScratch) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriteCommandsHandle, FileWriteCommandsBufferId, FileWriteQueueCapacity, out NativeArray<Shinobu38FileWriteCommand> fileCommands) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _fileWritePayloadHandle, FileWritePayloadBufferId, FileWritePayloadTotalBytes, out NativeArray<byte> filePayload) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriterStateHandle, FileWriterStateBufferId, 1, out NativeArray<Shinobu38FileWriterStateDTO> fileWriterState) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriterCursorHandle, FileWriterCursorBufferId, 1, out NativeArray<Shinobu38FileWriterCursorDTO> fileWriterCursor) ||
+                    !TryResolveWatchdogVaultBuffer(_dataVault, in _waypointIngestStateHandle, WaypointIngestStateBufferId, 1, out NativeArray<Shinobu38WaypointIngestStateDTO> waypointIngestState))
+                {
+                    return false;
+                }
+
+                JobHandle clearHandle = default;
+                clearHandle = ScheduleClear(stateBuffer, clearHandle);
+                clearHandle = ScheduleClear(snapshotBuffer, clearHandle);
+                clearHandle = ScheduleClear(inputBuffer, clearHandle);
+                clearHandle = ScheduleClear(waypoints, clearHandle);
+                clearHandle = ScheduleClear(rebaseSignals, clearHandle);
+                clearHandle = ScheduleClear(tuningBuffer, clearHandle);
+                clearHandle = ScheduleClear(mockVault, clearHandle);
+                clearHandle = ScheduleClear(telemetryRing, clearHandle);
+                clearHandle = ScheduleClear(csvScratch, clearHandle);
+                clearHandle = ScheduleClear(waypointScratch, clearHandle);
+                clearHandle = ScheduleClear(dumpScratch, clearHandle);
+                clearHandle = ScheduleClear(fileCommands, clearHandle);
+                clearHandle = ScheduleClear(filePayload, clearHandle);
+                clearHandle = ScheduleClear(fileWriterState, clearHandle);
+                clearHandle = ScheduleClear(fileWriterCursor, clearHandle);
+                clearHandle = ScheduleClear(waypointIngestState, clearHandle);
+                DispatcherJobFence.TryComplete(ref clearHandle, forceComplete: true); // COLD SYNC JOB: DataVault rebind MemClear before watchdog resumes - owner: Shinobu38QaWatchdogRuntime
+
+                tuningBuffer[0] = _pendingTuning;
+                GenerateEmergencyMockRoute(stateBuffer, waypoints, mockVault);
+                StartFileWriter();
+                QueueCsvHeader(csvScratch);
+                _memoryWindowStartBytes = _lastReservedBytes;
+                _memoryWindowStartWallSeconds = _qualityWallSeconds;
+                _lastDistanceForStuck = 0f;
+                _lowFpsElapsed = 0f;
+                _stuckElapsed = 0f;
+                _lastAvoidanceCorrections = 0f;
+                _lastCsvWriteMs = 0f;
+                _hasLastAupAuditPosition = false;
+                _lastAupAuditPosition = double3.zero;
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         private void TryRegisterHotSwapListener()
