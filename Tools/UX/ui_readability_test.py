@@ -151,7 +151,7 @@ def evaluate_profile(profile: dict, contrast: dict, thresholds: dict, sample_tex
 
 
 def build_report(spec_path: Path) -> dict:
-    spec = json.loads(spec_path.read_text(encoding="utf-8"))
+    spec = json.loads(spec_path.read_text(encoding="utf-8-sig"))
     sample_text = str(spec.get("sampleText", "O2 LOW"))
     thresholds = spec["readability"]
     contrast_by_id = {entry["id"]: entry for entry in spec["contrastProfiles"]}

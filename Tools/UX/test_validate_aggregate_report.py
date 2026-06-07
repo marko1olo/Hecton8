@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import copy
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -18,6 +19,10 @@ from Tools.UX.validate_aggregate_report import (
     EXPECTED_UNIT_HARNESS_TESTS,
     validate_aggregate_report,
 )
+from Tools.test_local_temp import project_local_tempdir_factory
+
+
+TEMP_DIR = project_local_tempdir_factory("ux_validate_aggregate_report")
 
 
 def _valid_probe_fixture() -> dict:
@@ -217,6 +222,30 @@ class AggregateReportValidatorTests(unittest.TestCase):
         failures = validate_aggregate_report(report, _valid_probe_fixture())
 
         self.assertIn("pythonCacheCountAfter must be 0", failures)
+
+    def test_cli_reports_missing_inputs_without_traceback(self) -> None:
+        with TEMP_DIR() as temp_root:
+            temp_dir = Path(temp_root)
+            completed = subprocess.run(
+                (
+                    sys.executable,
+                    str(ROOT / "Tools/UX/validate_aggregate_report.py"),
+                    "--report",
+                    str(temp_dir / "missing_aggregate.json"),
+                    "--environment-probe",
+                    str(temp_dir / "missing_probe.json"),
+                ),
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+
+        combined = completed.stdout + completed.stderr
+        self.assertEqual(1, completed.returncode)
+        self.assertIn("missing input:", combined)
+        self.assertNotIn("Traceback", combined)
 
 
 if __name__ == "__main__":

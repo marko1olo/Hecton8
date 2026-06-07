@@ -39,14 +39,14 @@
     {
       "category": "mandate",
       "categoryId": 2,
-      "hash32": 3743983635,
-      "label": "OPT_Premium_Approximation_Protocol"
+      "hash32": 1898963181,
+      "label": "OPT_Performance_Budgets_FrameTime_VRAM_Limits"
     },
     {
       "category": "mandate",
       "categoryId": 2,
-      "hash32": 1898963181,
-      "label": "OPT_Performance_Budgets_FrameTime_VRAM_Limits"
+      "hash32": 3918536381,
+      "label": "OPT_Premium_Approximation_Protocol"
     },
     {
       "category": "mandate",
@@ -411,7 +411,7 @@
     {
       "category": "physics",
       "categoryId": 6,
-      "hash32": 3875852127,
+      "hash32": 3207253088,
       "label": "Beer-Lambert single-scatter premium approximation"
     },
     {
@@ -541,7 +541,7 @@
       "stride": 128
     }
   },
-  "sha256": "13F772B45120CC9DEB4810C0C1770ADD55F9CACCC6E619A13D879780D1516B67",
+  "sha256": "52AA4AF7A00C7EB1A88499EF494816FE209B2E860EFFA9C246598BCFFFE2A00F",
   "sourceJson": "Data/System/Visual_Scalability_Matrix.json",
   "status": "VISUAL_LOD_MATRIX_BIN_BAKED",
   "stressAudit": {

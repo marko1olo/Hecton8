@@ -48,7 +48,7 @@ def audit_shader(path: Path, max_samples: int) -> dict:
 
 
 def build_report(spec_path: Path) -> dict:
-    spec = json.loads(spec_path.read_text(encoding="utf-8"))
+    spec = json.loads(spec_path.read_text(encoding="utf-8-sig"))
     budget = spec["textureSampleBudget"]
     max_samples = int(budget["maxSamplesPerUiElement"])
     records = [audit_shader(path, max_samples) for path in iter_shader_paths(list(budget["auditGlobs"]))]

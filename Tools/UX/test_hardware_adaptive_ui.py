@@ -4,9 +4,8 @@
 from __future__ import annotations
 
 import json
-import re
+import subprocess
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -17,22 +16,26 @@ SCRIPT_PATH = Path(__file__).resolve()
 ROOT = SCRIPT_PATH.parents[2]
 TOOLS = ROOT / "Tools"
 UX_TOOLS = TOOLS / "UX"
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(TOOLS))
 sys.path.insert(0, str(UX_TOOLS))
 
 import IconBaker  # noqa: E402
 import ui_readability_test as readability  # noqa: E402
 import ui_shader_sample_audit as sample_audit  # noqa: E402
+from Tools.test_local_temp import project_local_tempdir_factory  # noqa: E402
 
 
 SPEC_PATH = ROOT / "Docs" / "Design" / "HardwareAdaptiveUIScaler.json"
 SHARPNESS_CONTROLLER = ROOT / "Assets" / "_Project" / "Scripts" / "UI" / "WorldSpaceTMPSharpnessController.cs"
+TEMP_DIR = project_local_tempdir_factory("ux_hardware_adaptive_ui")
 
 
 class HardwareAdaptiveUiTests(unittest.TestCase):
     def test_spec_declares_required_profiles(self) -> None:
-        spec = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
-        self.assertEqual("UI SCALED", spec["status"])
+        spec = json.loads(SPEC_PATH.read_text(encoding="utf-8-sig"))
+        self.assertEqual("STATIC_PROFILE_AUTHORED_PENDING_ARTIFACT_RECHECK", spec["status"])
+        self.assertEqual("PY_READABILITY_PENDING_RERUN_UNITY_PROFILER_PENDING", spec["verificationStatus"])
         self.assertEqual("HARDWARE_ADAPTIVE_UI_BAKER", spec["promptId"])
         self.assertEqual("O2 LOW", spec["sampleText"])
         self.assertEqual(5, len(spec["sdfProfiles"]))
@@ -41,20 +44,15 @@ class HardwareAdaptiveUiTests(unittest.TestCase):
             [profile["id"] for profile in spec["sdfProfiles"]],
         )
 
-    def test_csharp_sdf_matrix_matches_json(self) -> None:
-        spec = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
+    def test_csharp_runtime_keeps_sdf_materials_static(self) -> None:
         source = SHARPNESS_CONTROLLER.read_text(encoding="utf-8")
-        resolved = extract_csharp_sdf_profiles(source)
-        self.assertEqual(5, len(resolved))
-
-        for profile in spec["sdfProfiles"]:
-            bucket = int(profile["shortSideMax"])
-            self.assertIn(bucket, resolved)
-            csharp = resolved[bucket]
-            self.assertAlmostEqual(float(profile["tmpWeightNormal"]), csharp["weightNormal"], places=4)
-            self.assertAlmostEqual(float(profile["tmpWeightBold"]), csharp["weightBold"], places=4)
-            self.assertAlmostEqual(float(profile["faceDilateOffset"]), csharp["dilateOffset"], places=4)
-            self.assertAlmostEqual(float(profile["outlineSoftnessOffset"]), csharp["softnessOffset"], places=4)
+        self.assertIn("Runtime SDF sharpness must come from offline-baked atlases", source)
+        self.assertIn("private void BindStaticSharedMaterial()", source)
+        self.assertIn("_target.fontSharedMaterial = staticMaterial;", source)
+        self.assertIn("SystemDispatcher.Register((ISlowTickable)this, PriorityLayer.UI)", source)
+        self.assertNotIn("new Material", source)
+        self.assertNotIn(".fontMaterial", source)
+        self.assertNotIn(".SetFloat(", source)
 
     def test_readability_report_passes_all_buckets(self) -> None:
         report = readability.build_report(SPEC_PATH)
@@ -72,19 +70,53 @@ class HardwareAdaptiveUiTests(unittest.TestCase):
         for record in report["records"]:
             self.assertLessEqual(record["totalTextureSamples"], report["maxSamplesPerUiElement"])
 
-    def test_written_reports_are_current(self) -> None:
-        readability_report_path = ROOT / "Docs" / "AgentLogs" / "UI_Readability_UX_ENGINEER.json"
-        shader_report_path = ROOT / "Docs" / "AgentLogs" / "UI_ShaderSampleAudit_UX_ENGINEER.json"
-        self.assertTrue(readability_report_path.exists())
-        self.assertTrue(shader_report_path.exists())
+    def test_cli_written_reports_match_current_builders(self) -> None:
+        with TEMP_DIR() as temp_root:
+            temp_dir = Path(temp_root)
+            readability_report_path = temp_dir / "UI_Readability_UX_ENGINEER.json"
+            shader_report_path = temp_dir / "UI_ShaderSampleAudit_UX_ENGINEER.json"
 
-        readability_report = json.loads(readability_report_path.read_text(encoding="utf-8"))
-        shader_report = json.loads(shader_report_path.read_text(encoding="utf-8"))
+            readability_completed = subprocess.run(
+                (
+                    sys.executable,
+                    str(ROOT / "Tools/UX/ui_readability_test.py"),
+                    "--spec",
+                    str(SPEC_PATH),
+                    "--write-report",
+                    str(readability_report_path),
+                ),
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            shader_completed = subprocess.run(
+                (
+                    sys.executable,
+                    str(ROOT / "Tools/UX/ui_shader_sample_audit.py"),
+                    "--spec",
+                    str(SPEC_PATH),
+                    "--write-report",
+                    str(shader_report_path),
+                ),
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+
+            self.assertEqual(0, readability_completed.returncode, readability_completed.stderr)
+            self.assertEqual(0, shader_completed.returncode, shader_completed.stderr)
+            readability_report = json.loads(readability_report_path.read_text(encoding="utf-8-sig"))
+            shader_report = json.loads(shader_report_path.read_text(encoding="utf-8-sig"))
+
         self.assertEqual(readability.build_report(SPEC_PATH), readability_report)
         self.assertEqual(sample_audit.build_report(SPEC_PATH), shader_report)
 
     def test_icon_baker_outputs_three_snap_sizes(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with TEMP_DIR() as temp_dir:
             source = Path(temp_dir) / "source_icon.png"
             output = Path(temp_dir) / "out"
             IconBaker.create_self_test_icon(source)
@@ -101,47 +133,6 @@ class HardwareAdaptiveUiTests(unittest.TestCase):
             with Image.open(output / "source_icon_32.png") as image32:
                 alpha_values = set(image32.getchannel("A").getdata())
                 self.assertTrue(alpha_values.issubset({0, 255}))
-
-
-def extract_csharp_sdf_profiles(source: str) -> dict[int, dict[str, float]]:
-    body_match = re.search(
-        r"ResolveHardwareSdfProfile\([^{]+{(?P<body>.*?)\n\s*}\n\n\s*private void RegisterToTickManager",
-        source,
-        re.DOTALL,
-    )
-    if body_match is None:
-        raise AssertionError("ResolveHardwareSdfProfile body not found")
-
-    body = body_match.group("body")
-    profiles: dict[int, dict[str, float]] = {}
-    for block_match in re.finditer(r"if \(shortSide <= (?P<limit>\d+)\)\s*{(?P<block>.*?)return;\s*}", body, re.DOTALL):
-        limit = int(block_match.group("limit"))
-        profiles[limit] = extract_assignments(block_match.group("block"))
-
-    fallback_match = re.search(
-        r"weightNormal\s*=\s*(?P<weightNormal>[-0-9.]+)f;\s*"
-        r"weightBold\s*=\s*(?P<weightBold>[-0-9.]+)f;\s*"
-        r"dilateOffset\s*=\s*(?P<dilateOffset>[-0-9.]+)f;\s*"
-        r"softnessOffset\s*=\s*(?P<softnessOffset>[-0-9.]+)f;",
-        body.rsplit("return;", 1)[-1],
-        re.DOTALL,
-    )
-    if fallback_match is None:
-        raise AssertionError("4K fallback SDF profile not found")
-
-    profiles[2160] = {key: float(value) for key, value in fallback_match.groupdict().items()}
-    return profiles
-
-
-def extract_assignments(block: str) -> dict[str, float]:
-    values: dict[str, float] = {}
-    for key in ("weightNormal", "weightBold", "dilateOffset", "softnessOffset"):
-        match = re.search(rf"{key}\s*=\s*(?P<value>[-0-9.]+)f;", block)
-        if match is None:
-            raise AssertionError(f"{key} assignment missing")
-        values[key] = float(match.group("value"))
-    return values
-
 
 if __name__ == "__main__":
     unittest.main()

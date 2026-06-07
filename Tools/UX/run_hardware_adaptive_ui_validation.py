@@ -315,7 +315,7 @@ def main() -> int:
 
     environment_probe_path = root / UNITY_ENVIRONMENT_PROBE_PATH
     if environment_probe_path.exists():
-        environment_probe = json.loads(environment_probe_path.read_text(encoding="utf-8"))
+        environment_probe = json.loads(environment_probe_path.read_text(encoding="utf-8-sig"))
         self_validation_failures = validate_aggregate_report(report, environment_probe)
     else:
         self_validation_failures = [f"missing Unity environment probe report: {UNITY_ENVIRONMENT_PROBE_PATH}"]
@@ -328,10 +328,10 @@ def main() -> int:
         report["status"] = "FAIL"
 
     status_log_failures = validate_status_log_consistency(
-        (root / STATUS_PATH).read_text(encoding="utf-8"),
-        (root / RATIONALE_PATH).read_text(encoding="utf-8"),
-        (root / LOG_PATH).read_text(encoding="utf-8"),
-        (root / BLOCKER_PATH).read_text(encoding="utf-8"),
+        (root / STATUS_PATH).read_text(encoding="utf-8-sig"),
+        (root / RATIONALE_PATH).read_text(encoding="utf-8-sig"),
+        (root / LOG_PATH).read_text(encoding="utf-8-sig"),
+        (root / BLOCKER_PATH).read_text(encoding="utf-8-sig"),
         report,
     )
     report["statusLogSelfValidation"] = {

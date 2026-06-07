@@ -4,17 +4,25 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import tempfile
+import sys
 import time
 import unittest
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from Tools import RunMetricPhiVerifySweep as sweep
+from Tools.test_local_temp import project_local_tempdir_factory
+
+
+TEMP_DIR = project_local_tempdir_factory("metric_phi_verify_sweep")
 
 
 class MetricPhiVerifySweepTests(unittest.TestCase):
     def test_selfcheck_sidecar_cleanup_removes_stale_files(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp_dir:
+        with TEMP_DIR() as tmp_dir:
             report = Path(tmp_dir) / "METRIC_PHI_VERIFY_SWEEP.json"
             stale = Path(tmp_dir) / "METRIC_PHI_VERIFY_SWEEP.selfcheck.123.json"
             stale.write_text("{}", encoding="utf-8")
@@ -27,7 +35,7 @@ class MetricPhiVerifySweepTests(unittest.TestCase):
             self.assertFalse(stale.exists())
 
     def test_selfcheck_sidecar_cleanup_preserves_fresh_foreign_files(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp_dir:
+        with TEMP_DIR() as tmp_dir:
             report = Path(tmp_dir) / "METRIC_PHI_VERIFY_SWEEP.json"
             foreign = Path(tmp_dir) / "METRIC_PHI_VERIFY_SWEEP.selfcheck.987654.json"
             foreign.write_text("{}", encoding="utf-8")
@@ -38,7 +46,7 @@ class MetricPhiVerifySweepTests(unittest.TestCase):
             self.assertTrue(foreign.exists())
 
     def test_selfcheck_sidecar_cleanup_removes_current_pid_file(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp_dir:
+        with TEMP_DIR() as tmp_dir:
             report = Path(tmp_dir) / "METRIC_PHI_VERIFY_SWEEP.json"
             own = Path(tmp_dir) / "METRIC_PHI_VERIFY_SWEEP.selfcheck.456.json"
             own.write_text("{}", encoding="utf-8")
@@ -49,7 +57,7 @@ class MetricPhiVerifySweepTests(unittest.TestCase):
             self.assertFalse(own.exists())
 
     def test_final_report_is_not_written_as_pending_selfcheck(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp_dir:
+        with TEMP_DIR() as tmp_dir:
             json_path = Path(tmp_dir) / "METRIC_PHI_VERIFY_SWEEP.json"
             md_path = Path(tmp_dir) / "METRIC_PHI_VERIFY_SWEEP.md"
             payload = {

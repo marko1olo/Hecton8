@@ -25,7 +25,7 @@ EXPECTED_COMMANDS = (
     "python_cache_cleanup",
 )
 
-EXPECTED_UNIT_HARNESS_TESTS = 48
+EXPECTED_UNIT_HARNESS_TESTS = 51
 EXPECTED_ARTIFACT_HASHES = 30
 EXPECTED_PROMPT_TASK_COUNT = 7
 EXPECTED_PROMPT_REQUIRED_STATUS = "UI SCALED"
@@ -195,7 +195,17 @@ def main() -> int:
     if not probe_path.is_absolute():
         probe_path = ROOT / probe_path
 
-    failures = validate_aggregate_report(_load_json(report_path), _load_json(probe_path))
+    try:
+        report = _load_json(report_path)
+        environment_probe = _load_json(probe_path)
+    except FileNotFoundError as exc:
+        print(f"missing input: {exc.filename}")
+        return 1
+    except json.JSONDecodeError as exc:
+        print(f"invalid JSON input: {exc}")
+        return 1
+
+    failures = validate_aggregate_report(report, environment_probe)
     if failures:
         for failure in failures:
             print(failure)

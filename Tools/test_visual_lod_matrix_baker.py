@@ -5,11 +5,19 @@ import json
 import hashlib
 import shutil
 import struct
-import tempfile
+import sys
 import unittest
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from Tools import VisualLodMatrixBaker as baker
+from Tools.test_local_temp import project_local_tempdir_factory
+
+
+TEMP_DIR = project_local_tempdir_factory("visual_lod_matrix_baker")
 
 HEADER_FORMAT = "<4sHHIIIIIIIIII16s"
 TIER_RECORD_FORMAT = "<32I"
@@ -90,7 +98,7 @@ class VisualLodMatrixBakerTests(unittest.TestCase):
             self.assertEqual(normalized_label, seen_hash_labels.setdefault(hash32, normalized_label))
 
     def test_verify_existing_rejects_binary_byte_drift(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp_dir:
+        with TEMP_DIR() as tmp_dir:
             binary_path = Path(tmp_dir) / "Visual_Scalability_Matrix.bin"
             manifest_path = Path(tmp_dir) / "Visual_Scalability_Matrix.manifest.json"
             shutil.copyfile(baker.BINARY_PATH, binary_path)
@@ -104,7 +112,7 @@ class VisualLodMatrixBakerTests(unittest.TestCase):
                 baker.verify_existing(baker.SOURCE_JSON, binary_path, manifest_path)
 
     def test_verify_existing_rejects_manifest_drift(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp_dir:
+        with TEMP_DIR() as tmp_dir:
             binary_path = Path(tmp_dir) / "Visual_Scalability_Matrix.bin"
             manifest_path = Path(tmp_dir) / "Visual_Scalability_Matrix.manifest.json"
             shutil.copyfile(baker.BINARY_PATH, binary_path)
@@ -120,7 +128,7 @@ class VisualLodMatrixBakerTests(unittest.TestCase):
     def test_baker_rejects_non_derived_beer_lambert_values(self) -> None:
         data = baker.load_json(baker.SOURCE_JSON)
         data["physicsDerivation"]["waterOptics"]["tenMeterTransmittanceRgb"][0] = 0.5
-        with tempfile.TemporaryDirectory() as tmp_dir:
+        with TEMP_DIR() as tmp_dir:
             source = Path(tmp_dir) / "Visual_Scalability_Matrix.json"
             source.write_text(json.dumps(data), encoding="utf-8")
             with self.assertRaises(baker.MatrixError):
@@ -130,7 +138,7 @@ class VisualLodMatrixBakerTests(unittest.TestCase):
         data = baker.load_json(baker.SOURCE_JSON)
         toaster = next(tier for tier in data["tiers"] if tier["tier"] == "TOASTER")
         toaster["shaderFeatures"]["bloom"] = True
-        with tempfile.TemporaryDirectory() as tmp_dir:
+        with TEMP_DIR() as tmp_dir:
             source = Path(tmp_dir) / "Visual_Scalability_Matrix.json"
             source.write_text(json.dumps(data), encoding="utf-8")
             with self.assertRaises(baker.MatrixError):
@@ -140,7 +148,7 @@ class VisualLodMatrixBakerTests(unittest.TestCase):
         data = baker.load_json(baker.SOURCE_JSON)
         god = next(tier for tier in data["tiers"] if tier["tier"] == "GOD_MODE")
         god["particles"]["totalBudget"] = 40000
-        with tempfile.TemporaryDirectory() as tmp_dir:
+        with TEMP_DIR() as tmp_dir:
             source = Path(tmp_dir) / "Visual_Scalability_Matrix.json"
             source.write_text(json.dumps(data), encoding="utf-8")
             with self.assertRaises(baker.MatrixError):
