@@ -409,6 +409,18 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void TopographyForgeRestoreFallbackKeepsBackupUntilCopySucceeds()
+        {
+            string source = ReadProjectFile(TopographyForgeGeneratorPath);
+
+            StringAssert.Contains("File.Replace(backupPath, path, failedPath, true);", source);
+            StringAssert.Contains("File.Copy(backupPath, path, true);", source);
+            StringAssert.Contains("TryDeleteFile(backupPath);", source);
+            StringAssert.DoesNotContain("File.Delete(path);\n            File.Move(backupPath, path);", source);
+            StringAssert.DoesNotContain("File.Delete(path);\r\n            File.Move(backupPath, path);", source);
+        }
+
+        [Test]
         public void GeneratedPrefabsUseSeparateCollisionMeshWhenPresent()
         {
             string[] guids = AssetDatabase.FindAssets("GEN_Geology_ t:Prefab", new[] { PrefabFolder });

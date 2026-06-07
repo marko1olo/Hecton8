@@ -1333,8 +1333,8 @@ namespace Hecton8.Editor.GeologyForge
                 }
             }
 
-            File.Delete(path);
-            File.Move(backupPath, path);
+            File.Copy(backupPath, path, true);
+            TryDeleteFile(backupPath);
         }
 
         private static string PrepareFailedArtifactPath(string failedPath)

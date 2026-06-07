@@ -2490,24 +2490,22 @@ namespace Hecton8.Physiology
             }
             catch (PlatformNotSupportedException)
             {
-                ReplaceBlackBoxDumpByBackupMove(tempPath, path);
+                ReplaceBlackBoxDumpByBackupCopy(tempPath, path);
             }
             catch (IOException)
             {
-                ReplaceBlackBoxDumpByBackupMove(tempPath, path);
+                ReplaceBlackBoxDumpByBackupCopy(tempPath, path);
             }
         }
 
-        private static void ReplaceBlackBoxDumpByBackupMove(string tempPath, string path)
+        private static void ReplaceBlackBoxDumpByBackupCopy(string tempPath, string path)
         {
             string backupPath = path + ".bak";
-            if (File.Exists(backupPath))
-                File.Delete(backupPath);
-
-            File.Move(path, backupPath);
+            File.Copy(path, backupPath, true);
             try
             {
-                File.Move(tempPath, path);
+                File.Copy(tempPath, path, true);
+                TryDeleteBlackBoxDumpPath(tempPath);
                 TryDeleteBlackBoxDumpPath(backupPath);
             }
             catch (Exception)
@@ -2521,8 +2519,8 @@ namespace Hecton8.Physiology
         {
             try
             {
-                if (!File.Exists(path) && File.Exists(backupPath))
-                    File.Move(backupPath, path);
+                if (File.Exists(backupPath))
+                    File.Copy(backupPath, path, true);
             }
             catch (Exception)
             {

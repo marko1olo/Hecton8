@@ -685,6 +685,27 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void ShinobuMetabolismBlackBoxDumpFallbackKeepsBackupUntilCopySucceeds()
+        {
+            string text = File.ReadAllText(ShinobuMetabolismRuntimePath());
+            string replaceBody = ExtractMethodBody(text, "ReplaceBlackBoxDump");
+            string fallbackBody = ExtractMethodBody(text, "ReplaceBlackBoxDumpByBackupCopy");
+            string restoreBody = ExtractMethodBody(text, "TryRestoreBlackBoxDumpBackup");
+
+            Assert.That(replaceBody, Does.Contain("File.Replace(tempPath, path, null, true);"));
+            Assert.That(replaceBody, Does.Contain("ReplaceBlackBoxDumpByBackupCopy(tempPath, path);"));
+            Assert.That(fallbackBody, Does.Contain("File.Copy(path, backupPath, true);"));
+            Assert.That(fallbackBody, Does.Contain("File.Copy(tempPath, path, true);"));
+            Assert.That(fallbackBody, Does.Contain("TryDeleteBlackBoxDumpPath(tempPath);"));
+            Assert.That(restoreBody, Does.Contain("File.Copy(backupPath, path, true);"));
+            Assert.That(fallbackBody, Does.Not.Contain("File.Delete(backupPath);"));
+            Assert.That(fallbackBody, Does.Not.Contain("File.Move(path, backupPath);"));
+            Assert.That(fallbackBody, Does.Not.Contain("File.Move(tempPath, path);"));
+            Assert.That(text, Does.Not.Contain("File.Delete(backupPath);\r\n\r\n            File.Move(path, backupPath);"));
+            Assert.That(text, Does.Not.Contain("File.Delete(backupPath);\n\n            File.Move(path, backupPath);"));
+        }
+
+        [Test]
         public void ShinobuSuitIntegrityJob_UsesSingleGuardAndPublishesAfterRelease()
         {
             string text = File.ReadAllText(ShinobuSuitIntegrityRuntimePath());
