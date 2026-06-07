@@ -65,7 +65,6 @@ class ProjectLocalTemporaryDirectory:
 
 def project_local_tempdir_factory(suite_name: str):
     temp_root = DEFAULT_TEMP_ROOT / suite_name
-    temp_root.mkdir(parents=True, exist_ok=True)
 
     def factory(*args, **kwargs):
         kwargs.setdefault("dir", temp_root)
@@ -93,3 +92,26 @@ class ProjectLocalTemporaryDirectoryTests(unittest.TestCase):
         finally:
             if path is not None:
                 shutil.rmtree(path, ignore_errors=True)
+
+    def test_factory_defers_suite_root_creation_until_tempdir_is_allocated(self) -> None:
+        suite_name = f"lazy_factory_{uuid.uuid4().hex}"
+        temp_root = DEFAULT_TEMP_ROOT / suite_name
+        shutil.rmtree(temp_root, ignore_errors=True)
+
+        factory = project_local_tempdir_factory(suite_name)
+
+        self.assertFalse(temp_root.exists())
+        temp = factory()
+        path = temp.name
+
+        try:
+            self.assertTrue(temp_root.exists())
+            self.assertIsNotNone(path)
+            self.assertTrue(Path(path).exists())
+        finally:
+            temp.cleanup()
+            shutil.rmtree(temp_root, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    unittest.main()
