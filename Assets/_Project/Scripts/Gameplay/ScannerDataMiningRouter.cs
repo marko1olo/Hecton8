@@ -697,7 +697,16 @@ namespace Hecton8.Gameplay
 
             if (_queryScheduled)
             {
-                DispatcherJobFence.TryComplete(ref _queryHandle, forceComplete: true);
+                DispatcherJobFence.BeginLateFrameSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _queryHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndLateFrameSwapWindow();
+                }
+
                 _queryScheduled = false;
                 ReleaseQueryMutationGuard();
             }

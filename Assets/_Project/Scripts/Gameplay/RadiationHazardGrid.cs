@@ -1574,7 +1574,16 @@ namespace Hecton8.Gameplay
             if (!_diffusionJobActive)
                 return;
 
-            DispatcherJobFence.TryComplete(ref _diffusionJobHandle, forceComplete: true);
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _diffusionJobHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+
             _diffusionJobActive = false;
             VaultBufferView<float> previousRead = _gridRead;
             _gridRead = _gridWrite;
@@ -1627,7 +1636,16 @@ namespace Hecton8.Gameplay
         {
             if (_radiationSimulationJobActive)
             {
-                DispatcherJobFence.TryComplete(ref _radiationSimulationJobHandle, forceComplete: true);
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _radiationSimulationJobHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
+
                 _radiationSimulationJobActive = false;
                 ReleaseRadiationSdfSnapshotLock();
             }
