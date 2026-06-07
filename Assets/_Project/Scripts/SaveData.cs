@@ -73,7 +73,7 @@ namespace Hecton8.SaveSystem
         public const byte PlayerInjuryBleedingFlag = 0x01;
         public const byte PlayerInjuryFractureFlag = 0x02;
         public const byte PlayerInjurySupportedFlagMask = PlayerInjuryBleedingFlag | PlayerInjuryFractureFlag;
-        public const byte PlayerLastDeathCauseMaxKnown = 7;
+        public const byte PlayerLastDeathCauseMaxKnown = (byte)Hecton8.Gameplay.SurvivalDeathCause.IntegrityFailure;
         public const ushort InventoryDefaultQualityMilli = 1000;
         public const byte InventoryItemGeneticsSupportedFlagsMask = 0x0F;
         public const int InventoryShadowPayloadMaxBytes = 16 * 1024;
