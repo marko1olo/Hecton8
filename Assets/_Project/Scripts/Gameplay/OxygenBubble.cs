@@ -335,7 +335,9 @@ namespace Hecton8.Gameplay
 
         private void QueueCollectEffects()
         {
-            _pendingCollectPosition = _transform != null ? _transform.position : transform.position;
+            _pendingCollectPosition = _runtimePositionDirty
+                ? _pendingRuntimePosition
+                : (_transform != null ? _transform.position : transform.position);
             _pendingCollectEffects = true;
         }
 
