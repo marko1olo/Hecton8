@@ -312,8 +312,16 @@ namespace Hecton8.Tools.ToolKinematics
             if (!_frameScheduled)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
-                return;
+            DispatcherJobFence.BeginPostFixedSwapWindow();
+            try
+            {
+                if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
+                    return;
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostFixedSwapWindow();
+            }
 
             FinishPendingFrameCompletion();
         }

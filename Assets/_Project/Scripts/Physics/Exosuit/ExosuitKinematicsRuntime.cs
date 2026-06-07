@@ -830,8 +830,16 @@ namespace Hecton8.Physics.Exosuit
                 return true;
             }
 
-            if (!DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true))
-                return false;
+            DispatcherJobFence.BeginPostFixedSwapWindow();
+            try
+            {
+                if (!DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true))
+                    return false;
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostFixedSwapWindow();
+            }
 
             _jobScheduled = false;
             FinishCompletedJob();

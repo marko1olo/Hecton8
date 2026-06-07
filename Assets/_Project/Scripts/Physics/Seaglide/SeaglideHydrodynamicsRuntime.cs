@@ -835,8 +835,16 @@ namespace Hecton8.Physics
             if (!_jobScheduled)
                 return true;
 
-            if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
-                return false;
+            DispatcherJobFence.BeginPostFixedSwapWindow();
+            try
+            {
+                if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
+                    return false;
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostFixedSwapWindow();
+            }
 
             return FinishPendingSolverCompletion();
         }
