@@ -105,6 +105,24 @@ namespace Hecton8.Physics
             return vault != null;
         }
 
+        public static bool RebindDataVault(IDataVault currentVault)
+        {
+            if (ReferenceEquals(_vault, currentVault) && _initialized && HasRuntimeDescriptorProof(_vault))
+                return true;
+
+            if (_jobScheduled && !CompleteScheduledForTeardown())
+                return false;
+
+            ReleaseSimulationGuard();
+            ReleaseVaultHandles(_vault);
+            _vault = null;
+            _initialized = false;
+            _csvLoaded = false;
+            _defaultCsvLoadAttempted = false;
+
+            return currentVault != null && EnsureInitialized(currentVault);
+        }
+
         public static bool EnsureInitialized(IDataVault explicitVault = null)
         {
             if (_initialized && _vault != null)
@@ -355,6 +373,45 @@ namespace Hecton8.Physics
 
             _simulationGuardHeld = false;
             _simulationGuardVault = null;
+        }
+
+        private static void ReleaseVaultHandles(IDataVault vault)
+        {
+            if (vault != null)
+            {
+                ReleaseVaultHandle(vault, ref _shockwaveHandle);
+                ReleaseVaultHandle(vault, ref _counterHandle);
+                ReleaseVaultHandle(vault, ref _entityHandle);
+                ReleaseVaultHandle(vault, ref _forceHandle);
+                ReleaseVaultHandle(vault, ref _forceTransportHandle);
+                ReleaseVaultHandle(vault, ref _visualHandle);
+                ReleaseVaultHandle(vault, ref _telemetryHandle);
+                ReleaseVaultHandle(vault, ref _profileHandle);
+                ReleaseVaultHandle(vault, ref _tuningHandle);
+                ReleaseVaultHandle(vault, ref _sdfDescriptorHandle);
+                ReleaseVaultHandle(vault, ref _sdfVoxelsHandle);
+            }
+
+            _shockwaveHandle = default;
+            _counterHandle = default;
+            _entityHandle = default;
+            _forceHandle = default;
+            _forceTransportHandle = default;
+            _visualHandle = default;
+            _telemetryHandle = default;
+            _profileHandle = default;
+            _tuningHandle = default;
+            _sdfDescriptorHandle = default;
+            _sdfVoxelsHandle = default;
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (IsVaultHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private static bool TryAcquireCavitationMutationGuard(IDataVault vault, ulong mask)
@@ -1492,6 +1549,24 @@ namespace Hecton8.Physics
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                if (AbyssalCavitationRuntime.RebindDataVault(currentService as IDataVault))
+                {
+                    AbyssalCavitationRuntime.EnsureGraphicsBuffers();
+#if UNITY_EDITOR
+                    if (autoLoadCsv)
+                        AbyssalCavitationRuntime.TryLoadDefaultOrdnanceCsv(forceReload: true);
+#endif
+                }
+                else
+                {
+                    AbyssalCavitationRuntime.ReleaseGraphicsBuffers();
+                }
+
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
                 currentService == null ||
                 !isActiveAndEnabled)
