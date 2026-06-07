@@ -423,22 +423,27 @@ namespace Hecton8.Input
             }
             catch (UnauthorizedAccessException)
             {
+                TryDeleteOptionsTempNoThrow(tempPath);
                 return false;
             }
             catch (IOException)
             {
+                TryDeleteOptionsTempNoThrow(tempPath);
                 return false;
             }
             catch (NotSupportedException)
             {
+                TryDeleteOptionsTempNoThrow(tempPath);
                 return false;
             }
             catch (EncoderFallbackException)
             {
+                TryDeleteOptionsTempNoThrow(tempPath);
                 return false;
             }
             catch (ArgumentException)
             {
+                TryDeleteOptionsTempNoThrow(tempPath);
                 return false;
             }
         }
@@ -528,8 +533,10 @@ namespace Hecton8.Input
             _loaded = true;
         }
 
-        private bool WritePortableOptionsFile(string path, OptionRecord[] records, int recordCount)
+        private bool WritePortableOptionsFile(string tempPath, OptionRecord[] records, int recordCount)
         {
+            TryDeleteOptionsTempNoThrow(tempPath);
+
             int payloadLength = TryWriteBinaryOptionsPayload(records, recordCount, _payloadBuffer, MaxOptionsPayloadBytes);
             if (!IsPayloadWithinCapacity(payloadLength))
                 return false;
@@ -542,7 +549,7 @@ namespace Hecton8.Input
             _headerBuffer[14] = 0;
             _headerBuffer[15] = 0;
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, FileHeaderBytes, FileOptions.WriteThrough))
             {
                 stream.Write(_headerBuffer, 0, FileHeaderBytes);
                 if (payloadLength > 0)
@@ -553,6 +560,27 @@ namespace Hecton8.Input
             }
 
             return true;
+        }
+
+        private static void TryDeleteOptionsTempNoThrow(string tempPath)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(tempPath) && File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (IOException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
         }
 
         private bool TryReadPortableOptionsFile(

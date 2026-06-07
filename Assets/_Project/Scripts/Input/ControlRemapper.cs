@@ -821,8 +821,11 @@ namespace Hecton8.Input
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
                 long writtenLength;
-                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, FileStreamBufferBytes, FileOptions.WriteThrough))
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, FileStreamBufferBytes, FileOptions.WriteThrough))
                 {
                     stream.Write(new ReadOnlySpan<byte>(source, byteCount));
                     stream.Flush(true);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -71,6 +72,7 @@ namespace Hecton8.Meta
         private const float FlushIntervalSeconds = 15f;
         private const float LongestLifeRecordStepSeconds = 60f;
         private const float MaxDepthRecordEpsilon = 0.25f;
+        private static readonly Encoding ProfileEncoding = new UTF8Encoding(false);
 
         // COLD ALLOC: AchievementRewardDefinition[6] - fixed explorer-point rewards for first-time internal achievements - owner: GlobalProfileManager
         private static readonly AchievementRewardDefinition[] _achievementRewards =
@@ -1068,7 +1070,14 @@ namespace Hecton8.Meta
                 profile.EnsureCapacity();
                 profile.version = GlobalProfileData.CurrentVersion;
                 string json = JsonUtility.ToJson(profile, true);
-                File.WriteAllText(tempPath, json);
+                TryDeleteProfileTempNoThrow(tempPath);
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
+                using (StreamWriter writer = new StreamWriter(stream, ProfileEncoding))
+                {
+                    writer.Write(json);
+                    writer.Flush();
+                    stream.Flush(true);
+                }
 
                 if (File.Exists(path))
                     File.Replace(tempPath, path, null, true);
@@ -1093,6 +1102,31 @@ namespace Hecton8.Meta
                 }
 
                 return false;
+            }
+        }
+
+        private static void TryDeleteProfileTempNoThrow(string tempPath)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(tempPath) && File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Best-effort temp cleanup only.
+            }
+            catch (IOException)
+            {
+                // Best-effort temp cleanup only.
+            }
+            catch (ArgumentException)
+            {
+                // Best-effort temp cleanup only.
+            }
+            catch (NotSupportedException)
+            {
+                // Best-effort temp cleanup only.
             }
         }
 

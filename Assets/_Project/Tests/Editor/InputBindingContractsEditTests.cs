@@ -103,6 +103,10 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("TryFindJsonProperty(", source);
             StringAssert.DoesNotContain("TryReadJsonStringProperty(", source);
             StringAssert.Contains("File.Replace(tempPath, path", source);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", source);
+            StringAssert.Contains("TryDeleteOptionsTempNoThrow(tempPath);", source);
+            StringAssert.Contains("stream.Flush(true);", source);
+            StringAssert.DoesNotContain("new FileStream(tempPath, FileMode.Create, FileAccess.Write", source);
             StringAssert.Contains("BinaryPayloadMagic", source);
             StringAssert.Contains("ApplyStagedOptionRecords", source);
             StringAssert.Contains("wasPortableContainer", source);
@@ -435,6 +439,18 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("PlayerPrefs", guide);
             StringAssert.Contains("controls.json", guide);
             StringAssert.Contains("TryClearBindingOverrides()", guide);
+        }
+
+        [Test]
+        public void ControlRemapperWritesControlsJsonThroughCreateNewTemp()
+        {
+            string source = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "Input", "ControlRemapper.cs"));
+
+            StringAssert.Contains("if (File.Exists(tempPath))", source);
+            StringAssert.Contains("File.Delete(tempPath);", source);
+            StringAssert.Contains("new FileStream(tempPath, FileMode.CreateNew", source);
+            StringAssert.Contains("stream.Flush(true);", source);
+            StringAssert.DoesNotContain("new FileStream(tempPath, FileMode.Create, FileAccess.Write", source);
         }
 
         [Test]
