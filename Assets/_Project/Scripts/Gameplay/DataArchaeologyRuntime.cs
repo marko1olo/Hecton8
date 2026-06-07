@@ -9,6 +9,7 @@ using Hecton8.Data;
 using Hecton8.Narrative;
 using Hecton8.SaveSystem;
 using Hecton8.Tools;
+using Hecton8.UI;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
@@ -377,7 +378,9 @@ namespace Hecton8.Gameplay
         private const byte ScanStateScanning = 1;
         private const byte ScanStateScanned = 2;
         private const byte ToolAcousticStateScanning = 1;
-        private const byte HudSeverityInfo = 1;
+        private const string DiscoveryUnlockedFallbackMessage = "PDA ARCHIVE ENTRY UNLOCKED";
+        private const string DiscoveryUnlockedTitlePrefix = "PDA ARCHIVE // ";
+        private const int DiscoveryNotificationCharCapacity = 160;
         private const int ScannerShaderPointCapacity = 4;
         private static readonly int _HectonScannerPointsId = Shader.PropertyToID("_HectonScannerPoints");
         private static readonly int _HectonScannerPointCountId = Shader.PropertyToID("_HectonScannerPointCount");
@@ -1323,15 +1326,26 @@ namespace Hecton8.Gameplay
                 Category = 0,
                 Flags = 0
             }, ref _signalPushDropCount);
-            SignalBus<HUDNotificationSignal>.TryPushTracked(new HUDNotificationSignal
+            PublishDiscoveryHudNotification(hash);
+        }
+
+        private static void PublishDiscoveryHudNotification(uint hash)
+        {
+            Span<char> message = stackalloc char[DiscoveryNotificationCharCapacity];
+            ReadOnlySpan<char> prefix = DiscoveryUnlockedTitlePrefix.AsSpan();
+            if (prefix.TryCopyTo(message) &&
+                H8AppliedLoreRuntime.TryWriteTitleUtf16(
+                    hash,
+                    H8AppliedLoreRuntime.DefaultLocaleHash,
+                    message.Slice(prefix.Length),
+                    out int titleLength) &&
+                titleLength > 0)
             {
-                MessageHash = hash,
-                ContextHash = hash,
-                SourceId = _scannerToolHash,
-                Frame = frame,
-                Severity = HudSeverityInfo,
-                Flags = 0
-            }, ref _signalPushDropCount);
+                NotificationEvents.TryPushInfo(message.Slice(0, prefix.Length + titleLength));
+                return;
+            }
+
+            NotificationEvents.TryPushInfo(DiscoveryUnlockedFallbackMessage.AsSpan());
         }
 
         private static float ResolvePresentationQualityWeight01()
