@@ -2462,9 +2462,22 @@ namespace Hecton8.Physics
             DisposeNativeStateBuffer(ref _exteriorThermalAnomalyTemperatures, VaultExteriorThermalTemperaturesFlag);
             DisposeNativeStateBuffer(ref _exteriorThermalAnomalyLifetimes, VaultExteriorThermalLifetimesFlag);
             DisposeNativeStateBuffer(ref _exteriorThermalHazardIds, VaultExteriorThermalHazardIdsFlag);
+            CompleteDisposeHandleInPostFixedSwapWindow();
             ClearNativeStateViews();
-            DispatcherJobSwap.TryComplete(ref _disposeHandle, true);
 
+        }
+
+        private void CompleteDisposeHandleInPostFixedSwapWindow()
+        {
+            DispatcherJobSwap.BeginPostFixedSwapWindow();
+            try
+            {
+                DispatcherJobSwap.TryComplete(ref _disposeHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostFixedSwapWindow();
+            }
         }
 
         private void RestoreRigidbodyDynamics()
