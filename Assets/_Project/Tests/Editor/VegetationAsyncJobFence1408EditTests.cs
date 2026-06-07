@@ -74,10 +74,15 @@ namespace Hecton8.Tests.Editor
         public void FlowFieldCompletion_UsesDispatcherFenceBeforeDataVaultPublishAndNativeRelease()
         {
             string source = ReadProjectScript("World/VegetationFlowFieldIntegrator.cs");
+            string helperBody = ExtractMethodBody(source, "TryCompleteVegetationSimulationJob");
 
             AssertFlowCompletionContract(source, "CompleteThreatPropagationJob", "ReleaseThreatPropagationPendingJob");
             AssertFlowCompletionContract(source, "CompleteFlowFieldJob", "ReleaseFlowFieldPendingJob");
             AssertFlowCompletionContract(source, "CompleteThermalGridJob", "ReleaseThermalGridPendingJob");
+            Assert.That(helperBody, Does.Contain("DispatcherJobSwap.TryComplete(ref handle, forceComplete: false)"));
+            AssertCompleteInsidePostSimulationWindow(
+                helperBody,
+                "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true)");
 
             string cancelBody = ExtractMethodBody(source, "CancelVegetationSimulationJobsForResidencyClear");
             Assert.That(cancelBody, Does.Contain("pending.Cancelled = true"));
@@ -401,7 +406,7 @@ namespace Hecton8.Tests.Editor
             string body = ExtractMethodBody(source, completeMethodName);
 
             AssertOrdered(body, "pending.Cancelled", "TryCopyVegetationMemorySnapshot");
-            AssertOrdered(body, "DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete)", "TryCopyVegetationMemorySnapshot");
+            AssertOrdered(body, "TryCompleteVegetationSimulationJob(ref pending.Handle, forceComplete)", "TryCopyVegetationMemorySnapshot");
             AssertOrdered(body, "TryCopyVegetationMemorySnapshot", releaseMethodName + "(ref pending)");
             Assert.That(body, Does.Contain("= default"));
             Assert.That(body, Does.Contain("= false"));

@@ -364,7 +364,7 @@ namespace Hecton8.World
                 return;
 
             ThreatPropagationPendingJob pending = _threatPropagationJob;
-            if (!DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete))
+            if (!TryCompleteVegetationSimulationJob(ref pending.Handle, forceComplete))
                 return;
 
             try
@@ -429,7 +429,7 @@ namespace Hecton8.World
                 return;
 
             FlowFieldPendingJob pending = _flowFieldJob;
-            if (!DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete))
+            if (!TryCompleteVegetationSimulationJob(ref pending.Handle, forceComplete))
                 return;
 
             try
@@ -477,7 +477,7 @@ namespace Hecton8.World
                 return;
 
             ThermalGridPendingJob pending = _thermalGridJob;
-            if (!DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete))
+            if (!TryCompleteVegetationSimulationJob(ref pending.Handle, forceComplete))
                 return;
 
             try
@@ -528,6 +528,22 @@ namespace Hecton8.World
                 ReleaseThermalGridPendingJob(ref pending);
                 _thermalGridJob = default;
                 _abyssalThermalGridScheduled = false;
+            }
+        }
+
+        private static bool TryCompleteVegetationSimulationJob(ref JobHandle handle, bool forceComplete)
+        {
+            if (!forceComplete)
+                return DispatcherJobSwap.TryComplete(ref handle, forceComplete: false);
+
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
             }
         }
 
