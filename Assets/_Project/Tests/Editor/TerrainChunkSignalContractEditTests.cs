@@ -383,6 +383,52 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void TerrainChunkPager_WorkerLifecycleFailsClosedAndCleansDeferredShutdown()
+        {
+            string path = Path.Combine(Directory.GetCurrentDirectory(), "Assets", "_Project", "Scripts", "World", "TerrainChunkPagerRuntime.cs");
+            string source = File.ReadAllText(path);
+
+            string initializeBlock = ExtractSourceBlock(source, "private void Initialize()", "private void Shutdown()");
+            Assert.That(initializeBlock.Contains("if (!StartWorker())"), Is.True);
+            Assert.That(initializeBlock.Contains("ReleaseNativeState();"), Is.True);
+            Assert.That(initializeBlock.IndexOf("if (!StartWorker())", StringComparison.Ordinal), Is.LessThan(initializeBlock.IndexOf("RegisterDispatcher();", StringComparison.Ordinal)));
+
+            string deferredShutdownBlock = ExtractSourceBlock(source, "private void TryReleaseDeferredShutdownState()", "private void RegisterDispatcher()");
+            Assert.That(deferredShutdownBlock.Contains("if (!StopWorker())"), Is.True);
+            Assert.That(deferredShutdownBlock.IndexOf("if (!StopWorker())", StringComparison.Ordinal), Is.LessThan(deferredShutdownBlock.IndexOf("ReleaseNativeState();", StringComparison.Ordinal)));
+
+            string rebindBlock = ExtractSourceBlock(source, "private void RebindDataVaultForLifecycle(", "private void AllocateNativeState()");
+            Assert.That(rebindBlock.Contains("if (!StartWorker())"), Is.True);
+            Assert.That(rebindBlock.Contains("UnregisterDispatcher(keepVisualSyncForDeferredShutdown: false);"), Is.True);
+            Assert.That(rebindBlock.Contains("ReleaseNativeState();"), Is.True);
+            Assert.That(rebindBlock.Contains("_initialized = 0;"), Is.True);
+
+            string startWorkerBlock = ExtractSourceBlock(source, "private bool StartWorker()", "private bool StopWorker()");
+            Assert.That(startWorkerBlock.Contains("catch (Exception)"), Is.True);
+            Assert.That(startWorkerBlock.Contains("_faultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo;"), Is.True);
+            Assert.That(startWorkerBlock.Contains("Volatile.Write(ref _workerRunning, 0);"), Is.True);
+            Assert.That(startWorkerBlock.Contains("Volatile.Write(ref _workerThreadActive, 0);"), Is.True);
+            Assert.That(startWorkerBlock.Contains("Volatile.Write(ref _workerHeartbeatTimestamp, 0L);"), Is.True);
+            Assert.That(startWorkerBlock.Contains("_workerWake = wake;"), Is.True);
+            Assert.That(startWorkerBlock.Contains("_workerThread = thread;"), Is.True);
+            Assert.That(startWorkerBlock.Contains("thread.Start();"), Is.True);
+            Assert.That(startWorkerBlock.Contains("return false;"), Is.True);
+
+            string stopWorkerBlock = ExtractSourceBlock(source, "private bool StopWorker()", "private static bool TryJoinWorkerNoThrow");
+            Assert.That(stopWorkerBlock.Contains("SignalWorkerWakeNoThrow(wake);"), Is.True);
+            Assert.That(stopWorkerBlock.Contains("TryJoinWorkerNoThrow(thread)"), Is.True);
+            Assert.That(stopWorkerBlock.Contains("DisposeWorkerWakeNoThrow(_workerWake);"), Is.True);
+            Assert.That(stopWorkerBlock.Contains("Volatile.Write(ref _workerHeartbeatTimestamp, 0L);"), Is.True);
+            Assert.That(stopWorkerBlock.Contains("thread.Join(2000)"), Is.False);
+
+            string joinBlock = ExtractSourceBlock(source, "private static bool TryJoinWorkerNoThrow", "private static void SignalWorkerWakeNoThrow");
+            Assert.That(joinBlock.Contains("ReferenceEquals(Thread.CurrentThread, thread)"), Is.True);
+            Assert.That(joinBlock.Contains("thread.Join(WorkerShutdownWaitMilliseconds);"), Is.True);
+            Assert.That(joinBlock.Contains("return !thread.IsAlive;"), Is.True);
+            Assert.That(joinBlock.Contains("catch (Exception)"), Is.True);
+        }
+
+        [Test]
         public void TerrainChunkPager_RejectsUnknownChunkHeaderVersionsAndFlags()
         {
             string root = Directory.GetCurrentDirectory();
@@ -400,6 +446,35 @@ namespace Hecton8.Tests.Editor
             Assert.That(validateBlock.Contains("header.Version != TerrainChunkPagerConstants.FileVersion"), Is.True);
             Assert.That(validateBlock.Contains("(header.Flags & ~TerrainChunkPagerConstants.FileFlagsMask) != 0u"), Is.True);
             Assert.That(validateBlock.Contains("header.Version == 0u"), Is.False);
+        }
+
+        [Test]
+        public void TerrainStreamingTelemetryDumpPaths_AreOwnerSpecific()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string pagerPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "TerrainChunkPagerRuntime.cs");
+            string pagerSource = File.ReadAllText(pagerPath);
+            Assert.That(pagerSource, Does.Contain("Dump_1305_TerrainChunkPager.bin"));
+            Assert.That(pagerSource, Does.Contain("private const int DumpHeaderBytes = 32;"));
+            Assert.That(pagerSource, Does.Contain("private const uint DumpLayoutHash = 0x44504354u;"));
+            Assert.That(pagerSource, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(pagerSource, Does.Contain("WriteUInt32(header, 24, DumpLayoutHash);"));
+            Assert.That(pagerSource, Does.Contain("WriteUInt32(header, 28, 0u);"));
+            Assert.That(pagerSource, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(pagerSource, Does.Not.Contain("Dump_1305_Streaming.bin"));
+
+            string residencyPath = Path.Combine(root, "Assets", "_Project", "Scripts", "World", "WorldChunkResidencyManager.cs");
+            string residencySource = File.ReadAllText(residencyPath);
+            Assert.That(residencySource, Does.Contain("Dump_1305_WorldChunkResidency.bin"));
+            Assert.That(residencySource, Does.Contain("Dump_1305_WorldChunkResidency_Backpressure.bin"));
+            Assert.That(residencySource, Does.Contain("Dump_1305_WorldChunkResidency_HLOD.bin"));
+            Assert.That(residencySource, Does.Contain("private const int WorldChunkResidencyDumpHeaderBytes = 32;"));
+            Assert.That(residencySource, Does.Contain("private const uint WorldChunkResidencyDumpLayoutHash = 0x44524357u;"));
+            Assert.That(residencySource, Does.Contain("DumpTelemetryToPath(DumpRelativePath, telemetryRing, reasonFlags);"));
+            Assert.That(residencySource, Does.Contain("WriteUInt64LittleEndian(payload, ref cursor, HectonDumpMagic);"));
+            Assert.That(residencySource, Does.Contain("WriteUInt32LittleEndian(payload, ref cursor, WorldChunkResidencyDumpVersion);"));
+            Assert.That(residencySource, Does.Contain("WriteUInt32LittleEndian(payload, ref cursor, WorldChunkResidencyDumpLayoutHash);"));
+            Assert.That(residencySource, Does.Not.Contain("Dump_1305_Streaming.bin"));
         }
 
         [Test]

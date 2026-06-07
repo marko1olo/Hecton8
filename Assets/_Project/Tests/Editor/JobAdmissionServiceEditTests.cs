@@ -335,10 +335,17 @@ namespace Hecton8.Tests.Editor
             string source = File.ReadAllText(TelemetryDumpValidatorWindowPath());
 
             Assert.That(source, Does.Contain("private const ulong TerrainStreamingDumpMagic = 0x00384E4F54434548UL;"));
-            Assert.That(source, Does.Contain("private const int TerrainStreamingPagerDumpHeaderBytes = 24;"));
+            Assert.That(source, Does.Contain("private const int TerrainStreamingLegacyPagerDumpHeaderBytes = 24;"));
+            Assert.That(source, Does.Contain("private const int TerrainStreamingPagerDumpHeaderBytes = 32;"));
             Assert.That(source, Does.Contain("private const int TerrainStreamingDumpEntrySizeBytes = 64;"));
             Assert.That(source, Does.Contain("private const uint TerrainStreamingPagerDumpVersion = 1305u;"));
+            Assert.That(source, Does.Contain("private const uint TerrainStreamingPagerDumpLayoutHash = 0x44504354u;"));
+            Assert.That(source, Does.Contain("private const int WorldChunkResidencyDumpHeaderBytes = 32;"));
+            Assert.That(source, Does.Contain("private const uint WorldChunkResidencyDumpVersion = 1u;"));
+            Assert.That(source, Does.Contain("private const uint WorldChunkResidencyDumpLayoutHash = 0x44524357u;"));
             Assert.That(source, Does.Contain("if (TryParseTerrainStreamingDump(path, bytes, span))"));
+            Assert.That(source, Does.Contain("if (!IsTerrainStreamingDumpPath(path))"));
+            Assert.That(source, Does.Contain("private static bool IsTerrainStreamingDumpPath(string path)"));
             Assert.That(source, Does.Contain("\"Dump_1305_Streaming.bin\""));
             Assert.That(source, Does.Contain("\"Dump_1305_TerrainChunkPager.bin\""));
             Assert.That(source, Does.Contain("\"Dump_1305_WorldChunkResidency.bin\""));
@@ -346,13 +353,21 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("\"Dump_1305_WorldChunkResidency_HLOD.bin\""));
             Assert.That(source, Does.Contain("bool pagerFile = IsTerrainStreamingPagerDumpFileName(fileName);"));
             Assert.That(source, Does.Contain("bool rawResidencyFile = IsWorldChunkResidencyDumpFileName(fileName);"));
-            Assert.That(source, Does.Contain("if ((pagerFile || legacyFile) &&"));
-            Assert.That(source, Does.Contain("if ((rawResidencyFile || legacyFile) &&"));
+            Assert.That(source, Does.Contain("if (span.Length >= TerrainStreamingLegacyPagerDumpHeaderBytes &&"));
+            Assert.That(source, Does.Contain("layoutHash == WorldChunkResidencyDumpLayoutHash"));
+            Assert.That(source, Does.Contain("if (span.Length < WorldChunkResidencyDumpHeaderBytes)"));
+            Assert.That(source, Does.Contain("if (pagerFile || legacyFile)"));
+            Assert.That(source, Does.Contain("bool requiresLayoutHash = pagerFile;"));
+            Assert.That(source, Does.Contain("ParseTerrainStreamingPagerDump(path, bytes, span, headerBytes, requiresLayoutHash)"));
+            Assert.That(source, Does.Contain("if (legacyFile &&"));
             Assert.That(source, Does.Contain("ReadU64(span, 0) == TerrainStreamingDumpMagic"));
             Assert.That(source, Does.Contain("span.Length % TerrainStreamingDumpEntrySizeBytes == 0"));
             Assert.That(source, Does.Contain("layout=terrain-chunk-pager-blackbox"));
             Assert.That(source, Does.Contain("layout=world-chunk-residency-blackbox"));
             Assert.That(source, Does.Contain("BuildInvalidTerrainStreamingHeaderSummary("));
+            Assert.That(source, Does.Contain("BuildInvalidWorldChunkResidencyHeaderSummary("));
+            Assert.That(source, Does.Contain("ParseWorldChunkResidencyHeaderDump("));
+            Assert.That(source, Does.Contain("WorldChunkResidencyDumpHeaderBytes + (long)entryCount * entrySize <= span.Length"));
             Assert.That(source, Does.Contain("BuildTerrainStreamingPagerEntryLine("));
             Assert.That(source, Does.Contain("BuildWorldChunkResidencyEntryLine("));
             Assert.That(source, Does.Contain("ResolveTerrainStreamingPagerFaultLabels(flags)"));
@@ -362,7 +377,8 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("\"hydration-copy-spike\""));
             Assert.That(source, Does.Contain("ReadF64(entry, 0)"));
             Assert.That(source, Does.Contain("ReadI64(entry, 0)"));
-            Assert.That(source, Does.Contain("ComputeXxHash64(bytes, TerrainStreamingPagerDumpHeaderBytes, payloadBytes)"));
+            Assert.That(source, Does.Contain("ComputeXxHash64(bytes, headerBytes, payloadBytes)"));
+            Assert.That(source, Does.Contain("ComputeXxHash64(bytes, WorldChunkResidencyDumpHeaderBytes, payloadBytes)"));
             Assert.That(source, Does.Contain("ComputeXxHash64(bytes, 0, span.Length)"));
         }
 

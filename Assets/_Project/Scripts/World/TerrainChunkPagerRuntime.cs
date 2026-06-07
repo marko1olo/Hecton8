@@ -23,10 +23,14 @@ namespace Hecton8.World
     {
         private const string WorkerName = "H8_Terrain_Pager";
         private const string DefaultChunkRootRelativePath = "Hecton8/TerrainChunks";
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1305_Streaming.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1305_TerrainChunkPager.bin";
         private const string StreamingProfileCsvRelativePath = "Docs/Tasks/streaming_hardware_profiles.csv";
         private const ulong HectonDumpMagic = 0x00384E4F54434548UL;
         private const uint DumpVersion = 1305u;
+        private const int DumpHeaderBytes = 32;
+        private const uint DumpLayoutHash = 0x44504354u; // TCPD
+        private const string DumpPayloadLabel = "terrainChunkPagerTelemetryDumpPayload";
+        private const int WorkerShutdownWaitMilliseconds = 2000;
 
         private const BufferID MetadataBufferId = (BufferID)71740;
         private const BufferID SectorCoordsBufferId = (BufferID)71741;
@@ -410,7 +414,12 @@ namespace Hecton8.World
             ResetRuntimeStateCounters();
 
             LoadColdStreamingProfile();
-            StartWorker();
+            if (!StartWorker())
+            {
+                ReleaseNativeState();
+                return;
+            }
+
             RegisterDispatcher();
             _initialized = 1;
             s_active = this;
@@ -462,6 +471,9 @@ namespace Hecton8.World
                 return;
 
             if (Volatile.Read(ref _workerThreadActive) != 0)
+                return;
+
+            if (!StopWorker())
                 return;
 
             UnregisterDispatcher(keepVisualSyncForDeferredShutdown: false);
@@ -622,7 +634,16 @@ namespace Hecton8.World
             }
 
             LoadColdStreamingProfile();
-            StartWorker();
+            if (!StartWorker())
+            {
+                UnregisterDispatcher(keepVisualSyncForDeferredShutdown: false);
+                ReleaseNativeState();
+                if (ReferenceEquals(s_active, this))
+                    s_active = null;
+                _initialized = 0;
+                return;
+            }
+
             RegisterDispatcher();
             _initialized = 1;
             s_active = this;
@@ -1420,42 +1441,112 @@ namespace Hecton8.World
             return true;
         }
 
-        private void StartWorker()
+        private bool StartWorker()
         {
-            _workerWake = new AutoResetEvent(false);
-            Volatile.Write(ref _workerRunning, 1);
-            Volatile.Write(ref _workerThreadActive, 1);
-            Volatile.Write(ref _workerHeartbeatTimestamp, System.Diagnostics.Stopwatch.GetTimestamp());
-            _workerThread = new Thread(WorkerLoop);
-            _workerThread.IsBackground = true;
-            _workerThread.Name = WorkerName;
-            _workerThread.Priority = System.Threading.ThreadPriority.BelowNormal;
-            _workerThread.Start();
+            AutoResetEvent wake = null;
+            Thread thread = null;
+            try
+            {
+                wake = new AutoResetEvent(false);
+                thread = new Thread(WorkerLoop)
+                {
+                    IsBackground = true,
+                    Name = WorkerName,
+                    Priority = System.Threading.ThreadPriority.BelowNormal
+                };
+
+                Volatile.Write(ref _workerRunning, 1);
+                Volatile.Write(ref _workerThreadActive, 1);
+                Volatile.Write(ref _workerHeartbeatTimestamp, System.Diagnostics.Stopwatch.GetTimestamp());
+                _workerWake = wake;
+                _workerThread = thread;
+                thread.Start();
+                return true;
+            }
+            catch (Exception)
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo;
+                Volatile.Write(ref _workerRunning, 0);
+                Volatile.Write(ref _workerThreadActive, 0);
+                Volatile.Write(ref _workerHeartbeatTimestamp, 0L);
+                if (thread == null || ReferenceEquals(_workerThread, thread))
+                    _workerThread = null;
+                if (wake != null && ReferenceEquals(_workerWake, wake))
+                    _workerWake = null;
+                DisposeWorkerWakeNoThrow(wake);
+                return false;
+            }
         }
 
         private bool StopWorker()
         {
             Volatile.Write(ref _workerRunning, 0);
             AutoResetEvent wake = _workerWake;
-            if (wake != null)
-                wake.Set();
+            SignalWorkerWakeNoThrow(wake);
 
             Thread thread = _workerThread;
             if (thread != null && thread.IsAlive)
             {
-                if (!thread.Join(2000))
+                if (!TryJoinWorkerNoThrow(thread))
                     return false;
             }
 
             _workerThread = null;
             if (_workerWake != null)
             {
-                _workerWake.Dispose();
+                DisposeWorkerWakeNoThrow(_workerWake);
                 _workerWake = null;
             }
 
             Volatile.Write(ref _workerThreadActive, 0);
+            Volatile.Write(ref _workerHeartbeatTimestamp, 0L);
             return true;
+        }
+
+        private static bool TryJoinWorkerNoThrow(Thread thread)
+        {
+            if (thread == null || !thread.IsAlive)
+                return true;
+            if (ReferenceEquals(Thread.CurrentThread, thread))
+                return false;
+
+            try
+            {
+                thread.Join(WorkerShutdownWaitMilliseconds);
+                return !thread.IsAlive;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static void SignalWorkerWakeNoThrow(AutoResetEvent wake)
+        {
+            if (wake == null)
+                return;
+
+            try
+            {
+                wake.Set();
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private static void DisposeWorkerWakeNoThrow(AutoResetEvent wake)
+        {
+            if (wake == null)
+                return;
+
+            try
+            {
+                wake.Dispose();
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private void WorkerLoop()
@@ -2341,31 +2432,40 @@ namespace Hecton8.World
 
             try
             {
-                const int headerBytes = 24;
-                int totalBytes = headerBytes + bytes;
-                NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                int totalBytes = DumpHeaderBytes + bytes;
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(TerrainChunkPagerRuntime),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory,
+                    Allocator.TempJob);
                 try
                 {
                     unsafe
                     {
                         byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
-                        Span<byte> header = new Span<byte>(payloadPtr, headerBytes);
+                        Span<byte> header = new Span<byte>(payloadPtr, DumpHeaderBytes);
                         WriteUInt64(header, 0, HectonDumpMagic);
                         WriteUInt32(header, 8, DumpVersion);
                         WriteUInt32(header, 12, (uint)_telemetryLength);
                         WriteUInt32(header, 16, (uint)UnsafeUtility.SizeOf<PagerTelemetryEntry>());
                         WriteUInt32(header, 20, faults);
+                        WriteUInt32(header, 24, DumpLayoutHash);
+                        WriteUInt32(header, 28, 0u);
 
                         void* snapshotPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryDumpSnapshotBytes);
-                        UnsafeUtility.MemCpy(payloadPtr + headerBytes, snapshotPtr, bytes);
+                        UnsafeUtility.MemCpy(payloadPtr + DumpHeaderBytes, snapshotPtr, bytes);
                     }
 
                     NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, totalBytes);
                 }
                 finally
                 {
-                    if (payload.IsCreated)
-                        payload.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(TerrainChunkPagerRuntime),
+                        DumpPayloadLabel,
+                        Allocator.TempJob);
                 }
             }
             catch (IOException)

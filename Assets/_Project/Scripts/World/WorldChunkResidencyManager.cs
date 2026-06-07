@@ -642,9 +642,13 @@ namespace Hecton8.World
         private const float StreamerStressSpeedSqRcp = 0.00111111112f;
         private const float AdrenalinePurgeSeconds = 3.0f;
         private const byte CriticalMemoryPressureSeverity = 2;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1305_Streaming.bin";
-        private const string BackpressureDumpRelativePath = "Docs/AgentLogs/Dump_1305_Streaming.bin";
-        private const string HlodDumpRelativePath = "Docs/AgentLogs/Dump_1305_Streaming.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1305_WorldChunkResidency.bin";
+        private const string BackpressureDumpRelativePath = "Docs/AgentLogs/Dump_1305_WorldChunkResidency_Backpressure.bin";
+        private const string HlodDumpRelativePath = "Docs/AgentLogs/Dump_1305_WorldChunkResidency_HLOD.bin";
+        private const ulong HectonDumpMagic = 0x00384E4F54434548UL;
+        private const uint WorldChunkResidencyDumpVersion = 1u;
+        private const int WorldChunkResidencyDumpHeaderBytes = 32;
+        private const uint WorldChunkResidencyDumpLayoutHash = 0x44524357u; // WCRD
         private const double LatencyDebtBaselineMs = 80.0;
         private const double CriticalHoleThresholdMs = 250.0;
         private const float StorageDebtEwmaWeight = 0.08f;
@@ -5883,7 +5887,7 @@ namespace Hecton8.World
             if (!telemetryRing.IsCreated)
                 return;
 
-            DumpTelemetryToPath(DumpRelativePath, telemetryRing);
+            DumpTelemetryToPath(DumpRelativePath, telemetryRing, reasonFlags);
         }
 
         private void DumpBackpressureTelemetry(uint reasonFlags)
@@ -5893,7 +5897,7 @@ namespace Hecton8.World
             if (!telemetryRing.IsCreated)
                 return;
 
-            DumpTelemetryToPath(BackpressureDumpRelativePath, telemetryRing);
+            DumpTelemetryToPath(BackpressureDumpRelativePath, telemetryRing, reasonFlags);
         }
 
         private void DumpHlodTelemetry(uint reasonFlags)
@@ -5903,10 +5907,10 @@ namespace Hecton8.World
             if (!telemetryRing.IsCreated)
                 return;
 
-            DumpTelemetryToPath(HlodDumpRelativePath, telemetryRing);
+            DumpTelemetryToPath(HlodDumpRelativePath, telemetryRing, reasonFlags);
         }
 
-        private static void DumpTelemetryToPath(string path, NativeArray<ChunkResidencyTelemetryEntry> telemetryRing)
+        private static void DumpTelemetryToPath(string path, NativeArray<ChunkResidencyTelemetryEntry> telemetryRing, uint reasonFlags)
         {
             if (string.IsNullOrEmpty(path) || !telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
                 return;
@@ -5914,12 +5918,19 @@ namespace Hecton8.World
             NativeArray<byte> payload = default;
             try
             {
-                int byteCount = TelemetryCapacity * ResidencyTelemetryEntrySizeBytes;
+                int byteCount = WorldChunkResidencyDumpHeaderBytes + TelemetryCapacity * ResidencyTelemetryEntrySizeBytes;
                 payload = NativeFaultDumpWriter.CreateTransientPayload(
                     byteCount,
                     nameof(WorldChunkResidencyManager),
                     "worldChunkResidencyTelemetryDumpPayload");
                 int cursor = 0;
+                WriteUInt64LittleEndian(payload, ref cursor, HectonDumpMagic);
+                WriteUInt32LittleEndian(payload, ref cursor, WorldChunkResidencyDumpVersion);
+                WriteUInt32LittleEndian(payload, ref cursor, TelemetryCapacity);
+                WriteUInt32LittleEndian(payload, ref cursor, ResidencyTelemetryEntrySizeBytes);
+                WriteUInt32LittleEndian(payload, ref cursor, reasonFlags);
+                WriteUInt32LittleEndian(payload, ref cursor, WorldChunkResidencyDumpLayoutHash);
+                WriteUInt32LittleEndian(payload, ref cursor, 0u);
                 for (int i = 0; i < TelemetryCapacity; i++)
                 {
                     ChunkResidencyTelemetryEntry entry = telemetryRing[i];

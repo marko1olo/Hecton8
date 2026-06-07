@@ -49,9 +49,11 @@ namespace Hecton8.EditorTools
         private const int SimulationBucketDumpEntrySizeBytes = 64;
         private const uint SimulationBucketDumpVersion = 1u;
         private const ulong TerrainStreamingDumpMagic = 0x00384E4F54434548UL; // HECTON8\0
-        private const int TerrainStreamingPagerDumpHeaderBytes = 24;
+        private const int TerrainStreamingLegacyPagerDumpHeaderBytes = 24;
+        private const int TerrainStreamingPagerDumpHeaderBytes = 32;
         private const int TerrainStreamingDumpEntrySizeBytes = 64;
         private const uint TerrainStreamingPagerDumpVersion = 1305u;
+        private const uint TerrainStreamingPagerDumpLayoutHash = 0x44504354u; // TCPD
         private const int WorldChunkResidencyDumpHeaderBytes = 32;
         private const uint WorldChunkResidencyDumpVersion = 1u;
         private const uint WorldChunkResidencyDumpLayoutHash = 0x44524357u; // WCRD
@@ -848,6 +850,11 @@ namespace Hecton8.EditorTools
 
         private bool TryParseTerrainStreamingDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
         {
+            if (!IsTerrainStreamingDumpPath(path))
+            {
+                return false;
+            }
+
             string fileName = Path.GetFileName(path) ?? string.Empty;
             bool pagerFile = IsTerrainStreamingPagerDumpFileName(fileName);
             bool rawResidencyFile = IsWorldChunkResidencyDumpFileName(fileName);
@@ -855,12 +862,8 @@ namespace Hecton8.EditorTools
                 fileName,
                 TerrainStreamingLegacyDumpFileName,
                 StringComparison.OrdinalIgnoreCase);
-            if (!pagerFile && !rawResidencyFile && !legacyFile)
-            {
-                return false;
-            }
 
-            if (span.Length >= TerrainStreamingPagerDumpHeaderBytes &&
+            if (span.Length >= TerrainStreamingLegacyPagerDumpHeaderBytes &&
                 ReadU64(span, 0) == TerrainStreamingDumpMagic)
             {
                 uint version = ReadU32(span, 8);
@@ -872,14 +875,34 @@ namespace Hecton8.EditorTools
                      version == WorldChunkResidencyDumpVersion &&
                      layoutHash == WorldChunkResidencyDumpLayoutHash))
                 {
+                    if (span.Length < WorldChunkResidencyDumpHeaderBytes)
+                    {
+                        SetSummary(BuildInvalidWorldChunkResidencyHeaderSummary(
+                            path,
+                            span.Length,
+                            version,
+                            0,
+                            0,
+                            0u,
+                            0u,
+                            0u));
+                        return true;
+                    }
+
                     return ParseWorldChunkResidencyHeaderDump(path, bytes, span);
                 }
 
                 if (pagerFile || legacyFile)
-                    return ParseTerrainStreamingPagerDump(path, bytes, span);
+                {
+                    int headerBytes = pagerFile
+                        ? TerrainStreamingPagerDumpHeaderBytes
+                        : TerrainStreamingLegacyPagerDumpHeaderBytes;
+                    bool requiresLayoutHash = pagerFile;
+                    return ParseTerrainStreamingPagerDump(path, bytes, span, headerBytes, requiresLayoutHash);
+                }
             }
 
-            if ((rawResidencyFile || legacyFile) &&
+            if (legacyFile &&
                 span.Length > 0 &&
                 span.Length % TerrainStreamingDumpEntrySizeBytes == 0)
             {
@@ -896,18 +919,31 @@ namespace Hecton8.EditorTools
             return true;
         }
 
-        private bool ParseTerrainStreamingPagerDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
+        private bool ParseTerrainStreamingPagerDump(
+            string path,
+            byte[] bytes,
+            ReadOnlySpan<byte> span,
+            int headerBytes,
+            bool requiresLayoutHash)
         {
             uint version = ReadU32(span, 8);
             int entryCount = ReadI32(span, 12);
             int entrySize = ReadI32(span, 16);
             uint faultFlags = ReadU32(span, 20);
+            uint layoutHash = span.Length >= TerrainStreamingPagerDumpHeaderBytes
+                ? ReadU32(span, 24)
+                : 0u;
+            uint reserved = span.Length >= TerrainStreamingPagerDumpHeaderBytes
+                ? ReadU32(span, 28)
+                : 0u;
             bool valid =
                 version == TerrainStreamingPagerDumpVersion &&
                 entryCount > 0 &&
                 entryCount <= 100000 &&
                 entrySize == TerrainStreamingDumpEntrySizeBytes &&
-                TerrainStreamingPagerDumpHeaderBytes + (long)entryCount * entrySize <= span.Length;
+                (!requiresLayoutHash ||
+                 (layoutHash == TerrainStreamingPagerDumpLayoutHash && reserved == 0u)) &&
+                headerBytes + (long)entryCount * entrySize <= span.Length;
 
             if (!valid)
             {
@@ -923,10 +959,10 @@ namespace Hecton8.EditorTools
 
             int nonEmptyEntryCount = CountTerrainStreamingEntriesWithPayload(
                 span,
-                TerrainStreamingPagerDumpHeaderBytes,
+                headerBytes,
                 entryCount);
             int payloadBytes = entryCount * entrySize;
-            ulong payloadHash = ComputeXxHash64(bytes, TerrainStreamingPagerDumpHeaderBytes, payloadBytes);
+            ulong payloadHash = ComputeXxHash64(bytes, headerBytes, payloadBytes);
             StringBuilder builder = new StringBuilder(300);
             builder.Append(Path.GetFileName(path));
             builder.Append(" | bytes=");
@@ -947,6 +983,11 @@ namespace Hecton8.EditorTools
             builder.Append(faultFlags.ToString("X8", CultureInfo.InvariantCulture));
             builder.Append(' ');
             builder.Append(ResolveTerrainStreamingPagerFaultLabels(faultFlags));
+            if (requiresLayoutHash)
+            {
+                builder.Append(" | layoutHash=0x");
+                builder.Append(layoutHash.ToString("X8", CultureInfo.InvariantCulture));
+            }
             builder.Append(" | xxHash3[payload]=0x");
             builder.Append(payloadHash.ToString("X16", CultureInfo.InvariantCulture));
             SetSummary(builder.ToString());
@@ -955,7 +996,7 @@ namespace Hecton8.EditorTools
             int seen = 0;
             for (int i = 0; i < entryCount; i++)
             {
-                int offset = TerrainStreamingPagerDumpHeaderBytes + i * entrySize;
+                int offset = headerBytes + i * entrySize;
                 ReadOnlySpan<byte> entry = span.Slice(offset, entrySize);
                 if (IsEmptyTerrainStreamingEntry(entry))
                     continue;
@@ -1009,6 +1050,87 @@ namespace Hecton8.EditorTools
             return true;
         }
 
+        private bool ParseWorldChunkResidencyHeaderDump(string path, byte[] bytes, ReadOnlySpan<byte> span)
+        {
+            uint version = ReadU32(span, 8);
+            int entryCount = ReadI32(span, 12);
+            int entrySize = ReadI32(span, 16);
+            uint reasonFlags = ReadU32(span, 20);
+            uint layoutHash = ReadU32(span, 24);
+            uint reserved = ReadU32(span, 28);
+            bool valid =
+                version == WorldChunkResidencyDumpVersion &&
+                entryCount > 0 &&
+                entryCount <= 100000 &&
+                entrySize == TerrainStreamingDumpEntrySizeBytes &&
+                layoutHash == WorldChunkResidencyDumpLayoutHash &&
+                reserved == 0u &&
+                WorldChunkResidencyDumpHeaderBytes + (long)entryCount * entrySize <= span.Length;
+
+            if (!valid)
+            {
+                SetSummary(BuildInvalidWorldChunkResidencyHeaderSummary(
+                    path,
+                    span.Length,
+                    version,
+                    entryCount,
+                    entrySize,
+                    reasonFlags,
+                    layoutHash,
+                    reserved));
+                return true;
+            }
+
+            int nonEmptyEntryCount = CountTerrainStreamingEntriesWithPayload(
+                span,
+                WorldChunkResidencyDumpHeaderBytes,
+                entryCount);
+            int payloadBytes = entryCount * entrySize;
+            ulong payloadHash = ComputeXxHash64(bytes, WorldChunkResidencyDumpHeaderBytes, payloadBytes);
+            StringBuilder builder = new StringBuilder(300);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | bytes=");
+            builder.Append(span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | magic=HECTON8");
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | layout=world-chunk-residency-blackbox");
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | displayed=");
+            builder.Append(math.min(nonEmptyEntryCount, MaxDisplayedFrames).ToString(CultureInfo.InvariantCulture));
+            builder.Append('/');
+            builder.Append(nonEmptyEntryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | reason=0x");
+            builder.Append(reasonFlags.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(' ');
+            builder.Append(ResolveWorldChunkResidencyFlagsLabel(reasonFlags));
+            builder.Append(" | layoutHash=0x");
+            builder.Append(layoutHash.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" | xxHash3[payload]=0x");
+            builder.Append(payloadHash.ToString("X16", CultureInfo.InvariantCulture));
+            SetSummary(builder.ToString());
+
+            int skip = math.max(0, nonEmptyEntryCount - MaxDisplayedFrames);
+            int seen = 0;
+            for (int i = 0; i < entryCount; i++)
+            {
+                int offset = WorldChunkResidencyDumpHeaderBytes + i * entrySize;
+                ReadOnlySpan<byte> entry = span.Slice(offset, entrySize);
+                if (IsEmptyTerrainStreamingEntry(entry))
+                    continue;
+
+                if (seen++ < skip)
+                    continue;
+
+                _rows.Add(BuildWorldChunkResidencyEntryLine(seen - 1, i, offset, entry));
+            }
+
+            return true;
+        }
+
         private static string BuildInvalidTerrainStreamingHeaderSummary(
             string path,
             int byteCount,
@@ -1030,6 +1152,36 @@ namespace Hecton8.EditorTools
             builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
             builder.Append(" | faults=0x");
             builder.Append(faultFlags.ToString("X8", CultureInfo.InvariantCulture));
+            return builder.ToString();
+        }
+
+        private static string BuildInvalidWorldChunkResidencyHeaderSummary(
+            string path,
+            int byteCount,
+            uint version,
+            int entryCount,
+            int entrySize,
+            uint reasonFlags,
+            uint layoutHash,
+            uint reserved)
+        {
+            StringBuilder builder = new StringBuilder(224);
+            builder.Append(Path.GetFileName(path));
+            builder.Append(" | invalid world-chunk-residency blackbox header");
+            builder.Append(" | bytes=");
+            builder.Append(byteCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | version=");
+            builder.Append(version.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entries=");
+            builder.Append(entryCount.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | entrySize=");
+            builder.Append(entrySize.ToString(CultureInfo.InvariantCulture));
+            builder.Append(" | reason=0x");
+            builder.Append(reasonFlags.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" | layoutHash=0x");
+            builder.Append(layoutHash.ToString("X8", CultureInfo.InvariantCulture));
+            builder.Append(" | reserved=0x");
+            builder.Append(reserved.ToString("X8", CultureInfo.InvariantCulture));
             return builder.ToString();
         }
 
