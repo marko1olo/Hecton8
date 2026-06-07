@@ -40,7 +40,12 @@ USING_RE = re.compile(r"^\s*using\s+(Hecton8(?:\.[A-Za-z0-9_]+)+)\s*;", re.M)
 STRUCT_RE = re.compile(
     r"\b(?:public|internal|private)?\s*(?:readonly\s+)?(?:partial\s+)?struct\s+(\w+)\s*:\s*([^\{\n]+)"
 )
-SIGNAL_BUS_RE = re.compile(r"SignalBus\s*<\s*([^>]+?)\s*>\s*\.\s*(Push|Publish|GetFrameSnapshot)\s*\(")
+SIGNAL_BUS_PRODUCER_METHODS = frozenset(("Push", "Publish", "TryPush", "TryPushTracked", "TryEnqueueBounded"))
+SIGNAL_BUS_CONSUMER_METHODS = frozenset(("GetFrameSnapshot", "GetFrameSnapshotArray", "TryConsumeFrame", "TryGetLatest"))
+SIGNAL_BUS_FLOW_METHODS = tuple(sorted(SIGNAL_BUS_PRODUCER_METHODS | SIGNAL_BUS_CONSUMER_METHODS, key=len, reverse=True))
+SIGNAL_BUS_RE = re.compile(
+    r"SignalBus\s*<\s*([^>]+?)\s*>\s*\.\s*(" + "|".join(SIGNAL_BUS_FLOW_METHODS) + r")\s*\("
+)
 NAMESPACE_RE = re.compile(r"\bnamespace\s+([A-Za-z0-9_.]+)")
 GLOBAL_PUBLISH_RE = re.compile(r"GlobalSignals\.Publish\s*\(")
 
@@ -331,11 +336,11 @@ def analyze_source_bytes(raw: bytes, path_rel: str, first_party: bool) -> dict[s
         methods = lane["methods"]
         if isinstance(methods, list) and method not in methods:
             methods.append(method)
-        if method in ("Push", "Publish"):
+        if method in SIGNAL_BUS_PRODUCER_METHODS:
             producers = lane["producers"]
             if isinstance(producers, list):
                 producers.append(entry_text)
-        else:
+        elif method in SIGNAL_BUS_CONSUMER_METHODS:
             consumers = lane["consumers"]
             if isinstance(consumers, list):
                 consumers.append(entry_text)
@@ -637,7 +642,10 @@ def append_signal_map(out: list[str], source: dict[str, object]) -> None:
         "Many use local variables and are not type-resolved by this static pass; they remain a migration/integrator risk."
     )
     out.append("")
-    out.append("| Signal | Declared at | Producers (`SignalBus<T>.Push/Publish`) | Consumers (`GetFrameSnapshot`) |")
+    out.append(
+        "| Signal | Declared at | Producers (`Push/Publish/TryPush*/TryEnqueueBounded`) | "
+        "Consumers (`GetFrameSnapshot*`/`TryConsumeFrame`/`TryGetLatest`) |"
+    )
     out.append("|---|---|---|---|")
     for name in all_signal_names:
         decl = signals.get(name)
@@ -895,8 +903,9 @@ def build_markdown(
         "build, and Play Mode remain PENDING VERIFICATION."
     )
     out.append(
-        "- The signal producer map only resolves explicit `SignalBus<T>` calls. Legacy "
-        "`GlobalSignals.Publish(...)` variable publishes require Roslyn-level dataflow to type-resolve fully."
+        "- The signal producer map only resolves explicit `SignalBus<T>` flow calls. Legacy "
+        "`GlobalSignals.Publish(...)` variable publishes and wrapper methods require Roslyn-level dataflow "
+        "to type-resolve fully."
     )
     out.append("- Task and agent-log folders are intentionally excluded from architecture authority sections.")
     out.append("")
@@ -989,7 +998,7 @@ def build_json_payload(
         },
         "residual_risk": [
             "Unity import, runtime wiring, actual VRAM residency, profiler frame time, GC, build, and Play Mode remain PENDING VERIFICATION.",
-            "Legacy GlobalSignals.Publish(...) variable publishes require Roslyn-level dataflow to type-resolve fully.",
+            "Legacy GlobalSignals.Publish(...) variable publishes and wrapper methods require Roslyn-level dataflow to type-resolve fully.",
             "Task and agent-log folders are intentionally excluded from architecture authority sections.",
         ],
     }

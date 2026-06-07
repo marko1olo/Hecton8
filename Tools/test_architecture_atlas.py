@@ -99,10 +99,15 @@ class BuildArchitectureAtlasTests(unittest.TestCase):
             "    public struct CacheProbeSignal : ISignal {}\n"
             "    public static class Probe\n"
             "    {\n"
+            "        private static int dropCount;\n"
             "        public static void Run()\n"
             "        {\n"
             "            SignalBus<CacheProbeSignal>.Publish(default);\n"
+            "            SignalBus<CacheProbeSignal>.TryPushTracked(default, ref dropCount);\n"
             "            SignalBus<CacheProbeSignal>.GetFrameSnapshot();\n"
+            "            SignalBus<CacheProbeSignal>.GetFrameSnapshotArray();\n"
+            "            SignalBus<CacheProbeSignal>.TryConsumeFrame(out _);\n"
+            "            SignalBus<CacheProbeSignal>.TryGetLatest(out _, out _);\n"
             "        }\n"
             "    }\n"
             "}\n"
@@ -118,7 +123,13 @@ class BuildArchitectureAtlasTests(unittest.TestCase):
         self.assertEqual(analysis["signals"][0]["name"], "CacheProbeSignal")
         self.assertIn("CacheProbeSignal", analysis["signal_uses"])
         self.assertIn("Publish", analysis["signal_uses"]["CacheProbeSignal"]["methods"])
+        self.assertIn("TryPushTracked", analysis["signal_uses"]["CacheProbeSignal"]["methods"])
         self.assertIn("GetFrameSnapshot", analysis["signal_uses"]["CacheProbeSignal"]["methods"])
+        self.assertIn("GetFrameSnapshotArray", analysis["signal_uses"]["CacheProbeSignal"]["methods"])
+        self.assertIn("TryConsumeFrame", analysis["signal_uses"]["CacheProbeSignal"]["methods"])
+        self.assertIn("TryGetLatest", analysis["signal_uses"]["CacheProbeSignal"]["methods"])
+        self.assertEqual(len(analysis["signal_uses"]["CacheProbeSignal"]["producers"]), 2)
+        self.assertEqual(len(analysis["signal_uses"]["CacheProbeSignal"]["consumers"]), 4)
 
     def test_sanitized_text_cells_do_not_emit_path_references(self) -> None:
         rendered = atlas_build.sanitize_text_cell(
