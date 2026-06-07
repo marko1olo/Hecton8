@@ -106,6 +106,19 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void MerkleWalRollbackRestoresBackupThroughTempReplace()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs");
+            string source = File.ReadAllText(path);
+
+            StringAssert.Contains("string restoreTempPath = walPath + \".restore.tmp\";", source);
+            StringAssert.Contains("File.Copy(backupPath, restoreTempPath, true);", source);
+            StringAssert.Contains("File.Replace(restoreTempPath, walPath, null, true);", source);
+            StringAssert.Contains("DeleteRestoreTempIfExists(restoreTempPath);", source);
+            StringAssert.DoesNotContain("File.Copy(backupPath, walPath, true);", source);
+        }
+
+        [Test]
         public void HeadlessWalFuzzer_CorruptedPrimaryPromotesBackupAndValidatesHash()
         {
             WalFuzzerProfileDTO profile = WalIntegrityFuzzerCore.BuildDefaultProfile();

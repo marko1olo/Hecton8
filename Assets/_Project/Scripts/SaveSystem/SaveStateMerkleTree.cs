@@ -1297,13 +1297,50 @@ namespace Hecton8.SaveSystem
         {
             if (!string.IsNullOrEmpty(backupPath) && File.Exists(backupPath))
             {
-                File.Copy(backupPath, walPath, true);
-                error = reason + " Restored .bak.";
+                string restoreTempPath = walPath + ".restore.tmp";
+                try
+                {
+                    string directory = Path.GetDirectoryName(walPath);
+                    if (!string.IsNullOrEmpty(directory))
+                        Directory.CreateDirectory(directory);
+
+                    DeleteRestoreTempIfExists(restoreTempPath);
+                    File.Copy(backupPath, restoreTempPath, true);
+                    if (File.Exists(walPath))
+                        File.Replace(restoreTempPath, walPath, null, true);
+                    else
+                        File.Move(restoreTempPath, walPath);
+
+                    error = reason + " Restored .bak.";
+                }
+                catch (Exception exception) when (
+                    exception is IOException ||
+                    exception is UnauthorizedAccessException ||
+                    exception is ArgumentException ||
+                    exception is NotSupportedException)
+                {
+                    DeleteRestoreTempIfExists(restoreTempPath);
+                    error = reason + " .bak restore failed: " + exception.GetType().Name + ": " + exception.Message;
+                }
+
                 return false;
             }
 
             error = reason + " No .bak available.";
             return false;
+        }
+
+        private static void DeleteRestoreTempIfExists(string path)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+            catch (ArgumentException) { }
+            catch (NotSupportedException) { }
         }
 
         private static bool TryReadExact(FileStream stream, Span<byte> destination)
