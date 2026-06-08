@@ -4,7 +4,7 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localized_pages: 488
+localized_pages: 489
 draft_machine_or_llm_pages: 0
 draft_marker_pages: 0
 ---
@@ -490,6 +490,7 @@ draft_marker_pages: 0
 - [Cable Forest Conductive Biota](P624_CABLE_FOREST_CONDUCTIVE_BIOTA.md) `P624_CABLE_FOREST_CONDUCTIVE_BIOTA`
 - [Ran Long Claim Transit](P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE.md) `P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE`
 - [Shallow Annex P-63 Pump Room](P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE.md) `P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE`
+- [Black Keel Tonne-Window Custody](P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY.md) `P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY`
 - [Black Keel Window Price](P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE.md) `P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE`
 - [Blue Debt Casket Handling](P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE.md) `P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE`
 - [Aegir Moon Ladder Sky Window](P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE.md) `P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE`

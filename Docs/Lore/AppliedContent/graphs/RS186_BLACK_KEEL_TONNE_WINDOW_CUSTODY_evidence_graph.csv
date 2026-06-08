@@ -1,0 +1,2 @@
+packet_id,arc_id,depth_band,route_moment,prereq_packet_ids,next_packet_ids,evidence_type,truth_claim,player_decision,spoiler_tier,primary_surface
+P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY,black_keel_custody_law,0-5600m,first_tonne_window_or_salvage_lien,P621_AEGIR_RECOVERY_WINDOW_GEOMETRY;P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE,,Keelmark custody receipt,"A tonne-window is a custody slot where body, proof, debt and salvage compete under route geometry and liability law.",What can I carry home when the carrier will not carry everything?,0,terminal
