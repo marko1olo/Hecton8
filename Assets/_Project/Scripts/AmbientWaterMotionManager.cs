@@ -137,6 +137,7 @@ namespace Hecton8.Physics
         private void OnDisable()
         {
             _runtimeWaterMotionCallbacksActive = false;
+            ResetInterruptedVisualCadence();
             BiomeMatrixEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             TryUnregister();
@@ -146,6 +147,7 @@ namespace Hecton8.Physics
         private void OnDestroy()
         {
             _runtimeWaterMotionCallbacksActive = false;
+            ResetInterruptedVisualCadence();
             BiomeMatrixEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             TryUnregister();
@@ -243,7 +245,10 @@ namespace Hecton8.Physics
         public void Tick(float deltaTime)
         {
             if (HectonFloatingOrigin.IsShiftInProgress)
+            {
+                ResetInterruptedVisualCadence();
                 return;
+            }
 
             _pendingVisualDeltaTime = SanitizeDeltaTime(_pendingVisualDeltaTime) + SanitizeDeltaTime(deltaTime);
             TryRegisterLateFrame();
@@ -252,7 +257,10 @@ namespace Hecton8.Physics
         public void LateFrameTick()
         {
             if (HectonFloatingOrigin.IsShiftInProgress)
+            {
+                ResetInterruptedVisualCadence();
                 return;
+            }
 
             float deltaTime = _pendingVisualDeltaTime > 0f ? _pendingVisualDeltaTime : SystemDispatcher.CurrentFrameDeltaTime;
             deltaTime = SanitizeDeltaTime(deltaTime);
@@ -304,6 +312,11 @@ namespace Hecton8.Physics
             }
 
             _debugActiveObjects = _objects.Count;
+        }
+
+        private void ResetInterruptedVisualCadence()
+        {
+            _pendingVisualDeltaTime = 0f;
         }
 
         private void RemoveMotionAtSwapBack(int index)

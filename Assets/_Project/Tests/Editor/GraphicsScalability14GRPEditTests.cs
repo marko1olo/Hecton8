@@ -785,6 +785,8 @@ namespace Hecton8.Tests.Editor
                 Application.dataPath,
                 "_Project/Scripts/AmbientWaterMotionManager.cs");
             string source = File.ReadAllText(motionPath);
+            string disableBody = ExtractMethodBlock(source, "private void OnDisable()");
+            string destroyBody = ExtractMethodBlock(source, "private void OnDestroy()");
             string tickBody = ExtractMethodBlock(source, "public void Tick(float deltaTime)");
             string lateFrameBody = ExtractMethodBlock(source, "public void LateFrameTick()");
             string lodBody = ExtractMethodBlock(source, "private static byte ResolveDistanceLodBand(");
@@ -795,10 +797,15 @@ namespace Hecton8.Tests.Editor
             string biomeBlendBody = ExtractMethodBlock(source, "private void UpdateBiomeCurrentBlend(float deltaTime)");
             string biomeTargetBody = ExtractMethodBlock(source, "private static Vector3 ResolveBiomeCurrentTarget(HectonBiomeMatrixProfile profile)");
             string refreshBody = ExtractMethodBlock(source, "private void RefreshDistanceThresholds()");
+            string resetCadenceBody = ExtractMethodBlock(source, "private void ResetInterruptedVisualCadence()");
             string validateBody = ExtractMethodBlock(source, "private void OnValidate()");
 
+            Assert.That(disableBody, Does.Contain("ResetInterruptedVisualCadence();"));
+            Assert.That(destroyBody, Does.Contain("ResetInterruptedVisualCadence();"));
             Assert.That(tickBody, Does.Contain("SanitizeDeltaTime(_pendingVisualDeltaTime) + SanitizeDeltaTime(deltaTime)"));
+            Assert.That(tickBody, Does.Contain("ResetInterruptedVisualCadence();"));
             Assert.That(lateFrameBody, Does.Contain("deltaTime = SanitizeDeltaTime(deltaTime);"));
+            Assert.That(lateFrameBody, Does.Contain("ResetInterruptedVisualCadence();"));
             Assert.That(lateFrameBody, Does.Contain("_time = AdvanceRuntimeTime(_time, deltaTime);"));
             Assert.That(lateFrameBody, Does.Contain("motion.HasRestAup && motion.RestAup.IsFinite()"));
             Assert.That(lateFrameBody, Does.Contain("TryResolveRuntimeWorldPosition(motion, in motionAup, hasMotionAup, out Vector3 worldPos)"));
@@ -823,6 +830,7 @@ namespace Hecton8.Tests.Editor
             Assert.That(biomeTargetBody, Does.Contain("math.isfinite(profile.ambientFlowOverrideWeight) ? profile.ambientFlowOverrideWeight : 0f"));
             Assert.That(biomeTargetBody, Does.Contain("ClampFiniteVector(profile.ambientFlowOverride * weight, MaxAmbientMotionCurrentMetersPerSecond)"));
             Assert.That(refreshBody, Does.Contain("nearDistance = ResolveDistanceMeters(nearDistance, 1f);"));
+            Assert.That(resetCadenceBody, Does.Contain("_pendingVisualDeltaTime = 0f;"));
             Assert.That(validateBody, Does.Contain("globalAmplitude = ResolveMotionAmplitude(globalAmplitude);"));
             Assert.That(validateBody, Does.Contain("globalFrequency = ResolveMotionFrequency(globalFrequency);"));
             Assert.That(source, Does.Contain("private static float SanitizeDeltaTime(float seconds)"));
