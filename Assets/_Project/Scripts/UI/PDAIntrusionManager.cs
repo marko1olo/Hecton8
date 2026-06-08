@@ -54,6 +54,8 @@ namespace Hecton8.UI
         private const uint PDAIntrusionListenerContextHash = 0x50495652u; // PIVR
         private const uint PDAIntrusionListenerExceptionWarningHash = 0x50495645u; // PIVE
         private const uint PDAIntrusionListenerExceptionContextHash = 0x50495658u; // PIVX
+        private const uint PDAIntrusionEventOverflowWarningHash = 0x50495651u; // PIVQ
+        private const uint PDAIntrusionEventContextHash = 0x50495650u; // PIVP
         private static readonly uint _RebootCompletedEventHash = unchecked((uint)LocHash.Compute("PDAIntrusion.RebootCompleted"));
 
         private struct PDAIntrusionListenerRegistry
@@ -177,13 +179,17 @@ namespace Hecton8.UI
         private static FixedUiEventQueue<PDAIntrusionEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _droppedEventCount;
         private static int _droppedListenerRegistrationCount;
         private static int _listenerExceptionCount;
+        private static int _lastEventOverflowTelemetryFrame = -1;
         private static int _lastListenerOverflowTelemetryFrame = -1;
         private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+        public static int DroppedEventCount => _droppedEventCount;
 
         public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
 
@@ -199,8 +205,10 @@ namespace Hecton8.UI
             _deferredUnregisterListeners.Clear();
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _droppedEventCount = 0;
             _droppedListenerRegistrationCount = 0;
             _listenerExceptionCount = 0;
+            _lastEventOverflowTelemetryFrame = -1;
             _lastListenerOverflowTelemetryFrame = -1;
             _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
@@ -251,7 +259,10 @@ namespace Hecton8.UI
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                ReportEventQueueOverflow();
                 return;
+            }
 
             PDAIntrusionEventPayload payload = default;
             payload.SourceID = sourceId;
@@ -262,14 +273,20 @@ namespace Hecton8.UI
             if (_isDispatching)
             {
                 if (!_nextFrameEvents.Enqueue(in payload))
+                {
+                    ReportEventQueueOverflow();
                     return;
+                }
 
                 _nextFrameEventCount++;
                 return;
             }
 
             if (!_pendingEvents.Enqueue(in payload))
+            {
+                ReportEventQueueOverflow();
                 return;
+            }
 
             _pendingEventCount++;
         }
@@ -516,6 +533,20 @@ namespace Hecton8.UI
 
             if (!_listeners.TryRegister(listener))
                 ReportListenerRegistrationOverflow();
+        }
+
+        private static void ReportEventQueueOverflow()
+        {
+            _droppedEventCount++;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (_lastEventOverflowTelemetryFrame == frame)
+                return;
+
+            _lastEventOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                PDAIntrusionEventOverflowWarningHash,
+                PDAIntrusionEventContextHash,
+                Mathf.Max(1, _droppedEventCount));
         }
 
         private static void ReportListenerRegistrationOverflow()

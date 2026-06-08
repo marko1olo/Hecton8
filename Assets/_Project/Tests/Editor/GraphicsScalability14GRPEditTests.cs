@@ -688,6 +688,38 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void PdaIntrusionEvents_ReportQueueOverflowDrops()
+        {
+            string intrusionPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/PDAIntrusionManager.cs");
+            string source = File.ReadAllText(intrusionPath);
+            string resetBody = ExtractMethodBlock(source, "private static void ResetStaticState()");
+            string raiseBody = ExtractMethodBlock(source, "internal static void RaiseRebootCompleted(uint sourceId)");
+            string reportBody = ExtractMethodBlock(source, "private static void ReportEventQueueOverflow()");
+
+            Assert.That(source, Does.Contain("private const uint PDAIntrusionEventOverflowWarningHash"));
+            Assert.That(source, Does.Contain("private const uint PDAIntrusionEventContextHash"));
+            Assert.That(source, Does.Contain("private static int _droppedEventCount;"));
+            Assert.That(source, Does.Contain("private static int _lastEventOverflowTelemetryFrame = -1;"));
+            Assert.That(source, Does.Contain("public static int DroppedEventCount => _droppedEventCount;"));
+            Assert.That(resetBody, Does.Contain("_droppedEventCount = 0;"));
+            Assert.That(resetBody, Does.Contain("_lastEventOverflowTelemetryFrame = -1;"));
+            Assert.That(raiseBody, Does.Contain("if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)"));
+            Assert.That(raiseBody, Does.Contain("ReportEventQueueOverflow();"));
+            Assert.That(raiseBody, Does.Contain("if (!_nextFrameEvents.Enqueue(in payload))"));
+            Assert.That(raiseBody, Does.Contain("if (!_pendingEvents.Enqueue(in payload))"));
+            Assert.AreEqual(3, CountToken(raiseBody, "ReportEventQueueOverflow();"));
+            Assert.That(reportBody, Does.Contain("_droppedEventCount++;"));
+            Assert.That(reportBody, Does.Contain("if (_lastEventOverflowTelemetryFrame == frame)"));
+            Assert.That(reportBody, Does.Contain("_lastEventOverflowTelemetryFrame = frame;"));
+            Assert.That(reportBody, Does.Contain("GlobalTelemetryBus.PublishPerformanceWarning("));
+            Assert.That(reportBody, Does.Contain("PDAIntrusionEventOverflowWarningHash"));
+            Assert.That(reportBody, Does.Contain("PDAIntrusionEventContextHash"));
+            Assert.That(reportBody, Does.Contain("Mathf.Max(1, _droppedEventCount)"));
+        }
+
+        [Test]
         public void SuitHud_TextCreationUsesCachedFontSharedMaterial()
         {
             string path = Path.Combine(
