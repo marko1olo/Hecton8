@@ -926,7 +926,9 @@ namespace Hecton8.Tests.Editor
             Assert.That(rebindBody, Does.Contain("UnregisterFromManager();"));
             Assert.That(rebindBody, Does.Contain("if (manager.Register(this))"));
             Assert.That(rebindBody, Does.Contain("_registeredManager = manager;"));
+            Assert.That(rebindBody, Does.Contain("TryUnregisterHotSwapListener();"));
             AssertOrder(rebindBody, "if (manager.Register(this))", "_registeredManager = manager;");
+            AssertOrder(rebindBody, "_registeredManager = manager;", "TryUnregisterHotSwapListener();");
             Assert.That(unregisterBody, Does.Contain("manager.Unregister(this);"));
             Assert.That(unregisterBody, Does.Contain("_registeredManager = null;"));
             Assert.That(registerListenerBody, Does.Contain("GlobalRegistry.TryRegisterHotSwapListener(this)"));

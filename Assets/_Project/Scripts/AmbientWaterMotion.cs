@@ -158,7 +158,12 @@ namespace Hecton8.Physics
                 return;
 
             if (manager.Register(this))
+            {
                 _registeredManager = manager;
+                return;
+            }
+
+            TryUnregisterHotSwapListener();
         }
 
         private void UnregisterFromManager()
