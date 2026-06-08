@@ -157,8 +157,8 @@ namespace Hecton8.Physics
             if (!isActiveAndEnabled || manager == null)
                 return;
 
-            manager.Register(this);
-            _registeredManager = manager;
+            if (manager.Register(this))
+                _registeredManager = manager;
         }
 
         private void UnregisterFromManager()

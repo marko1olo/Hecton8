@@ -840,7 +840,7 @@ namespace Hecton8.Tests.Editor
                 Application.dataPath,
                 "_Project/Scripts/AmbientWaterMotionManager.cs");
             string source = File.ReadAllText(motionPath);
-            string registerBody = ExtractMethodBlock(source, "public void Register(AmbientWaterMotion motion)");
+            string registerBody = ExtractMethodBlock(source, "public bool Register(AmbientWaterMotion motion)");
             string reportBody = ExtractMethodBlock(source, "private void ReportRegistrationCapacityExceeded()");
 
             Assert.That(source, Does.Contain("private const int MotionCapacity = 128;"));
@@ -850,10 +850,14 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("private int _droppedRegistrationCount;"));
             Assert.That(source, Does.Contain("private int _lastRegistrationOverflowWarningFrame = -1;"));
             Assert.That(source, Does.Contain("public int DroppedRegistrationCount => _droppedRegistrationCount;"));
+            Assert.That(registerBody, Does.Contain("if (motion == null)"));
+            Assert.That(registerBody, Does.Contain("return false;"));
             Assert.That(registerBody, Does.Contain("if (_objectsSet.Contains(motion))"));
+            Assert.That(registerBody, Does.Contain("return true;"));
             Assert.That(registerBody, Does.Contain("if (_objects.Count >= MotionCapacity)"));
             Assert.That(registerBody, Does.Contain("ReportRegistrationCapacityExceeded();"));
             Assert.That(registerBody, Does.Contain("if (_objectsSet.Add(motion))"));
+            Assert.That(registerBody, Does.Contain("_objects.Add(motion);"));
             AssertOrder(registerBody, "_objectsSet.Contains(motion)", "_objects.Count >= MotionCapacity");
             AssertOrder(registerBody, "_objects.Count >= MotionCapacity", "_objectsSet.Add(motion)");
             Assert.That(reportBody, Does.Contain("_droppedRegistrationCount++;"));
@@ -907,8 +911,9 @@ namespace Hecton8.Tests.Editor
             Assert.That(hotSwapBody, Does.Contain("ReferenceEquals(_registeredManager, previousService)"));
             Assert.That(hotSwapBody, Does.Contain("RebindManager(currentService as AmbientWaterMotionManager);"));
             Assert.That(rebindBody, Does.Contain("UnregisterFromManager();"));
-            Assert.That(rebindBody, Does.Contain("manager.Register(this);"));
+            Assert.That(rebindBody, Does.Contain("if (manager.Register(this))"));
             Assert.That(rebindBody, Does.Contain("_registeredManager = manager;"));
+            AssertOrder(rebindBody, "if (manager.Register(this))", "_registeredManager = manager;");
             Assert.That(unregisterBody, Does.Contain("manager.Unregister(this);"));
             Assert.That(unregisterBody, Does.Contain("_registeredManager = null;"));
             Assert.That(registerListenerBody, Does.Contain("GlobalRegistry.TryRegisterHotSwapListener(this)"));

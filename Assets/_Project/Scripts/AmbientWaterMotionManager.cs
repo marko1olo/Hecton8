@@ -179,27 +179,33 @@ namespace Hecton8.Physics
 
         //  REGISTRATION - O(1) dedupe through HashSet
 
-        public void Register(AmbientWaterMotion motion)
+        public bool Register(AmbientWaterMotion motion)
         {
-            if (motion == null) return;
+            if (motion == null)
+                return false;
 
             if (_objectsSet.Contains(motion))
             {
                 _debugActiveObjects = _objects.Count;
-                return;
+                return true;
             }
 
             if (_objects.Count >= MotionCapacity)
             {
                 ReportRegistrationCapacityExceeded();
                 _debugActiveObjects = _objects.Count;
-                return;
+                return false;
             }
 
             if (_objectsSet.Add(motion))
+            {
                 _objects.Add(motion);
+                _debugActiveObjects = _objects.Count;
+                return true;
+            }
 
             _debugActiveObjects = _objects.Count;
+            return false;
         }
 
         public void Unregister(AmbientWaterMotion motion)
