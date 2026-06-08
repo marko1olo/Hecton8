@@ -127,9 +127,12 @@ namespace Hecton8.Physics
                 return;
 
             CacheRegistryServicesCold();
+            TryRegisterService();
+            if (!_serviceRegistered)
+                return;
+
             TryRegisterHotSwapListener();
             TryRegister();
-            TryRegisterService();
             if (_runtimeWaterMotionCallbacksActive)
                 BiomeMatrixEvents.Register(this);
         }

@@ -785,6 +785,7 @@ namespace Hecton8.Tests.Editor
                 Application.dataPath,
                 "_Project/Scripts/AmbientWaterMotionManager.cs");
             string source = File.ReadAllText(motionPath);
+            string enableBody = ExtractMethodBlock(source, "private void OnEnable()");
             string disableBody = ExtractMethodBlock(source, "private void OnDisable()");
             string destroyBody = ExtractMethodBlock(source, "private void OnDestroy()");
             string tickBody = ExtractMethodBlock(source, "public void Tick(float deltaTime)");
@@ -800,6 +801,10 @@ namespace Hecton8.Tests.Editor
             string resetCadenceBody = ExtractMethodBlock(source, "private void ResetInterruptedVisualCadence()");
             string validateBody = ExtractMethodBlock(source, "private void OnValidate()");
 
+            Assert.That(enableBody, Does.Contain("TryRegisterService();"));
+            Assert.That(enableBody, Does.Contain("if (!_serviceRegistered)"));
+            AssertOrder(enableBody, "TryRegisterService();", "TryRegisterHotSwapListener();");
+            AssertOrder(enableBody, "TryRegisterService();", "TryRegister();");
             Assert.That(disableBody, Does.Contain("ResetInterruptedVisualCadence();"));
             Assert.That(destroyBody, Does.Contain("ResetInterruptedVisualCadence();"));
             Assert.That(tickBody, Does.Contain("SanitizeDeltaTime(_pendingVisualDeltaTime) + SanitizeDeltaTime(deltaTime)"));
