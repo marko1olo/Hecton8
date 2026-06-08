@@ -1713,9 +1713,15 @@ namespace Hecton8.UI
                 return false;
 
             AbsoluteUniversePosition markerAup = marker.PositionAup;
+            if (!markerAup.IsFinite())
+                return false;
+
             double cellSize = AbsoluteUniversePosition.CellSizeMeters;
             double x = (((double)markerAup.GridX - playerAup.GridX) * cellSize) + markerAup.LocalX - playerAup.LocalX;
             double z = (((double)markerAup.GridZ - playerAup.GridZ) * cellSize) + markerAup.LocalZ - playerAup.LocalZ;
+            if (double.IsNaN(x) || double.IsInfinity(x) || double.IsNaN(z) || double.IsInfinity(z))
+                return false;
+
             deltaX = (float)math.clamp(x, (double)float.MinValue, (double)float.MaxValue);
             deltaZ = (float)math.clamp(z, (double)float.MinValue, (double)float.MaxValue);
             return true;
@@ -1982,7 +1988,7 @@ namespace Hecton8.UI
             if (playerMovement != null)
             {
                 playerAup = playerMovement.CurrentAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
             playerAup = default;
@@ -1993,6 +1999,9 @@ namespace Hecton8.UI
         {
             runtimePosition = default;
             AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!targetAup.IsFinite() || !originAup.IsFinite())
+                return false;
+
             double3 localDelta = AupPrecisionMath.LocalDeltaDouble(
                 targetAup.ToAbsoluteDouble3(),
                 originAup.ToAbsoluteDouble3());
@@ -2033,13 +2042,18 @@ namespace Hecton8.UI
         {
             BiomeMatrixDirector biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
             if (biomeMatrixDirector != null)
-                return math.max(0f, biomeMatrixDirector.CurrentDepthMeters);
+            {
+                float currentDepthMeters = biomeMatrixDirector.CurrentDepthMeters;
+                return math.isfinite(currentDepthMeters) ? math.max(0f, currentDepthMeters) : 0f;
+            }
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return 0f;
 
             double absoluteY = playerAup.ToAbsoluteDouble3().y;
-            return (float)math.max(0d, -absoluteY);
+            return double.IsNaN(absoluteY) || double.IsInfinity(absoluteY)
+                ? 0f
+                : (float)math.max(0d, -absoluteY);
         }
 
         private void TryPublishGhostSignalRejected(int cycleIndex, float weakestIntensity)

@@ -657,6 +657,37 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void PdaRuntimeAupReadouts_RejectNonFinitePlayerAndMarkerAups()
+        {
+            string spectrumPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/PDASpectrumTab.cs");
+            string mapPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/PDAMapTab.cs");
+            string spectrumSource = File.ReadAllText(spectrumPath);
+            string mapSource = File.ReadAllText(mapPath);
+            string spectrumPlayerAup = ExtractMethodBlock(spectrumSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string spectrumDistance = ExtractMethodBlock(spectrumSource, "private static int ResolveRoundedApproximateAupDistanceMeters(");
+            string mapPlayerAup = ExtractMethodBlock(mapSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string mapRuntimePosition = ExtractMethodBlock(mapSource, "private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)");
+            string markerOverlayDelta = ExtractMethodBlock(mapSource, "private bool TryResolveMarkerOverlayDelta(");
+            string playerDepth = ExtractMethodBlock(mapSource, "private float ResolvePlayerDepthMeters()");
+
+            Assert.That(spectrumPlayerAup, Does.Contain("return playerAup.IsFinite();"));
+            Assert.That(spectrumPlayerAup, Does.Not.Contain("return true;"));
+            Assert.That(spectrumDistance, Does.Contain("if (!fromAup.IsFinite())"));
+            Assert.That(mapPlayerAup, Does.Contain("return playerAup.IsFinite();"));
+            Assert.That(mapPlayerAup, Does.Not.Contain("return true;"));
+            Assert.That(mapRuntimePosition, Does.Contain("if (!targetAup.IsFinite() || !originAup.IsFinite())"));
+            AssertOrder(mapRuntimePosition, "if (!targetAup.IsFinite() || !originAup.IsFinite())", "targetAup.ToAbsoluteDouble3()");
+            Assert.That(markerOverlayDelta, Does.Contain("if (!markerAup.IsFinite())"));
+            Assert.That(markerOverlayDelta, Does.Contain("double.IsNaN(x) || double.IsInfinity(x) || double.IsNaN(z) || double.IsInfinity(z)"));
+            Assert.That(playerDepth, Does.Contain("math.isfinite(currentDepthMeters) ? math.max(0f, currentDepthMeters) : 0f"));
+            Assert.That(playerDepth, Does.Contain("double.IsNaN(absoluteY) || double.IsInfinity(absoluteY)"));
+        }
+
+        [Test]
         public void SuitHud_TextCreationUsesCachedFontSharedMaterial()
         {
             string path = Path.Combine(

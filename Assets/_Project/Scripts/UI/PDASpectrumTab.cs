@@ -699,7 +699,7 @@ namespace Hecton8.UI
             if (_playerMovement != null)
             {
                 playerAup = _playerMovement.CurrentAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
             playerAup = default;
@@ -708,6 +708,9 @@ namespace Hecton8.UI
 
         private static int ResolveRoundedApproximateAupDistanceMeters(in AbsoluteUniversePosition fromAup, Vector3 toRuntimePosition)
         {
+            if (!fromAup.IsFinite())
+                return int.MaxValue;
+
             if (!TryResolveRuntimeAup(toRuntimePosition, out AbsoluteUniversePosition toAup))
                 return int.MaxValue;
 
