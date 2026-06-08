@@ -847,10 +847,18 @@ namespace Hecton8.Tests.Editor
             string awakeBody = ExtractMethodBlock(motionSource, "private void Awake()");
             string captureBody = ExtractMethodBlock(motionSource, "public void CaptureRestPose()");
             string applyBody = ExtractMethodBlock(motionSource, "public void ApplyProfile()");
+            string hotSwapBody = ExtractMethodBlock(motionSource, "public void OnGlobalRegistryServiceReplaced(");
+            string rebindBody = ExtractMethodBlock(motionSource, "private void RebindManager(AmbientWaterMotionManager manager)");
+            string unregisterBody = ExtractMethodBlock(motionSource, "private void UnregisterFromManager()");
+            string registerListenerBody = ExtractMethodBlock(motionSource, "private void TryRegisterHotSwapListener()");
+            string unregisterListenerBody = ExtractMethodBlock(motionSource, "private void TryUnregisterHotSwapListener()");
             string sanitizeBody = ExtractMethodBlock(motionSource, "private void SanitizeTuning()");
             string validateBody = ExtractMethodBlock(motionSource, "private void OnValidate()");
             string profileValidateBody = ExtractMethodBlock(profileSource, "private void OnValidate()");
 
+            Assert.That(motionSource, Does.Contain("public sealed class AmbientWaterMotion : MonoBehaviour, IGlobalRegistryHotSwapListener"));
+            Assert.That(motionSource, Does.Contain("private AmbientWaterMotionManager _registeredManager;"));
+            Assert.That(motionSource, Does.Contain("private bool _hotSwapRegistered;"));
             Assert.That(awakeBody, Does.Contain("SanitizeTuning();"));
             Assert.That(captureBody, Does.Contain("_restLocalPosition = IsFinite(localPosition) ? localPosition : Vector3.zero;"));
             Assert.That(captureBody, Does.Contain("_restLocalRotation = IsFinite(localRotation) ? localRotation : Quaternion.identity;"));
@@ -862,6 +870,16 @@ namespace Hecton8.Tests.Editor
             Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolveFrequency(profile.baseFrequency)"));
             Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolveCurrentCoupling(profile.currentCoupling)"));
             Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolveLodBias(profile.lodBias)"));
+            Assert.That(hotSwapBody, Does.Contain("serviceSlot != GlobalRegistryServiceSlot.AmbientWaterMotionRuntime"));
+            Assert.That(hotSwapBody, Does.Contain("ReferenceEquals(_registeredManager, previousService)"));
+            Assert.That(hotSwapBody, Does.Contain("RebindManager(currentService as AmbientWaterMotionManager);"));
+            Assert.That(rebindBody, Does.Contain("UnregisterFromManager();"));
+            Assert.That(rebindBody, Does.Contain("manager.Register(this);"));
+            Assert.That(rebindBody, Does.Contain("_registeredManager = manager;"));
+            Assert.That(unregisterBody, Does.Contain("manager.Unregister(this);"));
+            Assert.That(unregisterBody, Does.Contain("_registeredManager = null;"));
+            Assert.That(registerListenerBody, Does.Contain("GlobalRegistry.TryRegisterHotSwapListener(this)"));
+            Assert.That(unregisterListenerBody, Does.Contain("GlobalRegistry.TryUnregisterHotSwapListener(this);"));
             Assert.That(sanitizeBody, Does.Contain("verticalAmplitude = AmbientWaterMotionProfile.ResolveAmplitude(verticalAmplitude);"));
             Assert.That(validateBody, Does.Contain("SanitizeTuning();"));
             Assert.That(profileValidateBody, Does.Contain("verticalAmplitude = ResolveAmplitude(verticalAmplitude);"));

@@ -12,7 +12,7 @@ namespace Hecton8.Physics
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Ambient Water Motion")]
-    public sealed class AmbientWaterMotion : MonoBehaviour
+    public sealed class AmbientWaterMotion : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
         private const uint PhaseHashMultiplier = 747796405u;
         private const uint PhaseHashIncrement = 2891336453u;
@@ -41,6 +41,8 @@ namespace Hecton8.Physics
         private bool _hasRestAup;
         private float _phase;
         private byte _managerDistanceLodBand;
+        private AmbientWaterMotionManager _registeredManager;
+        private bool _hotSwapRegistered;
 
         public Transform CachedTransform => _cachedTransform;
         public Vector3 RestLocalPosition => _restLocalPosition;
@@ -76,16 +78,34 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            AmbientWaterMotionManager manager = GlobalRegistry.AmbientWaterMotion;
-            if (manager != null)
-                manager.Register(this);
+            TryRegisterHotSwapListener();
+            RebindManager(GlobalRegistry.AmbientWaterMotion);
         }
 
         private void OnDisable()
         {
-            AmbientWaterMotionManager manager = GlobalRegistry.AmbientWaterMotion;
-            if (manager != null)
-                manager.Unregister(this);
+            UnregisterFromManager();
+            TryUnregisterHotSwapListener();
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterFromManager();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.AmbientWaterMotionRuntime)
+                return;
+
+            if (ReferenceEquals(_registeredManager, previousService))
+                UnregisterFromManager();
+
+            RebindManager(currentService as AmbientWaterMotionManager);
         }
 
         public void CaptureRestPose()
@@ -126,6 +146,45 @@ namespace Hecton8.Physics
         {
             if (autoApplyProfile && profile != null)
                 ApplyProfile();
+        }
+
+        private void RebindManager(AmbientWaterMotionManager manager)
+        {
+            if (ReferenceEquals(_registeredManager, manager))
+                return;
+
+            UnregisterFromManager();
+            if (!isActiveAndEnabled || manager == null)
+                return;
+
+            manager.Register(this);
+            _registeredManager = manager;
+        }
+
+        private void UnregisterFromManager()
+        {
+            AmbientWaterMotionManager manager = _registeredManager;
+            if (manager != null)
+                manager.Unregister(this);
+
+            _registeredManager = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void SanitizeTuning()
