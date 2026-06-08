@@ -398,6 +398,26 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void AtlasRuntimePlayerAupResolvers_FailClosedForNonFiniteCurrentAup()
+        {
+            string signalSource = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs"));
+            string directiveSource = File.ReadAllText(Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs"));
+            string signalPlayerAup = ExtractMethodBody(signalSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string directivePlayerAup = ExtractMethodBody(directiveSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+
+            StringAssert.Contains("playerAup = _playerMovement.CurrentAup;", signalPlayerAup);
+            StringAssert.Contains("return playerAup.IsFinite();", signalPlayerAup);
+            StringAssert.DoesNotContain("return true;", signalPlayerAup);
+            StringAssert.Contains("playerAup = _playerMovement.CurrentAup;", directivePlayerAup);
+            StringAssert.Contains("return playerAup.IsFinite();", directivePlayerAup);
+            StringAssert.DoesNotContain("return true;", directivePlayerAup);
+        }
+
+        [Test]
         public void ActuarialGhostUpload_RejectsInvalidDataSize()
         {
             Atlas6LiabilityTelemetry telemetry = new Atlas6LiabilityTelemetry();

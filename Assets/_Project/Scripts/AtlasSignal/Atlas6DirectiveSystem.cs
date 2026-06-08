@@ -1536,7 +1536,7 @@ namespace Hecton8.AtlasSignal
             }
 
             playerAup = _playerMovement.CurrentAup;
-            return true;
+            return playerAup.IsFinite();
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]

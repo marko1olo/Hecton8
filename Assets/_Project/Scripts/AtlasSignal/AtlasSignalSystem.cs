@@ -478,7 +478,7 @@ namespace Hecton8.AtlasSignal
             }
 
             playerAup = _playerMovement.CurrentAup;
-            return true;
+            return playerAup.IsFinite();
         }
 
         private AbsoluteUniversePosition ResolveAtlasCoreAup()
