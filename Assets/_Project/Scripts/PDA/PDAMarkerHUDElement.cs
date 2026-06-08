@@ -310,7 +310,7 @@ namespace Hecton8.PDA
             if (playerContext != null && playerContext.PlayerMovement != null)
             {
                 observerAup = playerContext.PlayerMovement.CurrentAup;
-                return true;
+                return observerAup.IsFinite();
             }
 
             observerAup = default;
@@ -561,6 +561,9 @@ namespace Hecton8.PDA
         {
             runtimePosition = default;
             AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!targetAup.IsFinite() || !originAup.IsFinite())
+                return false;
+
             double3 localDelta = AupPrecisionMath.LocalDeltaDouble(
                 targetAup.ToAbsoluteDouble3(),
                 originAup.ToAbsoluteDouble3());

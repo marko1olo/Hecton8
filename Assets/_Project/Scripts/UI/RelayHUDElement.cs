@@ -315,7 +315,7 @@ namespace Hecton8.UI
             if (TryCachePlayerMovement())
             {
                 playerAup = _playerMovement.CurrentAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
             playerAup = default;
@@ -326,6 +326,9 @@ namespace Hecton8.UI
         {
             runtimePosition = default;
             AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!targetAup.IsFinite() || !originAup.IsFinite())
+                return false;
+
             double3 localDelta = AupPrecisionMath.LocalDeltaDouble(
                 targetAup.ToAbsoluteDouble3(),
                 originAup.ToAbsoluteDouble3());

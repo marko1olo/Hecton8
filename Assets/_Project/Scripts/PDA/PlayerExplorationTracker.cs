@@ -2013,7 +2013,10 @@ namespace Hecton8.PDA
         private bool RefreshPlayerTransformCache(bool force)
         {
             if (!force && _playerMovement != null)
+            {
+                CacheCurrentPlayerAupSample();
                 return true;
+            }
 
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null)
@@ -2022,8 +2025,7 @@ namespace Hecton8.PDA
                 _playerMovement = playerContext.PlayerMovement;
                 if (_playerMovement != null)
                 {
-                    _lastSampledAup = _playerMovement.CurrentAup;
-                    _hasLastSampledAup = true;
+                    CacheCurrentPlayerAupSample();
                     return true;
                 }
             }
@@ -2033,8 +2035,7 @@ namespace Hecton8.PDA
 
             if (_playerMovement != null)
             {
-                _lastSampledAup = _playerMovement.CurrentAup;
-                _hasLastSampledAup = true;
+                CacheCurrentPlayerAupSample();
                 return true;
             }
 
@@ -2044,11 +2045,37 @@ namespace Hecton8.PDA
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
-            if (_playerMovement == null)
+            if (!CacheCurrentPlayerAupSample())
                 return false;
 
-            playerAup = _playerMovement.CurrentAup;
+            playerAup = _lastSampledAup;
             return true;
+        }
+
+        private bool CacheCurrentPlayerAupSample()
+        {
+            if (_playerMovement == null)
+            {
+                ClearLastSampledAup();
+                return false;
+            }
+
+            AbsoluteUniversePosition playerAup = _playerMovement.CurrentAup;
+            if (!playerAup.IsFinite())
+            {
+                ClearLastSampledAup();
+                return false;
+            }
+
+            _lastSampledAup = playerAup;
+            _hasLastSampledAup = true;
+            return true;
+        }
+
+        private void ClearLastSampledAup()
+        {
+            _lastSampledAup = default;
+            _hasLastSampledAup = false;
         }
 
         private static bool TryResolveAupFromRuntimePosition(Vector3 runtimePosition, out AbsoluteUniversePosition playerAup)
@@ -3436,15 +3463,19 @@ namespace Hecton8.PDA
         {
             _cachedPlayerContext = playerContext;
             if (playerContext == null)
+            {
+                playerTransform = null;
+                _playerMovement = null;
+                ClearLastSampledAup();
                 return;
+            }
 
             playerTransform = playerContext.PlayerTransform;
             _playerMovement = playerContext.PlayerMovement;
             if (_playerMovement != null)
-            {
-                _lastSampledAup = _playerMovement.CurrentAup;
-                _hasLastSampledAup = true;
-            }
+                CacheCurrentPlayerAupSample();
+            else
+                ClearLastSampledAup();
         }
 
         private void RebindCartographyVault(IDataVault nextVault)

@@ -929,6 +929,80 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void HudMarkerRuntimeProjection_RejectsNonFiniteAupsBeforeDelta()
+        {
+            string registryPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/PDA/PDAMarkerRegistry.cs");
+            string markerHudPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/PDA/PDAMarkerHUDElement.cs");
+            string beaconHudPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/BeaconHUDElement.cs");
+            string relayHudPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/RelayHUDElement.cs");
+            string registrySource = File.ReadAllText(registryPath);
+            string markerHudSource = File.ReadAllText(markerHudPath);
+            string beaconHudSource = File.ReadAllText(beaconHudPath);
+            string relayHudSource = File.ReadAllText(relayHudPath);
+            string registryRuntimePosition = ExtractMethodBlock(registrySource, "private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)");
+            string markerObserverAup = ExtractMethodBlock(markerHudSource, "private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)");
+            string markerRuntimePosition = ExtractMethodBlock(markerHudSource, "private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)");
+            string beaconObserverAup = ExtractMethodBlock(beaconHudSource, "private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)");
+            string beaconRuntimePosition = ExtractMethodBlock(beaconHudSource, "private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)");
+            string relayPlayerAup = ExtractMethodBlock(relayHudSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string relayRuntimePosition = ExtractMethodBlock(relayHudSource, "private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)");
+
+            Assert.That(registryRuntimePosition, Does.Contain("!IsFiniteAup(in targetAup)"));
+            Assert.That(registryRuntimePosition, Does.Contain("!TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)"));
+            AssertOrder(registryRuntimePosition, "!TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)", "targetAup.ToAbsoluteDouble3()");
+            Assert.That(markerObserverAup, Does.Contain("return observerAup.IsFinite();"));
+            Assert.That(markerObserverAup, Does.Not.Contain("return true;"));
+            Assert.That(markerRuntimePosition, Does.Contain("if (!targetAup.IsFinite() || !originAup.IsFinite())"));
+            AssertOrder(markerRuntimePosition, "if (!targetAup.IsFinite() || !originAup.IsFinite())", "targetAup.ToAbsoluteDouble3()");
+            Assert.That(beaconObserverAup, Does.Contain("return observerAup.IsFinite();"));
+            Assert.That(beaconObserverAup, Does.Not.Contain("return true;"));
+            Assert.That(beaconRuntimePosition, Does.Contain("if (!targetAup.IsFinite() || !originAup.IsFinite())"));
+            AssertOrder(beaconRuntimePosition, "if (!targetAup.IsFinite() || !originAup.IsFinite())", "targetAup.ToAbsoluteDouble3()");
+            Assert.That(relayPlayerAup, Does.Contain("return playerAup.IsFinite();"));
+            Assert.That(relayPlayerAup, Does.Not.Contain("return true;"));
+            Assert.That(relayRuntimePosition, Does.Contain("if (!targetAup.IsFinite() || !originAup.IsFinite())"));
+            AssertOrder(relayRuntimePosition, "if (!targetAup.IsFinite() || !originAup.IsFinite())", "targetAup.ToAbsoluteDouble3()");
+        }
+
+        [Test]
+        public void PlayerExplorationTracker_RejectsNonFiniteCurrentAupSamples()
+        {
+            string trackerPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/PDA/PlayerExplorationTracker.cs");
+            string source = File.ReadAllText(trackerPath);
+            string refreshCache = ExtractMethodBlock(source, "private bool RefreshPlayerTransformCache(bool force)");
+            string resolvePlayerAup = ExtractMethodBlock(source, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string cacheSample = ExtractMethodBlock(source, "private bool CacheCurrentPlayerAupSample()");
+            string clearSample = ExtractMethodBlock(source, "private void ClearLastSampledAup()");
+            string cacheContext = ExtractMethodBlock(source, "private void CachePlayerContext(IPlayerRuntimeContext playerContext)");
+
+            Assert.That(refreshCache, Does.Contain("if (!force && _playerMovement != null)"));
+            AssertOrder(refreshCache, "if (!force && _playerMovement != null)", "CacheCurrentPlayerAupSample();");
+            Assert.That(resolvePlayerAup, Does.Contain("if (!CacheCurrentPlayerAupSample())"));
+            Assert.That(resolvePlayerAup, Does.Contain("playerAup = _lastSampledAup;"));
+            Assert.That(resolvePlayerAup, Does.Not.Contain("_playerMovement.CurrentAup"));
+            Assert.That(cacheSample, Does.Contain("if (_playerMovement == null)"));
+            Assert.That(cacheSample, Does.Contain("AbsoluteUniversePosition playerAup = _playerMovement.CurrentAup;"));
+            Assert.That(cacheSample, Does.Contain("if (!playerAup.IsFinite())"));
+            Assert.That(cacheSample, Does.Contain("ClearLastSampledAup();"));
+            AssertOrder(cacheSample, "if (!playerAup.IsFinite())", "_lastSampledAup = playerAup;");
+            Assert.That(clearSample, Does.Contain("_lastSampledAup = default;"));
+            Assert.That(clearSample, Does.Contain("_hasLastSampledAup = false;"));
+            Assert.That(cacheContext, Does.Contain("playerTransform = null;"));
+            Assert.That(cacheContext, Does.Contain("_playerMovement = null;"));
+            Assert.That(cacheContext, Does.Contain("ClearLastSampledAup();"));
+        }
+
+        [Test]
         public void SuitHud_TextCreationUsesCachedFontSharedMaterial()
         {
             string path = Path.Combine(

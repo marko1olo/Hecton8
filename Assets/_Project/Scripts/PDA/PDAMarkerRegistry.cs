@@ -798,7 +798,12 @@ namespace Hecton8.PDA
         private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)
         {
             runtimePosition = default;
-            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in targetAup) ||
+                !TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup))
+            {
+                return false;
+            }
+
             double3 localDelta = AupPrecisionMath.LocalDeltaDouble(
                 targetAup.ToAbsoluteDouble3(),
                 originAup.ToAbsoluteDouble3());
