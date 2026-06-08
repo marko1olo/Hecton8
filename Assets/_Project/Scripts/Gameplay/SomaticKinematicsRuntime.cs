@@ -1208,8 +1208,7 @@ namespace Hecton8.Gameplay
             }
             if (!_registeredHotSwap)
             {
-                GlobalRegistry.RegisterHotSwapListener(this);
-                _registeredHotSwap = true;
+                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
             }
         }
 

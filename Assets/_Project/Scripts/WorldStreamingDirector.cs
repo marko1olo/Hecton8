@@ -534,6 +534,12 @@ namespace Hecton8.World
             if (CoreDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityStreamingMaxAgeFrames, out float3 velocity))
                 return math.lengthsq(velocity);
 
+            if (playerRigidbody != null)
+            {
+                Vector3 safeVelocity = HectonPlayerMotor.SafeVelocity(playerRigidbody.linearVelocity);
+                return safeVelocity.sqrMagnitude;
+            }
+
             return 0f;
         }
 

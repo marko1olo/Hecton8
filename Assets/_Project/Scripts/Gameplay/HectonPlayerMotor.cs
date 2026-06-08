@@ -1396,8 +1396,7 @@ namespace Hecton8.Gameplay
             if (_registeredHotSwap || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterHotSwapListener(this);
-            _registeredHotSwap = true;
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
             _playerRuntimeContext = GlobalRegistry.Player;
             _fluidDecals = GlobalRegistry.FluidDecalPresentation;
             _physicsService = GlobalRegistry.Physics;
