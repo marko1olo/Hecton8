@@ -3254,21 +3254,21 @@ namespace Hecton8.Visor
             if (_playerMovement != null)
             {
                 playerAup = _playerMovement.CurrentAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
             IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
             if (playerRuntimeContext != null && playerRuntimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
             {
                 playerAup = movementState.PredictedAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
             HectonPlayerMovement movement = ResolvePlayerMovement();
             if (movement != null)
             {
                 playerAup = movement.CurrentAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
             playerAup = default;

@@ -475,7 +475,7 @@ namespace Hecton8.Quest
             if (_playerMovement != null)
             {
                 playerAup = _playerMovement.CurrentAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
             playerAup = default;

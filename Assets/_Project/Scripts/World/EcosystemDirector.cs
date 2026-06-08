@@ -6945,7 +6945,7 @@ namespace Hecton8.World
                 if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
                     playerAup = movementState.PredictedAup;
-                    return true;
+                    return playerAup.IsFinite();
                 }
 
                 PlayerLookState lookState = runtimeContext.LookState;
@@ -6964,7 +6964,7 @@ namespace Hecton8.World
                 return false;
 
             playerAup = playerMovement.CurrentAup;
-            return true;
+            return playerAup.IsFinite();
         }
 
         private void SyncPendingHibernatedFaunaPopulationRecords()

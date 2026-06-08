@@ -4460,7 +4460,7 @@ namespace Hecton8.Physics
                 IsFinite(in movementState.PredictedAup))
             {
                 playerAup = movementState.PredictedAup;
-                return true;
+                return IsFinite(in playerAup);
             }
 
             playerAup = default;

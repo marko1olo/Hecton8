@@ -472,7 +472,7 @@ namespace Hecton8.Progression
             if (_playerMovement != null)
             {
                 playerAup = _playerMovement.CurrentAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
             playerAup = default;

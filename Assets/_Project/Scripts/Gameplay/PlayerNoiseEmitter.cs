@@ -294,7 +294,7 @@ namespace Hecton8.Gameplay
             if (_playerMovement != null)
             {
                 playerAup = _playerMovement.CurrentAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
             if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
@@ -303,7 +303,7 @@ namespace Hecton8.Gameplay
                 if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
                     playerAup = movementState.PredictedAup;
-                    return true;
+                    return playerAup.IsFinite();
                 }
             }
 

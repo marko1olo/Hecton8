@@ -2087,7 +2087,7 @@ namespace Hecton8.Audio
             }
 
             playerAup = movement.CurrentAup;
-            return true;
+            return playerAup.IsFinite();
         }
 
         private bool TryResolvePlayerAupRuntimePosition(out Vector3 runtimePosition, out AbsoluteUniversePosition playerAup)

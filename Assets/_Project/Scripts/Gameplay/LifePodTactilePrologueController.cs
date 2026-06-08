@@ -842,7 +842,7 @@
             if (_cachedObserverMovement != null)
             {
                 observerAup = _cachedObserverMovement.PredictedAup;
-                return true;
+                return observerAup.IsFinite();
             }
 
             observerAup = default;

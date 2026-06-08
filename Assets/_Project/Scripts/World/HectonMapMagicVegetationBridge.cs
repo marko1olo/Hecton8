@@ -3168,14 +3168,14 @@ namespace Hecton8.World
                     (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
                     playerAup = movementState.PredictedAup;
-                    return true;
+                    return playerAup.IsFinite();
                 }
 
                 HectonPlayerMovement movement = runtimeContext.PlayerMovement;
                 if (movement != null)
                 {
                     playerAup = movement.PredictedAup;
-                    return true;
+                    return playerAup.IsFinite();
                 }
             }
 

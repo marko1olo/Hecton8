@@ -5722,7 +5722,7 @@ namespace Hecton8.AI
                 (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
                 playerAup = runtimeContext.MovementState.PredictedAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
             playerAup = default;

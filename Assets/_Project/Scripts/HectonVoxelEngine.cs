@@ -8473,7 +8473,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (playerMovement != null)
         {
             playerAup = playerMovement.CurrentAup;
-            return true;
+            return AbsoluteUniversePosition.IsFinite(in playerAup);
         }
 
         playerAup = default;

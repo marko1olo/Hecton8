@@ -2250,14 +2250,14 @@ namespace Hecton8.World
                 if (playerMovement != null)
                 {
                     playerAup = playerMovement.CurrentAup;
-                    return true;
+                    return IsFiniteAup(in playerAup);
                 }
 
                 PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
                 if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
                     playerAup = movementState.PredictedAup;
-                    return true;
+                    return IsFiniteAup(in playerAup);
                 }
             }
 

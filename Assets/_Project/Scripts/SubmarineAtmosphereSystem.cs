@@ -5161,7 +5161,7 @@ namespace Hecton8.Atmosphere
             _playerTransform = playerContext.PlayerTransform;
             _playerCamera = playerContext.PlayerCamera;
             playerAup = playerContext.PlayerMovement.CurrentAup;
-            return true;
+            return AbsoluteUniversePosition.IsFinite(in playerAup);
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)

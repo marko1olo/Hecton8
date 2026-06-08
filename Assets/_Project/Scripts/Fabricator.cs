@@ -2660,7 +2660,7 @@ namespace Hecton8.Crafting
             if (_playerMovement != null)
             {
                 playerAup = _playerMovement.CurrentAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
@@ -2672,7 +2672,7 @@ namespace Hecton8.Crafting
                     _playerTransform = playerContext.PlayerTransform;
 
                 playerAup = cachedMovement.CurrentAup;
-                return true;
+                return playerAup.IsFinite();
             }
 
             if (playerContext != null &&
