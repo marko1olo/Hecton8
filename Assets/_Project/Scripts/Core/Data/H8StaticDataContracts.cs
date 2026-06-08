@@ -1845,6 +1845,7 @@ namespace Hecton8.Core.Data
     public struct H8StaticDataSanityReport
     {
         public bool IsClean;
+        public bool BlackBoxDumpWritten;
         public int RecordsScanned;
         public uint FailedHash;
         public ushort FailedRecordType;
@@ -1957,24 +1958,48 @@ namespace Hecton8.Core.Data
             if (string.IsNullOrEmpty(csvPath) || !System.IO.File.Exists(csvPath))
                 return Fail("CSV file missing.");
 
+            if (string.IsNullOrEmpty(outputPath))
+                return Fail("Output path missing.");
+
             H8CsvTable table = H8CsvReader.ParseFile(csvPath);
-            using (System.IO.FileStream stream = new System.IO.FileStream(
-                outputPath,
-                System.IO.FileMode.Create,
-                System.IO.FileAccess.Write,
-                System.IO.FileShare.Read))
-            using (System.IO.StreamWriter writer = new System.IO.StreamWriter(stream, System.Text.Encoding.UTF8))
+            string directory = System.IO.Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(directory))
+                System.IO.Directory.CreateDirectory(directory);
+
+            string tempPath = outputPath + ".tmp";
+            TryDeleteFileNoThrow(tempPath);
+            try
             {
-                writer.WriteLine("Id,Fnv1a32");
-                for (int i = 0; i < table.RowCount; i++)
+                using (System.IO.FileStream stream = new System.IO.FileStream(
+                    tempPath,
+                    System.IO.FileMode.CreateNew,
+                    System.IO.FileAccess.Write,
+                    System.IO.FileShare.Read,
+                    4096,
+                    System.IO.FileOptions.WriteThrough | System.IO.FileOptions.SequentialScan))
+                using (System.IO.StreamWriter writer = new System.IO.StreamWriter(stream, System.Text.Encoding.UTF8, 4096, leaveOpen: true))
                 {
-                    string id = table.Get(i, 0);
-                    uint hash = ComputeFnv1a32(id.AsSpan());
-                    writer.Write(id);
-                    writer.Write(',');
-                    WriteHex8(writer, hash);
-                    writer.WriteLine();
+                    writer.WriteLine("Id,Fnv1a32");
+                    for (int i = 0; i < table.RowCount; i++)
+                    {
+                        string id = table.Get(i, 0);
+                        uint hash = ComputeFnv1a32(id.AsSpan());
+                        writer.Write(id);
+                        writer.Write(',');
+                        WriteHex8(writer, hash);
+                        writer.WriteLine();
+                    }
+
+                    writer.Flush();
+                    stream.Flush(true);
                 }
+
+                PromoteTempFileAtomic(tempPath, outputPath);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
             }
 
             return new H8DataBakeResult
@@ -1993,6 +2018,26 @@ namespace Hecton8.Core.Data
                 Success = false,
                 Message = message
             };
+        }
+
+        private static void PromoteTempFileAtomic(string tempPath, string destinationPath)
+        {
+            if (System.IO.File.Exists(destinationPath))
+                System.IO.File.Replace(tempPath, destinationPath, null, true);
+            else
+                System.IO.File.Move(tempPath, destinationPath);
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path) && System.IO.File.Exists(path))
+                    System.IO.File.Delete(path);
+            }
+            catch
+            {
+            }
         }
 
         private static void WriteHex8(TextWriter writer, uint value)
@@ -2299,8 +2344,18 @@ namespace Hecton8.Core.Data
             uint payloadCrc32,
             uint flags)
         {
+            TryWrite(path, ring, cursorValue, payloadCrc32, flags);
+        }
+
+        public static bool TryWrite(
+            string path,
+            H8StaticDataTelemetryEntry* ring,
+            int cursorValue,
+            uint payloadCrc32,
+            uint flags)
+        {
             if (ring == null || string.IsNullOrEmpty(path))
-                return;
+                return false;
 
             if ((uint)cursorValue >= H8StaticDataFormat.TelemetryFrameCount)
                 cursorValue = 0;
@@ -2329,19 +2384,23 @@ namespace Hecton8.Core.Data
                 byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
                 int writeCursor = 0;
                 if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(destination, byteCount, &header, headerSize))
-                    return;
+                    return false;
 
                 writeCursor += headerSize;
                 for (int i = 0; i < H8StaticDataFormat.TelemetryFrameCount; i++)
                 {
                     int sourceIndex = (cursorValue + i) % H8StaticDataFormat.TelemetryFrameCount;
                     if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(destination + writeCursor, byteCount - writeCursor, ring + sourceIndex, entrySize))
-                        return;
+                        return false;
 
                     writeCursor += entrySize;
                 }
 
-                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, payload, writeCursor);
+                return Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, payload, writeCursor);
+            }
+            catch (Exception)
+            {
+                return false;
             }
             finally
             {
@@ -2361,8 +2420,17 @@ namespace Hecton8.Core.Data
             int cursorValue,
             uint flags)
         {
+            TryWrite(path, ring, cursorValue, flags);
+        }
+
+        public static bool TryWrite(
+            string path,
+            BTreeTelemetryEntry* ring,
+            int cursorValue,
+            uint flags)
+        {
             if (ring == null || string.IsNullOrEmpty(path))
-                return;
+                return false;
 
             if ((uint)cursorValue >= H8StaticDataFormat.TelemetryFrameCount)
                 cursorValue = 0;
@@ -2391,19 +2459,23 @@ namespace Hecton8.Core.Data
                 byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
                 int writeCursor = 0;
                 if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(destination, byteCount, &header, headerSize))
-                    return;
+                    return false;
 
                 writeCursor += headerSize;
                 for (int i = 0; i < H8StaticDataFormat.TelemetryFrameCount; i++)
                 {
                     int sourceIndex = (cursorValue + i) % H8StaticDataFormat.TelemetryFrameCount;
                     if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(destination + writeCursor, byteCount - writeCursor, ring + sourceIndex, entrySize))
-                        return;
+                        return false;
 
                     writeCursor += entrySize;
                 }
 
-                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, payload, writeCursor);
+                return Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, payload, writeCursor);
+            }
+            catch (Exception)
+            {
+                return false;
             }
             finally
             {

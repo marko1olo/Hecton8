@@ -693,7 +693,10 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
             bool backupCreated = false;
             try
             {
-                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 65536))
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 65536))
                 {
                     stream.Write(header, 0, header.Length);
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(halfDistances);
@@ -734,20 +737,14 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
 
                 if (File.Exists(fullPath))
                 {
-                    File.Move(fullPath, backupPath);
+                    File.Replace(tempPath, fullPath, backupPath, true);
                     backupCreated = true;
+                    tempPromoted = true;
                 }
-
-                try
+                else
                 {
                     File.Move(tempPath, fullPath);
                     tempPromoted = true;
-                }
-                catch
-                {
-                    if (backupCreated && !File.Exists(fullPath) && File.Exists(backupPath))
-                        File.Move(backupPath, fullPath);
-                    throw;
                 }
 
                 return new StaticCaveSdfBinaryWriteResult

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.UI;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -28,6 +29,7 @@ namespace Hecton8.Core
         private const uint HullTempCriticalHash = 0x4854454Du; // HTEM
         private const uint ManualReleaseHash = 0x4D52454Cu; // MREL
         private const uint ManualReleaseContextHash = 0x434F434Bu; // COCK
+        private const string ManualReleasePromptMessage = "MANUAL RELEASE REQUIRED";
         private const uint ShallowWaterChunkHash = 0x53484C57u; // SHLW
         private const int SurvivalProxyHysteresisFrames = 150;
         private const int SurvivalProxyProbeIntervalFrames = 30;
@@ -463,14 +465,7 @@ namespace Hecton8.Core
             diegetic.Flags = DiegeticHudSignal.FlagPersistent;
             SignalBus<DiegeticHudSignal>.TryPushTracked(in diegetic, ref _signalPushDropCount);
 
-            HUDNotificationSignal hud = default;
-            hud.MessageHash = ManualReleaseHash;
-            hud.ContextHash = ManualReleaseContextHash;
-            hud.SourceId = SourceHash;
-            hud.Frame = CurrentFrame;
-            hud.Severity = 2;
-            hud.Flags = 1;
-            SignalBus<HUDNotificationSignal>.TryPushTracked(in hud, ref _signalPushDropCount);
+            NotificationEvents.TryPushCritical(ManualReleasePromptMessage.AsSpan());
         }
 
         public void PublishMassiveImpact()

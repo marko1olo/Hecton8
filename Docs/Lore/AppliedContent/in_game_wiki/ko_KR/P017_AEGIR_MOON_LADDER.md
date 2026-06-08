@@ -23,11 +23,11 @@ Aegir의 위성 사다리는 방사선 표지, relay 천체, 고갈된 claim, �
 
 ## Scanner
 
-위성 순서: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+위성 순서: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
 
 ## Terminal
 
-HECTON-8은 Aegir-VIII이다. 안쪽도, 가장 바깥도 아니다. Rake 공명과 Pale 그림자가 조석과 패킷 품질을 바꾼다.
+HECTON-8은 Aegir-VIII이다. 안쪽도, 가장 바깥도 아니다. Kestrel 공명과 Mute 그림자가 조석과 패킷 품질을 바꾼다.
 
 ## Audio
 

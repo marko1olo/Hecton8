@@ -942,7 +942,7 @@ namespace Hecton8.UI
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return;
 
-            float safeScanRadius = math.max(0f, scanRadius);
+            float safeScanRadius = math.isfinite(scanRadius) ? math.max(0f, scanRadius) : 0f;
             double scanRadiusSq = (double)safeScanRadius * safeScanRadius;
             BaseModule nearestModule = FindNearestActiveModule(in playerAup, scanRadiusSq);
 
@@ -984,7 +984,7 @@ namespace Hecton8.UI
 
         private static BaseModule FindNearestActiveModule(in AbsoluteUniversePosition playerAup, double scanRadiusSq)
         {
-            if (scanRadiusSq <= 0d)
+            if (!IsFiniteNonNegativeDistanceSq(scanRadiusSq) || scanRadiusSq <= 0d)
                 return null;
 
             BaseModule nearestModule = null;
@@ -1000,7 +1000,8 @@ namespace Hecton8.UI
                     continue;
 
                 double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in moduleAup);
-                if (distanceSq > nearestDistanceSq)
+                if (!IsFiniteNonNegativeDistanceSq(distanceSq) ||
+                    distanceSq > nearestDistanceSq)
                     continue;
 
                 nearestDistanceSq = distanceSq;
@@ -1029,12 +1030,22 @@ namespace Hecton8.UI
             }
 
             AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
             double3 offsetMeters = default;
             offsetMeters.x = runtimePosition.x;
             offsetMeters.y = runtimePosition.y;
             offsetMeters.z = runtimePosition.z;
             moduleAup = AbsoluteUniversePosition.OffsetMeters(in originAup, offsetMeters);
             return moduleAup.IsFinite();
+        }
+
+        private static bool IsFiniteNonNegativeDistanceSq(double distanceSq)
+        {
+            return !double.IsNaN(distanceSq) &&
+                   !double.IsInfinity(distanceSq) &&
+                   distanceSq >= 0d;
         }
 
         private void CheckIntegrityWarnings(BaseModule module, float integrity)

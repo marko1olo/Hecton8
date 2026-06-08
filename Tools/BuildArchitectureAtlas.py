@@ -20,7 +20,7 @@ ROOT = Path(".").resolve()
 OUTPUT = ROOT / "Docs" / "Generated" / "DEPENDENCY_GRAPH.md"
 JSON_OUTPUT = ROOT / "Docs" / "Generated" / "DEPENDENCY_GRAPH.json"
 SOURCE_CACHE_OUTPUT = ROOT / "Docs" / "Generated" / "DEPENDENCY_GRAPH.cache.json"
-SOURCE_CACHE_SCHEMA_VERSION = 1
+SOURCE_CACHE_SCHEMA_VERSION = 2
 _FILE_LIST_CACHE: dict[tuple[str, ...], list[str]] = {}
 
 SKIP_DIRS = {
@@ -40,7 +40,12 @@ USING_RE = re.compile(r"^\s*using\s+(Hecton8(?:\.[A-Za-z0-9_]+)+)\s*;", re.M)
 STRUCT_RE = re.compile(
     r"\b(?:public|internal|private)?\s*(?:readonly\s+)?(?:partial\s+)?struct\s+(\w+)\s*:\s*([^\{\n]+)"
 )
-SIGNAL_BUS_RE = re.compile(r"SignalBus\s*<\s*([^>]+?)\s*>\s*\.\s*(Push|Publish|GetFrameSnapshot)\s*\(")
+SIGNAL_BUS_PRODUCER_METHODS = frozenset(("Push", "Publish", "TryPush", "TryPushTracked", "TryEnqueueBounded"))
+SIGNAL_BUS_CONSUMER_METHODS = frozenset(("GetFrameSnapshot", "GetFrameSnapshotArray", "TryConsumeFrame", "TryGetLatest"))
+SIGNAL_BUS_FLOW_METHODS = tuple(sorted(SIGNAL_BUS_PRODUCER_METHODS | SIGNAL_BUS_CONSUMER_METHODS, key=len, reverse=True))
+SIGNAL_BUS_RE = re.compile(
+    r"SignalBus\s*<\s*([^>]+?)\s*>\s*\.\s*(" + "|".join(SIGNAL_BUS_FLOW_METHODS) + r")\s*\("
+)
 NAMESPACE_RE = re.compile(r"\bnamespace\s+([A-Za-z0-9_.]+)")
 GLOBAL_PUBLISH_RE = re.compile(r"GlobalSignals\.Publish\s*\(")
 
@@ -142,6 +147,135 @@ def normalize_signal_name(raw: str) -> str:
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8-sig", errors="ignore")
+
+
+def blank_csharp_span(buffer: list[str], text: str, start: int, end: int) -> None:
+    for index in range(start, min(end, len(buffer))):
+        if text[index] != "\n":
+            buffer[index] = " "
+
+
+def count_repeated(text: str, start: int, value: str) -> int:
+    count = 0
+    while start + count < len(text) and text[start + count] == value:
+        count += 1
+    return count
+
+
+def consume_csharp_normal_string(text: str, start: int, quote: str) -> int:
+    index = start + 1
+    while index < len(text):
+        if text[index] == "\\":
+            index += 2
+            continue
+
+        if text[index] == quote:
+            return index + 1
+
+        index += 1
+    return index
+
+
+def consume_csharp_verbatim_string(text: str, start: int) -> int:
+    index = start + 1
+    while index < len(text):
+        if text[index] != '"':
+            index += 1
+            continue
+
+        if index + 1 < len(text) and text[index + 1] == '"':
+            index += 2
+            continue
+
+        return index + 1
+    return index
+
+
+def consume_csharp_raw_string(text: str, quote_start: int, quote_count: int) -> int:
+    delimiter = '"' * quote_count
+    index = quote_start + quote_count
+    end = text.find(delimiter, index)
+    if end < 0:
+        return len(text)
+    return end + quote_count
+
+
+def strip_csharp_comments_and_literals(text: str) -> str:
+    buffer = list(text)
+    index = 0
+    length = len(text)
+
+    while index < length:
+        char = text[index]
+        next_char = text[index + 1] if index + 1 < length else ""
+
+        if char == "/" and next_char == "/":
+            end = text.find("\n", index)
+            if end < 0:
+                end = length
+            blank_csharp_span(buffer, text, index, end)
+            index = end
+            continue
+
+        if char == "/" and next_char == "*":
+            end = text.find("*/", index + 2)
+            end = length if end < 0 else end + 2
+            blank_csharp_span(buffer, text, index, end)
+            index = end
+            continue
+
+        if char == "$":
+            dollar_count = count_repeated(text, index, "$")
+            after_dollars = index + dollar_count
+            if after_dollars < length and text[after_dollars] == "@":
+                quote_index = after_dollars + 1
+                if quote_index < length and text[quote_index] == '"':
+                    end = consume_csharp_verbatim_string(text, quote_index)
+                    blank_csharp_span(buffer, text, index, end)
+                    index = end
+                    continue
+
+            if after_dollars < length and text[after_dollars] == '"':
+                quote_count = count_repeated(text, after_dollars, '"')
+                if quote_count >= 3:
+                    end = consume_csharp_raw_string(text, after_dollars, quote_count)
+                else:
+                    end = consume_csharp_normal_string(text, after_dollars, '"')
+                blank_csharp_span(buffer, text, index, end)
+                index = end
+                continue
+
+        if char == "@" and next_char == "$" and index + 2 < length and text[index + 2] == '"':
+            end = consume_csharp_verbatim_string(text, index + 2)
+            blank_csharp_span(buffer, text, index, end)
+            index = end
+            continue
+
+        if char == "@" and next_char == '"':
+            end = consume_csharp_verbatim_string(text, index + 1)
+            blank_csharp_span(buffer, text, index, end)
+            index = end
+            continue
+
+        if char == '"':
+            quote_count = count_repeated(text, index, '"')
+            if quote_count >= 3:
+                end = consume_csharp_raw_string(text, index, quote_count)
+            else:
+                end = consume_csharp_normal_string(text, index, '"')
+            blank_csharp_span(buffer, text, index, end)
+            index = end
+            continue
+
+        if char == "'":
+            end = consume_csharp_normal_string(text, index, "'")
+            blank_csharp_span(buffer, text, index, end)
+            index = end
+            continue
+
+        index += 1
+
+    return "".join(buffer)
 
 
 def summarize_missing_references(missing_refs: list[str]) -> str:
@@ -295,13 +429,14 @@ def analyze_source_bytes(raw: bytes, path_rel: str, first_party: bool) -> dict[s
         return entry
 
     text = raw.decode("utf-8-sig", errors="ignore")
-    namespace_match = NAMESPACE_RE.search(text)
+    code_text = strip_csharp_comments_and_literals(text)
+    namespace_match = NAMESPACE_RE.search(code_text)
     namespace = namespace_match.group(1) if namespace_match else ""
 
     parts = path_rel.split("/")
     domain = parts[3] if len(parts) > 4 else "RootScripts"
     edge_counts: Counter[tuple[str, str]] = Counter()
-    for match in USING_RE.finditer(text):
+    for match in USING_RE.finditer(code_text):
         namespace_used = match.group(1)
         namespace_parts = namespace_used.split(".")
         target_domain = namespace_parts[1] if len(namespace_parts) > 1 else "Core"
@@ -309,7 +444,7 @@ def analyze_source_bytes(raw: bytes, path_rel: str, first_party: bool) -> dict[s
             edge_counts[(domain, target_domain)] += 1
 
     signals = []
-    for match in STRUCT_RE.finditer(text):
+    for match in STRUCT_RE.finditer(code_text):
         if "ISignal" not in match.group(2):
             continue
 
@@ -318,30 +453,30 @@ def analyze_source_bytes(raw: bytes, path_rel: str, first_party: bool) -> dict[s
                 "name": match.group(1),
                 "namespace": namespace,
                 "path": path_rel,
-                "line": line_number(text, match.start()),
+                "line": line_number(code_text, match.start()),
             }
         )
 
     signal_uses: dict[str, dict[str, object]] = {}
-    for match in SIGNAL_BUS_RE.finditer(text):
+    for match in SIGNAL_BUS_RE.finditer(code_text):
         name = normalize_signal_name(match.group(1))
         method = match.group(2)
-        entry_text = f"{path_rel}:{line_number(text, match.start())}"
+        entry_text = f"{path_rel}:{line_number(code_text, match.start())}"
         lane = signal_uses.setdefault(name, {"producers": [], "consumers": [], "methods": []})
         methods = lane["methods"]
         if isinstance(methods, list) and method not in methods:
             methods.append(method)
-        if method in ("Push", "Publish"):
+        if method in SIGNAL_BUS_PRODUCER_METHODS:
             producers = lane["producers"]
             if isinstance(producers, list):
                 producers.append(entry_text)
-        else:
+        elif method in SIGNAL_BUS_CONSUMER_METHODS:
             consumers = lane["consumers"]
             if isinstance(consumers, list):
                 consumers.append(entry_text)
 
     global_publish_sites = [
-        f"{path_rel}:{line_number(text, match.start())}" for match in GLOBAL_PUBLISH_RE.finditer(text)
+        f"{path_rel}:{line_number(code_text, match.start())}" for match in GLOBAL_PUBLISH_RE.finditer(code_text)
     ]
 
     entry["using_edges"] = [[src, dst, count] for (src, dst), count in edge_counts.items()]
@@ -632,12 +767,18 @@ def append_signal_map(out: list[str], source: dict[str, object]) -> None:
         f"`SignalBus<T>` lanes observed in producer/consumer calls: {len(signal_uses)}. "
         f"Union listed below: {len(all_signal_names)} signals."
     )
-    out.append(
-        f"Legacy `GlobalSignals.Publish(...)` call sites found: {len(global_publish_sites)}. "
-        "Many use local variables and are not type-resolved by this static pass; they remain a migration/integrator risk."
-    )
+    if global_publish_sites:
+        out.append(
+            f"Legacy `GlobalSignals.Publish(...)` call sites found: {len(global_publish_sites)}. "
+            "Many use local variables and are not type-resolved by this static pass; they remain a migration/integrator risk."
+        )
+    else:
+        out.append("Legacy `GlobalSignals.Publish(...)` call sites found: 0.")
     out.append("")
-    out.append("| Signal | Declared at | Producers (`SignalBus<T>.Push/Publish`) | Consumers (`GetFrameSnapshot`) |")
+    out.append(
+        "| Signal | Declared at | Producers (`Push/Publish/TryPush*/TryEnqueueBounded`) | "
+        "Consumers (`GetFrameSnapshot*`/`TryConsumeFrame`/`TryGetLatest`) |"
+    )
     out.append("|---|---|---|---|")
     for name in all_signal_names:
         decl = signals.get(name)
@@ -895,8 +1036,9 @@ def build_markdown(
         "build, and Play Mode remain PENDING VERIFICATION."
     )
     out.append(
-        "- The signal producer map only resolves explicit `SignalBus<T>` calls. Legacy "
-        "`GlobalSignals.Publish(...)` variable publishes require Roslyn-level dataflow to type-resolve fully."
+        "- The signal producer map only resolves explicit `SignalBus<T>` flow calls. Legacy "
+        "`GlobalSignals.Publish(...)` variable publishes and wrapper methods require Roslyn-level dataflow "
+        "to type-resolve fully."
     )
     out.append("- Task and agent-log folders are intentionally excluded from architecture authority sections.")
     out.append("")
@@ -989,7 +1131,7 @@ def build_json_payload(
         },
         "residual_risk": [
             "Unity import, runtime wiring, actual VRAM residency, profiler frame time, GC, build, and Play Mode remain PENDING VERIFICATION.",
-            "Legacy GlobalSignals.Publish(...) variable publishes require Roslyn-level dataflow to type-resolve fully.",
+            "Legacy GlobalSignals.Publish(...) variable publishes and wrapper methods require Roslyn-level dataflow to type-resolve fully.",
             "Task and agent-log folders are intentionally excluded from architecture authority sections.",
         ],
     }

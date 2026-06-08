@@ -1519,7 +1519,15 @@ namespace Hecton8.Editor.Localization
                     Directory.CreateDirectory(directory);
 
                 tempPath = absolutePath + ".tmp." + Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture);
-                File.WriteAllBytes(tempPath, bytes);
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 65536, FileOptions.WriteThrough))
+                {
+                    stream.Write(bytes, 0, bytes.Length);
+                    stream.Flush(true);
+                }
+
                 if (File.Exists(absolutePath))
                     File.Replace(tempPath, absolutePath, null, true);
                 else
@@ -1532,11 +1540,22 @@ namespace Hecton8.Editor.Localization
                                        ex is ArgumentException ||
                                        ex is NotSupportedException)
             {
-                if (!string.IsNullOrEmpty(tempPath) && File.Exists(tempPath))
-                    File.Delete(tempPath);
+                TryDeleteFileNoThrow(tempPath);
 
                 failure = "asset write failed for " + assetPath + ": " + ex.GetType().Name + ": " + ex.Message;
                 return false;
+            }
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
             }
         }
 

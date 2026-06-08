@@ -305,7 +305,7 @@ namespace Hecton8.EditorTools
                 if (!writePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
                     writePath = AssetDatabase.GenerateUniqueAssetPath(Path.ChangeExtension(path, ".GFlip.png"));
 
-                File.WriteAllBytes(writePath, readable.EncodeToPNG());
+                WriteBytesAtomic(writePath, readable.EncodeToPNG());
                 AssetDatabase.ImportAsset(writePath, ImportAssetOptions.ForceUpdate);
                 TextureImporter outputImporter = AssetImporter.GetAtPath(writePath) as TextureImporter;
                 if (outputImporter != null)
@@ -483,7 +483,7 @@ namespace Hecton8.EditorTools
 
                 EnsureFolder(AtlasFolder);
                 string atlasPath = AssetDatabase.GenerateUniqueAssetPath(AtlasFolder + "/TX_ATLAS_Coral_2048.png");
-                File.WriteAllBytes(atlasPath, atlas.EncodeToPNG());
+                WriteBytesAtomic(atlasPath, atlas.EncodeToPNG());
 
                 AssetDatabase.ImportAsset(atlasPath, ImportAssetOptions.ForceUpdate);
                 TextureImporter importer = AssetImporter.GetAtPath(atlasPath) as TextureImporter;
@@ -511,6 +511,44 @@ namespace Hecton8.EditorTools
             {
                 if (atlas != null)
                     UnityEngine.Object.DestroyImmediate(atlas);
+            }
+        }
+
+        private static void WriteBytesAtomic(string path, byte[] bytes)
+        {
+            string tempPath = path + ".tmp";
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    stream.Write(bytes, 0, bytes.Length);
+                    stream.Flush(true);
+                }
+
+                if (File.Exists(path))
+                    File.Replace(tempPath, path, null, true);
+                else
+                    File.Move(tempPath, path);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
             }
         }
 

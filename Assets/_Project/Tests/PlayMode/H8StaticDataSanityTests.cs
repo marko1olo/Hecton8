@@ -10,6 +10,12 @@ namespace Hecton8.Tests.PlayMode
 {
     public sealed class H8StaticDataSanityTests
     {
+        private const int StaticDataHeaderSizeBytes = 64;
+        private const int StaticDataPayloadCrcOffset = 16;
+        private const int StaticDataLookupOffsetOffset = 28;
+        private const int StaticDataLookupRecordOffset = 8;
+        private const int StaticDataRecordHashOffset = 0;
+
         [Test]
         public void BakeOpenAndScan_DefaultBalanceData_HasNoNaNs()
         {
@@ -83,6 +89,49 @@ namespace Hecton8.Tests.PlayMode
                     Assert.AreEqual(expectedBabelCrc32, babel.PayloadCrc32);
                     babel.Shutdown();
                     babel.Shutdown();
+                }
+            }
+            finally
+            {
+                if (ownedVault != null)
+                {
+                    GlobalRegistry.UnregisterDataVault(ownedVault);
+                    ownedVault.Dispose();
+                }
+            }
+        }
+
+        [Test]
+        public void ScanForNaNs_RejectsRecordHashMismatchEvenWhenPayloadCrcIsValid()
+        {
+            string root = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "Data", "Balance"));
+            string output = Path.Combine(Path.GetTempPath(), "h8_static_data_bad_record_hash");
+            if (Directory.Exists(output))
+                Directory.Delete(output, true);
+
+            H8DataBakeResult bake = H8DataBaker.Bake(root, output);
+            Assert.IsTrue(bake.Success, bake.Message);
+            CorruptFirstRecordHashAndRefreshCrc(bake.StaticDataPath);
+
+            IDataVault existingVault = GlobalRegistry.DataVault;
+            GlobalDataVault ownedVault = null;
+            IDataVault activeVault = existingVault;
+            if (activeVault == null)
+            {
+                ownedVault = GlobalDataVault.Create();
+                GlobalRegistry.RegisterDataVault(ownedVault);
+                activeVault = ownedVault;
+            }
+
+            try
+            {
+                using (StaticDataStore store = new StaticDataStore(activeVault))
+                {
+                    Assert.IsTrue(store.Open(bake.StaticDataPath));
+                    H8StaticDataSanityReport report = H8StaticDataSanity.ScanForNaNs(store);
+                    Assert.IsFalse(report.IsClean);
+                    StringAssert.Contains("Record hash mismatch", report.Message);
+                    store.Shutdown();
                 }
             }
             finally
@@ -264,6 +313,25 @@ namespace Hecton8.Tests.PlayMode
                 Directory.Delete(path, true);
 
             Directory.CreateDirectory(path);
+        }
+
+        private static void CorruptFirstRecordHashAndRefreshCrc(string staticDataPath)
+        {
+            byte[] bytes = File.ReadAllBytes(staticDataPath);
+            int lookupOffset = (int)BitConverter.ToUInt32(bytes, StaticDataLookupOffsetOffset);
+            int firstRecordOffset = (int)BitConverter.ToInt64(bytes, lookupOffset + StaticDataLookupRecordOffset);
+            uint originalHash = BitConverter.ToUInt32(bytes, firstRecordOffset + StaticDataRecordHashOffset);
+            uint corruptedHash = originalHash ^ 0xA5A5A5A5u;
+            if (corruptedHash == 0u)
+                corruptedHash = 1u;
+
+            BitConverter.GetBytes(corruptedHash).CopyTo(bytes, firstRecordOffset + StaticDataRecordHashOffset);
+            uint payloadCrc = H8Crc32.Compute(new ReadOnlySpan<byte>(
+                bytes,
+                StaticDataHeaderSizeBytes,
+                bytes.Length - StaticDataHeaderSizeBytes));
+            BitConverter.GetBytes(payloadCrc).CopyTo(bytes, StaticDataPayloadCrcOffset);
+            File.WriteAllBytes(staticDataPath, bytes);
         }
     }
 }

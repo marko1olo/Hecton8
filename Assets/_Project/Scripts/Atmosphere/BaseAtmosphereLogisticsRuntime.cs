@@ -914,7 +914,16 @@ namespace Hecton8.Atmosphere
             if (!_simulationScheduled)
                 return;
 
-            DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+
             _simulationScheduled = false;
             ReleaseJobBufferPins();
         }

@@ -23,11 +23,11 @@ L’échelle lunaire d’Aegir comprend marqueurs irradiés, relais, claims épu
 
 ## Scanner
 
-Séquence lunaire: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Séquence lunaire: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
 
 ## Terminal
 
-HECTON-8 est Aegir-VIII: ni interne, ni la plus lointaine. La résonance de Rake et l’ombre de Pale modifient marée et paquets.
+HECTON-8 est Aegir-VIII: ni interne, ni la plus lointaine. La résonance de Kestrel et l’ombre de Mute modifient marée et paquets.
 
 ## Audio
 

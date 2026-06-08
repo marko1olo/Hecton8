@@ -648,7 +648,6 @@ namespace Hecton8.Core
 
                 CaptureState((float)StandardInputTickIntervalSeconds);
                 PublishDeterministicInputState(_standardInputFrame++);
-                RunMockCollisionHapticJob(_standardInputFrame - 1u);
                 substepCount++;
             }
 
@@ -2439,6 +2438,7 @@ namespace Hecton8.Core
 
         private void EnsureHapticDeviceBinding()
         {
+            SignalCorridorRuntime.EnsureHapticPulseSignalLaneInitialized();
             SubscribeToDeviceChanges();
             RefreshCachedGamepadBinding();
             if (HectonXRRuntimeState.IsXRActive)
@@ -3989,6 +3989,17 @@ namespace Hecton8.Core
             float safeDeltaTime = math.isfinite(deltaTime) && deltaTime > 0f
                 ? math.min(deltaTime, 0.1f)
                 : (float)StandardInputTickIntervalSeconds;
+            if (ToolHapticsRuntime.PowerSaveMuteActive)
+            {
+                DrainSuppressedHapticRequests();
+                DrainSuppressedHapticPulses();
+                ClearVaultBuffer(ref _hapticCommandDtoHandle);
+                _lastHapticCommandsActive = 0;
+                _hapticDispatchAccumulator = 0f;
+                QueueHapticOutput(schemeHash, 0f, 0f);
+                return;
+            }
+
             InputProfileDTO profile = ReadInputProfile();
             bool throttleHaptics = ShouldThrottleHapticDispatch(schemeHash);
             if (throttleHaptics)
@@ -4012,6 +4023,14 @@ namespace Hecton8.Core
                     continue;
 
                 InsertHapticRequestCommand(in request);
+            }
+
+            while (SignalBus<HapticPulseSignal>.TryConsumeFrame(out HapticPulseSignal pulse))
+            {
+                if (schemeHash == InputSchemeHashKeyboardMouse)
+                    continue;
+
+                InsertHapticPulseCommand(in pulse);
             }
 
             if (schemeHash == InputSchemeHashKeyboardMouse)
@@ -4087,6 +4106,20 @@ namespace Hecton8.Core
             }
 
             QueueHapticOutput(schemeHash, lowMotor, highMotor);
+        }
+
+        private static void DrainSuppressedHapticRequests()
+        {
+            while (SignalBus<HapticRequest>.TryConsumeFrame(out _))
+            {
+            }
+        }
+
+        private static void DrainSuppressedHapticPulses()
+        {
+            while (SignalBus<HapticPulseSignal>.TryConsumeFrame(out _))
+            {
+            }
         }
 
         private void QueueHapticOutput(uint schemeHash, float lowMotor, float highMotor)
@@ -4177,6 +4210,26 @@ namespace Hecton8.Core
                 ResolveHapticRequestBlendMode(in request));
         }
 
+        private void InsertHapticPulseCommand(in HapticPulseSignal pulse)
+        {
+            float low = ClampFinite01(pulse.LowFrequencyMotor01);
+            float high = ClampFinite01(pulse.HighFrequencyMotor01);
+            if ((low <= HapticMotorWriteEpsilon && high <= HapticMotorWriteEpsilon) ||
+                pulse.DurationSeconds <= 0f)
+            {
+                return;
+            }
+
+            float decayRate = 1f / math.max(pulse.DurationSeconds, 0.02f);
+            InsertHapticCommandDto(
+                low,
+                high,
+                decayRate,
+                HapticLowMotorMask | HapticHighMotorMask,
+                ResolveHapticPulsePriority(pulse.PriorityFlags),
+                ResolveHapticPulseBlendMode(pulse.PriorityFlags));
+        }
+
         private void InsertHapticCommandDto(float lowFreqIntensity, float highFreqIntensity, float decayRate, uint motorMask)
         {
             InsertHapticCommandDto(
@@ -4242,16 +4295,6 @@ namespace Hecton8.Core
             {
                 ReleaseInputMutationGuard();
             }
-        }
-
-        private void RunMockCollisionHapticJob(uint frame)
-        {
-            // SHINOBU_353 owns mock haptic storms through GenerateMockHapticStormJob.
-        }
-
-        private void HandleMockCollisionSignal(in MockCollisionSignal signal)
-        {
-            // Legacy direct command injection disabled; keep the signature for old test harnesses.
         }
 
         private int EvaluateHapticCommandDtos(

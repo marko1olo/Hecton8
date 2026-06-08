@@ -4,6 +4,7 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Tools;
+using Hecton8.UI;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -50,7 +51,8 @@ namespace Hecton8.Core.Hardware
         private const uint SourceHash = 0x54484452u;
         private const uint ThermalContextHash = 0x54484552u;
         private const uint BatteryContextHash = 0x42415454u;
-        private const uint SuitThermalCriticalHash = 0x53544352u;
+        private const string SuitThermalThrottlingMessage = "SUIT THERMAL THROTTLING";
+        private const string SuitThermalCriticalMessage = "SUIT THERMAL CRITICAL";
         private const uint ActionLane4Vfx = 1u << 0;
         private const uint ActionFoveatedFreeze = 1u << 1;
         private const uint ActionRenderScale = 1u << 2;
@@ -98,6 +100,7 @@ namespace Hecton8.Core.Hardware
         private bool _criticalPolicyApplied;
         private bool _hapticMuteApplied;
         private bool _criticalDumped;
+        private byte _lastThermalNotificationSeverity;
         private IFoveatedSimulationDirector _foveatedDirector;
         private SystemDispatcher _dispatcher;
         private ToolHapticsRuntime _haptics;
@@ -321,7 +324,7 @@ namespace Hecton8.Core.Hardware
             }
 
             uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
-            ApplyThermalPoliciesCold(frame);
+            ApplyThermalPoliciesCold();
             PublishSignalsCold(frame, previousSeverity);
             PublishTelemetryCold();
             WriteSnapshot(frame);
@@ -540,7 +543,7 @@ namespace Hecton8.Core.Hardware
                    batteryStatus == (byte)BatteryStatus.Discharging;
         }
 
-        private void ApplyThermalPoliciesCold(uint frame)
+        private void ApplyThermalPoliciesCold()
         {
             bool throttling = _severity >= (byte)HardwareThermalSeverity.Throttling;
             bool critical = _severity >= (byte)HardwareThermalSeverity.Critical;
@@ -577,6 +580,7 @@ namespace Hecton8.Core.Hardware
 
             if (!_policyInitialized || hapticMute != _hapticMuteApplied)
             {
+                ToolHapticsRuntime.SetPowerSaveMuteGlobal(hapticMute);
                 ToolHapticsRuntime haptics = _haptics;
                 if (haptics != null)
                     haptics.SetPowerSaveMute(hapticMute);
@@ -584,21 +588,31 @@ namespace Hecton8.Core.Hardware
                 _hapticMuteApplied = hapticMute;
             }
 
-            if (throttling)
-            {
-                HUDNotificationSignal warning = new HUDNotificationSignal
-                {
-                    MessageHash = SuitThermalCriticalHash,
-                    ContextHash = ThermalContextHash,
-                    SourceId = SourceHash,
-                    Frame = frame,
-                    Severity = _severity,
-                    Flags = (byte)(critical ? 1 : 0)
-                };
-                SignalBus<HUDNotificationSignal>.TryPushTracked(in warning, ref s_x001HardwareThermalServiceSignalPushDropCount);
-            }
+            PublishThermalNotificationIfNeeded(throttling, critical);
 
             _policyInitialized = true;
+        }
+
+        private void PublishThermalNotificationIfNeeded(bool throttling, bool critical)
+        {
+            if (!throttling)
+            {
+                _lastThermalNotificationSeverity = 0;
+                return;
+            }
+
+            byte targetSeverity = (byte)(critical
+                ? HardwareThermalSeverity.Critical
+                : HardwareThermalSeverity.Throttling);
+            if (_lastThermalNotificationSeverity >= targetSeverity)
+                return;
+
+            if (critical)
+                NotificationEvents.TryPushCritical(SuitThermalCriticalMessage.AsSpan());
+            else
+                NotificationEvents.TryPushWarning(SuitThermalThrottlingMessage.AsSpan());
+
+            _lastThermalNotificationSeverity = targetSeverity;
         }
 
         private void ReleaseThermalPolicies()
@@ -616,6 +630,7 @@ namespace Hecton8.Core.Hardware
                 dispatcher.SetThermalCriticalSlowTick(false);
 
             ToolHapticsRuntime haptics = _haptics;
+            ToolHapticsRuntime.SetPowerSaveMuteGlobal(false);
             if (haptics != null)
                 haptics.SetPowerSaveMute(false);
 
@@ -623,6 +638,7 @@ namespace Hecton8.Core.Hardware
             _throttlingPolicyApplied = false;
             _criticalPolicyApplied = false;
             _hapticMuteApplied = false;
+            _lastThermalNotificationSeverity = 0;
         }
 
         private void PublishSignalsCold(uint frame, byte previousSeverity)
@@ -1220,7 +1236,14 @@ namespace Hecton8.Core.Hardware
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.ToolHapticsRuntime)
+            {
                 _haptics = currentService as ToolHapticsRuntime;
+                bool hapticMute = _policyInitialized && _hapticMuteApplied;
+                ToolHapticsRuntime.SetPowerSaveMuteGlobal(hapticMute);
+                ToolHapticsRuntime haptics = _haptics;
+                if (haptics != null)
+                    haptics.SetPowerSaveMute(hapticMute);
+            }
         }
 
         private void TryRegisterHotSwap()

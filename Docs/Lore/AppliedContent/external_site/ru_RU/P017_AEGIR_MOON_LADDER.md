@@ -23,11 +23,11 @@ localization_flags: 1
 
 ## Scanner
 
-Последовательность лун: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Последовательность лун: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
 
 ## Terminal
 
-HECTON-8 это Aegir-VIII: не внутренняя и не самая дальняя. Резонанс Rake и тень Pale меняют прилив и качество пакетов.
+HECTON-8 это Aegir-VIII: не внутренняя и не самая дальняя. Резонанс Kestrel и тень Mute меняют прилив и качество пакетов.
 
 ## Audio
 

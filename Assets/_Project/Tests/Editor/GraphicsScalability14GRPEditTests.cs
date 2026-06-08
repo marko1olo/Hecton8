@@ -491,6 +491,542 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void FakeRadarPresentation_RejectsNonFiniteAupDistances()
+        {
+            string fakeRadarPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/FakeRadarBlipController.cs");
+            string source = File.ReadAllText(fakeRadarPath);
+            string scheduleBody = ExtractMethodBlock(source, "private void ScheduleBlipCull(Camera projectionCamera)");
+            string playerAupBody = ExtractMethodBlock(source, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+
+            Assert.That(scheduleBody, Does.Contain("if (!hitAup.IsFinite())"));
+            Assert.That(scheduleBody, Does.Contain("if (!math.all(math.isfinite(enemyDeltaAup)))"));
+            Assert.That(scheduleBody, Does.Contain("!math.isfinite(distanceSqr) || distanceSqr <= 0.0001f || distanceSqr > rangeSqr"));
+            Assert.That(playerAupBody, Does.Contain("return playerAup.IsFinite();"));
+            Assert.That(playerAupBody, Does.Not.Contain("return true;"));
+        }
+
+        [Test]
+        public void AcousticRadarPresentation_RejectsNonFiniteAupDistances()
+        {
+            string acousticRadarPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/AcousticRadarSphereRenderer.cs");
+            string source = File.ReadAllText(acousticRadarPath);
+            string refreshBody = ExtractMethodBlock(source, "private void RefreshMatricesForLateFrame()");
+            string listenerAupBody = ExtractMethodBlock(source, "private bool TryResolveListenerAup(Vector3 listenerPosition, out AbsoluteUniversePosition listenerAup)");
+            string offsetBody = ExtractMethodBlock(source, "private static AbsoluteUniversePosition OffsetAupLocal(in AbsoluteUniversePosition anchorAup, Vector3 runtimeOffset)");
+            string validateBody = ExtractMethodBlock(source, "private void OnValidate()");
+
+            Assert.That(refreshBody, Does.Contain("!IsFinite(anchorPosition)"));
+            Assert.That(refreshBody, Does.Contain("ResolveMaxContactDistanceMeters(maxContactDistanceMeters)"));
+            Assert.That(refreshBody, Does.Contain("if (!sampleAup.IsFinite())"));
+            Assert.That(refreshBody, Does.Contain("!math.isfinite(distanceSq) || distanceSq <= 0.0001f || distanceSq > safeMaxDistanceSq"));
+            Assert.That(listenerAupBody, Does.Contain("return listenerAup.IsFinite();"));
+            Assert.That(listenerAupBody, Does.Not.Contain("return true;"));
+            Assert.That(offsetBody, Does.Contain("if (!anchorAup.IsFinite() || !IsFinite(runtimeOffset))"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector3 value)"));
+            Assert.That(source, Does.Contain("private static float ResolveMaxContactDistanceMeters(float distanceMeters)"));
+            Assert.That(source, Does.Contain("math.isfinite(distanceMeters) ? math.max(1f, distanceMeters) : 1f"));
+            Assert.That(validateBody, Does.Contain("maxContactDistanceMeters = ResolveMaxContactDistanceMeters(maxContactDistanceMeters);"));
+        }
+
+        [Test]
+        public void SonarHoloCompassProjection_RejectsNonFiniteAupDistances()
+        {
+            string compassPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/SonarHoloCompass.cs");
+            string source = File.ReadAllText(compassPath);
+            string scheduleBody = ExtractMethodBlock(source, "private void ScheduleProjection(int emitterCount)");
+            string viewAupBody = ExtractMethodBlock(source, "private bool TryResolveViewAup(Vector3 viewPosition, out AbsoluteUniversePosition viewAup)");
+            string offsetBody = ExtractMethodBlock(source, "private static AbsoluteUniversePosition OffsetAupLocal(in AbsoluteUniversePosition anchorAup, Vector3 runtimeOffset)");
+
+            Assert.That(scheduleBody, Does.Contain("!IsFinite(viewPosition)"));
+            Assert.That(scheduleBody, Does.Contain("if (!sampleAup.IsFinite())"));
+            Assert.That(scheduleBody, Does.Contain("_projectionInputs[i] = default;"));
+            Assert.That(scheduleBody, Does.Contain("!math.all(math.isfinite(listenerRelativePosition))"));
+            AssertOrder(scheduleBody, "AbsoluteUniversePosition sampleAup = sample.PositionAup;", "if (!sampleAup.IsFinite())");
+            AssertOrder(scheduleBody, "if (!sampleAup.IsFinite())", "sampleAup.ToAbsoluteDouble3()");
+            Assert.That(viewAupBody, Does.Contain("return viewAup.IsFinite();"));
+            Assert.That(viewAupBody, Does.Not.Contain("return true;"));
+            Assert.That(offsetBody, Does.Contain("if (!anchorAup.IsFinite() || !IsFinite(runtimeOffset))"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector3 value)"));
+        }
+
+        [Test]
+        public void ArWaypointRuntimeProjection_RejectsNonFiniteAupMetrics()
+        {
+            string waypointPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/ARWaypointOverlay.cs");
+            string source = File.ReadAllText(waypointPath);
+            string collectBody = ExtractMethodBlock(source, "private void CollectRuntimeWaypoints()");
+            string nativeCopyBody = ExtractMethodBlock(source, "private int CopyRuntimeTargetsForStencil(NativeArray<StencilTargetSourceDTO> destination, int capacity)");
+            string spanCopyBody = ExtractMethodBlock(source, "private int CopyRuntimeTargetsForStencil(Span<StencilTargetSourceDTO> destination, int capacity)");
+            string renderBody = ExtractMethodBlock(source, "private void RenderWaypoints()");
+            string occlusionBody = ExtractMethodBlock(source, "private void RefreshOcclusionStates()");
+            string projectBody = ExtractMethodBlock(source, "private bool TryProjectWaypointOntoHudPlane(");
+            string frameBody = ExtractMethodBlock(source, "private WaypointProjectionFrame ResolveWaypointProjectionFrame()");
+            string planeBody = ExtractMethodBlock(source, "private static float ResolveHudPlaneDistance(");
+            string colorBody = ExtractMethodBlock(source, "private static Color ResolveWaypointColor(Color color)");
+
+            Assert.That(collectBody, Does.Contain("runtimeWaypoint.Color = ResolveWaypointColor(externalWaypoint.Color);"));
+            Assert.That(nativeCopyBody, Does.Contain("int writeCount = 0;"));
+            Assert.That(nativeCopyBody, Does.Contain("!waypoint.Active || !waypoint.PositionAup.IsFinite()"));
+            Assert.That(nativeCopyBody, Does.Contain("destination[writeCount] = new StencilTargetSourceDTO"));
+            Assert.That(nativeCopyBody, Does.Contain("return writeCount;"));
+            Assert.That(spanCopyBody, Does.Contain("int writeCount = 0;"));
+            Assert.That(spanCopyBody, Does.Contain("!waypoint.Active || !waypoint.PositionAup.IsFinite()"));
+            Assert.That(spanCopyBody, Does.Contain("destination[writeCount] = new StencilTargetSourceDTO"));
+            Assert.That(spanCopyBody, Does.Contain("return writeCount;"));
+            Assert.That(renderBody, Does.Contain("!waypoint.Active || !waypoint.PositionAup.IsFinite()"));
+            Assert.That(occlusionBody, Does.Contain("!waypoint.PositionAup.IsFinite()"));
+            Assert.That(occlusionBody, Does.Contain("!math.all(math.isfinite(delta)) || !math.isfinite(distanceSq)"));
+            Assert.That(projectBody, Does.Contain("!waypointAup.IsFinite()"));
+            Assert.That(projectBody, Does.Contain("!projectionFrame.CameraAup.IsFinite()"));
+            Assert.That(projectBody, Does.Contain("!math.all(math.isfinite(deltaAup))"));
+            Assert.That(projectBody, Does.Contain("!math.isfinite(viewDepth)"));
+            Assert.That(projectBody, Does.Contain("!math.isfinite(projectedWorldX) || !math.isfinite(projectedWorldY)"));
+            Assert.That(projectBody, Does.Contain("!IsFinite(projectedCanvasPosition)"));
+            Assert.That(frameBody, Does.Contain("!IsFinite(cameraPosition)"));
+            Assert.That(frameBody, Does.Contain("!math.isfinite(planeDistance) || planeDistance <= ProjectionDepthEpsilon"));
+            Assert.That(frameBody, Does.Contain("!IsFinite(lossyScale)"));
+            Assert.That(planeBody, Does.Contain("!IsFinite(cameraPosition)"));
+            Assert.That(planeBody, Does.Contain("!IsFinite(canvasRect.position)"));
+            Assert.That(planeBody, Does.Contain("math.isfinite(planeDistance)"));
+            Assert.That(colorBody, Does.Contain("!IsFinite(color) || color.a <= 0f"));
+            Assert.That(colorBody, Does.Contain("math.saturate(color.r)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Color color)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector2 value)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector3 value)"));
+        }
+
+        [Test]
+        public void SubmarineSonarHoloMap_RejectsNonFiniteRuntimePresentation()
+        {
+            string mapPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/SubmarineSonarHoloMapRenderer.cs");
+            string source = File.ReadAllText(mapPath);
+            string visualSyncBody = ExtractMethodBlock(source, "private void RunVisualSync(float deltaTime)");
+            string lateFrameBody = ExtractMethodBlock(source, "public void LateFrameTick()");
+            string refreshBody = ExtractMethodBlock(source, "private void RefreshMapSample(int gridCells)");
+            string floorBody = ExtractMethodBlock(source, "private static float ResolveHybridFloorDelta(Vector3 samplePosition, float originY)");
+            string interpolationBody = ExtractMethodBlock(source, "private void UploadInterpolatedVertices()");
+            string visibleBody = ExtractMethodBlock(source, "private bool ResolveVisibleToPlayer()");
+            string qualityBody = ExtractMethodBlock(source, "private void RefreshQualityPolicy()");
+            string materialBody = ExtractMethodBlock(source, "private void ApplyMaterialPropertiesIfNeeded()");
+            string boundsBody = ExtractMethodBlock(source, "private void RefreshRuntimeMeshBounds()");
+            string clearBody = ExtractMethodBlock(source, "private void ClearMapSamples()");
+            string validateBody = ExtractMethodBlock(source, "private void OnValidate()");
+
+            Assert.That(visualSyncBody, Does.Contain("math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f"));
+            Assert.That(visualSyncBody, Does.Contain("SanitizeQualityWeight01(_cachedQualityWeight01)"));
+            Assert.That(lateFrameBody, Does.Contain("TryResolveAnchorRenderPose(anchor, out Vector3 anchorPosition, out Quaternion anchorRotation)"));
+            Assert.That(lateFrameBody, Does.Contain("Matrix4x4.TRS(anchorPosition, anchorRotation, Vector3.one)"));
+            Assert.That(refreshBody, Does.Contain("if (!IsFinite(originPosition) || !IsFinite(originRotation))"));
+            Assert.That(refreshBody, Does.Contain("ClearMapSamples();"));
+            Assert.That(refreshBody, Does.Contain("ResolveSampleRadiusMeters(sampleRadiusMeters)"));
+            Assert.That(refreshBody, Does.Contain("ResolveDisplayRadiusMeters(displayRadiusMeters)"));
+            Assert.That(refreshBody, Does.Contain("ResolveMaxHeightDeltaMeters(maxHeightDeltaMeters)"));
+            Assert.That(refreshBody, Does.Contain("ResolveVerticalExaggeration(verticalExaggeration)"));
+            Assert.That(refreshBody, Does.Contain("math.isfinite(heightDelta)"));
+            Assert.That(floorBody, Does.Contain("if (!IsFinite(samplePosition) || !math.isfinite(originY))"));
+            Assert.That(floorBody, Does.Contain("math.isfinite(terrainDelta) ? terrainDelta : 0f"));
+            Assert.That(floorBody, Does.Contain("math.isfinite(fallbackDelta) ? fallbackDelta : 0f"));
+            Assert.That(interpolationBody, Does.Contain("IsFinite(vertex) ? vertex : Vector3.zero"));
+            Assert.That(visibleBody, Does.Contain("!IsFinite(cameraPosition)"));
+            Assert.That(visibleBody, Does.Contain("!IsFinite(anchor.position)"));
+            Assert.That(visibleBody, Does.Contain("!math.isfinite(directionLengthSq)"));
+            Assert.That(qualityBody, Does.Contain("SanitizeQualityWeight01(value, _cachedQualityWeight01)"));
+            Assert.That(materialBody, Does.Contain("Color safeSonarColor = ResolveSonarColor(sonarColor);"));
+            Assert.That(materialBody, Does.Contain("_materialProperties.SetColor(_BaseColorId, safeSonarColor);"));
+            Assert.That(boundsBody, Does.Contain("ResolveSampleRadiusMeters(sampleRadiusMeters)"));
+            Assert.That(boundsBody, Does.Contain("ResolveDisplayRadiusMeters(displayRadiusMeters)"));
+            Assert.That(clearBody, Does.Contain("_hasCurrentSample = false;"));
+            Assert.That(clearBody, Does.Contain("_hasPreviousSample = false;"));
+            Assert.That(validateBody, Does.Contain("sonarColor = ResolveSonarColor(sonarColor);"));
+            Assert.That(source, Does.Contain("private static bool TryResolveAnchorRenderPose(Transform anchor, out Vector3 position, out Quaternion rotation)"));
+            Assert.That(source, Does.Contain("private static float SanitizeQualityWeight01(float value, float fallback = 0f)"));
+            Assert.That(source, Does.Contain("private static Color ResolveSonarColor(Color color)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Color color)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Quaternion rotation)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector3 value)"));
+        }
+
+        [Test]
+        public void PdaRuntimeAupReadouts_RejectNonFinitePlayerAndMarkerAups()
+        {
+            string spectrumPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/PDASpectrumTab.cs");
+            string mapPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/PDAMapTab.cs");
+            string spectrumSource = File.ReadAllText(spectrumPath);
+            string mapSource = File.ReadAllText(mapPath);
+            string spectrumPlayerAup = ExtractMethodBlock(spectrumSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string spectrumDistance = ExtractMethodBlock(spectrumSource, "private static int ResolveRoundedApproximateAupDistanceMeters(");
+            string mapPlayerAup = ExtractMethodBlock(mapSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string mapRuntimePosition = ExtractMethodBlock(mapSource, "private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)");
+            string markerOverlayDelta = ExtractMethodBlock(mapSource, "private bool TryResolveMarkerOverlayDelta(");
+            string playerDepth = ExtractMethodBlock(mapSource, "private float ResolvePlayerDepthMeters()");
+
+            Assert.That(spectrumPlayerAup, Does.Contain("return playerAup.IsFinite();"));
+            Assert.That(spectrumPlayerAup, Does.Not.Contain("return true;"));
+            Assert.That(spectrumDistance, Does.Contain("if (!fromAup.IsFinite())"));
+            Assert.That(mapPlayerAup, Does.Contain("return playerAup.IsFinite();"));
+            Assert.That(mapPlayerAup, Does.Not.Contain("return true;"));
+            Assert.That(mapRuntimePosition, Does.Contain("if (!targetAup.IsFinite() || !originAup.IsFinite())"));
+            AssertOrder(mapRuntimePosition, "if (!targetAup.IsFinite() || !originAup.IsFinite())", "targetAup.ToAbsoluteDouble3()");
+            Assert.That(markerOverlayDelta, Does.Contain("if (!markerAup.IsFinite())"));
+            Assert.That(markerOverlayDelta, Does.Contain("double.IsNaN(x) || double.IsInfinity(x) || double.IsNaN(z) || double.IsInfinity(z)"));
+            Assert.That(playerDepth, Does.Contain("math.isfinite(currentDepthMeters) ? math.max(0f, currentDepthMeters) : 0f"));
+            Assert.That(playerDepth, Does.Contain("double.IsNaN(absoluteY) || double.IsInfinity(absoluteY)"));
+        }
+
+        [Test]
+        public void PdaIntrusionEvents_ReportQueueOverflowDrops()
+        {
+            string intrusionPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/PDAIntrusionManager.cs");
+            string source = File.ReadAllText(intrusionPath);
+            string resetBody = ExtractMethodBlock(source, "private static void ResetStaticState()");
+            string raiseBody = ExtractMethodBlock(source, "internal static void RaiseRebootCompleted(uint sourceId)");
+            string reportBody = ExtractMethodBlock(source, "private static void ReportEventQueueOverflow()");
+
+            Assert.That(source, Does.Contain("private const uint PDAIntrusionEventOverflowWarningHash"));
+            Assert.That(source, Does.Contain("private const uint PDAIntrusionEventContextHash"));
+            Assert.That(source, Does.Contain("private static int _droppedEventCount;"));
+            Assert.That(source, Does.Contain("private static int _lastEventOverflowTelemetryFrame = -1;"));
+            Assert.That(source, Does.Contain("public static int DroppedEventCount => _droppedEventCount;"));
+            Assert.That(resetBody, Does.Contain("_droppedEventCount = 0;"));
+            Assert.That(resetBody, Does.Contain("_lastEventOverflowTelemetryFrame = -1;"));
+            Assert.That(raiseBody, Does.Contain("if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)"));
+            Assert.That(raiseBody, Does.Contain("ReportEventQueueOverflow();"));
+            Assert.That(raiseBody, Does.Contain("if (!_nextFrameEvents.Enqueue(in payload))"));
+            Assert.That(raiseBody, Does.Contain("if (!_pendingEvents.Enqueue(in payload))"));
+            Assert.AreEqual(3, CountToken(raiseBody, "ReportEventQueueOverflow();"));
+            Assert.That(reportBody, Does.Contain("_droppedEventCount++;"));
+            Assert.That(reportBody, Does.Contain("if (_lastEventOverflowTelemetryFrame == frame)"));
+            Assert.That(reportBody, Does.Contain("_lastEventOverflowTelemetryFrame = frame;"));
+            Assert.That(reportBody, Does.Contain("GlobalTelemetryBus.PublishPerformanceWarning("));
+            Assert.That(reportBody, Does.Contain("PDAIntrusionEventOverflowWarningHash"));
+            Assert.That(reportBody, Does.Contain("PDAIntrusionEventContextHash"));
+            Assert.That(reportBody, Does.Contain("Mathf.Max(1, _droppedEventCount)"));
+        }
+
+        [Test]
+        public void PdaIntrusionManager_SanitizesRuntimeTimersAndDirectorInputs()
+        {
+            string intrusionPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/PDAIntrusionManager.cs");
+            string source = File.ReadAllText(intrusionPath);
+            string progressBody = ExtractMethodBlock(source, "public float RebootProgressNormalized");
+            string advanceBody = ExtractMethodBlock(source, "private void AdvanceIntrusionPresentationState(float dt)");
+            string lateFrameBody = ExtractMethodBlock(source, "public void LateFrameTick()");
+            string directorBody = ExtractMethodBlock(source, "private void HandleEquipmentGlitchRequested(float intensity)");
+            string ambientBody = ExtractMethodBlock(source, "private void TickAmbientIntrusionThreat(float dt)");
+            string abyssalBody = ExtractMethodBlock(source, "private bool ShouldTriggerAbyssalHack(Vector3 origin)");
+            string visualBody = ExtractMethodBlock(source, "private void TickVisualCadence(float dt)");
+            string rebootBody = ExtractMethodBlock(source, "private void TickRebootHold(float dt)");
+            string textDriftBody = ExtractMethodBlock(source, "private void TickTextDrift(float dt)");
+            string triggerBody = ExtractMethodBlock(source, "private void TriggerHack()");
+            string resolveOwnersBody = ExtractMethodBlock(source, "private void ResolveRuntimeOwners(float dt)");
+            string validateBody = ExtractMethodBlock(source, "private void OnValidate()");
+
+            Assert.That(progressBody, Does.Contain("ResolveRebootHoldDurationSeconds(rebootHoldDuration)"));
+            Assert.That(progressBody, Does.Contain("SanitizeNonNegativeSeconds(_rebootHoldTimer)"));
+            Assert.That(advanceBody, Does.Contain("float safeDeltaTime = SanitizeDeltaTime(dt);"));
+            Assert.That(advanceBody, Does.Contain("TickAmbientIntrusionThreat(safeDeltaTime);"));
+            Assert.That(advanceBody, Does.Contain("TickVisualCadence(safeDeltaTime);"));
+            Assert.That(advanceBody, Does.Contain("TickRebootHold(safeDeltaTime);"));
+            Assert.That(lateFrameBody, Does.Contain("float dt = SanitizeDeltaTime(SystemDispatcher.CurrentFrameUnscaledDeltaTime);"));
+            Assert.That(directorBody, Does.Contain("!math.isfinite(intensity)"));
+            Assert.That(directorBody, Does.Contain("ResolveEquipmentGlitchThreshold01(equipmentGlitchThreshold)"));
+            Assert.That(ambientBody, Does.Contain("SanitizeNonNegativeSeconds(_leviathanScanTimer) - SanitizeDeltaTime(dt)"));
+            Assert.That(ambientBody, Does.Contain("ResolveLeviathanScanIntervalSeconds(leviathanScanInterval)"));
+            Assert.That(ambientBody, Does.Contain("ResolveLeviathanHackRadiusMeters(leviathanHackRadius)"));
+            Assert.That(abyssalBody, Does.Contain("math.isfinite(_playerMovement.CurrentHullStress01)"));
+            Assert.That(abyssalBody, Does.Contain("return IsFinite(origin) && IsInsideDeadZone(origin);"));
+            Assert.That(visualBody, Does.Contain("SanitizeNonNegativeSeconds(_visualPhaseTimer) - SanitizeDeltaTime(dt)"));
+            Assert.That(visualBody, Does.Contain("ResolveVisualPhaseDurationSeconds(visualPhaseDuration)"));
+            Assert.That(rebootBody, Does.Contain("float safeDeltaTime = SanitizeDeltaTime(dt);"));
+            Assert.That(rebootBody, Does.Contain("SanitizeNonNegativeSeconds(_rebootHoldTimer) + safeDeltaTime"));
+            Assert.That(rebootBody, Does.Contain("ResolveRebootHoldDurationSeconds(rebootHoldDuration)"));
+            Assert.That(textDriftBody, Does.Contain("float safeDeltaTime = SanitizeDeltaTime(dt);"));
+            Assert.That(textDriftBody, Does.Contain("math.isfinite(_textDriftRescanTimer)"));
+            Assert.That(textDriftBody, Does.Contain("ResolveTextDriftRescanIntervalSeconds(TextDriftRescanInterval)"));
+            Assert.That(textDriftBody, Does.Contain("math.isfinite(_textDriftWaveTime)"));
+            Assert.That(triggerBody, Does.Contain("ResolveVisualPhaseDurationSeconds(visualPhaseDuration)"));
+            Assert.That(resolveOwnersBody, Does.Contain("SanitizeNonNegativeSeconds(_runtimeOwnerResolveRetryTimer)"));
+            Assert.That(resolveOwnersBody, Does.Contain("SanitizeDeltaTime(dt)"));
+            Assert.That(validateBody, Does.Contain("equipmentGlitchThreshold = ResolveEquipmentGlitchThreshold01(equipmentGlitchThreshold);"));
+            Assert.That(validateBody, Does.Contain("leviathanScanInterval = ResolveLeviathanScanIntervalSeconds(leviathanScanInterval);"));
+            Assert.That(validateBody, Does.Contain("leviathanHackRadius = ResolveLeviathanHackRadiusMeters(leviathanHackRadius);"));
+            Assert.That(validateBody, Does.Contain("visualPhaseDuration = ResolveVisualPhaseDurationSeconds(visualPhaseDuration);"));
+            Assert.That(validateBody, Does.Contain("rebootHoldDuration = ResolveRebootHoldDurationSeconds(rebootHoldDuration);"));
+            Assert.That(source, Does.Contain("private static float SanitizeDeltaTime(float seconds)"));
+            Assert.That(source, Does.Contain("private static float SanitizeNonNegativeSeconds(float seconds)"));
+            Assert.That(source, Does.Contain("private static float ResolveEquipmentGlitchThreshold01(float threshold)"));
+            Assert.That(source, Does.Contain("private static float ResolveLeviathanScanIntervalSeconds(float intervalSeconds)"));
+            Assert.That(source, Does.Contain("private static float ResolveLeviathanHackRadiusMeters(float radiusMeters)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector3 value)"));
+        }
+
+        [Test]
+        public void AmbientWaterMotionManager_RejectsNonFinitePresentationInputs()
+        {
+            string motionPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AmbientWaterMotionManager.cs");
+            string source = File.ReadAllText(motionPath);
+            string enableBody = ExtractMethodBlock(source, "private void OnEnable()");
+            string disableBody = ExtractMethodBlock(source, "private void OnDisable()");
+            string destroyBody = ExtractMethodBlock(source, "private void OnDestroy()");
+            string tickBody = ExtractMethodBlock(source, "public void Tick(float deltaTime)");
+            string lateFrameBody = ExtractMethodBlock(source, "public void LateFrameTick()");
+            string lodBody = ExtractMethodBlock(source, "private static byte ResolveDistanceLodBand(");
+            string runtimeWorldBody = ExtractMethodBlock(source, "private static bool TryResolveRuntimeWorldPosition(");
+            string runtimePositionBody = ExtractMethodBlock(source, "private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition aup, out Vector3 runtimePosition)");
+            string presentationPositionBody = ExtractMethodBlock(source, "private static bool TryResolvePresentationRestWorldPosition(AmbientWaterMotion motion, out Vector3 worldPosition)");
+            string applyBody = ExtractMethodBlock(source, "private void ApplyMotion(AmbientWaterMotion motion, Vector3 worldPos)");
+            string biomeBlendBody = ExtractMethodBlock(source, "private void UpdateBiomeCurrentBlend(float deltaTime)");
+            string biomeTargetBody = ExtractMethodBlock(source, "private static Vector3 ResolveBiomeCurrentTarget(HectonBiomeMatrixProfile profile)");
+            string refreshBody = ExtractMethodBlock(source, "private void RefreshDistanceThresholds()");
+            string resetCadenceBody = ExtractMethodBlock(source, "private void ResetInterruptedVisualCadence()");
+            string validateBody = ExtractMethodBlock(source, "private void OnValidate()");
+
+            Assert.That(enableBody, Does.Contain("TryRegisterService();"));
+            Assert.That(enableBody, Does.Contain("if (!_serviceRegistered)"));
+            AssertOrder(enableBody, "TryRegisterService();", "TryRegisterHotSwapListener();");
+            AssertOrder(enableBody, "TryRegisterService();", "TryRegister();");
+            Assert.That(disableBody, Does.Contain("ResetInterruptedVisualCadence();"));
+            Assert.That(destroyBody, Does.Contain("ResetInterruptedVisualCadence();"));
+            Assert.That(tickBody, Does.Contain("SanitizeDeltaTime(_pendingVisualDeltaTime) + SanitizeDeltaTime(deltaTime)"));
+            Assert.That(tickBody, Does.Contain("ResetInterruptedVisualCadence();"));
+            Assert.That(lateFrameBody, Does.Contain("deltaTime = SanitizeDeltaTime(deltaTime);"));
+            Assert.That(lateFrameBody, Does.Contain("ResetInterruptedVisualCadence();"));
+            Assert.That(lateFrameBody, Does.Contain("_time = AdvanceRuntimeTime(_time, deltaTime);"));
+            Assert.That(lateFrameBody, Does.Contain("motion.HasRestAup && motion.RestAup.IsFinite()"));
+            Assert.That(lateFrameBody, Does.Contain("TryResolveRuntimeWorldPosition(motion, in motionAup, hasMotionAup, out Vector3 worldPos)"));
+            Assert.That(runtimeWorldBody, Does.Contain("TryResolveRuntimePosition(in motionAup, out worldPos)"));
+            Assert.That(runtimeWorldBody, Does.Contain("TryResolvePresentationRestWorldPosition(motion, out worldPos)"));
+            Assert.That(runtimePositionBody, Does.Contain("if (!aup.IsFinite())"));
+            Assert.That(runtimePositionBody, Does.Contain("return IsFinite(runtimePosition);"));
+            Assert.That(presentationPositionBody, Does.Contain("return IsFinite(worldPosition);"));
+            Assert.That(lodBody, Does.Contain("double.IsNaN(distanceSq) || double.IsInfinity(distanceSq) || distanceSq < 0d"));
+            Assert.That(lodBody, Does.Contain("ResolveDistanceLimitSqr(nearSq, 1f)"));
+            Assert.That(applyBody, Does.Contain("if (!IsFinite(worldPos))"));
+            Assert.That(applyBody, Does.Contain("ResolveMotionCoupling(motion.CurrentCoupling)"));
+            Assert.That(applyBody, Does.Contain("volumeCurrent = ClampFiniteVector(volumeCurrent, MaxAmbientMotionCurrentMetersPerSecond);"));
+            Assert.That(applyBody, Does.Contain("if (!math.all(math.isfinite(phantomCurrent)))"));
+            Assert.That(applyBody, Does.Contain("float time = SanitizeNonNegativeSeconds(_time);"));
+            Assert.That(applyBody, Does.Contain("float frequency = ResolveMotionFrequency(motion.BaseFrequency) * ResolveMotionFrequency(globalFrequency);"));
+            Assert.That(applyBody, Does.Contain("Vector3 positionalAmplitude = ClampFiniteVector(motion.PositionalAmplitude, MaxAmbientMotionAmplitudeMeters);"));
+            Assert.That(applyBody, Does.Contain("if (IsFinite(localPosition))"));
+            Assert.That(applyBody, Does.Contain("if (IsFinite(localRotation))"));
+            Assert.That(biomeBlendBody, Does.Contain("ClampFiniteVector(_biomeCurrentStartVector, MaxAmbientMotionCurrentMetersPerSecond)"));
+            Assert.That(biomeBlendBody, Does.Contain("SanitizeNonNegativeSeconds(_biomeCurrentBlendElapsed) + SanitizeDeltaTime(deltaTime)"));
+            Assert.That(biomeTargetBody, Does.Contain("math.isfinite(profile.ambientFlowOverrideWeight) ? profile.ambientFlowOverrideWeight : 0f"));
+            Assert.That(biomeTargetBody, Does.Contain("ClampFiniteVector(profile.ambientFlowOverride * weight, MaxAmbientMotionCurrentMetersPerSecond)"));
+            Assert.That(refreshBody, Does.Contain("nearDistance = ResolveDistanceMeters(nearDistance, 1f);"));
+            Assert.That(resetCadenceBody, Does.Contain("_pendingVisualDeltaTime = 0f;"));
+            Assert.That(validateBody, Does.Contain("globalAmplitude = ResolveMotionAmplitude(globalAmplitude);"));
+            Assert.That(validateBody, Does.Contain("globalFrequency = ResolveMotionFrequency(globalFrequency);"));
+            Assert.That(source, Does.Contain("private static float SanitizeDeltaTime(float seconds)"));
+            Assert.That(source, Does.Contain("private static float SanitizeNonNegativeSeconds(float seconds)"));
+            Assert.That(source, Does.Contain("private static float AdvanceRuntimeTime(float currentSeconds, float deltaSeconds)"));
+            Assert.That(source, Does.Contain("private static Vector3 ClampFiniteVector(Vector3 value, float maxMagnitude)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector3 value)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Quaternion rotation)"));
+        }
+
+        [Test]
+        public void AmbientWaterMotionManager_FailsClosedWhenRegistryCapacityExceeded()
+        {
+            string motionPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AmbientWaterMotionManager.cs");
+            string source = File.ReadAllText(motionPath);
+            string registerBody = ExtractMethodBlock(source, "public bool Register(AmbientWaterMotion motion)");
+            string reportBody = ExtractMethodBlock(source, "private void ReportRegistrationCapacityExceeded()");
+
+            Assert.That(source, Does.Contain("private const int MotionCapacity = 128;"));
+            Assert.That(source, Does.Contain("private const uint AmbientMotionRegistrationCapacityWarningHash"));
+            Assert.That(source, Does.Contain("private const uint AmbientMotionSystemContextHash"));
+            Assert.That(source, Does.Contain("[SerializeField] private int _debugDroppedRegistrationCount;"));
+            Assert.That(source, Does.Contain("private int _droppedRegistrationCount;"));
+            Assert.That(source, Does.Contain("private int _lastRegistrationOverflowWarningFrame = -1;"));
+            Assert.That(source, Does.Contain("public int DroppedRegistrationCount => _droppedRegistrationCount;"));
+            Assert.That(registerBody, Does.Contain("if (motion == null)"));
+            Assert.That(registerBody, Does.Contain("return false;"));
+            Assert.That(registerBody, Does.Contain("if (_objectsSet.Contains(motion))"));
+            Assert.That(registerBody, Does.Contain("return true;"));
+            Assert.That(registerBody, Does.Contain("if (_objects.Count >= MotionCapacity)"));
+            Assert.That(registerBody, Does.Contain("ReportRegistrationCapacityExceeded();"));
+            Assert.That(registerBody, Does.Contain("if (_objectsSet.Add(motion))"));
+            Assert.That(registerBody, Does.Contain("_objects.Add(motion);"));
+            AssertOrder(registerBody, "_objectsSet.Contains(motion)", "_objects.Count >= MotionCapacity");
+            AssertOrder(registerBody, "_objects.Count >= MotionCapacity", "_objectsSet.Add(motion)");
+            Assert.That(reportBody, Does.Contain("_droppedRegistrationCount++;"));
+            Assert.That(reportBody, Does.Contain("_debugDroppedRegistrationCount = _droppedRegistrationCount;"));
+            Assert.That(reportBody, Does.Contain("int currentFrame = SystemDispatcher.CurrentFrameIndex;"));
+            Assert.That(reportBody, Does.Contain("_lastRegistrationOverflowWarningFrame == currentFrame"));
+            Assert.That(reportBody, Does.Contain("GlobalTelemetryBus.PublishPerformanceWarning("));
+            Assert.That(reportBody, Does.Contain("AmbientMotionRegistrationCapacityWarningHash"));
+            Assert.That(reportBody, Does.Contain("AmbientMotionSystemContextHash"));
+            Assert.That(reportBody, Does.Contain("_lastRegistrationOverflowWarningFrame = currentFrame;"));
+        }
+
+        [Test]
+        public void AmbientWaterMotion_AuthoringBridgeSanitizesProfileAndRestPose()
+        {
+            string motionPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AmbientWaterMotion.cs");
+            string profilePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AmbientWaterMotionProfile.cs");
+            string motionSource = File.ReadAllText(motionPath);
+            string profileSource = File.ReadAllText(profilePath);
+            string awakeBody = ExtractMethodBlock(motionSource, "private void Awake()");
+            string enableBody = ExtractMethodBlock(motionSource, "private void OnEnable()");
+            string captureBody = ExtractMethodBlock(motionSource, "public void CaptureRestPose()");
+            string applyBody = ExtractMethodBlock(motionSource, "public void ApplyProfile()");
+            string hotSwapBody = ExtractMethodBlock(motionSource, "public void OnGlobalRegistryServiceReplaced(");
+            string rebindBody = ExtractMethodBlock(motionSource, "private void RebindManager(AmbientWaterMotionManager manager)");
+            string unregisterBody = ExtractMethodBlock(motionSource, "private void UnregisterFromManager()");
+            string registerListenerBody = ExtractMethodBlock(motionSource, "private void TryRegisterHotSwapListener()");
+            string unregisterListenerBody = ExtractMethodBlock(motionSource, "private void TryUnregisterHotSwapListener()");
+            string sanitizeBody = ExtractMethodBlock(motionSource, "private void SanitizeTuning()");
+            string validateBody = ExtractMethodBlock(motionSource, "private void OnValidate()");
+            string profileValidateBody = ExtractMethodBlock(profileSource, "private void OnValidate()");
+
+            Assert.That(motionSource, Does.Contain("public sealed class AmbientWaterMotion : MonoBehaviour, IGlobalRegistryHotSwapListener"));
+            Assert.That(motionSource, Does.Contain("private AmbientWaterMotionManager _registeredManager;"));
+            Assert.That(motionSource, Does.Contain("private bool _hotSwapRegistered;"));
+            Assert.That(awakeBody, Does.Contain("SanitizeTuning();"));
+            Assert.That(enableBody, Does.Contain("if (!Application.isPlaying)"));
+            AssertOrder(enableBody, "if (!Application.isPlaying)", "TryRegisterHotSwapListener();");
+            AssertOrder(enableBody, "if (!Application.isPlaying)", "RebindManager(GlobalRegistry.AmbientWaterMotion);");
+            Assert.That(captureBody, Does.Contain("_restLocalPosition = IsFinite(localPosition) ? localPosition : Vector3.zero;"));
+            Assert.That(captureBody, Does.Contain("_restLocalRotation = IsFinite(localRotation) ? localRotation : Quaternion.identity;"));
+            Assert.That(captureBody, Does.Contain("if (!IsFinite(worldPosition))"));
+            Assert.That(captureBody, Does.Contain("_hasRestAup = false;"));
+            Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolveAmplitude(profile.verticalAmplitude)"));
+            Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolvePositionalAmplitude(profile.positionalAmplitude)"));
+            Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolveAngularAmplitude(profile.angularAmplitude)"));
+            Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolveFrequency(profile.baseFrequency)"));
+            Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolveCurrentCoupling(profile.currentCoupling)"));
+            Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolveLodBias(profile.lodBias)"));
+            Assert.That(hotSwapBody, Does.Contain("serviceSlot != GlobalRegistryServiceSlot.AmbientWaterMotionRuntime"));
+            Assert.That(hotSwapBody, Does.Contain("ReferenceEquals(_registeredManager, previousService)"));
+            Assert.That(hotSwapBody, Does.Contain("RebindManager(currentService as AmbientWaterMotionManager);"));
+            Assert.That(rebindBody, Does.Contain("UnregisterFromManager();"));
+            Assert.That(rebindBody, Does.Contain("if (manager.Register(this))"));
+            Assert.That(rebindBody, Does.Contain("_registeredManager = manager;"));
+            Assert.That(rebindBody, Does.Contain("TryUnregisterHotSwapListener();"));
+            AssertOrder(rebindBody, "if (manager.Register(this))", "_registeredManager = manager;");
+            AssertOrder(rebindBody, "_registeredManager = manager;", "TryUnregisterHotSwapListener();");
+            Assert.That(unregisterBody, Does.Contain("manager.Unregister(this);"));
+            Assert.That(unregisterBody, Does.Contain("_registeredManager = null;"));
+            Assert.That(registerListenerBody, Does.Contain("GlobalRegistry.TryRegisterHotSwapListener(this)"));
+            Assert.That(unregisterListenerBody, Does.Contain("GlobalRegistry.TryUnregisterHotSwapListener(this);"));
+            Assert.That(sanitizeBody, Does.Contain("verticalAmplitude = AmbientWaterMotionProfile.ResolveAmplitude(verticalAmplitude);"));
+            Assert.That(validateBody, Does.Contain("SanitizeTuning();"));
+            Assert.That(profileValidateBody, Does.Contain("verticalAmplitude = ResolveAmplitude(verticalAmplitude);"));
+            Assert.That(profileValidateBody, Does.Contain("positionalAmplitude = ResolvePositionalAmplitude(positionalAmplitude);"));
+            Assert.That(profileValidateBody, Does.Contain("angularAmplitude = ResolveAngularAmplitude(angularAmplitude);"));
+            Assert.That(profileValidateBody, Does.Contain("baseFrequency = ResolveFrequency(baseFrequency);"));
+            Assert.That(profileValidateBody, Does.Contain("currentCoupling = ResolveCurrentCoupling(currentCoupling);"));
+            Assert.That(profileValidateBody, Does.Contain("lodBias = ResolveLodBias(lodBias);"));
+            Assert.That(motionSource, Does.Contain("private static bool IsFinite(Vector3 value)"));
+            Assert.That(motionSource, Does.Contain("private static bool IsFinite(Quaternion rotation)"));
+            Assert.That(profileSource, Does.Contain("internal static Vector3 ResolvePositionalAmplitude(Vector3 amplitude)"));
+            Assert.That(profileSource, Does.Contain("private static Vector3 ClampFiniteVector(Vector3 value, float maxMagnitude)"));
+            Assert.That(profileSource, Does.Contain("private static bool IsFinite(Vector3 value)"));
+        }
+
+        [Test]
+        public void HudMarkerRuntimeProjection_RejectsNonFiniteAupsBeforeDelta()
+        {
+            string registryPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/PDA/PDAMarkerRegistry.cs");
+            string markerHudPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/PDA/PDAMarkerHUDElement.cs");
+            string beaconHudPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/BeaconHUDElement.cs");
+            string relayHudPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/RelayHUDElement.cs");
+            string registrySource = File.ReadAllText(registryPath);
+            string markerHudSource = File.ReadAllText(markerHudPath);
+            string beaconHudSource = File.ReadAllText(beaconHudPath);
+            string relayHudSource = File.ReadAllText(relayHudPath);
+            string registryRuntimePosition = ExtractMethodBlock(registrySource, "private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)");
+            string markerObserverAup = ExtractMethodBlock(markerHudSource, "private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)");
+            string markerRuntimePosition = ExtractMethodBlock(markerHudSource, "private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)");
+            string beaconObserverAup = ExtractMethodBlock(beaconHudSource, "private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)");
+            string beaconRuntimePosition = ExtractMethodBlock(beaconHudSource, "private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)");
+            string relayPlayerAup = ExtractMethodBlock(relayHudSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string relayRuntimePosition = ExtractMethodBlock(relayHudSource, "private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)");
+
+            Assert.That(registryRuntimePosition, Does.Contain("!IsFiniteAup(in targetAup)"));
+            Assert.That(registryRuntimePosition, Does.Contain("!TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)"));
+            AssertOrder(registryRuntimePosition, "!TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)", "targetAup.ToAbsoluteDouble3()");
+            Assert.That(markerObserverAup, Does.Contain("return observerAup.IsFinite();"));
+            Assert.That(markerObserverAup, Does.Not.Contain("return true;"));
+            Assert.That(markerRuntimePosition, Does.Contain("if (!targetAup.IsFinite() || !originAup.IsFinite())"));
+            AssertOrder(markerRuntimePosition, "if (!targetAup.IsFinite() || !originAup.IsFinite())", "targetAup.ToAbsoluteDouble3()");
+            Assert.That(beaconObserverAup, Does.Contain("return observerAup.IsFinite();"));
+            Assert.That(beaconObserverAup, Does.Not.Contain("return true;"));
+            Assert.That(beaconRuntimePosition, Does.Contain("if (!targetAup.IsFinite() || !originAup.IsFinite())"));
+            AssertOrder(beaconRuntimePosition, "if (!targetAup.IsFinite() || !originAup.IsFinite())", "targetAup.ToAbsoluteDouble3()");
+            Assert.That(relayPlayerAup, Does.Contain("return playerAup.IsFinite();"));
+            Assert.That(relayPlayerAup, Does.Not.Contain("return true;"));
+            Assert.That(relayRuntimePosition, Does.Contain("if (!targetAup.IsFinite() || !originAup.IsFinite())"));
+            AssertOrder(relayRuntimePosition, "if (!targetAup.IsFinite() || !originAup.IsFinite())", "targetAup.ToAbsoluteDouble3()");
+        }
+
+        [Test]
+        public void PlayerExplorationTracker_RejectsNonFiniteCurrentAupSamples()
+        {
+            string trackerPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/PDA/PlayerExplorationTracker.cs");
+            string source = File.ReadAllText(trackerPath);
+            string refreshCache = ExtractMethodBlock(source, "private bool RefreshPlayerTransformCache(bool force)");
+            string resolvePlayerAup = ExtractMethodBlock(source, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string cacheSample = ExtractMethodBlock(source, "private bool CacheCurrentPlayerAupSample()");
+            string clearSample = ExtractMethodBlock(source, "private void ClearLastSampledAup()");
+            string cacheContext = ExtractMethodBlock(source, "private void CachePlayerContext(IPlayerRuntimeContext playerContext)");
+
+            Assert.That(refreshCache, Does.Contain("if (!force && _playerMovement != null)"));
+            AssertOrder(refreshCache, "if (!force && _playerMovement != null)", "CacheCurrentPlayerAupSample();");
+            Assert.That(resolvePlayerAup, Does.Contain("if (!CacheCurrentPlayerAupSample())"));
+            Assert.That(resolvePlayerAup, Does.Contain("playerAup = _lastSampledAup;"));
+            Assert.That(resolvePlayerAup, Does.Not.Contain("_playerMovement.CurrentAup"));
+            Assert.That(cacheSample, Does.Contain("if (_playerMovement == null)"));
+            Assert.That(cacheSample, Does.Contain("AbsoluteUniversePosition playerAup = _playerMovement.CurrentAup;"));
+            Assert.That(cacheSample, Does.Contain("if (!playerAup.IsFinite())"));
+            Assert.That(cacheSample, Does.Contain("ClearLastSampledAup();"));
+            AssertOrder(cacheSample, "if (!playerAup.IsFinite())", "_lastSampledAup = playerAup;");
+            Assert.That(clearSample, Does.Contain("_lastSampledAup = default;"));
+            Assert.That(clearSample, Does.Contain("_hasLastSampledAup = false;"));
+            Assert.That(cacheContext, Does.Contain("playerTransform = null;"));
+            Assert.That(cacheContext, Does.Contain("_playerMovement = null;"));
+            Assert.That(cacheContext, Does.Contain("ClearLastSampledAup();"));
+        }
+
+        [Test]
         public void SuitHud_TextCreationUsesCachedFontSharedMaterial()
         {
             string path = Path.Combine(

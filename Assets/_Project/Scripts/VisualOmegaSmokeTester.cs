@@ -82,7 +82,7 @@ namespace Hecton8.Dev
             _debugFailureCount = 0;
 
             string projectRoot = ResolveProjectRoot();
-            string flashlightSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/Visor/HectonFlashlightVoxelShadowProvider.cs");
+            string equipmentSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/ModularEquipmentEngine.cs");
             string atmosphereSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/HectonAtmosphereManager.cs");
             string mapMagicSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/MapMagicBridge.cs");
             string registrySource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/Core/GlobalRegistry.cs");
@@ -100,11 +100,11 @@ namespace Hecton8.Dev
             string visorFluidShaderSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_VisorFluidDistortion.shader");
             string scooterShaftSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader");
 
-            CheckContains(flashlightSource, "RuntimeVoxelShadowProviderEnabled = false", "flashlight-voxel-provider-runtime-disabled");
-            CheckContains(flashlightSource, "PublishInactiveGlobals", "flashlight-legacy-provider-fails-closed");
-            CheckNotContains(flashlightSource, "new NativeArray", "flashlight-provider-nativearray-evicted");
-            CheckNotContains(flashlightSource, "OverlapBoxNonAlloc", "flashlight-provider-physics-scan-evicted");
-            CheckNotContains(flashlightSource, "RegisterUpdatable", "flashlight-provider-update-loop-evicted");
+            CheckContains(equipmentSource, "PublishInactiveFlashlightPresentationShaderGlobals();", "flashlight-owner-fails-closed");
+            CheckContains(equipmentSource, "private static void PublishInactiveFlashlightPresentationShaderGlobals()", "flashlight-owner-inactive-route");
+            CheckContains(equipmentSource, "Shader.SetGlobalFloat(FlashlightActiveShaderId, 0f);", "flashlight-active-global-clears");
+            CheckContains(equipmentSource, "Shader.SetGlobalFloat(FlashlightVoxelActiveShaderId, 0f);", "flashlight-voxel-global-disabled");
+            CheckContains(equipmentSource, "Shader.SetGlobalMatrix(FlashlightVoxelWorldToLocalShaderId, Matrix4x4.identity);", "flashlight-voxel-matrix-reset");
             CheckNotContains(atmosphereSource, "_instance", "atmosphere-static-instance-removed");
             CheckNotContains(mapMagicSource, "private static MapMagicBridge _instance", "mapmagic-legacy-static-instance-removed");
             CheckContains(mapMagicSource, "private static MapMagicBridge s_activeRuntimeInstance;", "mapmagic-owner-local-active-instance");

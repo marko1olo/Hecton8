@@ -23,11 +23,11 @@ Aegir卫星阶梯让可游玩的月球成为运动系统的一部分。其他卫
 
 ## Scanner
 
-卫星序列：Cinder、Hook、Glass、Switch、Drywell、Brinehook、Rake、HECTON-8、Pale、Longmark、Grave、Farline。
+卫星序列：Skarn、Vela、Claw、Lumen、Thorne、Anvil、Kestrel、HECTON-8、Mute。
 
 ## Terminal
 
-HECTON-8是Aegir-VIII：既非内侧，也非最远。Rake共振和Pale阴影会改变潮汐和数据包质量。
+HECTON-8是Aegir-VIII：既非内侧，也非最远。Kestrel共振和Mute阴影会改变潮汐和数据包质量。
 
 ## Audio
 

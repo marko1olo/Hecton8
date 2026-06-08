@@ -3743,7 +3743,16 @@ namespace Hecton8.VFX.Bioluminescence
         {
             if (_stateJobScheduled)
             {
-                DispatcherJobFence.TryComplete(ref _stateJobHandle, forceComplete: true);
+                DispatcherJobFence.BeginLateFrameSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _stateJobHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndLateFrameSwapWindow();
+                }
+
                 _stateJobScheduled = false;
             }
 

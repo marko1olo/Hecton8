@@ -45,14 +45,23 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void SynthesizedHapticPulses_PreservePriorityFlagsWhenQueued()
+        public void HapticPulseLane_FeedsInputDispatcherWithoutSynthesisDtoBypass()
         {
-            string source = ReadProjectFile("Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs");
+            string dispatcher = Normalize(ReadProjectFile("Assets/_Project/Scripts/Core/InputDispatcher.cs"));
+            string synthesis = Normalize(ReadProjectFile("Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs"));
+            string acoustic = Normalize(ReadProjectFile("Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs"));
 
-            Assert.AreEqual(2, CountToken(source, "ResolveHapticPulsePriority("));
-            Assert.AreEqual(2, CountToken(source, "ResolveHapticPulseBlendMode("));
-            StringAssert.Contains("ResolveHapticPulsePriority(pulse.PriorityFlags)", source);
-            StringAssert.Contains("ResolveHapticPulsePriority(synthesizedPulse.PriorityFlags)", source);
+            StringAssert.Contains("SignalCorridorRuntime.EnsureHapticPulseSignalLaneInitialized();", dispatcher);
+            StringAssert.Contains("while (SignalBus<HapticPulseSignal>.TryConsumeFrame(out HapticPulseSignal pulse))", dispatcher);
+            StringAssert.Contains("InsertHapticPulseCommand(in pulse);", dispatcher);
+            StringAssert.Contains("private void InsertHapticPulseCommand(in HapticPulseSignal pulse)", dispatcher);
+            StringAssert.Contains("ResolveHapticPulsePriority(pulse.PriorityFlags)", dispatcher);
+            StringAssert.Contains("ResolveHapticPulseBlendMode(pulse.PriorityFlags)", dispatcher);
+            Assert.AreEqual(2, CountToken(synthesis, "SignalBus<HapticPulseSignal>.TryPushTracked(in pulse"));
+            StringAssert.DoesNotContain("ResolveHapticPulsePriority(pulse.PriorityFlags)", synthesis);
+            StringAssert.DoesNotContain("ResolveHapticPulsePriority(synthesizedPulse.PriorityFlags)", synthesis);
+            Assert.AreEqual(2, CountToken(acoustic, "SignalBus<HapticPulseSignal>.TryPushTracked(in pulse"));
+            StringAssert.DoesNotContain("SignalBus<HapticPulseSignal>.TryPush(in pulse", acoustic);
         }
 
         [Test]
@@ -85,6 +94,9 @@ namespace Hecton8.Tests.Editor
             string questManager = ReadProjectFile("Assets/_Project/Scripts/Quest/QuestManager.cs");
             string questDagResolver = ReadProjectFile("Assets/_Project/Scripts/Quest/QuestDagResolverRuntime.cs");
             string toolKinematics = ReadProjectFile("Assets/_Project/Scripts/Tools/ToolKinematics/ToolKinematicsRuntime.cs");
+            string acoustic = ReadProjectFile("Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs");
+            string pdaEncyclopedia = ReadProjectFile("Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs");
+            string bioCable = ReadProjectFile("Assets/_Project/Scripts/World/BioCableIK.cs");
 
             StringAssert.Contains("public const uint PriorityMask = PriorityCollision | PriorityExplosion | PriorityTool;", signal);
             StringAssert.Contains("public const int SourceHashShift = 3;", signal);
@@ -101,9 +113,28 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("HapticPulseSignal.PackPriorityAndSourceHash(\n                    HapticPulseSignal.PriorityTool,\n                    QuestDagRuntimeConstants.SignalSourceHash)", Normalize(questManager));
             StringAssert.Contains("HapticPulseSignal.PackPriorityAndSourceHash(\n                    HapticPulseSignal.PriorityTool,\n                    QuestDagRuntimeConstants.SignalSourceHash)", Normalize(questDagResolver));
             StringAssert.Contains("HapticPulseSignal.PackPriorityAndSourceHash(\n                    HapticPulseSignal.PriorityTool,\n                    heat.ToolHash)", Normalize(toolKinematics));
+            StringAssert.Contains("HapticPulseSignal.PackPriorityAndSourceHash(\n                        HapticPulseSignal.PriorityTool,\n                        GhostBlipSourceHash)", Normalize(acoustic));
+            StringAssert.Contains("HapticPulseSignal.PackPriorityAndSourceHash(\n                        HapticPulseSignal.PriorityTool,\n                        TuningHapticSourceHash)", Normalize(acoustic));
+            StringAssert.Contains("HapticPulseSignal.PackPriorityAndSourceHash(\n                    HapticPulseSignal.PriorityTool,\n                    LoreUnlockHapticSourceHash)", Normalize(pdaEncyclopedia));
+            StringAssert.Contains("HapticPulseSignal.PackPriorityAndSourceHash(\n                HapticPulseSignal.PriorityCollision,\n                PredatorCableBiteSourceId)", Normalize(bioCable));
             StringAssert.DoesNotContain("PriorityTool | (QuestDagRuntimeConstants.SignalSourceHash & 0x00FFFFFFu)", questManager);
             StringAssert.DoesNotContain("PriorityTool | (QuestDagRuntimeConstants.SignalSourceHash & 0x00FFFFFFu)", questDagResolver);
             StringAssert.DoesNotContain("PriorityTool | (heat.ToolHash & 0x00FFFFFFu)", toolKinematics);
+            StringAssert.DoesNotContain("PriorityFlags = HapticPulseSignal.Priority", acoustic);
+            StringAssert.DoesNotContain("PriorityFlags = HapticPulseSignal.Priority", pdaEncyclopedia);
+            StringAssert.DoesNotContain("PriorityFlags = HapticPulseSignal.Priority", bioCable);
+        }
+
+        [Test]
+        public void HapticMockStorms_DoNotRetainLegacyDirectInjectionStub()
+        {
+            string dispatcher = ReadProjectFile("Assets/_Project/Scripts/Core/InputDispatcher.cs");
+            string synthesis = ReadProjectFile("Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs");
+
+            StringAssert.DoesNotContain("RunMockCollisionHapticJob", dispatcher);
+            StringAssert.DoesNotContain("HandleMockCollisionSignal", dispatcher);
+            StringAssert.DoesNotContain("Legacy direct command injection disabled", dispatcher);
+            StringAssert.Contains("GenerateMockHapticStormJob", synthesis);
         }
 
         [Test]
@@ -190,6 +221,35 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("out bool recordedFrame", dispatcher);
             StringAssert.Contains("TryReadInputBuffer(in _inputTelemetryHandle, InputBlackBoxCapacity, out NativeArray<InputTelemetryEntryDTO>.ReadOnly telemetry)", dispatcher);
             StringAssert.Contains("telemetry.GetUnsafeReadOnlyPtr()", dispatcher);
+        }
+
+        [Test]
+        public void PowerSaveMute_SuppressesHapticIngressBeforeDeviceDispatch()
+        {
+            string dispatcher = Normalize(ReadProjectFile("Assets/_Project/Scripts/Core/InputDispatcher.cs"));
+            string synthesis = Normalize(ReadProjectFile("Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs"));
+
+            int drainIndex = dispatcher.IndexOf("private void DrainToolHaptics(float deltaTime)", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(drainIndex, 0, "DrainToolHaptics");
+            int muteIndex = dispatcher.IndexOf("if (ToolHapticsRuntime.PowerSaveMuteActive)", drainIndex, StringComparison.Ordinal);
+            int synthIndex = dispatcher.IndexOf("if (!IsHapticSynthesisDispatcherRouteRegistered())", drainIndex, StringComparison.Ordinal);
+            int requestIndex = dispatcher.IndexOf("while (SignalBus<HapticRequest>.TryConsumeFrame", drainIndex, StringComparison.Ordinal);
+            Assert.Greater(muteIndex, drainIndex, "power-save mute gate must be inside DrainToolHaptics.");
+            Assert.Greater(synthIndex, muteIndex, "power-save mute must stop fallback synthesis before it queues DTO commands.");
+            Assert.Greater(requestIndex, muteIndex, "power-save mute must drain haptic requests before normal request insertion.");
+
+            string muteWindow = dispatcher.Substring(muteIndex, Math.Min(512, dispatcher.Length - muteIndex));
+            StringAssert.Contains("DrainSuppressedHapticRequests();", muteWindow);
+            StringAssert.Contains("ClearVaultBuffer(ref _hapticCommandDtoHandle);", muteWindow);
+            StringAssert.Contains("_lastHapticCommandsActive = 0;", muteWindow);
+            StringAssert.Contains("_hapticDispatchAccumulator = 0f;", muteWindow);
+            StringAssert.Contains("QueueHapticOutput(schemeHash, 0f, 0f);", muteWindow);
+
+            StringAssert.Contains("using Hecton8.Tools;", synthesis);
+            Assert.AreEqual(3, CountToken(synthesis, "ToolHapticsRuntime.PowerSaveMuteActive"));
+            StringAssert.Contains("if (ToolHapticsRuntime.PowerSaveMuteActive)\n            {\n                _hapticSynthesisAccumulator = 0f;\n                return dependsOn;\n            }", synthesis);
+            StringAssert.Contains("if (ToolHapticsRuntime.PowerSaveMuteActive)\n                return;", synthesis);
+            StringAssert.Contains("if (ToolHapticsRuntime.PowerSaveMuteActive)\n            {\n                _hapticSynthesisAccumulator = 0f;\n                return;\n            }", synthesis);
         }
 
         [Test]

@@ -90,6 +90,81 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void EntityDeltaTelemetryDumpUsesTrackedTransientPayload()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/SaveSystem/EntityDeltaCompressionArchitecture.cs");
+            string source = File.ReadAllText(path);
+
+            StringAssert.Contains("private const string TelemetryDumpPayloadLabel = \"entityDeltaTelemetryDumpPayload\";", source);
+            StringAssert.Contains("NativeFaultDumpWriter.CreateTransientPayload(", source);
+            StringAssert.Contains("nameof(EntityDeltaCompressionArchitecture)", source);
+            StringAssert.Contains("TelemetryDumpPayloadLabel", source);
+            StringAssert.Contains("NativeArrayOptions.UninitializedMemory", source);
+            StringAssert.Contains("NativeFaultDumpWriter.DisposeTransientPayload(", source);
+            StringAssert.DoesNotContain("new NativeArray<byte>(", source);
+            StringAssert.DoesNotContain("payload.Dispose()", source);
+        }
+
+        [Test]
+        public void MerkleWalRollbackRestoresBackupThroughTempReplace()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs");
+            string source = File.ReadAllText(path);
+
+            StringAssert.Contains("string restoreTempPath = walPath + \".restore.tmp\";", source);
+            StringAssert.Contains("File.Copy(backupPath, restoreTempPath, false);", source);
+            StringAssert.Contains("File.Replace(restoreTempPath, walPath, null, true);", source);
+            StringAssert.Contains("DeleteRestoreTempIfExists(restoreTempPath);", source);
+            StringAssert.DoesNotContain("File.Copy(backupPath, walPath, true);", source);
+            StringAssert.DoesNotContain("File.Copy(backupPath, restoreTempPath, true);", source);
+        }
+
+        [Test]
+        public void IndexedSectorCommitUsesAtomicOverwrite()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/SaveBinaryStorage.cs");
+            string source = File.ReadAllText(path);
+
+            StringAssert.Contains("public static bool OverwriteAllAtomic(", source);
+            StringAssert.Contains("TryWriteAllNative(tempPath, buffer, byteCount, null, 0, byteCount, createAlways: true, paceWrites: false, out error)", source);
+            StringAssert.Contains("TryFlushPathNative(tempPath)", source);
+            StringAssert.Contains("DeleteAtomicOverwriteTempIfExists(tempPath);", source);
+            StringAssert.Contains("File.Replace(tempPath, absolutePath, null, true);", source);
+            StringAssert.Contains("AsyncWriteManager.OverwriteAllAtomic(absolutePath, compactPtr, compactLength, \".compact.tmp\", out error)", source);
+            StringAssert.Contains("AsyncWriteManager.OverwriteAllAtomic(absoluteSavePath, mappedFilePtr, (int)newLength, \".sector-commit.tmp\", out error)", source);
+            StringAssert.Contains("File.Copy(absolutePath, backupTempPath, false);", source);
+            StringAssert.DoesNotContain("File.Copy(absolutePath, backupTempPath, true);", source);
+        }
+
+        [Test]
+        public void CriticalRecoveryPromotionCopiesBackupIntoFreshTemp()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/SaveManager.cs");
+            string source = File.ReadAllText(path);
+
+            StringAssert.Contains("DeleteFileIfExists(tempSavePath);", source);
+            StringAssert.Contains("File.Copy(absoluteBackupPath, absoluteTempPath, false);", source);
+            StringAssert.Contains("File.Replace(absoluteTempPath, absolutePrimaryPath, null, true);", source);
+            StringAssert.DoesNotContain("File.Copy(absoluteBackupPath, absoluteTempPath, true);", source);
+        }
+
+        [Test]
+        public void Shinobu357PartialWalPromotionAvoidsDeleteMoveFallback()
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs");
+            string source = File.ReadAllText(path);
+
+            StringAssert.Contains("TryReplaceOrCopyWal(partialPath, destinationPath)", source);
+            StringAssert.Contains("File.Replace(partialPath, destinationPath, null, true);", source);
+            StringAssert.Contains("TryCopyWalOverDestination(partialPath, destinationPath)", source);
+            StringAssert.Contains("File.Copy(partialPath, destinationPath, true);", source);
+            StringAssert.Contains("DeleteIfExists(partialPath);", source);
+            StringAssert.DoesNotContain("TryDeleteAndMoveWal", source);
+            StringAssert.DoesNotContain("DeleteIfExists(destinationPath);\r\n                File.Move(partialPath, destinationPath);", source);
+            StringAssert.DoesNotContain("DeleteIfExists(destinationPath);\n                File.Move(partialPath, destinationPath);", source);
+        }
+
+        [Test]
         public void HeadlessWalFuzzer_CorruptedPrimaryPromotesBackupAndValidatesHash()
         {
             WalFuzzerProfileDTO profile = WalIntegrityFuzzerCore.BuildDefaultProfile();

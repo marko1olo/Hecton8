@@ -18,6 +18,7 @@ namespace Hecton8.Audio.Synthesis.Editor
         private const string DefaultCsv = "Docs/Audio/dialogue_script.csv";
         private const string DefaultOut = "Assets/StreamingAssets/Hecton8/Audio/vocal_banks.h8bin";
         private const uint MockHash = 0x05203E88u;
+        private static int s_x001DigitalVoiceForgeWindowSignalPushDropCount;
 
         private TextField _csvField;
         private TextField _outField;
@@ -334,7 +335,7 @@ namespace Hecton8.Audio.Synthesis.Editor
             cue.PlaybackSpeed = 1f;
             cue.RadioDistortion01 = 0.42f;
             cue.SpatialBlend01 = 0f;
-            SignalBus<VocalCueSignal>.TryPush(in cue);
+            SignalBus<VocalCueSignal>.TryPushTracked(in cue, ref s_x001DigitalVoiceForgeWindowSignalPushDropCount);
         }
 
         private static void DrawWaveform(MeshGenerationContext ctx)

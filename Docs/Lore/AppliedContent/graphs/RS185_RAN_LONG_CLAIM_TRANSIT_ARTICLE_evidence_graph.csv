@@ -1,0 +1,2 @@
+packet_id,arc_id,depth_band,route_moment,prereq_packet_ids,next_packet_ids,evidence_type,truth_claim,player_decision,spoiler_tier,primary_surface
+P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE,ran_long_claim_transit,0-5600m,first_route_archive_or_black_keel_window,P621_AEGIR_RECOVERY_WINDOW_GEOMETRY;P623_PELLET_LANE_WAKE_LEDGER,,route transit chart,"Aegir is reachable through slow legal and physical infrastructure, but no-FTL transit means proof can outrun rescue by years.",Why can Black Keel answer without rescuing me?,0,external_site

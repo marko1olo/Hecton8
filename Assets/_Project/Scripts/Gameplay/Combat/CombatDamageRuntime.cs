@@ -1266,6 +1266,19 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private static bool ForceCompleteCombatJobInPostSimulationWindow(ref JobHandle handle)
+        {
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
+        }
+
         public static void Shutdown()
         {
             UnregisterCombatRegistryHotSwapBridge();
@@ -1273,14 +1286,14 @@ namespace Hecton8.Gameplay
 
             if (_damageJobScheduled)
             {
-                DispatcherJobSwap.TryComplete(ref _damageJobHandle, forceComplete: true);
+                ForceCompleteCombatJobInPostSimulationWindow(ref _damageJobHandle);
                 _damageJobScheduled = false;
                 FinishArmorPenetrationScheduledCompletion();
             }
 
             if (_statusJobScheduled)
             {
-                DispatcherJobSwap.TryComplete(ref _statusJobHandle, forceComplete: true);
+                ForceCompleteCombatJobInPostSimulationWindow(ref _statusJobHandle);
                 _statusJobScheduled = false;
                 CompleteStatusEffectFrame();
             }

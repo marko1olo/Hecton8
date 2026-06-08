@@ -970,10 +970,26 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
                 Directory.CreateDirectory(directory);
 
             string temp = BuildTempPath(fullPath);
-            File.WriteAllText(temp, text, TextEncoding);
-            if (File.Exists(fullPath))
-                File.Delete(fullPath);
-            File.Move(temp, fullPath);
+            try
+            {
+                if (File.Exists(temp))
+                    File.Delete(temp);
+
+                using (FileStream stream = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                using (StreamWriter writer = new StreamWriter(stream, TextEncoding, 4096, true))
+                {
+                    writer.Write(text ?? string.Empty);
+                    writer.Flush();
+                    stream.Flush(true);
+                }
+
+                PromoteTempFileAtomic(temp, fullPath);
+            }
+            catch
+            {
+                TryDeleteTempFileNoThrow(temp);
+                throw;
+            }
         }
 
         private static void WriteBytesAtomic(string path, ReadOnlySpan<byte> bytes)
@@ -984,11 +1000,47 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
                 Directory.CreateDirectory(directory);
 
             string temp = BuildTempPath(fullPath);
-            using (FileStream stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
-                stream.Write(bytes);
+            try
+            {
+                if (File.Exists(temp))
+                    File.Delete(temp);
+
+                using (FileStream stream = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    stream.Write(bytes);
+                    stream.Flush(true);
+                }
+
+                PromoteTempFileAtomic(temp, fullPath);
+            }
+            catch
+            {
+                TryDeleteTempFileNoThrow(temp);
+                throw;
+            }
+        }
+
+        private static void PromoteTempFileAtomic(string temp, string fullPath)
+        {
             if (File.Exists(fullPath))
-                File.Delete(fullPath);
+            {
+                File.Replace(temp, fullPath, null, true);
+                return;
+            }
+
             File.Move(temp, fullPath);
+        }
+
+        private static void TryDeleteTempFileNoThrow(string temp)
+        {
+            try
+            {
+                if (File.Exists(temp))
+                    File.Delete(temp);
+            }
+            catch
+            {
+            }
         }
 
         private static string BuildTempPath(string fullPath)

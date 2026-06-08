@@ -1502,7 +1502,16 @@ namespace Hecton8.Construction
             if (!_validationPending)
                 return;
 
-            DispatcherJobSwap.TryComplete(ref _validationHandle, true);
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobSwap.TryComplete(ref _validationHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
+
             _validationPending = false;
             _discardValidationResult = false;
             ReleaseValidationBufferGuard();

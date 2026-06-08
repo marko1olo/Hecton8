@@ -615,7 +615,7 @@ namespace Hecton8.SaveSystem
             {
                 if (File.Exists(destinationPath))
                 {
-                    if (!TryReplaceOrMoveWal(partialPath, destinationPath))
+                    if (!TryReplaceOrCopyWal(partialPath, destinationPath))
                     {
                         DeleteIfExists(partialPath);
                         return false;
@@ -642,7 +642,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static bool TryReplaceOrMoveWal(string partialPath, string destinationPath)
+        private static bool TryReplaceOrCopyWal(string partialPath, string destinationPath)
         {
             try
             {
@@ -651,20 +651,20 @@ namespace Hecton8.SaveSystem
             }
             catch (PlatformNotSupportedException)
             {
-                return TryDeleteAndMoveWal(partialPath, destinationPath);
+                return TryCopyWalOverDestination(partialPath, destinationPath);
             }
             catch (IOException)
             {
-                return TryDeleteAndMoveWal(partialPath, destinationPath);
+                return TryCopyWalOverDestination(partialPath, destinationPath);
             }
         }
 
-        private static bool TryDeleteAndMoveWal(string partialPath, string destinationPath)
+        private static bool TryCopyWalOverDestination(string partialPath, string destinationPath)
         {
             try
             {
-                DeleteIfExists(destinationPath);
-                File.Move(partialPath, destinationPath);
+                File.Copy(partialPath, destinationPath, true);
+                DeleteIfExists(partialPath);
                 return true;
             }
             catch

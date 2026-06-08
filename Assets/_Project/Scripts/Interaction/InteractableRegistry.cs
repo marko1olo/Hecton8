@@ -284,22 +284,23 @@ namespace Hecton8.Interaction
                     continue;
                 }
 
-                Bounds bounds = collider.bounds;
-                if (!IsFiniteBounds(in bounds) ||
-                    !bounds.IntersectRay(normalizedRay, out float distance) ||
-                    !float.IsFinite(distance) ||
-                    distance < 0f ||
-                    distance > bestDistance)
+                if (!collider.Raycast(normalizedRay, out RaycastHit raycastHit, bestDistance) ||
+                    !float.IsFinite(raycastHit.distance) ||
+                    raycastHit.distance < 0f ||
+                    raycastHit.distance > bestDistance)
                 {
                     continue;
                 }
 
-                Vector3 point = normalizedRay.origin + normalizedRay.direction * distance;
-                bestDistance = distance;
-                bestCollider = collider;
+                Vector3 point = IsFiniteVector(raycastHit.point)
+                    ? raycastHit.point
+                    : normalizedRay.origin + normalizedRay.direction * raycastHit.distance;
+
+                bestDistance = raycastHit.distance;
+                bestCollider = raycastHit.collider != null ? raycastHit.collider : collider;
                 bestInfo = targetInfo;
                 bestPoint = point;
-                bestNormal = EstimateBoundsNormal(in bounds, point, -normalizedRay.direction);
+                bestNormal = ResolveRaycastNormal(raycastHit.normal, -normalizedRay.direction);
             }
 
             if (bestCollider == null)
@@ -571,34 +572,16 @@ namespace Hecton8.Interaction
             return IsFiniteVector(ray.origin) && IsFiniteVector(ray.direction);
         }
 
-        private static bool IsFiniteBounds(in Bounds bounds)
-        {
-            return IsFiniteVector(bounds.center) && IsFiniteVector(bounds.extents) && bounds.extents.sqrMagnitude > 0f;
-        }
-
         private static bool IsFiniteVector(Vector3 value)
         {
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
 
-        private static Vector3 EstimateBoundsNormal(in Bounds bounds, Vector3 point, Vector3 fallback)
+        private static Vector3 ResolveRaycastNormal(Vector3 normal, Vector3 fallback)
         {
-            Vector3 local = point - bounds.center;
-            Vector3 extents = bounds.extents;
-            float dx = Mathf.Abs(extents.x - Mathf.Abs(local.x));
-            float dy = Mathf.Abs(extents.y - Mathf.Abs(local.y));
-            float dz = Mathf.Abs(extents.z - Mathf.Abs(local.z));
-
-            Vector3 normal;
-            if (dx <= dy && dx <= dz)
-                normal = new Vector3(local.x >= 0f ? 1f : -1f, 0f, 0f);
-            else if (dy <= dz)
-                normal = new Vector3(0f, local.y >= 0f ? 1f : -1f, 0f);
-            else
-                normal = new Vector3(0f, 0f, local.z >= 0f ? 1f : -1f);
-
-            if (IsFiniteVector(normal) && normal.sqrMagnitude > 0.000001f)
-                return normal;
+            float normalLengthSq = normal.sqrMagnitude;
+            if (IsFiniteVector(normal) && float.IsFinite(normalLengthSq) && normalLengthSq > 0.000001f)
+                return normal * math.rsqrt(normalLengthSq);
 
             float fallbackLengthSq = fallback.sqrMagnitude;
             if (IsFiniteVector(fallback) && float.IsFinite(fallbackLengthSq) && fallbackLengthSq > 0.000001f)

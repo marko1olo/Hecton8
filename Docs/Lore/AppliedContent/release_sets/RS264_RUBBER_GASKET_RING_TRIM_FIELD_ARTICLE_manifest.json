@@ -1,0 +1,23 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET_MANIFEST.V0",
+  "release_set_id": "RS264_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE",
+  "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+  "evidence_class": "STATIC_SOURCE",
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS264_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE.packets.json"
+  ],
+  "packets": [
+    "P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE"
+  ],
+  "route_cards": [
+    "Docs/Lore/AppliedContent/route_cards/264_rubber_gasket_ring_trim_route_cards.csv"
+  ],
+  "binding_maps": [
+    "Docs/Lore/AppliedContent/binding_maps/RS264_rubber_gasket_ring_trim_runtime_binding_map.csv"
+  ],
+  "evidence_graph": "Docs/Lore/AppliedContent/graphs/RS264_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE_evidence_graph.csv",
+  "canonical_importer_ready": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "notes": "Rubber pressure gasket material article for hatches, viewport rims and pipe sockets. Narrow follow-on to hull rib/gasket ledger; runtime consumes baked DataMonolith rows and hash constants only."
+}

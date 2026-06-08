@@ -2094,8 +2094,16 @@ namespace Hecton8.AI.Ambient
 
             try
             {
-                if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
-                    return;
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+                        return;
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
 
                 _jobPending = false;
             }

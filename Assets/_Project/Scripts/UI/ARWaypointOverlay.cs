@@ -750,7 +750,7 @@ namespace Hecton8.UI
                 runtimeWaypoint.LabelLength = externalWaypoint.HasLabel ? externalWaypoint.LabelLength : DefaultExternalLabel.Length;
                 runtimeWaypoint.LabelSlotIndex = i;
                 runtimeWaypoint.LabelRevision = externalWaypoint.LabelRevision;
-                runtimeWaypoint.Color = externalWaypoint.Color.a <= 0f ? RelayColor : externalWaypoint.Color;
+                runtimeWaypoint.Color = ResolveWaypointColor(externalWaypoint.Color);
                 runtimeWaypoint.Active = true;
                 runtimeWaypoint.HasLabel = externalWaypoint.HasLabel;
                 runtimeWaypoint.Occluded = count < _waypointCount && _runtimeWaypoints[count].Occluded;
@@ -767,57 +767,59 @@ namespace Hecton8.UI
         private int CopyRuntimeTargetsForStencil(NativeArray<StencilTargetSourceDTO> destination, int capacity)
         {
             int count = math.min(math.min(_waypointCount, _runtimeWaypoints.Length), capacity);
-            for (int i = 0; i < count; i++)
+            int writeCount = 0;
+            for (int i = 0; i < count && writeCount < capacity; i++)
             {
                 RuntimeWaypoint waypoint = _runtimeWaypoints[i];
-                if (!waypoint.Active)
+                if (!waypoint.Active || !waypoint.PositionAup.IsFinite())
                 {
-                    destination[i] = default;
                     continue;
                 }
 
-                Color color = waypoint.Color;
-                destination[i] = new StencilTargetSourceDTO
+                Color color = ResolveWaypointColor(waypoint.Color);
+                destination[writeCount] = new StencilTargetSourceDTO
                 {
                     PositionAup = waypoint.PositionAup,
                     Color = new float4(color.r, color.g, color.b, color.a),
                     Flags = waypoint.Occluded ? 3u : 1u,
                     StableId = unchecked((uint)(i + 1))
                 };
+                writeCount++;
             }
 
-            for (int i = count; i < capacity; i++)
+            for (int i = writeCount; i < capacity; i++)
                 destination[i] = default;
 
-            return count;
+            return writeCount;
         }
 
         private int CopyRuntimeTargetsForStencil(Span<StencilTargetSourceDTO> destination, int capacity)
         {
             int count = math.min(math.min(_waypointCount, _runtimeWaypoints.Length), capacity);
-            for (int i = 0; i < count; i++)
+            int writeCount = 0;
+            for (int i = 0; i < count && writeCount < capacity; i++)
             {
                 RuntimeWaypoint waypoint = _runtimeWaypoints[i];
-                if (!waypoint.Active)
+                if (!waypoint.Active || !waypoint.PositionAup.IsFinite())
                 {
-                    destination[i] = default;
                     continue;
                 }
 
-                Color color = waypoint.Color;
-                destination[i] = new StencilTargetSourceDTO
+                Color color = ResolveWaypointColor(waypoint.Color);
+                destination[writeCount] = new StencilTargetSourceDTO
                 {
                     PositionAup = waypoint.PositionAup,
                     Color = new float4(color.r, color.g, color.b, color.a),
                     Flags = waypoint.Occluded ? 3u : 1u,
                     StableId = unchecked((uint)(i + 1))
                 };
+                writeCount++;
             }
 
-            for (int i = count; i < capacity; i++)
+            for (int i = writeCount; i < capacity; i++)
                 destination[i] = default;
 
-            return count;
+            return writeCount;
         }
 
         private void RenderWaypoints()
@@ -838,7 +840,7 @@ namespace Hecton8.UI
             for (int i = 0; i < _waypointCount; i++)
             {
                 RuntimeWaypoint waypoint = _runtimeWaypoints[i];
-                if (!waypoint.Active)
+                if (!waypoint.Active || !waypoint.PositionAup.IsFinite())
                 {
                     HideSlot(i);
                     continue;
@@ -926,6 +928,9 @@ namespace Hecton8.UI
 
             Vector3 cameraForwardVector = cameraTransform.forward;
             float3 cameraForward = math.float3(cameraForwardVector.x, cameraForwardVector.y, cameraForwardVector.z);
+            if (!math.all(math.isfinite(cameraForward)))
+                return;
+
             float nearDistanceSq = CinematicOcclusionNearDistanceMeters * CinematicOcclusionNearDistanceMeters;
             float farDistanceSq = CinematicOcclusionFarDistanceMeters * CinematicOcclusionFarDistanceMeters;
             float behindDotSq = CinematicOcclusionBehindDot * CinematicOcclusionBehindDot;
@@ -937,12 +942,28 @@ namespace Hecton8.UI
                 if (!waypoint.Active)
                     continue;
 
+                if (!waypoint.PositionAup.IsFinite())
+                {
+                    waypoint.Active = false;
+                    waypoint.Occluded = false;
+                    _runtimeWaypoints[i] = waypoint;
+                    continue;
+                }
+
                 float3 delta = AupPrecisionMath.LocalDeltaFloat3Clamped(
                     waypoint.PositionAup.ToAbsoluteDouble3(),
                     cameraAup.ToAbsoluteDouble3(),
                     AupPrecisionMath.DefaultMaxLocalCastMeters,
                     float3.zero);
                 float distanceSq = math.lengthsq(delta);
+                if (!math.all(math.isfinite(delta)) || !math.isfinite(distanceSq))
+                {
+                    waypoint.Active = false;
+                    waypoint.Occluded = false;
+                    _runtimeWaypoints[i] = waypoint;
+                    continue;
+                }
+
                 if (distanceSq <= 0.01f)
                 {
                     waypoint.Occluded = false;
@@ -999,17 +1020,28 @@ namespace Hecton8.UI
             clampedToEdge = false;
             visibility01 = 0f;
 
-            if (projectionFrame.IsValid == 0u)
+            if (projectionFrame.IsValid == 0u ||
+                !waypointAup.IsFinite() ||
+                !projectionFrame.CameraAup.IsFinite())
+            {
                 return false;
+            }
 
             float3 deltaAup = AupPrecisionMath.LocalDeltaFloat3Clamped(
                 waypointAup.ToAbsoluteDouble3(),
                 projectionFrame.CameraAup.ToAbsoluteDouble3(),
                 AupPrecisionMath.DefaultMaxLocalCastMeters,
                 float3.zero);
-            float viewDepth = math.dot(projectionFrame.CameraForward, deltaAup);
-            if (projectionFrame.PlaneDistance <= ProjectionDepthEpsilon)
+            if (!math.all(math.isfinite(deltaAup)))
                 return false;
+
+            float viewDepth = math.dot(projectionFrame.CameraForward, deltaAup);
+            if (!math.isfinite(viewDepth) ||
+                !math.isfinite(projectionFrame.PlaneDistance) ||
+                projectionFrame.PlaneDistance <= ProjectionDepthEpsilon)
+            {
+                return false;
+            }
 
             float depthForProjection = math.abs(viewDepth) > ProjectionDepthEpsilon
                 ? viewDepth
@@ -1017,10 +1049,14 @@ namespace Hecton8.UI
 
             float projectedWorldX = math.dot(projectionFrame.CameraRight, deltaAup) * (projectionFrame.PlaneDistance / depthForProjection);
             float projectedWorldY = math.dot(projectionFrame.CameraUp, deltaAup) * (projectionFrame.PlaneDistance / depthForProjection);
+            if (!math.isfinite(projectedWorldX) || !math.isfinite(projectedWorldY))
+                return false;
 
             Vector2 projectedCanvasPosition;
             projectedCanvasPosition.x = projectedWorldX / projectionFrame.ScaleX;
             projectedCanvasPosition.y = projectedWorldY / projectionFrame.ScaleY;
+            if (!IsFinite(projectedCanvasPosition))
+                return false;
 
             bool behindPlayer = viewDepth <= ProjectionDepthEpsilon;
             if (behindPlayer)
@@ -1066,16 +1102,31 @@ namespace Hecton8.UI
             Vector3 cameraRight = cameraTransform.right;
             Vector3 cameraUp = cameraTransform.up;
             Vector3 cameraForward = cameraTransform.forward;
+            if (!IsFinite(cameraPosition) ||
+                !IsFinite(cameraRight) ||
+                !IsFinite(cameraUp) ||
+                !IsFinite(cameraForward))
+            {
+                return default;
+            }
+
             if (!TryResolveCameraAup(out AbsoluteUniversePosition cameraAup))
                 return default;
 
             float3 cameraForward3 = math.float3(cameraForward.x, cameraForward.y, cameraForward.z);
             float planeDistance = ResolveHudPlaneDistance(cameraForward3, cameraPosition, _targetCanvasRect);
-            if (planeDistance <= ProjectionDepthEpsilon)
+            if (!math.isfinite(planeDistance) || planeDistance <= ProjectionDepthEpsilon)
                 return default;
 
             Vector3 lossyScale = _root.lossyScale;
             Rect rootRect = _root.rect;
+            if (!IsFinite(lossyScale) ||
+                !math.isfinite(rootRect.width) ||
+                !math.isfinite(rootRect.height))
+            {
+                return default;
+            }
+
             return new WaypointProjectionFrame
             {
                 CameraAup = cameraAup,
@@ -1705,6 +1756,39 @@ namespace Hecton8.UI
             return (byte)math.clamp(alphaInt, 0, 255);
         }
 
+        private static Color ResolveWaypointColor(Color color)
+        {
+            if (!IsFinite(color) || color.a <= 0f)
+                return RelayColor;
+
+            return new Color(
+                math.saturate(color.r),
+                math.saturate(color.g),
+                math.saturate(color.b),
+                math.saturate(color.a));
+        }
+
+        private static bool IsFinite(Color color)
+        {
+            return math.isfinite(color.r) &&
+                   math.isfinite(color.g) &&
+                   math.isfinite(color.b) &&
+                   math.isfinite(color.a);
+        }
+
+        private static bool IsFinite(Vector2 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
         private static bool ColorsMatch(Color lhs, Color rhs)
         {
             return lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a;
@@ -1715,9 +1799,17 @@ namespace Hecton8.UI
             if (canvasRect == null)
                 return 0f;
 
-            return math.max(
-                ProjectionDepthEpsilon,
-                math.dot(cameraForward, (float3)(canvasRect.position - cameraPosition)));
+            if (!math.all(math.isfinite(cameraForward)) ||
+                !IsFinite(cameraPosition) ||
+                !IsFinite(canvasRect.position))
+            {
+                return 0f;
+            }
+
+            float planeDistance = math.dot(cameraForward, (float3)(canvasRect.position - cameraPosition));
+            return math.isfinite(planeDistance)
+                ? math.max(ProjectionDepthEpsilon, planeDistance)
+                : 0f;
         }
 
         private static RectTransform FindExistingChild(Transform parent, string childName)

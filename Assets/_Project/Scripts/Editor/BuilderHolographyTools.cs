@@ -488,6 +488,14 @@ namespace Hecton8.EditorTools
                                                        !habitatConstruction.Contains("SpawnedModules") &&
                                                        habitatConstruction.Contains("GetSpawnedModuleAt(") &&
                                                        constructionManager.Contains("internal GameObject GetSpawnedModuleAt");
+            bool deconstructionInventoryFullNotificationEventBacked =
+                constructionManager.Contains("using Hecton8.UI;") &&
+                constructionManager.Contains("DeconstructionInventoryFullMessage") &&
+                constructionManager.Contains("NotificationEvents.TryPushCritical(DeconstructionInventoryFullMessage.AsSpan())") &&
+                constructionManager.Contains("PublishDeconstructionInventoryFullNotification();") &&
+                !constructionManager.Contains("PublishDeconstructionHudNotification") &&
+                !constructionManager.Contains("0xD3C04A11u") &&
+                !constructionManager.Contains("SignalBus<HUDNotificationSignal>.TryPushTracked(new HUDNotificationSignal");
             bool validationResetNonBlocking = !MethodContains(habitatConstruction, "ResetValidation", "CompletePendingValidation") &&
                                               MethodContains(habitatConstruction, "ResetValidation", "_discardValidationResult = true") &&
                                               MethodContains(habitatConstruction, "TryConsumeCompletedValidation", "bool discardResult = _discardValidationResult") &&
@@ -563,6 +571,7 @@ namespace Hecton8.EditorTools
             AppendBool(builder, "groupedBuildCostPresentationRows", groupedBuildCostPresentationRows, true);
             AppendBool(builder, "noHabitatGameObjectSocketIndexOverload", noHabitatGameObjectSocketIndexOverload, true);
             AppendBool(builder, "noSpawnedModulesInterfaceValidation", noSpawnedModulesInterfaceValidation, true);
+            AppendBool(builder, "deconstructionInventoryFullNotificationEventBacked", deconstructionInventoryFullNotificationEventBacked, true);
             AppendBool(builder, "validationResetNonBlocking", validationResetNonBlocking, true);
             AppendBool(builder, "noPlayerBuilderContextOwnerCreation", noPlayerBuilderContextOwnerCreation, true);
             AppendBool(builder, "pdaConstructionRegistryColdCached", pdaConstructionRegistryColdCached, true);

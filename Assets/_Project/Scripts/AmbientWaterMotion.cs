@@ -12,7 +12,7 @@ namespace Hecton8.Physics
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Ambient Water Motion")]
-    public sealed class AmbientWaterMotion : MonoBehaviour
+    public sealed class AmbientWaterMotion : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
         private const uint PhaseHashMultiplier = 747796405u;
         private const uint PhaseHashIncrement = 2891336453u;
@@ -41,6 +41,8 @@ namespace Hecton8.Physics
         private bool _hasRestAup;
         private float _phase;
         private byte _managerDistanceLodBand;
+        private AmbientWaterMotionManager _registeredManager;
+        private bool _hotSwapRegistered;
 
         public Transform CachedTransform => _cachedTransform;
         public Vector3 RestLocalPosition => _restLocalPosition;
@@ -65,6 +67,7 @@ namespace Hecton8.Physics
         private void Awake()
         {
             ApplyProfileIfNeeded();
+            SanitizeTuning();
             _cachedTransform = transform;
             CaptureRestPose();
 
@@ -75,24 +78,56 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            AmbientWaterMotionManager manager = GlobalRegistry.AmbientWaterMotion;
-            if (manager != null)
-                manager.Register(this);
+            if (!Application.isPlaying)
+                return;
+
+            TryRegisterHotSwapListener();
+            RebindManager(GlobalRegistry.AmbientWaterMotion);
         }
 
         private void OnDisable()
         {
-            AmbientWaterMotionManager manager = GlobalRegistry.AmbientWaterMotion;
-            if (manager != null)
-                manager.Unregister(this);
+            UnregisterFromManager();
+            TryUnregisterHotSwapListener();
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterFromManager();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.AmbientWaterMotionRuntime)
+                return;
+
+            if (ReferenceEquals(_registeredManager, previousService))
+                UnregisterFromManager();
+
+            RebindManager(currentService as AmbientWaterMotionManager);
         }
 
         public void CaptureRestPose()
         {
             _cachedTransform ??= transform;
-            _restLocalPosition = _cachedTransform.localPosition;
-            _restLocalRotation = _cachedTransform.localRotation;
-            _restAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedTransform.position);
+            Vector3 localPosition = _cachedTransform.localPosition;
+            Quaternion localRotation = _cachedTransform.localRotation;
+            Vector3 worldPosition = _cachedTransform.position;
+
+            _restLocalPosition = IsFinite(localPosition) ? localPosition : Vector3.zero;
+            _restLocalRotation = IsFinite(localRotation) ? localRotation : Quaternion.identity;
+            if (!IsFinite(worldPosition))
+            {
+                _restAup = default;
+                _hasRestAup = false;
+                return;
+            }
+
+            _restAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
             _hasRestAup = _restAup.IsFinite();
         }
 
@@ -101,13 +136,13 @@ namespace Hecton8.Physics
             if (profile == null)
                 return;
 
-            verticalAmplitude = profile.verticalAmplitude;
-            positionalAmplitude = profile.positionalAmplitude;
-            angularAmplitude = profile.angularAmplitude;
-            baseFrequency = profile.baseFrequency;
-            currentCoupling = profile.currentCoupling;
+            verticalAmplitude = AmbientWaterMotionProfile.ResolveAmplitude(profile.verticalAmplitude);
+            positionalAmplitude = AmbientWaterMotionProfile.ResolvePositionalAmplitude(profile.positionalAmplitude);
+            angularAmplitude = AmbientWaterMotionProfile.ResolveAngularAmplitude(profile.angularAmplitude);
+            baseFrequency = AmbientWaterMotionProfile.ResolveFrequency(profile.baseFrequency);
+            currentCoupling = AmbientWaterMotionProfile.ResolveCurrentCoupling(profile.currentCoupling);
             allowDistanceLod = profile.allowDistanceLod;
-            lodBias = profile.lodBias;
+            lodBias = AmbientWaterMotionProfile.ResolveLodBias(profile.lodBias);
         }
 
         private void ApplyProfileIfNeeded()
@@ -116,12 +151,80 @@ namespace Hecton8.Physics
                 ApplyProfile();
         }
 
+        private void RebindManager(AmbientWaterMotionManager manager)
+        {
+            if (ReferenceEquals(_registeredManager, manager))
+                return;
+
+            UnregisterFromManager();
+            if (!isActiveAndEnabled || manager == null)
+                return;
+
+            if (manager.Register(this))
+            {
+                _registeredManager = manager;
+                return;
+            }
+
+            TryUnregisterHotSwapListener();
+        }
+
+        private void UnregisterFromManager()
+        {
+            AmbientWaterMotionManager manager = _registeredManager;
+            if (manager != null)
+                manager.Unregister(this);
+
+            _registeredManager = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void SanitizeTuning()
+        {
+            verticalAmplitude = AmbientWaterMotionProfile.ResolveAmplitude(verticalAmplitude);
+            positionalAmplitude = AmbientWaterMotionProfile.ResolvePositionalAmplitude(positionalAmplitude);
+            angularAmplitude = AmbientWaterMotionProfile.ResolveAngularAmplitude(angularAmplitude);
+            baseFrequency = AmbientWaterMotionProfile.ResolveFrequency(baseFrequency);
+            currentCoupling = AmbientWaterMotionProfile.ResolveCurrentCoupling(currentCoupling);
+            lodBias = AmbientWaterMotionProfile.ResolveLodBias(lodBias);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z);
+        }
+
+        private static bool IsFinite(Quaternion rotation)
+        {
+            return float.IsFinite(rotation.x) &&
+                   float.IsFinite(rotation.y) &&
+                   float.IsFinite(rotation.z) &&
+                   float.IsFinite(rotation.w);
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
             ApplyProfileIfNeeded();
-            if (baseFrequency < 0f) baseFrequency = 0f;
-            if (lodBias < 0.1f) lodBias = 0.1f;
+            SanitizeTuning();
             if (!Application.isPlaying)
                 CaptureRestPose();
         }

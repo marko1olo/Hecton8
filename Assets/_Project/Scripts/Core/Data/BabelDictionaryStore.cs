@@ -78,6 +78,8 @@ namespace Hecton8.Core.Data
         private uint _lastTreeDepth;
         private uint _lastTreeKeysProcessed;
         private uint _lastPrefetchTouchCount;
+        private uint _pendingBlackBoxDumpCount;
+        private uint _pendingBTreeTelemetryDumpCount;
         private bool _errorSliceVaultBacked;
         private bool _activeLoreReadHandleValid;
         private bool _btreeAvailable;
@@ -116,7 +118,7 @@ namespace Hecton8.Core.Data
             if (ReferenceEquals(_dataVault, dataVault))
                 return;
 
-            if (_ownedFallbackPointer != null)
+            if (HasOpenStoreState())
                 CloseFile();
 
             ReleaseVaultHandles(_dataVault);
@@ -134,16 +136,39 @@ namespace Hecton8.Core.Data
             }
         }
 
+        private bool HasOpenStoreState()
+        {
+            return _basePointer != null ||
+                   _mappedBytes != 0L ||
+                   _fileStream != null ||
+                   _ownedFallbackPointer != null ||
+                   _mappedBytesHandle.BufferID != 0u ||
+                   _errorSliceHandle.BufferID != 0u ||
+                   _errorPointer != null ||
+                   _blackBoxHandle.BufferID != 0u ||
+                   _blackBoxCursorHandle.BufferID != 0u ||
+                   _btreeTelemetryHandle.BufferID != 0u ||
+                   _btreeTelemetryCursorHandle.BufferID != 0u ||
+                   _btreeTelemetryAccumulatorHandle.BufferID != 0u ||
+                   _activeLoreReadHandleValid;
+        }
+
         public bool OpenDefault()
         {
             string path = Path.Combine(Application.dataPath, "..", "Data", "Balance", "Baked", H8StaticDataFormat.BabelDictionaryFileName);
-            return Open(Path.GetFullPath(path));
+            if (TryResolveFullPath(path, out string resolvedPath))
+                return Open(resolvedPath);
+
+            return FailOpenPathResolveCold();
         }
 
         public bool OpenDefault(uint expectedPayloadCrc32)
         {
             string path = Path.Combine(Application.dataPath, "..", "Data", "Balance", "Baked", H8StaticDataFormat.BabelDictionaryFileName);
-            return Open(Path.GetFullPath(path), expectedPayloadCrc32);
+            if (TryResolveFullPath(path, out string resolvedPath))
+                return Open(resolvedPath, expectedPayloadCrc32);
+
+            return FailOpenPathResolveCold();
         }
 
         public bool Open(string path)
@@ -152,68 +177,107 @@ namespace Hecton8.Core.Data
             if (!EnsureBlackBox())
                 return false;
 
-            if (!BitConverter.IsLittleEndian || string.IsNullOrEmpty(path) || !File.Exists(path))
+            try
             {
-                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
-                return false;
-            }
-
-            FileInfo info = new FileInfo(path);
-            if (info.Length < UnsafeUtility.SizeOf<H8BabelDictionaryHeader>() || info.Length > int.MaxValue)
-            {
-                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
-                return false;
-            }
-
-            _sourceFileBytes = info.Length;
-            long paddedLength = H8StaticDataFormat.AlignUp16(info.Length);
-            _paddingBytes = (uint)(paddedLength - info.Length);
-
-#if HECTON8_BABEL_MMF_AVAILABLE
-            if (_paddingBytes == 0u)
-            {
-                _fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.RandomAccess);
-                _mappedFile = MemoryMappedFile.CreateFromFile(
-                    _fileStream,
-                    null,
-                    info.Length,
-                    MemoryMappedFileAccess.Read,
-                    HandleInheritability.None,
-                    true);
-                _accessor = _mappedFile.CreateViewAccessor(0L, info.Length, MemoryMappedFileAccess.Read);
-                _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref _basePointer);
-                _mappedBytes = info.Length;
-            }
-            else
-#endif
-            {
-                if (!TryAcquirePaddedDictionaryBuffer(paddedLength))
+                if (!BitConverter.IsLittleEndian || string.IsNullOrEmpty(path) || !File.Exists(path))
                 {
                     RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
                     return false;
                 }
 
-                if (!LoadFileIntoPaddedBufferCold(path, _ownedFallbackPointer, info.Length))
+                FileInfo info = new FileInfo(path);
+                if (info.Length < UnsafeUtility.SizeOf<H8BabelDictionaryHeader>() || info.Length > int.MaxValue)
                 {
-                    Dispose();
+                    RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
                     return false;
                 }
 
-                if (_paddingBytes > 0u)
-                    UnsafeUtility.MemClear(_ownedFallbackPointer + info.Length, _paddingBytes);
+                _sourceFileBytes = info.Length;
+                long paddedLength = H8StaticDataFormat.AlignUp16(info.Length);
+                _paddingBytes = (uint)(paddedLength - info.Length);
 
-                _basePointer = _ownedFallbackPointer;
-                _mappedBytes = paddedLength;
+                bool openedMapped = false;
+#if HECTON8_BABEL_MMF_AVAILABLE
+                openedMapped = _paddingBytes == 0u && TryOpenMemoryMappedDictionary(path, info.Length);
+#endif
+                if (!openedMapped)
+                {
+                    if (!TryOpenPaddedDictionaryBuffer(path, paddedLength, info.Length))
+                        return false;
+                }
+
+                EnsureBTreeTelemetry();
+
+                if (!EnsureErrorSlice() || !ValidateHeaderAndChecksum() || !BuildIndexTable())
+                {
+                    CloseFile();
+                    return false;
+                }
+
+                RecordTelemetry(StateOpenHash, 0u, 0u, 0L);
+                return true;
             }
-
-            if (!EnsureErrorSlice() || !ValidateHeaderAndChecksum() || !BuildIndexTable())
+            catch (IOException)
             {
-                Dispose();
+                return FailOpenCold();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return FailOpenCold();
+            }
+            catch (NotSupportedException)
+            {
+                return FailOpenCold();
+            }
+            catch (ArgumentException)
+            {
+                return FailOpenCold();
+            }
+        }
+
+        private bool FailOpenCold()
+        {
+            RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
+            CloseFile();
+            return false;
+        }
+
+        private bool FailOpenPathResolveCold()
+        {
+            CloseFile();
+            if (EnsureBlackBox())
+                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
+
+            return false;
+        }
+
+        private static bool TryResolveFullPath(string path, out string resolvedPath)
+        {
+            resolvedPath = null;
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            try
+            {
+                resolvedPath = Path.GetFullPath(path);
+                return !string.IsNullOrEmpty(resolvedPath);
+            }
+            catch (IOException)
+            {
                 return false;
             }
-
-            RecordTelemetry(StateOpenHash, 0u, 0u, 0L);
-            return true;
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
         }
 
         public bool Open(string path, uint expectedPayloadCrc32)
@@ -292,9 +356,9 @@ namespace Hecton8.Core.Data
             CaptureLookupStats(depth, keysProcessed, prefetchTouchCount, elapsedNs);
 
             if (elapsedNs > SlowLookupDumpThresholdNs)
-                DumpBlackBox();
+                RequestBlackBoxDump();
             if (_lastSearchComputeTimeNs > H8CacheBTree.BTreeSlowBatchThresholdNs)
-                DumpBTreeTelemetry();
+                RequestBTreeTelemetryDump();
 
             if (!found)
             {
@@ -356,7 +420,7 @@ namespace Hecton8.Core.Data
             long elapsedNs = ToNanoseconds(System.Diagnostics.Stopwatch.GetTimestamp() - start);
             CaptureLookupStats(depth, keysProcessed, prefetchTouchCount, elapsedNs);
             if (_lastSearchComputeTimeNs > H8CacheBTree.BTreeSlowBatchThresholdNs)
-                DumpBTreeTelemetry();
+                RequestBTreeTelemetryDump();
 
             if (!found)
             {
@@ -458,42 +522,75 @@ namespace Hecton8.Core.Data
 
         public void DumpBlackBox(string path = null)
         {
+            TryDumpBlackBox(path);
+        }
+
+        public bool TryDumpBlackBox(string path = null)
+        {
             if (!TryReadBlackBox(out NativeArray<H8StaticDataTelemetryEntry>.ReadOnly ring, out NativeArray<int>.ReadOnly cursor))
             {
-                return;
+                return false;
             }
 
-            string resolvedPath = string.IsNullOrEmpty(path)
-                ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", BlackBoxDumpFileName))
-                : path;
+            if (!TryResolveDumpPath(path, BlackBoxDumpFileName, out string resolvedPath))
+                return false;
+
             H8StaticDataTelemetryEntry* ringPtr = (H8StaticDataTelemetryEntry*)ring.GetUnsafeReadOnlyPtr();
-            H8StaticDataBlackBoxDump.Write(
+            if (!H8StaticDataBlackBoxDump.TryWrite(
                 resolvedPath,
                 ringPtr,
                 cursor[0],
                 IsOpen ? _header.PayloadCrc32 : 0u,
-                IsOpen ? _header.Flags : 0u);
+                IsOpen ? _header.Flags : 0u))
+            {
+                return false;
+            }
+
+            _pendingBlackBoxDumpCount = 0u;
+            return true;
         }
 
         public void DumpBTreeTelemetry(string path = null)
+        {
+            TryDumpBTreeTelemetry(path);
+        }
+
+        public bool TryDumpBTreeTelemetry(string path = null)
         {
             if (!TryReadBTreeTelemetry(
                     out NativeArray<BTreeTelemetryEntry>.ReadOnly ring,
                     out NativeArray<int>.ReadOnly cursor,
                     out _))
             {
-                return;
+                return false;
             }
 
-            string resolvedPath = string.IsNullOrEmpty(path)
-                ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", BTreeTelemetryDumpFileName))
-                : path;
+            if (!TryResolveDumpPath(path, BTreeTelemetryDumpFileName, out string resolvedPath))
+                return false;
+
             BTreeTelemetryEntry* ringPtr = (BTreeTelemetryEntry*)ring.GetUnsafeReadOnlyPtr();
-            H8BTreeTelemetryDump.Write(
+            if (!H8BTreeTelemetryDump.TryWrite(
                 resolvedPath,
                 ringPtr,
                 cursor[0],
-                H8CacheBTree.BTreeTelemetrySlowBatchFlag);
+                H8CacheBTree.BTreeTelemetrySlowBatchFlag))
+            {
+                return false;
+            }
+
+            _pendingBTreeTelemetryDumpCount = 0u;
+            return true;
+        }
+
+        public bool FlushPendingDumpsCold()
+        {
+            bool flushed = true;
+            if (_pendingBlackBoxDumpCount != 0u)
+                flushed &= TryDumpBlackBox();
+            if (_pendingBTreeTelemetryDumpCount != 0u)
+                flushed &= TryDumpBTreeTelemetry();
+
+            return flushed;
         }
 
         public void Dispose()
@@ -547,6 +644,108 @@ namespace Hecton8.Core.Data
             return (long)ns;
         }
 
+        private static bool TryResolveDumpPath(string requestedPath, string defaultFileName, out string resolvedPath)
+        {
+            resolvedPath = null;
+            if (!TryResolveDumpRoot(out string dumpRoot))
+                return false;
+
+            string candidatePath = string.IsNullOrWhiteSpace(requestedPath)
+                ? Path.Combine(dumpRoot, defaultFileName)
+                : requestedPath;
+
+            try
+            {
+                string fullPath = Path.IsPathRooted(candidatePath)
+                    ? Path.GetFullPath(candidatePath)
+                    : Path.GetFullPath(Path.Combine(dumpRoot, candidatePath));
+                if (!IsPathUnderRoot(fullPath, dumpRoot))
+                    return false;
+
+                resolvedPath = fullPath;
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+        }
+
+        private static bool TryResolveDumpRoot(out string dumpRoot)
+        {
+            dumpRoot = null;
+            string dataPath = Application.dataPath;
+            if (string.IsNullOrEmpty(dataPath))
+                return false;
+
+            try
+            {
+                dumpRoot = Path.GetFullPath(Path.Combine(dataPath, "..", "Docs", "AgentLogs"));
+                return !string.IsNullOrEmpty(dumpRoot);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+        }
+
+        private static bool IsPathUnderRoot(string fullPath, string rootPath)
+        {
+            if (string.IsNullOrEmpty(fullPath) || string.IsNullOrEmpty(rootPath))
+                return false;
+
+            string normalizedRoot = Path.GetFullPath(rootPath);
+            if (!normalizedRoot.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) &&
+                !normalizedRoot.EndsWith(Path.AltDirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+            {
+                normalizedRoot += Path.DirectorySeparatorChar;
+            }
+
+            string normalizedPath = Path.GetFullPath(fullPath);
+            StringComparison comparison = Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            return normalizedPath.StartsWith(normalizedRoot, comparison);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void RequestBlackBoxDump()
+        {
+            if (_pendingBlackBoxDumpCount < uint.MaxValue)
+                _pendingBlackBoxDumpCount++;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void RequestBTreeTelemetryDump()
+        {
+            if (_pendingBTreeTelemetryDumpCount < uint.MaxValue)
+                _pendingBTreeTelemetryDumpCount++;
+        }
+
         private bool LoadFileIntoPaddedBufferCold(string path, byte* destination, long sourceLength)
         {
             using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.SequentialScan))
@@ -568,6 +767,69 @@ namespace Hecton8.Core.Data
                 RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, offset);
                 return false;
             }
+        }
+
+#if HECTON8_BABEL_MMF_AVAILABLE
+        private bool TryOpenMemoryMappedDictionary(string path, long sourceLength)
+        {
+            try
+            {
+                _fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.RandomAccess);
+                _mappedFile = MemoryMappedFile.CreateFromFile(
+                    _fileStream,
+                    null,
+                    sourceLength,
+                    MemoryMappedFileAccess.Read,
+                    HandleInheritability.None,
+                    true);
+                _accessor = _mappedFile.CreateViewAccessor(0L, sourceLength, MemoryMappedFileAccess.Read);
+                _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref _basePointer);
+                _mappedBytes = sourceLength;
+                return true;
+            }
+            catch (IOException)
+            {
+                CloseMemoryMappedDictionary();
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                CloseMemoryMappedDictionary();
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                CloseMemoryMappedDictionary();
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                CloseMemoryMappedDictionary();
+                return false;
+            }
+        }
+#endif
+
+        private bool TryOpenPaddedDictionaryBuffer(string path, long paddedLength, long sourceLength)
+        {
+            if (!TryAcquirePaddedDictionaryBuffer(paddedLength))
+            {
+                RecordTelemetry(StateErrorHash, ErrorMissingHash, 0u, 0L);
+                return false;
+            }
+
+            if (!LoadFileIntoPaddedBufferCold(path, _ownedFallbackPointer, sourceLength))
+            {
+                CloseFile();
+                return false;
+            }
+
+            if (_paddingBytes > 0u)
+                UnsafeUtility.MemClear(_ownedFallbackPointer + sourceLength, _paddingBytes);
+
+            _basePointer = _ownedFallbackPointer;
+            _mappedBytes = paddedLength;
+            return true;
         }
 
         private bool TryAcquirePaddedDictionaryBuffer(long paddedLength)
@@ -741,7 +1003,6 @@ namespace Hecton8.Core.Data
                 BabelIndexDTO entry = UnsafeUtility.ReadArrayElement<BabelIndexDTO>(_indexPointer, i);
                 if ((entry.StringHash == 0u && count > 1) ||
                     (i > 0 && entry.StringHash <= previousHash) ||
-                    entry.ByteLength == 0u ||
                     (entry.ByteOffset & 15u) != 0u ||
                     entry.ByteOffset < _header.DataOffset ||
                     entry.ByteLength > _header.FileByteLength ||
@@ -1038,22 +1299,10 @@ namespace Hecton8.Core.Data
         private void CloseFile()
         {
             CompleteActiveLoreReadsForClose();
+            FlushPendingDumpsCold();
 
 #if HECTON8_BABEL_MMF_AVAILABLE
-            if (_accessor != null)
-            {
-                if (_basePointer != null && _ownedFallbackPointer == null)
-                    _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
-
-                _accessor.Dispose();
-                _accessor = null;
-            }
-
-            if (_mappedFile != null)
-            {
-                _mappedFile.Dispose();
-                _mappedFile = null;
-            }
+            CloseMemoryMappedDictionary();
 #endif
             if (_fileStream != null)
             {
@@ -1096,10 +1345,41 @@ namespace Hecton8.Core.Data
             _lastTreeDepth = 0u;
             _lastTreeKeysProcessed = 0u;
             _lastPrefetchTouchCount = 0u;
+            _pendingBlackBoxDumpCount = 0u;
+            _pendingBTreeTelemetryDumpCount = 0u;
             _activeLoreReadHandle = default;
             _activeLoreReadHandleValid = false;
             _header = default;
         }
+
+#if HECTON8_BABEL_MMF_AVAILABLE
+        private void CloseMemoryMappedDictionary()
+        {
+            if (_accessor != null)
+            {
+                if (_basePointer != null && _ownedFallbackPointer == null)
+                {
+                    _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                    _basePointer = null;
+                }
+
+                _accessor.Dispose();
+                _accessor = null;
+            }
+
+            if (_mappedFile != null)
+            {
+                _mappedFile.Dispose();
+                _mappedFile = null;
+            }
+
+            if (_fileStream != null)
+            {
+                _fileStream.Dispose();
+                _fileStream = null;
+            }
+        }
+#endif
 
         private void RegisterLoreReadHandle(JobHandle handle)
         {

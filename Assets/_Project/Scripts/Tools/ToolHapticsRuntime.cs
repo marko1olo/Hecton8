@@ -195,16 +195,18 @@ namespace Hecton8.Tools
 
         public static bool PowerSaveMuteActive => Volatile.Read(ref s_powerSaveMute) != 0;
 
+        public static void SetPowerSaveMuteGlobal(bool muted)
+        {
+            Volatile.Write(ref s_powerSaveMute, muted ? 1 : 0);
+        }
+
         public void SetPowerSaveMute(bool muted)
         {
             int value = muted ? 1 : 0;
-            if (Interlocked.Exchange(ref s_powerSaveMute, value) == value)
-                return;
+            Interlocked.Exchange(ref s_powerSaveMute, value);
 
-            if (!muted)
-                return;
-
-            ClearBuffers();
+            if (muted)
+                ClearBuffers();
         }
 
         public void Tick(float deltaTime)

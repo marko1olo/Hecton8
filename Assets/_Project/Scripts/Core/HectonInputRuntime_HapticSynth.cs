@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Tools;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -107,6 +108,11 @@ namespace Hecton8.Core
             uint schemeHash = _currentInputSchemeHash != 0u ? _currentInputSchemeHash : ResolveCurrentInputSchemeHash();
             if (schemeHash == InputSchemeHashKeyboardMouse)
                 return dependsOn;
+            if (ToolHapticsRuntime.PowerSaveMuteActive)
+            {
+                _hapticSynthesisAccumulator = 0f;
+                return dependsOn;
+            }
 
             InputProfileDTO profile = ReadInputProfile();
             return ScheduleHapticSynthesisTranslator(timing.FrameDelta, in profile, schemeHash, timing.FrameId, dependsOn);
@@ -253,6 +259,8 @@ namespace Hecton8.Core
             {
                 return;
             }
+            if (ToolHapticsRuntime.PowerSaveMuteActive)
+                return;
 
             uint elapsedMicros = ResolveElapsedHapticSynthesisMicros();
             HapticTelemetryEntry telemetry = default;
@@ -301,38 +309,22 @@ namespace Hecton8.Core
             }
 
             SignalBus<HapticPulseSignal>.TryPushTracked(in pulse, ref s_x001HectonInputRuntimeHapticSynthSignalPushDropCount);
-            float safeDeltaTime = math.isfinite(deltaTime) && deltaTime > 0f
-                ? math.min(deltaTime, 0.1f)
-                : (float)StandardInputTickIntervalSeconds;
-            float decayRate = 1f / math.max(pulse.DurationSeconds, math.max(safeDeltaTime, 0.02f));
-            InsertHapticCommandDto(
-                pulse.LowFrequencyMotor01,
-                pulse.HighFrequencyMotor01,
-                decayRate,
-                HapticLowMotorMask | HapticHighMotorMask,
-                ResolveHapticPulsePriority(pulse.PriorityFlags),
-                ResolveHapticPulseBlendMode(pulse.PriorityFlags));
         }
 
         private void QueueSynthesizedHapticCommand(float deltaTime, in InputProfileDTO profile, uint schemeHash)
         {
             if (schemeHash == InputSchemeHashKeyboardMouse)
                 return;
+            if (ToolHapticsRuntime.PowerSaveMuteActive)
+            {
+                _hapticSynthesisAccumulator = 0f;
+                return;
+            }
 
             float safeDeltaTime = math.isfinite(deltaTime) && deltaTime > 0f
                 ? math.min(deltaTime, 0.1f)
                 : (float)StandardInputTickIntervalSeconds;
-            if (!TryRunHapticSynthesisTranslator(safeDeltaTime, in profile, out HapticPulseSignal synthesizedPulse))
-                return;
-
-            float decayRate = 1f / math.max(synthesizedPulse.DurationSeconds, 0.02f);
-            InsertHapticCommandDto(
-                synthesizedPulse.LowFrequencyMotor01,
-                synthesizedPulse.HighFrequencyMotor01,
-                decayRate,
-                HapticLowMotorMask | HapticHighMotorMask,
-                ResolveHapticPulsePriority(synthesizedPulse.PriorityFlags),
-                ResolveHapticPulseBlendMode(synthesizedPulse.PriorityFlags));
+            TryRunHapticSynthesisTranslator(safeDeltaTime, in profile, out _);
         }
 
         private bool TryRunHapticSynthesisTranslator(float deltaTime, in InputProfileDTO inputProfile, out HapticPulseSignal pulse)

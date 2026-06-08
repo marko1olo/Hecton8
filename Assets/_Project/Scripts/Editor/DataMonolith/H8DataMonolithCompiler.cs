@@ -681,15 +681,10 @@ namespace Hecton8.EditorValidation
             if (TryPromoteWithNativeReplace(outputPath, tempPath, backupPath, out string nativeError))
                 return true;
 
-            if (TryPromoteWithRecoverableMove(outputPath, tempPath, backupPath, out string moveError))
-                return true;
-
             if (TryPromoteWithValidatedCopy(outputPath, tempPath, backupPath, out string copyError))
                 return true;
 
             error = "Atomic output promote failed: File.Replace=" + ex.GetType().Name + ": " + ex.Message + "; " + nativeError;
-            if (!string.IsNullOrEmpty(moveError))
-                error += "; RecoverableMove=" + moveError;
             if (!string.IsNullOrEmpty(copyError))
                 error += "; ValidatedCopy=" + copyError;
             return false;
@@ -757,91 +752,6 @@ namespace Hecton8.EditorValidation
             catch (ArgumentException ex) { return FailFileOperation(ex, out error); }
             catch (NotSupportedException ex) { return FailFileOperation(ex, out error); }
             catch (System.Security.SecurityException ex) { return FailFileOperation(ex, out error); }
-        }
-
-        private static bool TryPromoteWithRecoverableMove(string outputPath, string tempPath, string backupPath, out string error)
-        {
-            error = string.Empty;
-            try
-            {
-                if (!TryFileExists(backupPath))
-                    File.Copy(outputPath, backupPath, true);
-
-                PrepareWritableFile(outputPath);
-                PrepareWritableFile(tempPath);
-                File.Delete(outputPath);
-                File.Move(tempPath, outputPath);
-                TryDeleteFile(backupPath);
-                return true;
-            }
-            catch (IOException ex)
-            {
-                error = ex.GetType().Name + ": " + ex.Message;
-                if (!TryFileExists(outputPath) && TryFileExists(backupPath))
-                    TryRestoreMovedBackup(outputPath, backupPath, ref error);
-
-                return false;
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                error = ex.GetType().Name + ": " + ex.Message;
-                if (!TryFileExists(outputPath) && TryFileExists(backupPath))
-                    TryRestoreMovedBackup(outputPath, backupPath, ref error);
-
-                return false;
-            }
-            catch (ArgumentException ex)
-            {
-                error = ex.GetType().Name + ": " + ex.Message;
-                if (!TryFileExists(outputPath) && TryFileExists(backupPath))
-                    TryRestoreMovedBackup(outputPath, backupPath, ref error);
-
-                return false;
-            }
-            catch (NotSupportedException ex)
-            {
-                error = ex.GetType().Name + ": " + ex.Message;
-                if (!TryFileExists(outputPath) && TryFileExists(backupPath))
-                    TryRestoreMovedBackup(outputPath, backupPath, ref error);
-
-                return false;
-            }
-            catch (System.Security.SecurityException ex)
-            {
-                error = ex.GetType().Name + ": " + ex.Message;
-                if (!TryFileExists(outputPath) && TryFileExists(backupPath))
-                    TryRestoreMovedBackup(outputPath, backupPath, ref error);
-
-                return false;
-            }
-        }
-
-        private static void TryRestoreMovedBackup(string outputPath, string backupPath, ref string error)
-        {
-            try
-            {
-                File.Move(backupPath, outputPath);
-            }
-            catch (IOException restoreEx)
-            {
-                error += "; restore failed: " + restoreEx.GetType().Name + ": " + restoreEx.Message;
-            }
-            catch (UnauthorizedAccessException restoreEx)
-            {
-                error += "; restore failed: " + restoreEx.GetType().Name + ": " + restoreEx.Message;
-            }
-            catch (ArgumentException restoreEx)
-            {
-                error += "; restore failed: " + restoreEx.GetType().Name + ": " + restoreEx.Message;
-            }
-            catch (NotSupportedException restoreEx)
-            {
-                error += "; restore failed: " + restoreEx.GetType().Name + ": " + restoreEx.Message;
-            }
-            catch (System.Security.SecurityException restoreEx)
-            {
-                error += "; restore failed: " + restoreEx.GetType().Name + ": " + restoreEx.Message;
-            }
         }
 
         private static bool TryPromoteWithValidatedCopy(string outputPath, string tempPath, string backupPath, out string error)

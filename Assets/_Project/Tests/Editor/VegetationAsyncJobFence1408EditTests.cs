@@ -74,10 +74,15 @@ namespace Hecton8.Tests.Editor
         public void FlowFieldCompletion_UsesDispatcherFenceBeforeDataVaultPublishAndNativeRelease()
         {
             string source = ReadProjectScript("World/VegetationFlowFieldIntegrator.cs");
+            string helperBody = ExtractMethodBody(source, "TryCompleteVegetationSimulationJob");
 
             AssertFlowCompletionContract(source, "CompleteThreatPropagationJob", "ReleaseThreatPropagationPendingJob");
             AssertFlowCompletionContract(source, "CompleteFlowFieldJob", "ReleaseFlowFieldPendingJob");
             AssertFlowCompletionContract(source, "CompleteThermalGridJob", "ReleaseThermalGridPendingJob");
+            Assert.That(helperBody, Does.Contain("DispatcherJobSwap.TryComplete(ref handle, forceComplete: false)"));
+            AssertCompleteInsidePostSimulationWindow(
+                helperBody,
+                "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true)");
 
             string cancelBody = ExtractMethodBody(source, "CancelVegetationSimulationJobsForResidencyClear");
             Assert.That(cancelBody, Does.Contain("pending.Cancelled = true"));
@@ -167,6 +172,26 @@ namespace Hecton8.Tests.Editor
             Assert.That(cancelBody, Does.Contain("InvalidateAbyssalPathState()"));
             Assert.That(chunkCancelBody, Does.Contain("MarkChunkBuildJobCancelled(i)"));
             Assert.That(disposeBody, Does.Contain("CompleteAndReleaseChunkBuildJob(i)"));
+        }
+
+        [Test]
+        public void ChunkBuildTeardown_ForceCompletesInsidePostSimulationWindowBeforeReadPinRelease()
+        {
+            string bridgeSource = ReadProjectScript("World/HectonMapMagicVegetationBridge.cs");
+            string releaseBody = ExtractMethodBody(bridgeSource, "CompleteAndReleaseChunkBuildJob");
+            string helperBody = ExtractMethodBody(bridgeSource, "ForceCompleteChunkBuildJobInPostSimulationWindow");
+
+            AssertOrdered(
+                releaseBody,
+                "ForceCompleteChunkBuildJobInPostSimulationWindow(ref pending.Handle)",
+                "ReleaseChunkBuildPendingJob(ref pending)");
+            Assert.That(
+                releaseBody,
+                Does.Not.Contain("DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete: true)"));
+            Assert.That(releaseBody, Does.Contain("_chunkBuildJobs[slot] = pending;"));
+            AssertCompleteInsidePostSimulationWindow(
+                helperBody,
+                "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true)");
         }
 
         [Test]
@@ -274,6 +299,7 @@ namespace Hecton8.Tests.Editor
                 source,
                 "public bool TryScheduleAbyssalPath(Vector3 startPosition, Vector3 endPosition, int traversalSpeciesId");
             string completeBody = ExtractMethodBody(source, "CompleteAbyssalPathJob");
+            string helperBody = ExtractMethodBody(source, "TryCompleteVegetationNavJob");
             string invalidateBody = ExtractMethodBody(source, "InvalidateAbyssalPathState");
 
             AssertOrdered(scheduleBody, "JobHandle smoothingHandle = smoothingJob.Schedule(pathSourceHandle)", "_abyssalPathJob = new AbyssalPathPendingJob");
@@ -289,8 +315,12 @@ namespace Hecton8.Tests.Editor
             Assert.That(scheduleBody, Does.Not.Contain("CommitAbyssalPathResult"));
             Assert.That(source, Does.Not.Contain("ForceCompleteAbyssalPathDependency"));
 
-            AssertOrdered(completeBody, "DispatcherJobSwap.TryComplete(ref handle, forceComplete)", "CommitAbyssalPathResult");
+            AssertOrdered(completeBody, "TryCompleteVegetationNavJob(ref handle, forceComplete)", "CommitAbyssalPathResult");
             AssertOrdered(completeBody, "CommitAbyssalPathResult", "ReleaseAbyssalPathPendingJob(ref pending)");
+            Assert.That(helperBody, Does.Contain("DispatcherJobSwap.TryComplete(ref handle, forceComplete: false)"));
+            AssertCompleteInsidePostSimulationWindow(
+                helperBody,
+                "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true)");
             Assert.That(completeBody, Does.Contain("_abyssalPathScheduled = false"));
             Assert.That(completeBody, Does.Contain("!pending.Cancelled"));
             Assert.That(invalidateBody, Does.Contain("pending.Cancelled = true"));
@@ -356,7 +386,51 @@ namespace Hecton8.Tests.Editor
             Assert.That(readBody, Does.Not.Contain("TryComplete"));
             Assert.That(rebuildBody, Does.Not.Contain("CompleteHLODCullJob"));
             Assert.That(rebuildBody, Does.Not.Contain("TryComplete"));
-            Assert.That(completeBody, Does.Contain("DispatcherJobSwap.TryComplete"));
+            Assert.That(completeBody, Does.Contain("TryCompleteVegetationNavJob(ref _hlodCullHandle, forceComplete)"));
+        }
+
+        [Test]
+        public void NativePoolDefragCompletion_ForceCompletesInsidePostSimulationWindowBeforePoolSwap()
+        {
+            string source = ReadProjectScript("World/VegetationMemoryPool.cs");
+            string completeBody = ExtractMethodBody(source, "CompleteNativePoolDefragIfReady");
+            string helperBody = ExtractMethodBody(source, "TryCompleteNativePoolDefragJob");
+
+            AssertOrdered(
+                completeBody,
+                "TryCompleteNativePoolDefragJob(ref _surfacePoolDefragHandle, forceComplete)",
+                "SwapChunkPools(ref _surfaceChunkPool, ref _surfaceDefragScratchPool)");
+            AssertOrdered(
+                completeBody,
+                "TryCompleteNativePoolDefragJob(ref _underwaterPoolDefragHandle, forceComplete)",
+                "SwapChunkPools(ref _underwaterChunkPool, ref _underwaterDefragScratchPool)");
+            Assert.That(
+                completeBody,
+                Does.Not.Contain("DispatcherJobSwap.TryComplete(ref _surfacePoolDefragHandle, forceComplete)"));
+            Assert.That(
+                completeBody,
+                Does.Not.Contain("DispatcherJobSwap.TryComplete(ref _underwaterPoolDefragHandle, forceComplete)"));
+            Assert.That(helperBody, Does.Contain("DispatcherJobSwap.TryComplete(ref handle, forceComplete: false)"));
+            AssertCompleteInsidePostSimulationWindow(
+                helperBody,
+                "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true)");
+        }
+
+        private static void AssertCompleteInsidePostSimulationWindow(string method, string completeCall)
+        {
+            const string beginWindow = "BeginPostSimulationSwapWindow();";
+            const string endWindow = "EndPostSimulationSwapWindow();";
+
+            int completeIndex = method.IndexOf(completeCall, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(completeIndex, 0, completeCall);
+
+            int beginIndex = method.LastIndexOf(beginWindow, completeIndex, StringComparison.Ordinal);
+            int endIndex = method.IndexOf(endWindow, completeIndex, StringComparison.Ordinal);
+
+            Assert.GreaterOrEqual(beginIndex, 0, completeCall);
+            Assert.GreaterOrEqual(endIndex, 0, completeCall);
+            Assert.Less(beginIndex, completeIndex, completeCall);
+            Assert.Less(completeIndex, endIndex, completeCall);
         }
 
         private static void AssertFlowCompletionContract(string source, string completeMethodName, string releaseMethodName)
@@ -364,7 +438,7 @@ namespace Hecton8.Tests.Editor
             string body = ExtractMethodBody(source, completeMethodName);
 
             AssertOrdered(body, "pending.Cancelled", "TryCopyVegetationMemorySnapshot");
-            AssertOrdered(body, "DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete)", "TryCopyVegetationMemorySnapshot");
+            AssertOrdered(body, "TryCompleteVegetationSimulationJob(ref pending.Handle, forceComplete)", "TryCopyVegetationMemorySnapshot");
             AssertOrdered(body, "TryCopyVegetationMemorySnapshot", releaseMethodName + "(ref pending)");
             Assert.That(body, Does.Contain("= default"));
             Assert.That(body, Does.Contain("= false"));

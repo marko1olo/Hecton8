@@ -227,7 +227,7 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            File.WriteAllBytes(SeaGrassAtlasAssetPath, atlas.EncodeToPNG());
+            WriteBytesAtomic(SeaGrassAtlasAssetPath, atlas.EncodeToPNG());
             UnityEngine.Object.DestroyImmediate(atlas);
             RestoreTextureReadability(sourcePaths, restoreReadability);
             AssetDatabase.ImportAsset(SeaGrassAtlasAssetPath, ImportAssetOptions.ForceUpdate);
@@ -235,6 +235,44 @@ namespace Hecton8.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"[WorldProceduralFloraTextureAuthoring] Built sea-grass atlas '{SeaGrassAtlasAssetPath}' at {SeaGrassAtlasSize}x{SeaGrassAtlasSize} BC7.");
+        }
+
+        private static void WriteBytesAtomic(string path, byte[] bytes)
+        {
+            string tempPath = path + ".tmp";
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    stream.Write(bytes, 0, bytes.Length);
+                    stream.Flush(true);
+                }
+
+                if (File.Exists(path))
+                    File.Replace(tempPath, path, null, true);
+                else
+                    File.Move(tempPath, path);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+            }
         }
 
         [MenuItem("Hecton/Validation/Scaffold Missing Flora Texture Import Folders", priority = 269)]

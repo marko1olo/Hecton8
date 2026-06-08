@@ -23,11 +23,11 @@ Drabina księżyców Aegir robi z grywalnego księżyca część ruchomego syste
 
 ## Scanner
 
-Sekwencja księżyców: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Sekwencja księżyców: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
 
 ## Terminal
 
-HECTON-8 to Aegir-VIII: ani wewnętrzny, ani najdalszy. Rezonans Rake i cień Pale zmieniają pływy i pakiety.
+HECTON-8 to Aegir-VIII: ani wewnętrzny, ani najdalszy. Rezonans Kestrel i cień Mute zmieniają pływy i pakiety.
 
 ## Audio
 

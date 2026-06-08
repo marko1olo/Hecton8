@@ -23,11 +23,11 @@ Aegirs Mondleiter umfasst Strahlungsmarker, Relaiskörper, ausgebeutete Claims, 
 
 ## Scanner
 
-Mondfolge: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Mondfolge: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
 
 ## Terminal
 
-HECTON-8 ist Aegir-VIII: nicht innen, nicht am weitesten draußen. Rake-Resonanz und Pale-Schatten ändern Tide und Paketqualität.
+HECTON-8 ist Aegir-VIII: nicht innen, nicht am weitesten draußen. Kestrel-Resonanz und Mute-Schatten ändern Tide und Paketqualität.
 
 ## Audio
 

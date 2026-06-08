@@ -23,11 +23,11 @@ A escada lunar de Aegir inclui marcadores de radiação, corpos relay, claims es
 
 ## Scanner
 
-Sequência de luas: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Sequência de luas: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
 
 ## Terminal
 
-HECTON-8 é Aegir-VIII: nem interna, nem a mais distante. A ressonância de Rake e a sombra de Pale alteram maré e pacotes.
+HECTON-8 é Aegir-VIII: nem interna, nem a mais distante. A ressonância de Kestrel e a sombra de Mute alteram maré e pacotes.
 
 ## Audio
 

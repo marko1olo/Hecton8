@@ -75,6 +75,12 @@ namespace Hecton8.Interaction
                 return;
             }
 
+            if (_connected)
+            {
+                Disconnect();
+                return;
+            }
+
             BeginDrag(interactor);
         }
 

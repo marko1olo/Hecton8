@@ -288,7 +288,7 @@ namespace Hecton8.Editor.ModdingSDK
 
                 string finalBundlePath = Path.Combine(outputDirectory, modId + ".bundle");
                 if (!string.IsNullOrWhiteSpace(bundleOutputPath))
-                    File.Copy(bundleOutputPath, finalBundlePath, true);
+                    CopyFileAtomic(bundleOutputPath, finalBundlePath);
                 else if (File.Exists(finalBundlePath))
                     File.Delete(finalBundlePath);
 
@@ -410,7 +410,7 @@ namespace Hecton8.Editor.ModdingSDK
                 string sourcePath = assemblyPaths[i];
                 string fileName = Path.GetFileName(sourcePath);
                 string destinationPath = Path.Combine(outputDirectory, fileName);
-                File.Copy(sourcePath, destinationPath, true);
+                CopyFileAtomic(sourcePath, destinationPath);
                 copiedFileNames[copiedCount++] = fileName;
             }
 
@@ -419,6 +419,65 @@ namespace Hecton8.Editor.ModdingSDK
 
             Array.Resize(ref copiedFileNames, copiedCount);
             return copiedFileNames;
+        }
+
+        private static void CopyFileAtomic(string sourcePath, string destinationPath)
+        {
+            string tempPath = destinationPath + ".tmp";
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                File.Copy(sourcePath, tempPath, false);
+                if (File.Exists(destinationPath))
+                    File.Replace(tempPath, destinationPath, null, true);
+                else
+                    File.Move(tempPath, destinationPath);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void WriteTextAtomic(string destinationPath, string text)
+        {
+            string tempPath = destinationPath + ".tmp";
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                File.WriteAllText(tempPath, text);
+                if (File.Exists(destinationPath))
+                    File.Replace(tempPath, destinationPath, null, true);
+                else
+                    File.Move(tempPath, destinationPath);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (Exception exception) when (
+                exception is IOException ||
+                exception is UnauthorizedAccessException ||
+                exception is ArgumentException ||
+                exception is NotSupportedException ||
+                exception is System.Security.SecurityException)
+            {
+            }
         }
 
         private static void RemoveStaleAssemblies(string outputDirectory, string[] copiedAssemblies)
@@ -464,7 +523,7 @@ namespace Hecton8.Editor.ModdingSDK
         {
             string json = JsonUtility.ToJson(manifest, true);
             string manifestPath = Path.Combine(outputDirectory, "mod.json");
-            File.WriteAllText(manifestPath, json);
+            WriteTextAtomic(manifestPath, json);
         }
 
         private bool TryValidateConfiguration(bool includeExpensiveFileContentValidation, out string validationError)

@@ -59,9 +59,42 @@ namespace Hecton8.Core.Bridge.EditorTools
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            File.WriteAllText(fullPath, builder.ToString(), new UTF8Encoding(false));
+            WriteTextAtomic(fullPath, builder.ToString(), new UTF8Encoding(false));
             AssetDatabase.ImportAsset(OutputPath);
             Debug.Log("[H8Bridge] Design facade contracts generated.");
+        }
+
+        private static void WriteTextAtomic(string path, string text, Encoding encoding)
+        {
+            string tempPath = path + ".tmp";
+            try
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+
+                File.WriteAllText(tempPath, text, encoding);
+                if (File.Exists(path))
+                    File.Replace(tempPath, path, null, true);
+                else
+                    File.Move(tempPath, path);
+            }
+            catch
+            {
+                TryDeleteFileNoThrow(tempPath);
+                throw;
+            }
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+            }
         }
 
         private static void AppendBuiltinDefaultContracts(StringBuilder builder)

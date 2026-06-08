@@ -50,6 +50,24 @@ Every accepted system must document:
 
 If the ownership record is missing, the system is not accepted.
 
+## Integration Handoff Lock
+
+A runtime system is not integrated merely because the class, manager, prefab, or validator exists.
+
+New or changed systems that claim integration must name and prove:
+
+- producer route: what event, owner phase, authoring data, scene object, or player action feeds it;
+- consumer route: which gameplay/UI/audio/VFX/save/telemetry owners read the result;
+- scene/prefab/asset binding route, or explicit reason no Unity binding is required;
+- configuration/data source and generated/baked artifact if data-driven;
+- dispatcher phase and registration/unregistration path;
+- failure path, fallback, and black-box/telemetry fields;
+- save/load identity when state persists;
+- Compact/Middle/High/Ultra behavior when presentation, cadence, or capacity changes;
+- proof command or Unity/player artifact for the claimed integration level.
+
+If any route is unknown, the system remains `PENDING VERIFICATION` or `BLOCKER`; do not fill the gap with a new wrapper, fallback manager, global lookup, or report.
+
 ## Data Access Law
 
 Read accessors named `Get*`, `TryGet*`, `Resolve*`, or `Read*` must be pure. They must not allocate, publish events, complete jobs, mutate state, search the scene, sync GameObjects, load assets, or grow buffers.

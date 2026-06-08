@@ -913,6 +913,7 @@ namespace Hecton8.Narrative.Editor
                 !TryFindFile(files, "GlobalSignalPayloads.DomainRemainder.cs", out FileUnit signalFile) ||
                 !TryFindFile(files, "GlobalSignals.RuntimeLifecycle.cs", out FileUnit signalLifecycleFile) ||
                 !TryFindFile(files, "H8AppliedLoreRuntime.cs", out FileUnit appliedLoreRuntimeFile) ||
+                !TryFindFile(files, "DataArchaeologyRuntime.cs", out FileUnit dataArchaeologyFile) ||
                 !TryFindFile(files, "ScanEvents.cs", out FileUnit scanEventsFile))
             {
                 findings.Add(new Finding(
@@ -977,6 +978,14 @@ namespace Hecton8.Narrative.Editor
                 CountInvocationInMethod(scannerFile.Root, "OnEnable", "ScanEvents.EnsureInitializedCold");
             summary.ScannerLoreFragmentLegacyDirectDequeues =
                 CountTextInFilesExcept(files, "TryDequeueLoreFragmentScanned", "GlobalSignals.LegacyFacade.cs");
+            int dataArchaeologyHudNotificationBridge =
+                CountTextInMethod(dataArchaeologyFile.Root, "PublishCompletionSignals", "PublishDiscoveryHudNotification(hash)") +
+                CountTextInMethod(dataArchaeologyFile.Root, "PublishDiscoveryHudNotification", "H8AppliedLoreRuntime.TryWriteTitleUtf16") +
+                CountTextInMethod(dataArchaeologyFile.Root, "PublishDiscoveryHudNotification", "NotificationEvents.TryPushInfo") +
+                CountTextInMethod(dataArchaeologyFile.Root, "PublishDiscoveryHudNotification", "DiscoveryUnlockedFallbackMessage");
+            int dataArchaeologyLegacyHudSignal =
+                CountTextInMethod(dataArchaeologyFile.Root, "PublishCompletionSignals", "HUDNotificationSignal") +
+                CountTextInMethod(dataArchaeologyFile.Root, "PublishCompletionSignals", "SignalBus<HUDNotificationSignal>");
 
             bool valid =
                 summary.ScannerLoreFragmentSignalLayout >= 10 &&
@@ -992,7 +1001,9 @@ namespace Hecton8.Narrative.Editor
                 summary.ScannerLoreFragmentAppliedLorePairedFlags >= 1 &&
                 summary.ScannerLoreFragmentHashOnlyFlagStrips >= 2 &&
                 summary.ScannerLoreFragmentScanEventsColdPrewarm >= 2 &&
-                summary.ScannerLoreFragmentLegacyDirectDequeues == 0;
+                summary.ScannerLoreFragmentLegacyDirectDequeues == 0 &&
+                dataArchaeologyHudNotificationBridge >= 4 &&
+                dataArchaeologyLegacyHudSignal == 0;
 
             if (valid)
                 return;
@@ -1014,7 +1025,9 @@ namespace Hecton8.Narrative.Editor
                 " applied_paired_flags=" + summary.ScannerLoreFragmentAppliedLorePairedFlags +
                 " flag_strips=" + summary.ScannerLoreFragmentHashOnlyFlagStrips +
                 " scan_events_cold_prewarm=" + summary.ScannerLoreFragmentScanEventsColdPrewarm +
-                " legacy_dequeues=" + summary.ScannerLoreFragmentLegacyDirectDequeues));
+                " legacy_dequeues=" + summary.ScannerLoreFragmentLegacyDirectDequeues +
+                " data_archaeology_hud_bridge=" + dataArchaeologyHudNotificationBridge +
+                " data_archaeology_legacy_hud=" + dataArchaeologyLegacyHudSignal));
             summary.DependencyFindings++;
         }
 

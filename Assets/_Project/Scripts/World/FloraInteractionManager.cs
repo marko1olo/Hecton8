@@ -3668,14 +3668,32 @@ namespace Hecton8.World
             if (!_wakeDecayScheduled)
                 return true;
 
-            bool completed = forceComplete || dispatcherSwapWindow
-                ? DispatcherJobSwap.TryComplete(ref _wakeDecayHandle, forceComplete)
-                : DispatcherJobSwap.TryFinalizeCompleted(ref _wakeDecayHandle);
+            bool completed;
+            if (forceComplete)
+                completed = ForceCompleteWakeDecayJobInPostSimulationWindow();
+            else if (dispatcherSwapWindow)
+                completed = DispatcherJobSwap.TryComplete(ref _wakeDecayHandle, forceComplete: false);
+            else
+                completed = DispatcherJobSwap.TryFinalizeCompleted(ref _wakeDecayHandle);
+
             if (!completed)
                 return false;
 
             _wakeDecayScheduled = false;
             return true;
+        }
+
+        private bool ForceCompleteWakeDecayJobInPostSimulationWindow()
+        {
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobSwap.TryComplete(ref _wakeDecayHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
         }
 
         private void PublishProceduralWakeBuffer(bool forceUpload = false)
@@ -4196,10 +4214,23 @@ namespace Hecton8.World
             if (!_floraSwayFieldBuildScheduled)
                 return true;
 
-            if (!DispatcherJobFence.TryComplete(ref _floraSwayFieldBuildHandle, forceComplete: true))
+            if (!ForceCompleteFloraSwayFieldBuildInPostSimulationWindow())
                 return false;
 
             return FinishFloraSwayFieldJob(uploadAfterComplete);
+        }
+
+        private bool ForceCompleteFloraSwayFieldBuildInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobFence.TryComplete(ref _floraSwayFieldBuildHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         private bool FinishFloraSwayFieldJob(bool uploadAfterComplete)

@@ -307,6 +307,7 @@ namespace Hecton8.AI.Sensory
         public const float InvTwoPi = 0.15915494309189533577f;
         public const float DefaultGhostPredatorFrequency = 4.75f;
         public const uint GhostBlipSourceHash = 0x47484F53u;
+        private const uint TuningHapticSourceHash = 0x54554E45u;
 
         public const byte FlagActiveTrail = 1 << 0;
         public const byte FlagPortalBreadcrumb = 1 << 1;
@@ -344,6 +345,7 @@ namespace Hecton8.AI.Sensory
         private const ulong BlackBoxMutationGuardMask = AcousticBlackBoxGuardBit;
 
         private static readonly AcousticEchoHotSwapBridge s_hotSwapBridge = new AcousticEchoHotSwapBridge(); // COLD ALLOC: AcousticEchoHotSwapBridge[1] - static acoustic echo DataVault rebind listener - owner: AcousticEchoLocationRuntime
+        private static int s_x001AcousticEchoLocationRuntimeSignalPushDropCount;
         private static IDataVault _dataVault;
         private static IDataVault _pendingDataVaultRebind;
         private static VaultGenerationHandle<EchoTap> _frameTapsHandle;
@@ -447,7 +449,7 @@ namespace Hecton8.AI.Sensory
             {
                 try
                 {
-                    DispatcherJobFence.TryComplete(ref _trackingHandle, forceComplete: true);
+                    ForceCompleteTrackingInPostSimulationWindow();
                 }
                 finally
                 {
@@ -479,6 +481,19 @@ namespace Hecton8.AI.Sensory
             _pendingProducerFaultAup = default;
             _sequence = 0u;
             _initialized = 0;
+        }
+
+        private static bool ForceCompleteTrackingInPostSimulationWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobFence.TryComplete(ref _trackingHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
         }
 
         public static bool TryEnqueueEchoTap(in EchoTap tap)
@@ -1197,9 +1212,11 @@ namespace Hecton8.AI.Sensory
                     LowFrequencyMotor01 = 0.15f,
                     HighFrequencyMotor01 = math.saturate(unsuppressedAmplitude),
                     DurationSeconds = 0.075f,
-                    PriorityFlags = HapticPulseSignal.PriorityTool
+                    PriorityFlags = HapticPulseSignal.PackPriorityAndSourceHash(
+                        HapticPulseSignal.PriorityTool,
+                        GhostBlipSourceHash)
                 };
-                if (SignalBus<HapticPulseSignal>.TryPush(in pulse))
+                if (SignalBus<HapticPulseSignal>.TryPushTracked(in pulse, ref s_x001AcousticEchoLocationRuntimeSignalPushDropCount))
                     _lastGhostHapticFrame = frame;
             }
 
@@ -1212,9 +1229,11 @@ namespace Hecton8.AI.Sensory
                     LowFrequencyMotor01 = 0.42f,
                     HighFrequencyMotor01 = 0.08f,
                     DurationSeconds = 0.18f,
-                    PriorityFlags = HapticPulseSignal.PriorityTool
+                    PriorityFlags = HapticPulseSignal.PackPriorityAndSourceHash(
+                        HapticPulseSignal.PriorityTool,
+                        TuningHapticSourceHash)
                 };
-                if (SignalBus<HapticPulseSignal>.TryPush(in pulse))
+                if (SignalBus<HapticPulseSignal>.TryPushTracked(in pulse, ref s_x001AcousticEchoLocationRuntimeSignalPushDropCount))
                     _lastTuningHapticFrame = frame;
             }
         }

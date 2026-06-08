@@ -46,8 +46,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
             "Assets/_Project/Scripts/Visor/HectonVolumetricParticulateFogFeature.cs",
             "Assets/_Project/Scripts/Visor/HectonHalfResParticlesFeature.cs",
             "Assets/_Project/Scripts/Visor/DeferredDecalPass.cs",
-            "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
-            "Assets/_Project/Scripts/Visor/CausticsProjectorManager.cs"
+            "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs"
         };
 
         private static readonly string[] RendererAssetPaths =

@@ -1717,9 +1717,22 @@ namespace Hecton8.Gameplay
             finally
             {
                 JobHandle.ScheduleBatchedJobs();
-                DispatcherJobFence.TryComplete(ref _disposeHandle, forceComplete: true);
+                ForceCompleteDisposeHandleInPostSimulationWindow(ref _disposeHandle);
                 _groundResponseScheduled = false;
                 _pendingGroundResponseHandle = default;
+            }
+        }
+
+        private static void ForceCompleteDisposeHandleInPostSimulationWindow(ref JobHandle handle)
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
             }
         }
 
@@ -1867,7 +1880,7 @@ namespace Hecton8.Gameplay
                     JobHandle.ScheduleBatchedJobs();
                     try
                     {
-                        DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+                        ForceCompleteDisposeHandleInPostSimulationWindow(ref disposeHandle);
                     }
                     catch (Exception exception)
                     {
@@ -2033,7 +2046,7 @@ namespace Hecton8.Gameplay
                 return;
 
             // COLD SYNC JOB: floating-origin rebasing must not race pending IK target writes.
-            DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
+            ForceCompletePendingGroundResponseInPostSimulationWindow();
             SwapTargetBuffers();
             PublishFrontTargetBuffer(applyPresentation: false);
             WriteTelemetrySample(TelemetryReasonOriginShift);
@@ -2047,7 +2060,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             // COLD SYNC JOB: lifecycle slot mutation must not race pending IK writes.
-            DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
+            ForceCompletePendingGroundResponseInPostSimulationWindow();
             SwapTargetBuffers();
             _groundResponseScheduled = false;
             _pendingGroundResponseHandle = default;
@@ -2060,12 +2073,25 @@ namespace Hecton8.Gameplay
                 return;
 
             // COLD SYNC JOB: disabled runtimes must not leave pre-shift target writes pending.
-            DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
+            ForceCompletePendingGroundResponseInPostSimulationWindow();
             SwapTargetBuffers();
             PublishFrontTargetBuffer(applyPresentation: false);
             WriteTelemetrySample(TelemetryReasonRuntimeDisable);
             _groundResponseScheduled = false;
             _pendingGroundResponseHandle = default;
+        }
+
+        private void ForceCompletePendingGroundResponseInPostSimulationWindow()
+        {
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
         }
 
         private void RebaseScheduledEntityStates(float3 shiftOffset)

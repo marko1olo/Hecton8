@@ -1191,10 +1191,23 @@ namespace Hecton8.Gameplay
             if (!_jobScheduled)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _activeHandle, forceComplete: true))
+            if (!ForceCompleteActiveJobInPostSimulationWindow())
                 return;
 
             FinishScheduledCompletion();
+        }
+
+        private static bool ForceCompleteActiveJobInPostSimulationWindow()
+        {
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobSwap.TryComplete(ref _activeHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
         }
 
         private static void FinishScheduledCompletion()

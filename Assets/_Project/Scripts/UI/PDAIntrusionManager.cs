@@ -54,6 +54,8 @@ namespace Hecton8.UI
         private const uint PDAIntrusionListenerContextHash = 0x50495652u; // PIVR
         private const uint PDAIntrusionListenerExceptionWarningHash = 0x50495645u; // PIVE
         private const uint PDAIntrusionListenerExceptionContextHash = 0x50495658u; // PIVX
+        private const uint PDAIntrusionEventOverflowWarningHash = 0x50495651u; // PIVQ
+        private const uint PDAIntrusionEventContextHash = 0x50495650u; // PIVP
         private static readonly uint _RebootCompletedEventHash = unchecked((uint)LocHash.Compute("PDAIntrusion.RebootCompleted"));
 
         private struct PDAIntrusionListenerRegistry
@@ -177,13 +179,17 @@ namespace Hecton8.UI
         private static FixedUiEventQueue<PDAIntrusionEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _droppedEventCount;
         private static int _droppedListenerRegistrationCount;
         private static int _listenerExceptionCount;
+        private static int _lastEventOverflowTelemetryFrame = -1;
         private static int _lastListenerOverflowTelemetryFrame = -1;
         private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+        public static int DroppedEventCount => _droppedEventCount;
 
         public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
 
@@ -199,8 +205,10 @@ namespace Hecton8.UI
             _deferredUnregisterListeners.Clear();
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _droppedEventCount = 0;
             _droppedListenerRegistrationCount = 0;
             _listenerExceptionCount = 0;
+            _lastEventOverflowTelemetryFrame = -1;
             _lastListenerOverflowTelemetryFrame = -1;
             _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
@@ -251,7 +259,10 @@ namespace Hecton8.UI
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                ReportEventQueueOverflow();
                 return;
+            }
 
             PDAIntrusionEventPayload payload = default;
             payload.SourceID = sourceId;
@@ -262,14 +273,20 @@ namespace Hecton8.UI
             if (_isDispatching)
             {
                 if (!_nextFrameEvents.Enqueue(in payload))
+                {
+                    ReportEventQueueOverflow();
                     return;
+                }
 
                 _nextFrameEventCount++;
                 return;
             }
 
             if (!_pendingEvents.Enqueue(in payload))
+            {
+                ReportEventQueueOverflow();
                 return;
+            }
 
             _pendingEventCount++;
         }
@@ -518,6 +535,20 @@ namespace Hecton8.UI
                 ReportListenerRegistrationOverflow();
         }
 
+        private static void ReportEventQueueOverflow()
+        {
+            _droppedEventCount++;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (_lastEventOverflowTelemetryFrame == frame)
+                return;
+
+            _lastEventOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                PDAIntrusionEventOverflowWarningHash,
+                PDAIntrusionEventContextHash,
+                Mathf.Max(1, _droppedEventCount));
+        }
+
         private static void ReportListenerRegistrationOverflow()
         {
             _droppedListenerRegistrationCount++;
@@ -650,10 +681,16 @@ namespace Hecton8.UI
         /// <summary>
         /// Hold progress for the manual reboot action in normalized [0..1] range.
         /// </summary>
-        public float RebootProgressNormalized =>
-            rebootHoldDuration > 0.001f
-                ? math.saturate(_rebootHoldTimer / rebootHoldDuration)
-                : 0f;
+        public float RebootProgressNormalized
+        {
+            get
+            {
+                float safeDuration = ResolveRebootHoldDurationSeconds(rebootHoldDuration);
+                return safeDuration > 0.001f
+                    ? math.saturate(SanitizeNonNegativeSeconds(_rebootHoldTimer) / safeDuration)
+                    : 0f;
+            }
+        }
 
         private void Awake()
         {
@@ -786,20 +823,21 @@ namespace Hecton8.UI
         /// <inheritdoc />
         private void AdvanceIntrusionPresentationState(float dt)
         {
+            float safeDeltaTime = SanitizeDeltaTime(dt);
             if (!_isHacked)
             {
                 _restoreTextDriftRequested = true;
-                TickAmbientIntrusionThreat(dt);
+                TickAmbientIntrusionThreat(safeDeltaTime);
                 return;
             }
 
-            TickVisualCadence(dt);
-            TickRebootHold(dt);
+            TickVisualCadence(safeDeltaTime);
+            TickRebootHold(safeDeltaTime);
         }
 
         public void LateFrameTick()
         {
-            float dt = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            float dt = SanitizeDeltaTime(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             AdvanceIntrusionPresentationState(SystemDispatcher.CurrentFrameDeltaTime);
 
             if (_restoreTextDriftRequested)
@@ -826,8 +864,11 @@ namespace Hecton8.UI
 
         private void HandleEquipmentGlitchRequested(float intensity)
         {
-            if (intensity < equipmentGlitchThreshold)
+            if (!math.isfinite(intensity) ||
+                math.saturate(intensity) < ResolveEquipmentGlitchThreshold01(equipmentGlitchThreshold))
+            {
                 return;
+            }
 
             TriggerHack();
         }
@@ -864,11 +905,11 @@ namespace Hecton8.UI
 
         private void TickAmbientIntrusionThreat(float dt)
         {
-            _leviathanScanTimer -= dt;
+            _leviathanScanTimer = SanitizeNonNegativeSeconds(_leviathanScanTimer) - SanitizeDeltaTime(dt);
             if (_leviathanScanTimer > 0f)
                 return;
 
-            _leviathanScanTimer = math.max(0.05f, leviathanScanInterval);
+            _leviathanScanTimer = ResolveLeviathanScanIntervalSeconds(leviathanScanInterval);
 
             if (!TryResolveIntrusionOriginAup(out AbsoluteUniversePosition originAup))
                 return;
@@ -884,7 +925,7 @@ namespace Hecton8.UI
 
             int contactCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
                 origin,
-                math.max(8f, leviathanHackRadius),
+                ResolveLeviathanHackRadiusMeters(leviathanHackRadius),
                 SpatialTargetKind.Bioform,
                 _bioformContacts);
 
@@ -937,10 +978,14 @@ namespace Hecton8.UI
 
         private bool ShouldTriggerAbyssalHack(Vector3 origin)
         {
-            if (_playerMovement != null && _playerMovement.CurrentHullStress01 > HullStressHackThreshold)
+            if (_playerMovement != null &&
+                math.isfinite(_playerMovement.CurrentHullStress01) &&
+                _playerMovement.CurrentHullStress01 > HullStressHackThreshold)
+            {
                 return true;
+            }
 
-            return IsInsideDeadZone(origin);
+            return IsFinite(origin) && IsInsideDeadZone(origin);
         }
 
         private bool IsInsideDeadZone(Vector3 origin)
@@ -974,17 +1019,18 @@ namespace Hecton8.UI
 
         private void TickVisualCadence(float dt)
         {
-            _visualPhaseTimer -= dt;
+            _visualPhaseTimer = SanitizeNonNegativeSeconds(_visualPhaseTimer) - SanitizeDeltaTime(dt);
             if (_visualPhaseTimer > 0f)
                 return;
 
-            _visualPhaseTimer = math.max(0.1f, visualPhaseDuration);
+            _visualPhaseTimer = ResolveVisualPhaseDurationSeconds(visualPhaseDuration);
             _visualPhase = NextVisualPhase(_visualPhase);
             _visualPhaseDirty = true;
         }
 
         private void TickRebootHold(float dt)
         {
+            float safeDeltaTime = SanitizeDeltaTime(dt);
             if (!CanAcceptRebootHold())
             {
                 if (_rebootHoldTimer > HiddenProgressCutoff)
@@ -999,8 +1045,8 @@ namespace Hecton8.UI
                 return;
             }
 
-            _rebootHoldTimer += dt;
-            if (_rebootHoldTimer < rebootHoldDuration)
+            _rebootHoldTimer = SanitizeNonNegativeSeconds(_rebootHoldTimer) + safeDeltaTime;
+            if (_rebootHoldTimer < ResolveRebootHoldDurationSeconds(rebootHoldDuration))
                 return;
 
             CompleteReboot();
@@ -1008,6 +1054,7 @@ namespace Hecton8.UI
 
         private void TickTextDrift(float dt)
         {
+            float safeDeltaTime = SanitizeDeltaTime(dt);
             if (_playerPda == null || !PlayerPDA.IsOpen)
             {
                 RestoreTextDriftPositions();
@@ -1021,11 +1068,13 @@ namespace Hecton8.UI
                 return;
             }
 
-            _textDriftRescanTimer -= dt;
+            _textDriftRescanTimer = math.isfinite(_textDriftRescanTimer)
+                ? _textDriftRescanTimer - safeDeltaTime
+                : 0f;
             if (!ReferenceEquals(_driftPanelRoot, panelRoot))
             {
                 RestoreTextDriftPositions();
-                _textDriftRescanTimer = math.max(0.1f, TextDriftRescanInterval);
+                _textDriftRescanTimer = ResolveTextDriftRescanIntervalSeconds(TextDriftRescanInterval);
                 return;
             }
 
@@ -1033,12 +1082,14 @@ namespace Hecton8.UI
                 return;
 
             if (_textDriftRescanTimer <= 0f)
-                _textDriftRescanTimer = math.max(0.1f, TextDriftRescanInterval);
+                _textDriftRescanTimer = ResolveTextDriftRescanIntervalSeconds(TextDriftRescanInterval);
 
             if (_driftTargetCount == 0)
                 return;
 
-            _textDriftWaveTime += dt;
+            _textDriftWaveTime = math.isfinite(_textDriftWaveTime)
+                ? _textDriftWaveTime + safeDeltaTime
+                : 0f;
             float glyphScale = _visualPhase == IntrusionVisualPhase.Glyphs ? 1.22f : 1f;
             for (int i = 0; i < _driftTargetCount; i++)
             {
@@ -1149,7 +1200,7 @@ namespace Hecton8.UI
             _isHacked = true;
             _rebootHoldTimer = 0f;
             _visualPhase = IntrusionVisualPhase.English;
-            _visualPhaseTimer = math.max(0.1f, visualPhaseDuration);
+            _visualPhaseTimer = ResolveVisualPhaseDurationSeconds(visualPhaseDuration);
             _visualPhaseDirty = true;
         }
 
@@ -1228,7 +1279,8 @@ namespace Hecton8.UI
             if (_playerPda != null && _playerMovement != null && _vegetationBridge != null)
                 return;
 
-            _runtimeOwnerResolveRetryTimer -= math.max(0f, dt);
+            _runtimeOwnerResolveRetryTimer = SanitizeNonNegativeSeconds(_runtimeOwnerResolveRetryTimer) -
+                                             SanitizeDeltaTime(dt);
             if (_runtimeOwnerResolveRetryTimer > 0f)
                 return;
 
@@ -1348,6 +1400,64 @@ namespace Hecton8.UI
                 SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            equipmentGlitchThreshold = ResolveEquipmentGlitchThreshold01(equipmentGlitchThreshold);
+            leviathanScanInterval = ResolveLeviathanScanIntervalSeconds(leviathanScanInterval);
+            leviathanHackRadius = ResolveLeviathanHackRadiusMeters(leviathanHackRadius);
+            visualPhaseDuration = ResolveVisualPhaseDurationSeconds(visualPhaseDuration);
+            rebootHoldDuration = ResolveRebootHoldDurationSeconds(rebootHoldDuration);
+        }
+#endif
+
+        private static float SanitizeDeltaTime(float seconds)
+        {
+            return math.isfinite(seconds) ? math.max(0f, seconds) : 0f;
+        }
+
+        private static float SanitizeNonNegativeSeconds(float seconds)
+        {
+            return math.isfinite(seconds) ? math.max(0f, seconds) : 0f;
+        }
+
+        private static float ResolveEquipmentGlitchThreshold01(float threshold)
+        {
+            return math.isfinite(threshold) ? math.saturate(threshold) : EquipmentGlitchHackThreshold;
+        }
+
+        private static float ResolveLeviathanScanIntervalSeconds(float intervalSeconds)
+        {
+            return math.isfinite(intervalSeconds) ? math.max(0.05f, intervalSeconds) : LeviathanCheckInterval;
+        }
+
+        private static float ResolveLeviathanHackRadiusMeters(float radiusMeters)
+        {
+            return math.isfinite(radiusMeters) ? math.max(8f, radiusMeters) : LeviathanHackRadius;
+        }
+
+        private static float ResolveVisualPhaseDurationSeconds(float durationSeconds)
+        {
+            return math.isfinite(durationSeconds) ? math.max(0.1f, durationSeconds) : VisualPhaseDuration;
+        }
+
+        private static float ResolveRebootHoldDurationSeconds(float durationSeconds)
+        {
+            return math.isfinite(durationSeconds) ? math.max(0.5f, durationSeconds) : RebootHoldDuration;
+        }
+
+        private static float ResolveTextDriftRescanIntervalSeconds(float intervalSeconds)
+        {
+            return math.isfinite(intervalSeconds) ? math.max(0.1f, intervalSeconds) : TextDriftRescanInterval;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
         }
 
         private static IntrusionVisualPhase NextVisualPhase(IntrusionVisualPhase current)

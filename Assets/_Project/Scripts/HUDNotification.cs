@@ -38,6 +38,9 @@ namespace Hecton8.UI
         private const string HudSignalFallbackPrefix = "HUD SIGNAL 0x";
         private const string InventoryFullMessagePrefix = "INVENTORY FULL // CANNOT STORE ";
         private const string FallbackInventoryItemName = "ITEM";
+        private const uint HudNotificationSignalUnresolvedWarningHash = 0x484E5355u; // HNSU
+        private const uint HudNotificationSignalContextHash = 0x484E5347u; // HNSG
+        private const double UnresolvedSignalTelemetryCooldownSeconds = 5.0;
         private const SystemID VaultOwnerSystemId = SystemID.UI;
         private const BufferID QueueBufferId = BufferID.HudNotificationQueue;
         private static readonly uint HudNotificationRegistrationMissWarningHash = unchecked((uint)LocHash.Compute("HUDNotification.MessageRegistrationMiss"));
@@ -118,6 +121,8 @@ namespace Hecton8.UI
         private bool _presentationDirty;
         private bool _visualStyleDirty;
         private bool _textDirty;
+        private int _unresolvedSignalCount;
+        private double _nextUnresolvedSignalTelemetryTime;
         private ILocalizationStressPresentationReadModel _localizationStressPresentation;
         private int _lastStressCorruptionBucket = int.MinValue;
         private int _messageRegistrationMissCount;
@@ -195,6 +200,8 @@ namespace Hecton8.UI
             NotificationEvents.Unregister(this);
             _queueCount = 0;
             _currentMessageHash = 0u;
+            _unresolvedSignalCount = 0;
+            _nextUnresolvedSignalTelemetryTime = 0d;
             ClearFixedBufferMessageCache();
             ClearNotificationDiagnostics();
         }
@@ -214,6 +221,8 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            DrainHudNotificationSignals();
+
             if (_tickDormant) return;
             if (_notifRoot == null) return;
 
@@ -247,6 +256,76 @@ namespace Hecton8.UI
                 _textDirty = true;
 
             _presentationDirty = true;
+        }
+
+        private void DrainHudNotificationSignals()
+        {
+            ReadOnlySpan<HUDNotificationSignal> signals = SignalBus<HUDNotificationSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                HUDNotificationSignal signal = signals[i];
+                if (!CanResolveDisplayMessage(signal.MessageHash))
+                {
+                    ReportUnresolvedHudNotificationSignal(in signal);
+                    continue;
+                }
+
+                Enqueue(signal.MessageHash, ResolveSignalSeverity(signal.Severity));
+            }
+        }
+
+        private bool CanResolveDisplayMessage(uint messageHash)
+        {
+            if (messageHash == 0u)
+                return false;
+
+            if (HasFixedBufferMessage(messageHash))
+                return true;
+
+            return NotificationEvents.TryResolveMessageSpan(messageHash, out ReadOnlySpan<char> message) &&
+                   message.Length > 0;
+        }
+
+        private bool HasFixedBufferMessage(uint messageHash)
+        {
+            if (messageHash == 0u)
+                return false;
+
+            for (int i = 0; i < _fixedBufferMessageCache.Length; i++)
+            {
+                FixedBufferMessageCacheEntry entry = _fixedBufferMessageCache[i];
+                if (entry.IsValid != 0 && entry.MessageHash == messageHash && entry.Length > 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static NotificationSeverity ResolveSignalSeverity(byte severity)
+        {
+            if (severity >= (byte)NotificationSeverity.Critical)
+                return NotificationSeverity.Critical;
+
+            return severity == (byte)NotificationSeverity.Warning
+                ? NotificationSeverity.Warning
+                : NotificationSeverity.Info;
+        }
+
+        private void ReportUnresolvedHudNotificationSignal(in HUDNotificationSignal signal)
+        {
+            if (_unresolvedSignalCount < int.MaxValue)
+                _unresolvedSignalCount++;
+
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (now < _nextUnresolvedSignalTelemetryTime)
+                return;
+
+            _nextUnresolvedSignalTelemetryTime = now + UnresolvedSignalTelemetryCooldownSeconds;
+            uint contextHash = signal.SourceId != 0u ? signal.SourceId : HudNotificationSignalContextHash;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                HudNotificationSignalUnresolvedWarningHash,
+                contextHash,
+                _unresolvedSignalCount);
         }
 
         public void LateFrameTick()

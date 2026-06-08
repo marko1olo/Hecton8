@@ -242,8 +242,7 @@ namespace Hecton8.Rendering.Scatter
                 request.Dispose();
                 request = null;
 
-                TryDeleteFileCold(cachePath);
-                File.Move(tempPath, cachePath);
+                CommitUriCacheCold(tempPath, cachePath);
                 _uriTempPathCold = null;
 
                 if (!TryLoadFromFileCold(cachePath, out string failure))
@@ -344,6 +343,14 @@ namespace Hecton8.Rendering.Scatter
             catch (UnauthorizedAccessException) { }
             catch (ArgumentException) { }
             catch (NotSupportedException) { }
+        }
+
+        private static void CommitUriCacheCold(string tempPath, string cachePath)
+        {
+            if (File.Exists(cachePath))
+                File.Replace(tempPath, cachePath, null, true);
+            else
+                File.Move(tempPath, cachePath);
         }
 
         private bool TryLoadFromFileCold(string filePath, out string failure)

@@ -1015,9 +1015,15 @@ namespace Hecton8.QA.Headless
                 writer.Write('}');
             }
 
+            PromoteResultFileCold(tempPath);
+        }
+
+        private void PromoteResultFileCold(string tempPath)
+        {
             if (File.Exists(_resultPath))
-                File.Delete(_resultPath);
-            File.Move(tempPath, _resultPath);
+                File.Replace(tempPath, _resultPath, null, true);
+            else
+                File.Move(tempPath, _resultPath);
         }
 
         private void TryWriteResult(int exitCode, string status)

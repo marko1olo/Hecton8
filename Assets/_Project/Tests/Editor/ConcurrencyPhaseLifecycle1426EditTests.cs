@@ -1078,6 +1078,21 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void ShinobuMetabolismBlackBoxDumpUsesNativeFaultDumpWriter()
+        {
+            string text = File.ReadAllText(ShinobuMetabolismRuntimePath());
+            string dumpBody = ExtractMethodBody(text, "DumpBlackBox");
+
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.CreateTransientPayload("));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.TryWriteAll(_dumpPath, payload, byteCount);"));
+            Assert.That(dumpBody, Does.Contain("NativeFaultDumpWriter.DisposeTransientPayload("));
+            Assert.That(text, Does.Not.Contain("ReplaceBlackBoxDump("));
+            Assert.That(text, Does.Not.Contain("ReplaceBlackBoxDumpByBackupCopy"));
+            Assert.That(text, Does.Not.Contain("TryRestoreBlackBoxDumpBackup"));
+            Assert.That(text, Does.Not.Contain("File.Copy(tempPath, path, true);"));
+        }
+
+        [Test]
         public void ShinobuSuitIntegrityJob_UsesSingleGuardAndPublishesAfterRelease()
         {
             string text = File.ReadAllText(ShinobuSuitIntegrityRuntimePath());
@@ -1205,6 +1220,7 @@ namespace Hecton8.Tests.Editor
             string acquire = ExtractMethodBody(text, "TryAcquireScheduledVaultGuard");
             string release = ExtractMethodBody(text, "ReleaseScheduledVaultGuard");
             string lateFrame = ExtractMethodBody(text, "LateFrameTick");
+            string forceComplete = ExtractMethodBody(text, "ForceCompletePendingJobForBarrier");
             string barrier = ExtractMethodBody(text, "ForceCompleteAndCommitScheduledJobForBarrier");
             string telemetry = ExtractMethodBody(text, "RecordTelemetry");
 
@@ -1223,6 +1239,20 @@ namespace Hecton8.Tests.Editor
             Assert.That(release, Does.Contain("ReleaseMutationGuard(JobMutationGuardMask)"));
             Assert.That(lateFrame, Does.Contain("finally"));
             Assert.That(lateFrame, Does.Contain("ReleaseScheduledVaultGuard()"));
+            Assert.That(lateFrame, Does.Not.Contain("BeginPostSimulationSwapWindow"));
+            Assert.That(forceComplete, Does.Contain("DispatcherJobSwap.BeginPostSimulationSwapWindow()"));
+            Assert.That(forceComplete, Does.Contain("DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: true)"));
+            Assert.That(forceComplete, Does.Contain("DispatcherJobSwap.EndPostSimulationSwapWindow()"));
+            Assert.That(forceComplete, Does.Contain("_pullScheduled = false"));
+            Assert.Less(
+                forceComplete.IndexOf("DispatcherJobSwap.BeginPostSimulationSwapWindow()", StringComparison.Ordinal),
+                forceComplete.IndexOf("DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: true)", StringComparison.Ordinal));
+            Assert.Less(
+                forceComplete.IndexOf("DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: true)", StringComparison.Ordinal),
+                forceComplete.IndexOf("DispatcherJobSwap.EndPostSimulationSwapWindow()", StringComparison.Ordinal));
+            Assert.Less(
+                forceComplete.IndexOf("DispatcherJobSwap.EndPostSimulationSwapWindow()", StringComparison.Ordinal),
+                forceComplete.IndexOf("_pullScheduled = false", StringComparison.Ordinal));
             Assert.That(barrier, Does.Contain("finally"));
             Assert.That(barrier, Does.Contain("ReleaseScheduledVaultGuard()"));
             Assert.That(telemetry, Does.Contain("TryAcquireMutationGuard(JobMutationGuardMask)"));

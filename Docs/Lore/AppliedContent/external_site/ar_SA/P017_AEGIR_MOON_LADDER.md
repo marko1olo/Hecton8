@@ -23,11 +23,11 @@ localization_flags: 1
 
 ## Scanner
 
-تسلسل الأقمار: Cinder، Hook، Glass، Switch، Drywell، Brinehook، Rake، HECTON-8، Pale، Longmark، Grave، Farline.
+تسلسل الأقمار: Skarn، Vela، Claw، Lumen، Thorne، Anvil، Kestrel، HECTON-8، Mute.
 
 ## Terminal
 
-HECTON-8 هو Aegir-VIII: ليس داخلياً ولا الأبعد. رنين Rake وظل Pale يغيران المد وجودة الحزم.
+HECTON-8 هو Aegir-VIII: ليس داخلياً ولا الأبعد. رنين Kestrel وظل Mute يغيران المد وجودة الحزم.
 
 ## Audio
 

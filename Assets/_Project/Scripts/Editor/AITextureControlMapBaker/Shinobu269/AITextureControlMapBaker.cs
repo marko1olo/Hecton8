@@ -406,16 +406,23 @@ namespace Hecton8.Editor.AITextureControlMaps
                 bool queued = ThreadPool.QueueUserWorkItem(_ =>
                 {
                     string error = null;
+                    string tempPath = context.OutputPath + ".tmp";
                     try
                     {
-                        using (FileStream stream = new FileStream(context.OutputPath, FileMode.Create, FileAccess.Write, FileShare.Read, 65536, FileOptions.Asynchronous | FileOptions.SequentialScan))
+                        if (File.Exists(tempPath))
+                            File.Delete(tempPath);
+
+                        using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.Read, 65536, FileOptions.Asynchronous | FileOptions.SequentialScan))
                         {
                             byte* bytes = (byte*)pointer.ToPointer();
                             stream.Write(new ReadOnlySpan<byte>(bytes, byteCount));
                         }
+
+                        PromoteTempFileAtomic(tempPath, context.OutputPath);
                     }
                     catch (Exception ex)
                     {
+                        TryDeleteFileNoThrow(tempPath);
                         error = ex.Message;
                     }
                     finally
@@ -434,6 +441,26 @@ namespace Hecton8.Editor.AITextureControlMaps
             {
                 writeStopwatch.Stop();
                 EnqueueWriteCompletion(new WriteCompletion(context, pngBytes, encodeMilliseconds, writeStopwatch.Elapsed.TotalMilliseconds, ex.Message));
+            }
+        }
+
+        private static void PromoteTempFileAtomic(string tempPath, string path)
+        {
+            if (File.Exists(path))
+                File.Replace(tempPath, path, null, true);
+            else
+                File.Move(tempPath, path);
+        }
+
+        private static void TryDeleteFileNoThrow(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
             }
         }
 

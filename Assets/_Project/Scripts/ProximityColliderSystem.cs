@@ -846,13 +846,29 @@ namespace Hecton8.Core
         {
             if (_jobScheduled)
             {
-                DispatcherJobSwap.TryComplete(ref _jobHandle, forceComplete: true);
+                TryCompleteProximityJobForTeardown(ref _jobHandle);
                 _jobHandle = default;
                 _jobScheduled = false;
                 _jobPendingFrameCount = 0;
             }
 
             ReleaseJobBufferLocks();
+        }
+
+        private static bool TryCompleteProximityJobForTeardown(ref JobHandle handle)
+        {
+            bool completed;
+            DispatcherJobSwap.BeginLateFrameSwapWindow();
+            try
+            {
+                completed = DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndLateFrameSwapWindow();
+            }
+
+            return completed;
         }
 
         /// <summary>

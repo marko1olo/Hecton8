@@ -742,7 +742,16 @@ namespace Hecton8.Thermodynamics
             if (_simulationJobActive)
             {
                 // [BLOCKING_SYNC_POINT] Teardown cannot release Vault handles while the simulation writer is active.
-                DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+                DispatcherJobFence.BeginLateFrameSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndLateFrameSwapWindow();
+                }
+
                 H8Memory.RegisterActiveJob(MemoryOwner, default);
             }
 

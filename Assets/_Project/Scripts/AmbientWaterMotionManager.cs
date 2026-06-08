@@ -28,7 +28,14 @@ namespace Hecton8.Physics
         private const float DegreesToHalfRadians = 0.008726646259971648f;
         private const float LodHysteresisMultiplier = 1.12f;
         private const float MaxVisualRotationDegrees = 24f;
+        private const float MaxRuntimeDeltaTimeSeconds = 0.25f;
+        private const float MaxAmbientMotionCurrentMetersPerSecond = 12f;
+        private const float MaxAmbientMotionAmplitudeMeters = 2f;
+        private const float MaxAmbientMotionFrequency = 8f;
+        private const float MaxAmbientMotionCoupling = 2f;
         private const int MotionCapacity = 128;
+        private const uint AmbientMotionRegistrationCapacityWarningHash = 0x414D5243u;
+        private const uint AmbientMotionSystemContextHash = 0x414D4F54u;
         private const byte LodBandNear = 0;
         private const byte LodBandMedium = 1;
         private const byte LodBandFar = 2;
@@ -51,6 +58,7 @@ namespace Hecton8.Physics
 
         [Header("Diagnostics")]
         [SerializeField] private int _debugActiveObjects;
+        [SerializeField] private int _debugDroppedRegistrationCount;
         [SerializeField] private int _debugNearCount;
         [SerializeField] private int _debugMediumCount;
         [SerializeField] private int _debugFarCount;
@@ -87,6 +95,8 @@ namespace Hecton8.Physics
         private float _biomeCurrentBlendElapsed;
         private bool _hasBiomeCurrentTarget;
         private float _pendingVisualDeltaTime;
+        private int _droppedRegistrationCount;
+        private int _lastRegistrationOverflowWarningFrame = -1;
 
         private static AmbientWaterMotionManager s_activeRuntime;
 
@@ -95,6 +105,8 @@ namespace Hecton8.Physics
         {
             s_activeRuntime = null;
         }
+
+        public int DroppedRegistrationCount => _droppedRegistrationCount;
 
         //  LIFECYCLE
 
@@ -115,9 +127,12 @@ namespace Hecton8.Physics
                 return;
 
             CacheRegistryServicesCold();
+            TryRegisterService();
+            if (!_serviceRegistered)
+                return;
+
             TryRegisterHotSwapListener();
             TryRegister();
-            TryRegisterService();
             if (_runtimeWaterMotionCallbacksActive)
                 BiomeMatrixEvents.Register(this);
         }
@@ -125,6 +140,7 @@ namespace Hecton8.Physics
         private void OnDisable()
         {
             _runtimeWaterMotionCallbacksActive = false;
+            ResetInterruptedVisualCadence();
             BiomeMatrixEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             TryUnregister();
@@ -134,6 +150,7 @@ namespace Hecton8.Physics
         private void OnDestroy()
         {
             _runtimeWaterMotionCallbacksActive = false;
+            ResetInterruptedVisualCadence();
             BiomeMatrixEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             TryUnregister();
@@ -167,15 +184,33 @@ namespace Hecton8.Physics
 
         //  REGISTRATION - O(1) dedupe through HashSet
 
-        public void Register(AmbientWaterMotion motion)
+        public bool Register(AmbientWaterMotion motion)
         {
-            if (motion == null) return;
+            if (motion == null)
+                return false;
 
-            // HashSet.Add returns false for existing entries: O(1) instead of O(n) Contains.
+            if (_objectsSet.Contains(motion))
+            {
+                _debugActiveObjects = _objects.Count;
+                return true;
+            }
+
+            if (_objects.Count >= MotionCapacity)
+            {
+                ReportRegistrationCapacityExceeded();
+                _debugActiveObjects = _objects.Count;
+                return false;
+            }
+
             if (_objectsSet.Add(motion))
+            {
                 _objects.Add(motion);
+                _debugActiveObjects = _objects.Count;
+                return true;
+            }
 
             _debugActiveObjects = _objects.Count;
+            return false;
         }
 
         public void Unregister(AmbientWaterMotion motion)
@@ -192,31 +227,53 @@ namespace Hecton8.Physics
             _debugActiveObjects = _objects.Count;
         }
 
+        private void ReportRegistrationCapacityExceeded()
+        {
+            _droppedRegistrationCount++;
+            _debugDroppedRegistrationCount = _droppedRegistrationCount;
+
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastRegistrationOverflowWarningFrame == currentFrame)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                AmbientMotionRegistrationCapacityWarningHash,
+                AmbientMotionSystemContextHash,
+                _droppedRegistrationCount);
+            _lastRegistrationOverflowWarningFrame = currentFrame;
+        }
+
         //  TICK
 
         public void Tick(float deltaTime)
         {
             if (HectonFloatingOrigin.IsShiftInProgress)
+            {
+                ResetInterruptedVisualCadence();
                 return;
+            }
 
-            _pendingVisualDeltaTime += math.max(0f, deltaTime);
+            _pendingVisualDeltaTime = SanitizeDeltaTime(_pendingVisualDeltaTime) + SanitizeDeltaTime(deltaTime);
             TryRegisterLateFrame();
         }
 
         public void LateFrameTick()
         {
             if (HectonFloatingOrigin.IsShiftInProgress)
+            {
+                ResetInterruptedVisualCadence();
                 return;
+            }
 
             float deltaTime = _pendingVisualDeltaTime > 0f ? _pendingVisualDeltaTime : SystemDispatcher.CurrentFrameDeltaTime;
+            deltaTime = SanitizeDeltaTime(deltaTime);
             _pendingVisualDeltaTime = 0f;
             UpdateBiomeCurrentBlend(deltaTime);
 
             if (_objects.Count == 0) return;
 
             _frameCounter++;
-            _time += deltaTime;
-            if (_time > 100000f) _time -= 100000f;
+            _time = AdvanceRuntimeTime(_time, deltaTime);
 
             _debugNearCount   = 0;
             _debugMediumCount = 0;
@@ -241,11 +298,14 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                bool hasMotionAup = motion.HasRestAup;
+                bool hasMotionAup = motion.HasRestAup && motion.RestAup.IsFinite();
                 AbsoluteUniversePosition motionAup = hasMotionAup ? motion.RestAup : default;
-                Vector3 worldPos = hasMotionAup
-                    ? ResolveRuntimePosition(in motionAup)
-                    : ResolvePresentationRestWorldPosition(motion);
+                if (!TryResolveRuntimeWorldPosition(motion, in motionAup, hasMotionAup, out Vector3 worldPos))
+                {
+                    motion.ManagerDistanceLodBand = LodBandCull;
+                    _debugCulledCount++;
+                    continue;
+                }
 
                 if (!ShouldUpdateAup(motion, i, motionAup, hasMotionAup, observerAup, hasObserverAup,
                                   _nearDistanceSqr, _mediumDistanceSqr, _farDistanceSqr, _cullDistanceSqr, quality))
@@ -255,6 +315,11 @@ namespace Hecton8.Physics
             }
 
             _debugActiveObjects = _objects.Count;
+        }
+
+        private void ResetInterruptedVisualCadence()
+        {
+            _pendingVisualDeltaTime = 0f;
         }
 
         private void RemoveMotionAtSwapBack(int index)
@@ -293,7 +358,7 @@ namespace Hecton8.Physics
                 return ((_frameCounter + index) & ResolveQualityScaledFrameMask(_mediumFrameMask, quality)) == 0;
             }
 
-            float bias = math.max(0.1f, motion.LodBias);
+            float bias = ResolveLodBias(motion.LodBias);
             double biasSq = (double)bias * bias;
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in motionAup, in observerAup);
             byte lodBand = ResolveDistanceLodBand(
@@ -338,6 +403,17 @@ namespace Hecton8.Physics
             float farSq,
             float cullSq)
         {
+            if (double.IsNaN(distanceSq) || double.IsInfinity(distanceSq) || distanceSq < 0d)
+                return LodBandOutside;
+
+            if (double.IsNaN(biasSq) || double.IsInfinity(biasSq) || biasSq <= 0d)
+                biasSq = 1d;
+
+            nearSq = ResolveDistanceLimitSqr(nearSq, 1f);
+            mediumSq = math.max(ResolveDistanceLimitSqr(mediumSq, nearSq), nearSq);
+            farSq = math.max(ResolveDistanceLimitSqr(farSq, mediumSq), mediumSq);
+            cullSq = math.max(ResolveDistanceLimitSqr(cullSq, farSq), farSq);
+
             double hysteresisSq = (double)LodHysteresisMultiplier * LodHysteresisMultiplier;
             double nearLimit = (double)nearSq * biasSq;
             double mediumLimit = (double)mediumSq * biasSq;
@@ -371,19 +447,38 @@ namespace Hecton8.Physics
             return NormalizeCadenceDivisor((int)math.ceil(scaledDivisor)) - 1;
         }
 
-        private static Vector3 ResolveRuntimePosition(in AbsoluteUniversePosition aup)
+        private static bool TryResolveRuntimeWorldPosition(
+            AmbientWaterMotion motion,
+            in AbsoluteUniversePosition motionAup,
+            bool hasMotionAup,
+            out Vector3 worldPos)
         {
-            float3 runtime = aup.ToRuntimeFloat3();
-            return new Vector3(runtime.x, runtime.y, runtime.z);
+            return hasMotionAup
+                ? TryResolveRuntimePosition(in motionAup, out worldPos)
+                : TryResolvePresentationRestWorldPosition(motion, out worldPos);
         }
 
-        private static Vector3 ResolvePresentationRestWorldPosition(AmbientWaterMotion motion)
+        private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition aup, out Vector3 runtimePosition)
+        {
+            if (!aup.IsFinite())
+            {
+                runtimePosition = Vector3.zero;
+                return false;
+            }
+
+            float3 runtime = aup.ToRuntimeFloat3();
+            runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
+            return IsFinite(runtimePosition);
+        }
+
+        private static bool TryResolvePresentationRestWorldPosition(AmbientWaterMotion motion, out Vector3 worldPosition)
         {
             Transform tr = motion.CachedTransform;
             Transform parent = tr != null ? tr.parent : null;
-            return parent != null
+            worldPosition = parent != null
                 ? parent.TransformPoint(motion.RestLocalPosition)
                 : motion.RestLocalPosition;
+            return IsFinite(worldPosition);
         }
 
         private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)
@@ -416,9 +511,12 @@ namespace Hecton8.Physics
 
         private void ApplyMotion(AmbientWaterMotion motion, Vector3 worldPos)
         {
+            if (!IsFinite(worldPos))
+                return;
+
             Transform tr = motion.CachedTransform;
 
-            float coupling = math.max(0f, motion.CurrentCoupling);
+            float coupling = ResolveMotionCoupling(motion.CurrentCoupling);
             Vector3 current = Vector3.zero;
             if (coupling > 0.0001f)
             {
@@ -426,6 +524,7 @@ namespace Hecton8.Physics
                 IAmbientCurrentReadModel ambientCurrent = _ambientCurrentReadModel;
                 if (ambientCurrent != null)
                     ambientCurrent.TrySampleAuthoredCurrent(worldPos, out volumeCurrent);
+                volumeCurrent = ClampFiniteVector(volumeCurrent, MaxAmbientMotionCurrentMetersPerSecond);
 
                 float3 phantomCurrent = CurrentManager.SampleHorizontal(
                     new float3(worldPos.x, worldPos.y, worldPos.z),
@@ -433,10 +532,13 @@ namespace Hecton8.Physics
                     0.018f,
                     0.12f,
                     1f);
+                if (!math.all(math.isfinite(phantomCurrent)))
+                    phantomCurrent = float3.zero;
 
                 current = (volumeCurrent
                     + new Vector3(phantomCurrent.x, phantomCurrent.y, phantomCurrent.z)
                     + _biomeCurrentVector) * coupling;
+                current = ClampFiniteVector(current, MaxAmbientMotionCurrentMetersPerSecond);
             }
 
             float currentSqrMagnitude = current.x * current.x + current.y * current.y + current.z * current.z;
@@ -445,27 +547,38 @@ namespace Hecton8.Physics
                 ? current * math.rsqrt(currentSqrMagnitude)
                 : Vector3.forward;
 
-            float t = (_time + motion.Phase)
-                    * math.max(0f, motion.BaseFrequency * globalFrequency);
+            float time = SanitizeNonNegativeSeconds(_time);
+            float phase = math.isfinite(motion.Phase) ? motion.Phase : 0f;
+            float frequency = ResolveMotionFrequency(motion.BaseFrequency) * ResolveMotionFrequency(globalFrequency);
+            float t = (time + phase) * frequency;
 
-            float bobY = FastTriangleSigned(t * 1.13f) * motion.VerticalAmplitude;
-            float bobX = FastTriangleSigned(t * 0.91f) * motion.PositionalAmplitude.x;
-            float bobZ = FastTriangleSigned(t * 1.07f + 1.5707964f) * motion.PositionalAmplitude.z;
+            Vector3 positionalAmplitude = ClampFiniteVector(motion.PositionalAmplitude, MaxAmbientMotionAmplitudeMeters);
+            Vector3 angularAmplitude = ClampFiniteVector(motion.AngularAmplitude, MaxVisualRotationDegrees);
+            float verticalAmplitude = ResolveMotionAmplitude(motion.VerticalAmplitude);
+            float amplitude = ResolveMotionAmplitude(globalAmplitude);
+
+            float bobY = FastTriangleSigned(t * 1.13f) * verticalAmplitude;
+            float bobX = FastTriangleSigned(t * 0.91f) * positionalAmplitude.x;
+            float bobZ = FastTriangleSigned(t * 1.07f + 1.5707964f) * positionalAmplitude.z;
 
             Vector3 offset = new Vector3(
                 bobX + currentDir.x * currentMagnitude * 0.03f,
                 bobY,
                 bobZ + currentDir.z * currentMagnitude * 0.03f)
-                * globalAmplitude;
+                * amplitude;
 
-            float pitch = FastTriangleSigned(t * 0.87f) * motion.AngularAmplitude.x
+            float pitch = FastTriangleSigned(t * 0.87f) * angularAmplitude.x
                         + currentDir.z * currentMagnitude * 2f;
-            float yaw   = FastTriangleSigned(t * 0.43f) * motion.AngularAmplitude.y;
-            float roll  = FastTriangleSigned(t * 0.79f + 1.5707964f) * motion.AngularAmplitude.z
+            float yaw   = FastTriangleSigned(t * 0.43f) * angularAmplitude.y;
+            float roll  = FastTriangleSigned(t * 0.79f + 1.5707964f) * angularAmplitude.z
                         - currentDir.x * currentMagnitude * 3f;
 
-            tr.localPosition = motion.RestLocalPosition + offset;
-            tr.localRotation = motion.RestLocalRotation * ApproximateVisualRotation(pitch, yaw, roll);
+            Vector3 localPosition = motion.RestLocalPosition + offset;
+            Quaternion localRotation = motion.RestLocalRotation * ApproximateVisualRotation(pitch, yaw, roll);
+            if (IsFinite(localPosition))
+                tr.localPosition = localPosition;
+            if (IsFinite(localRotation))
+                tr.localRotation = localRotation;
         }
 
         private static float ApproximateVectorMagnitude(Vector3 value)
@@ -476,11 +589,15 @@ namespace Hecton8.Physics
             float max = math.max(ax, math.max(ay, az));
             float min = math.min(ax, math.min(ay, az));
             float mid = ax + ay + az - max - min;
-            return max + (mid * 0.375f) + (min * 0.125f);
+            float magnitude = max + (mid * 0.375f) + (min * 0.125f);
+            return math.isfinite(magnitude) ? magnitude : 0f;
         }
 
         private static float FastTriangleSigned(float phase)
         {
+            if (!math.isfinite(phase))
+                return 0f;
+
             float triangle01 = 1f - math.abs(math.frac(phase * 0.15915494f + 0.25f) * 2f - 1f);
             return triangle01 * 2f - 1f;
         }
@@ -493,6 +610,13 @@ namespace Hecton8.Physics
 
         private static Quaternion ApproximateVisualRotation(float pitchDegrees, float yawDegrees, float rollDegrees)
         {
+            if (!math.isfinite(pitchDegrees))
+                pitchDegrees = 0f;
+            if (!math.isfinite(yawDegrees))
+                yawDegrees = 0f;
+            if (!math.isfinite(rollDegrees))
+                rollDegrees = 0f;
+
             float x = math.clamp(pitchDegrees, -MaxVisualRotationDegrees, MaxVisualRotationDegrees) * DegreesToHalfRadians;
             float y = math.clamp(yawDegrees, -MaxVisualRotationDegrees, MaxVisualRotationDegrees) * DegreesToHalfRadians;
             float z = math.clamp(rollDegrees, -MaxVisualRotationDegrees, MaxVisualRotationDegrees) * DegreesToHalfRadians;
@@ -505,7 +629,9 @@ namespace Hecton8.Physics
             if (!_hasBiomeCurrentTarget)
                 return;
 
-            _biomeCurrentBlendElapsed += math.max(0f, deltaTime);
+            _biomeCurrentStartVector = ClampFiniteVector(_biomeCurrentStartVector, MaxAmbientMotionCurrentMetersPerSecond);
+            _biomeCurrentTargetVector = ClampFiniteVector(_biomeCurrentTargetVector, MaxAmbientMotionCurrentMetersPerSecond);
+            _biomeCurrentBlendElapsed = SanitizeNonNegativeSeconds(_biomeCurrentBlendElapsed) + SanitizeDeltaTime(deltaTime);
             float t = math.saturate(_biomeCurrentBlendElapsed * BiomeFlowBlendInvSeconds);
             float smooth = t * t * (3f - 2f * t);
             float3 biomeCurrent = math.lerp(
@@ -524,9 +650,7 @@ namespace Hecton8.Physics
 
         private void SetBiomeCurrentTarget(HectonBiomeMatrixProfile profile)
         {
-            Vector3 target = Vector3.zero;
-            if (profile != null && profile.hasAmbientFlowOverride)
-                target = profile.ambientFlowOverride * math.saturate(profile.ambientFlowOverrideWeight);
+            Vector3 target = ResolveBiomeCurrentTarget(profile);
 
             _debugBiomeCurrentBiomeId = profile != null ? profile.matrixIndex : -1;
             if ((target - _biomeCurrentTargetVector).sqrMagnitude <= 0.000001f)
@@ -550,13 +674,119 @@ namespace Hecton8.Physics
 
         private void RefreshDistanceThresholds()
         {
-            _nearDistanceSqr = nearDistance * nearDistance;
-            _mediumDistanceSqr = mediumDistance * mediumDistance;
-            _farDistanceSqr = farDistance * farDistance;
-            _cullDistanceSqr = cullDistance * cullDistance;
+            nearDistance = ResolveDistanceMeters(nearDistance, 1f);
+            mediumDistance = math.max(ResolveDistanceMeters(mediumDistance, nearDistance), nearDistance);
+            farDistance = math.max(ResolveDistanceMeters(farDistance, mediumDistance), mediumDistance);
+            cullDistance = math.max(ResolveDistanceMeters(cullDistance, farDistance), farDistance);
+            _nearDistanceSqr = ResolveDistanceSqr(nearDistance, 1f);
+            _mediumDistanceSqr = ResolveDistanceSqr(mediumDistance, _nearDistanceSqr);
+            _farDistanceSqr = ResolveDistanceSqr(farDistance, _mediumDistanceSqr);
+            _cullDistanceSqr = ResolveDistanceSqr(cullDistance, _farDistanceSqr);
             _mediumFrameMask = NormalizeCadenceDivisor(mediumDivisor) - 1;
             _farFrameMask = NormalizeCadenceDivisor(farDivisor) - 1;
             _cullFrameMask = NormalizeCadenceDivisor(cullDivisor) - 1;
+        }
+
+        private static float SanitizeDeltaTime(float seconds)
+        {
+            if (!math.isfinite(seconds) || seconds <= 0f)
+                return 0f;
+
+            return math.min(seconds, MaxRuntimeDeltaTimeSeconds);
+        }
+
+        private static float SanitizeNonNegativeSeconds(float seconds)
+        {
+            return math.isfinite(seconds) && seconds > 0f ? seconds : 0f;
+        }
+
+        private static float AdvanceRuntimeTime(float currentSeconds, float deltaSeconds)
+        {
+            float next = SanitizeNonNegativeSeconds(currentSeconds) + SanitizeDeltaTime(deltaSeconds);
+            return next > 100000f ? next - 100000f : next;
+        }
+
+        private static float ResolveMotionAmplitude(float amplitude)
+        {
+            return math.clamp(math.isfinite(amplitude) ? amplitude : 0f, 0f, MaxAmbientMotionAmplitudeMeters);
+        }
+
+        private static float ResolveMotionFrequency(float frequency)
+        {
+            return math.clamp(math.isfinite(frequency) ? frequency : 0f, 0f, MaxAmbientMotionFrequency);
+        }
+
+        private static float ResolveMotionCoupling(float coupling)
+        {
+            return math.clamp(math.isfinite(coupling) ? coupling : 0f, 0f, MaxAmbientMotionCoupling);
+        }
+
+        private static float ResolveLodBias(float lodBias)
+        {
+            return math.clamp(math.isfinite(lodBias) ? lodBias : 1f, 0.1f, 8f);
+        }
+
+        private static float ResolveDistanceMeters(float distanceMeters, float fallbackMeters)
+        {
+            float fallback = math.isfinite(fallbackMeters) && fallbackMeters > 0f ? fallbackMeters : 1f;
+            return math.max(1f, math.isfinite(distanceMeters) ? distanceMeters : fallback);
+        }
+
+        private static float ResolveDistanceSqr(float distanceMeters, float fallback)
+        {
+            float safeDistance = ResolveDistanceMeters(distanceMeters, math.sqrt(math.max(1f, fallback)));
+            float distanceSqr = safeDistance * safeDistance;
+            return math.isfinite(distanceSqr) ? distanceSqr : math.max(1f, fallback);
+        }
+
+        private static float ResolveDistanceLimitSqr(float distanceSqr, float fallbackSqr)
+        {
+            float fallback = math.isfinite(fallbackSqr) && fallbackSqr > 0f ? fallbackSqr : 1f;
+            return math.isfinite(distanceSqr) && distanceSqr > 0f ? distanceSqr : fallback;
+        }
+
+        private static Vector3 ResolveBiomeCurrentTarget(HectonBiomeMatrixProfile profile)
+        {
+            if (profile == null || !profile.hasAmbientFlowOverride)
+                return Vector3.zero;
+
+            float weight = math.saturate(math.isfinite(profile.ambientFlowOverrideWeight) ? profile.ambientFlowOverrideWeight : 0f);
+            return ClampFiniteVector(profile.ambientFlowOverride * weight, MaxAmbientMotionCurrentMetersPerSecond);
+        }
+
+        private static Vector3 ClampFiniteVector(Vector3 value, float maxMagnitude)
+        {
+            if (!IsFinite(value))
+                return Vector3.zero;
+
+            float safeMax = math.max(0f, math.isfinite(maxMagnitude) ? maxMagnitude : 0f);
+            if (safeMax <= 0f)
+                return Vector3.zero;
+
+            float sqrMagnitude = value.x * value.x + value.y * value.y + value.z * value.z;
+            float maxSqr = safeMax * safeMax;
+            if (!math.isfinite(sqrMagnitude))
+                return Vector3.zero;
+            if (sqrMagnitude <= maxSqr)
+                return value;
+
+            float scale = safeMax * math.rsqrt(sqrMagnitude);
+            return value * scale;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
+        private static bool IsFinite(Quaternion rotation)
+        {
+            return math.isfinite(rotation.x) &&
+                   math.isfinite(rotation.y) &&
+                   math.isfinite(rotation.z) &&
+                   math.isfinite(rotation.w);
         }
 
         private static int NormalizeCadenceDivisor(int divisor)
@@ -703,12 +933,8 @@ namespace Hecton8.Physics
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (nearDistance   < 1f)              nearDistance   = 1f;
-            if (mediumDistance < nearDistance)    mediumDistance = nearDistance;
-            if (farDistance    < mediumDistance)  farDistance    = mediumDistance;
-            if (cullDistance   < farDistance)     cullDistance   = farDistance;
-            if (globalAmplitude < 0f)             globalAmplitude = 0f;
-            if (globalFrequency < 0f)             globalFrequency = 0f;
+            globalAmplitude = ResolveMotionAmplitude(globalAmplitude);
+            globalFrequency = ResolveMotionFrequency(globalFrequency);
             RefreshDistanceThresholds();
         }
 #endif

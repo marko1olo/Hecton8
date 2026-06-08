@@ -803,7 +803,16 @@ namespace Hecton8.VFX.PlasmaBeam
 
             try
             {
-                DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+                DispatcherJobFence.BeginPostSimulationSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostSimulationSwapWindow();
+                }
+
                 _simulationScheduled = false;
             }
             finally

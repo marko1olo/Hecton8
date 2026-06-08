@@ -368,13 +368,13 @@ namespace Hecton8.World
                 return;
 
             if (_surfaceDefragMoveCount > 0 &&
-                !DispatcherJobSwap.TryComplete(ref _surfacePoolDefragHandle, forceComplete))
+                !TryCompleteNativePoolDefragJob(ref _surfacePoolDefragHandle, forceComplete))
             {
                 return;
             }
 
             if (_underwaterDefragMoveCount > 0 &&
-                !DispatcherJobSwap.TryComplete(ref _underwaterPoolDefragHandle, forceComplete))
+                !TryCompleteNativePoolDefragJob(ref _underwaterPoolDefragHandle, forceComplete))
             {
                 return;
             }
@@ -423,6 +423,22 @@ namespace Hecton8.World
                 default);
             if (isActiveAndEnabled)
                 _activeSetDirty = !RebuildAndBindActiveBuffers();
+        }
+
+        private static bool TryCompleteNativePoolDefragJob(ref JobHandle handle, bool forceComplete)
+        {
+            if (!forceComplete)
+                return DispatcherJobSwap.TryComplete(ref handle, forceComplete: false);
+
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                return DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
         }
 
         private int BuildPoolDefragPlan(

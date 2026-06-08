@@ -34,6 +34,7 @@ using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.SaveSystem;
+using Hecton8.UI;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
@@ -75,6 +76,7 @@ namespace Hecton8.Construction
         private const int DeconstructionCounterLaneLength = 2;
         private const int DeconstructionRefundCommandCountIndex = 0;
         private const int DeconstructionLootCacheCountIndex = 1;
+        private const string DeconstructionInventoryFullMessage = "DECONSTRUCTION BLOCKED // INVENTORY FULL";
         private const BufferID DeconstructionDfsStackBufferId = (BufferID)72140;
         private const BufferID DeconstructionDfsVisitedBufferId = (BufferID)72141;
         private const BufferID DeconstructionDfsResultBufferId = (BufferID)72142;
@@ -1005,7 +1007,7 @@ namespace Hecton8.Construction
             {
                 module.CancelAuthoritativeDeconstruction();
                 RejectDeconstruction(in request, DeconstructReasonInventoryFull, 0, ReadDfsVisitedCount(), ReadDfsExpectedCount());
-                PublishDeconstructionHudNotification(request.TargetEntityId, DeconstructReasonInventoryFull);
+                PublishDeconstructionInventoryFullNotification();
                 return;
             }
 
@@ -1162,17 +1164,9 @@ namespace Hecton8.Construction
             }, ref _signalPushDropCount);
         }
 
-        private static void PublishDeconstructionHudNotification(uint sourceId, byte reason)
+        private static void PublishDeconstructionInventoryFullNotification()
         {
-            SignalBus<HUDNotificationSignal>.TryPushTracked(new HUDNotificationSignal
-            {
-                MessageHash = 0xD3C04A11u,
-                ContextHash = reason,
-                SourceId = sourceId,
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Severity = 2,
-                Flags = 0
-            }, ref _signalPushDropCount);
+            NotificationEvents.TryPushCritical(DeconstructionInventoryFullMessage.AsSpan());
         }
 
         private BaseModule ResolveBaseModuleByEntityId(uint targetEntityId)

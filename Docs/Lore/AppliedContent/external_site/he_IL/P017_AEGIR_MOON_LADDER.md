@@ -23,11 +23,11 @@ localization_flags: 1
 
 ## Scanner
 
-רצף ירחים: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+רצף ירחים: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
 
 ## Terminal
 
-HECTON-8 הוא Aegir-VIII: לא פנימי ולא הרחוק ביותר. תהודת Rake וצל Pale משנים גאות ואיכות חבילות.
+HECTON-8 הוא Aegir-VIII: לא פנימי ולא הרחוק ביותר. תהודת Kestrel וצל Mute משנים גאות ואיכות חבילות.
 
 ## Audio
 

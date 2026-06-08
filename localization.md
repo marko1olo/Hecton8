@@ -122,6 +122,8 @@ For production lore/content, every required locale row must contain draft text o
 
 Do not claim `native_reviewed` or `runtime_ready` without the review/proof artifact.
 
+Production AppliedContent localization is file-backed. Locale text must be present in the packet/source data that feeds export/import, not only in chat or a planning note. When `in_game_wiki`, `external_site`, scanner, terminal, audio, or field-note surfaces are in scope, the matching surface text must exist per required locale or carry an explicit `BLOCKED_TRANSLATION_DRAFT` row.
+
 ## Proof Artifacts
 
 Localization work must provide:

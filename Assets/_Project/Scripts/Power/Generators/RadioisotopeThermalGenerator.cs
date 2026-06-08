@@ -11,6 +11,7 @@ using Hecton8.Gameplay;
 using Hecton8.Power;
 using Hecton8.Power.Generators.Contracts;
 using Hecton8.SaveSystem;
+using Hecton8.UI;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -54,10 +55,7 @@ namespace Hecton8.Power.Generators
         private const uint RtgTelemetryHash = 0x52544721u; // RTG!
         private const uint ActiveRtgsHash = 0x41525447u; // ARTG
         private const uint AverageRtgHealthHash = 0x41564821u; // AVH!
-        private static readonly uint RtgLowOutputMessageHash =
-            unchecked((uint)LocHash.Compute("Power.RTG.OutputBelowTwentyPercent"));
-        private static readonly uint RtgLowOutputContextHash =
-            unchecked((uint)LocHash.Compute(nameof(RadioisotopeThermalGenerator)));
+        private const string RtgLowOutputMessage = "RTG OUTPUT BELOW 20%";
 
         private const byte FlagActive = RtgDecayMath.FlagActive;
         private const byte FlagDead = RtgDecayMath.FlagDead;
@@ -994,14 +992,7 @@ namespace Hecton8.Power.Generators
             if (_slot >= 0 && TryResolveRtgFlags(out NativeArray<byte> rtgFlags))
                 rtgFlags[_slot] = (byte)(rtgFlags[_slot] | FlagWarned20);
 
-            HUDNotificationSignal signal = default;
-            signal.MessageHash = RtgLowOutputMessageHash;
-            signal.ContextHash = RtgLowOutputContextHash;
-            signal.SourceId = unchecked((uint)_sourceId);
-            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
-            signal.Severity = 2;
-            signal.Flags = 0;
-            SignalBus<HUDNotificationSignal>.TryPushTracked(in signal, ref s_x001RadioisotopeThermalGeneratorSignalPushDropCount);
+            NotificationEvents.TryPushWarning(RtgLowOutputMessage.AsSpan());
         }
 
         private void MarkPowerGridDirty()

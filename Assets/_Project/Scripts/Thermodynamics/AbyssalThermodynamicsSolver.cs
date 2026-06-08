@@ -942,15 +942,32 @@ namespace Hecton8.Thermodynamics
 
         private bool CompleteThermalJobsForLifecycle()
         {
-            if (_hasPendingJob &&
-                !DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
+            if (_hasPendingJob)
             {
-                return false;
+                DispatcherJobFence.BeginLateFrameSwapWindow();
+                try
+                {
+                    if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
+                        return false;
+                }
+                finally
+                {
+                    DispatcherJobFence.EndLateFrameSwapWindow();
+                }
             }
 
             _hasPendingJob = false;
             ReleaseReactorSharedLocks();
-            DispatcherJobFence.TryComplete(ref _sampleReadHandle, forceComplete: true);
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+            try
+            {
+                DispatcherJobFence.TryComplete(ref _sampleReadHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndLateFrameSwapWindow();
+            }
+
             H8Memory.RegisterActiveJob(SystemID.Thermodynamics, default);
             return true;
         }
@@ -1071,7 +1088,7 @@ namespace Hecton8.Thermodynamics
             float safeCellSize = math.max(0.001f, math.isfinite(cellSizeMeters) ? cellSizeMeters : DefaultCellSizeMeters);
             double3 anchorAup = TryResolveAnchorAup(out double3 resolvedAnchorAup)
                 ? resolvedAnchorAup
-                : RuntimeOriginRoute.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
+                : ResolveRuntimeOriginAupDouble3();
             double halfExtent = (_activeResolution * safeCellSize) * 0.5;
             if (!_gridOriginInitialized)
             {
@@ -1134,6 +1151,9 @@ namespace Hecton8.Thermodynamics
             }
 
             AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
             AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
@@ -1142,6 +1162,12 @@ namespace Hecton8.Thermodynamics
 
             anchorAup = resolvedAup.ToAbsoluteDouble3();
             return math.all(math.isfinite(anchorAup));
+        }
+
+        private static double3 ResolveRuntimeOriginAupDouble3()
+        {
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            return originAup.IsFinite() ? originAup.ToAbsoluteDouble3() : double3.zero;
         }
 
         private float ResolveVisualQualityWeight()

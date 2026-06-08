@@ -3533,28 +3533,44 @@ namespace Hecton8.Physics
 
         private void CompleteStructuralJobsForTeardown()
         {
-            if (_damageJobRunning)
+            if (!_damageJobRunning &&
+                !_mappingJobRunning &&
+                !_fatigueJobRunning &&
+                !_breachRepairJobRunning)
             {
-                DispatcherJobFence.TryComplete(ref _damageJobHandle, forceComplete: true);
-                _damageJobRunning = false;
+                return;
             }
 
-            if (_mappingJobRunning)
+            DispatcherJobFence.BeginPostFixedSwapWindow();
+            try
             {
-                DispatcherJobFence.TryComplete(ref _mappingJobHandle, forceComplete: true);
-                _mappingJobRunning = false;
-            }
+                if (_damageJobRunning)
+                {
+                    DispatcherJobFence.TryComplete(ref _damageJobHandle, forceComplete: true);
+                    _damageJobRunning = false;
+                }
 
-            if (_fatigueJobRunning)
-            {
-                DispatcherJobFence.TryComplete(ref _fatigueJobHandle, forceComplete: true);
-                _fatigueJobRunning = false;
-            }
+                if (_mappingJobRunning)
+                {
+                    DispatcherJobFence.TryComplete(ref _mappingJobHandle, forceComplete: true);
+                    _mappingJobRunning = false;
+                }
 
-            if (_breachRepairJobRunning)
+                if (_fatigueJobRunning)
+                {
+                    DispatcherJobFence.TryComplete(ref _fatigueJobHandle, forceComplete: true);
+                    _fatigueJobRunning = false;
+                }
+
+                if (_breachRepairJobRunning)
+                {
+                    DispatcherJobFence.TryComplete(ref _breachRepairJobHandle, forceComplete: true);
+                    _breachRepairJobRunning = false;
+                }
+            }
+            finally
             {
-                DispatcherJobFence.TryComplete(ref _breachRepairJobHandle, forceComplete: true);
-                _breachRepairJobRunning = false;
+                DispatcherJobFence.EndPostFixedSwapWindow();
             }
         }
 

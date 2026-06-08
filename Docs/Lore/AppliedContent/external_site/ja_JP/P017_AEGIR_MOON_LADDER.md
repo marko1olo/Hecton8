@@ -23,11 +23,11 @@ Aegir衛星ラダーは、プレイ対象の月を動く大系の一部にする
 
 ## Scanner
 
-衛星列: Cinder、Hook、Glass、Switch、Drywell、Brinehook、Rake、HECTON-8、Pale、Longmark、Grave、Farline。
+衛星列: Skarn、Vela、Claw、Lumen、Thorne、Anvil、Kestrel、HECTON-8、Mute。
 
 ## Terminal
 
-HECTON-8はAegir-VIII。内側でも最遠でもない。Rake共鳴とPaleの影が潮汐と通信品質を変える。
+HECTON-8はAegir-VIII。内側でも最遠でもない。Kestrel共鳴とMuteの影が潮汐と通信品質を変える。
 
 ## Audio
 
