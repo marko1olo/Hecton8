@@ -195,6 +195,8 @@ def main() -> int:
         "rankedWindows": results,
     }
     path = Path(args.output)
+    if not path.is_absolute():
+        path = ROOT / path
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(output, indent=2, sort_keys=True), encoding="utf-8")
     print(json.dumps({"status": "ok", "output": str(path.relative_to(ROOT).as_posix()), "topWindows": results[:5]}, indent=2))

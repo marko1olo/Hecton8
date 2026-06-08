@@ -4,9 +4,9 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localized_pages: 521
-draft_machine_or_llm_pages: 521
-draft_marker_pages: 508
+localized_pages: 526
+draft_machine_or_llm_pages: 526
+draft_marker_pages: 513
 ---
 
 # Индекс кодекса HECTON-8
@@ -531,6 +531,11 @@ draft_marker_pages: 508
 - [Реестр следа пеллетной трассы](P623_PELLET_LANE_WAKE_LEDGER.md) `P623_PELLET_LANE_WAKE_LEDGER`
 - [Проводящая биота Кабельного леса](P624_CABLE_FOREST_CONDUCTIVE_BIOTA.md) `P624_CABLE_FOREST_CONDUCTIVE_BIOTA`
 - [Транзит длинной заявки Ran](P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE.md) `P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE`
+- [Shallow Annex P-63 Pump Room](P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE.md) `P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE`
 - [Хранение tonne-window Black Keel](P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY.md) `P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY`
+- [Black Keel Window Price](P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE.md) `P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE`
+- [Blue Debt Casket Handling](P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE.md) `P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE`
+- [Aegir Moon Ladder Sky Window](P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE.md) `P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE`
+- [Deep Reach Variance Memo Contradiction](P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE.md) `P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE`
 
 <!-- Generated localized index for in_game_wiki/ru_RU. -->

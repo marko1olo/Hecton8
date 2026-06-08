@@ -23,11 +23,11 @@ Aegirs maanladder bevat stralingsmarkeringen, relay-lichamen, uitgeputte claims,
 
 ## Scanner
 
-Maanvolgorde: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
+Maanvolgorde: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
 
 ## Terminal
 
-HECTON-8 is Aegir-VIII: niet binnenste, niet verste. Kestrel-resonantie en Mute-schaduw veranderen getij en pakketkwaliteit.
+HECTON-8 is Aegir-VIII: niet binnenste, niet verste. Rake-resonantie en Pale-schaduw veranderen getij en pakketkwaliteit.
 
 ## Audio
 

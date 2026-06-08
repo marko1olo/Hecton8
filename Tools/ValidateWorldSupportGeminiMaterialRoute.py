@@ -283,6 +283,12 @@ def validate_static(errors: list[str]) -> None:
         'material.DisableKeyword("_ALPHAPREMULTIPLY_ON")',
         'material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT")',
         "material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent",
+        'SetFloatIfPresent(material, "_Surface", 1f)',
+        'SetFloatIfPresent(material, "_Blend", 0f)',
+        'SetFloatIfPresent(material, "_AlphaClip", 0f)',
+        'SetFloatIfPresent(material, "_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha)',
+        'SetFloatIfPresent(material, "_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha)',
+        'SetFloatIfPresent(material, "_ZWrite", 0f)',
     ):
         if token not in decal_builder_text:
             errors.append(f"world-support decal builder must force transparent keyword/render state token: {token}")
@@ -391,6 +397,41 @@ def validate_post_apply(errors: list[str]) -> None:
         material_text = target_path.read_text(encoding="utf-8-sig")
         if source_guid not in material_text:
             errors.append(f"post-apply decal material {material_path} missing source texture guid from {source_id}")
+        validate_decal_transparent_render_state(material_text, material_path, source_id, errors)
+
+
+def validate_decal_transparent_render_state(
+    material_text: str,
+    material_path: str,
+    source_id: str,
+    errors: list[str],
+) -> None:
+    required_tokens = (
+        "m_CustomRenderQueue: 3000",
+        "RenderType: Transparent",
+        "_SURFACE_TYPE_TRANSPARENT",
+        "- _Surface: 1",
+        "- _Blend: 0",
+        "- _AlphaClip: 0",
+        "- _SrcBlend: 5",
+        "- _DstBlend: 10",
+        "- _ZWrite: 0",
+    )
+    for token in required_tokens:
+        if token not in material_text:
+            errors.append(f"post-apply decal material {material_path} from {source_id} missing transparent token {token}")
+
+    forbidden_tokens = (
+        "- _ALPHATEST_ON",
+        "- _ALPHAPREMULTIPLY_ON",
+        "RenderType: TransparentCutout",
+        "m_CustomRenderQueue: -1",
+        "- _Surface: 0",
+        "- _ZWrite: 1",
+    )
+    for token in forbidden_tokens:
+        if token in material_text:
+            errors.append(f"post-apply decal material {material_path} from {source_id} contains stale opaque/cutout token {token}")
 
 
 def main() -> int:

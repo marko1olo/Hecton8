@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import fnmatch
 import io
 import json
 import re
@@ -154,8 +155,16 @@ def resolve_source(root: Path, source: str) -> Path:
     return root / path
 
 
-def collect_packets(root: Path) -> list[dict[str, Any]]:
+def packet_matches_glob(packet_id: str, packet_glob: str) -> bool:
+    if not packet_glob:
+        return True
+
+    return any(fnmatch.fnmatch(packet_id, glob.strip()) for glob in packet_glob.split(",") if glob.strip())
+
+
+def collect_packets(root: Path, packet_glob: str = "") -> list[dict[str, Any]]:
     packets_by_id: dict[str, dict[str, Any]] = {}
+    targeted = bool(packet_glob.strip())
 
     for manifest_path in iter_manifest_paths(root):
         manifest = load_json(manifest_path)
@@ -174,9 +183,16 @@ def collect_packets(root: Path) -> list[dict[str, Any]]:
 
         raw_manifest_packet_ids = manifest.get("packets", [])
         if not isinstance(raw_manifest_packet_ids, list) or not raw_manifest_packet_ids:
+            if targeted:
+                continue
             raise ValueError(f"Manifest packets must list source packet ids: {manifest_path}")
 
         manifest_packet_id_list = [str(packet_id).strip() for packet_id in raw_manifest_packet_ids if str(packet_id).strip()]
+        if targeted:
+            manifest_packet_id_list = [packet_id for packet_id in manifest_packet_id_list if packet_matches_glob(packet_id, packet_glob)]
+            if not manifest_packet_id_list:
+                continue
+
         manifest_packet_ids = set(manifest_packet_id_list)
         duplicated_manifest_ids = sorted(
             {packet_id for packet_id in manifest_packet_id_list if manifest_packet_id_list.count(packet_id) > 1}
@@ -193,12 +209,16 @@ def collect_packets(root: Path) -> list[dict[str, Any]]:
                 for packet in packet_source["packets"]:
                     if not isinstance(packet, dict):
                         raise ValueError(f"Packet bundle contains non-object packet: {source_path}")
+                    if targeted and not packet_matches_glob(str(packet.get("packet_id", "")), packet_glob):
+                        continue
                     packet = dict(packet)
                     packet.setdefault("release_set_id", release_set_id)
                     packet.setdefault("_bundle_status", bundle_status)
                     packet.setdefault("_manifest_status", manifest_status)
                     source_packet_ids.add(add_packet(packets_by_id, packet, source_path))
             else:
+                if targeted and not packet_matches_glob(str(packet_source.get("packet_id", "")), packet_glob):
+                    continue
                 packet = dict(packet_source)
                 packet.setdefault("release_set_id", release_set_id)
                 packet.setdefault("_bundle_status", bundle_status)

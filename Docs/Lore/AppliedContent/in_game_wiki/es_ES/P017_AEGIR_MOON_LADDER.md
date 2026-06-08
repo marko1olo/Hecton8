@@ -23,11 +23,11 @@ La escalera lunar de Aegir reúne marcadores de radiación, relés, claims agota
 
 ## Scanner
 
-Secuencia de lunas: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
+Secuencia de lunas: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
 
 ## Terminal
 
-HECTON-8 es Aegir-VIII: ni interior ni la más lejana. La resonancia de Kestrel y la sombra de Mute alteran marea y paquetes.
+HECTON-8 es Aegir-VIII: ni interior ni la más lejana. La resonancia de Rake y la sombra de Pale alteran marea y paquetes.
 
 ## Audio
 

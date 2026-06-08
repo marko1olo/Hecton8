@@ -23,11 +23,11 @@ A escada lunar de Aegir torna a lua jogável parte de um sistema em movimento. O
 
 ## Scanner
 
-Sequência de luas: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
+Sequência de luas: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
 
 ## Terminal
 
-HECTON-8 é Aegir-VIII: nem interna, nem a mais distante. A ressonância de Kestrel e a sombra de Mute alteram maré e pacotes.
+HECTON-8 é Aegir-VIII: nem interna, nem a mais distante. A ressonância de Rake e a sombra de Pale alteram maré e pacotes.
 
 ## Audio
 

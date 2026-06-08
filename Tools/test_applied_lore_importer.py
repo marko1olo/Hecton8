@@ -210,6 +210,34 @@ class TestAppliedLoreImporter(unittest.TestCase):
 
             self.assertEqual([packet["packet_id"] for packet in packets], ["P_IMPORTER_MATCH"])
 
+    def test_collect_packets_scoped_glob_ignores_unrelated_duplicate_wip(self):
+        with temporary_directory() as tmp:
+            root = Path(tmp)
+            write_canonical_release(
+                root,
+                "RS_TEST_IMPORTER_TARGET",
+                ["P_IMPORTER_TARGET"],
+                [packet_with_id("P_IMPORTER_TARGET")],
+            )
+            write_canonical_release(
+                root,
+                "RS_TEST_IMPORTER_OTHER_A",
+                ["P_IMPORTER_OTHER_DUPLICATE"],
+                [packet_with_id("P_IMPORTER_OTHER_DUPLICATE")],
+            )
+            write_canonical_release(
+                root,
+                "RS_TEST_IMPORTER_OTHER_B",
+                ["P_IMPORTER_OTHER_DUPLICATE"],
+                [packet_with_id("P_IMPORTER_OTHER_DUPLICATE")],
+            )
+
+            packets = collect_packets(root, "P_IMPORTER_TARGET")
+
+            self.assertEqual([packet["packet_id"] for packet in packets], ["P_IMPORTER_TARGET"])
+            with self.assertRaisesRegex(ValueError, "Duplicate packet_id P_IMPORTER_OTHER_DUPLICATE"):
+                collect_packets(root)
+
     def test_collect_packets_rejects_manifest_id_missing_source(self):
         with temporary_directory() as tmp:
             root = Path(tmp)

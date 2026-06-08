@@ -9,7 +9,7 @@
     "P1430_WELDED_SEAM_RIVET_ROW_LEDGER"
   ],
   "packet_sources": [
-    "Docs/Lore/AppliedContent/packets/RS264_WELDED_SEAM_RIVET_ROW_ARTICLE.packets.json"
+    "Docs/Lore/AppliedContent/packets_disabled_duplicates/RS264_WELDED_SEAM_RIVET_ROW_ARTICLE.packets.json"
   ],
   "canonical_importer_ready": false,
   "runtime_binding_map": "Docs/Lore/AppliedContent/binding_maps/RS264_runtime_binding_map.csv",

@@ -23,11 +23,11 @@ Tangga bulan Aegir berisi penanda radiasi, tubuh relay, claim habis, bahaya reso
 
 ## Scanner
 
-Urutan bulan: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
+Urutan bulan: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
 
 ## Terminal
 
-HECTON-8 adalah Aegir-VIII: bukan dalam, bukan paling jauh. Resonansi Kestrel dan bayangan Mute mengubah pasang dan paket.
+HECTON-8 adalah Aegir-VIII: bukan dalam, bukan paling jauh. Resonansi Rake dan bayangan Pale mengubah pasang dan paket.
 
 ## Audio
 

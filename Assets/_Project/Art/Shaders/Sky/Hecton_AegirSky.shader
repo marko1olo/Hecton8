@@ -224,7 +224,7 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 return star * _StarIntensity * lerp(0.55, 1.35, quality);
             }
 
-            float3 DrawScreenSpaceAegir(float3 background, float4 positionCS, float quality, float flowSpeed, inout float alpha)
+            float3 DrawScreenSpaceAegir(float3 background, float4 positionCS, float quality, float flowSpeed, float systemVisibility, inout float alpha)
             {
                 float2 screenSize = max(_ScreenParams.xy, float2(1.0, 1.0));
                 float2 screenUv = positionCS.xy / screenSize;
@@ -249,7 +249,7 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 float ringLaneB = Hash11(floor(ringDistance * 57.0 - delta.x * 4.0));
                 float dustyLane = lerp(0.46, 1.0, ringLaneA) * lerp(0.58, 1.0, ringLaneB);
                 float broadBand = 0.64 + 0.36 * sin(ringDistance * 38.0 + delta.x * 2.1);
-                float ringAlpha = ringMask * dustyLane * broadBand * _RingOpacity * lerp(0.58, 1.0, quality);
+                float ringAlpha = ringMask * dustyLane * broadBand * _RingOpacity * lerp(0.58, 1.0, quality) * systemVisibility;
                 float ringBackOcclusion = lerp(1.0 - discMask * 0.86, 1.0, smoothstep(-0.015, 0.025, delta.y));
                 float3 ringColor = _RingTint.rgb * lerp(0.24, 0.72, dustyLane) * lerp(0.52, 0.95, quality);
                 background = lerp(background, ringColor, ringAlpha * ringBackOcclusion);
@@ -297,7 +297,7 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 gasColor *= 1.0 - smoothstep(0.66, 0.98, abs(normalXY.y)) * 0.30;
                 gasColor *= 1.0 - smoothstep(0.0, 0.72, max(-normalXY.x * 0.38 + normalXY.y * 0.22, 0.0)) * 0.10;
 
-                float discAlpha = discMask * _ScreenAegirOpacity;
+                float discAlpha = discMask * _ScreenAegirOpacity * systemVisibility;
                 alpha = max(alpha, discAlpha);
                 return lerp(background, gasColor, discAlpha);
             }
@@ -325,8 +325,10 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 float rim = saturate(1.0 - viewFacing);
                 float rim2 = rim * rim;
                 float rim4 = rim2 * rim2;
+                float limbDarken = lerp(1.0, 0.58, saturate(pow(rim, 1.35)));
                 float scatter = rim2 * 0.42 + rim4 * (0.35 + quality * 1.35);
                 scatter *= saturate(ndotl * 0.65 + 0.35);
+                color *= limbDarken;
                 color += _AtmosphereTint.rgb * scatter;
                 return color * _AegirExposure;
             }
@@ -345,6 +347,7 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 float ringOuterSq = ringOuter * ringOuter;
                 float shadowStrength = saturate(_H8AegirOrbitScalars.y);
                 float flowSpeed = max(_H8AegirOrbitScalars.z, 0.0);
+                float systemVisibility = saturate(1.0 - _H8AegirSunDirection.w);
 
                 float3 starColor = StarField(rayDir, quality);
                 float3 color = _VoidTint.rgb + starColor;
@@ -365,7 +368,7 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                     float gap = step(0.15, ringPhase) * step(ringPhase, 0.94);
                     float lit = saturate(dot(ringNormal, lightDir) * 0.42 + 0.58);
                     ringColor = _RingTint.rgb * (0.35 + lanes * 0.65) * lit;
-                    ringAlpha = ringMask * gap * (0.28 + quality * 0.42);
+                    ringAlpha = ringMask * gap * (0.28 + quality * 0.42) * _RingOpacity * systemVisibility;
                 }
 
                 float planetT;
@@ -381,12 +384,13 @@ Shader "HECTON/Sky/Hecton_AegirSky"
 
                 if (planetHit)
                 {
-                    color = DrawAegir(rayDir, center, lightDir, ringNormal, quality, flowSpeed, ringInnerSq, ringOuterSq, shadowStrength, planetPoint, planetNormal);
-                    alpha = max(alpha, 1.0);
+                    float3 planetColor = DrawAegir(rayDir, center, lightDir, ringNormal, quality, flowSpeed, ringInnerSq, ringOuterSq, shadowStrength, planetPoint, planetNormal);
+                    color = lerp(color, planetColor, systemVisibility);
+                    alpha = max(alpha, systemVisibility);
                 }
 
-                if (_ScreenAegirOpacity > 0.0001)
-                    color = DrawScreenSpaceAegir(color, input.positionCS, quality, flowSpeed, alpha);
+                if (_ScreenAegirOpacity > 0.0001 && systemVisibility > 0.0001)
+                    color = DrawScreenSpaceAegir(color, input.positionCS, quality, flowSpeed, systemVisibility, alpha);
 
                 return float4(color, saturate(alpha));
             }

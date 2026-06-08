@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import io
+import json
 from pathlib import Path
 
 from AppliedLoreImporter import fnv1a32
@@ -148,8 +149,23 @@ def baked_packet_ids(root: Path) -> set[str]:
 
 
 def iter_route_card_sources(root: Path) -> list[Path]:
+    manifest_dir = root / "Docs" / "Lore" / "AppliedContent" / "release_sets"
+    disabled_paths: set[Path] = set()
+    if manifest_dir.exists():
+        for manifest_path in sorted(manifest_dir.glob("*_manifest.json"), key=lambda path: path.name.lower()):
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+            if manifest.get("canonical_importer_ready") is not False:
+                continue
+
+            route_cards = str(manifest.get("route_cards", "")).strip()
+            if route_cards:
+                disabled_paths.add((root / route_cards).resolve())
+
     route_dir = root / "Docs" / "Lore" / "AppliedContent" / "route_cards"
-    return sorted(route_dir.glob("*_route_cards.csv"), key=lambda path: path.name.lower())
+    return sorted(
+        (path for path in route_dir.glob("*_route_cards.csv") if path.resolve() not in disabled_paths),
+        key=lambda path: path.name.lower(),
+    )
 
 
 def route_card_output_path(root: Path) -> Path:

@@ -53,6 +53,7 @@ namespace Hecton8.UI
         private bool _registeredForSurvivalSignals;
         private bool _hotSwapListenerRegistered;
         private uint _survivalSignalSourceId;
+        private uint _lastSurvivalSignalSequence;
         private int _lastSurvivalVitalsSnapshotGeneration;
         private IAudioService _cachedAudioService;
         private IPlayerRuntimeContext _cachedPlayerContext;
@@ -204,6 +205,10 @@ namespace Hecton8.UI
                 if (signal.SourceId != _survivalSignalSourceId)
                     continue;
 
+                if (!IsNewerSurvivalSequence(signal.Sequence, _lastSurvivalSignalSequence))
+                    continue;
+
+                _lastSurvivalSignalSequence = signal.Sequence;
                 ProcessSurvivalVitalsSignal(in signal);
             }
         }
@@ -261,6 +266,31 @@ namespace Hecton8.UI
 
             _survivalSignalSourceId = sourceId;
             _lastSurvivalVitalsSnapshotGeneration = SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration;
+            _lastSurvivalSignalSequence = ResolveLatestSurvivalVitalsSignalSequence(sourceId);
+        }
+
+        private static uint ResolveLatestSurvivalVitalsSignalSequence(uint sourceId)
+        {
+            if (sourceId == 0u)
+                return 0u;
+
+            uint latestSequence = 0u;
+            ReadOnlySpan<SurvivalVitalsChangedSignal> signals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                ref readonly SurvivalVitalsChangedSignal signal = ref signals[i];
+                if (signal.SourceId == sourceId && IsNewerSurvivalSequence(signal.Sequence, latestSequence))
+                    latestSequence = signal.Sequence;
+            }
+
+            return latestSequence;
+        }
+
+        private static bool IsNewerSurvivalSequence(uint sequence, uint previousSequence)
+        {
+            return sequence != 0u &&
+                   sequence != previousSequence &&
+                   (previousSequence == 0u || unchecked(sequence - previousSequence) < 0x80000000u);
         }
 
         private static uint ResolveSurvivalSignalSourceId(HectonSurvivalSystem system)

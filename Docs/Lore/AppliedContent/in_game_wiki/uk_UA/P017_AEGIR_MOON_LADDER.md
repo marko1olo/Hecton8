@@ -23,11 +23,11 @@ localization_flags: 1
 
 ## Scanner
 
-Послідовність місяців: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
+Послідовність місяців: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
 
 ## Terminal
 
-HECTON-8 це Aegir-VIII: не внутрішній і не найдальший. Резонанс Kestrel і тінь Mute змінюють припливи та пакети.
+HECTON-8 це Aegir-VIII: не внутрішній і не найдальший. Резонанс Rake і тінь Pale змінюють припливи та пакети.
 
 ## Audio
 

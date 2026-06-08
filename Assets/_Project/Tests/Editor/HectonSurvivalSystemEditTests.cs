@@ -489,6 +489,8 @@ public sealed class HectonSurvivalSystemEditTests
     {
         string suitSource = File.ReadAllText(SuitAdvisoryControllerPath);
         string wristSource = File.ReadAllText(WristHologramHudRuntimePath);
+        string suitLateFrameBody = ExtractMethodBody(suitSource, "public void LateFrameTick()");
+        string suitRefreshBindingBody = ExtractMethodBody(suitSource, "private void RefreshSurvivalSignalBinding()");
         string suitProcessBody = ExtractMethodBody(suitSource, "private void ProcessSurvivalVitalsSignal(in SurvivalVitalsChangedSignal signal)");
         string suitFiniteUnitBody = ExtractMethodBody(suitSource, "private static bool TryResolveFiniteUnit01(float value, out float safeValue)");
         string wristInjectO2Body = ExtractMethodBody(wristSource, "public void InjectO2Signal(in O2LevelChangedSignal signal)");
@@ -504,6 +506,22 @@ public sealed class HectonSurvivalSystemEditTests
         StringAssert.Contains("HandleIntegrityChanged(integrity01);", suitProcessBody);
         StringAssert.Contains("if (!math.isfinite(value))", suitFiniteUnitBody);
         StringAssert.Contains("safeValue = math.saturate(value);", suitFiniteUnitBody);
+        StringAssert.Contains("private uint _lastSurvivalSignalSequence;", suitSource);
+        StringAssert.Contains("private int _lastSurvivalVitalsSnapshotGeneration;", suitSource);
+        StringAssert.Contains("int snapshotGeneration = SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration;", suitLateFrameBody);
+        StringAssert.Contains("snapshotGeneration == _lastSurvivalVitalsSnapshotGeneration", suitLateFrameBody);
+        StringAssert.Contains("_lastSurvivalVitalsSnapshotGeneration = snapshotGeneration;", suitLateFrameBody);
+        StringAssert.Contains("if (!IsNewerSurvivalSequence(signal.Sequence, _lastSurvivalSignalSequence))", suitLateFrameBody);
+        StringAssert.Contains("_lastSurvivalSignalSequence = signal.Sequence;", suitLateFrameBody);
+        AssertSourceOrder(suitLateFrameBody, "int snapshotGeneration = SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration;", "ReadOnlySpan<SurvivalVitalsChangedSignal> signals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();");
+        StringAssert.Contains("_lastSurvivalVitalsSnapshotGeneration = SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration;", suitRefreshBindingBody);
+        StringAssert.Contains("_lastSurvivalSignalSequence = ResolveLatestSurvivalVitalsSignalSequence(sourceId);", suitRefreshBindingBody);
+        StringAssert.DoesNotContain("_lastSurvivalSignalSequence = 0u;", suitRefreshBindingBody);
+        StringAssert.DoesNotContain("signal.Sequence == _lastSurvivalSignalSequence", suitLateFrameBody);
+        StringAssert.Contains("private static uint ResolveLatestSurvivalVitalsSignalSequence(uint sourceId)", suitSource);
+        StringAssert.Contains("private static bool IsNewerSurvivalSequence(uint sequence, uint previousSequence)", suitSource);
+        StringAssert.Contains("sequence != previousSequence", suitSource);
+        StringAssert.Contains("unchecked(sequence - previousSequence) < 0x80000000u", suitSource);
         StringAssert.DoesNotContain("HandleOxygenChanged(signal.Oxygen01);", suitProcessBody);
         StringAssert.DoesNotContain("HandleEnergyChanged(signal.Energy01);", suitProcessBody);
         StringAssert.DoesNotContain("HandleIntegrityChanged(signal.Integrity01);", suitProcessBody);

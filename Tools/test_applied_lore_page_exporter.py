@@ -211,6 +211,29 @@ class TestAppliedLorePageExporter(unittest.TestCase):
             self.assertEqual(second[0], 0)
             self.assertEqual(second[3], 0)
 
+    def test_targeted_export_does_not_rewrite_global_indexes(self):
+        with temporary_directory() as tmp:
+            root = Path(tmp)
+            base = root / "Docs" / "Lore" / "AppliedContent"
+            index_path = base / "Publication_Surface_Index.csv"
+            index_path.parent.mkdir(parents=True)
+            index_text = "sentinel global index\n"
+            index_path.write_text(index_text, encoding="utf-8")
+
+            with patch("AppliedLorePageExporter.collect_packets", return_value=[page_export_packet()]), patch(
+                "AppliedLorePageExporter.navigation_cluster_graph_rows",
+                return_value=[],
+            ):
+                written, _skipped, _removed_disabled, indexes_written = export_pages(
+                    root,
+                    overwrite=True,
+                    packet_glob="P_TEST_PAGE",
+                )
+
+            self.assertGreater(written, 0)
+            self.assertEqual(indexes_written, 0)
+            self.assertEqual(index_path.read_text(encoding="utf-8"), index_text)
+
     def test_surface_source_voice_and_packet_tier_metadata_win(self):
         packet = {
             "packet_id": "P459",

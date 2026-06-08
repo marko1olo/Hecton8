@@ -48,6 +48,7 @@
 
 using System;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Atmosphere;
@@ -816,6 +817,8 @@ namespace Hecton8.Environment
 
         private IFluidSurfaceCurrentReadModel _physicsEngine;
         private IFluidBubbleBurstSink _fluidBubbleBurstSink;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
+        private IHectonOceanKinematics _oceanKinematicsProvider;
         private bool _physicsEngineCached;
         private bool _physicsEngineLookupAttempted;
         private static IOceanVisualBridge s_oceanVisualBridge;
@@ -2391,6 +2394,7 @@ namespace Hecton8.Environment
                 depthZoneDirector = GlobalRegistry.DepthZone;
 
             CachePhysicsEngine();
+            CacheOceanKinematicsRuntimeCold();
             CacheAtmosphereManager();
             CacheOceanVisualBridgeCold();
             _runtimeServiceResolveRequested = false;
@@ -2414,6 +2418,7 @@ namespace Hecton8.Environment
 
             _runtimeServiceResolveRequested = false;
             CachePhysicsEngine();
+            CacheOceanKinematicsRuntimeCold();
             CacheAtmosphereManager();
             CacheOceanVisualBridgeCold();
         }
@@ -2504,6 +2509,13 @@ namespace Hecton8.Environment
 #if UNITY_EDITOR
                     _debugPhysicsEngineFound = _physicsEngineCached;
 #endif
+                    break;
+
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    _oceanKinematicsProvider = _oceanKinematicsService != null
+                        ? _oceanKinematicsService.ActiveProvider
+                        : null;
                     break;
 
                 case GlobalRegistryServiceSlot.AtmosphereRuntime:
@@ -7396,6 +7408,19 @@ namespace Hecton8.Environment
 
         private float ResolveWaterLevel()
         {
+            if (_playerMovement != null &&
+                TryResolveVisualWaterLevel(_playerMovement.CurrentWaterSurfaceY, out float playerWaterSurfaceY))
+            {
+                return playerWaterSurfaceY;
+            }
+
+            IHectonOceanKinematics oceanKinematics = ReadCachedOceanKinematicsProvider();
+            if (oceanKinematics != null &&
+                TryResolveVisualWaterLevel(oceanKinematics.SeaLevel, out float oceanSeaLevel))
+            {
+                return oceanSeaLevel;
+            }
+
             if (atmosphereManager != null)
             {
                 float atmosphereSeaLevel = atmosphereManager.SeaLevelY;
@@ -7830,6 +7855,33 @@ namespace Hecton8.Environment
 #if UNITY_EDITOR
             _debugPhysicsEngineFound = _physicsEngineCached;
 #endif
+        }
+
+        private void CacheOceanKinematicsRuntimeCold()
+        {
+            if (!Application.isPlaying)
+            {
+                _oceanKinematicsService = null;
+                _oceanKinematicsProvider = null;
+                return;
+            }
+
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
+            _oceanKinematicsProvider = _oceanKinematicsService != null
+                ? _oceanKinematicsService.ActiveProvider
+                : null;
+        }
+
+        private IHectonOceanKinematics ReadCachedOceanKinematicsProvider()
+        {
+            IHectonOceanKinematics provider = _oceanKinematicsProvider;
+            if (provider != null)
+                return provider;
+
+            IHectonOceanKinematicsService service = _oceanKinematicsService;
+            provider = service != null ? service.ActiveProvider : null;
+            _oceanKinematicsProvider = provider;
+            return provider;
         }
 
         private void InitializeCurrentValues()

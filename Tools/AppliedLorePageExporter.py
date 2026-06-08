@@ -709,7 +709,7 @@ def check_publication_freshness(
     *,
     include_placeholder_markers: bool = True,
 ) -> PublicationCheckStats:
-    packets = collect_packets(root)
+    packets = collect_packets(root, packet_glob)
     base = root / "Docs" / "Lore" / "AppliedContent"
     selected_packets = [packet for packet in packets if packet_matches_glob(safe_text(packet.get("packet_id")), packet_glob)]
     cluster_spoiler_tiers = cluster_spoiler_tier_map(base)
@@ -753,15 +753,16 @@ def check_publication_freshness(
             counts["disabled"] += 1
             issues.append(f"orphan-generated: {path.relative_to(root).as_posix()}")
 
-    for locale in TARGET_LOCALES:
-        for folder, surface_key, _surface_title in SURFACES:
-            path = base / folder / locale / "INDEX.md"
-            surface_packets = [packet for packet in packets if is_surface_enabled(packet, surface_key)]
-            compare_expected_file(root, path, render_index(surface_packets, locale, folder, surface_key), issues, counts)
+    if not packet_glob:
+        for locale in TARGET_LOCALES:
+            for folder, surface_key, _surface_title in SURFACES:
+                path = base / folder / locale / "INDEX.md"
+                surface_packets = [packet for packet in packets if is_surface_enabled(packet, surface_key)]
+                compare_expected_file(root, path, render_index(surface_packets, locale, folder, surface_key), issues, counts)
 
-    compare_expected_file(root, base / "Localization_Status_Index.md", render_localization_status_index(packets), issues, counts)
-    compare_expected_file(root, base / "Publication_Surface_Index.csv", render_publication_surface_index(base, packets), issues, counts)
-    compare_expected_file(root, base / "Publication_Cluster_Index.csv", render_publication_cluster_index(base, packets), issues, counts)
+        compare_expected_file(root, base / "Localization_Status_Index.md", render_localization_status_index(packets), issues, counts)
+        compare_expected_file(root, base / "Publication_Surface_Index.csv", render_publication_surface_index(base, packets), issues, counts)
+        compare_expected_file(root, base / "Publication_Cluster_Index.csv", render_publication_cluster_index(base, packets), issues, counts)
 
     return PublicationCheckStats(
         checked_files=counts["checked"],
@@ -774,7 +775,7 @@ def check_publication_freshness(
 
 
 def export_pages(root: Path, overwrite: bool, packet_glob: str = "") -> tuple[int, int, int, int]:
-    packets = collect_packets(root)
+    packets = collect_packets(root, packet_glob)
     base = root / "Docs" / "Lore" / "AppliedContent"
     written = 0
     skipped = 0
@@ -823,16 +824,17 @@ def export_pages(root: Path, overwrite: bool, packet_glob: str = "") -> tuple[in
             path.unlink()
             removed_disabled += 1
 
-    for locale in TARGET_LOCALES:
-        for folder, surface_key, _surface_title in SURFACES:
-            path = base / folder / locale / "INDEX.md"
-            surface_packets = [packet for packet in packets if is_surface_enabled(packet, surface_key)]
-            if write_markdown_if_changed(path, render_index(surface_packets, locale, folder, surface_key)):
-                indexes_written += 1
+    if not packet_glob:
+        for locale in TARGET_LOCALES:
+            for folder, surface_key, _surface_title in SURFACES:
+                path = base / folder / locale / "INDEX.md"
+                surface_packets = [packet for packet in packets if is_surface_enabled(packet, surface_key)]
+                if write_markdown_if_changed(path, render_index(surface_packets, locale, folder, surface_key)):
+                    indexes_written += 1
 
-    write_localization_status_index(base, packets)
-    write_publication_surface_index(base, packets)
-    write_publication_cluster_index(base, packets)
+        write_localization_status_index(base, packets)
+        write_publication_surface_index(base, packets)
+        write_publication_cluster_index(base, packets)
     return written, skipped, removed_disabled, indexes_written
 
 

@@ -23,11 +23,11 @@ Aegir的卫星阶梯包括辐射标记、relay天体、枯竭claim、共振危�
 
 ## Scanner
 
-卫星序列：Skarn、Vela、Claw、Lumen、Thorne、Anvil、Kestrel、HECTON-8、Mute。
+卫星序列：Cinder、Hook、Glass、Switch、Drywell、Brinehook、Rake、HECTON-8、Pale、Longmark、Grave、Farline。
 
 ## Terminal
 
-HECTON-8是Aegir-VIII：既非内侧，也非最远。Kestrel共振和Mute阴影会改变潮汐和数据包质量。
+HECTON-8是Aegir-VIII：既非内侧，也非最远。Rake共振和Pale阴影会改变潮汐和数据包质量。
 
 ## Audio
 

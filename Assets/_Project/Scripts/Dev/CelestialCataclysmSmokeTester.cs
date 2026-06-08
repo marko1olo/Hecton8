@@ -37,6 +37,8 @@ namespace Hecton8.Dev
         private const string AtmosphereManagerPath = "Assets/_Project/Scripts/HectonAtmosphereManager.cs";
         private const string FirmamentComputePath = "Assets/_Project/Art/Shaders/HectonFirmamentBake.compute";
         private const string AlienSkyShaderPath = "Assets/_Project/Art/Shaders/Hecton_AlienSky_Master.shader";
+        private const string AegirSkyShaderPath = "Assets/_Project/Art/Shaders/Sky/Hecton_AegirSky.shader";
+        private const string AegirImpostorShaderPath = "Assets/_Project/Art/Shaders/H8_AegirGasGiantImpostor_1428.shader";
         private const string CelestialAtmosphereIncludePath = "Assets/_Project/Art/Shaders/Hecton_CelestialAtmosphere.hlsl";
         private const string CoreLitIncludePath = "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl";
         private const string AlienSkyShaderName = "HECTON/Sky/Hecton_AlienSky_Master";
@@ -133,6 +135,9 @@ namespace Hecton8.Dev
                 return false;
 
             if (!ValidateFirmamentContracts())
+                return false;
+
+            if (!ValidateAegirPresentationContracts())
                 return false;
 
             if (!ValidateOmegaContracts())

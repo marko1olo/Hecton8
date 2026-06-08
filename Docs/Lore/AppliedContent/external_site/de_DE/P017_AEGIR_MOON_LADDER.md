@@ -23,11 +23,11 @@ Aegirs Mondleiter macht den spielbaren Mond Teil eines bewegten Systems. Andere 
 
 ## Scanner
 
-Mondfolge: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
+Mondfolge: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
 
 ## Terminal
 
-HECTON-8 ist Aegir-VIII: nicht innen, nicht am weitesten draußen. Kestrel-Resonanz und Mute-Schatten ändern Tide und Paketqualität.
+HECTON-8 ist Aegir-VIII: nicht innen, nicht am weitesten draußen. Rake-Resonanz und Pale-Schatten ändern Tide und Paketqualität.
 
 ## Audio
 

@@ -39,6 +39,8 @@ namespace Hecton8.UI
         private const float CinematicOcclusionFarDistanceMeters = 128f;
         private const float CinematicOcclusionSideWeight = 0.62f;
         private const float CinematicOcclusionBehindDot = -0.05f;
+        private const float MinimumLightReadableWaypointScale = 0.56f;
+        private const float MaximumLightReadableWaypointScale = 1.18f;
         private const double WaypointSolveBudgetWarningMilliseconds = 0.2d;
         private const int WaypointPerformanceWarningCooldownFrames = 90;
         private const int WaypointSolveTelemetryCadenceFrames = 16;
@@ -230,6 +232,7 @@ namespace Hecton8.UI
         private RectTransform _root;
         private Camera _viewCamera;
         private Transform _playerTransform;
+        private ICelestialLightReadabilityReadModel _celestialLightReadModel;
         [SerializeField]
         private RectTransform _authoredRoot;
 
@@ -392,6 +395,7 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             UnregisterFromSlowTickManager();
             HideAllSlots();
+            _celestialLightReadModel = null;
             if (ReferenceEquals(s_activeRuntimeInstance, this))
                 s_activeRuntimeInstance = null;
         }
@@ -403,6 +407,7 @@ namespace Hecton8.UI
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterFromTickManager();
             UnregisterFromSlowTickManager();
+            _celestialLightReadModel = null;
             if (ReferenceEquals(s_activeRuntimeInstance, this))
                 s_activeRuntimeInstance = null;
         }
@@ -575,6 +580,9 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.ARWaypointRuntime)
                 s_cachedWaypointService = currentService as IARWaypointService;
+
+            if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
+                _celestialLightReadModel = currentService as ICelestialLightReadabilityReadModel ?? GlobalRegistry.CelestialLightReadabilityReadModel;
         }
 
         private void TryRegisterHotSwapListener()
@@ -597,6 +605,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedPlayerContext = GlobalRegistry.Player;
+            _celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;
             if (_cachedPlayerContext != null && _playerTransform == null)
                 _playerTransform = _cachedPlayerContext.PlayerTransform;
         }
@@ -837,6 +846,7 @@ namespace Hecton8.UI
                 return;
             }
 
+            CelestialLightReadabilitySnapshot light = ResolveCelestialLightReadability();
             for (int i = 0; i < _waypointCount; i++)
             {
                 RuntimeWaypoint waypoint = _runtimeWaypoints[i];
@@ -852,7 +862,8 @@ namespace Hecton8.UI
                         out Vector2 anchoredPosition,
                         out Vector2 clampDirection,
                         out bool clampedToEdge,
-                        out float visibility01))
+                        out float visibility01,
+                        out float waypointDistanceMeters))
                 {
                     HideSlot(i);
                     continue;
@@ -880,6 +891,10 @@ namespace Hecton8.UI
                 float alpha = waypoint.Occluded
                     ? visibility01 * OccludedAlpha
                     : visibility01 * (clampedToEdge ? EdgeAlpha : VisibleAlpha);
+                alpha = math.clamp(
+                    alpha * ResolveWaypointLightAlphaMultiplier(in light, waypointDistanceMeters),
+                    HiddenAlpha,
+                    1f);
 
                 Color outlineColor = waypoint.Color;
                 outlineColor.a = 0.22f;
@@ -1007,18 +1022,50 @@ namespace Hecton8.UI
             _nextWaypointPerformanceWarningFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + WaypointPerformanceWarningCooldownFrames;
         }
 
+        private CelestialLightReadabilitySnapshot ResolveCelestialLightReadability()
+        {
+            ICelestialLightReadabilityReadModel readModel = _celestialLightReadModel;
+            return readModel != null ? readModel.LightReadabilitySnapshot : default;
+        }
+
+        private static float ResolveWaypointLightAlphaMultiplier(
+            in CelestialLightReadabilitySnapshot light,
+            float distanceMeters)
+        {
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.Valid) == 0u ||
+                (light.Flags & (uint)CelestialLightReadabilityFlags.Underwater) == 0u)
+            {
+                return 1f;
+            }
+
+            float distance = math.max(0f, math.select(distanceMeters, 0f, !math.isfinite(distanceMeters)));
+            float visibilityMeters = math.max(1f, light.UnderwaterVisibilityMeters);
+            float farFade = math.saturate((visibilityMeters * 2.25f - distance) / math.max(1f, visibilityMeters * 1.25f));
+            float distanceScale = math.lerp(MinimumLightReadableWaypointScale, 1f, farFade);
+            float rescueLift = math.saturate(
+                math.max(light.DeepDarkness01, light.ArtificialLightWeight01) * 0.26f +
+                light.BiolumWeight01 * 0.08f);
+            float ambientLift = light.AmbientReadability01 * 0.05f;
+            return math.clamp(
+                distanceScale + rescueLift + ambientLift,
+                MinimumLightReadableWaypointScale,
+                MaximumLightReadableWaypointScale);
+        }
+
         private bool TryProjectWaypointOntoHudPlane(
             in AbsoluteUniversePosition waypointAup,
             in WaypointProjectionFrame projectionFrame,
             out Vector2 anchoredPosition,
             out Vector2 clampDirection,
             out bool clampedToEdge,
-            out float visibility01)
+            out float visibility01,
+            out float distanceMeters)
         {
             anchoredPosition = Vector2.zero;
             clampDirection = Vector2.up;
             clampedToEdge = false;
             visibility01 = 0f;
+            distanceMeters = 0f;
 
             if (projectionFrame.IsValid == 0u ||
                 !waypointAup.IsFinite() ||
@@ -1034,6 +1081,12 @@ namespace Hecton8.UI
                 float3.zero);
             if (!math.all(math.isfinite(deltaAup)))
                 return false;
+
+            float distanceSq = math.lengthsq(deltaAup);
+            if (!math.isfinite(distanceSq))
+                return false;
+
+            distanceMeters = math.sqrt(math.max(0f, distanceSq));
 
             float viewDepth = math.dot(projectionFrame.CameraForward, deltaAup);
             if (!math.isfinite(viewDepth) ||

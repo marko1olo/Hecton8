@@ -112,7 +112,7 @@ def iter_packet_source_paths(base: Path, explicit_paths: tuple[Path, ...] = ()) 
     return sorted(packet_dir.glob(PACKET_SOURCE_GLOB), key=lambda item: item.name.lower())
 
 
-def release_set_by_packet_source(base: Path) -> dict[Path, dict[str, str]]:
+def release_set_by_packet_source(base: Path) -> dict[Path, dict[str, object]]:
     release_dir = base / "release_sets"
     mapped: dict[Path, dict[str, str]] = {}
     if not release_dir.exists():
@@ -133,9 +133,18 @@ def release_set_by_packet_source(base: Path) -> dict[Path, dict[str, str]]:
             source_path = Path(raw_source)
             if not source_path.is_absolute():
                 source_path = base.parent.parent.parent / source_path
-            mapped[source_path.resolve()] = {
+            resolved_source = source_path.resolve()
+            existing = mapped.get(resolved_source)
+            canonical_importer_ready = data.get("canonical_importer_ready")
+            if existing is not None and existing.get("canonical_importer_ready") is not False:
+                continue
+            if existing is not None and canonical_importer_ready is False:
+                continue
+
+            mapped[resolved_source] = {
                 "release_set_id": release_set_id,
                 "manifest_status": manifest_status,
+                "canonical_importer_ready": canonical_importer_ready,
             }
 
     return mapped
@@ -148,6 +157,9 @@ def load_packet_sources(base: Path, explicit_paths: tuple[Path, ...] = ()) -> li
     for source_path in iter_packet_source_paths(base, explicit_paths):
         data = read_json_object(source_path)
         source_metadata = release_sets_by_source.get(source_path.resolve(), {})
+        if not explicit_paths and source_metadata.get("canonical_importer_ready") is False:
+            continue
+
         source_release_set = safe_text(source_metadata.get("release_set_id"))
         manifest_status = safe_text(source_metadata.get("manifest_status"))
         bundle_release_set = safe_text(data.get("release_set_id")) or source_release_set

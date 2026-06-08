@@ -551,7 +551,12 @@ namespace Hecton8.Core.Generated
         public const uint P623_PELLET_LANE_WAKE_LEDGER = 0x1C738CB9u;
         public const uint P624_CABLE_FOREST_CONDUCTIVE_BIOTA = 0x727AB672u;
         public const uint P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE = 0xAAD27229u;
+        public const uint P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE = 0xAD16A872u;
         public const uint P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY = 0x81CAAF3Fu;
+        public const uint P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE = 0xA59B820Du;
+        public const uint P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE = 0x5DF42184u;
+        public const uint P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE = 0x3EAA43BFu;
+        public const uint P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE = 0x3E14880Fu;
 
         public const uint Locale_en_US = 0x6C199F07u;
         public const uint Locale_ru_RU = 0x5FBC7928u;

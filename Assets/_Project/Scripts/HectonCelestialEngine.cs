@@ -1252,6 +1252,7 @@ namespace Hecton8.Celestial
         private static readonly int _ID_EquatorialSpeed    = Shader.PropertyToID("_EquatorialSpeed");
         private static readonly int _ID_PolarMultiplier    = Shader.PropertyToID("_PolarMultiplier");
         private static readonly int _ID_PlanetPhase        = Shader.PropertyToID("_PlanetPhase");
+        private static readonly int _ID_LightDirection     = Shader.PropertyToID("_LightDirection");
         private static readonly int _ID_StormEmission      = Shader.PropertyToID("_StormEmission");
         private static readonly int _ID_Blend              = Shader.PropertyToID("_Blend");
         private static readonly int _ID_StarIntensity      = Shader.PropertyToID("_StarIntensity");
@@ -1295,6 +1296,13 @@ namespace Hecton8.Celestial
         private static readonly int _ID_HectonCelestialLightReadability2 = Shader.PropertyToID("_HectonCelestialLightReadability2");
         private static readonly int _ID_HectonCelestialLightReadability3 = Shader.PropertyToID("_HectonCelestialLightReadability3");
         private static readonly int _ID_HectonCelestialSunColorIntensity = Shader.PropertyToID("_HectonCelestialSunColorIntensity");
+        private static readonly int _ID_H8AegirSunDirection = Shader.PropertyToID("_H8AegirSunDirection");
+        private static readonly int _ID_H8AegirPlanetCenterRadius = Shader.PropertyToID("_H8AegirPlanetCenterRadius");
+        private static readonly int _ID_H8AegirRingPlaneInner = Shader.PropertyToID("_H8AegirRingPlaneInner");
+        private static readonly int _ID_H8AegirOrbitScalars = Shader.PropertyToID("_H8AegirOrbitScalars");
+        private static readonly int _ID_H8AegirFlowPhase = Shader.PropertyToID("_H8AegirFlowPhase");
+        private static readonly int _ID_H8AegirFlowPhaseValid = Shader.PropertyToID("_H8AegirFlowPhaseValid");
+        private static readonly int _ID_H8GlobalQualityWeight = Shader.PropertyToID("_H8GlobalQualityWeight");
         private static readonly int _ID_HectonAtmosphereColor = Shader.PropertyToID("_HectonAtmosphereColor");
         private static readonly int _ID_HectonStormCloudDensity = Shader.PropertyToID("_HectonStormCloudDensity");
         private static readonly int _ID_HectonLightningFlash = Shader.PropertyToID("_HectonLightningFlash");
@@ -1447,6 +1455,49 @@ namespace Hecton8.Celestial
         // LIFECYCLE
         // ─────────────────────────────────────────────
 
+        private bool TryClaimCelestialRuntimeAuthority()
+        {
+            if (!Application.isPlaying)
+                return true;
+
+            HectonCelestialEngine active = s_activeRuntimeCelestialEngine;
+            if (active != null && !ReferenceEquals(active, this))
+                return false;
+
+            HectonCelestialEngine registered = GlobalRegistry.CelestialEngine;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+                s_activeRuntimeCelestialEngine = registered;
+                return false;
+            }
+
+            s_activeRuntimeCelestialEngine = this;
+            _hasCelestialRuntimeAuthority = true;
+            return true;
+        }
+
+        private void ReleaseCelestialRuntimeAuthority()
+        {
+            if (ReferenceEquals(s_activeRuntimeCelestialEngine, this))
+                s_activeRuntimeCelestialEngine = null;
+
+            _hasCelestialRuntimeAuthority = false;
+        }
+
+        private void DisableDuplicateCelestialPresentation()
+        {
+            if (!s_duplicateRuntimeCelestialWarningPublished)
+            {
+                s_duplicateRuntimeCelestialWarningPublished = true;
+                Hecton8.Core.H8Debug.LogWarning("[HectonCelestialEngine] Duplicate runtime owner disabled; keeping the existing celestial source of truth.", this);
+            }
+
+            if (aegirRenderer != null)
+                aegirRenderer.enabled = false;
+
+            enabled = false;
+        }
+
         private void Awake()
         {
             CacheCelestialOrbitReciprocals();
@@ -1467,6 +1518,12 @@ namespace Hecton8.Celestial
             if (Application.isPlaying)
             {
                 GlobalTelemetryBus.Initialize();
+                if (!TryClaimCelestialRuntimeAuthority())
+                {
+                    DisableDuplicateCelestialPresentation();
+                    return;
+                }
+
                 GlobalRegistry.RegisterCelestialEngineRuntime(this);
                 RefreshColdRuntimeDependencies();
                 TryRegisterHotSwapListener();
@@ -1590,6 +1647,8 @@ namespace Hecton8.Celestial
 
         private void OnDisable()
         {
+            bool shouldClearRuntimeSnapshot = !Application.isPlaying || _hasCelestialRuntimeAuthority;
+
             if (GlobalRegistry.CelestialEngine == this)
                 GlobalRegistry.UnregisterCelestialEngineRuntime(this);
 
@@ -1615,7 +1674,9 @@ namespace Hecton8.Celestial
             TryUnregisterHotSwapListener();
             DisposeCelestialRuntimeBuffers(forceCompleteOrbitJob: true);
             ClearCelestialTruthReadCache();
-            ClearCelestialRuntimeSnapshot();
+            if (shouldClearRuntimeSnapshot)
+                ClearCelestialRuntimeSnapshot();
+            ReleaseCelestialRuntimeAuthority();
 
 #if UNITY_EDITOR
             if (!Application.isPlaying)
@@ -1633,6 +1694,8 @@ namespace Hecton8.Celestial
 
         private void OnDestroy()
         {
+            bool shouldClearRuntimeSnapshot = !Application.isPlaying || _hasCelestialRuntimeAuthority;
+
             if (GlobalRegistry.CelestialEngine == this)
                 GlobalRegistry.UnregisterCelestialEngineRuntime(this);
 
@@ -1656,7 +1719,9 @@ namespace Hecton8.Celestial
             TryUnregisterHotSwapListener();
             DisposeCelestialRuntimeBuffers(forceCompleteOrbitJob: true);
             ClearCelestialTruthReadCache();
-            ClearCelestialRuntimeSnapshot();
+            if (shouldClearRuntimeSnapshot)
+                ClearCelestialRuntimeSnapshot();
+            ReleaseCelestialRuntimeAuthority();
         }
 
         private void RefreshColdRuntimeDependencies()
@@ -2388,6 +2453,16 @@ namespace Hecton8.Celestial
             else if (aegirObserverRelativeBody == null)
                 aegirTransform.TryGetComponent(out aegirObserverRelativeBody);
 
+            if (aegirRenderer == null && aegirTransform != null)
+            {
+                aegirTransform.TryGetComponent(out aegirRenderer);
+                if (aegirRenderer == null)
+                    aegirRenderer = aegirTransform.GetComponentInChildren<Renderer>(true);
+            }
+
+            if (aegirRenderer != null)
+                ValidateAegirRendererMaterialCold();
+
             EnforceAegirFixedDirectionLock();
 
             if (playerTransform == null)
@@ -2405,6 +2480,35 @@ namespace Hecton8.Celestial
 
             if (_skyMaterial == null)
                 Hecton8.Core.H8Debug.LogWarning("[HectonCelestialEngine] Sky Material is not assigned!", this);
+        }
+
+        private void ValidateAegirRendererMaterialCold()
+        {
+            Material material = aegirRenderer.sharedMaterial;
+            if (material == null && aegirFallbackMaterial != null)
+            {
+                aegirRenderer.sharedMaterial = aegirFallbackMaterial;
+                material = aegirFallbackMaterial;
+            }
+
+            _aegirSharedMaterial = material;
+            if (material == null)
+            {
+                if (!_aegirMaterialWarningPublished)
+                {
+                    _aegirMaterialWarningPublished = true;
+                    Hecton8.Core.H8Debug.LogWarning("[HectonCelestialEngine] Aegir renderer has no material; disabling mesh presentation and keeping sky projection globals authoritative.", this);
+                }
+
+                aegirRenderer.enabled = false;
+                return;
+            }
+
+            if (material.HasProperty(_ID_MainTex) && material.GetTexture(_ID_MainTex) == null && !_aegirMaterialWarningPublished)
+            {
+                _aegirMaterialWarningPublished = true;
+                Hecton8.Core.H8Debug.LogWarning("[HectonCelestialEngine] Aegir material is missing its band texture; renderer will use shader fallback while sky projection remains authoritative.", this);
+            }
         }
 
         private void EnforceAegirFixedDirectionLock()
@@ -5486,6 +5590,7 @@ namespace Hecton8.Celestial
             Shader.SetGlobalVector(_ID_HectonCelestialLightReadability2, Vector4.zero);
             Shader.SetGlobalVector(_ID_HectonCelestialLightReadability3, Vector4.zero);
             Shader.SetGlobalVector(_ID_HectonCelestialSunColorIntensity, Vector4.zero);
+            ClearAegirSkyProjectionGlobals();
             Shader.SetGlobalColor(_ID_HectonAtmosphereColor, Color.black);
             _stormCloudDensity01 = 0f;
             UploadStormCloudDensityShaderGlobal(0f, forceUpload: true);
@@ -6584,6 +6689,7 @@ namespace Hecton8.Celestial
 
             Shader.SetGlobalVector(_ID_AegirDirection, aegirDirection);
             PublishSkyRotationAndOccluders(aegirDirection);
+            PublishAegirSkyProjectionGlobals(aegirDirection);
             Shader.SetGlobalColor(_ID_SkyColorZenith, _resolvedSkyZenith);
             Shader.SetGlobalColor(_ID_SkyColorHorizon, _resolvedSkyHorizon);
             Shader.SetGlobalColor(_ID_SkyColorNadir, _resolvedSkyNadir);
@@ -6751,6 +6857,124 @@ namespace Hecton8.Celestial
 
             Shader.SetGlobalInt(_ID_HectonSkyOccluderCount, occluderCount);
             Shader.SetGlobalVectorArray(_ID_HectonSkyOccluders, _skyOccluders);
+        }
+
+        private void PublishAegirSkyProjectionGlobals(Vector4 aegirDirection)
+        {
+            AegirSkyProjectionProfile profile = ResolveAegirSkyProjectionProfile();
+            if (!profile.publishGlobals || aegirDirection.sqrMagnitude <= 0.0001f)
+            {
+                ClearAegirSkyProjectionGlobals();
+                return;
+            }
+
+            float3 toAegir = NormalizeVisualRsqrt(
+                new float3(aegirDirection.x, aegirDirection.y, aegirDirection.z),
+                new float3(0f, SurfaceAegirFixedVerticalOffset, 1f));
+            float3 sunDirection = NormalizeVisualRsqrt(_resolvedSunDirection, new float3(-0.38f, -0.72f, 0.58f));
+            Vector3 ringNormalManaged = profile.ringPlaneNormal;
+            float3 ringNormal = NormalizeVisualRsqrt(
+                new float3(ringNormalManaged.x, ringNormalManaged.y, ringNormalManaged.z),
+                new float3(0.16f, 0.93f, 0.33f));
+            float radius = ResolveAegirSkyProjectionRadius(profile);
+            float ringOuter = math.max(profile.ringOuterRadius, radius + 0.02f);
+            float ringInner = math.clamp(profile.ringInnerRadius, radius + 0.01f, ringOuter - 0.01f);
+            float quality = ResolveAegirSkyProjectionQuality01(profile);
+            float visibility = ResolveAegirSkyProjectionVisibility01(profile);
+            float occlusion = 1f - visibility;
+            float flowSpeed = math.max(0f, profile.bandFlowSpeed);
+            float flowPhase = math.frac(_rotationPhase + _gameTime * flowSpeed);
+
+            Shader.SetGlobalVector(
+                _ID_H8AegirSunDirection,
+                new Vector4(sunDirection.x, sunDirection.y, sunDirection.z, occlusion));
+            Shader.SetGlobalVector(
+                _ID_H8AegirPlanetCenterRadius,
+                new Vector4(toAegir.x, toAegir.y, toAegir.z, radius));
+            Shader.SetGlobalVector(
+                _ID_H8AegirRingPlaneInner,
+                new Vector4(ringNormal.x, ringNormal.y, ringNormal.z, ringInner));
+            Shader.SetGlobalVector(
+                _ID_H8AegirOrbitScalars,
+                new Vector4(ringOuter, math.saturate(profile.ringShadowStrength), flowSpeed, quality));
+            Shader.SetGlobalFloat(_ID_H8AegirFlowPhase, flowPhase);
+            Shader.SetGlobalFloat(_ID_H8AegirFlowPhaseValid, 1f);
+            Shader.SetGlobalFloat(_ID_H8GlobalQualityWeight, quality);
+        }
+
+        private AegirSkyProjectionProfile ResolveAegirSkyProjectionProfile()
+        {
+            AegirSkyProjectionProfile profile = aegirSkyProjection;
+            bool looksUninitialized =
+                !profile.publishGlobals &&
+                profile.fallbackAngularRadius <= 0f &&
+                profile.ringOuterRadius <= 0f &&
+                profile.ringInnerRadius <= 0f &&
+                profile.minimumQuality <= 0f &&
+                profile.visibilityFloor <= 0f;
+            return looksUninitialized ? AegirSkyProjectionProfile.Default : profile;
+        }
+
+        private float ResolveAegirSkyProjectionRadius(AegirSkyProjectionProfile profile)
+        {
+            float angularRadiusDegrees = GetAegirAngularRadiusDegrees();
+            float radius = math.sin(math.radians(math.clamp(angularRadiusDegrees, 0.01f, 40f)));
+            if (!math.isfinite(radius) || radius <= 0.001f)
+                radius = profile.fallbackAngularRadius;
+
+            return math.clamp(radius, 0.05f, 0.65f);
+        }
+
+        private float ResolveAegirSkyProjectionQuality01(AegirSkyProjectionProfile profile)
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.isfinite(quality) ? math.saturate(quality) : 0f;
+
+            DynamicResolutionScaler scaler = _cachedDynamicResolution;
+            if (scaler != null && math.isfinite(scaler.CurrentRenderScale))
+                quality = math.min(quality <= 0f ? 1f : quality, math.saturate(scaler.CurrentRenderScale));
+
+            return math.max(math.saturate(profile.minimumQuality), quality);
+        }
+
+        private float ResolveAegirSkyProjectionVisibility01(AegirSkyProjectionProfile profile)
+        {
+            float visibility = 1f;
+            CelestialLightReadabilitySnapshot snapshot = _celestialLightReadabilitySnapshot;
+            if (snapshot.Sequence != 0u)
+            {
+                float depthMeters = math.max(0f, snapshot.DepthMeters);
+                float ambient = math.saturate(math.max(snapshot.DirectSun01 * 0.75f, snapshot.AmbientReadability01));
+                float deepLoss = math.saturate(snapshot.DeepDarkness01);
+                float fogLoss = math.saturate((math.max(0f, snapshot.FogDensityMultiplier) - 1f) * 0.35f);
+
+                if (depthMeters > 0.01f)
+                {
+                    float waterRange = math.saturate(snapshot.UnderwaterVisibilityMeters * math.rcp(112f));
+                    visibility = waterRange * math.lerp(0.36f, 1f, ambient);
+                    visibility *= 1f - deepLoss * 0.78f;
+                }
+                else
+                {
+                    visibility *= math.lerp(0.78f, 1f, ambient);
+                }
+
+                visibility *= 1f - fogLoss;
+            }
+
+            visibility *= 1f - math.saturate(_stormCloudDensity01) * 0.42f;
+            return math.max(math.saturate(profile.visibilityFloor), math.saturate(visibility));
+        }
+
+        private void ClearAegirSkyProjectionGlobals()
+        {
+            Shader.SetGlobalVector(_ID_H8AegirSunDirection, Vector4.zero);
+            Shader.SetGlobalVector(_ID_H8AegirPlanetCenterRadius, Vector4.zero);
+            Shader.SetGlobalVector(_ID_H8AegirRingPlaneInner, Vector4.zero);
+            Shader.SetGlobalVector(_ID_H8AegirOrbitScalars, Vector4.zero);
+            Shader.SetGlobalFloat(_ID_H8AegirFlowPhase, 0f);
+            Shader.SetGlobalFloat(_ID_H8AegirFlowPhaseValid, 0f);
+            Shader.SetGlobalFloat(_ID_H8GlobalQualityWeight, 0f);
         }
 
         private void PublishOceanCelestialProjectionGlobals(Vector4 aegirDirection)
@@ -6930,6 +7154,7 @@ namespace Hecton8.Celestial
             }
 
             block.SetVector(_ID_FresnelSunDir, new Vector4(toSun.x, toSun.y, toSun.z, 0));
+            block.SetVector(_ID_LightDirection, new Vector4(toSun.x, toSun.y, toSun.z, 0));
             block.SetFloat(_ID_BacklitIntensity, backlitIntensity);
             block.SetFloat(_ID_EquatorialSpeed, equatorialRotationSpeed);
             block.SetFloat(_ID_PolarMultiplier, polarRotationMultiplier);
@@ -6941,6 +7166,9 @@ namespace Hecton8.Celestial
             block.SetFloat(_ID_NightBlend, _currentBlend);
             block.SetFloat(_ID_AtmosphereTransmittanceWeight, _atmosphereTransmittanceWeight);
             block.SetFloat(_ID_AtmosphereInscatterWeight, _atmosphereInscatterWeight);
+            AegirSkyProjectionProfile profile = ResolveAegirSkyProjectionProfile();
+            block.SetFloat(_ID_H8GlobalQualityWeight, ResolveAegirSkyProjectionQuality01(profile));
+            block.SetVector(_ID_H8AegirSunDirection, new Vector4(toSun.x, toSun.y, toSun.z, 1f - ResolveAegirSkyProjectionVisibility01(profile)));
 
             block.SetColor(_ID_SkyColorZenith, _resolvedSkyZenith);
             block.SetColor(_ID_SkyColorHorizon, _resolvedSkyHorizon);

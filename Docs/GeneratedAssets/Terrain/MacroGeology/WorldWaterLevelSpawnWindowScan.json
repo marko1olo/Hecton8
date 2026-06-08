@@ -1,6 +1,6 @@
 {
   "artifact": "WorldWaterLevelSpawnWindowScan",
-  "artifactVersion": 4,
+  "artifactVersion": 5,
   "authoringSeed": 880031,
   "combinedSeed": 301469796,
   "designTargets": {
@@ -1615,6 +1615,36 @@
       "windowResolution": 65
     }
   ],
+  "runtimeDetailContract": {
+    "chunkSizeMeters": 512,
+    "distantHlod": {
+      "heightResolution": 65,
+      "maxDistanceMeters": 24576,
+      "samplePitchMeters": 8
+    },
+    "farSilhouette": {
+      "heightResolution": 129,
+      "maxDistanceMeters": 6144,
+      "samplePitchMeters": 4
+    },
+    "midTraversal": {
+      "heightResolution": 257,
+      "maxDistanceMeters": 2048,
+      "samplePitchMeters": 2
+    },
+    "nearPlayable": {
+      "heightResolution": 513,
+      "maxDistanceMeters": 768,
+      "samplePitchMeters": 1
+    },
+    "nestedProofWindowsMeters": [
+      10000,
+      1000,
+      512,
+      100
+    ],
+    "source": "Assets/_Project/Scripts/World/WorldTerrainDetailContracts.cs"
+  },
   "runtimeSeed": 0,
   "windowExtentMeters": 10000.0
 }

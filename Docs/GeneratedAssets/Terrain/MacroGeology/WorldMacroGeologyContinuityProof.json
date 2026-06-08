@@ -1,20 +1,20 @@
 {
   "artifact": "WorldMacroGeologyContinuityProof",
-  "artifactVersion": 4,
+  "artifactVersion": 5,
   "checks": [
     {
-      "averageNeighborGradient": 0.140722,
+      "averageNeighborGradient": 0.135625,
       "axis": "x",
-      "maxNeighborGradient": 0.621217,
+      "maxNeighborGradient": 0.530516,
       "maxSameCoordinateDeltaMeters": 0.0,
-      "sampleCount": 192
+      "sampleCount": 96
     },
     {
-      "averageNeighborGradient": 0.218241,
+      "averageNeighborGradient": 0.208965,
       "axis": "z",
-      "maxNeighborGradient": 0.993957,
+      "maxNeighborGradient": 0.768341,
       "maxSameCoordinateDeltaMeters": 0.0,
-      "sampleCount": 192
+      "sampleCount": 96
     }
   ],
   "runtimeSeed": 0,

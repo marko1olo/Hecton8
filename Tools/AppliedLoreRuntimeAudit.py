@@ -593,6 +593,10 @@ def evidence_graph_is_draft_authoring_source(root: Path, path: Path) -> bool:
     return applied_content_csv_is_draft_authoring_source(root, path, "_evidence_graph.csv")
 
 
+def route_cards_are_draft_authoring_source(root: Path, path: Path) -> bool:
+    return applied_content_csv_is_draft_authoring_source(root, path, "_route_cards.csv")
+
+
 def load_csv(path: Path) -> list[CsvPacketRow]:
     if not path.exists():
         fail(f"Missing AppliedLore CSV: {path}")
@@ -3538,6 +3542,9 @@ def validate_route_cards(root: Path, rows: list[CsvPacketRow]) -> int:
     owner_by_packet: dict[str, str] = {}
     prerequisite_graph: dict[str, set[str]] = {packet_id: set() for packet_id in expected}
     for path in iter_applied_content_csv_sources(root, "route_cards", "*_route_cards.csv"):
+        if route_cards_are_draft_authoring_source(root, path):
+            continue
+
         with path.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
             if tuple(reader.fieldnames or ()) != ROUTE_CARD_HEADERS:
@@ -3610,6 +3617,9 @@ def validate_route_card_source_export(root: Path, rows: list[CsvPacketRow]) -> i
     expected_packet_ids = {row.packet_id for row in rows}
     expected_by_route: dict[str, dict[str, str]] = {}
     for source_path in iter_applied_content_csv_sources(root, "route_cards", "*_route_cards.csv"):
+        if route_cards_are_draft_authoring_source(root, source_path):
+            continue
+
         with source_path.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
             if tuple(reader.fieldnames or ()) != ROUTE_CARD_HEADERS:

@@ -745,10 +745,10 @@ def build_preview(args: argparse.Namespace) -> int:
     )
     origin_x = float(args.origin_x_m)
     origin_z = float(args.origin_z_m)
-    resolution = max(128, min(2048, int(args.resolution)))
+    resolution = max(96, min(2048, int(args.resolution)))
     analysis_resolution_arg = int(args.analysis_resolution)
     if 0 < analysis_resolution_arg < resolution:
-        resolution = max(128, min(resolution, analysis_resolution_arg))
+        resolution = max(96, min(resolution, analysis_resolution_arg))
     analysis_resolution = resolution
     half = params.extent * 0.5
     step = params.extent / max(1, resolution - 1)

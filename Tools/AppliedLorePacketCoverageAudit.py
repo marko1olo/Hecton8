@@ -54,6 +54,11 @@ EVIDENCE_GRAPH_HEADERS = (
 )
 PRIMARY_SURFACES = set(ROUTE_CARD_PRIMARY_SURFACES)
 ENDING_PRESSURES = set(ROUTE_CARD_ENDING_PRESSURES)
+DISABLED_MANIFEST_CSV_FIELDS = {
+    "binding_maps": "runtime_binding_map",
+    "graphs": "evidence_graph",
+    "route_cards": "route_cards",
+}
 
 
 class AppliedLoreCoverageError(Exception):
@@ -107,11 +112,37 @@ def read_csv_rows(path: Path, expected_headers: tuple[str, ...] | None = None) -
         return [{key: safe_text(value) for key, value in row.items()} for row in reader]
 
 
+def disabled_manifest_csv_paths(base: Path, folder: str) -> set[Path]:
+    manifest_field = DISABLED_MANIFEST_CSV_FIELDS.get(folder)
+    if manifest_field is None:
+        return set()
+
+    release_dir = base / "release_sets"
+    if not release_dir.exists():
+        return set()
+
+    root = base.parent.parent.parent
+    disabled_paths: set[Path] = set()
+    for manifest_path in sorted(release_dir.glob("*_manifest.json"), key=lambda item: item.name.lower()):
+        data = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+        if data.get("canonical_importer_ready") is not False:
+            continue
+
+        artifact = safe_text(data.get(manifest_field))
+        if artifact:
+            disabled_paths.add((root / artifact).resolve())
+    return disabled_paths
+
+
 def iter_source_csvs(base: Path, folder: str, pattern: str) -> list[Path]:
     path = base / folder
     if not path.exists():
         raise AppliedLoreCoverageError(f"Missing AppliedContent folder: {path}")
-    return sorted(path.glob(pattern), key=lambda item: item.name.lower())
+    disabled_paths = disabled_manifest_csv_paths(base, folder)
+    return sorted(
+        (item for item in path.glob(pattern) if item.resolve() not in disabled_paths),
+        key=lambda item: item.name.lower(),
+    )
 
 
 def parse_uint(value: str, field: str, row_label: str) -> int:

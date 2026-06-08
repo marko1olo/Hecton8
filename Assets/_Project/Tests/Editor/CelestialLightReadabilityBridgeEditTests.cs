@@ -139,6 +139,7 @@ namespace Hecton8.Tests.Editor
             string biolum = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs"));
             string audio = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs"));
             string shadows = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingRuntime.cs"));
+            string arWaypoints = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/UI/ARWaypointOverlay.cs"));
 
             StringAssert.Contains("ICelestialLightReadabilityReadModel", water);
             StringAssert.Contains("TelemetryFlagCelestialLightMissing", water);
@@ -151,6 +152,9 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("light.DeepDarkness01", audio);
             StringAssert.Contains("LightReadabilitySnapshot", shadows);
             StringAssert.Contains("GlobalRegistryServiceSlot.CelestialEngineRuntime", shadows);
+            StringAssert.Contains("ICelestialLightReadabilityReadModel", arWaypoints);
+            StringAssert.Contains("ResolveWaypointLightAlphaMultiplier", arWaypoints);
+            StringAssert.Contains("GlobalRegistryServiceSlot.CelestialEngineRuntime", arWaypoints);
         }
 
         private static CelestialRuntimeSnapshot BuildCelestial(float3 sunDirection, float eclipse01)
