@@ -2,12 +2,12 @@
   "schema_version": 1,
   "status": "ATLAS GENERATED STATIC SOURCE / ATLASCHECK SEPARATE GATE REQUIRED / RUNTIME PENDING",
   "evidence_class": "STATIC_SOURCE/STATIC_DOC/FILESYSTEM/PY_TOOL",
-  "generated": "2026-06-08 03:11:17",
+  "generated": "2026-06-08 03:59:08",
   "summary": {
     "source_file_count": 5349,
-    "source_line_count": 2668838,
+    "source_line_count": 2669084,
     "first_party_source_file_count": 2547,
-    "first_party_source_line_count": 2055175,
+    "first_party_source_line_count": 2055325,
     "asmdef_count": 225,
     "first_party_asmdef_count": 169,
     "exact_core_dependent_count": 109,
@@ -5679,7 +5679,6 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs:1429",
-        "Assets/_Project/Scripts/Audio/Editor/ShinobuAcousticDspSmokeTester.cs:112",
         "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:4725",
         "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyFacade.cs:1097",
         "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyFacade.cs:1228",
@@ -5713,21 +5712,18 @@
     {
       "name": "AcousticZoneChangedEvent",
       "declaration": {
-        "namespace": "Hecton8.Audio.Editor",
-        "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs",
-        "line": 2617
+        "namespace": "Hecton8.Core.Contracts.Signals",
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs",
+        "line": 58
       },
       "methods": [
         "GetFrameSnapshot",
         "TryPushTracked"
       ],
       "producers": [
-        "Assets/_Project/Scripts/AcousticZoneController.cs:29",
-        "Assets/_Project/Scripts/AcousticZoneController.cs:104",
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:2619"
+        "Assets/_Project/Scripts/AcousticZoneController.cs:104"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:874",
         "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs:2104"
       ]
     },
@@ -5860,21 +5856,19 @@
     {
       "name": "AudioEvent",
       "declaration": {
-        "namespace": "Hecton8.Audio.Editor",
-        "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs",
-        "line": 1773
+        "namespace": "Hecton8.Core.Contracts.Signals",
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs",
+        "line": 225
       },
       "methods": [
         "GetFrameSnapshot",
         "TryPushTracked"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:1767",
         "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs:895",
         "Assets/_Project/Scripts/PowerGrid.cs:1963"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:468",
         "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:6874"
       ]
     },
@@ -5983,7 +5977,7 @@
     {
       "name": "BaseIntegrityEventPayload",
       "declaration": {
-        "namespace": "is",
+        "namespace": "Hecton8.Habitat.Deformation",
         "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorTypes.cs",
         "line": 59
       },
@@ -6031,7 +6025,6 @@
       "consumers": [
         "Assets/_Project/Scripts/Audio/Editor/AbyssalDspTunerWindow.cs:133",
         "Assets/_Project/Scripts/Audio/Editor/AbyssalDspTunerWindow.cs:260",
-        "Assets/_Project/Scripts/Audio/Editor/Shinobu351HullStressDspSmokeTester.cs:58",
         "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:6888"
       ]
     },
@@ -6858,20 +6851,18 @@
     {
       "name": "DirectorAIMusicSignal",
       "declaration": {
-        "namespace": "Hecton8.Audio.Editor",
-        "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs",
-        "line": 1113
+        "namespace": "Hecton8.Core.Contracts.Signals",
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs",
+        "line": 103
       },
       "methods": [
         "GetFrameSnapshot",
         "TryPushTracked"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:1114",
         "Assets/_Project/Scripts/HectonDirectorAI.cs:321"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:882",
         "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs:2119"
       ]
     },
@@ -7531,16 +7522,11 @@
       },
       "methods": [
         "GetFrameSnapshot",
-        "TryConsumeFrame",
-        "TryPushTracked"
+        "TryConsumeFrame"
       ],
-      "producers": [
-        "Assets/_Project/Scripts/Editor/BuilderHolographyTools.cs:498",
-        "Assets/_Project/Scripts/Editor/PersistenceUxSmokeTester.cs:280"
-      ],
+      "producers": [],
       "consumers": [
         "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyFacade.cs:1141",
-        "Assets/_Project/Scripts/Editor/PersistenceUxSmokeTester.cs:191",
         "Assets/_Project/Scripts/HUDNotification.cs:232"
       ]
     },
@@ -7697,7 +7683,6 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.FlockingAvoidance.cs:54",
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:462",
         "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:4746",
         "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:207",
         "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:412",
@@ -8126,7 +8111,6 @@
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:466",
         "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:6614"
       ]
     },
@@ -8941,7 +8925,6 @@
       "producers": [
         "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs:316",
         "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs:2147",
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:464",
         "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:6797",
         "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:6604",
         "Assets/_Project/Scripts/Gameplay/CelestialCataclysmSystem.cs:247",
@@ -8956,8 +8939,6 @@
         "Assets/_Project/Scripts/Visor/SpectrumSystem.cs:2544"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:306",
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:463",
         "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:6759",
         "Assets/_Project/Scripts/Gameplay/TraumaDispatcher.cs:845",
         "Assets/_Project/Scripts/HectonDirectorAI.cs:1014",
@@ -9897,12 +9878,6 @@
         "Assets/_Project/Scripts/Core/IPlatformIntegration.cs:158"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:317",
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:492",
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:596",
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:679",
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:1087",
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:1168",
         "Assets/_Project/Scripts/Core/IPlatformIntegration.cs:171"
       ]
     },

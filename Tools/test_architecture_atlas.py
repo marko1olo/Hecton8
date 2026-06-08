@@ -131,6 +131,37 @@ class BuildArchitectureAtlasTests(unittest.TestCase):
         self.assertEqual(len(analysis["signal_uses"]["CacheProbeSignal"]["producers"]), 2)
         self.assertEqual(len(analysis["signal_uses"]["CacheProbeSignal"]["consumers"]), 4)
 
+    def test_analyze_source_ignores_comments_and_string_literals(self) -> None:
+        source = (
+            "namespace Hecton8.Core.Signals\n"
+            "{\n"
+            "    public struct RealSignal : ISignal {}\n"
+            "    public static class Probe\n"
+            "    {\n"
+            "        private static int dropCount;\n"
+            "        public static void Run()\n"
+            "        {\n"
+            "            // SignalBus<CommentSignal>.TryPushTracked(default, ref dropCount);\n"
+            "            string literal = \"GlobalSignals.Publish(default); SignalBus<StringSignal>.Publish(default);\";\n"
+            "            string raw = \"\"\"\n"
+            "SignalBus<RawSignal>.GetFrameSnapshot();\n"
+            "\"\"\";\n"
+            "            /* SignalBus<BlockSignal>.TryGetLatest(out _, out _); */\n"
+            "            SignalBus<RealSignal>.TryPushTracked(default, ref dropCount);\n"
+            "        }\n"
+            "    }\n"
+            "}\n"
+        )
+        analysis = atlas_build.analyze_source_bytes(
+            source.encode("utf-8"),
+            "Assets/_Project/Scripts/Core/Signals/Probe.cs",
+            True,
+        )
+
+        self.assertEqual(analysis["global_publish_sites"], [])
+        self.assertEqual(list(analysis["signal_uses"].keys()), ["RealSignal"])
+        self.assertEqual(analysis["signal_uses"]["RealSignal"]["methods"], ["TryPushTracked"])
+
     def test_sanitized_text_cells_do_not_emit_path_references(self) -> None:
         rendered = atlas_build.sanitize_text_cell(
             "Solution: moved code through Assets/_Project/Scripts/Core/Signals/Foo.cs"
