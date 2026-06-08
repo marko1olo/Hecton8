@@ -720,6 +720,65 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void PdaIntrusionManager_SanitizesRuntimeTimersAndDirectorInputs()
+        {
+            string intrusionPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/UI/PDAIntrusionManager.cs");
+            string source = File.ReadAllText(intrusionPath);
+            string progressBody = ExtractMethodBlock(source, "public float RebootProgressNormalized");
+            string advanceBody = ExtractMethodBlock(source, "private void AdvanceIntrusionPresentationState(float dt)");
+            string lateFrameBody = ExtractMethodBlock(source, "public void LateFrameTick()");
+            string directorBody = ExtractMethodBlock(source, "private void HandleEquipmentGlitchRequested(float intensity)");
+            string ambientBody = ExtractMethodBlock(source, "private void TickAmbientIntrusionThreat(float dt)");
+            string abyssalBody = ExtractMethodBlock(source, "private bool ShouldTriggerAbyssalHack(Vector3 origin)");
+            string visualBody = ExtractMethodBlock(source, "private void TickVisualCadence(float dt)");
+            string rebootBody = ExtractMethodBlock(source, "private void TickRebootHold(float dt)");
+            string textDriftBody = ExtractMethodBlock(source, "private void TickTextDrift(float dt)");
+            string triggerBody = ExtractMethodBlock(source, "private void TriggerHack()");
+            string resolveOwnersBody = ExtractMethodBlock(source, "private void ResolveRuntimeOwners(float dt)");
+            string validateBody = ExtractMethodBlock(source, "private void OnValidate()");
+
+            Assert.That(progressBody, Does.Contain("ResolveRebootHoldDurationSeconds(rebootHoldDuration)"));
+            Assert.That(progressBody, Does.Contain("SanitizeNonNegativeSeconds(_rebootHoldTimer)"));
+            Assert.That(advanceBody, Does.Contain("float safeDeltaTime = SanitizeDeltaTime(dt);"));
+            Assert.That(advanceBody, Does.Contain("TickAmbientIntrusionThreat(safeDeltaTime);"));
+            Assert.That(advanceBody, Does.Contain("TickVisualCadence(safeDeltaTime);"));
+            Assert.That(advanceBody, Does.Contain("TickRebootHold(safeDeltaTime);"));
+            Assert.That(lateFrameBody, Does.Contain("float dt = SanitizeDeltaTime(SystemDispatcher.CurrentFrameUnscaledDeltaTime);"));
+            Assert.That(directorBody, Does.Contain("!math.isfinite(intensity)"));
+            Assert.That(directorBody, Does.Contain("ResolveEquipmentGlitchThreshold01(equipmentGlitchThreshold)"));
+            Assert.That(ambientBody, Does.Contain("SanitizeNonNegativeSeconds(_leviathanScanTimer) - SanitizeDeltaTime(dt)"));
+            Assert.That(ambientBody, Does.Contain("ResolveLeviathanScanIntervalSeconds(leviathanScanInterval)"));
+            Assert.That(ambientBody, Does.Contain("ResolveLeviathanHackRadiusMeters(leviathanHackRadius)"));
+            Assert.That(abyssalBody, Does.Contain("math.isfinite(_playerMovement.CurrentHullStress01)"));
+            Assert.That(abyssalBody, Does.Contain("return IsFinite(origin) && IsInsideDeadZone(origin);"));
+            Assert.That(visualBody, Does.Contain("SanitizeNonNegativeSeconds(_visualPhaseTimer) - SanitizeDeltaTime(dt)"));
+            Assert.That(visualBody, Does.Contain("ResolveVisualPhaseDurationSeconds(visualPhaseDuration)"));
+            Assert.That(rebootBody, Does.Contain("float safeDeltaTime = SanitizeDeltaTime(dt);"));
+            Assert.That(rebootBody, Does.Contain("SanitizeNonNegativeSeconds(_rebootHoldTimer) + safeDeltaTime"));
+            Assert.That(rebootBody, Does.Contain("ResolveRebootHoldDurationSeconds(rebootHoldDuration)"));
+            Assert.That(textDriftBody, Does.Contain("float safeDeltaTime = SanitizeDeltaTime(dt);"));
+            Assert.That(textDriftBody, Does.Contain("math.isfinite(_textDriftRescanTimer)"));
+            Assert.That(textDriftBody, Does.Contain("ResolveTextDriftRescanIntervalSeconds(TextDriftRescanInterval)"));
+            Assert.That(textDriftBody, Does.Contain("math.isfinite(_textDriftWaveTime)"));
+            Assert.That(triggerBody, Does.Contain("ResolveVisualPhaseDurationSeconds(visualPhaseDuration)"));
+            Assert.That(resolveOwnersBody, Does.Contain("SanitizeNonNegativeSeconds(_runtimeOwnerResolveRetryTimer)"));
+            Assert.That(resolveOwnersBody, Does.Contain("SanitizeDeltaTime(dt)"));
+            Assert.That(validateBody, Does.Contain("equipmentGlitchThreshold = ResolveEquipmentGlitchThreshold01(equipmentGlitchThreshold);"));
+            Assert.That(validateBody, Does.Contain("leviathanScanInterval = ResolveLeviathanScanIntervalSeconds(leviathanScanInterval);"));
+            Assert.That(validateBody, Does.Contain("leviathanHackRadius = ResolveLeviathanHackRadiusMeters(leviathanHackRadius);"));
+            Assert.That(validateBody, Does.Contain("visualPhaseDuration = ResolveVisualPhaseDurationSeconds(visualPhaseDuration);"));
+            Assert.That(validateBody, Does.Contain("rebootHoldDuration = ResolveRebootHoldDurationSeconds(rebootHoldDuration);"));
+            Assert.That(source, Does.Contain("private static float SanitizeDeltaTime(float seconds)"));
+            Assert.That(source, Does.Contain("private static float SanitizeNonNegativeSeconds(float seconds)"));
+            Assert.That(source, Does.Contain("private static float ResolveEquipmentGlitchThreshold01(float threshold)"));
+            Assert.That(source, Does.Contain("private static float ResolveLeviathanScanIntervalSeconds(float intervalSeconds)"));
+            Assert.That(source, Does.Contain("private static float ResolveLeviathanHackRadiusMeters(float radiusMeters)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector3 value)"));
+        }
+
+        [Test]
         public void SuitHud_TextCreationUsesCachedFontSharedMaterial()
         {
             string path = Path.Combine(
