@@ -78,6 +78,9 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+                return;
+
             TryRegisterHotSwapListener();
             RebindManager(GlobalRegistry.AmbientWaterMotion);
         }

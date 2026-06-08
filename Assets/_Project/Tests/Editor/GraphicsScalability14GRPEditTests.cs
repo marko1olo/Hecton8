@@ -895,6 +895,7 @@ namespace Hecton8.Tests.Editor
             string motionSource = File.ReadAllText(motionPath);
             string profileSource = File.ReadAllText(profilePath);
             string awakeBody = ExtractMethodBlock(motionSource, "private void Awake()");
+            string enableBody = ExtractMethodBlock(motionSource, "private void OnEnable()");
             string captureBody = ExtractMethodBlock(motionSource, "public void CaptureRestPose()");
             string applyBody = ExtractMethodBlock(motionSource, "public void ApplyProfile()");
             string hotSwapBody = ExtractMethodBlock(motionSource, "public void OnGlobalRegistryServiceReplaced(");
@@ -910,6 +911,9 @@ namespace Hecton8.Tests.Editor
             Assert.That(motionSource, Does.Contain("private AmbientWaterMotionManager _registeredManager;"));
             Assert.That(motionSource, Does.Contain("private bool _hotSwapRegistered;"));
             Assert.That(awakeBody, Does.Contain("SanitizeTuning();"));
+            Assert.That(enableBody, Does.Contain("if (!Application.isPlaying)"));
+            AssertOrder(enableBody, "if (!Application.isPlaying)", "TryRegisterHotSwapListener();");
+            AssertOrder(enableBody, "if (!Application.isPlaying)", "RebindManager(GlobalRegistry.AmbientWaterMotion);");
             Assert.That(captureBody, Does.Contain("_restLocalPosition = IsFinite(localPosition) ? localPosition : Vector3.zero;"));
             Assert.That(captureBody, Does.Contain("_restLocalRotation = IsFinite(localRotation) ? localRotation : Quaternion.identity;"));
             Assert.That(captureBody, Does.Contain("if (!IsFinite(worldPosition))"));
