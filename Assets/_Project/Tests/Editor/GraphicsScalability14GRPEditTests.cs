@@ -779,6 +779,61 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void AmbientWaterMotionManager_RejectsNonFinitePresentationInputs()
+        {
+            string motionPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AmbientWaterMotionManager.cs");
+            string source = File.ReadAllText(motionPath);
+            string tickBody = ExtractMethodBlock(source, "public void Tick(float deltaTime)");
+            string lateFrameBody = ExtractMethodBlock(source, "public void LateFrameTick()");
+            string lodBody = ExtractMethodBlock(source, "private static byte ResolveDistanceLodBand(");
+            string runtimeWorldBody = ExtractMethodBlock(source, "private static bool TryResolveRuntimeWorldPosition(");
+            string runtimePositionBody = ExtractMethodBlock(source, "private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition aup, out Vector3 runtimePosition)");
+            string presentationPositionBody = ExtractMethodBlock(source, "private static bool TryResolvePresentationRestWorldPosition(AmbientWaterMotion motion, out Vector3 worldPosition)");
+            string applyBody = ExtractMethodBlock(source, "private void ApplyMotion(AmbientWaterMotion motion, Vector3 worldPos)");
+            string biomeBlendBody = ExtractMethodBlock(source, "private void UpdateBiomeCurrentBlend(float deltaTime)");
+            string biomeTargetBody = ExtractMethodBlock(source, "private static Vector3 ResolveBiomeCurrentTarget(HectonBiomeMatrixProfile profile)");
+            string refreshBody = ExtractMethodBlock(source, "private void RefreshDistanceThresholds()");
+            string validateBody = ExtractMethodBlock(source, "private void OnValidate()");
+
+            Assert.That(tickBody, Does.Contain("SanitizeDeltaTime(_pendingVisualDeltaTime) + SanitizeDeltaTime(deltaTime)"));
+            Assert.That(lateFrameBody, Does.Contain("deltaTime = SanitizeDeltaTime(deltaTime);"));
+            Assert.That(lateFrameBody, Does.Contain("_time = AdvanceRuntimeTime(_time, deltaTime);"));
+            Assert.That(lateFrameBody, Does.Contain("motion.HasRestAup && motion.RestAup.IsFinite()"));
+            Assert.That(lateFrameBody, Does.Contain("TryResolveRuntimeWorldPosition(motion, in motionAup, hasMotionAup, out Vector3 worldPos)"));
+            Assert.That(runtimeWorldBody, Does.Contain("TryResolveRuntimePosition(in motionAup, out worldPos)"));
+            Assert.That(runtimeWorldBody, Does.Contain("TryResolvePresentationRestWorldPosition(motion, out worldPos)"));
+            Assert.That(runtimePositionBody, Does.Contain("if (!aup.IsFinite())"));
+            Assert.That(runtimePositionBody, Does.Contain("return IsFinite(runtimePosition);"));
+            Assert.That(presentationPositionBody, Does.Contain("return IsFinite(worldPosition);"));
+            Assert.That(lodBody, Does.Contain("double.IsNaN(distanceSq) || double.IsInfinity(distanceSq) || distanceSq < 0d"));
+            Assert.That(lodBody, Does.Contain("ResolveDistanceLimitSqr(nearSq, 1f)"));
+            Assert.That(applyBody, Does.Contain("if (!IsFinite(worldPos))"));
+            Assert.That(applyBody, Does.Contain("ResolveMotionCoupling(motion.CurrentCoupling)"));
+            Assert.That(applyBody, Does.Contain("volumeCurrent = ClampFiniteVector(volumeCurrent, MaxAmbientMotionCurrentMetersPerSecond);"));
+            Assert.That(applyBody, Does.Contain("if (!math.all(math.isfinite(phantomCurrent)))"));
+            Assert.That(applyBody, Does.Contain("float time = SanitizeNonNegativeSeconds(_time);"));
+            Assert.That(applyBody, Does.Contain("float frequency = ResolveMotionFrequency(motion.BaseFrequency) * ResolveMotionFrequency(globalFrequency);"));
+            Assert.That(applyBody, Does.Contain("Vector3 positionalAmplitude = ClampFiniteVector(motion.PositionalAmplitude, MaxAmbientMotionAmplitudeMeters);"));
+            Assert.That(applyBody, Does.Contain("if (IsFinite(localPosition))"));
+            Assert.That(applyBody, Does.Contain("if (IsFinite(localRotation))"));
+            Assert.That(biomeBlendBody, Does.Contain("ClampFiniteVector(_biomeCurrentStartVector, MaxAmbientMotionCurrentMetersPerSecond)"));
+            Assert.That(biomeBlendBody, Does.Contain("SanitizeNonNegativeSeconds(_biomeCurrentBlendElapsed) + SanitizeDeltaTime(deltaTime)"));
+            Assert.That(biomeTargetBody, Does.Contain("math.isfinite(profile.ambientFlowOverrideWeight) ? profile.ambientFlowOverrideWeight : 0f"));
+            Assert.That(biomeTargetBody, Does.Contain("ClampFiniteVector(profile.ambientFlowOverride * weight, MaxAmbientMotionCurrentMetersPerSecond)"));
+            Assert.That(refreshBody, Does.Contain("nearDistance = ResolveDistanceMeters(nearDistance, 1f);"));
+            Assert.That(validateBody, Does.Contain("globalAmplitude = ResolveMotionAmplitude(globalAmplitude);"));
+            Assert.That(validateBody, Does.Contain("globalFrequency = ResolveMotionFrequency(globalFrequency);"));
+            Assert.That(source, Does.Contain("private static float SanitizeDeltaTime(float seconds)"));
+            Assert.That(source, Does.Contain("private static float SanitizeNonNegativeSeconds(float seconds)"));
+            Assert.That(source, Does.Contain("private static float AdvanceRuntimeTime(float currentSeconds, float deltaSeconds)"));
+            Assert.That(source, Does.Contain("private static Vector3 ClampFiniteVector(Vector3 value, float maxMagnitude)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Vector3 value)"));
+            Assert.That(source, Does.Contain("private static bool IsFinite(Quaternion rotation)"));
+        }
+
+        [Test]
         public void SuitHud_TextCreationUsesCachedFontSharedMaterial()
         {
             string path = Path.Combine(
