@@ -834,6 +834,50 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void AmbientWaterMotion_AuthoringBridgeSanitizesProfileAndRestPose()
+        {
+            string motionPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AmbientWaterMotion.cs");
+            string profilePath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AmbientWaterMotionProfile.cs");
+            string motionSource = File.ReadAllText(motionPath);
+            string profileSource = File.ReadAllText(profilePath);
+            string awakeBody = ExtractMethodBlock(motionSource, "private void Awake()");
+            string captureBody = ExtractMethodBlock(motionSource, "public void CaptureRestPose()");
+            string applyBody = ExtractMethodBlock(motionSource, "public void ApplyProfile()");
+            string sanitizeBody = ExtractMethodBlock(motionSource, "private void SanitizeTuning()");
+            string validateBody = ExtractMethodBlock(motionSource, "private void OnValidate()");
+            string profileValidateBody = ExtractMethodBlock(profileSource, "private void OnValidate()");
+
+            Assert.That(awakeBody, Does.Contain("SanitizeTuning();"));
+            Assert.That(captureBody, Does.Contain("_restLocalPosition = IsFinite(localPosition) ? localPosition : Vector3.zero;"));
+            Assert.That(captureBody, Does.Contain("_restLocalRotation = IsFinite(localRotation) ? localRotation : Quaternion.identity;"));
+            Assert.That(captureBody, Does.Contain("if (!IsFinite(worldPosition))"));
+            Assert.That(captureBody, Does.Contain("_hasRestAup = false;"));
+            Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolveAmplitude(profile.verticalAmplitude)"));
+            Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolvePositionalAmplitude(profile.positionalAmplitude)"));
+            Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolveAngularAmplitude(profile.angularAmplitude)"));
+            Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolveFrequency(profile.baseFrequency)"));
+            Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolveCurrentCoupling(profile.currentCoupling)"));
+            Assert.That(applyBody, Does.Contain("AmbientWaterMotionProfile.ResolveLodBias(profile.lodBias)"));
+            Assert.That(sanitizeBody, Does.Contain("verticalAmplitude = AmbientWaterMotionProfile.ResolveAmplitude(verticalAmplitude);"));
+            Assert.That(validateBody, Does.Contain("SanitizeTuning();"));
+            Assert.That(profileValidateBody, Does.Contain("verticalAmplitude = ResolveAmplitude(verticalAmplitude);"));
+            Assert.That(profileValidateBody, Does.Contain("positionalAmplitude = ResolvePositionalAmplitude(positionalAmplitude);"));
+            Assert.That(profileValidateBody, Does.Contain("angularAmplitude = ResolveAngularAmplitude(angularAmplitude);"));
+            Assert.That(profileValidateBody, Does.Contain("baseFrequency = ResolveFrequency(baseFrequency);"));
+            Assert.That(profileValidateBody, Does.Contain("currentCoupling = ResolveCurrentCoupling(currentCoupling);"));
+            Assert.That(profileValidateBody, Does.Contain("lodBias = ResolveLodBias(lodBias);"));
+            Assert.That(motionSource, Does.Contain("private static bool IsFinite(Vector3 value)"));
+            Assert.That(motionSource, Does.Contain("private static bool IsFinite(Quaternion rotation)"));
+            Assert.That(profileSource, Does.Contain("internal static Vector3 ResolvePositionalAmplitude(Vector3 amplitude)"));
+            Assert.That(profileSource, Does.Contain("private static Vector3 ClampFiniteVector(Vector3 value, float maxMagnitude)"));
+            Assert.That(profileSource, Does.Contain("private static bool IsFinite(Vector3 value)"));
+        }
+
+        [Test]
         public void SuitHud_TextCreationUsesCachedFontSharedMaterial()
         {
             string path = Path.Combine(
