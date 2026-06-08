@@ -4,9 +4,9 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
-localized_pages: 518
-draft_machine_or_llm_pages: 518
-draft_marker_pages: 505
+localized_pages: 521
+draft_machine_or_llm_pages: 521
+draft_marker_pages: 508
 ---
 
 # ארכיון השטח של HECTON-8
@@ -172,6 +172,7 @@ draft_marker_pages: 505
 - [מדף גיר מואר מלא שברים](P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE.md) `P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE`
 - [מצע שטיח שורשים רדוד](P1321_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE.md) `P1321_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE`
 - [טין קרום מלח בקניון התמלחת](P1322_BRINE_CANYON_SALT_CRUST_SILT_FIELD_ARTICLE.md) `P1322_BRINE_CANYON_SALT_CRUST_SILT_FIELD_ARTICLE`
+- [טבעת גומי לאטימת לחץ](P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE.md) `P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE`
 - [יציאה חלקית: חזרה לאותו seed](P132_PARTIAL_EXIT_SAME_SEED_RETURN.md) `P132_PARTIAL_EXIT_SAME_SEED_RETURN`
 - [לכידה תאגידית: חילוץ נקי](P133_CORPORATE_CAPTURE_BAD_END.md) `P133_CORPORATE_CAPTURE_BAD_END`
 - [החזקת הסגר: אוויר עומד](P134_QUARANTINE_HOLD_STALE_AIR.md) `P134_QUARANTINE_HOLD_STALE_AIR`
@@ -529,5 +530,7 @@ draft_marker_pages: 505
 - [תרשים צל הממסר של Kestrel](P622_KESTREL_RELAY_SHADOW_CHART.md) `P622_KESTREL_RELAY_SHADOW_CHART`
 - [פנקס שובל נתיב הכדוריות](P623_PELLET_LANE_WAKE_LEDGER.md) `P623_PELLET_LANE_WAKE_LEDGER`
 - [ביוטה מוליכה ביער הכבלים](P624_CABLE_FOREST_CONDUCTIVE_BIOTA.md) `P624_CABLE_FOREST_CONDUCTIVE_BIOTA`
+- [מעבר תביעת Ran הארוכה](P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE.md) `P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE`
+- [משמורת tonne-window של Black Keel](P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY.md) `P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY`
 
 <!-- Generated localized index for external_site/he_IL. -->

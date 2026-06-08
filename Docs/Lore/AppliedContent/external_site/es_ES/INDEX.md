@@ -4,9 +4,9 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localized_pages: 518
-draft_machine_or_llm_pages: 518
-draft_marker_pages: 505
+localized_pages: 521
+draft_machine_or_llm_pages: 521
+draft_marker_pages: 508
 ---
 
 # Archivo de campo HECTON-8
@@ -172,6 +172,7 @@ draft_marker_pages: 505
 - [Plataforma fótica de escombro calizo](P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE.md) `P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE`
 - [Sustrato somero de raíces marinas](P1321_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE.md) `P1321_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE`
 - [Limo con costra salina del cañón de salmuera](P1322_BRINE_CANYON_SALT_CRUST_SILT_FIELD_ARTICLE.md) `P1322_BRINE_CANYON_SALT_CRUST_SILT_FIELD_ARTICLE`
+- [Anillo de goma de sellado a presión](P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE.md) `P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE`
 - [Salida parcial: retorno al mismo seed](P132_PARTIAL_EXIT_SAME_SEED_RETURN.md) `P132_PARTIAL_EXIT_SAME_SEED_RETURN`
 - [Captura corporativa: rescate limpio](P133_CORPORATE_CAPTURE_BAD_END.md) `P133_CORPORATE_CAPTURE_BAD_END`
 - [Retención de cuarentena: aire viciado](P134_QUARANTINE_HOLD_STALE_AIR.md) `P134_QUARANTINE_HOLD_STALE_AIR`
@@ -529,5 +530,7 @@ draft_marker_pages: 505
 - [Carta de sombra de relé Kestrel](P622_KESTREL_RELAY_SHADOW_CHART.md) `P622_KESTREL_RELAY_SHADOW_CHART`
 - [Libro de estela de carril de pellets](P623_PELLET_LANE_WAKE_LEDGER.md) `P623_PELLET_LANE_WAKE_LEDGER`
 - [Biota conductora del Bosque de Cables](P624_CABLE_FOREST_CONDUCTIVE_BIOTA.md) `P624_CABLE_FOREST_CONDUCTIVE_BIOTA`
+- [Tránsito de la Ran Long Claim](P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE.md) `P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE`
+- [Custodia tonne-window de Black Keel](P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY.md) `P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY`
 
 <!-- Generated localized index for external_site/es_ES. -->

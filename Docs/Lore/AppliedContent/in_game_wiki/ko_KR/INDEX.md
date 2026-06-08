@@ -4,9 +4,9 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localized_pages: 518
-draft_machine_or_llm_pages: 518
-draft_marker_pages: 505
+localized_pages: 521
+draft_machine_or_llm_pages: 521
+draft_marker_pages: 508
 ---
 
 # HECTON-8 코덱스 색인
@@ -172,6 +172,7 @@ draft_marker_pages: 505
 - [유광층 석회암 잔해 선반](P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE.md) `P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE`
 - [얕은 뿌리 매트 기질](P1321_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE.md) `P1321_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE`
 - [염수 협곡의 소금껍질 실트](P1322_BRINE_CANYON_SALT_CRUST_SILT_FIELD_ARTICLE.md) `P1322_BRINE_CANYON_SALT_CRUST_SILT_FIELD_ARTICLE`
+- [고무 압력 실링 링](P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE.md) `P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE`
 - [부분 탈출: 동일 시드 귀환](P132_PARTIAL_EXIT_SAME_SEED_RETURN.md) `P132_PARTIAL_EXIT_SAME_SEED_RETURN`
 - [기업 포획: 깨끗한 구조](P133_CORPORATE_CAPTURE_BAD_END.md) `P133_CORPORATE_CAPTURE_BAD_END`
 - [격리 보류: 탁한 공기](P134_QUARANTINE_HOLD_STALE_AIR.md) `P134_QUARANTINE_HOLD_STALE_AIR`
@@ -529,5 +530,7 @@ draft_marker_pages: 505
 - [Kestrel 중계 그림자 도표](P622_KESTREL_RELAY_SHADOW_CHART.md) `P622_KESTREL_RELAY_SHADOW_CHART`
 - [펠릿 항로 항적 장부](P623_PELLET_LANE_WAKE_LEDGER.md) `P623_PELLET_LANE_WAKE_LEDGER`
 - [케이블 숲의 전도성 생물상](P624_CABLE_FOREST_CONDUCTIVE_BIOTA.md) `P624_CABLE_FOREST_CONDUCTIVE_BIOTA`
+- [Ran Long Claim 통과 항로](P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE.md) `P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE`
+- [Black Keel tonne-window 보관](P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY.md) `P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY`
 
 <!-- Generated localized index for in_game_wiki/ko_KR. -->

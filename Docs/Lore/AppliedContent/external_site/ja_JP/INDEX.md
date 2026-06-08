@@ -4,9 +4,9 @@ surface: external_site
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localized_pages: 518
-draft_machine_or_llm_pages: 518
-draft_marker_pages: 505
+localized_pages: 521
+draft_machine_or_llm_pages: 521
+draft_marker_pages: 508
 ---
 
 # HECTON-8 フィールドアーカイブ
@@ -172,6 +172,7 @@ draft_marker_pages: 505
 - [有光層石灰岩瓦礫棚](P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE.md) `P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE`
 - [浅瀬の根マット基質](P1321_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE.md) `P1321_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE`
 - [ブライン渓谷の塩殻シルト](P1322_BRINE_CANYON_SALT_CRUST_SILT_FIELD_ARTICLE.md) `P1322_BRINE_CANYON_SALT_CRUST_SILT_FIELD_ARTICLE`
+- [ゴム製圧力シールリング](P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE.md) `P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE`
 - [部分退出：同一シード帰還](P132_PARTIAL_EXIT_SAME_SEED_RETURN.md) `P132_PARTIAL_EXIT_SAME_SEED_RETURN`
 - [企業回収：清潔な救助](P133_CORPORATE_CAPTURE_BAD_END.md) `P133_CORPORATE_CAPTURE_BAD_END`
 - [隔離保留：よどんだ空気](P134_QUARANTINE_HOLD_STALE_AIR.md) `P134_QUARANTINE_HOLD_STALE_AIR`
@@ -529,5 +530,7 @@ draft_marker_pages: 505
 - [Kestrelリレー影図](P622_KESTREL_RELAY_SHADOW_CHART.md) `P622_KESTREL_RELAY_SHADOW_CHART`
 - [ペレットレーン航跡台帳](P623_PELLET_LANE_WAKE_LEDGER.md) `P623_PELLET_LANE_WAKE_LEDGER`
 - [ケーブルの森の導電性生物相](P624_CABLE_FOREST_CONDUCTIVE_BIOTA.md) `P624_CABLE_FOREST_CONDUCTIVE_BIOTA`
+- [Ran Long Claim航路通過](P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE.md) `P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE`
+- [Black Keel tonne-window保管](P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY.md) `P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY`
 
 <!-- Generated localized index for external_site/ja_JP. -->

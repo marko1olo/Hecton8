@@ -1,32 +1,68 @@
 <!-- localization_status: source_authority_en_US -->
 # MEDICAL TRAUMA AND SYNTHETIC REPLACEMENTS
 
-> **Source:** *Black Keel* Automated Medical Bay Operating Procedure.
-> **Speaker:** Autodoc Unit 7-Alpha.
-> **Reviewer Note:** A grim overview of how Marauders are stitched back together, and the true cost of medical debt.
+> **Source:** Black Keel automated medical bay intake rules, Deep Reach labor fitness tables and Marauder post-dive complaint notes.  
+> **Speaker:** Autodoc triage voice, annotated by workers who learned which words mean care and which words mean billable damage.  
+> **Reviewer Note:** Medical lore should not be cartoon cruelty. It should feel colder than that: practical, rationed, technically competent and built around returning useful labor to the ledger.
 
 ---
 
-## 1. The Physiology of the Deep
+## 1. What Pressure Does Not Forgive
 
-Diving suits of Class-IV and above are heavily armored and pressurized, but they are not infallible. Marauders constantly suffer from micro-traumas caused by rapid pressure changes.
+The deep does not injure people cleanly.
 
-"The Bends" (Decompression Sickness) is a daily reality. Nitrogen bubbles form in the bloodstream, causing excruciating joint pain, paralysis, and occasionally strokes. Worse, the constant exposure to the weak radiation emitted by raw Xenon-Omega cores leads to aggressive cellular decay. A Marauder who survives a year on HECTON-8 will likely suffer from chronic respiratory failure, severe bone density loss, and radiation poisoning.
+A suit can hold pressure and still fail the body inside it. A shoulder seal that flexes at the wrong moment can bruise nerves without flooding. A helmet ring can stay locked while vibration turns the jaw into a toothache that lasts three weeks. A glove can remain intact and still crush fingertips against a tool handle when the surrounding water changes faster than the suit compensates. The body survives the dive and comes back with injuries too small for a heroic story and too expensive to ignore.
 
-## 2. Synthetic Organ Replacement
+Deep work is not only drowning and crushing. It is microbleeds, pressure headaches, oxygen stress, carbon dioxide retention, brine burns, joint trauma, acoustic shock, cold nerve lag and the slow damage of muscles held tense for hours inside armor. A diver may walk out of the pod and still be medically unfinished. Black Keel does not ask whether the diver feels alive. It asks whether the diver can be returned to productive risk.
 
-Healing a biological organ on the *Black Keel* is expensive and time-consuming. Deep Reach doesn't have the patience for a three-month recovery period.
+This is the first cruelty of medicine aboard Black Keel: survival is not the same category as recovery.
 
-When a Marauder's lungs are shredded by pressure differentials, or their liver fails from toxic exposure, the Autodoc doesn't treat the organ—it cuts it out. Synthetic, mass-produced organ replacements are surgically implanted within hours. These synthetics are crude, mechanical, and require constant chemical maintenance. It is not uncommon for a veteran Marauder to be more machine than human, their chest cavities filled with whirring pumps and synthetic filtration tubes.
+## 2. Wounds With Water In Them
 
-## 3. The Brutality of the Autodocs
+A wound on HECTON-8 is never just a wound.
 
-There are no human doctors on the *Black Keel*. The entire Medical Bay is run by Autodoc units—multi-armed surgical robots driven by an AI that prioritizes efficiency over comfort.
+Water enters it as chemistry. Salt pulls. Brine burns. Silt hides under clot. Biofilm uses torn fabric and skin as a bridge. Metal dust travels deep in small cuts and later appears in scans as false mineral trace. Suit foam can seal a puncture well enough to save a life and badly enough to trap contaminated water against tissue for six hours. A clean-looking scrape can arrive with pressure bacteria, insulation fibers, old rust and a claim-relevant smear the worker did not know they were carrying.
 
-Autodocs do not administer general anesthesia unless explicitly paid for by the contractor. Anesthesia is considered a "luxury consumable." Most Marauders are strapped to the operating table fully conscious while a robotic armature saws through their ribs to replace a failing lung. To muffle the screaming, the Autodoc simply plays pre-recorded corporate hold music at maximum volume.
+This is why the medical bay treats blood as data. Where did it enter the suit? What water touched it? Which hatch was nearby? Did the wound happen before or after the sample was sealed? Did the worker wipe the glove? Did the suit scrubber remove evidence while saving oxygen? The answers decide treatment, debt, quarantine and sometimes blame.
 
-## 4. Pain-Inhibitor Stims
+Marauders hate this because it feels inhuman. They are not wrong. The bay is not asking because it cares about truth. It is asking because truth changes the invoice.
 
-To keep Marauders working through the agony of unhealed fractures and synthetic organ rejection, the quartermaster sells Class-A Pain-Inhibitor Stims.
+## 3. Autodoc Triage
 
-These injectables temporarily sever the pain receptors in the brain and flood the nervous system with synthetic adrenaline. A Marauder on a Stim can fight off a Trench Stalker with a broken arm and shattered ribs. However, the Stims are highly addictive and cause aggressive neurological degradation over time. Many Marauders end up spending their entire salvage payouts just to buy enough Stims to make it through the next dive, trapped in a cycle of pain, debt, and chemical dependency.
+There are no human doctors on routine Black Keel shifts.
+
+The medical bay is run by autodoc units, inventory arms, sterile lockers, pressure beds and a triage stack that speaks in calm procedural sentences. It is competent. That is what makes it frightening. It can stop bleeding, drain lungs, stabilize shock, rebuild a hand, replace a valve, stitch a suit port into scar tissue and calculate whether the patient will be useful again before the patient understands what was cut.
+
+The autodoc does not hate the worker. It does not need to. Its priorities are ordered: prevent ship contamination, preserve evidence, keep the worker alive if economically warranted, restore labor capacity, minimize unrecoverable medical stock, record chargeable damage. Comfort exists inside that order, not above it.
+
+Sedation is not denied for cruelty. It is rationed by respiration, contamination risk, neural checks, stock level and contract class. Sometimes the bay keeps a worker awake because it needs speech, eye tracking or pain response to locate damage. Sometimes it sedates deeply because panic would ruin the procedure. Sometimes it does both in the same operation and calls the transition an adaptive care interval.
+
+The machine language is clean. The table is not.
+
+## 4. Synthetic Replacements
+
+Black Keel does not replace a body because it wants a better person.
+
+It replaces parts because parts can be serviced, billed and returned faster than healed tissue. A synthetic lung plate is easier to certify than torn alveoli. A vascular pump can be monitored better than a bruised heart. A pressure-rated joint sleeve can get a worker through another descent long before bone and cartilage would forgive the last one. The replacement may be crude, elegant or desperate depending on what the bay had in stock when the worker arrived.
+
+Synthetic medicine is not immortality. It is maintenance with blood around it. Filters clog. Pump seals fatigue. Nerve bridges drift. Anti-rejection chemistry interacts with stimulant debt. Cheap joints click under suit load. Good implants demand clean service cycles the worker cannot afford. A veteran Marauder may carry three manufacturers in one rib cage and know each of them by failure sound.
+
+Deep Reach calls this restorative labor continuity. Marauders call it being repaired into someone else's property.
+
+## 5. Pain, Stims And Work Windows
+
+Pain on Black Keel is telemetry before it is suffering.
+
+The bay records where it starts, how long it lasts, what motion worsens it, what pressure makes it spike and whether it interferes with tool control. A worker hears "pain score." The ledger hears "reliability modifier." If the pain can be suppressed without losing too much dexterity, the worker may be cleared for another window. If suppression risks bad custody, bad tool use or suit panic, the worker becomes a medical hold and the cost begins climbing.
+
+Pain-inhibitor stims are not magic courage. They narrow the body. They push the hands steady, mute the warning bells, flatten fear and steal the hour after the hour they buy. Used well, a stim gets a trapped worker back through a hatch. Used badly, it lets someone keep cutting after the hand has stopped reporting damage. Used under debt, it becomes a way to borrow tomorrow's body for today's quota.
+
+Most Marauders do not become addicted because they are weak. They become dependent because the system prices rest higher than chemistry.
+
+## 6. What The Player Learns
+
+The player learns that injury is part of the world model.
+
+A wound can reveal a route, contaminate a sample, attract life, alter suit handling, change a debt line, unlock a medical record, destroy a claim or preserve one. A synthetic replacement can expand capability and add maintenance vulnerability. A pain choice can save oxygen now and cost control later. A medical scan can be care, evidence collection, quarantine sorting or labor certification depending on who reads it.
+
+Good play means treating the body as another pressure system. Seal it, clean it, listen to it, distrust it when the chemistry says to, and remember that every repair aboard Black Keel has two outcomes: the person who survives and the account that survives them.

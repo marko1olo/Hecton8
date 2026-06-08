@@ -167,6 +167,7 @@ namespace Hecton8.Core.Generated
         public const uint P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE = 0xC3657486u;
         public const uint P1321_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE = 0x18AD1165u;
         public const uint P1322_BRINE_CANYON_SALT_CRUST_SILT_FIELD_ARTICLE = 0xF448999Fu;
+        public const uint P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE = 0x1AEAADCDu;
         public const uint P132_PARTIAL_EXIT_SAME_SEED_RETURN = 0xD8C9AB96u;
         public const uint P133_CORPORATE_CAPTURE_BAD_END = 0x11396D9Fu;
         public const uint P134_QUARANTINE_HOLD_STALE_AIR = 0x6428403Bu;
@@ -549,6 +550,8 @@ namespace Hecton8.Core.Generated
         public const uint P622_KESTREL_RELAY_SHADOW_CHART = 0x756AA1A6u;
         public const uint P623_PELLET_LANE_WAKE_LEDGER = 0x1C738CB9u;
         public const uint P624_CABLE_FOREST_CONDUCTIVE_BIOTA = 0x727AB672u;
+        public const uint P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE = 0xAAD27229u;
+        public const uint P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY = 0x81CAAF3Fu;
 
         public const uint Locale_en_US = 0x6C199F07u;
         public const uint Locale_ru_RU = 0x5FBC7928u;

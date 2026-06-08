@@ -4,9 +4,9 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localized_pages: 518
-draft_machine_or_llm_pages: 518
-draft_marker_pages: 505
+localized_pages: 521
+draft_machine_or_llm_pages: 521
+draft_marker_pages: 508
 ---
 
 # Index du codex HECTON-8
@@ -172,6 +172,7 @@ draft_marker_pages: 505
 - [Plateau photique de gravats calcaires](P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE.md) `P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE`
 - [Tapis racinaire d'herbier peu profond](P1321_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE.md) `P1321_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE`
 - [Limon à croûte saline du canyon de saumure](P1322_BRINE_CANYON_SALT_CRUST_SILT_FIELD_ARTICLE.md) `P1322_BRINE_CANYON_SALT_CRUST_SILT_FIELD_ARTICLE`
+- [Joint annulaire en caoutchouc de pression](P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE.md) `P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE`
 - [Sortie partielle : retour même seed](P132_PARTIAL_EXIT_SAME_SEED_RETURN.md) `P132_PARTIAL_EXIT_SAME_SEED_RETURN`
 - [Capture corporative : secours propre](P133_CORPORATE_CAPTURE_BAD_END.md) `P133_CORPORATE_CAPTURE_BAD_END`
 - [Maintien en quarantaine : air vicié](P134_QUARANTINE_HOLD_STALE_AIR.md) `P134_QUARANTINE_HOLD_STALE_AIR`
@@ -529,5 +530,7 @@ draft_marker_pages: 505
 - [Carte d'ombre relais de Kestrel](P622_KESTREL_RELAY_SHADOW_CHART.md) `P622_KESTREL_RELAY_SHADOW_CHART`
 - [Registre de sillage de voie à pellets](P623_PELLET_LANE_WAKE_LEDGER.md) `P623_PELLET_LANE_WAKE_LEDGER`
 - [Biote conductrice de la Forêt de câbles](P624_CABLE_FOREST_CONDUCTIVE_BIOTA.md) `P624_CABLE_FOREST_CONDUCTIVE_BIOTA`
+- [Transit de la Ran Long Claim](P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE.md) `P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE`
+- [Garde tonne-window de Black Keel](P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY.md) `P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY`
 
 <!-- Generated localized index for in_game_wiki/fr_FR. -->

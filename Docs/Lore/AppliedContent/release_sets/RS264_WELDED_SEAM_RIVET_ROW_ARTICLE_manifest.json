@@ -3,7 +3,7 @@
   "release_set_id": "RS264_WELDED_SEAM_RIVET_ROW_ARTICLE",
   "title": "Welded Seam And Rivet Row Article",
   "date": "2026-06-08",
-  "status": "source_ready",
+  "status": "duplicate_shadow_disabled_importer_rs263_canonical",
   "evidence_class": "STATIC_SOURCE",
   "packets": [
     "P1430_WELDED_SEAM_RIVET_ROW_LEDGER"
@@ -11,7 +11,7 @@
   "packet_sources": [
     "Docs/Lore/AppliedContent/packets/RS264_WELDED_SEAM_RIVET_ROW_ARTICLE.packets.json"
   ],
-  "canonical_importer_ready": true,
+  "canonical_importer_ready": false,
   "runtime_binding_map": "Docs/Lore/AppliedContent/binding_maps/RS264_runtime_binding_map.csv",
   "evidence_graph": "Docs/Lore/AppliedContent/graphs/RS264_WELDED_SEAM_RIVET_ROW_ARTICLE_evidence_graph.csv",
   "route_cards": "Docs/Lore/AppliedContent/route_cards/RS264_WELDED_SEAM_RIVET_ROW_ARTICLE_route_cards.csv",
