@@ -9161,7 +9161,13 @@ namespace Hecton8.Construction
                     return dockAup.ToAbsoluteDouble3();
             }
 
-            return RuntimeOriginRoute.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
+            return ResolveRuntimeOriginAupDouble3();
+        }
+
+        private static double3 ResolveRuntimeOriginAupDouble3()
+        {
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            return originAup.IsFinite() ? originAup.ToAbsoluteDouble3() : double3.zero;
         }
 
         private static bool TryResolvePlayerAup(out double3 playerAup)

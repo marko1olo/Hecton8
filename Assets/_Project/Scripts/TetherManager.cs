@@ -1149,7 +1149,9 @@ namespace Hecton8.Physics
             cameraPosition = sourceTransform != null ? sourceTransform.position : Vector3.zero;
             if (!math.all(math.isfinite(new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z))))
             {
-                cameraAup = RuntimeOriginRoute.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
+                if (!TryResolveRuntimeOriginAup(out cameraAup))
+                    cameraAup = double3.zero;
+
                 cameraPosition = Vector3.zero;
                 return math.all(math.isfinite(cameraAup));
             }
@@ -1166,6 +1168,17 @@ namespace Hecton8.Physics
             }
 
             return TryResolveRuntimeAup(cameraPosition, out cameraAup);
+        }
+
+        private static bool TryResolveRuntimeOriginAup(out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absoluteAup = originAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absoluteAup));
         }
 
         private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 absoluteAup)
