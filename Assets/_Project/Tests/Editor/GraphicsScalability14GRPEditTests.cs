@@ -834,6 +834,39 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void AmbientWaterMotionManager_FailsClosedWhenRegistryCapacityExceeded()
+        {
+            string motionPath = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/AmbientWaterMotionManager.cs");
+            string source = File.ReadAllText(motionPath);
+            string registerBody = ExtractMethodBlock(source, "public void Register(AmbientWaterMotion motion)");
+            string reportBody = ExtractMethodBlock(source, "private void ReportRegistrationCapacityExceeded()");
+
+            Assert.That(source, Does.Contain("private const int MotionCapacity = 128;"));
+            Assert.That(source, Does.Contain("private const uint AmbientMotionRegistrationCapacityWarningHash"));
+            Assert.That(source, Does.Contain("private const uint AmbientMotionSystemContextHash"));
+            Assert.That(source, Does.Contain("[SerializeField] private int _debugDroppedRegistrationCount;"));
+            Assert.That(source, Does.Contain("private int _droppedRegistrationCount;"));
+            Assert.That(source, Does.Contain("private int _lastRegistrationOverflowWarningFrame = -1;"));
+            Assert.That(source, Does.Contain("public int DroppedRegistrationCount => _droppedRegistrationCount;"));
+            Assert.That(registerBody, Does.Contain("if (_objectsSet.Contains(motion))"));
+            Assert.That(registerBody, Does.Contain("if (_objects.Count >= MotionCapacity)"));
+            Assert.That(registerBody, Does.Contain("ReportRegistrationCapacityExceeded();"));
+            Assert.That(registerBody, Does.Contain("if (_objectsSet.Add(motion))"));
+            AssertOrder(registerBody, "_objectsSet.Contains(motion)", "_objects.Count >= MotionCapacity");
+            AssertOrder(registerBody, "_objects.Count >= MotionCapacity", "_objectsSet.Add(motion)");
+            Assert.That(reportBody, Does.Contain("_droppedRegistrationCount++;"));
+            Assert.That(reportBody, Does.Contain("_debugDroppedRegistrationCount = _droppedRegistrationCount;"));
+            Assert.That(reportBody, Does.Contain("int currentFrame = SystemDispatcher.CurrentFrameIndex;"));
+            Assert.That(reportBody, Does.Contain("_lastRegistrationOverflowWarningFrame == currentFrame"));
+            Assert.That(reportBody, Does.Contain("GlobalTelemetryBus.PublishPerformanceWarning("));
+            Assert.That(reportBody, Does.Contain("AmbientMotionRegistrationCapacityWarningHash"));
+            Assert.That(reportBody, Does.Contain("AmbientMotionSystemContextHash"));
+            Assert.That(reportBody, Does.Contain("_lastRegistrationOverflowWarningFrame = currentFrame;"));
+        }
+
+        [Test]
         public void AmbientWaterMotion_AuthoringBridgeSanitizesProfileAndRestPose()
         {
             string motionPath = Path.Combine(

@@ -34,6 +34,8 @@ namespace Hecton8.Physics
         private const float MaxAmbientMotionFrequency = 8f;
         private const float MaxAmbientMotionCoupling = 2f;
         private const int MotionCapacity = 128;
+        private const uint AmbientMotionRegistrationCapacityWarningHash = 0x414D5243u;
+        private const uint AmbientMotionSystemContextHash = 0x414D4F54u;
         private const byte LodBandNear = 0;
         private const byte LodBandMedium = 1;
         private const byte LodBandFar = 2;
@@ -56,6 +58,7 @@ namespace Hecton8.Physics
 
         [Header("Diagnostics")]
         [SerializeField] private int _debugActiveObjects;
+        [SerializeField] private int _debugDroppedRegistrationCount;
         [SerializeField] private int _debugNearCount;
         [SerializeField] private int _debugMediumCount;
         [SerializeField] private int _debugFarCount;
@@ -92,6 +95,8 @@ namespace Hecton8.Physics
         private float _biomeCurrentBlendElapsed;
         private bool _hasBiomeCurrentTarget;
         private float _pendingVisualDeltaTime;
+        private int _droppedRegistrationCount;
+        private int _lastRegistrationOverflowWarningFrame = -1;
 
         private static AmbientWaterMotionManager s_activeRuntime;
 
@@ -100,6 +105,8 @@ namespace Hecton8.Physics
         {
             s_activeRuntime = null;
         }
+
+        public int DroppedRegistrationCount => _droppedRegistrationCount;
 
         //  LIFECYCLE
 
@@ -176,7 +183,19 @@ namespace Hecton8.Physics
         {
             if (motion == null) return;
 
-            // HashSet.Add returns false for existing entries: O(1) instead of O(n) Contains.
+            if (_objectsSet.Contains(motion))
+            {
+                _debugActiveObjects = _objects.Count;
+                return;
+            }
+
+            if (_objects.Count >= MotionCapacity)
+            {
+                ReportRegistrationCapacityExceeded();
+                _debugActiveObjects = _objects.Count;
+                return;
+            }
+
             if (_objectsSet.Add(motion))
                 _objects.Add(motion);
 
@@ -195,6 +214,22 @@ namespace Hecton8.Physics
             }
 
             _debugActiveObjects = _objects.Count;
+        }
+
+        private void ReportRegistrationCapacityExceeded()
+        {
+            _droppedRegistrationCount++;
+            _debugDroppedRegistrationCount = _droppedRegistrationCount;
+
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastRegistrationOverflowWarningFrame == currentFrame)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                AmbientMotionRegistrationCapacityWarningHash,
+                AmbientMotionSystemContextHash,
+                _droppedRegistrationCount);
+            _lastRegistrationOverflowWarningFrame = currentFrame;
         }
 
         //  TICK
