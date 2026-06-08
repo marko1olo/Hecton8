@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Drabina księżyców Aegir
@@ -23,11 +23,11 @@ Drabina Aegir obejmuje znaczniki promieniowania, przekaźniki, wyczerpane claimy
 
 ## Scanner
 
-Sekwencja księżyców: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Sekwencja księżyców: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
 
 ## Terminal
 
-HECTON-8 to Aegir-VIII: ani wewnętrzny, ani najdalszy. Rezonans Rake i cień Pale zmieniają pływy i pakiety.
+HECTON-8 to Aegir-VIII: ani wewnętrzny, ani najdalszy. Rezonans Kestrel i cień Mute zmieniają pływy i pakiety.
 
 ## Audio
 

@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Aegir衛星ラダー
@@ -23,11 +23,11 @@ Aegirの衛星ラダーは、放射線標識、リレー天体、枯れた請求
 
 ## Scanner
 
-衛星列: Cinder、Hook、Glass、Switch、Drywell、Brinehook、Rake、HECTON-8、Pale、Longmark、Grave、Farline。
+衛星列: Skarn、Vela、Claw、Lumen、Thorne、Anvil、Kestrel、HECTON-8、Mute。
 
 ## Terminal
 
-HECTON-8はAegir-VIII。内側でも最遠でもない。Rake共鳴とPaleの影が潮汐と通信品質を変える。
+HECTON-8はAegir-VIII。内側でも最遠でもない。Kestrel共鳴とMuteの影が潮汐と通信品質を変える。
 
 ## Audio
 

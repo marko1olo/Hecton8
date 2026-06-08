@@ -209,130 +209,130 @@
           "external_site": "Aegir's moon ladder makes HECTON-8 part of a moving recovery problem. Other moons shape tide phase, carrier waits, relay shadows and the cost of leaving."
         },
         "ru_RU": {
-          "title": "Лунная лестница Aegir",
-          "scanner": "Последовательность лун: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
-          "field_note": "Небо здесь механизм, а не фон.",
-          "terminal": "HECTON-8 это Aegir-VIII: не внутренняя и не самая дальняя. Резонанс Rake и тень Pale меняют прилив и качество пакетов.",
-          "audio": "Считай луны, прежде чем верить окну.",
-          "in_game_wiki": "Aegir использует практическую лунную лестницу: радиационные маркеры, реле, выработанные claims, резонансные опасности, HECTON-8, холодные складские луны и внешние неправильные тела. HECTON-8 ценен, потому что стоит между живым океаном и орбитальным давлением.",
-          "external_site": "Лунная лестница Aegir делает игровую луну частью движущейся системы. Другие луны задают приливы, ожидание carrier, тени relay и цену выхода."
+          "title": "Draft ru_RU localization pending native pass. Лунная лестница Aegir",
+          "scanner": "Draft ru_RU localization pending native pass. Последовательность лун: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.",
+          "field_note": "Draft ru_RU localization pending native pass. Небо здесь механизм, а не фон.",
+          "terminal": "Draft ru_RU localization pending native pass. HECTON-8 это Aegir-VIII: не внутренняя и не самая дальняя. Резонанс Kestrel и тень Mute меняют прилив и качество пакетов.",
+          "audio": "Draft ru_RU localization pending native pass. Считай луны, прежде чем верить окну.",
+          "in_game_wiki": "Draft ru_RU localization pending native pass. Aegir использует практическую лунную лестницу: радиационные маркеры, реле, выработанные claims, резонансные опасности, HECTON-8, холодные складские луны и внешние неправильные тела. HECTON-8 ценен, потому что стоит между живым океаном и орбитальным давлением.",
+          "external_site": "Draft ru_RU localization pending native pass. Лунная лестница Aegir делает игровую луну частью движущейся системы. Другие луны задают приливы, ожидание carrier, тени relay и цену выхода."
         },
         "ja_JP": {
-          "title": "Aegir衛星ラダー",
-          "scanner": "衛星列: Cinder、Hook、Glass、Switch、Drywell、Brinehook、Rake、HECTON-8、Pale、Longmark、Grave、Farline。",
-          "field_note": "空は背景ではなく機構だ。",
-          "terminal": "HECTON-8はAegir-VIII。内側でも最遠でもない。Rake共鳴とPaleの影が潮汐と通信品質を変える。",
-          "audio": "窓を信じる前に衛星を数えろ。",
-          "in_game_wiki": "Aegirの衛星ラダーは、放射線標識、リレー天体、枯れた請求地、共鳴危険、HECTON-8、低温保管衛星、外側の不規則天体でできている。HECTON-8は生きた海と軌道圧の間にあるから価値を持つ。",
-          "external_site": "Aegir衛星ラダーは、プレイ対象の月を動く大系の一部にする。他の衛星が潮汐、待機、リレー影、脱出コストを決める。"
+          "title": "Draft ja_JP localization pending native pass. Aegir衛星ラダー",
+          "scanner": "Draft ja_JP localization pending native pass. 衛星列: Skarn、Vela、Claw、Lumen、Thorne、Anvil、Kestrel、HECTON-8、Mute。",
+          "field_note": "Draft ja_JP localization pending native pass. 空は背景ではなく機構だ。",
+          "terminal": "Draft ja_JP localization pending native pass. HECTON-8はAegir-VIII。内側でも最遠でもない。Kestrel共鳴とMuteの影が潮汐と通信品質を変える。",
+          "audio": "Draft ja_JP localization pending native pass. 窓を信じる前に衛星を数えろ。",
+          "in_game_wiki": "Draft ja_JP localization pending native pass. Aegirの衛星ラダーは、放射線標識、リレー天体、枯れた請求地、共鳴危険、HECTON-8、低温保管衛星、外側の不規則天体でできている。HECTON-8は生きた海と軌道圧の間にあるから価値を持つ。",
+          "external_site": "Draft ja_JP localization pending native pass. Aegir衛星ラダーは、プレイ対象の月を動く大系の一部にする。他の衛星が潮汐、待機、リレー影、脱出コストを決める。"
         },
         "zh_CN": {
-          "title": "Aegir卫星阶梯",
-          "scanner": "卫星序列：Cinder、Hook、Glass、Switch、Drywell、Brinehook、Rake、HECTON-8、Pale、Longmark、Grave、Farline。",
-          "field_note": "天空是机械，不是背景。",
-          "terminal": "HECTON-8是Aegir-VIII：既非内侧，也非最远。Rake共振和Pale阴影会改变潮汐和数据包质量。",
-          "audio": "相信窗口前，先数清卫星。",
-          "in_game_wiki": "Aegir的卫星阶梯包括辐射标记、relay天体、枯竭claim、共振危险、HECTON-8、低温储存卫星和外侧不规则体。HECTON-8的价值在于处于活海容忍度和轨道压力之间。",
-          "external_site": "Aegir卫星阶梯让可游玩的月球成为运动系统的一部分。其他卫星塑造潮汐、carrier等待、relay阴影和离开的代价。"
+          "title": "Draft zh_CN localization pending native pass. Aegir卫星阶梯",
+          "scanner": "Draft zh_CN localization pending native pass. 卫星序列：Skarn、Vela、Claw、Lumen、Thorne、Anvil、Kestrel、HECTON-8、Mute。",
+          "field_note": "Draft zh_CN localization pending native pass. 天空是机械，不是背景。",
+          "terminal": "Draft zh_CN localization pending native pass. HECTON-8是Aegir-VIII：既非内侧，也非最远。Kestrel共振和Mute阴影会改变潮汐和数据包质量。",
+          "audio": "Draft zh_CN localization pending native pass. 相信窗口前，先数清卫星。",
+          "in_game_wiki": "Draft zh_CN localization pending native pass. Aegir的卫星阶梯包括辐射标记、relay天体、枯竭claim、共振危险、HECTON-8、低温储存卫星和外侧不规则体。HECTON-8的价值在于处于活海容忍度和轨道压力之间。",
+          "external_site": "Draft zh_CN localization pending native pass. Aegir卫星阶梯让可游玩的月球成为运动系统的一部分。其他卫星塑造潮汐、carrier等待、relay阴影和离开的代价。"
         },
         "fr_FR": {
-          "title": "Échelle lunaire d’Aegir",
-          "scanner": "Séquence lunaire: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
-          "field_note": "Le ciel est un mécanisme, pas un décor.",
-          "terminal": "HECTON-8 est Aegir-VIII: ni interne, ni la plus lointaine. La résonance de Rake et l’ombre de Pale modifient marée et paquets.",
-          "audio": "Compte les lunes avant de croire à une fenêtre.",
-          "in_game_wiki": "L’échelle lunaire d’Aegir comprend marqueurs irradiés, relais, claims épuisés, dangers résonants, HECTON-8, lunes de stockage froid et irréguliers externes. HECTON-8 vaut parce qu’elle se tient entre océan vivant et pression orbitale.",
-          "external_site": "L’échelle lunaire d’Aegir inscrit la lune jouable dans un système en mouvement. Les autres lunes façonnent marées, attentes du carrier, ombres relais et coût du départ."
+          "title": "Draft fr_FR localization pending native pass. Échelle lunaire d’Aegir",
+          "scanner": "Draft fr_FR localization pending native pass. Séquence lunaire: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.",
+          "field_note": "Draft fr_FR localization pending native pass. Le ciel est un mécanisme, pas un décor.",
+          "terminal": "Draft fr_FR localization pending native pass. HECTON-8 est Aegir-VIII: ni interne, ni la plus lointaine. La résonance de Kestrel et l’ombre de Mute modifient marée et paquets.",
+          "audio": "Draft fr_FR localization pending native pass. Compte les lunes avant de croire à une fenêtre.",
+          "in_game_wiki": "Draft fr_FR localization pending native pass. L’échelle lunaire d’Aegir comprend marqueurs irradiés, relais, claims épuisés, dangers résonants, HECTON-8, lunes de stockage froid et irréguliers externes. HECTON-8 vaut parce qu’elle se tient entre océan vivant et pression orbitale.",
+          "external_site": "Draft fr_FR localization pending native pass. L’échelle lunaire d’Aegir inscrit la lune jouable dans un système en mouvement. Les autres lunes façonnent marées, attentes du carrier, ombres relais et coût du départ."
         },
         "es_ES": {
-          "title": "Escalera lunar de Aegir",
-          "scanner": "Secuencia de lunas: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
-          "field_note": "El cielo es un mecanismo, no decorado.",
-          "terminal": "HECTON-8 es Aegir-VIII: ni interior ni la más lejana. La resonancia de Rake y la sombra de Pale alteran marea y paquetes.",
-          "audio": "Cuenta las lunas antes de confiar en una ventana.",
-          "in_game_wiki": "La escalera lunar de Aegir reúne marcadores de radiación, relés, claims agotados, peligros resonantes, HECTON-8, lunas de almacenamiento frío e irregulares exteriores. HECTON-8 vale porque queda entre océano vivo y presión orbital.",
-          "external_site": "La escalera lunar de Aegir convierte la luna jugable en parte de un sistema móvil. Otras lunas moldean mareas, esperas del carrier, sombras relé y coste de salida."
+          "title": "Draft es_ES localization pending native pass. Escalera lunar de Aegir",
+          "scanner": "Draft es_ES localization pending native pass. Secuencia de lunas: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.",
+          "field_note": "Draft es_ES localization pending native pass. El cielo es un mecanismo, no decorado.",
+          "terminal": "Draft es_ES localization pending native pass. HECTON-8 es Aegir-VIII: ni interior ni la más lejana. La resonancia de Kestrel y la sombra de Mute alteran marea y paquetes.",
+          "audio": "Draft es_ES localization pending native pass. Cuenta las lunas antes de confiar en una ventana.",
+          "in_game_wiki": "Draft es_ES localization pending native pass. La escalera lunar de Aegir reúne marcadores de radiación, relés, claims agotados, peligros resonantes, HECTON-8, lunas de almacenamiento frío e irregulares exteriores. HECTON-8 vale porque queda entre océano vivo y presión orbital.",
+          "external_site": "Draft es_ES localization pending native pass. La escalera lunar de Aegir convierte la luna jugable en parte de un sistema móvil. Otras lunas moldean mareas, esperas del carrier, sombras relé y coste de salida."
         },
         "de_DE": {
-          "title": "Aegirs Mondleiter",
-          "scanner": "Mondfolge: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
-          "field_note": "Der Himmel ist Mechanik, keine Kulisse.",
-          "terminal": "HECTON-8 ist Aegir-VIII: nicht innen, nicht am weitesten draußen. Rake-Resonanz und Pale-Schatten ändern Tide und Paketqualität.",
-          "audio": "Zähle die Monde, bevor du einem Fenster traust.",
-          "in_game_wiki": "Aegirs Mondleiter umfasst Strahlungsmarker, Relaiskörper, ausgebeutete Claims, Resonanzgefahren, HECTON-8, kalte Lagermonde und äußere Irreguläre. HECTON-8 ist wertvoll, weil er zwischen lebendem Ozean und Umlaufdruck liegt.",
-          "external_site": "Aegirs Mondleiter macht den spielbaren Mond Teil eines bewegten Systems. Andere Monde formen Gezeiten, Carrier-Wartezeiten, Relaisschatten und Abflugkosten."
+          "title": "Draft de_DE localization pending native pass. Aegirs Mondleiter",
+          "scanner": "Draft de_DE localization pending native pass. Mondfolge: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.",
+          "field_note": "Draft de_DE localization pending native pass. Der Himmel ist Mechanik, keine Kulisse.",
+          "terminal": "Draft de_DE localization pending native pass. HECTON-8 ist Aegir-VIII: nicht innen, nicht am weitesten draußen. Kestrel-Resonanz und Mute-Schatten ändern Tide und Paketqualität.",
+          "audio": "Draft de_DE localization pending native pass. Zähle die Monde, bevor du einem Fenster traust.",
+          "in_game_wiki": "Draft de_DE localization pending native pass. Aegirs Mondleiter umfasst Strahlungsmarker, Relaiskörper, ausgebeutete Claims, Resonanzgefahren, HECTON-8, kalte Lagermonde und äußere Irreguläre. HECTON-8 ist wertvoll, weil er zwischen lebendem Ozean und Umlaufdruck liegt.",
+          "external_site": "Draft de_DE localization pending native pass. Aegirs Mondleiter macht den spielbaren Mond Teil eines bewegten Systems. Andere Monde formen Gezeiten, Carrier-Wartezeiten, Relaisschatten und Abflugkosten."
         },
         "pl_PL": {
-          "title": "Drabina księżyców Aegir",
-          "scanner": "Sekwencja księżyców: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
-          "field_note": "Niebo jest mechanizmem, nie tłem.",
-          "terminal": "HECTON-8 to Aegir-VIII: ani wewnętrzny, ani najdalszy. Rezonans Rake i cień Pale zmieniają pływy i pakiety.",
-          "audio": "Policz księżyce, zanim zaufasz oknu.",
-          "in_game_wiki": "Drabina Aegir obejmuje znaczniki promieniowania, przekaźniki, wyczerpane claimy, zagrożenia rezonansowe, HECTON-8, chłodne magazyny i obiekty zewnętrzne. HECTON-8 jest cenny, bo leży między żywym oceanem a presją orbitalną.",
-          "external_site": "Drabina księżyców Aegir robi z grywalnego księżyca część ruchomego systemu. Inne księżyce kształtują pływy, oczekiwanie carriera, cienie przekaźników i koszt wyjścia."
+          "title": "Draft pl_PL localization pending native pass. Drabina księżyców Aegir",
+          "scanner": "Draft pl_PL localization pending native pass. Sekwencja księżyców: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.",
+          "field_note": "Draft pl_PL localization pending native pass. Niebo jest mechanizmem, nie tłem.",
+          "terminal": "Draft pl_PL localization pending native pass. HECTON-8 to Aegir-VIII: ani wewnętrzny, ani najdalszy. Rezonans Kestrel i cień Mute zmieniają pływy i pakiety.",
+          "audio": "Draft pl_PL localization pending native pass. Policz księżyce, zanim zaufasz oknu.",
+          "in_game_wiki": "Draft pl_PL localization pending native pass. Drabina Aegir obejmuje znaczniki promieniowania, przekaźniki, wyczerpane claimy, zagrożenia rezonansowe, HECTON-8, chłodne magazyny i obiekty zewnętrzne. HECTON-8 jest cenny, bo leży między żywym oceanem a presją orbitalną.",
+          "external_site": "Draft pl_PL localization pending native pass. Drabina księżyców Aegir robi z grywalnego księżyca część ruchomego systemu. Inne księżyce kształtują pływy, oczekiwanie carriera, cienie przekaźników i koszt wyjścia."
         },
         "uk_UA": {
-          "title": "Місячна драбина Aegir",
-          "scanner": "Послідовність місяців: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
-          "field_note": "Небо тут механізм, а не декорація.",
-          "terminal": "HECTON-8 це Aegir-VIII: не внутрішній і не найдальший. Резонанс Rake і тінь Pale змінюють припливи та пакети.",
-          "audio": "Порахуй місяці, перш ніж вірити вікну.",
-          "in_game_wiki": "Місячна драбина Aegir містить радіаційні маркери, реле, вичерпані claims, резонансні небезпеки, HECTON-8, холодні склади й зовнішні неправильні тіла. HECTON-8 цінний, бо стоїть між живим океаном і орбітальним тиском.",
-          "external_site": "Місячна драбина Aegir робить ігровий місяць частиною рухомої системи. Інші місяці формують припливи, очікування carrier, тіні relay і ціну виходу."
+          "title": "Draft uk_UA localization pending native pass. Місячна драбина Aegir",
+          "scanner": "Draft uk_UA localization pending native pass. Послідовність місяців: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.",
+          "field_note": "Draft uk_UA localization pending native pass. Небо тут механізм, а не декорація.",
+          "terminal": "Draft uk_UA localization pending native pass. HECTON-8 це Aegir-VIII: не внутрішній і не найдальший. Резонанс Kestrel і тінь Mute змінюють припливи та пакети.",
+          "audio": "Draft uk_UA localization pending native pass. Порахуй місяці, перш ніж вірити вікну.",
+          "in_game_wiki": "Draft uk_UA localization pending native pass. Місячна драбина Aegir містить радіаційні маркери, реле, вичерпані claims, резонансні небезпеки, HECTON-8, холодні склади й зовнішні неправильні тіла. HECTON-8 цінний, бо стоїть між живим океаном і орбітальним тиском.",
+          "external_site": "Draft uk_UA localization pending native pass. Місячна драбина Aegir робить ігровий місяць частиною рухомої системи. Інші місяці формують припливи, очікування carrier, тіні relay і ціну виходу."
         },
         "ar_SA": {
-          "title": "سلم أقمار Aegir",
-          "scanner": "تسلسل الأقمار: Cinder، Hook، Glass، Switch، Drywell، Brinehook، Rake، HECTON-8، Pale، Longmark، Grave، Farline.",
-          "field_note": "السماء آلية وليست خلفية.",
-          "terminal": "HECTON-8 هو Aegir-VIII: ليس داخلياً ولا الأبعد. رنين Rake وظل Pale يغيران المد وجودة الحزم.",
-          "audio": "عد الأقمار قبل أن تثق بنافذة.",
-          "in_game_wiki": "سلم أقمار Aegir يضم علامات إشعاع وأجسام relay وclaims مستنزفة وأخطار رنين وHECTON-8 وأقمار تخزين بارد وأجساماً خارجية. قيمة HECTON-8 أنه بين محيط حي وضغط مداري.",
-          "external_site": "سلم أقمار Aegir يجعل القمر القابل للعب جزءاً من نظام متحرك. الأقمار الأخرى تشكل المد وانتظار carrier وظلال relay وكلفة المغادرة."
+          "title": "Draft ar_SA localization pending native pass. سلم أقمار Aegir",
+          "scanner": "Draft ar_SA localization pending native pass. تسلسل الأقمار: Skarn، Vela، Claw، Lumen، Thorne، Anvil، Kestrel، HECTON-8، Mute.",
+          "field_note": "Draft ar_SA localization pending native pass. السماء آلية وليست خلفية.",
+          "terminal": "Draft ar_SA localization pending native pass. HECTON-8 هو Aegir-VIII: ليس داخلياً ولا الأبعد. رنين Kestrel وظل Mute يغيران المد وجودة الحزم.",
+          "audio": "Draft ar_SA localization pending native pass. عد الأقمار قبل أن تثق بنافذة.",
+          "in_game_wiki": "Draft ar_SA localization pending native pass. سلم أقمار Aegir يضم علامات إشعاع وأجسام relay وclaims مستنزفة وأخطار رنين وHECTON-8 وأقمار تخزين بارد وأجساماً خارجية. قيمة HECTON-8 أنه بين محيط حي وضغط مداري.",
+          "external_site": "Draft ar_SA localization pending native pass. سلم أقمار Aegir يجعل القمر القابل للعب جزءاً من نظام متحرك. الأقمار الأخرى تشكل المد وانتظار carrier وظلال relay وكلفة المغادرة."
         },
         "id_ID": {
-          "title": "Tangga Bulan Aegir",
-          "scanner": "Urutan bulan: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
-          "field_note": "Langit adalah mekanisme, bukan latar.",
-          "terminal": "HECTON-8 adalah Aegir-VIII: bukan dalam, bukan paling jauh. Resonansi Rake dan bayangan Pale mengubah pasang dan paket.",
-          "audio": "Hitung bulan sebelum percaya pada jendela.",
-          "in_game_wiki": "Tangga bulan Aegir berisi penanda radiasi, tubuh relay, claim habis, bahaya resonansi, HECTON-8, bulan penyimpanan dingin, dan benda luar. HECTON-8 bernilai karena berada di antara toleransi laut hidup dan tekanan orbit.",
-          "external_site": "Tangga bulan Aegir membuat bulan permainan menjadi bagian sistem bergerak. Bulan lain membentuk pasang, tunggu carrier, bayangan relay, dan harga pergi."
+          "title": "Draft id_ID localization pending native pass. Tangga Bulan Aegir",
+          "scanner": "Draft id_ID localization pending native pass. Urutan bulan: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.",
+          "field_note": "Draft id_ID localization pending native pass. Langit adalah mekanisme, bukan latar.",
+          "terminal": "Draft id_ID localization pending native pass. HECTON-8 adalah Aegir-VIII: bukan dalam, bukan paling jauh. Resonansi Kestrel dan bayangan Mute mengubah pasang dan paket.",
+          "audio": "Draft id_ID localization pending native pass. Hitung bulan sebelum percaya pada jendela.",
+          "in_game_wiki": "Draft id_ID localization pending native pass. Tangga bulan Aegir berisi penanda radiasi, tubuh relay, claim habis, bahaya resonansi, HECTON-8, bulan penyimpanan dingin, dan benda luar. HECTON-8 bernilai karena berada di antara toleransi laut hidup dan tekanan orbit.",
+          "external_site": "Draft id_ID localization pending native pass. Tangga bulan Aegir membuat bulan permainan menjadi bagian sistem bergerak. Bulan lain membentuk pasang, tunggu carrier, bayangan relay, dan harga pergi."
         },
         "ko_KR": {
-          "title": "Aegir 위성 사다리",
-          "scanner": "위성 순서: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
-          "field_note": "하늘은 배경이 아니라 장치다.",
-          "terminal": "HECTON-8은 Aegir-VIII이다. 안쪽도, 가장 바깥도 아니다. Rake 공명과 Pale 그림자가 조석과 패킷 품질을 바꾼다.",
-          "audio": "창을 믿기 전에 위성을 세어라.",
-          "in_game_wiki": "Aegir의 위성 사다리는 방사선 표지, relay 천체, 고갈된 claim, 공명 위험, HECTON-8, 냉각 저장 위성, 외곽 불규칙체로 이루어진다. HECTON-8은 살아 있는 바다와 궤도 압력 사이에 있어 가치가 있다.",
-          "external_site": "Aegir 위성 사다리는 플레이 가능한 달을 움직이는 시스템의 일부로 만든다. 다른 위성은 조석, carrier 대기, relay 그림자, 탈출 비용을 만든다."
+          "title": "Draft ko_KR localization pending native pass. Aegir 위성 사다리",
+          "scanner": "Draft ko_KR localization pending native pass. 위성 순서: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.",
+          "field_note": "Draft ko_KR localization pending native pass. 하늘은 배경이 아니라 장치다.",
+          "terminal": "Draft ko_KR localization pending native pass. HECTON-8은 Aegir-VIII이다. 안쪽도, 가장 바깥도 아니다. Kestrel 공명과 Mute 그림자가 조석과 패킷 품질을 바꾼다.",
+          "audio": "Draft ko_KR localization pending native pass. 창을 믿기 전에 위성을 세어라.",
+          "in_game_wiki": "Draft ko_KR localization pending native pass. Aegir의 위성 사다리는 방사선 표지, relay 천체, 고갈된 claim, 공명 위험, HECTON-8, 냉각 저장 위성, 외곽 불규칙체로 이루어진다. HECTON-8은 살아 있는 바다와 궤도 압력 사이에 있어 가치가 있다.",
+          "external_site": "Draft ko_KR localization pending native pass. Aegir 위성 사다리는 플레이 가능한 달을 움직이는 시스템의 일부로 만든다. 다른 위성은 조석, carrier 대기, relay 그림자, 탈출 비용을 만든다."
         },
         "he_IL": {
-          "title": "סולם הירחים של Aegir",
-          "scanner": "רצף ירחים: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
-          "field_note": "השמים הם מנגנון, לא תפאורה.",
-          "terminal": "HECTON-8 הוא Aegir-VIII: לא פנימי ולא הרחוק ביותר. תהודת Rake וצל Pale משנים גאות ואיכות חבילות.",
-          "audio": "ספור את הירחים לפני שאתה סומך על חלון.",
-          "in_game_wiki": "סולם הירחים של Aegir כולל סמני קרינה, גופי relay, claims מותשים, סכנות תהודה, HECTON-8, ירחי אחסון קרים וגופים חיצוניים. HECTON-8 חשוב כי הוא בין אוקיינוס חי ללחץ מסלולי.",
-          "external_site": "סולם הירחים של Aegir הופך את הירח המשחקי לחלק ממערכת נעה. ירחים אחרים מעצבים גאות, המתנת carrier, צללי relay ועלות עזיבה."
+          "title": "Draft he_IL localization pending native pass. סולם הירחים של Aegir",
+          "scanner": "Draft he_IL localization pending native pass. רצף ירחים: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.",
+          "field_note": "Draft he_IL localization pending native pass. השמים הם מנגנון, לא תפאורה.",
+          "terminal": "Draft he_IL localization pending native pass. HECTON-8 הוא Aegir-VIII: לא פנימי ולא הרחוק ביותר. תהודת Kestrel וצל Mute משנים גאות ואיכות חבילות.",
+          "audio": "Draft he_IL localization pending native pass. ספור את הירחים לפני שאתה סומך על חלון.",
+          "in_game_wiki": "Draft he_IL localization pending native pass. סולם הירחים של Aegir כולל סמני קרינה, גופי relay, claims מותשים, סכנות תהודה, HECTON-8, ירחי אחסון קרים וגופים חיצוניים. HECTON-8 חשוב כי הוא בין אוקיינוס חי ללחץ מסלולי.",
+          "external_site": "Draft he_IL localization pending native pass. סולם הירחים של Aegir הופך את הירח המשחקי לחלק ממערכת נעה. ירחים אחרים מעצבים גאות, המתנת carrier, צללי relay ועלות עזיבה."
         },
         "pt_BR": {
-          "title": "Escada lunar de Aegir",
-          "scanner": "Sequência de luas: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
-          "field_note": "O céu é mecanismo, não cenário.",
-          "terminal": "HECTON-8 é Aegir-VIII: nem interna, nem a mais distante. A ressonância de Rake e a sombra de Pale alteram maré e pacotes.",
-          "audio": "Conte as luas antes de confiar numa janela.",
-          "in_game_wiki": "A escada lunar de Aegir inclui marcadores de radiação, corpos relay, claims esgotados, perigos ressonantes, HECTON-8, luas de armazenamento frio e irregulares externos. HECTON-8 vale por ficar entre oceano vivo e pressão orbital.",
-          "external_site": "A escada lunar de Aegir torna a lua jogável parte de um sistema em movimento. Outras luas moldam marés, espera do carrier, sombras relay e custo de saída."
+          "title": "Draft pt_BR localization pending native pass. Escada lunar de Aegir",
+          "scanner": "Draft pt_BR localization pending native pass. Sequência de luas: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.",
+          "field_note": "Draft pt_BR localization pending native pass. O céu é mecanismo, não cenário.",
+          "terminal": "Draft pt_BR localization pending native pass. HECTON-8 é Aegir-VIII: nem interna, nem a mais distante. A ressonância de Kestrel e a sombra de Mute alteram maré e pacotes.",
+          "audio": "Draft pt_BR localization pending native pass. Conte as luas antes de confiar numa janela.",
+          "in_game_wiki": "Draft pt_BR localization pending native pass. A escada lunar de Aegir inclui marcadores de radiação, corpos relay, claims esgotados, perigos ressonantes, HECTON-8, luas de armazenamento frio e irregulares externos. HECTON-8 vale por ficar entre oceano vivo e pressão orbital.",
+          "external_site": "Draft pt_BR localization pending native pass. A escada lunar de Aegir torna a lua jogável parte de um sistema em movimento. Outras luas moldam marés, espera do carrier, sombras relay e custo de saída."
         },
         "nl_NL": {
-          "title": "Maanladder van Aegir",
-          "scanner": "Maanvolgorde: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.",
-          "field_note": "De hemel is een mechanisme, geen decor.",
-          "terminal": "HECTON-8 is Aegir-VIII: niet binnenste, niet verste. Rake-resonantie en Pale-schaduw veranderen getij en pakketkwaliteit.",
-          "audio": "Tel de manen voordat je een venster vertrouwt.",
-          "in_game_wiki": "Aegirs maanladder bevat stralingsmarkeringen, relay-lichamen, uitgeputte claims, resonantiegevaren, HECTON-8, koude opslagmanen en buitenste objecten. HECTON-8 is waardevol omdat hij tussen levende oceaan en baandruk zit.",
-          "external_site": "De maanladder van Aegir maakt de speelbare maan deel van een bewegend systeem. Andere manen vormen getijden, carrier-wachten, relay-schaduwen en de kost van vertrekken."
+          "title": "Draft nl_NL localization pending native pass. Maanladder van Aegir",
+          "scanner": "Draft nl_NL localization pending native pass. Maanvolgorde: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.",
+          "field_note": "Draft nl_NL localization pending native pass. De hemel is een mechanisme, geen decor.",
+          "terminal": "Draft nl_NL localization pending native pass. HECTON-8 is Aegir-VIII: niet binnenste, niet verste. Kestrel-resonantie en Mute-schaduw veranderen getij en pakketkwaliteit.",
+          "audio": "Draft nl_NL localization pending native pass. Tel de manen voordat je een venster vertrouwt.",
+          "in_game_wiki": "Draft nl_NL localization pending native pass. Aegirs maanladder bevat stralingsmarkeringen, relay-lichamen, uitgeputte claims, resonantiegevaren, HECTON-8, koude opslagmanen en buitenste objecten. HECTON-8 is waardevol omdat hij tussen levende oceaan en baandruk zit.",
+          "external_site": "Draft nl_NL localization pending native pass. De maanladder van Aegir maakt de speelbare maan deel van een bewegend systeem. Andere manen vormen getijden, carrier-wachten, relay-schaduwen en de kost van vertrekken."
         }
       }
     },

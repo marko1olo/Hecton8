@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Aegirs Mondleiter
@@ -23,11 +23,11 @@ Aegirs Mondleiter macht den spielbaren Mond Teil eines bewegten Systems. Andere 
 
 ## Scanner
 
-Mondfolge: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Mondfolge: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
 
 ## Terminal
 
-HECTON-8 ist Aegir-VIII: nicht innen, nicht am weitesten draußen. Rake-Resonanz und Pale-Schatten ändern Tide und Paketqualität.
+HECTON-8 ist Aegir-VIII: nicht innen, nicht am weitesten draußen. Kestrel-Resonanz und Mute-Schatten ändern Tide und Paketqualität.
 
 ## Audio
 

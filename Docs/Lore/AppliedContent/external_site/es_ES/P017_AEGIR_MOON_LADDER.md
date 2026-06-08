@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Escalera lunar de Aegir
@@ -23,11 +23,11 @@ La escalera lunar de Aegir convierte la luna jugable en parte de un sistema móv
 
 ## Scanner
 
-Secuencia de lunas: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Secuencia de lunas: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
 
 ## Terminal
 
-HECTON-8 es Aegir-VIII: ni interior ni la más lejana. La resonancia de Rake y la sombra de Pale alteran marea y paquetes.
+HECTON-8 es Aegir-VIII: ni interior ni la más lejana. La resonancia de Kestrel y la sombra de Mute alteran marea y paquetes.
 
 ## Audio
 

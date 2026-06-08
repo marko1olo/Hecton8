@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Tangga Bulan Aegir
@@ -23,11 +23,11 @@ Tangga bulan Aegir membuat bulan permainan menjadi bagian sistem bergerak. Bulan
 
 ## Scanner
 
-Urutan bulan: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Urutan bulan: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
 
 ## Terminal
 
-HECTON-8 adalah Aegir-VIII: bukan dalam, bukan paling jauh. Resonansi Rake dan bayangan Pale mengubah pasang dan paket.
+HECTON-8 adalah Aegir-VIII: bukan dalam, bukan paling jauh. Resonansi Kestrel dan bayangan Mute mengubah pasang dan paket.
 
 ## Audio
 

@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Aegir 위성 사다리
@@ -23,11 +23,11 @@ Aegir 위성 사다리는 플레이 가능한 달을 움직이는 시스템의 �
 
 ## Scanner
 
-위성 순서: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+위성 순서: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
 
 ## Terminal
 
-HECTON-8은 Aegir-VIII이다. 안쪽도, 가장 바깥도 아니다. Rake 공명과 Pale 그림자가 조석과 패킷 품질을 바꾼다.
+HECTON-8은 Aegir-VIII이다. 안쪽도, 가장 바깥도 아니다. Kestrel 공명과 Mute 그림자가 조석과 패킷 품질을 바꾼다.
 
 ## Audio
 

@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # סולם הירחים של Aegir
@@ -23,11 +23,11 @@ localization_flags: 0
 
 ## Scanner
 
-רצף ירחים: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+רצף ירחים: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
 
 ## Terminal
 
-HECTON-8 הוא Aegir-VIII: לא פנימי ולא הרחוק ביותר. תהודת Rake וצל Pale משנים גאות ואיכות חבילות.
+HECTON-8 הוא Aegir-VIII: לא פנימי ולא הרחוק ביותר. תהודת Kestrel וצל Mute משנים גאות ואיכות חבילות.
 
 ## Audio
 

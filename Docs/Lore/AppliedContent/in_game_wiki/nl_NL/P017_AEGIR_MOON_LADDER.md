@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Maanladder van Aegir
@@ -23,11 +23,11 @@ Aegirs maanladder bevat stralingsmarkeringen, relay-lichamen, uitgeputte claims,
 
 ## Scanner
 
-Maanvolgorde: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Maanvolgorde: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute.
 
 ## Terminal
 
-HECTON-8 is Aegir-VIII: niet binnenste, niet verste. Rake-resonantie en Pale-schaduw veranderen getij en pakketkwaliteit.
+HECTON-8 is Aegir-VIII: niet binnenste, niet verste. Kestrel-resonantie en Mute-schaduw veranderen getij en pakketkwaliteit.
 
 ## Audio
 
