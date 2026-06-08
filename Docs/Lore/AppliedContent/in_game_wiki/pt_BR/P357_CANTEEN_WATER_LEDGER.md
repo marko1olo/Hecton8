@@ -23,7 +23,7 @@ O registro da cantina é pequeno o suficiente para passar despercebido e humano 
 
 É por isso que importa. HECTON-8 fica real quando a colônia deixa de ser só local de desastre e vira um lugar onde trabalhadores cansados contavam água potável como registro de guarda de ferramentas. Uma ficha de refeição não era só ração. Provava que alguém saiu do turno, devolveu uma chave de bomba, teve sintomas de pressão checados ou deveria estar num leito em vez de sob o piso. O registro transforma perda anônima em rotina: nomes abreviados, correções rubricadas, dívidas levadas adiante porque o sistema não teve tempo de ficar gentil.
 
-Para um saqueador, o objeto é útil antes de ser triste. A correção da sala de bombas liga a cantina a uma rota de manutenção. Os exceções médicas apontam doença de pressão antes de o pacote oficial admitir um cluster de ferimentos. As fichas faltando podem significar roubo, triagem de emergência, contaminação ou alguém alimentando em silêncio uma equipe que a escala já tinha apagado. Preserve a placa antes de desmontar a sala. Uma linha sobre copos pode provar mais que um memorial.
+Para um saqueador, o objeto é útil antes de ser triste. A correção da sala de bombas liga a cantina a uma rota de manutenção. Os exceções médicas apontam doença de pressão antes de o pacote oficial admitir um grupo de ferimentos. As fichas faltando podem significar roubo, triagem de emergência, contaminação ou alguém alimentando em silêncio uma equipe que a escala já tinha apagado. Preserve a placa antes de desmontar a sala. Uma linha sobre copos pode provar mais que um memorial.
 
 ## Scanner
 

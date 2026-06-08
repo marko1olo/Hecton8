@@ -19,19 +19,19 @@ localization_flags: 1
 
 # Registro de agua de comedor
 
-El registro del comedor es lo bastante pequeno para pasarlo por alto y demasiado humano para tratarlo como chatarra. Es una pizarra laminada de presion de una sala de comida ahogada: fichas de agua a un lado, acceso de bombas al otro, excepciones médicas apretados en el margen donde el software no dejo ningun campo humano. Nadie escribio una despedida. Nadie explico la Gran Marea. La ultima pelea visible trata de seis vasos perdidos, un filtro norte malo y si el equipo de bombas debia recibir agua antes de una bajada nocturna.
+El registro del comedor es lo bastante pequeno para pasarlo por alto y demasiado humano para tratarlo como chatarra. Es una pizarra laminada de presión de una sala de comida ahogada: fichas de agua a un lado, acceso de bombas al otro, excepciones médicas apretados en el margen donde el software no dejo ningun campo humano. Nadie escribio una despedida. Nadie explico la Gran Marea. La ultima pelea visible trata de seis vasos perdidos, un filtro norte malo y si el equipo de bombas debia recibir agua antes de una bajada nocturna.
 
-Por eso importa. HECTON-8 se vuelve real cuando la colonia deja de ser un sitio de desastre y empieza a ser un lugar donde trabajadores cansados contaban agua potable como custodia de herramientas. Una ficha de comida no era solo racion. Probaba que alguien salio de turno, devolvio una llave de bomba, reviso sintomas de presion o debia estar en una litera y no bajo el suelo. El registro convierte la perdida anonima en rutina: nombres abreviados, correcciones inicialadas, deudas arrastradas porque el sistema no tuvo tiempo de volverse amable.
+Por eso importa. HECTON-8 se vuelve real cuando la colonia deja de ser un sitio de desastre y empieza a ser un lugar donde trabajadores cansados contaban agua potable como custodia de herramientas. Una ficha de comida no era solo racion. Probaba que alguien salio de turno, devolvio una llave de bomba, reviso sintomas de presión o debia estar en una litera y no bajo el suelo. El registro convierte la perdida anonima en rutina: nombres abreviados, correcciónes inicialadas, deudas arrastradas porque el sistema no tuvo tiempo de volverse amable.
 
-Para un merodeador, el objeto es util antes de ser triste. La correccion de bombas une el comedor con una ruta de mantenimiento. Los excepciones médicas apuntan a enfermedad de presion antes de que el paquete oficial admita un grupo de lesiones. Las fichas perdidas pueden significar robo, triaje urgente, contaminacion o alguien alimentando en silencio a un equipo que el horario ya habia borrado. Conserva la pizarra antes de desguazar la sala. Una linea sobre vasos puede probar mas que un memorial.
+Para un merodeador, el objeto es útil antes de ser triste. La corrección de bombas une el comedor con una ruta de mantenimiento. Las excepciones médicas apuntan a enfermedad de presión antes de que el paquete oficial admita un grupo de lesiones. Las fichas perdidas pueden significar robo, triaje urgente, contaminacion o alguien alimentando en silencio a un equipo que el horario ya había borrado. Conserva la pizarra antes de desguazar la sala. Una línea sobre vasos puede probar más que un memorial.
 
 ## Scanner
 
-REGISTRO DE AGUA DE COMEDOR // Pizarra laminada, esquinas hinchadas. Faltan seis fichas de agua-comida, dos excepciones médicas, una correccion de sala de bombas en lapiz graso. La colonia aun discutia por vasos cuando el oceano empezo a tomar habitaciones.
+REGISTRO DE AGUA DE COMEDOR // Pizarra laminada, esquinas hinchadas. Faltan seis fichas de agua-comida, dos excepciones médicas, una corrección de sala de bombas en lapiz graso. La colonia aun discutia por vasos cuando el oceano empezo a tomar habitaciones.
 
 ## Terminal
 
-REGISTRO COMEDOR: asignacion potable sellada por jefe de turno. Fichas faltantes: 6. Excepciones m?dicas: 2. Correccion bomba: Mara Venn. Disputa de racion retenida tras tono 2 porque el filtro norte salio agrio y nadie queria marcar contaminación todavia.
+REGISTRO COMEDOR: asignacion potable sellada por jefe de turno. Fichas faltantes: 6. Excepciones médicas: 2. Correccion bomba: Mara Venn. Disputa de racion retenida tras tono 2 porque el filtro norte salio agrio y nadie queria marcar contaminación todavia.
 
 ## Audio
 

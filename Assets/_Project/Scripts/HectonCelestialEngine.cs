@@ -726,8 +726,12 @@ namespace Hecton8.Celestial
         [SerializeField] private Transform aegirTransform;
         [SerializeField] private ObserverRelativeCelestialBody aegirObserverRelativeBody;
         [SerializeField] private Renderer aegirRenderer;
+        [SerializeField] private Material aegirFallbackMaterial;
         [SerializeField] private Transform playerTransform;
         [SerializeField] private HectonAtmosphereManager _atmosphereManager;
+
+        [Header("Aegir Sky Projection Source Profile")]
+        [SerializeField] private AegirSkyProjectionProfile aegirSkyProjection = AegirSkyProjectionProfile.Default;
 
         [Header("Sky Material")]
         [SerializeField] private Material _skyMaterial;
@@ -1133,6 +1137,8 @@ namespace Hecton8.Celestial
         private float _surfaceWeatherStarVisibilityMultiplier = 1f;
         private float _surfaceWeatherStormEmissionMultiplier = 1f;
         private float _surfaceWeatherSkyLuminanceMultiplier = 1f;
+        private bool _hasCelestialRuntimeAuthority;
+        private bool _aegirMaterialWarningPublished;
         private bool _registeredToTickManager;
         private bool _firmamentStartupBakeAttempted;
         private float _surfaceWeatherSunDiscMultiplier = 1f;

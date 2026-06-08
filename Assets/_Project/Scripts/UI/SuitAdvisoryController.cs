@@ -53,7 +53,7 @@ namespace Hecton8.UI
         private bool _registeredForSurvivalSignals;
         private bool _hotSwapListenerRegistered;
         private uint _survivalSignalSourceId;
-        private uint _lastSurvivalSignalSequence;
+        private int _lastSurvivalVitalsSnapshotGeneration;
         private IAudioService _cachedAudioService;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private FixedCharBuffer _advisoryMessageBuffer = new FixedCharBuffer(192); // COLD ALLOC: char[192] - suit advisory notification staging buffer - owner: SuitAdvisoryController
@@ -192,6 +192,11 @@ namespace Hecton8.UI
             if (_survivalSignalSourceId == 0u)
                 return;
 
+            int snapshotGeneration = SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration;
+            if (snapshotGeneration == 0 || snapshotGeneration == _lastSurvivalVitalsSnapshotGeneration)
+                return;
+
+            _lastSurvivalVitalsSnapshotGeneration = snapshotGeneration;
             ReadOnlySpan<SurvivalVitalsChangedSignal> signals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
             {
@@ -199,10 +204,6 @@ namespace Hecton8.UI
                 if (signal.SourceId != _survivalSignalSourceId)
                     continue;
 
-                if (signal.Sequence == 0u || signal.Sequence == _lastSurvivalSignalSequence)
-                    continue;
-
-                _lastSurvivalSignalSequence = signal.Sequence;
                 ProcessSurvivalVitalsSignal(in signal);
             }
         }
@@ -259,7 +260,7 @@ namespace Hecton8.UI
                 return;
 
             _survivalSignalSourceId = sourceId;
-            _lastSurvivalSignalSequence = 0u;
+            _lastSurvivalVitalsSnapshotGeneration = SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration;
         }
 
         private static uint ResolveSurvivalSignalSourceId(HectonSurvivalSystem system)

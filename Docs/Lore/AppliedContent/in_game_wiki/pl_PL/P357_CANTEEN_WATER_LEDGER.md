@@ -23,7 +23,7 @@ Rejestr kantyny jest dość mały, by go przegapić, i zbyt ludzki, by nazwać g
 
 Dlatego to ważne. HECTON-8 staje się prawdziwe, gdy kolonia przestaje być miejscem katastrofy, a staje się miejscem, gdzie zmęczeni robotnicy liczyli wodę pitną jak ewidencję narzędzi. Żeton posiłku nie był tylko racją. Dowodził, że ktoś wrócił ze zmiany, oddał klucz pompy, miał sprawdzone objawy ciśnieniowe albo powinien być w koi, a nie pod podłogą. Rejestr zmienia anonimową stratę w rutynę: skrócone imiona, parafowane poprawki, długi przeniesione dalej, bo system nie miał czasu stać się dobry.
 
-Dla maraudera obiekt jest użyteczny, zanim stanie się smutny. Korekta pompowni łączy kantynę z trasą konserwacji. Wyj?tki medyczne wskazują chorobę ciśnieniową, zanim oficjalny pakiet uzna cluster obrażeń. Brakujące żetony mogą oznaczać kradzież, nagły triage, skażenie albo kogoś, kto po cichu karmił ekipę już wymazaną z grafiku. Zachowaj tablicę przed rozebraniem pokoju. Linia o kubkach może udowodnić więcej niż pomnik.
+Dla szabrownika-kontraktora obiekt jest użyteczny, zanim stanie się smutny. Korekta pompowni łączy kantynę z trasą konserwacji. Wyjątki medyczne wskazują chorobę ciśnieniową, zanim oficjalny pakiet uzna grupę obrażeń. Brakujące żetony mogą oznaczać kradzież, nagły triage, skażenie albo kogoś, kto po cichu karmił ekipę już wymazaną z grafiku. Zachowaj tablicę przed rozebraniem pokoju. Linia o kubkach może udowodnić więcej niż pomnik.
 
 ## Scanner
 
@@ -31,7 +31,7 @@ REJESTR WODY KANTYNY // Laminowana tablica, narożniki spuchnięte. Brakuje sze�
 
 ## Terminal
 
-REJESTR KANTYNY: przydział pitny zapieczętowany przez lidera zmiany. Brakujące żetony: 6. Override medyczne: 2. Korekta pompowni: Mara Venn. Spór racji wstrzymany po tonie 2, bo północny filtr skwaśniał i nikt nie chciał jeszcze pisać skażenie.
+REJESTR KANTYNY: przydział pitny zapieczętowany przez lidera zmiany. Brakujące żetony: 6. Wyjątek medyczne: 2. Korekta pompowni: Mara Venn. Spór racji wstrzymany po tonie 2, bo północny filtr skwaśniał i nikt nie chciał jeszcze pisać skażenie.
 
 ## Audio
 

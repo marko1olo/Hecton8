@@ -789,6 +789,54 @@ public class HectonCelestialEngineEditTests
     }
 
     [Test]
+    public void CelestialEnginePublishesAegirSkyProjectionGlobalsFromRuntimeSnapshot()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+
+        StringAssert.Contains("AegirSkyProjectionProfile", source);
+        StringAssert.Contains("PublishAegirSkyProjectionGlobals(aegirDirection);", source);
+        StringAssert.Contains("Shader.SetGlobalVector(\n                _ID_H8AegirPlanetCenterRadius", source);
+        StringAssert.Contains("Shader.SetGlobalVector(\n                _ID_H8AegirSunDirection", source);
+        StringAssert.Contains("Shader.SetGlobalFloat(_ID_H8AegirFlowPhaseValid, 1f);", source);
+        StringAssert.Contains("ResolveAegirSkyProjectionVisibility01", source);
+        StringAssert.Contains("ClearAegirSkyProjectionGlobals();", source);
+    }
+
+    [Test]
+    public void CelestialEngineDuplicateRuntimeOwnerDoesNotClearActiveProjectionGlobals()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+
+        StringAssert.Contains("TryClaimCelestialRuntimeAuthority()", source);
+        StringAssert.Contains("DisableDuplicateCelestialPresentation()", source);
+        StringAssert.Contains("bool shouldClearRuntimeSnapshot = !Application.isPlaying || _hasCelestialRuntimeAuthority;", source);
+        StringAssert.Contains("if (shouldClearRuntimeSnapshot)\n                ClearCelestialRuntimeSnapshot();", source);
+        StringAssert.Contains("ReleaseCelestialRuntimeAuthority();", source);
+    }
+
+    [Test]
+    public void AegirSkyAndImpostorShadersConsumeRuntimeProjectionContract()
+    {
+        string skyPath = Path.Combine("Assets", "_Project", "Art", "Shaders", "Sky", "Hecton_AegirSky.shader");
+        string impostorPath = Path.Combine("Assets", "_Project", "Art", "Shaders", "H8_AegirGasGiantImpostor_1428.shader");
+        string skySource = File.ReadAllText(skyPath).Replace("\r\n", "\n");
+        string impostorSource = File.ReadAllText(impostorPath).Replace("\r\n", "\n");
+
+        StringAssert.Contains("_H8AegirSunDirection", skySource);
+        StringAssert.Contains("systemVisibility = saturate(1.0 - _H8AegirSunDirection.w);", skySource);
+        StringAssert.Contains("ringAlpha = ringMask * gap * (0.28 + quality * 0.42) * _RingOpacity * systemVisibility;", skySource);
+        StringAssert.Contains("float3 planetColor = DrawAegir", skySource);
+
+        StringAssert.Contains("_PlanetPhase", impostorSource);
+        StringAssert.Contains("_H8GlobalQualityWeight", impostorSource);
+        StringAssert.Contains("_H8AegirSunDirection", impostorSource);
+        StringAssert.Contains("_HectonCelestialLightReadability0", impostorSource);
+        StringAssert.Contains("systemVisibility = min(systemVisibility", impostorSource);
+    }
+
+    [Test]
     public void SeismicWaveMathRejectsFarFiniteAupBeforeFloatCast()
     {
         SeismicSignal signal = CreateRadialSeismicSignal();

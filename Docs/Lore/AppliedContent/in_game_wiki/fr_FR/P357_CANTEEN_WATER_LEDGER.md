@@ -21,7 +21,7 @@ localization_flags: 1
 
 Le registre de cantine est assez petit pour etre manque et trop humain pour etre du decor. C'est une ardoise plastifiee pour pression, sortie d'une salle de repas noyee: jetons d'eau d'un cote, acces pompe de l'autre, dérogations médicales serres dans une marge ou le logiciel n'avait laisse aucun champ humain. Personne n'y a ecrit d'adieu. Personne n'y explique la Grande Maree. Le dernier conflit visible concerne six gobelets manquants, un mauvais filtre nord, et si l'equipe des pompes devait recevoir de l'eau avant une descente de nuit.
 
-C'est pour cela qu'il compte. HECTON-8 devient reel quand la colonie cesse d'etre un site de catastrophe et devient un endroit ou des travailleurs fatigues comptaient l'eau potable comme une tra?abilit? des outils. Un jeton de repas n'etait pas seulement une ration. Il prouvait qu'une personne etait sortie de quart, avait rendu une cle de pompe, avait fait verifier des symptomes de pression, ou devait etre dans une couchette au lieu d'etre sous le plancher. Le registre transforme une perte anonyme en routine: noms abreges, corrections initialees, dettes reportees parce que le systeme n'avait pas le temps d'etre gentil.
+C'est pour cela qu'il compte. HECTON-8 devient reel quand la colonie cesse d'etre un site de catastrophe et devient un endroit ou des travailleurs fatigues comptaient l'eau potable comme une traçabilité des outils. Un jeton de repas n'etait pas seulement une ration. Il prouvait qu'une personne etait sortie de quart, avait rendu une cle de pompe, avait fait verifier des symptomes de pression, ou devait etre dans une couchette au lieu d'etre sous le plancher. Le registre transforme une perte anonyme en routine: noms abreges, corrections initialees, dettes reportees parce que le systeme n'avait pas le temps d'etre gentil.
 
 Pour un maraudeur, l'objet est utile avant d'etre triste. La correction de pompe relie la cantine a une route de maintenance. Les dérogations médicales pointent vers la maladie de pression avant que le paquet officiel reconnaisse un groupe de blessures. Les jetons manquants peuvent signifier vol, triage d'urgence, contamination, ou quelqu'un nourrissant en silence une equipe deja effacee par l'horaire. Preserve l'ardoise avant de depouiller la piece. Une ligne de gobelet peut prouver plus qu'un memorial.
 
@@ -31,7 +31,7 @@ REGISTRE D'EAU CANTINE // Ardoise plastifiee, coins gonfles. Six jetons d'eau-re
 
 ## Terminal
 
-REGISTRE CANTINE: allocation potable scellee par chef de quart. Jetons manquants: 6. D?rogations m?dicales: 2. Correction pompe: Mara Venn. Litige de ration suspendu apres tonalite 2 car le filtre nord tournait aigre et personne ne voulait encore ecrire contamination.
+REGISTRE CANTINE: allocation potable scellee par chef de quart. Jetons manquants: 6. Dérogations médicales: 2. Correction pompe: Mara Venn. Litige de ration suspendu apres tonalite 2 car le filtre nord tournait aigre et personne ne voulait encore ecrire contamination.
 
 ## Audio
 
