@@ -1,0 +1,2 @@
+packet_id,packet_hash_hex,packet_hash_uint,release_set,primary_component,primary_field,secondary_component,secondary_field,suggested_world_target,unlock_moment,notes
+P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE,0xAAD27229,2865918505,RS185_RAN_LONG_CLAIM_TRANSIT_ARTICLE,NarrativeDiscovery,appliedLorePacketHash,MessageTerminal,appliedLorePacketHash,"poi.route_archive, poi.luyten_packet_spool, poi.black_keel_window_clock",ran_long_claim_transit_article,Authoring evidence only; runtime consumes baked packet hash and string-pool rows. Unity placement still requires an editor binding pass.

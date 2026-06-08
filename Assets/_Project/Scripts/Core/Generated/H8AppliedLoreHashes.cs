@@ -477,6 +477,7 @@ namespace Hecton8.Core.Generated
         public const uint P622_KESTREL_RELAY_SHADOW_CHART = 0x756AA1A6u;
         public const uint P623_PELLET_LANE_WAKE_LEDGER = 0x1C738CB9u;
         public const uint P624_CABLE_FOREST_CONDUCTIVE_BIOTA = 0x727AB672u;
+        public const uint P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE = 0xAAD27229u;
 
         public const uint Locale_en_US = 0x6C199F07u;
         public const uint Locale_ru_RU = 0x5FBC7928u;

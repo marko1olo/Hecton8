@@ -2,9 +2,9 @@
 packet_id: P013_NEARLIGHT_SHIP_CLASSES
 release_set_id: RS003_HUMAN_SPACE_AEGIR_ROUTE
 article_id: ships.nearlight_classes
-unlock_id: unlock.first_transit_manifest
-poi_tags: poi.transit_manifest;poi.sleeper_tag
-biome_tags: biome.drowned_colony;biome.crash_shelf
+unlock_id: unlock.first_nearlight_manifest
+poi_tags: poi.transit_manifest;poi.old_ship_class_table
+biome_tags: biome.drowned_colony;biome.black_keel_link
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
@@ -14,7 +14,7 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Classes de vaisseaux proche-lumière
