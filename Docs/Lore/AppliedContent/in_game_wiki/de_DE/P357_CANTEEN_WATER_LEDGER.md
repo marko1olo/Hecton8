@@ -23,7 +23,7 @@ Das Kantinenledger ist klein genug, um es zu uebersehen, und zu menschlich, um e
 
 Darum zaehlt es. HECTON-8 wird real, wenn die Kolonie aufhoert, nur Katastrophenort zu sein, und ein Ort wird, an dem muede Arbeiter Trinkwasser wie Werkzeugnachweis zaehlten. Eine Mahlzeitmarke war nicht nur Ration. Sie bewies, dass jemand von der Schicht kam, einen Pumpenschluessel zurueckgab, Drucksymptome pruefen liess oder in einer Koje sein sollte statt unter dem Boden. Das Ledger verwandelt anonymen Verlust in Routine: abgekuerzte Namen, abgezeichnete Korrekturen, vorgetragene Schulden, weil das System keine Zeit hatte, freundlich zu werden.
 
-Fuer einen Marauder ist das Objekt nuetzlich, bevor es traurig ist. Die Pumpenraum-Korrektur verbindet die Kantine mit einer Wartungsroute. Die medizinischen Overrides zeigen Druckkrankheit, bevor das offizielle Paket einen Verletzungscluster zugibt. Die fehlenden Marken koennen Diebstahl bedeuten, Notfalltriage, Kontamination oder jemanden, der heimlich einen Trupp fuetterte, den der Plan schon geloescht hatte. Bewahre die Tafel, bevor du den Raum ausweidest. Eine Becherzeile kann mehr beweisen als ein Memorial.
+Fuer einen Marauder ist das Objekt nuetzlich, bevor es traurig ist. Die Pumpenraum-Korrektur verbindet die Kantine mit einer Wartungsroute. Die medizinischen Overrides zeigen Druckkrankheit, bevor das offizielle Paket einen Verletzungsgruppe zugibt. Die fehlenden Marken koennen Diebstahl bedeuten, Notfalltriage, Kontamination oder jemanden, der heimlich einen Trupp fuetterte, den der Plan schon geloescht hatte. Bewahre die Tafel, bevor du den Raum ausweidest. Eine Becherzeile kann mehr beweisen als ein Memorial.
 
 ## Scanner
 
@@ -31,7 +31,7 @@ KANTINEN-WASSERLEDGER // Laminierte Tafel, Ecken aufgequollen. Sechs Mahlzeit-Wa
 
 ## Terminal
 
-KANTINENLEDGER: Trinkwasserzuteilung vom Schichtlead versiegelt. Fehlende Marken: 6. Medizinische Ausnahmen: 2. Pumpenraum-Korrektur: Mara Venn. Rationsstreit nach Ton 2 gehalten, weil der Nordfilter sauer lief und niemand es schon contamination nennen wollte.
+KANTINENLEDGER: Trinkwasserzuteilung vom Schichtlead versiegelt. Fehlende Marken: 6. Medizinische Ausnahmen: 2. Pumpenraum-Korrektur: Mara Venn. Rationsstreit nach Ton 2 gehalten, weil der Nordfilter sauer lief und niemand es schon Kontamination nennen wollte.
 
 ## Audio
 
@@ -39,6 +39,6 @@ Der letzte Streit war nicht heroisch. Es ging darum, wer getrunken hat, wer nass
 
 ## Field Note
 
-Sechs fehlende Marken, zwei medizinische Ausnahmen, eine Pumpenkorrektur. Den Rand nicht s?ubern. Der Becherstreit ist die Route.
+Sechs fehlende Marken, zwei medizinische Ausnahmen, eine Pumpenkorrektur. Den Rand nicht säubern. Der Becherstreit ist die Route.
 
 <!-- In-Game Wiki; generated from P357_CANTEEN_WATER_LEDGER/de_DE. -->

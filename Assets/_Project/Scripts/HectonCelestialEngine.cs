@@ -487,6 +487,8 @@ namespace Hecton8.Celestial
     public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, ILateFrameTickable, IBiomeMatrixEventListener, IWeatherEventListener, IGlobalRegistryHotSwapListener, ICelestialSkyDirectionReadModel, ICelestialResonanceReadModel, ICelestialLightReadabilityReadModel
     {
         private static int s_x001HectonCelestialEngineSignalPushDropCount;
+        private static HectonCelestialEngine s_activeRuntimeCelestialEngine;
+        private static bool s_duplicateRuntimeCelestialWarningPublished;
         private const string MandatedSkyMaterialName = "Mat_HectonSky";
         private const float SurfaceCloudShadowCookieEpsilon = 0.0001f;
         private const float SurfaceReadableSunIntensityFloor = 1.05f;
@@ -515,6 +517,13 @@ namespace Hecton8.Celestial
         {
             state = _currentAtmosphericLightingState;
             return _hasAtmosphericLightingState && state.IsValid != 0;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCelestialEngineRuntimeAuthority()
+        {
+            s_activeRuntimeCelestialEngine = null;
+            s_duplicateRuntimeCelestialWarningPublished = false;
         }
         // Configuration
 
@@ -586,6 +595,33 @@ namespace Hecton8.Celestial
                     registryOffsetMeters = 76000f
                 };
             }
+        }
+
+        [Serializable]
+        private struct AegirSkyProjectionProfile
+        {
+            public bool publishGlobals;
+            [Range(0.05f, 0.65f)] public float fallbackAngularRadius;
+            [Range(0.05f, 1.35f)] public float ringOuterRadius;
+            [Range(0.05f, 1.0f)] public float ringInnerRadius;
+            [Range(0f, 1f)] public float ringShadowStrength;
+            [Range(0f, 0.02f)] public float bandFlowSpeed;
+            public Vector3 ringPlaneNormal;
+            [Range(0f, 1f)] public float minimumQuality;
+            [Range(0f, 0.25f)] public float visibilityFloor;
+
+            public static AegirSkyProjectionProfile Default => new AegirSkyProjectionProfile
+            {
+                publishGlobals = true,
+                fallbackAngularRadius = 0.325f,
+                ringOuterRadius = 0.68f,
+                ringInnerRadius = 0.43f,
+                ringShadowStrength = 0.26f,
+                bandFlowSpeed = 0.00008f,
+                ringPlaneNormal = new Vector3(0.16f, 0.93f, 0.33f),
+                minimumQuality = 0.16f,
+                visibilityFloor = 0.035f
+            };
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]

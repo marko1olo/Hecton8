@@ -21,7 +21,7 @@ localization_flags: 1
 
 Das Kantinen-Wasserledger ist eines der einfachsten menschlichen Artefakte in HECTON-8: eine Essraumtafel fuer Trinkwasser, Markenrueckgabe, Pumpenzugang und medizinische Ausnahmen. Es erklaert die Katastrophe nicht. Es zeigt die Kolonie unmittelbar bevor die Katastrophe zur Geschichte wurde.
 
-Sein Wert liegt in Textur und Beweis. Sechs fehlende Marken klingen klein, bis der Spieler versteht, was Wasser in einer Druckkolonie bedeutete. Trinkwasser lief durch Filter, Schichtbuchhaltung, medizinische Ausnahmen und Pumpenraum-custody. Ein fehlender Becher konnte ein mueder Arbeiter sein. Er konnte auch ein kranker Trupp sein, eine kontaminierte Leitung, ein umgangener Rationsbefehl oder ein Supervisor, der einen lokalen Ausfall vor Deep-Reach-Berichten versteckte.
+Sein Wert liegt in Textur und Beweis. Sechs fehlende Marken klingen klein, bis der Spieler versteht, was Wasser in einer Druckkolonie bedeutete. Trinkwasser lief durch Filter, Schichtbuchhaltung, medizinische Ausnahmen und Pumpenraumnachweis. Ein fehlender Becher konnte ein mueder Arbeiter sein. Er konnte auch ein kranker Trupp sein, eine kontaminierte Leitung, ein umgangener Rationsbefehl oder ein Supervisor, der einen lokalen Ausfall vor Deep-Reach-Berichten versteckte.
 
 Es geht nicht um Melodrama. Das Ledger macht die Kolonie als Arbeit lesbar: Menschen kamen von Schicht, stritten, korrigierten Eintraege, liehen Werkzeuge, schuetzten ihre Leute und versuchten, den Raum normal zu halten, waehrend der Ozean schon ins System kam. In HECTON-8 kann so eine gewoehnliche Spur Beweis werden.
 

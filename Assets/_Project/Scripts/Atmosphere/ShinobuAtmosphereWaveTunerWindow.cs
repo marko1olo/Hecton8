@@ -162,11 +162,11 @@ namespace Hecton8.Atmosphere.Editor
                     out NativeArray<OceanSurfaceTelemetryEntry>.ReadOnly telemetry) ||
                 telemetry.Length <= 0)
             {
-                return "GlobalDataVault ocean buffers active. Readback telemetry pending.";
+                return "GlobalDataVault ocean buffers active. Surface telemetry pending.";
             }
 
             OceanSurfaceTelemetryEntry latest = ResolveLatestTelemetry(telemetry);
-            return "GlobalDataVault ocean buffers active. GPU readback latency " +
+            return "GlobalDataVault ocean buffers active. Surface telemetry latency " +
                    latest.ReadbackLatencyFrames +
                    " frames, samples " +
                    latest.ReadbackSampleCount +

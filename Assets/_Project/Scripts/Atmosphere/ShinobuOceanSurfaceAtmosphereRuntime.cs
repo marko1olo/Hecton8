@@ -377,7 +377,19 @@ namespace Hecton8.Atmosphere
 
         public void ColdTick()
         {
-            if (!_runtimeActive || !_vaultBuffersReady)
+            if (!_runtimeActive)
+                return;
+
+            if (!_vaultBuffersReady)
+            {
+                if (!EnsureVaultBuffersCold())
+                {
+                    _surfaceTelemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagMissingRuntimeData;
+                    return;
+                }
+            }
+
+            if (!_initializedWeather && !LoadLegacyWeatherOrGenerateEmergency())
                 return;
 
             ResolveCameraTransformCold();
@@ -991,7 +1003,7 @@ namespace Hecton8.Atmosphere
             return _vaultBuffersReady;
         }
 
-        private void LoadLegacyWeatherOrGenerateEmergency()
+        private bool LoadLegacyWeatherOrGenerateEmergency()
         {
             bool loaded = false;
 #if UNITY_EDITOR
@@ -1013,13 +1025,16 @@ namespace Hecton8.Atmosphere
             }
 #endif
 
-            if (!loaded)
-                GenerateEmergencyMockWeather();
-            else
-                EnsureAtmosphereDefaults();
+            bool hydrated = loaded ? EnsureAtmosphereDefaults() : GenerateEmergencyMockWeather();
+            if (!hydrated)
+            {
+                _surfaceTelemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagMissingRuntimeData;
+                return false;
+            }
 
             _initializedWeather = true;
             UploadPreparedWaveBufferToGpu();
+            return true;
         }
 
         private bool TryLoadLegacyWeatherFile(string relativePath)
@@ -1065,20 +1080,22 @@ namespace Hecton8.Atmosphere
                 waves[waveIndex] = HectonOceanSurfaceMath.SanitizeWave(wave);
             }
 
-            EnsureWeatherDefaultsFromWaves();
+            if (!EnsureWeatherDefaultsFromWaves())
+                return false;
+
             _waveParameterPayloadDirty = true;
             return true;
 #endif
         }
 
-        private void GenerateEmergencyMockWeather()
+        private bool GenerateEmergencyMockWeather()
         {
             if (!ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves) ||
                 !ResolveWeatherArray(out NativeArray<WeatherStateDTO> weather) ||
                 !ResolveAtmosphereArray(out NativeArray<AtmosphereDTO> atmosphere))
             {
                 _surfaceTelemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagMissingRuntimeData;
-                return;
+                return false;
             }
 
             NativeArray<float4> swell = default;
@@ -1098,12 +1115,13 @@ namespace Hecton8.Atmosphere
             _surfaceTelemetryFlags |= OceanSurfaceAtmosphereConstants.TelemetryFlagEmergencyWeatherFallback;
             _waveParameterPayloadDirty = true;
             RefreshCachedSurfaceSnapshot();
+            return true;
         }
 
-        private void EnsureAtmosphereDefaults()
+        private bool EnsureAtmosphereDefaults()
         {
             if (!ResolveAtmosphereArray(out NativeArray<AtmosphereDTO> atmosphere))
-                return;
+                return false;
 
             AtmosphereDTO atmo = atmosphere[0];
             if (!math.all(math.isfinite(atmo.RayleighBeta.xyz)) || math.lengthsq(atmo.RayleighBeta.xyz) <= 0.0000001f)
@@ -1115,15 +1133,15 @@ namespace Hecton8.Atmosphere
                 atmosphere[0] = atmo;
             }
 
-            EnsureWeatherDefaultsFromWaves();
+            return EnsureWeatherDefaultsFromWaves();
         }
 
-        private void EnsureWeatherDefaultsFromWaves()
+        private bool EnsureWeatherDefaultsFromWaves()
         {
             if (!ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves) ||
                 !ResolveWeatherArray(out NativeArray<WeatherStateDTO> weather))
             {
-                return;
+                return false;
             }
 
             WeatherStateDTO state = weather[0];
@@ -1137,6 +1155,7 @@ namespace Hecton8.Atmosphere
             state.GlobalQualityWeight = ResolveGlobalQualityWeight();
             state.MaxWaveAmplitude = HectonOceanSurfaceMath.ResolveMaxAmplitude(waves);
             weather[0] = state;
+            return true;
         }
 
         private bool TryLoadWeatherProfilesCsv()

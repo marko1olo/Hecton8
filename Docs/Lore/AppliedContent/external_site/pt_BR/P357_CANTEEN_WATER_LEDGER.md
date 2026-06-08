@@ -21,7 +21,7 @@ localization_flags: 1
 
 O Registro de Água da Cantina é um dos artefatos humanos mais simples de HECTON-8: uma placa de sala de refeições que anota água potável, devolução de fichas, acesso às bombas e exceções médicas. Ele não explica o desastre. Mostra a colônia logo antes de o desastre virar história.
 
-Seu valor é textura e prova. Seis fichas faltando parecem pouco até o jogador entender o que água significava numa colônia de pressão. Água potável passava por filtros, contabilidade de turno, overrides médicos e custody da sala de bombas. Um copo faltando podia ser um trabalhador cansado. Também podia ser uma equipe doente, uma linha contaminada, uma ordem de ração contornada ou um supervisor escondendo uma falha local dos relatórios da Deep Reach.
+Seu valor é textura e prova. Seis fichas faltando parecem pouco até o jogador entender o que água significava numa colônia de pressão. Água potável passava por filtros, contabilidade de turno, exceções médicas e registro da sala de bombas. Um copo faltando podia ser um trabalhador cansado. Também podia ser uma equipe doente, uma linha contaminada, uma ordem de ração contornada ou um supervisor escondendo uma falha local dos relatórios da Deep Reach.
 
 O ponto não é melodrama. O registro torna a colônia legível como trabalho: pessoas saíam de turno, discutiam, corrigiam registros, pegavam ferramentas emprestadas, protegiam os seus e tentavam manter a sala normal enquanto o oceano já entrava no sistema. Em HECTON-8, esse traço comum pode virar prova.
 

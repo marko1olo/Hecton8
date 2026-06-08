@@ -1111,7 +1111,9 @@ def build_preview(args: argparse.Namespace) -> int:
     chunk_max_x = math.floor((window_max_x - 0.001) / params.chunk)
     chunk_min_z = math.floor(window_min_z / params.chunk)
     chunk_max_z = math.floor((window_max_z - 0.001) / params.chunk)
-    chunk_count_axis = max(chunk_max_x - chunk_min_x + 1, chunk_max_z - chunk_min_z + 1)
+    chunk_count_x = chunk_max_x - chunk_min_x + 1
+    chunk_count_z = chunk_max_z - chunk_min_z + 1
+    chunk_count_axis = max(chunk_count_x, chunk_count_z)
     chunk_entries = []
     for world_chunk_z in range(chunk_min_z, chunk_max_z + 1):
         min_z = world_chunk_z * params.chunk
@@ -1160,6 +1162,8 @@ def build_preview(args: argparse.Namespace) -> int:
         "originMeters": {"x": origin_x, "z": origin_z},
         "chunkSizeMeters": params.chunk,
         "chunkCountAxis": chunk_count_axis,
+        "chunkCountX": chunk_count_x,
+        "chunkCountZ": chunk_count_z,
         "chunkCount": len(chunk_entries),
         "runtimeChunkRange": {
             "minX": chunk_min_x,
@@ -1192,6 +1196,8 @@ def build_preview(args: argparse.Namespace) -> int:
         "areaSquareKilometers": round((params.extent * params.extent) / 1_000_000.0, 3),
         "chunkSizeMeters": params.chunk,
         "chunkCountAxis": chunk_count_axis,
+        "chunkCountX": chunk_count_x,
+        "chunkCountZ": chunk_count_z,
         "resolution": resolution,
         "workers": worker_count,
         "metersPerPixel": params.extent / resolution,

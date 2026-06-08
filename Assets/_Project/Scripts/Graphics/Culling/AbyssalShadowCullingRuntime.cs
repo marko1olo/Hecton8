@@ -60,6 +60,7 @@ namespace Hecton8.Graphics.Culling
         [SerializeField, Min(1)] private int _gizmoBoxLimit = 96;
 
         private IDataVault _dataVault;
+        private ICelestialLightReadabilityReadModel _celestialLightReadModel;
         private VaultGenerationHandle<ShadowCullInstanceDTO> _instanceHandle;
         private VaultGenerationHandle<ShadowCullStateDTO> _stateHandle;
         private VaultGenerationHandle<float> _illuminationHandle;
@@ -141,6 +142,7 @@ namespace Hecton8.Graphics.Culling
             }
 
             s_active = this;
+            _celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;
             RebindDataVaultForLifecycle(GlobalRegistry.DataVault, null);
             if (_dataVault != null)
                 EnsureInitialized(_dataVault);
@@ -179,6 +181,7 @@ namespace Hecton8.Graphics.Culling
 
             ReleaseGpuBuffers();
             ReleaseVaultHandles(vault);
+            _celestialLightReadModel = null;
             ResetVaultHandles();
             _dataVault = null;
             _initialized = false;
@@ -741,6 +744,10 @@ namespace Hecton8.Graphics.Culling
                     TryRegisterSlowTick();
                     TryRegisterDispatcherSystems();
                 }
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
+            {
+                _celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;
             }
         }
 
@@ -1343,6 +1350,17 @@ namespace Hecton8.Graphics.Culling
 
         private float3 ResolveDirectionalLight()
         {
+            ICelestialLightReadabilityReadModel readModel = _celestialLightReadModel;
+            CelestialLightReadabilitySnapshot light = readModel != null
+                ? readModel.LightReadabilitySnapshot
+                : default;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.Valid) != 0u &&
+                math.all(math.isfinite(light.SunDirection)) &&
+                math.lengthsq(light.SunDirection) > 0.000001f)
+            {
+                return math.normalizesafe(-light.SunDirection, new float3(-0.35f, -0.72f, -0.25f));
+            }
+
             float3 value = new float3(_directionalLightDirection.x, _directionalLightDirection.y, _directionalLightDirection.z);
             if (!math.all(math.isfinite(value)) || math.lengthsq(value) < 0.000001f)
                 value = new float3(-0.35f, -0.72f, -0.25f);

@@ -494,7 +494,7 @@ public sealed class HectonSurvivalSystemEditTests
         string wristInjectO2Body = ExtractMethodBody(wristSource, "public void InjectO2Signal(in O2LevelChangedSignal signal)");
         string wristDrainBody = ExtractMethodBody(wristSource, "private void DrainGlobalSignalSnapshots()");
         string wristUiStateBody = ExtractMethodBody(wristSource, "private void RefreshUiStateStoreInputs()");
-        string wristBuildBody = ExtractMethodBody(wristSource, "private WristHudFrameBuildInput BuildFrameInput(");
+        string wristBuildBody = ExtractMethodBody(wristSource, "private void BuildTextQuadsOwnerPhase(float deltaTime)");
 
         StringAssert.Contains("TryResolveFiniteUnit01(signal.Oxygen01, out float oxygen01)", suitProcessBody);
         StringAssert.Contains("HandleOxygenChanged(oxygen01);", suitProcessBody);

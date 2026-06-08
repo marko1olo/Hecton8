@@ -23,7 +23,7 @@ Buku kantin cukup kecil untuk terlewat dan terlalu manusiawi untuk dianggap samp
 
 Itulah sebabnya penting. HECTON-8 terasa nyata ketika koloni berhenti menjadi situs bencana dan menjadi tempat pekerja lelah menghitung air minum seperti catatan tanggung jawab alat. Token makan bukan sekadar ransum. Itu bukti seseorang selesai sif, mengembalikan kunci pompa, diperiksa gejala tekanan, atau seharusnya berada di ranjang, bukan di bawah lantai. Buku ini mengubah kehilangan anonim menjadi rutinitas: nama disingkat, koreksi diparaf, utang dibawa maju karena sistem tidak sempat menjadi baik.
 
-Bagi Marauder, objek ini berguna sebelum menjadi sedih. Koreksi ruang pompa mengikat kantin ke rute perawatan. Override medis menunjuk penyakit tekanan sebelum paket resmi mengakui cluster cedera. Token hilang bisa berarti pencurian, triase darurat, kontaminasi, atau seseorang diam-diam memberi makan kru yang sudah dihapus jadwal. Simpan papan sebelum membongkar ruangan. Satu baris soal gelas bisa membuktikan lebih banyak daripada memorial.
+Bagi Marauder, objek ini berguna sebelum menjadi sedih. Koreksi ruang pompa mengikat kantin ke rute perawatan. Override medis menunjuk penyakit tekanan sebelum paket resmi mengakui kelompok cedera. Token hilang bisa berarti pencurian, triase darurat, kontaminasi, atau seseorang diam-diam memberi makan kru yang sudah dihapus jadwal. Simpan papan sebelum membongkar ruangan. Satu baris soal gelas bisa membuktikan lebih banyak daripada memorial.
 
 ## Scanner
 
@@ -31,7 +31,7 @@ BUKU AIR KANTIN // Papan laminasi, sudut-sudutnya menggembung. Enam token air-ma
 
 ## Terminal
 
-BUKU KANTIN: alokasi minum disegel kepala sif. Token hilang: 6. Override medis: 2. Koreksi ruang pompa: Mara Venn. Sengketa ransum ditahan setelah nada 2 karena filter utara terasa asam dan belum ada yang mau menulis contamination.
+BUKU KANTIN: alokasi minum disegel kepala sif. Token hilang: 6. Override medis: 2. Koreksi ruang pompa: Mara Venn. Sengketa ransum ditahan setelah nada 2 karena filter utara terasa asam dan belum ada yang mau menulis kontaminasi.
 
 ## Audio
 

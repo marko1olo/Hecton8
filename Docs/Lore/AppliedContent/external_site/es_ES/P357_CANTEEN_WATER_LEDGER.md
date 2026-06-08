@@ -21,7 +21,7 @@ localization_flags: 1
 
 El Registro de agua de comedor es uno de los artefactos humanos mas simples de HECTON-8: una pizarra de comedor que anota agua potable, devoluciones de fichas, acceso a bombas y excepciones medicas. No explica el desastre. Muestra la colonia justo antes de que el desastre se convirtiera en historia.
 
-Su valor es textura y prueba. Seis fichas faltantes suenan menores hasta que el jugador entiende lo que significaba el agua en una colonia de presion. El agua potable pasaba por filtros, contabilidad de turno, excepciones m?dicas y custody de bombas. Un vaso perdido podia ser un trabajador cansado. Tambien podia ser un equipo enfermo, una linea contaminada, una orden de racion sorteada o un supervisor ocultando un fallo local a los informes de Deep Reach.
+Su valor es textura y prueba. Seis fichas faltantes suenan menores hasta que el jugador entiende lo que significaba el agua en una colonia de presion. El agua potable pasaba por filtros, contabilidad de turno, excepciones médicas y custodia de bombas. Un vaso perdido podia ser un trabajador cansado. Tambien podia ser un equipo enfermo, una linea contaminada, una orden de racion sorteada o un supervisor ocultando un fallo local a los informes de Deep Reach.
 
 La intencion no es melodrama. El registro hace legible la colonia como trabajo: la gente volvia de turno, discutia, corregia registros, tomaba herramientas, protegia a los suyos y trataba de mantener normal la sala mientras el oceano entraba en el sistema. En HECTON-8, esa huella ordinaria puede convertirse en prueba.
 

@@ -23,7 +23,7 @@ De kantinelog is klein genoeg om te missen en te menselijk om als rommel te beha
 
 Daarom telt het. HECTON-8 wordt echt wanneer de kolonie ophoudt alleen een rampplaats te zijn en een plek wordt waar vermoeide arbeiders drinkwater telden als gereedschapsregistratie. Een maaltijdtoken was niet alleen rantsoen. Het bewees dat iemand van shift kwam, een pompsleutel teruggaf, drukklachten liet controleren of in een bed had moeten liggen in plaats van onder de vloer. De log verandert anoniem verlies in routine: afgekorte namen, geparafeerde correcties, schulden doorgeschoven omdat het systeem geen tijd had vriendelijk te worden.
 
-Voor een Marauder is het object nuttig voordat het verdrietig is. De pompkamercorrectie verbindt de kantine met een onderhoudsroute. De medische uitzonderingen wijzen naar drukziekte voordat het officiele pakket een letselcluster erkent. De ontbrekende tokens kunnen diefstal betekenen, noodtriage, besmetting of iemand die stil een ploeg voedde die het rooster al had gewist. Bewaar het bord voordat je de kamer sloopt. Een bekerregel kan meer bewijzen dan een monument.
+Voor een Marauder is het object nuttig voordat het verdrietig is. De pompkamercorrectie verbindt de kantine met een onderhoudsroute. De medische uitzonderingen wijzen naar drukziekte voordat het officiele pakket een letselgroep erkent. De ontbrekende tokens kunnen diefstal betekenen, noodtriage, besmetting of iemand die stil een ploeg voedde die het rooster al had gewist. Bewaar het bord voordat je de kamer sloopt. Een bekerregel kan meer bewijzen dan een monument.
 
 ## Scanner
 

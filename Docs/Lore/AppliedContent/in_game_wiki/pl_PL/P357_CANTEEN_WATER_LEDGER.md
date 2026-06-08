@@ -19,19 +19,19 @@ localization_flags: 1
 
 # Rejestr wody w kantynie
 
-Rejestr kantyny jest dość mały, by go przegapić, i zbyt ludzki, by nazwać go śmieciem. To laminowana pod ciśnienie tablica z zatopionej jadalni: po jednej stronie żetony wody, po drugiej dostęp do pomp, a wyj?tki medyczne wciśnięte w margines, gdzie oprogramowanie nie zostawiło ludzkiego pola. Nikt nie napisał na niej pożegnania. Nikt nie wyjaśnił Wielkiej Fali. Ostatni widoczny spór dotyczy sześciu brakujących kubków, złego północnego filtra i tego, czy ekipa pomp powinna dostać wodę przed nocnym zejściem.
+Rejestr kantyny jest dość mały, by go przegapić, i zbyt ludzki, by nazwać go śmieciem. To laminowana pod ciśnienie tablica z zatopionej jadalni: po jednej stronie żetony wody, po drugiej dostęp do pomp, a wyjątki medyczne wciśnięte w margines, gdzie oprogramowanie nie zostawiło ludzkiego pola. Nikt nie napisał na niej pożegnania. Nikt nie wyjaśnił Wielkiej Fali. Ostatni widoczny spór dotyczy sześciu brakujących kubków, złego północnego filtra i tego, czy ekipa pomp powinna dostać wodę przed nocnym zejściem.
 
-Dlatego to ważne. HECTON-8 staje się prawdziwe, gdy kolonia przestaje być miejscem katastrofy, a staje się miejscem, gdzie zmęczeni robotnicy liczyli wodę pitną jak custody narzędzi. Żeton posiłku nie był tylko racją. Dowodził, że ktoś wrócił ze zmiany, oddał klucz pompy, miał sprawdzone objawy ciśnieniowe albo powinien być w koi, a nie pod podłogą. Rejestr zmienia anonimową stratę w rutynę: skrócone imiona, parafowane poprawki, długi przeniesione dalej, bo system nie miał czasu stać się dobry.
+Dlatego to ważne. HECTON-8 staje się prawdziwe, gdy kolonia przestaje być miejscem katastrofy, a staje się miejscem, gdzie zmęczeni robotnicy liczyli wodę pitną jak ewidencję narzędzi. Żeton posiłku nie był tylko racją. Dowodził, że ktoś wrócił ze zmiany, oddał klucz pompy, miał sprawdzone objawy ciśnieniowe albo powinien być w koi, a nie pod podłogą. Rejestr zmienia anonimową stratę w rutynę: skrócone imiona, parafowane poprawki, długi przeniesione dalej, bo system nie miał czasu stać się dobry.
 
 Dla maraudera obiekt jest użyteczny, zanim stanie się smutny. Korekta pompowni łączy kantynę z trasą konserwacji. Wyj?tki medyczne wskazują chorobę ciśnieniową, zanim oficjalny pakiet uzna cluster obrażeń. Brakujące żetony mogą oznaczać kradzież, nagły triage, skażenie albo kogoś, kto po cichu karmił ekipę już wymazaną z grafiku. Zachowaj tablicę przed rozebraniem pokoju. Linia o kubkach może udowodnić więcej niż pomnik.
 
 ## Scanner
 
-REJESTR WODY KANTYNY // Laminowana tablica, narożniki spuchnięte. Brakuje sześciu żetonów wody do posiłku, dwa wyj?tki medyczne, jedna korekta pompowni tłustym ołówkiem. Kolonia nadal kłóciła się o kubki, gdy ocean zaczął zabierać pokoje.
+REJESTR WODY KANTYNY // Laminowana tablica, narożniki spuchnięte. Brakuje sześciu żetonów wody do posiłku, dwa wyjątki medyczne, jedna korekta pompowni tłustym ołówkiem. Kolonia nadal kłóciła się o kubki, gdy ocean zaczął zabierać pokoje.
 
 ## Terminal
 
-REJESTR KANTYNY: przydział pitny zapieczętowany przez lidera zmiany. Brakujące żetony: 6. Override medyczne: 2. Korekta pompowni: Mara Venn. Spór racji wstrzymany po tonie 2, bo północny filtr skwaśniał i nikt nie chciał jeszcze pisać contamination.
+REJESTR KANTYNY: przydział pitny zapieczętowany przez lidera zmiany. Brakujące żetony: 6. Override medyczne: 2. Korekta pompowni: Mara Venn. Spór racji wstrzymany po tonie 2, bo północny filtr skwaśniał i nikt nie chciał jeszcze pisać skażenie.
 
 ## Audio
 
@@ -39,6 +39,6 @@ Ostatnia kłótnia nie była heroiczna. Była o to, kto pił, kto pracował mokr
 
 ## Field Note
 
-Sze?? brakuj?cych ?eton?w, dwa wyj?tki medyczne, jedna korekta pompowni. Nie czy?? marginesu. Sp?r o kubki jest tras?.
+Sześć brakujących żetonów, dwa wyjątki medyczne, jedna korekta pompowni. Nie czyść marginesu. Spór o kubki jest trasą.
 
 <!-- In-Game Wiki; generated from P357_CANTEEN_WATER_LEDGER/pl_PL. -->

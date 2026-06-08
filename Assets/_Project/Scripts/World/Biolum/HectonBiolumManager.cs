@@ -818,9 +818,22 @@ namespace Hecton8.Biolum
                 (((snapshot.Flags & (uint)CelestialRuntimeFlags.EclipseActive) != 0u) ||
                  snapshot.EclipseOcclusion01 > 0.05f);
             Vector3 cameraPosition = GetCameraPosition();
-            bool daylightShallow = valid && !eclipse && snapshot.SunDirection.y > 0.05f && cameraPosition.y > ShallowDaylightCutoffY;
+            ICelestialLightReadabilityReadModel lightReadModel = _cachedCelestialLight;
+            CelestialLightReadabilitySnapshot light = lightReadModel != null
+                ? lightReadModel.LightReadabilitySnapshot
+                : default;
+            bool lightValid = (light.Flags & (uint)CelestialLightReadabilityFlags.Valid) != 0u &&
+                              math.isfinite(light.BiolumWeight01) &&
+                              math.isfinite(light.DirectSun01) &&
+                              math.isfinite(light.DepthMeters);
+            bool daylightShallow = valid &&
+                                   !eclipse &&
+                                   snapshot.SunDirection.y > 0.05f &&
+                                   cameraPosition.y > ShallowDaylightCutoffY;
 
-            _daylightMask = daylightShallow ? 0f : 1f;
+            _daylightMask = lightValid
+                ? math.saturate(light.BiolumWeight01)
+                : (daylightShallow ? 0f : 1f);
             _eclipseMask = eclipse ? 1f : 0f;
             celestialTime = valid ? snapshot.AbsoluteUniverseTime : AdvanceFallbackCelestialTimeSeconds(safeDeltaTime);
         }
@@ -2072,6 +2085,8 @@ namespace Hecton8.Biolum
             TryUnregisterHotSwapListener();
             TryUnregisterLateFrameTick();
             ReleaseRuntimeResources();
+            _cachedCelestialSnapshot = null;
+            _cachedCelestialLight = null;
             _disposed = true;
         }
 

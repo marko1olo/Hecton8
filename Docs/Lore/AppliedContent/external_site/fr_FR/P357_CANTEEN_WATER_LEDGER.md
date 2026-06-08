@@ -21,7 +21,7 @@ localization_flags: 1
 
 Le registre d'eau de cantine est l'un des artefacts humains les plus simples de HECTON-8: une ardoise de salle de repas qui note eau potable, retours de jetons, acces aux pompes et exceptions medicales. Il n'explique pas la catastrophe. Il montre la colonie juste avant que la catastrophe devienne une histoire.
 
-Sa valeur est dans la texture et la preuve. Six jetons manquants semblent mineurs jusqu'a ce que le joueur comprenne ce que signifiait l'eau dans une colonie sous pression. L'eau potable passait par filtres, comptabilite de quart, d?rogations m?dicales et custody de pompe. Un gobelet absent pouvait etre un travailleur fatigue. Il pouvait aussi etre une equipe malade, une ligne contaminee, un ordre de ration contourne, ou un superviseur cachant une panne locale aux rapports Deep Reach.
+Sa valeur est dans la texture et la preuve. Six jetons manquants semblent mineurs jusqu'a ce que le joueur comprenne ce que signifiait l'eau dans une colonie sous pression. L'eau potable passait par filtres, comptabilite de quart, dérogations médicales et traçabilité de la pompe. Un gobelet absent pouvait etre un travailleur fatigue. Il pouvait aussi etre une equipe malade, une ligne contaminee, un ordre de ration contourne, ou un superviseur cachant une panne locale aux rapports Deep Reach.
 
 Le but n'est pas le melodrame. Le registre rend la colonie lisible comme travail: les gens revenaient de quart, se disputaient, corrigeaient les fiches, empruntaient des outils, protegeaient les leurs et tentaient de garder la piece normale pendant que l'ocean entrait deja dans le systeme. Dans HECTON-8, cette trace ordinaire peut devenir preuve.
 

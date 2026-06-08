@@ -210,6 +210,35 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RuntimeWeatherHydrationDoesNotMarkInitializedWhenVaultBuffersAreMissing()
+        {
+            string path = Path.Combine("Assets", "_Project", "Scripts", "Atmosphere", "ShinobuOceanSurfaceAtmosphereRuntime.cs");
+            string source = File.ReadAllText(path).Replace("\r\n", "\n");
+            string loadMethod = SliceBetween(
+                source,
+                "private bool LoadLegacyWeatherOrGenerateEmergency()",
+                "private bool TryLoadLegacyWeatherFile(string relativePath)");
+            string coldTick = SliceBetween(
+                source,
+                "public void ColdTick()",
+                "public void LateFrameTick()");
+
+            StringAssert.Contains("bool hydrated = loaded ? EnsureAtmosphereDefaults() : GenerateEmergencyMockWeather();", loadMethod);
+            StringAssert.Contains("if (!hydrated)", loadMethod);
+            StringAssert.Contains("return false;", loadMethod);
+            StringAssert.Contains("_initializedWeather = true;", loadMethod);
+            AssertTextBefore(loadMethod, "if (!hydrated)", "_initializedWeather = true;");
+            StringAssert.Contains("if (!_vaultBuffersReady)", coldTick);
+            StringAssert.Contains("if (!EnsureVaultBuffersCold())", coldTick);
+            StringAssert.Contains("if (!_initializedWeather && !LoadLegacyWeatherOrGenerateEmergency())", coldTick);
+            AssertTextBefore(coldTick, "if (!_vaultBuffersReady)", "ResolveCameraTransformCold();");
+            StringAssert.DoesNotContain("private void LoadLegacyWeatherOrGenerateEmergency()", source);
+            StringAssert.DoesNotContain("private void GenerateEmergencyMockWeather()", source);
+            StringAssert.DoesNotContain("private void EnsureAtmosphereDefaults()", source);
+            StringAssert.DoesNotContain("private void EnsureWeatherDefaultsFromWaves()", source);
+        }
+
+        [Test]
         public void RuntimeTelemetryFlags_ExposeFallbackRehydrateAndMissingData()
         {
             string runtimePath = Path.Combine("Assets", "_Project", "Scripts", "Atmosphere", "ShinobuOceanSurfaceAtmosphereRuntime.cs");
@@ -339,6 +368,15 @@ namespace Hecton8.Tests.Editor
             int end = source.IndexOf(endToken, start, System.StringComparison.Ordinal);
             Assert.Greater(end, start, $"Missing end token: {endToken}");
             return source.Substring(start, end - start);
+        }
+
+        private static void AssertTextBefore(string source, string earlier, string later)
+        {
+            int earlierIndex = source.IndexOf(earlier, System.StringComparison.Ordinal);
+            int laterIndex = source.IndexOf(later, System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(earlierIndex, 0, $"Missing expected text: {earlier}");
+            Assert.GreaterOrEqual(laterIndex, 0, $"Missing expected text: {later}");
+            Assert.Less(earlierIndex, laterIndex, $"Expected '{earlier}' to appear before '{later}'.");
         }
     }
 }

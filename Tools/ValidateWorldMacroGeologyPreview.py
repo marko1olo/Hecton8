@@ -133,7 +133,17 @@ def validate(path: Path) -> int:
                 fail(errors, "chunk_manifest artifact is not WorldMacroGeologyChunkManifest")
             if int(chunk_manifest.get("artifactVersion", 0)) != int(manifest.get("artifactVersion", 0)):
                 fail(errors, "chunk_manifest artifactVersion mismatch")
-            expected_chunks = int(manifest.get("chunkCountAxis", 0)) ** 2
+            runtime_range = chunk_manifest.get("runtimeChunkRange", {})
+            if isinstance(runtime_range, dict):
+                expected_chunks = (
+                    int(runtime_range.get("maxX", -1)) - int(runtime_range.get("minX", 0)) + 1
+                ) * (
+                    int(runtime_range.get("maxZ", -1)) - int(runtime_range.get("minZ", 0)) + 1
+                )
+            else:
+                expected_chunks = int(manifest.get("chunkCountX", manifest.get("chunkCountAxis", 0))) * int(
+                    manifest.get("chunkCountZ", manifest.get("chunkCountAxis", 0))
+                )
             if int(chunk_manifest.get("chunkCount", 0)) != expected_chunks:
                 fail(errors, f"chunk_manifest chunkCount must equal {expected_chunks}")
             storage_contract = chunk_manifest.get("storageContract", {})
